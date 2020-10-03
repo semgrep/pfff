@@ -293,7 +293,7 @@ sgrep_spatch_pattern:
          * empty functions/methods, but I doubt people want explicitely
          * to match that => better to return a Partial
          *)
-        | DFunc (_, (_, Empty)) | DMethod (_, _, (_, Empty))
+        | DFunc (_, _, (_, Empty)) | DMethod (_, _, _, (_, Empty))
            -> Partial (PartialDecl top_decl)
         | _ -> item1 $1
         )
@@ -898,17 +898,18 @@ indcl: "(" oarg_type_list_ocomma ")" fnres
 
 (* // all in one place to show how crappy it all is *)
 xfndcl: LFUNC fndcl fnbody
-    { $2 $3 }
+    { $2 $1 $3 }
 
 fndcl:
 |   sym "(" oarg_type_list_ocomma ")" fnres 
-     { fun body -> DFunc ($1, ({ fparams = $3; fresults = $5 }, body)) }
+     { fun tok body -> DFunc (tok, $1, ({ fparams=$3; fresults = $5 }, body)) }
 |   "(" oarg_type_list_ocomma ")" sym 
     "(" oarg_type_list_ocomma ")" fnres
      {
-      fun body ->
+      fun tok body ->
         match $2 with
-        | [ParamClassic x] -> DMethod ($4, x, ({ fparams = $6; fresults = $8 }, body))
+        | [ParamClassic x] -> 
+            DMethod (tok, $4, x, ({ fparams = $6; fresults = $8 }, body))
         | [] -> error $1 "method has no receiver"
         | [ParamEllipsis _] -> error $1 "method has ... for receiver"
         | _::_::_ -> error $1 "method has multiple receivers"

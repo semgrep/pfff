@@ -304,6 +304,7 @@ let func_def {
     fparams = params |> List.map (fun x -> G.ParamClassic x);
     frettype = Some ret;
     fbody = G.Block v3;
+    fkind = G.Function, G.fake "";
     }
 
 let rec

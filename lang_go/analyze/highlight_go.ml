@@ -139,8 +139,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.ktop_decl = (fun (k, _) x ->
       (match x with
-      | DFunc   (id,     (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
-      | DMethod (id, _o, (_t, _st)) -> tag_ident id (Entity (E.Method, def2))
+      | DFunc   (_, id,   (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
+      | DMethod (_, id,_o,(_t, _st)) -> tag_ident id (Entity (E.Method, def2))
       | DTop _ | STop _ -> ()
       | Package _ | Import _ -> ()
       );

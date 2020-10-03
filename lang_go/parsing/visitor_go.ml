@@ -353,9 +353,11 @@ and v_function_ x =
 
 and v_top_decl x =
   let k = function
-  | DFunc ((v1, v2)) ->
+  | DFunc ((t, v1, v2)) ->
+      v_tok t;
       let v1 = v_ident v1 and v2 = v_function_ v2 in ()
-  | DMethod ((v1, v2, v3)) ->
+  | DMethod ((t, v1, v2, v3)) ->
+      v_tok t;
       let v1 = v_ident v1
       and v2 = v_parameter v2
       and v3 = v_function_ v3
