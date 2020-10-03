@@ -138,7 +138,12 @@ and v_expr (x: expr) =
   | Call (v1, v2) -> v_expr v1; v_bracket (v_list v_argument) v2
   | Subscript ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_bracket (v_list v_slice) v2 and v3 = v_expr_context v3 in ()
-  | Lambda ((v1, v2)) -> let v1 = v_parameters v1 and v2 = v_expr v2 in ()
+  | Lambda (t0, v1, t1, v2) -> 
+    let t0 = v_tok t0 in
+    let v1 = v_parameters v1 in 
+    let t1 = v_tok t1 in
+    let v2 = v_expr v2 in 
+    ()
   | IfExp ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   | Yield ((t, v1, v2)) -> 
@@ -293,7 +298,8 @@ and v_stmt x =
       and v2 = v_list v_expr v2
       and v3 = v_bool v3
       in ()
-  | FunctionDef ((v1, v2, v3, v4, v5)) ->
+  | FunctionDef ((t0, v1, v2, v3, v4, v5)) ->
+      let t0 = v_tok t0 in
       let v1 = v_name v1
       and v2 = v_parameters v2
       and v3 = v_option v_type_ v3

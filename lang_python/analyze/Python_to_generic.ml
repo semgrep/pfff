@@ -279,8 +279,9 @@ let rec expr (x: expr) =
   | Call (v1, v2) -> let v1 = expr v1 in let v2 = bracket (list argument) v2 in 
       G.Call (v1, v2)
 
-  | Lambda ((v1, v2)) -> let v1 = parameters v1 and v2 = expr v2 in 
-      G.Lambda ({G.fparams = v1; fbody = G.exprstmt v2; frettype = None})
+  | Lambda ((t0, v1, _t2, v2)) -> let v1 = parameters v1 and v2 = expr v2 in 
+      G.Lambda ({G.fparams = v1; fbody = G.exprstmt v2; frettype = None;
+                 fkind = G.LambdaKind, t0 })
   | IfExp ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -516,7 +517,7 @@ and list_stmt1 xs =
 (*s: function [[Python_to_generic.stmt_aux]] *)
 and stmt_aux x =
   match x with
-  | FunctionDef ((v1, v2, v3, v4, v5)) ->
+  | FunctionDef ((t, v1, v2, v3, v4, v5)) ->
       let v1 = name v1
       and v2 = parameters v2
       and v3 = option type_ v3
@@ -524,7 +525,8 @@ and stmt_aux x =
       and v5 = list decorator v5
       in
       let ent = G.basic_entity v1 v5 in
-      let def = { G.fparams = v2; frettype = v3; fbody = v4; } in
+      let def = { G.fparams = v2; frettype = v3; fbody = v4; 
+                  fkind = G.Function, t } in
       [G.DefStmt (ent, G.FuncDef def)]
   | ClassDef ((v0, v1, v2, v3, v4)) ->
       let v1 = name v1

@@ -194,7 +194,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     );
     V.kstmt = (fun (k, _) x ->
      match x with
-     | FunctionDef (name, _params, _typopt, _body, _decorators) ->
+     | FunctionDef (_t, name, _params, _typopt, _body, _decorators) ->
        let kind = if !in_class then E.Method else E.Function in
        tag_name name (Entity (kind, def2));
        k x
