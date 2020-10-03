@@ -303,10 +303,11 @@ and expr e =
       let v1 = ident v1 in
       let v2 = typ v2 in
       G.TypedMetavar (v1, Parse_info.fake_info " ", v2)
-  | Lambda (v1, v2) ->
+  | Lambda (v1, t, v2) ->
       let v1 = params v1 in
       let v2 = stmt v2 in
-      G.Lambda { G.fparams = v1; frettype = None; fbody = v2 }
+      G.Lambda { G.fparams = v1; frettype = None; fbody = v2; 
+                 fkind = (G.Arrow, t); }
 
 and expr_or_type = function
   | Left e -> G.E (expr e)
@@ -466,7 +467,7 @@ and
         G.OtherAttribute (G.OA_AnnotThrow, [G.T t]))
   in
   { ent with G.attrs = ent.G.attrs @ throws },
-  { G.fparams = v2; frettype  = rett; fbody = v4 }
+  { G.fparams = v2; frettype  = rett; fbody = v4; fkind = G.Method, G.fake "" }
 
 and field v = var_with_init v
 

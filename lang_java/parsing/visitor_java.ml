@@ -216,8 +216,11 @@ and v_expr (x : expr) =
       let v1 = v_ident v1 in
       let v2 = v_typ v2 in
       ()
-    | Lambda ((v1, v2)) ->
-      let v1 = v_parameters v1 and v2 = v_stmt v2 in ()
+    | Lambda ((v1, t, v2)) ->
+      let v1 = v_parameters v1 in 
+      v_tok t;
+      let v2 = v_stmt v2 in
+      ()
   in
   vin.kexpr (k, all_functions) x
 
