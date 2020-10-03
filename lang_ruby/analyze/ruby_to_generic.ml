@@ -110,7 +110,8 @@ let rec expr = function
       let params = match params_opt with None -> [] | Some xs -> xs in
       let params = list formal_param params in
       let st = G.Block (t1, stmts xs, t2) in
-      let def = { G.fparams = params; frettype = None; fbody = st } in
+      let def = { G.fparams = params; frettype = None; fbody = st;
+                  fkind = G.LambdaKind, t1} in
       G.Lambda def
   | S x -> 
       let st = stmt x in
@@ -473,10 +474,11 @@ and option_tok_stmts x =
 
 and definition def = 
   match def with
-  | MethodDef (_t, kind, params, body) -> 
+  | MethodDef (t, kind, params, body) -> 
       let params = list formal_param params in
       let body = body_exn body in
-      let funcdef = { G.fparams = params; frettype = None; fbody = body } in
+      let funcdef = { G.fparams = params; frettype = None; fbody = body;
+                      fkind = G.Method, t } in
       (match kind with
       | M mn -> 
         (match method_name mn with
