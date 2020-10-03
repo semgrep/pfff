@@ -33,12 +33,11 @@ let test_parse_simple xs =
                 Parse_js.parse (* ~timeout:5 *) file 
        ))
       in
-      let cst = 
+      let ast = 
           match xs with
-          | Some cst, _ -> cst
+          | Some ast, _ -> ast
           | None, _ -> failwith "parse error"
       in
-      let ast = Ast_js_build.program cst in
       (* just to have a better comparison with 
        * semgrep -lang js -test_parse_lang *)
       let _gen = Js_to_generic.program ast in      
@@ -46,16 +45,7 @@ let test_parse_simple xs =
        * Constant_propafation.propagate done with -test_parse_lang
        *)
       stat
-    with exn ->
-      (match exn with
-      | Ast_js_build.TodoConstruct (s, tok)
-      | Ast_js_build.UnhandledConstruct (s, tok)
-        -> 
-        pr2 s;
-        pr2 (Parse_info.error_message_info tok);
-        Parse_info.bad_stat file
-      | _ -> Parse_info.bad_stat file
-      )
+    with _exn -> Parse_info.bad_stat file
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
@@ -87,20 +77,12 @@ let test_parse_simple xs =
 
 let test_dump_ast file =
   try 
-    let cst = Parse_js.parse_program file in
-    let ast = 
-      Common.save_excursion Ast_js_build.transpile_xml false (fun () ->
-      Common.save_excursion Ast_js_build.transpile_pattern false (fun () ->
-        Ast_js_build.program cst 
-      ))
-    in
+    let ast = Parse_js.parse_program file in
     let s = Ast_js.show_program ast in
     pr s
    with exn ->
       (match exn with
       | Parse_info.Lexical_error (s, tok)
-      | Ast_js_build.TodoConstruct (s, tok)
-      | Ast_js_build.UnhandledConstruct (s, tok)
         -> 
         pr2 s;
         pr2 (Parse_info.error_message_info tok);

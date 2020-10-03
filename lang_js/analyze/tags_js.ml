@@ -45,13 +45,14 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
         Parse_js.parse file 
       )))
     in
-    let ast = astopt ||| [] in
+    let _ast = astopt ||| [] in
 
     let filelines = Common2.cat_array file in
 
     (* many class idioms are recognized in Class_js *)
     let hcomplete_name_of_info = 
-      Class_pre_es6.extract_complete_name_of_info ast  in
+       failwith "Class_pre_es6 in TODO_more"
+      (* Class_pre_es6.extract_complete_name_of_info ast *)  in
     
     let tags_classes = 
       hcomplete_name_of_info 

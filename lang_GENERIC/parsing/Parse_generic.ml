@@ -51,11 +51,7 @@ let parse_with_lang lang file =
     Python_to_generic.program ast
   | Lang.Typescript (* abusing Js parser for now here *)
   | Lang.Javascript ->
-    let cst = Parse_js.parse_program file in
-    (* does also the job of a Resolve_js.resolve ast
-     * but Js_to_generic does not use the tags
-     *)
-    let ast = Ast_js_build.program cst in
+    let ast = Parse_js.parse_program file in
     Js_to_generic.program ast
   | Lang.JSON ->
     let ast = Parse_json.parse_program file in
@@ -110,8 +106,7 @@ let parse_pattern lang str =
   (* abusing JS parser so no need extend tree-sitter grammar*)
   | Lang.Typescript
   | Lang.Javascript ->
-      let any_cst = Parse_js.any_of_string str in
-      let any = Ast_js_build.any any_cst in
+      let any = Parse_js.any_of_string str in
       Js_to_generic.any any
   | Lang.JSON ->
       let any = Parse_json.any_of_string str in

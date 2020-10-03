@@ -586,3 +586,17 @@ let mk_default_entity_var tok exp =
   v, n
 
 let attr x = KeywordAttr x
+
+(*****************************************************************************)
+(* Helpers, could also be put in lib_parsing.ml instead *)
+(*****************************************************************************)
+module PI = Parse_info
+
+(* used both by Parsing_hacks_js and Parse_js *)
+let fakeInfoAttach info =
+  let info = PI.rewrap_str "';' (from ASI)" info in
+  let pinfo = PI.token_location_of_info info in
+  { PI.
+    token = PI.FakeTokStr (";", Some (pinfo, -1));
+    transfo = PI.NoTransfo;
+  }

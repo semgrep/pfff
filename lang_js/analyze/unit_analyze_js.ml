@@ -79,19 +79,12 @@ function foo() {}
       in
       files |> List.iter (fun file ->
         try
-          let cst = Parse_js.parse_program file in
-          Common.save_excursion Ast_js_build.transpile_xml false (fun () ->
-          Common.save_excursion Ast_js_build.transpile_pattern false (fun () ->
-            Ast_js_build.program cst  |> ignore
-          ))
+          Parse_js.parse_program file |> ignore
         with 
         | Parse_info.Parsing_error _
         | Parse_info.Lexical_error (_, _)
-        | Ast_js_build.TodoConstruct (_, _)
-        | Ast_js_build.UnhandledConstruct (_, _) 
         | Common.Impossible
-              ->
-          assert_failure (spf "it should correctly parse %s" file)
+        -> assert_failure (spf "it should correctly parse %s" file)
       )
     );
 ]

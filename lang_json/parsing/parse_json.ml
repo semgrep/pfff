@@ -29,8 +29,7 @@ let parse_program filename =
     PI.mk_lexer_for_yacc toks TH.is_comment in
 
   try 
-    let e_cst = Parser_js.json lexer lexbuf_fake in
-    Ast_js_build.expr e_cst
+    Parser_js.json lexer lexbuf_fake
   with Parsing.Parse_error ->
       let cur = tr.PI.current in
       if !Flag.show_parsing_error 
@@ -48,5 +47,5 @@ let any_of_string str =
      * so let's call directly Parser_js.json
      *)
     let e = Parser_js.json lexer lexbuf_fake in
-    Ast_json.E (Ast_js_build.expr e)
+    Ast_json.E (e)
   )

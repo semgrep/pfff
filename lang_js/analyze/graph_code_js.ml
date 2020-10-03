@@ -16,7 +16,7 @@ open Common
 
 module E = Entity_code
 module G = Graph_code
-module PI = Parse_info
+(*module PI = Parse_info*)
 
 open Ast_js
 module Ast = Ast_js
@@ -97,19 +97,9 @@ let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
     try 
-      let cst = Parse_js.parse_program file in
-      (* far easier representation to work on than the CST *)
-      Ast_js_build.program cst
+      Parse_js.parse_program file
     with
     | Timeout -> raise Timeout
-    | Ast_js_build.TodoConstruct (s, tok)
-    | Ast_js_build.UnhandledConstruct (s, tok)
-      -> 
-        pr2 s;
-        pr2 (Parse_info.error_message_info tok);
-        if !error_recovery
-        then []
-        else failwith s
     | exn ->
       pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
       if !error_recovery 

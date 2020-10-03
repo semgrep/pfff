@@ -1,6 +1,6 @@
 
 let string_of_any ast =
-	Cst_js.show_any ast
+	Ast_js.show_any ast
 
 let load db gen =
 	try
