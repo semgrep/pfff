@@ -1433,7 +1433,8 @@ and method_def _env cname parent self this (heap, acc) def =
     f_params = def.f_params;
     f_return_type = def.f_return_type;
     f_body = def.f_body;
-    f_kind = Function; m_modifiers = [];
+    f_kind = def.f_kind; 
+    m_modifiers = [];
     l_uses = [];
     f_attrs = def.f_attrs;
   } in

@@ -328,7 +328,7 @@ and expr =
   | Lambda v1 -> 
       let tok = snd v1.f_name in
       (match v1 with
-      | { f_kind = AnonLambda; f_ref = false; m_modifiers = [];
+      | { f_kind = (AnonLambda, t); f_ref = false; m_modifiers = [];
           f_name = _ignored;
           l_uses = []; f_attrs = [];
           f_params = ps; f_return_type = rett;
@@ -337,7 +337,8 @@ and expr =
             let ps = parameters ps in
             let rett = option hint_type rett in
             (* TODO: transform l_uses in UseOuterDecl preceding body *)
-            G.Lambda { G.fparams = ps; frettype = rett; fbody = body }
+            G.Lambda { G.fparams = ps; frettype = rett; fbody = body;
+                       fkind = G.LambdaKind, t }
       | _ -> error tok "TODO: Lambda"
       )
 
@@ -423,7 +424,7 @@ and func_def {
                f_body = f_body
              } =
   let id = ident f_name in
-  let _fkind = function_kind f_kind in
+  let fkind = function_kind f_kind in
   let params = parameters f_params in
   let fret = option hint_type f_return_type in
   let _is_refTODO = bool f_ref in
@@ -436,15 +437,16 @@ and func_def {
   let attrs = list attribute f_attrs in
   let body = list stmt f_body |> G.stmt1 in 
   let ent = G.basic_entity id (modifiers @ attrs) in
-  let def = { G.fparams = params; frettype = fret; fbody = body } in
+  let def = { G.fparams = params; frettype = fret; fbody = body; fkind } in
   ent, def
 
-and function_kind =
-  function
-  | Function -> ()
-  | AnonLambda -> ()
-  | ShortLambda -> ()
-  | Method -> ()
+and function_kind (kind, t) =
+  (match kind with
+  | Function -> G.Function
+  | AnonLambda -> G.LambdaKind
+  | ShortLambda -> G.Arrow
+  | Method -> G.Method
+  ), t
 
 and parameters x = list parameter x
 

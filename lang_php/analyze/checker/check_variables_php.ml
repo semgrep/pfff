@@ -391,7 +391,7 @@ and func_def env def =
   def.f_params |> List.iter (fun p -> Common.opt (expr env) p.p_default);
 
   let access_cnt =
-    match def.f_kind with
+    match fst def.f_kind with
     | Function  | AnonLambda | ShortLambda -> 0
     (* Don't report UnusedParameter for parameters of methods;
      * people sometimes override a method and don't use all
@@ -407,7 +407,7 @@ and func_def env def =
   let oldvars = !(env.vars) in
 
   let enclosing_vars =
-    match def.f_kind with
+    match fst def.f_kind with
     (* for ShortLambda enclosing variables can be accessed  *)
     | ShortLambda -> Map_.to_list oldvars
     (* fresh new scope *)
@@ -446,7 +446,7 @@ and func_def env def =
    * in error message related to $this. It's ok to not use $this
    * in a method.
    *)
-  if def.f_kind = Method && not (A.is_static def.m_modifiers)
+  if fst def.f_kind = Method && not (A.is_static def.m_modifiers)
   then begin
      let tok = (Cst_php.fakeInfo "$this") in
      env.vars := Map_.add "$this" (tok, S.Class, ref 1) !(env.vars);
@@ -869,7 +869,7 @@ and expr env e =
 
   | Lambda def ->
       let in_long_lambda =
-        match def.f_kind with ShortLambda -> false | _ -> true
+        match fst def.f_kind with ShortLambda -> false | _ -> true
       in
       func_def { env with in_long_lambda } def
   | Ellipsis _ -> raise Impossible
