@@ -16,13 +16,13 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* An Abstract Syntax Tree for Javascript and (partially) Typescript,
- * not a Concrete Syntax Tree as in cst_js.ml.
+(* An Abstract Syntax Tree for Javascript and (partially) Typescript.
+ * (for a Concrete Syntax Tree see old/cst_js_ml).
  * 
  * This file contains a simplified Javascript AST. The original
- * Javascript syntax tree (cst_js.ml) is good for code refactoring or
+ * Javascript syntax tree (cst_js.ml) was good for code refactoring or
  * code visualization; the types used matches exactly the source. However,
- * for other algorithms, the nature of the CST makes the code a bit
+ * for other algorithms, the nature of the CST made the code a bit
  * redundant. Hence the idea of a real and simplified AST 
  * where certain constructions have been factorized or even removed.
  *

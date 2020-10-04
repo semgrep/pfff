@@ -16,7 +16,7 @@
  *)
 open Common
 
-open Cst_js
+open Ast_js
 
 (*************************************************************************)
 (* Prelude *)
@@ -53,7 +53,7 @@ open Cst_js
 (*************************************************************************)
 (* Helpers *)
 (*************************************************************************)
-
+(* TODO
 let bop op a b c = B(a, (op, b), c)
 let uop op a b = U((op,a), b)
 let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None;}
@@ -82,38 +82,39 @@ let (@@) xs sc =
   match sc with None -> xs | Some x -> xs @ [Right x]
 let (^@) xs sc =
   match sc with None -> xs | Some x -> xs @ [Right x]
+*)
 %}
 (*************************************************************************)
 (* Tokens *)
 (*************************************************************************)
 
-%token <Cst_js.tok> TUnknown  (* unrecognized token *)
-%token <Cst_js.tok> EOF
+%token <Parse_info.t> TUnknown  (* unrecognized token *)
+%token <Parse_info.t> EOF
 
 (*-----------------------------------------*)
 (* The space/comment tokens *)
 (*-----------------------------------------*)
 (* coupling: Token_helpers.is_comment *)
-%token <Cst_js.tok> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.t> TCommentSpace TCommentNewline   TComment
 
 (*-----------------------------------------*)
 (* The normal tokens *)
 (*-----------------------------------------*)
 
 (* tokens with a value *)
-%token<string * Cst_js.tok> T_NUMBER
-%token<string * Cst_js.tok> T_ID
+%token<string * Parse_info.t> T_NUMBER
+%token<string * Parse_info.t> T_ID
 
-%token<string * Cst_js.tok> T_STRING 
-%token<string * Cst_js.tok> T_ENCAPSED_STRING
-%token<string * Cst_js.tok> T_REGEX
+%token<string * Parse_info.t> T_STRING 
+%token<string * Parse_info.t> T_ENCAPSED_STRING
+%token<string * Parse_info.t> T_REGEX
 
 (*-----------------------------------------*)
 (* Keyword tokens *)
 (*-----------------------------------------*)
 (* coupling: if you add an element here, expand also ident_keyword_bis
  * and also maybe the special hack for regexp in lexer_js.mll *)
-%token <Cst_js.tok>
+%token <Parse_info.t>
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
  T_WHILE T_FOR T_DO T_CONTINUE T_BREAK
@@ -136,7 +137,7 @@ let (^@) xs sc =
 (*-----------------------------------------*)
 
 (* syntax *)
-%token <Cst_js.tok>
+%token <Parse_info.t>
  T_LCURLY "{" T_RCURLY "}"
  T_LPAREN "(" T_RPAREN ")"
  T_LBRACKET "[" T_RBRACKET "]"
@@ -150,7 +151,7 @@ let (^@) xs sc =
 
 
 (* operators *)
-%token <Cst_js.tok>
+%token <Parse_info.t>
  T_OR T_AND
  T_BIT_OR T_BIT_XOR T_BIT_AND
  T_PLUS T_MINUS
@@ -185,11 +186,11 @@ let (^@) xs sc =
 (*-----------------------------------------*)
 
 (* Automatically Inserted Semicolon (ASI), see parse_js.ml *)
-%token <Cst_js.tok> T_VIRTUAL_SEMICOLON
+%token <Parse_info.t> T_VIRTUAL_SEMICOLON
 (* fresh_token: the opening '(' of the parameters preceding an '->' *)
-%token <Cst_js.tok> T_LPAREN_ARROW
+%token <Parse_info.t> T_LPAREN_ARROW
 (* fresh_token: the first '{' in a semgrep pattern for objects *)
-%token <Cst_js.tok> T_LCURLY_SEMGREP
+%token <Parse_info.t> T_LCURLY_SEMGREP
 
 (*************************************************************************)
 (* Priorities *)
@@ -229,23 +230,19 @@ let (^@) xs sc =
 (*************************************************************************)
 (* Rules type decl *)
 (*************************************************************************)
-%start <Cst_js.module_item list> main
-%start <Cst_js.module_item option> module_item_or_eof 
-%start <Cst_js.any> sgrep_spatch_pattern
+%start <Ast_js.program> main
+%start <Ast_js.stmt option> module_item_or_eof 
+%start <Ast_js.any> sgrep_spatch_pattern
 (* for lang_json/ *)
-%start <Cst_js.expr> json
+%start <Ast_js.expr> json
 
 %%
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
 listc(X):
- | X { [Left $1] }
- | listc(X) "," X { $1 @ [Right $2; Left $3] }
-
-listc2(X):
- | X               { [$1] }
- | listc2(X) "," X { $1 @ [Right $2; $3] }
+ | X { [$1] }
+ | listc(X) "," X { $1 @ [$3] }
 
 optl(X):
  | (* empty *) { [] }
@@ -257,21 +254,24 @@ optl(X):
 
 main: program EOF { $1 }
 
+(* less: could restrict to literals and collections *)
+json: expr EOF { $1 }
+
 program: optl(module_item+) { $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
- | module_item { Some $1 }
+ | module_item { Some $1 } 
  | EOF         { None }
 
 module_item:
- | item        { It $1 }
- | import_decl { Import $1 }
- | export_decl { Export $1 }
+ | item        { $1 }
+ | import_decl { M $1 }
+ | export_decl { M $1 }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
- | stmt { St $1 }
+ | stmt { $1 }
  | decl { $1 }
 
 decl:
@@ -285,13 +285,11 @@ decl:
  (* es6: *)
  | lexical_decl   { St $1 }
  | class_decl     { ClassDecl $1 }
- (* typescript: *)
+
+ (* typescript-ext: *)
  | interface_decl { InterfaceDecl $1 }
  | type_alias_decl { ItemTodo $1 }
  | enum_decl       { ItemTodo $1 }
-
-(* less: could restrict to literals and collections *)
-json: expr EOF { $1 }
 
 (*************************************************************************)
 (* sgrep *)
@@ -300,7 +298,7 @@ json: expr EOF { $1 }
 sgrep_spatch_pattern:
  (* copy-paste of object_literal rule but with T_LCURLY_SEMGREP *)
  | T_LCURLY_SEMGREP "}"    { Expr (Object ($1, [], $2)) }
- | T_LCURLY_SEMGREP listc2(property_name_and_value) ","? "}" 
+ | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
      { Expr (Object ($1, $2 @@ $3, $4)) }
 
  | assignment_expr_no_stmt EOF   { Expr $1 }
@@ -1179,7 +1177,7 @@ element:
 
 object_literal:
  | "{" "}"                                      { ($1, [], $2) }
- | "{" listc2(property_name_and_value) ","? "}" { ($1, $2 @@ $3, $4) }
+ | "{" listc(property_name_and_value) ","? "}" { ($1, $2 @@ $3, $4) }
 
 property_name_and_value:
  | property_name ":" assignment_expr  { Left (P_field ($1, $2, $3)) }
