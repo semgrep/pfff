@@ -17,6 +17,7 @@
 open Common
 
 open Ast_js
+module G = AST_generic (* for operators, fake, and now also type_ *)
 
 (*************************************************************************)
 (* Prelude *)
@@ -53,6 +54,25 @@ open Ast_js
 (*************************************************************************)
 (* Helpers *)
 (*************************************************************************)
+let fb = G.fake_bracket
+let st1 = stmt_of_stmts
+
+(* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
+ * function decl (because 'function_decl' accepts id_opt,
+ * see its comment to see the reason)
+ * This is why we intercept this case by returning instead an Expr pattern.
+ *)
+let fix_sgrep_module_item _x =
+  raise Todo
+(* TODO
+  match x with
+  | It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
+      Expr (Function decl)
+  (* less: could check that sc is an ASI *)
+  | It (St (ExprStmt (e, _sc))) -> Expr e
+  | _ -> ModuleItem x
+*)
+
 (* TODO
 let bop op a b c = B(a, (op, b), c)
 let uop op a b = U((op,a), b)
@@ -61,27 +81,6 @@ let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) =
   { f_kind = kind; f_params= ps; f_body = (lc, xs, rc);
     f_type_params = t; f_return_type = rt; f_properties = props }
 
-(* for missing closing > for generics *)
-let fake_tok s = Parse_info.fake_info s
-
-(* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
- * function decl (because 'function_decl' accepts id_opt,
- * see its comment to see the reason), which then causes an exception
- * in Ast_js_build which does not accept anonymous toplevel function.
- * This is why we intercept this case by returning instead an Expr pattern.
- *)
-let fix_sgrep_module_item x =
-  match x with
-  | It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
-      Expr (Function decl)
-  (* less: could check that sc is an ASI *)
-  | It (St (ExprStmt (e, _sc))) -> Expr e
-  | _ -> ModuleItem x
-
-let (@@) xs sc =
-  match sc with None -> xs | Some x -> xs @ [Right x]
-let (^@) xs sc =
-  match sc with None -> xs | Some x -> xs @ [Right x]
 *)
 %}
 (*************************************************************************)
@@ -236,6 +235,8 @@ let (^@) xs sc =
 (* for lang_json/ *)
 %start <Ast_js.expr> json
 
+%type <Ast_js.stmt list> stmt item
+
 %%
 (*************************************************************************)
 (* Macros *)
@@ -266,8 +267,8 @@ module_item_or_eof:
 
 module_item:
  | item        { $1 }
- | import_decl { M $1 }
- | export_decl { M $1 }
+ | import_decl { $1 |> List.map (fun x -> M x) }
+ | export_decl { $1 |> List.map (fun x -> M x) }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
@@ -276,20 +277,20 @@ item:
 
 decl:
  (* part of hoistable_declaration in the ECMA grammar *)
- | function_decl  { FunDecl $1 }
+ | function_decl  { [FunDecl $1] }
  (* es6: *)
- | generator_decl { FunDecl $1 }
+ | generator_decl { [FunDecl $1] }
  (* es7: *)
- | async_decl     { FunDecl $1 }
+ | async_decl     { [FunDecl $1] }
 
  (* es6: *)
- | lexical_decl   { St $1 }
- | class_decl     { ClassDecl $1 }
+ | lexical_decl   { $1 }
+ | class_decl     { [ClassDecl $1] }
 
  (* typescript-ext: *)
- | interface_decl { InterfaceDecl $1 }
- | type_alias_decl { ItemTodo $1 }
- | enum_decl       { ItemTodo $1 }
+ | interface_decl { [InterfaceDecl $1] }
+ | type_alias_decl { [ItemTodo $1] }
+ | enum_decl       { [ItemTodo $1] }
 
 (*************************************************************************)
 (* sgrep *)
@@ -297,13 +298,13 @@ decl:
 
 sgrep_spatch_pattern:
  (* copy-paste of object_literal rule but with T_LCURLY_SEMGREP *)
- | T_LCURLY_SEMGREP "}"    { Expr (Object ($1, [], $2)) }
+ | T_LCURLY_SEMGREP "}"    { Expr (Obj ($1, [], $2)) }
  | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
-     { Expr (Object ($1, $2 @@ $3, $4)) }
+     { Expr (Obj ($1, $2, $4)) }
 
  | assignment_expr_no_stmt EOF   { Expr $1 }
  | module_item EOF               { fix_sgrep_module_item $1}
- | module_item module_item+ EOF  { ModuleItems ($1::$2) }
+ | module_item module_item+ EOF  { Items ($1::$2) }
 
 (*************************************************************************)
 (* Namespace *)
@@ -379,21 +380,19 @@ export_clause:
 (*************************************************************************)
 
 (* part of 'stmt' *)
-variable_stmt: T_VAR listc(variable_decl) sc { VarsDecl ((Var, $1), $2, $3) }
+variable_stmt: T_VAR listc(variable_decl) sc { build_vars  (Var, $1) $2 }
 
 (* part of 'decl' *)
 lexical_decl:
  (* es6: *)
- | T_CONST listc(variable_decl) sc { VarsDecl((Const, $1), $2,$3) }
- | T_LET listc(variable_decl) sc { VarsDecl((Let, $1), $2,$3) }
+ | T_CONST listc(variable_decl) sc { build_vars (Const, $1) $2 }
+ | T_LET listc(variable_decl) sc   { build_vars (Let, $1) $2 }
 
 
 (* one var from a list of vars *)
 variable_decl:
- | id annotation? initializeur?
-     { VarClassic { v_name = $1; v_type = $2; v_init = $3 } }
- | binding_pattern annotation? initializeur
-     { VarPattern { vpat = $1; vpat_type = $2; vpat_init = Some $3 } }
+ | id annotation? initializeur?               { Left $1, $2, $3 }
+ | binding_pattern annotation? initializeur   { Right $1, $2, Some $3 }
 
 initializeur: "=" assignment_expr { $1, $2 }
 
@@ -405,12 +404,9 @@ for_variable_decl:
  | T_LET listc(variable_decl_no_in)   { ((Let, $1), $2) }
 
 variable_decl_no_in:
- | id initializer_no_in
-     { VarClassic { v_name = $1; v_init = Some $2; v_type =None } }
- | id
-     { VarClassic { v_name = $1; v_init = None; v_type = None } }
- | binding_pattern initializer_no_in
-     { VarPattern { vpat = $1; vpat_init = Some $2; vpat_type = None } }
+ | id initializer_no_in                 { Left $1, None, Some $2 }
+ | id                                   { Left $1, None, None }
+ | binding_pattern initializer_no_in    { Right $1, None, Some $2 }
 
 (* 'for ... in' and 'for ... of' declare only one variable *)
 for_single_variable_decl:
@@ -682,12 +678,12 @@ enum_member:
 (*************************************************************************)
 (* Declare (ambient) declaration *)
 (*************************************************************************)
-(* typescript: *)
+(* typescript-ext: *)
 
 (*************************************************************************)
 (* Types *)
 (*************************************************************************)
-(* typescript: *)
+(* typescript-ext: *)
 
 (*----------------------------*)
 (* Annotations *)
@@ -707,9 +703,9 @@ complex_annotation:
 (* can't use 'type'; generate syntax error in parser_js.ml *)
 type_:
  | primary_or_union_type { $1 }
- | "?" type_         { TQuestion ($1, $2) }
+ | "?" type_         { raise Todo }
  | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
-   { TFun (($1, $2, $3), $4, $5) }
+   { raise Todo }
 
 primary_or_union_type:
  | primary_or_intersect_type { $1 }
@@ -748,16 +744,16 @@ type_reference:
 
 (* was called type_reference in Flow *)
 type_name: 
- | T_ID { V($1) }
- | module_name "." T_ID { V($3) }
+ | T_ID { [$1] }
+ | module_name "." T_ID { $1 @ [ $3] }
 
 module_name:
- | T_ID { V($1) }
- | module_name "." T_ID { V($3) (* TODO: $1 *) } 
+ | T_ID { [$1] }
+ | module_name "." T_ID { $1 @ [$3] } 
 
-union_type:     primary_or_union_type     T_BIT_OR primary_type { TTodo }
+union_type:     primary_or_union_type     T_BIT_OR primary_type { raise Todo }
 
-intersect_type: primary_or_intersect_type T_BIT_AND primary_type { TTodo }
+intersect_type: primary_or_intersect_type T_BIT_AND primary_type { raise Todo }
 
 
 object_type: "{" optl(type_member+) "}"  { TObj ($1, $2, $3) } 
@@ -765,13 +761,13 @@ object_type: "{" optl(type_member+) "}"  { TObj ($1, $2, $3) }
 (* partial type annotations are not supported *)
 type_member: 
  | property_name_typescript complex_annotation sc_or_comma
-    { ($1, $2, $3) }
+    { raise Todo }
  | property_name_typescript "?" complex_annotation sc_or_comma
-    { ($1, $3, $4) (* TODO $2*) }
+    { raise Todo }
  | "[" T_ID ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
-    { (* TODO *) (PN_Id $2, $6, $7)  }
+    { raise Todo  }
  | "[" T_ID ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
-    { (* TODO *) (PN_Id $2, $6, $7) }
+    { raise Todo }
 
 (* no [xxx] here *)
 property_name_typescript:
@@ -824,22 +820,22 @@ mismatched_type_arguments:
  | T_LESS_THAN type_argument_list2 T_RSHIFT3 { $1, $2, $3 }
 
 type_argument_list1:
- | nominal_type1                              { [Left (TName $1)] }
- | listc(type_argument) "," nominal_type1     { $1 @ [Right $2;Left(TName $3)]}
+ | nominal_type1                              { [$1] }
+ | listc(type_argument) "," nominal_type1     { $1 @ [$3]}
 
 nominal_type1: type_name type_arguments1 { ($1, Some $2) }
 
 (* missing 1 closing > *)
-type_arguments1: T_LESS_THAN listc(type_argument)    { $1, $2, fake_tok ">" }
+type_arguments1: T_LESS_THAN listc(type_argument)    { $1, $2, G.fake ">" }
 
 type_argument_list2:
- | nominal_type2                            { [Left (TName $1)] }
- | listc(type_argument) "," nominal_type2   { $1 @ [Right $2; Left(TName $3)]}
+ | nominal_type2                            { [$1] }
+ | listc(type_argument) "," nominal_type2   { $1 @ [$3]}
 
 nominal_type2: type_name type_arguments2 { ($1, Some $2) }
 
 (* missing 2 closing > *)
-type_arguments2: T_LESS_THAN type_argument_list1    { $1, $2, fake_tok ">" }
+type_arguments2: T_LESS_THAN type_argument_list1    { $1, $2, G.fake ">" }
 
 (*----------------------------*)
 (* Type or expr *)
@@ -863,22 +859,25 @@ type_or_expr:
 (*************************************************************************)
 
 stmt:
- | block           { $1 }
- | variable_stmt   { $1 }
- | empty_stmt      { $1 }
- | expr_stmt       { $1 }
- | if_stmt         { $1 }
- | iteration_stmt  { $1 }
- | continue_stmt   { $1 }
- | break_stmt      { $1 }
- | return_stmt     { $1 }
- | with_stmt       { $1 }
- | labelled_stmt   { $1 }
- | switch_stmt     { $1 }
- | throw_stmt      { $1 }
- | try_stmt        { $1 }
+ | block           { [$1] }
+ | variable_stmt   { $1 |> List.map (fun x -> DefStmt x) }
+ | empty_stmt      { [$1] }
+ | expr_stmt       { [$1] }
+ | if_stmt         { [$1] }
+ | iteration_stmt  { [$1] }
+ | continue_stmt   { [$1] }
+ | break_stmt      { [$1] }
+ | return_stmt     { [$1] }
+ | with_stmt       { [$1] }
+ | labelled_stmt   { [$1] }
+ | switch_stmt     { [$1] }
+ | throw_stmt      { [$1] }
+ | try_stmt        { [$1] }
  (* sgrep-ext: *)
- | "..." { ExprStmt (Ellipsis $1, None) }
+ | "..." { [ExprStmt (Ellipsis $1, G.sc)] }
+
+%inline
+stmt1: stmt { stmt_of_stmts $1 }
 
 block: "{" optl(stmt_list) "}" { Block ($1, $2, $3) }
 
@@ -923,16 +922,16 @@ initializer_no_in: "=" assignment_expr_no_in { $1, $2 }
 continue_stmt: T_CONTINUE id? sc { Continue ($1, $2, $3) }
 break_stmt:    T_BREAK    id? sc { Break ($1, $2, $3) }
 
-return_stmt: T_RETURN expr? sc { Return ($1, $2, $3) }
+return_stmt: T_RETURN expr? sc { Return ($1, $2) }
 
-with_stmt: T_WITH "(" expr ")" stmt { With ($1, ($2, $3, $4), $5) }
+with_stmt: T_WITH "(" expr ")" stmt1 { With ($1, $3, $5) }
 
-switch_stmt: T_SWITCH "(" expr ")" case_block { Switch ($1, ($2, $3, $4), $5) }
+switch_stmt: T_SWITCH "(" expr ")" case_block { Switch ($1, $3, $5) }
 
 labelled_stmt: id ":" stmt { Labeled ($1, $2, $3) }
 
 
-throw_stmt: T_THROW expr sc { Throw ($1, $2, $3) }
+throw_stmt: T_THROW expr sc { Throw ($1, $2) }
 
 try_stmt:
  | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
@@ -1210,29 +1209,34 @@ argument:
 (*----------------------------*)
 xhp_html:
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_GT xhp_child* T_XHP_CLOSE_TAG
-     { Xhp ($1, $2, $3, $4, $5)  }
+     { { xml_tag = $1; xml_attrs = $2; xml_body = $4 } }
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
-     { XhpSingleton ($1, $2, $3) }
- (* reactext: https://reactjs.org/docs/fragments.html#short-syntax *)
+     { { xml_tag = $1; xml_attrs = $2; xml_body = [] } }
+ (* reactjs-ext: https://reactjs.org/docs/fragments.html#short-syntax *)
  | T_XHP_SHORT_FRAGMENT xhp_child* T_XHP_CLOSE_TAG 
-     { Xhp (("", $1), [], $1, $2, $3) }
+     { { xml_tag = ("", $1); xml_attrs = []; xml_body = $2 } }
 
 xhp_child:
- | T_XHP_TEXT        { XhpText $1 }
- | xhp_html          { XhpNested $1 }
- | "{" expr sc? "}"   { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
- | "{" "}"           { XhpExpr ($1, None , $2) (*TODO$3*) }
+ | T_XHP_TEXT        { XmlText $1 }
+ | xhp_html          { XmlXml $1 }
+ | "{" expr sc? "}"   { XmlExpr ($2) }
+ (* sometimes people use empty { } to put comment in it *)
+ | "{" "}"           { XmlExpr (IdSpecial (Null, $1)) }
 
 xhp_attribute:
- | T_XHP_ATTR "=" xhp_attribute_value  { XhpAttrValue ($1, $2, $3) }
- | "{" "..." assignment_expr "}"       { XhpAttrSpread ($1, ($2, $3), $4) }
- (* jsxext: not in XHP *)
- | T_XHP_ATTR                          { XhpAttrNoValue ($1) }
+ | T_XHP_ATTR "=" xhp_attribute_value  
+    { XmlAttr ($1, $3) }
+ | "{" "..." assignment_expr "}"       
+    { let e = Apply (IdSpecial (Spread, $2), fb [$3]) in 
+      XmlAttrExpr ($1, e, $4) }
+ (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
+ | T_XHP_ATTR                     
+    { XmlAttr ($1, Bool (true, G.fake "true")) }
 
 xhp_attribute_value:
- | T_STRING           { XhpAttrString ($1) }
- | "{" expr sc? "}"    { XhpAttrExpr ($1, $2, $4)(*TODO$3*)}
- | "..." { XhpAttrEllipsis $1 }
+ | T_STRING           { String $1 }
+ | "{" expr sc? "}"   { $2 }
+ | "..."              { Ellipsis $1 }
 
 (*----------------------------*)
 (* interpolated strings *)

@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -528,8 +529,6 @@ let tok_of_name (_, tok) = tok
 
 let unwrap x = fst x
 
-and string_of_xhp_tag s = s
-
 let mk_const_var id e = 
   { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None;
     v_resolved = ref NotResolved }
@@ -586,6 +585,22 @@ let mk_default_entity_var tok exp =
   v, n
 
 let attr x = KeywordAttr x
+
+
+let idexp id =
+  match special_of_id_opt (fst id) with
+  | None -> Id (id, ref NotResolved)
+  | Some special -> IdSpecial (special, snd id)
+
+let build_vars kwd vars =
+  vars |> List.map (fun (id_or_pat, ty_opt, initopt) ->
+      match id_or_pat with
+      | Left id ->
+      { v_name = id; v_kind = (kwd); v_init = initopt; v_type = ty_opt;
+        v_resolved = ref NotResolved }
+      | Right pat ->
+        var_pattern_to_var kwd pat (snd kwd) initopt
+   )
 
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
