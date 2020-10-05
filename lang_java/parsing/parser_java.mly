@@ -373,9 +373,9 @@ reference_type:
  | array_type { $1 }
 
 array_type:
- | primitive_type          LB_RB                { TArray $1 }
- | class_or_interface_type (* was name *) LB_RB { TArray $1 }
- | array_type              LB_RB                { TArray $1 }
+ | primitive_type          LB_RB                { TArray ($2, $1, $2) }
+ | class_or_interface_type (* was name *) LB_RB { TArray ($2, $1, $2) }
+ | array_type              LB_RB                { TArray ($2, $1, $2) }
 
 (*----------------------------*)
 (* Generics arguments *)

@@ -422,9 +422,10 @@ and vof_type_ =
   | TyEllipsis v1 -> 
       let v1 = vof_tok v1 in
       OCaml.VSum (("TyEllipsis", [ v1 ]))
-  | TyRecordAnon v1 ->
+  | TyRecordAnon (v0, v1) ->
+      let v0 = vof_tok v0 in
       let v1 = vof_bracket (OCaml.vof_list vof_field) v1
-      in OCaml.VSum (("TyAnd", [ v1 ]))
+      in OCaml.VSum (("TyAnd", [ v0; v1 ]))
   | TyOr (v1, v2, v3) ->
       let v1 = vof_type_ v1 in 
       let v2 = vof_tok v2 in
@@ -451,7 +452,7 @@ and vof_type_ =
       in OCaml.VSum (("TyName", [ v1 ]))
   | TyVar v1 -> let v1 = vof_ident v1 in OCaml.VSum (("TyVar", [ v1 ]))
   | TyArray ((v1, v2)) ->
-      let v1 = OCaml.vof_option vof_expr v1
+      let v1 = vof_bracket (OCaml.vof_option vof_expr) v1
       and v2 = vof_type_ v2
       in OCaml.VSum (("TyArray", [ v1; v2 ]))
   | TyPointer (t, v1) ->

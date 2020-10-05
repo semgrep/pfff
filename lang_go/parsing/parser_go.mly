@@ -791,18 +791,13 @@ fnret_type:
 
 
 othertype:
-|   "[" oexpr_no_dots "]" ntype 
-      { match $2 with 
-        | None -> TSlice $4 
-        | Some e -> TArray (e, $4) 
-      }
-|   "[" "..." "]" ntype  
-      { TArrayEllipsis ($2, $4) }
+|   "[" oexpr_no_dots "]" ntype { TArray (($1, $2, $3), $4) }
+|   "[" "..." "]" ntype         { TArrayEllipsis (($1, $2, $3), $4) }
 
 |   LCHAN non_recvchantype { TChan ($1, TBidirectional, $2) }
-|   LCHAN "<-" ntype      { TChan ($1, TSend, $3) }
+|   LCHAN "<-" ntype       { TChan ($1, TSend, $3) }
 
-|   LMAP "[" ntype "]" ntype { TMap ($1, $3, $5) }
+|   LMAP "[" ntype "]" ntype { TMap ($1, ($2, $3, $4), $5) }
 
 |   structtype    { $1 }
 |   interfacetype { $1 }

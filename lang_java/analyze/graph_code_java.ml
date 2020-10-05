@@ -150,7 +150,7 @@ let looks_like_enum_constant s =
 let rec classname_and_info_of_typ t =
   match t with
   | TBasic x -> x
-  | TArray t -> classname_and_info_of_typ t
+  | TArray (_, t, _) -> classname_and_info_of_typ t
   | TClass xs ->
       let x = Common2.list_last xs in
       let (ident, _args) = x in
@@ -810,7 +810,7 @@ and init_opt env opt =
 (* ---------------------------------------------------------------------- *)
 and typ env = function
   | TBasic _ -> ()
-  | TArray t -> typ env t
+  | TArray (_, t, _) -> typ env t
   (* other big dependency source! *)
   | TClass reft ->
       (* todo: let's forget generic arguments for now *)
