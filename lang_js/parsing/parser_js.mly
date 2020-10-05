@@ -242,7 +242,7 @@ let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) =
 (* for lang_json/ *)
 %start <Ast_js.expr> json
 
-%type <Ast_js.stmt list> stmt item
+%type <Ast_js.stmt list> stmt item module_item
 
 %%
 (*************************************************************************)
@@ -256,6 +256,10 @@ optl(X):
  | (* empty *) { [] }
  | X           { $1 }
 
+optl2(X):
+ | (* empty *) { [] }
+ | X           { List.flatten $1 }
+
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
@@ -265,17 +269,17 @@ main: program EOF { $1 }
 (* less: could restrict to literals and collections *)
 json: expr EOF { $1 }
 
-program: optl(module_item+) { $1 }
+program: optl2(module_item+) { $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
- | module_item { Some $1 } 
+ | module_item { raise Todo } 
  | EOF         { None }
 
 module_item:
  | item        { $1 }
- | import_decl { $1 |> List.map (fun x -> M x) }
- | export_decl { $1 |> List.map (fun x -> M x) }
+ | import_decl { raise Todo (* $1 |> List.map (fun x -> M x)*) }
+ | export_decl { raise Todo (* $1 |> List.map (fun x -> M x)*) }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
@@ -309,9 +313,9 @@ sgrep_spatch_pattern:
  | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
      { Expr (Obj ($1, $2, $4)) }
 
- | assignment_expr_no_stmt EOF   { Expr $1 }
- | module_item EOF               { fix_sgrep_module_item $1}
- | module_item module_item+ EOF  { Items ($1::$2) }
+ | assignment_expr_no_stmt  EOF  { Expr $1 }
+ | module_item              EOF  { fix_sgrep_module_item $1}
+ | module_item module_item+ EOF  { Items (List.flatten ($1::$2)) }
 
 (*************************************************************************)
 (* Namespace *)
@@ -321,8 +325,10 @@ sgrep_spatch_pattern:
 (*----------------------------*)
 
 import_decl: 
- | T_IMPORT import_clause from_clause sc  { $1, ImportFrom ($2, $3), $4 }
- | T_IMPORT module_specifier sc           { $1, ImportEffect $2, $3 }
+ | T_IMPORT import_clause from_clause sc  
+    { $1, ImportFrom ($2, $3), $4 }
+ | T_IMPORT module_specifier sc           
+    { $1, ImportEffect $2, $3 }
 
 import_clause: 
  | import_default                  { Some $1, None }
@@ -435,19 +441,23 @@ binding_pattern:
  | array_binding_pattern { $1 }
 
 object_binding_pattern:
- | "{" "}"                               { PatObj ($1, [], $2)  }
- | "{" listc(binding_property) ","?  "}" { PatObj ($1, $2, $4) }
+ | "{" "}"                               { Obj ($1, [], $2)  }
+ | "{" listc(binding_property) ","?  "}" { Obj ($1, $2, $4) }
 
 binding_property:
- | binding_id initializeur?          { PatId ($1, $2) }
- | property_name ":" binding_element { PatProp ($1, $2, $3) }
+ | binding_id initializeur?          
+    { PatId ($1, $2) }
+ | property_name ":" binding_element 
+    { PatProp ($1, $2, $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id         { PatDots ($1, PatId ($2, None)) }
- | "..." binding_pattern    { PatDots ($1, PatNest ($2, None)) }
+ | "..." binding_id         
+    { PatDots ($1, PatId ($2, None)) }
+ | "..." binding_pattern    
+    { PatDots ($1, PatNest ($2, None)) }
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id initializeur? { PatId ($1, $2) }
+ | binding_id         initializeur? { PatId ($1, $2) }
  | binding_pattern    initializeur? { PatNest ($1, $2) }
 
 (* array destructuring *)
@@ -764,7 +774,7 @@ union_type:     primary_or_union_type     T_BIT_OR primary_type { raise Todo }
 intersect_type: primary_or_intersect_type T_BIT_AND primary_type { raise Todo }
 
 
-object_type: "{" optl(type_member+) "}"  { TObj ($1, $2, $3) } 
+object_type: "{" optl(type_member+) "}"  { raise Todo } 
 
 (* partial type annotations are not supported *)
 type_member: 
@@ -830,7 +840,7 @@ type_argument_list1:
  | nominal_type1                              { [$1] }
  | listc(type_argument) "," nominal_type1     { $1 @ [$3]}
 
-nominal_type1: type_name type_arguments1 { ($1, Some $2) }
+nominal_type1: type_name type_arguments1 { $1 }
 
 (* missing 1 closing > *)
 type_arguments1: T_LESS_THAN listc(type_argument)    { $1, $2, G.fake ">" }
@@ -839,7 +849,7 @@ type_argument_list2:
  | nominal_type2                            { [$1] }
  | listc(type_argument) "," nominal_type2   { $1 @ [$3]}
 
-nominal_type2: type_name type_arguments2 { ($1, Some $2) }
+nominal_type2: type_name type_arguments2 { $1 }
 
 (* missing 2 closing > *)
 type_arguments2: T_LESS_THAN type_argument_list1    { $1, $2, G.fake ">" }
@@ -1013,11 +1023,12 @@ post_in_expr(x):
  | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop G.Gt $1 $2 $3 }
  | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop G.LtE $1 $2 $3 }
  | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
- | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)         
-   { bop B_instanceof $1 $2 $3 }
+ | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)  
+    { special Instanceof $2 [$1; $3] }
 
  (* also T_IN! *)
- | post_in_expr(x) T_IN post_in_expr(d1)             { bop G.In $1 $2 $3 }
+ | post_in_expr(x) T_IN post_in_expr(d1)             { special In $2 [$1; $3] }
+
  | post_in_expr(x) T_EQUAL post_in_expr(d1)          { bop G.Eq $1 $2 $3 }
  | post_in_expr(x) T_NOT_EQUAL post_in_expr(d1)      { bop G.NotEq $1 $2 $3 }
  | post_in_expr(x) T_STRICT_EQUAL post_in_expr(d1)   { bop G.PhysEq $1 $2 $3 }
@@ -1034,13 +1045,13 @@ pre_in_expr(x):
  | left_hand_side_expr_(x)                     { $1 }
 
  | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)    
-    { uop U_post_increment $2 $1 }
+    { special (IncrDecr (G.Incr, G.Postfix)) $2 [$1] }
  | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)    
-    { uop U_post_decrement $2 $1 }
+    { special (IncrDecr (G.Decr, G.Postfix)) $2 [$1] }
  | T_INCR pre_in_expr(d1)                      
-  { uop U_pre_increment $1 $2 }
+  { special (IncrDecr (G.Incr, G.Prefix)) $1 [$2] }
  | T_DECR pre_in_expr(d1)                      
-  { uop U_pre_decrement $1 $2 }
+  { special (IncrDecr (G.Decr, G.Prefix)) $1 [$2] }
 
  | T_DELETE pre_in_expr(d1)                    { special Delete $1 [$2] }
  | T_VOID pre_in_expr(d1)                      { special Void $1 [$2] }
@@ -1320,7 +1331,7 @@ post_in_expr_no_in:
  | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)  { bop G.LtE $1 $2 $3 }
  | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
  | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)     
-   { bop B_instanceof $1 $2 $3 }
+   { special Instanceof $2 [$1; $3] }
 
  (* no T_IN case *)
 
