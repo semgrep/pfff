@@ -73,9 +73,16 @@ let fix_sgrep_module_item _x =
   | _ -> ModuleItem x
 *)
 
+let mk_Fun _ = raise Todo
+let mk_Encaps _ _ = raise Todo
+
+let special spec tok xs = 
+  Apply (IdSpecial (spec, tok), fb xs)
+
+let bop op a b c = special (ArithOp op) b [a;c]
+let uop op tok x = special op tok [x]
+
 (* TODO
-let bop op a b c = B(a, (op, b), c)
-let uop op a b = U((op,a), b)
 let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None;}
 let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) = 
   { f_kind = kind; f_params= ps; f_body = (lc, xs, rc);
@@ -334,7 +341,7 @@ import_names:
 named_imports:
  | "{" "}"                             { ($1, [], $2) }
  | "{" listc(import_specifier) "}"     { ($1, $2, $3) }
- | "{" listc(import_specifier) "," "}" { ($1, $2 @ [Right $3], $4) }
+ | "{" listc(import_specifier) "," "}" { ($1, $2, $4) }
 
 (* also valid for export *)
 from_clause: T_FROM module_specifier { ($1, $2) }
@@ -373,7 +380,7 @@ export_names:
 export_clause:
  | "{" "}"                              { ($1, [], $2) }
  | "{" listc(import_specifier) "}"      { ($1, $2, $3) }
- | "{" listc(import_specifier) ","  "}" { ($1, $2 @ [Right $3], $4) }
+ | "{" listc(import_specifier) ","  "}" { ($1, $2, $4) }
 
 (*************************************************************************)
 (* Variable decl *)
@@ -429,7 +436,7 @@ binding_pattern:
 
 object_binding_pattern:
  | "{" "}"                               { PatObj ($1, [], $2)  }
- | "{" listc(binding_property) ","?  "}" { PatObj ($1, $2 @@ $3, $4) }
+ | "{" listc(binding_property) ","?  "}" { PatObj ($1, $2, $4) }
 
 binding_property:
  | binding_id initializeur?          { PatId ($1, $2) }
@@ -450,8 +457,8 @@ array_binding_pattern:
  | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
 
 binding_start_element:
- | ","                  { [Right $1] }
- | binding_element ","  { [Left $1; Right $2] }
+ | ","                  { [] (* TODO elison *) }
+ | binding_element ","  { [$1] }
 
 binding_start_list:
 (* always ends in a "," *)
@@ -465,10 +472,10 @@ binding_element_list:
  | binding_start_list binding_elision_element { $1 @ $2 }
 
 binding_elision_element:
- | binding_element        { [Left $1] }
+ | binding_element        { [$1] }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id       { [Left (PatDots ($1, PatId ($2, None)))] }
- | "..." binding_pattern  { [Left (PatDots ($1, PatNest ($2, None)))] }
+ | "..." binding_id       { [(PatDots ($1, PatId ($2, None)))] }
+ | "..." binding_pattern  { [(PatDots ($1, PatNest ($2, None)))] }
 
 (*************************************************************************)
 (* Function declarations (and exprs) *)
@@ -497,12 +504,12 @@ function_body: optl(stmt_list) { $1 }
 
 formal_parameter_list_opt:
  | (*empty*)   { [] }
- | formal_parameter_list ","?  { List.rev ($1) ^@ $2 }
+ | formal_parameter_list ","?  { List.rev $1 }
 
 (* must be written in a left-recursive way (see conflicts.txt) *)
 formal_parameter_list:
- | formal_parameter_list "," formal_parameter { (Left $3)::(Right $2)::$1 }
- | formal_parameter                           { [Left $1] }
+ | formal_parameter_list "," formal_parameter { $3::$1 }
+ | formal_parameter                           { [$1] }
 
 (* The ECMA and Typescript grammars imposes more restrictions
  * (some require_parameter, optional_parameter, rest_parameter)
@@ -718,24 +725,25 @@ primary_or_intersect_type:
 (* I introduced those intermediate rules to remove ambiguities *)
 primary_type:
  | primary_type2 { $1 }
- | primary_type "[" "]" { TTodo }
+ | primary_type "[" "]" { raise Todo }
 
 primary_type2:
- | predefined_type      { $1 }
- | type_reference       { TName($1) }
+ | predefined_type      { G.TyName (G.name_of_id $1) }
+ (* TODO: could be TyApply if snd $1 is a Some *)
+ | type_reference       { G.TyName(G.name_of_ids (fst $1)) }
  | object_type          { $1 }
- | "[" listc(type_) "]" { TTodo }
+ | "[" listc(type_) "]" { raise Todo }
  (* not in Typescript grammar *)
- | T_STRING { TTodo }
+ | T_STRING              { raise Todo }
 
 predefined_type:
- | T_ANY_TYPE      { TName (V("any", $1), None) }
- | T_NUMBER_TYPE   { TName (V("number", $1), None) }
- | T_BOOLEAN_TYPE  { TName (V("boolean", $1), None) }
- | T_STRING_TYPE   { TName (V("string", $1), None) }
- | T_VOID          { TName (V("void", $1), None) }
+ | T_ANY_TYPE      { "any", $1 }
+ | T_NUMBER_TYPE   { "number", $1 }
+ | T_BOOLEAN_TYPE  { "boolean", $1 }
+ | T_STRING_TYPE   { "string", $1 }
+ | T_VOID          { "void", $1 }
  (* not in Typescript grammar, but often part of union type *)
- | T_NULL          { TName (V("null", $1), None) }
+ | T_NULL          { "null", $1 }
 
 (* was called nominal_type in Flow *)
 type_reference:
@@ -745,7 +753,7 @@ type_reference:
 (* was called type_reference in Flow *)
 type_name: 
  | T_ID { [$1] }
- | module_name "." T_ID { $1 @ [ $3] }
+ | module_name "." T_ID { $1 @ [$3] }
 
 module_name:
  | T_ID { [$1] }
@@ -771,29 +779,28 @@ type_member:
 
 (* no [xxx] here *)
 property_name_typescript:
- | id    { PN_Id $1 }
- | string_literal  { PN_String $1 }
- | numeric_literal { PN_Num $1 }
- | ident_keyword   { PN_Id $1 }
+ | id    { PN $1 }
+ | string_literal  { PN $1 }
+ | numeric_literal { PN $1 }
+ | ident_keyword   { PN $1 }
 
 
 param_type_list:
- | param_type "," param_type_list { (Left $1)::(Right $2)::$3 }
- | param_type                         { [Left $1] }
+ | param_type "," param_type_list { $1::$3 }
+ | param_type                         { [$1] }
  | optional_param_type_list           { $1 }
 
 (* partial type annotations are not supported *)
-param_type: id complex_annotation { (RequiredParam($1), $2) }
+param_type: id complex_annotation { raise Todo }
 
-optional_param_type: id "?" complex_annotation { OptionalParam($1,$2),$3}
+optional_param_type: id "?" complex_annotation { raise Todo }
 
 optional_param_type_list:
- | optional_param_type "," optional_param_type_list
-     { (Left $1)::(Right $2)::$3 }
- | optional_param_type       { [Left $1] }
- | rest_param_type           { [Left $1] }
+ | optional_param_type "," optional_param_type_list { $1::$3 }
+ | optional_param_type       { [$1] }
+ | rest_param_type           { [$1] }
 
-rest_param_type: "..." id complex_annotation { (RestParam($1,$2), $3) }
+rest_param_type: "..." id complex_annotation { raise Todo }
 
 (*----------------------------*)
 (* Type parameters (type variables) *)
@@ -1002,57 +1009,61 @@ left_hand_side_expr_(x):
 post_in_expr(x):
  | pre_in_expr(x) { $1 }
 
- | post_in_expr(x) T_LESS_THAN post_in_expr(d1)          { bop B_lt $1 $2 $3 }
- | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop B_gt $1 $2 $3 }
- | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop B_le $1 $2 $3 }
- | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop B_ge $1 $2 $3 }
- | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)         { bop B_instanceof $1 $2 $3 }
+ | post_in_expr(x) T_LESS_THAN post_in_expr(d1)          { bop G.Lt $1 $2 $3 }
+ | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop G.Gt $1 $2 $3 }
+ | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop G.LtE $1 $2 $3 }
+ | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
+ | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)         
+   { bop B_instanceof $1 $2 $3 }
 
  (* also T_IN! *)
- | post_in_expr(x) T_IN post_in_expr(d1)                 { bop B_in $1 $2 $3 }
-
- | post_in_expr(x) T_EQUAL post_in_expr(d1)              { bop B_equal $1 $2 $3 }
- | post_in_expr(x) T_NOT_EQUAL post_in_expr(d1)          { bop B_notequal $1 $2 $3 }
- | post_in_expr(x) T_STRICT_EQUAL post_in_expr(d1)       { bop B_physequal $1 $2 $3 }
- | post_in_expr(x) T_STRICT_NOT_EQUAL post_in_expr(d1) { bop B_physnotequal $1 $2 $3 }
- | post_in_expr(x) T_BIT_AND post_in_expr(d1)            { bop B_bitand $1 $2 $3 }
- | post_in_expr(x) T_BIT_XOR post_in_expr(d1)            { bop B_bitxor $1 $2 $3 }
- | post_in_expr(x) T_BIT_OR post_in_expr(d1)             { bop B_bitor $1 $2 $3 }
- | post_in_expr(x) T_AND post_in_expr(d1)                { bop B_and $1 $2 $3 }
- | post_in_expr(x) T_OR post_in_expr(d1)                 { bop B_or $1 $2 $3 }
+ | post_in_expr(x) T_IN post_in_expr(d1)             { bop G.In $1 $2 $3 }
+ | post_in_expr(x) T_EQUAL post_in_expr(d1)          { bop G.Eq $1 $2 $3 }
+ | post_in_expr(x) T_NOT_EQUAL post_in_expr(d1)      { bop G.NotEq $1 $2 $3 }
+ | post_in_expr(x) T_STRICT_EQUAL post_in_expr(d1)   { bop G.PhysEq $1 $2 $3 }
+ | post_in_expr(x) T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop G.NotPhysEq $1 $2 $3 }
+ | post_in_expr(x) T_BIT_AND post_in_expr(d1)        { bop G.BitAnd $1 $2 $3 }
+ | post_in_expr(x) T_BIT_XOR post_in_expr(d1)        { bop G.BitXor $1 $2 $3 }
+ | post_in_expr(x) T_BIT_OR post_in_expr(d1)         { bop G.BitOr $1 $2 $3 }
+ | post_in_expr(x) T_AND post_in_expr(d1)            { bop G.And $1 $2 $3 }
+ | post_in_expr(x) T_OR post_in_expr(d1)             { bop G.Or $1 $2 $3 }
 
 
 (* called unary_expr and update_expr in ECMA *)
 pre_in_expr(x):
  | left_hand_side_expr_(x)                     { $1 }
 
- | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)    { uop U_post_increment $2 $1 }
- | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)    { uop U_post_decrement $2 $1 }
- | T_INCR pre_in_expr(d1)                      { uop U_pre_increment $1 $2 }
- | T_DECR pre_in_expr(d1)                      { uop U_pre_decrement $1 $2 }
+ | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)    
+    { uop U_post_increment $2 $1 }
+ | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)    
+    { uop U_post_decrement $2 $1 }
+ | T_INCR pre_in_expr(d1)                      
+  { uop U_pre_increment $1 $2 }
+ | T_DECR pre_in_expr(d1)                      
+  { uop U_pre_decrement $1 $2 }
 
- | T_DELETE pre_in_expr(d1)                    { uop U_delete $1 $2 }
- | T_VOID pre_in_expr(d1)                      { uop U_void $1 $2 }
- | T_TYPEOF pre_in_expr(d1)                    { uop U_typeof $1 $2 }
+ | T_DELETE pre_in_expr(d1)                    { special Delete $1 [$2] }
+ | T_VOID pre_in_expr(d1)                      { special Void $1 [$2] }
+ | T_TYPEOF pre_in_expr(d1)                    { special Typeof $1 [$2] }
 
- | T_PLUS pre_in_expr(d1)                      { uop U_plus $1 $2 }
- | T_MINUS pre_in_expr(d1)                     { uop U_minus $1 $2}
- | T_BIT_NOT pre_in_expr(d1)                   { uop U_bitnot $1 $2 }
- | T_NOT pre_in_expr(d1)                       { uop U_not $1 $2 }
+ | T_PLUS pre_in_expr(d1)                      { uop (ArithOp G.Plus) $1 $2 }
+ | T_MINUS pre_in_expr(d1)                     { uop (ArithOp G.Minus) $1 $2}
+ | T_BIT_NOT pre_in_expr(d1)                   { uop (ArithOp G.BitNot) $1 $2 }
+ | T_NOT pre_in_expr(d1)                       { uop (ArithOp G.Not) $1 $2 }
  (* es7: *)
- | T_AWAIT pre_in_expr(d1)                     { Await ($1, $2) }
+ | T_AWAIT pre_in_expr(d1)                     { special Await $1 [$2] }
 
- | pre_in_expr(x) "*" pre_in_expr(d1)    { bop B_mul $1 $2 $3 }
- | pre_in_expr(x) T_DIV pre_in_expr(d1)     { bop B_div $1 $2 $3 }
- | pre_in_expr(x) T_MOD pre_in_expr(d1)     { bop B_mod $1 $2 $3 }
- | pre_in_expr(x) T_PLUS pre_in_expr(d1)    { bop B_add $1 $2 $3 }
- | pre_in_expr(x) T_MINUS pre_in_expr(d1)   { bop B_sub $1 $2 $3 }
- | pre_in_expr(x) T_LSHIFT pre_in_expr(d1)  { bop B_lsl $1 $2 $3 }
- | pre_in_expr(x) T_RSHIFT pre_in_expr(d1)  { bop B_lsr $1 $2 $3 }
- | pre_in_expr(x) T_RSHIFT3 pre_in_expr(d1) { bop B_asr $1 $2 $3 }
+ | pre_in_expr(x) "*" pre_in_expr(d1)       { bop G.Mult $1 $2 $3 }
+ | pre_in_expr(x) T_DIV pre_in_expr(d1)     { bop G.Div $1 $2 $3 }
+ | pre_in_expr(x) T_MOD pre_in_expr(d1)     { bop G.Mod $1 $2 $3 }
+ | pre_in_expr(x) T_PLUS pre_in_expr(d1)    { bop G.Plus $1 $2 $3 }
+ | pre_in_expr(x) T_MINUS pre_in_expr(d1)   { bop G.Minus $1 $2 $3 }
+ | pre_in_expr(x) T_LSHIFT pre_in_expr(d1)  { bop G.LSL $1 $2 $3 }
+ | pre_in_expr(x) T_RSHIFT pre_in_expr(d1)  { bop G.LSR $1 $2 $3 }
+ | pre_in_expr(x) T_RSHIFT3 pre_in_expr(d1) { bop G.ASR $1 $2 $3 }
 
  (* es7: *)
- | pre_in_expr(x) T_EXPONENT pre_in_expr(d1) { bop B_expo $1 $2 $3 }
+ | pre_in_expr(x) T_EXPONENT pre_in_expr(d1) { bop G.Pow $1 $2 $3 }
 
 
 call_expr(x):
@@ -1061,20 +1072,20 @@ call_expr(x):
  | call_expr(x) "[" expr "]"         { Bracket($1, ($2, $3,$4))}
  | call_expr(x) "." method_name      { Period ($1, $2, $3) }
  (* es6: *)
- | call_expr(x) template_literal     { TemplateString (Some $1, $2) }
+ | call_expr(x) template_literal     { mk_Encaps (Some $1) $2 }
  | T_SUPER arguments { Apply(Super($1), $2) }
 
 new_expr(x):
  | member_expr(x)    { $1 }
- | T_NEW new_expr(d1) { uop U_new $1 $2 }
+ | T_NEW new_expr(d1) { special New $1 [$2] }
 
 member_expr(x):
  | primary_expr(x)                   { $1 }
  | member_expr(x) "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
  | member_expr(x) "." field_name     { Period ($1, $2, $3) }
- | T_NEW member_expr(d1) arguments   { Apply(uop U_new $1 $2, $3) }
+ | T_NEW member_expr(d1) arguments   { Apply(special New $1 [$2], $3) }
  (* es6: *)
- | member_expr(x) template_literal   { TemplateString (Some $1, $2) }
+ | member_expr(x) template_literal   { mk_Encaps (Some $1) $2 }
  | T_SUPER "[" expr "]"    { Bracket(Super($1),($2,$3,$4))}
  | T_SUPER "." field_name { Period(Super($1), $2, $3) }
  | T_NEW "." id { 
@@ -1090,36 +1101,36 @@ primary_expr(x):
 d1: primary_with_stmt { $1 }
 
 primary_with_stmt:
- | object_literal            { Object $1 }
- | function_expr             { Function $1 }
+ | object_literal            { Obj $1 }
+ | function_expr             { mk_Fun $1 }
  (* es6: *)
  | class_expr                { $1 }
  (* es6: *)
- | generator_expr            { Function $1 }
+ | generator_expr            { mk_Fun $1 }
  (* es7: *)
- | async_function_expr       { Function $1 }
+ | async_function_expr       { mk_Fun $1 }
 
 
 primary_expr_no_braces:
- | T_THIS          { This $1 }
- | id      { V $1 }
+ | T_THIS          { IdSpecial (This, $1) }
+ | id              { idexp $1 }
 
- | null_literal    { L(Null $1) }
- | boolean_literal { L(Bool $1) }
- | numeric_literal { L(Num $1) }
- | string_literal  { L(String $1) }
+ | null_literal    { IdSpecial (Null, $1) }
+ | boolean_literal { Bool $1 }
+ | numeric_literal { Num $1 }
+ | string_literal  { String $1 }
 
  (* marcel: this isn't an expansion of literal in ECMA-262... mistake? *)
- | regex_literal                { L(Regexp $1) }
+ | regex_literal                { Regexp $1 }
  | array_literal                { $1 }
 
  (* simple! ECMA mixes this rule with arrow parameters (bad) *)
- | "(" expr ")" { Paren ($1, $2, $3) }
+ | "(" expr ")" { $2 }
 
  (* xhp: do not put in 'expr', otherwise can't have xhp in function arg *)
- | xhp_html { XhpHtml $1 }
+ | xhp_html { Xml $1 }
 
- | template_literal { TemplateString (None, $1) }
+ | template_literal { mk_Encaps None $1 }
 
 (*----------------------------*)
 (* scalar *)
@@ -1157,18 +1168,18 @@ assignment_operator:
 
 array_literal:
  | "[" optl(elision) "]"                   { Array($1, $2, $3) }
- | "[" element_list_rev optl(elision) "]"  { Array($1, List.rev $2 @ $3, $4) }
+ | "[" element_list_rev optl(elision) "]"  { Array($1, List.rev $2, $4) }
 
 (* TODO: conflict on "," *)
 element_list_rev:
- | optl(elision)   element                { (Left $2)::$1 }
- | element_list_rev "," element     { (Left $3) :: [Right $2] @ $1 }
- | element_list_rev "," elision element  { (Left $4) :: $3 @ [Right $2] @ $1 }
+ | optl(elision)   element                { $2::$1 }
+ | element_list_rev "," element     { $3:$1 }
+ | element_list_rev "," elision element  { $4:: ($3 @ $1) }
 
 element:
  | assignment_expr { $1 }
  (* es6: spread operator: *)
- | "..." assignment_expr { uop U_spread $1 $2 }
+ | "..." assignment_expr { special Spread $1 [$2] }
 
 (*----------------------------*)
 (* object *)
@@ -1176,33 +1187,38 @@ element:
 
 object_literal:
  | "{" "}"                                      { ($1, [], $2) }
- | "{" listc(property_name_and_value) ","? "}" { ($1, $2 @@ $3, $4) }
+ | "{" listc(property_name_and_value) ","? "}" { ($1, $2, $4) }
 
 property_name_and_value:
- | property_name ":" assignment_expr  { Left (P_field ($1, $2, $3)) }
- | method_definition                  { Left (P_method ($1)) }
+ | property_name ":" assignment_expr  
+    { Field (mk_field $1 (Some $3)) }
+ | method_definition                  
+    { $1 }
  (* es6: *)
- | id                                 { Left (P_shorthand ($1)) }
+ | id                                 
+    { Field (mk_field (PN $1) (Some (Id ($1, ref NotResolved)))) }
  (* es6: spread operator: *)
- | "..." assignment_expr              { Left (P_spread ($1, $2)) }
- | "..."                              { Left (P_ellipsis $1 ) }
+ | "..." assignment_expr              
+    { (FieldSpread ($1, $2)) }
+ | "..."                              
+    { (FieldEllipsis $1 ) }
 
 (*----------------------------*)
 (* function call *)
 (*----------------------------*)
 
-arguments: "(" argument_list_opt ")" { ($1, $2 , $3) }
+arguments: "(" argument_list_opt ")" { ($1, $2, $3) }
 
 argument_list_opt:
  | (*empty*)   { [] }
  (* argument_list must be written in a left-recursive way(see conflicts.txt) *)
- | listc(argument) ","?  { ($1 ^@ $2)  }
+ | listc(argument) ","?  { $1  }
 
 (* assignment_expr because expr supports sequence of exprs with ',' *)
 argument:
  | assignment_expr       { $1 }
  (* es6: spread operator, allowed not only in last position *)
- | "..." assignment_expr { (uop U_spread $1 $2) }
+ | "..." assignment_expr { special Spread $1 [$2] }
 
 (*----------------------------*)
 (* XHP embeded html *)
@@ -1245,8 +1261,8 @@ xhp_attribute_value:
 template_literal: T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { ($1, $2, $3) }
 
 encaps:
- | T_ENCAPSED_STRING        { EncapsString $1 }
- | T_DOLLARCURLY expr "}"   { EncapsExpr ($1, $2, $3) }
+ | T_ENCAPSED_STRING        { String $1 }
+ | T_DOLLARCURLY expr "}"   { $2 }
 
 (*----------------------------*)
 (* arrow (short lambda) *)
@@ -1299,23 +1315,24 @@ conditional_expr_no_in:
 
 post_in_expr_no_in:
  | pre_in_expr(d1) { $1 }
- | post_in_expr_no_in T_LESS_THAN post_in_expr(d1)          { bop B_lt $1 $2 $3 }
- | post_in_expr_no_in T_GREATER_THAN post_in_expr(d1)       { bop B_gt $1 $2 $3 }
- | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)    { bop B_le $1 $2 $3 }
- | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop B_ge $1 $2 $3 }
- | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)         { bop B_instanceof $1 $2 $3 }
+ | post_in_expr_no_in T_LESS_THAN post_in_expr(d1)        { bop G.Lt $1 $2 $3 }
+ | post_in_expr_no_in T_GREATER_THAN post_in_expr(d1)     { bop G.Gt $1 $2 $3 }
+ | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)  { bop G.LtE $1 $2 $3 }
+ | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
+ | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)     
+   { bop B_instanceof $1 $2 $3 }
 
  (* no T_IN case *)
 
- | post_in_expr_no_in T_EQUAL post_in_expr(d1)              { bop B_equal $1 $2 $3 }
- | post_in_expr_no_in T_NOT_EQUAL post_in_expr(d1)          { bop B_notequal $1 $2 $3 }
- | post_in_expr_no_in T_STRICT_EQUAL post_in_expr(d1)       { bop B_physequal $1 $2 $3 }
- | post_in_expr_no_in T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop B_physnotequal $1 $2 $3 }
- | post_in_expr_no_in T_BIT_AND post_in_expr(d1)            { bop B_bitand $1 $2 $3 }
- | post_in_expr_no_in T_BIT_XOR post_in_expr(d1)            { bop B_bitxor $1 $2 $3 }
- | post_in_expr_no_in T_BIT_OR post_in_expr(d1)             { bop B_bitor $1 $2 $3 }
- | post_in_expr_no_in T_AND post_in_expr(d1)                { bop B_and $1 $2 $3 }
- | post_in_expr_no_in T_OR post_in_expr(d1)                 { bop B_or $1 $2 $3 }
+ | post_in_expr_no_in T_EQUAL post_in_expr(d1)         { bop G.Eq $1 $2 $3 }
+ | post_in_expr_no_in T_NOT_EQUAL post_in_expr(d1)     { bop G.NotEq $1 $2 $3 }
+ | post_in_expr_no_in T_STRICT_EQUAL post_in_expr(d1)  { bop G.PhysEq $1 $2 $3}
+ | post_in_expr_no_in T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop G.NotPhysEq $1 $2 $3 }
+ | post_in_expr_no_in T_BIT_AND post_in_expr(d1)       { bop G.BitAnd $1 $2 $3}
+ | post_in_expr_no_in T_BIT_XOR post_in_expr(d1)       { bop G.BitXor $1 $2 $3}
+ | post_in_expr_no_in T_BIT_OR post_in_expr(d1)        { bop G.BitOr $1 $2 $3 }
+ | post_in_expr_no_in T_AND post_in_expr(d1)           { bop G.And $1 $2 $3 }
+ | post_in_expr_no_in T_OR post_in_expr(d1)            { bop G.Or $1 $2 $3 }
 
 (*----------------------------*)
 (* (no stmt, and no object literal like { v: 1 }) *)
@@ -1387,34 +1404,33 @@ ident_keyword_bis:
  | T_TYPEOF { $1 } | T_VOID { $1 }
 
 field_name:
- | id { $1 }
+ | id            { $1 }
  | ident_keyword { $1 }
 
 method_name:
- | id { $1 }
+ | id            { $1 }
  | ident_keyword { $1 }
 
 property_name:
- | id    { PN_Id $1 }
- | string_literal  { PN_String $1 }
- | numeric_literal { PN_Num $1 }
- | ident_keyword   { PN_Id $1 }
+ | id              { PN $1 }
+ | string_literal  { PN $1 }
+ | numeric_literal { PN $1 }
+ | ident_keyword   { PN $1 }
  (* es6: *)
- | "[" assignment_expr "]" { PN_Computed ($1, $2, $3) }
+ | "[" assignment_expr "]" { PN_Computed ($2) }
 
 (*************************************************************************)
 (* Misc *)
 (*************************************************************************)
 
 sc:
- | ";"                 { Some $1 }
- | T_VIRTUAL_SEMICOLON { None }
+ | ";"                 { raise Todo }
+ | T_VIRTUAL_SEMICOLON { raise Todo }
 
 sc_or_comma:
- | sc { $1 }
- | "," { Some $1 }
+ | sc  { raise Todo }
+ | "," { raise Todo }
 
 elision:
- | "," { [Right $1] }
- | elision "," { $1 @ [Right $2] }
-
+ | "," { [$1] }
+ | elision "," { $1 @ [$2] }
