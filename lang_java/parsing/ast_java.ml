@@ -65,7 +65,7 @@ type typ =
   (* 'void', 'int', and other primitive types; could be merged with TClass *)
   | TBasic of string wrap
   | TClass of class_type
-  | TArray of typ
+  | TArray of typ bracket
 
   (* class or interface or enum type actually *)
  and class_type =
@@ -540,7 +540,7 @@ let rec canon_var mods t_opt v =
   | ArrayDecl v' -> 
       (match t_opt with
       | None -> raise Common.Impossible
-      | Some t -> canon_var mods (Some (TArray t)) v'
+      | Some t -> canon_var mods (Some (TArray (AST_generic.fake_bracket t))) v'
       )
 
 let method_header mods mtype (v, formals) throws =

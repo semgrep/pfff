@@ -68,13 +68,13 @@ type type_ =
  | TName of qualified_ident (* includes the basic types: bool/int/... *)
  | TPtr of tok * type_
 
- | TArray of expr * type_
- | TSlice of type_
+ (* old: a TArray (None) was called a TSlice before *)
+ | TArray of expr option bracket * type_
   (* only in CompositeLit (could be rewritten as TArray with static length) *)
- | TArrayEllipsis of tok (* ... *) * type_ 
+ | TArrayEllipsis of tok (* ... *) bracket * type_ 
 
  | TFunc of func_type
- | TMap of tok * type_ * type_
+ | TMap of tok * type_ bracket * type_
  | TChan of tok * chan_dir * type_
 
  | TStruct    of tok * struct_field list bracket

@@ -71,7 +71,8 @@ let rec typ =
   function
   | TBasic v1 -> let v1 = wrap string v1 in G.TyBuiltin v1
   | TClass v1 -> let v1 = class_type v1 in v1
-  | TArray v1 -> let v1 = typ v1 in G.TyArray (None, v1)
+  | TArray (t1, v1, t2) -> 
+      let v1 = typ v1 in G.TyArray ((t1, None, t2), v1)
 and class_type v =
   let res = list1
     (fun (v1, v2) ->
@@ -237,8 +238,8 @@ and expr e =
         if n <1 
         then raise Impossible; (* see parser_java.mly dims | dim_exprs rules *)
         if n = 1
-        then G.TyArray (None, v1) 
-        else G.TyArray (None, mk_array (n - 1))
+        then G.TyArray (fb None, v1) 
+        else G.TyArray (fb None, mk_array (n - 1))
       in
       let t = mk_array (v3 + List.length v2) in
       (match v4 with

@@ -118,12 +118,12 @@ let rec type_ =
       G.TyName (name_of_qualified_ident v1)
   | TPtr (t, v1) -> let v1 = type_ v1 in 
       G.TyPointer (t, v1)
-  | TArray ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in 
-      G.TyArray (Some v1, v2)
-  | TSlice v1 -> let v1 = type_ v1 in 
-      G.TyArray (None, v1) (* not sure worth introducing an OT_Slice *)
-  | TArrayEllipsis ((v1, v2)) -> let _v1 = tok v1 and v2 = type_ v2 in
-      G.TyArray (None, v2)
+  | TArray ((v1, v2)) -> 
+      let v1 = bracket (option expr) v1 and v2 = type_ v2 in 
+      G.TyArray (v1, v2)
+  | TArrayEllipsis ((v1, v2)) -> 
+      let (t1, _v1, t2) = bracket tok v1 and v2 = type_ v2 in
+      G.TyArray ((t1, None, t2), v2)
   | TFunc v1 -> let (params, ret) = func_type v1 in 
       let ret = 
         match ret with
@@ -135,13 +135,13 @@ let rec type_ =
            | _ -> None
        ) in
       G.TyFun (params, ret)
-  | TMap ((t, v1, v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
+  | TMap ((t, (_, v1, _), v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
   | TChan ((t, v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "chan" t, [G.TypeArg v1; G.TypeArg v2])
 
-  | TStruct (_t, v1) -> let v1 = bracket (list struct_field) v1 in 
-      G.TyRecordAnon v1
+  | TStruct (t, v1) -> let v1 = bracket (list struct_field) v1 in 
+      G.TyRecordAnon (t, v1)
   | TInterface (t, v1) -> let v1 = bracket (list interface_field) v1 in 
       let s = gensym () in
       let ent = G.basic_entity (s, t) [] in

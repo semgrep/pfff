@@ -882,7 +882,7 @@ and type_ =
   | TyFun of parameter_classic list * type_ (* return type *)
 
   (* a special case of TApply, also a special case of TPointer *)
-  | TyArray of (* const_expr *) expr option * type_
+  | TyArray of (* const_expr *) expr option bracket * type_
   | TyTuple of type_ list bracket (* at least 2 elements *)
 
   (*s: [[AST_generic.type_]] other cases *)
@@ -912,7 +912,7 @@ and type_ =
    * Most record types are defined via a TypeDef and are then referenced
    * via a TyName. Here we have flexible record types (a.k.a. rows in OCaml).
    *)
-  | TyRecordAnon of field list bracket
+  | TyRecordAnon of tok (* 'struct/shape', fake in other *)* field list bracket
 
   (* sgrep-ext: *)
   | TyEllipsis of tok

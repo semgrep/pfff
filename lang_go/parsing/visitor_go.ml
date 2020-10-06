@@ -100,13 +100,14 @@ and v_type_ x =
   | TPtr (t, v1) -> 
         let t = v_tok t in
         let v1 = v_type_ v1 in ()
-  | TArray ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
-  | TSlice v1 -> let v1 = v_type_ v1 in ()
-  | TArrayEllipsis ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()
+  | TArray ((v1, v2)) -> let v1 = v_bracket (v_option v_expr) v1 
+        and v2 = v_type_ v2 in ()
+  | TArrayEllipsis ((v1, v2)) -> 
+        let v1 = v_bracket v_tok v1 and v2 = v_type_ v2 in ()
   | TFunc v1 -> let v1 = v_func_type v1 in ()
   | TMap ((t, v1, v2)) -> 
         let t = v_tok t in
-        let v1 = v_type_ v1 and v2 = v_type_ v2 in ()
+        let v1 = v_bracket v_type_ v1 and v2 = v_type_ v2 in ()
   | TChan ((t, v1, v2)) -> 
         let t = v_tok t in
         let v1 = v_chan_dir v1 and v2 = v_type_ v2 in ()

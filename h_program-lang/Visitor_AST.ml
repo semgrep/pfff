@@ -318,7 +318,8 @@ and v_type_ x =
   let k x = 
   match x with
   | TyEllipsis v1 -> v_tok v1
-  | TyRecordAnon v1 ->
+  | TyRecordAnon (v0, v1) ->
+      v_tok v0;
       let v1 = v_bracket (v_list v_field) v1
       in ()
   | TyOr (v1, v2, v3) -> v_type_ v1; v_tok v2; v_type_ v3
@@ -332,7 +333,7 @@ and v_type_ x =
       let v1 = v_name v1 in ()
   | TyVar v1 -> let v1 = v_ident v1 in ()
   | TyArray ((v1, v2)) ->
-      let v1 = v_option v_expr v1 and v2 = v_type_ v2 in ()
+      let v1 = v_bracket (v_option v_expr) v1 and v2 = v_type_ v2 in ()
   | TyPointer (t, v1) -> 
         let t = v_tok t in
         let v1 = v_type_ v1 in ()

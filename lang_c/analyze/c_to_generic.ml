@@ -116,7 +116,7 @@ let rec type_ =
   | TPointer (t, v1) -> let v1 = type_ v1 in G.TyPointer (t, v1)
   | TArray ((v1, v2)) ->
       let v1 = option const_expr v1 and v2 = type_ v2 in
-      G.TyArray (v1, v2)
+      G.TyArray (fb v1, v2)
   | TFunction v1 -> let (ret, params) = function_type v1 in 
       G.TyFun (params, ret)
   | TStructName ((v1, v2)) ->
