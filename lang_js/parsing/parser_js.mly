@@ -55,7 +55,6 @@ module G = AST_generic (* for operators, fake, and now also type_ *)
 (* Helpers *)
 (*************************************************************************)
 let fb = G.fake_bracket
-let st1 = stmt_of_stmts
 
 (* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
  * function decl (because 'function_decl' accepts id_opt,
@@ -73,8 +72,21 @@ let fix_sgrep_module_item _x =
   | _ -> ModuleItem x
 *)
 
-let mk_Fun _ = raise Todo
-let mk_Encaps _ _ = raise Todo
+
+let mk_Fun ?(id=None) props (_generics, f_params, f_rettype) (lc, xs, rc) = 
+  let f_attrs = props |> List.map attr in
+  Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
+let mk_Field fld_name e =
+  Field { fld_name; fld_attrs = []; fld_body = Some e; fld_type = None }
+let mk_Encaps _ _ = 
+  raise Todo
+let mk_Super tok =
+  IdSpecial (Super, tok)
+
+let mk_pattern binding_pattern _annot_opt init_opt =
+  match init_opt with
+  | None -> binding_pattern
+  | Some (t, e) -> Assign (binding_pattern, t, e)
 
 let special spec tok xs = 
   Apply (IdSpecial (spec, tok), fb xs)
@@ -82,13 +94,6 @@ let special spec tok xs =
 let bop op a b c = special (ArithOp op) b [a;c]
 let uop op tok x = special op tok [x]
 
-(* TODO
-let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None;}
-let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) = 
-  { f_kind = kind; f_params= ps; f_body = (lc, xs, rc);
-    f_type_params = t; f_return_type = rt; f_properties = props }
-
-*)
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -243,14 +248,15 @@ let mk_func_decl kind props (t, ps, rt) (lc, xs, rc) =
 %start <Ast_js.expr> json
 
 %type <Ast_js.stmt list> stmt item module_item
+%type <Ast_js.entity list> decl
 
 %%
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
 listc(X):
- | X { [$1] }
- | listc(X) "," X { $1 @ [$3] }
+ | X { (*[$1]*) raise Todo }
+ | listc(X) "," X { (* $1 @ [$3] *) raise Todo }
 
 optl(X):
  | (* empty *) { [] }
@@ -284,7 +290,7 @@ module_item:
 (* item is also in stmt_list, inside every blocks *)
 item:
  | stmt { $1 }
- | decl { $1 }
+ | decl { $1 |> List.map (fun v -> DefStmt v) }
 
 decl:
  (* part of hoistable_declaration in the ECMA grammar *)
@@ -300,8 +306,8 @@ decl:
 
  (* typescript-ext: *)
  | interface_decl { [InterfaceDecl $1] }
- | type_alias_decl { [ItemTodo $1] }
- | enum_decl       { [ItemTodo $1] }
+ | type_alias_decl { raise Todo }
+ | enum_decl       { raise Todo }
 
 (*************************************************************************)
 (* sgrep *)
@@ -326,23 +332,22 @@ sgrep_spatch_pattern:
 
 import_decl: 
  | T_IMPORT import_clause from_clause sc  
-    { $1, ImportFrom ($2, $3), $4 }
+    { (*$1, ImportFrom ($2, $3), $4*) raise Todo }
  | T_IMPORT module_specifier sc           
-    { $1, ImportEffect $2, $3 }
+    { (*$1, ImportEffect $2, $3*) raise Todo }
 
 import_clause: 
  | import_default                  { Some $1, None }
- (* less: add "," in AST? *)
  | import_default "," import_names { Some $1, Some $3 }
  |                    import_names { None, Some $1 }
 
 import_default: binding_id { $1 }
 
 import_names:
- | "*" T_AS binding_id   { ImportNamespace ($1, $2, $3) }
- | named_imports         { ImportNames $1 }
+ | "*" T_AS binding_id   { (* ImportNamespace ($1, $2, $3) *) raise Todo }
+ | named_imports         { (*ImportNames $1*) raise Todo }
  (* typing-ext: *)
- | T_TYPE named_imports  { ImportTypes ($1, $2) }
+ | T_TYPE named_imports  { raise Todo }
 
 named_imports:
  | "{" "}"                             { ($1, [], $2) }
@@ -407,7 +412,9 @@ variable_decl:
  | id annotation? initializeur?               { Left $1, $2, $3 }
  | binding_pattern annotation? initializeur   { Right $1, $2, Some $3 }
 
-initializeur: "=" assignment_expr { $1, $2 }
+initializeur: "=" assignment_expr { $2 }
+
+initializeur2: "=" assignment_expr { $1, $2 }
 
 
 for_variable_decl:
@@ -491,16 +498,16 @@ binding_elision_element:
 (* Function declarations (and exprs) *)
 (*************************************************************************)
 
-(* ugly: f_name is None only when part of an 'export default' decl 
- * TODO: use other tech to enforce this? extra rule after
- * T_EXPORT T_DEFAULT? but then many ambiguities.
+(* ugly: id is None only when part of an 'export default' decl 
+ * less: use other tech to enforce this? extra rule after
+ *  T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
 function_decl: T_FUNCTION id? call_signature "{" function_body "}"
-   { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
+   { mk_Fun [] $3 ($4, $5, $6), $2 }
 
 (* the id is really optional here *)
 function_expr: T_FUNCTION id? call_signature  "{" function_body "}"
-   { mk_func_decl (F_func ($1, $2)) [] $3 ($4, $5, $6) }
+   { mk_Fun ~id:$2 [] $3 ($4, $5, $6) }
 
 (* typescript: *)
 call_signature: generics? "(" formal_parameter_list_opt ")"  annotation? 
@@ -531,11 +538,10 @@ formal_parameter:
    { ParamClassic (mk_param $1) }
  (* es6: default parameter *)
  | id initializeur
-    { let (tok,e) = $2 in ParamClassic 
-      { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
+    { ParamClassic { (mk_param $1) with p_default = Some $2 } }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
-  | binding_pattern annotation? initializeur? 
-    { ParamPattern { ppat = $1; ppat_type = $2; ppat_default = $3 } }
+  | binding_pattern annotation? initializeur2? 
+    { ParamPattern (mk_pattern $1 $2 $3) }
 
  (* es6: spread *)
  | "..." id 
@@ -544,15 +550,14 @@ formal_parameter:
  (* typing-ext: *)
  | id annotation 
     { ParamClassic { (mk_param $1) with p_type = Some $2; } }
+ (* TODO: token for '?' *)
  | id "?"
-     { ParamClassic { (mk_param $1) with p_default = Some(DNone $2); } }
+     { ParamClassic (mk_param $1) }
  | id "?" annotation
-     { ParamClassic { (mk_param $1) with 
-                     p_type = Some $3; p_default = Some(DNone $2); } }
+     { ParamClassic { (mk_param $1) with p_type = Some $3 } }
+
  | id annotation initializeur
-     { let (tok,e) = $3 in ParamClassic 
-       { (mk_param $1) with 
-         p_type = Some $2; p_default = Some(DSome(tok,e)); } }
+     { ParamClassic { (mk_param $1) with p_type = Some $2; p_default=Some $3}}
 
  | "..." id annotation
     { ParamClassic { (mk_param $2) with p_dots = Some $1; p_type = Some $3;} }
@@ -562,24 +567,22 @@ formal_parameter:
 (*----------------------------*)
 (* generators *)
 (*----------------------------*)
-(* TODO: id? in original grammar, why? *)
-generator_decl: T_FUNCTION "*" id call_signature "{" function_body "}"
-   { mk_func_decl (F_func ($1, Some $3)) [Generator $2] $4 ($5, $6, $7) }
+generator_decl: T_FUNCTION "*" id? call_signature "{" function_body "}"
+   { mk_Fun [Generator, $2] $4 ($5, $6, $7), Some $3 }
 
 (* the id is optional here *)
 generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
-   { mk_func_decl (F_func ($1, $3)) [Generator $2] $4 ($5, $6, $7) }
+   { mk_Fun ~id:$3 [Generator, $2] $4 ($5, $6, $7) }
 
 (*----------------------------*)
 (* asynchronous functions *)
 (*----------------------------*)
-(* TODO: id? in original grammar, why? *)
-async_decl: T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
-   { mk_func_decl (F_func ($2, Some $3)) [Async $1] $4 ($5, $6, $7) }
+async_decl: T_ASYNC T_FUNCTION id? call_signature "{" function_body "}"
+   { mk_Fun [Async, $1] $4 ($5, $6, $7), $3 }
 
 (* the id is optional here *)
 async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
-   { mk_func_decl (F_func ($2, $3)) [Async $1] $4 ($5, $6, $7) }
+   { mk_Fun ~id:$3 [Async, $1] $4 ($5, $6, $7) }
 
 (*************************************************************************)
 (* Class declaration *)
@@ -598,9 +601,9 @@ class_body: "{" optl(class_element+) "}" { ($1, $2, $3) }
 
 class_heritage: extends_clause? implements_clause?  { $1, $2 }
 
-extends_clause: T_EXTENDS type_or_expr { ($1, $2) }
+extends_clause: T_EXTENDS type_or_expr { raise Todo }
 (* typescript-ext: *)
-implements_clause: T_IMPLEMENTS listc(type_) { ($1, $2) }
+implements_clause: T_IMPLEMENTS listc(type_) { raise Todo }
 
 binding_id: id { $1 }
 
@@ -649,22 +652,22 @@ access_modifier:
 (*----------------------------*)
 method_definition:
  |     property_name call_signature "{" function_body "}"
-    { mk_func_decl (F_method $1) [] $2 ($3, $4, $5) }
+    { mk_Field $1 (mk_Fun [] $2 ($3, $4, $5)) }
 
  | "*" property_name call_signature "{" function_body "}"
-    { mk_func_decl (F_method $2) [Generator $1] $3 ($4, $5, $6) }
+    { mk_Field $2 (mk_Fun [Generator, $1] $3 ($4, $5, $6)) }
 
  (* we enforce 0 parameter here *)
  | T_GET property_name generics? "(" ")" annotation? "{" function_body "}"
-    { mk_func_decl (F_get ($1, $2)) [] ($3, ($4, [], $5), $6) ($7, $8, $9) }
+    { mk_Field $2 (mk_Fun [Get, $1] ($3, ([]), $6) ($7, $8, $9)) }
  (* we enforce 1 parameter here *)
  | T_SET property_name  generics? "(" formal_parameter ")" annotation?
     "{" function_body "}"
-    { mk_func_decl (F_set ($1, $2)) [] ($3,($4, [Left $5],$6),$7) ($8,$9,$10)}
+    { mk_Field $2 (mk_Fun [Set, $1] ($3,([$5]),$7) ($8,$9,$10)) }
 
  (* es7: *)
  | T_ASYNC property_name call_signature  "{" function_body "}"
-  { mk_func_decl (F_method $2) [Async $1] $3 ($4, $5, $6) }
+  { mk_Field $2 (mk_Fun [Async, $1] $3 ($4, $5, $6)) }
 
 (*************************************************************************)
 (* Interface declaration *)
@@ -674,10 +677,9 @@ method_definition:
  * Why? because [] can follow an interface_decl? *)
 
 interface_decl: T_INTERFACE binding_id generics? interface_extends? object_type
-   { { i_tok = $1;i_name = $2; (* TODO: interface_extends! *)
-       i_type_params = $3; i_type = $5; } }
+   { raise Todo }
 
-interface_extends: T_EXTENDS listc(type_reference) { ($1, $2) }
+interface_extends: T_EXTENDS listc(type_reference) { raise Todo }
 
 (*************************************************************************)
 (* Type declaration *)
@@ -878,7 +880,7 @@ type_or_expr:
 stmt:
  | block           { [$1] }
  | variable_stmt   { $1 |> List.map (fun x -> DefStmt x) }
- | empty_stmt      { [$1] }
+ | empty_stmt      { [] }
  | expr_stmt       { [$1] }
  | if_stmt         { [$1] }
  | iteration_stmt  { [$1] }
@@ -898,40 +900,41 @@ stmt1: stmt { stmt_of_stmts $1 }
 
 block: "{" optl(stmt_list) "}" { Block ($1, $2, $3) }
 
-stmt_list: item+ { $1 }
+stmt_list: item+ { List.flatten $1 }
 
-empty_stmt: sc { Nop $1 }
+empty_stmt: sc { }
 
-expr_stmt: expr_no_stmt sc { ExprStmt ($1, $2) }
+expr_stmt: expr_no_stmt sc 
+  { ExprStmt ($1, $2) (* less: generate a UseStrict *) }
 
 
 if_stmt:
- | T_IF "(" expr ")" stmt T_ELSE stmt { If ($1, ($2, $3, $4), $5,Some($6,$7)) }
- | T_IF "(" expr ")" stmt %prec p_IF  { If ($1, ($2, $3, $4), $5, None) }
+ | T_IF "(" expr ")" stmt1 T_ELSE stmt1 { If ($1, ($3), $5,Some($7)) }
+ | T_IF "(" expr ")" stmt1 %prec p_IF   { If ($1, ($3), $5, None) }
 
 
 iteration_stmt:
- | T_DO stmt T_WHILE "(" expr ")" sc   { Do ($1, $2, $3, ($4, $5, $6), $7) }
- | T_WHILE "(" expr ")" stmt           { While ($1, ($2, $3, $4), $5) }
+ | T_DO stmt1 T_WHILE "(" expr ")" sc   { Do ($1, $2, ($5)) }
+ | T_WHILE "(" expr ")" stmt1           { While ($1, ($3), $5) }
 
- | T_FOR "(" expr_no_in? ";" expr? ";" expr? ")" stmt
-     { For ($1, $2, ForHeaderClassic 
-              ($3|>Common2.fmap (fun x -> LHS1 x), $4, $5, $6, $7), $8, $9)}
- | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt
-     { For ($1, $2, ForHeaderClassic (Some (ForVars $3), $4, $5, $6, $7), 
-            $8, $9) }
+ | T_FOR "(" expr_no_in ";" expr? ";" expr? ")" stmt1
+     { For ($1, ForClassic (Right $3, $5, $7), $9) }
+ | T_FOR "("            ";" expr? ";" expr? ")" stmt1
+     { For ($1, ForClassic (Left [], $4, $6), $8) }
+ | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt1
+     { For ($1, ForClassic (Left $3, $5, $7), $9) }
 
- | T_FOR "(" left_hand_side_expr T_IN expr ")" stmt
-     { For ($1, $2, ForHeaderIn (LHS2 $3, $4, $5), $6, $7) }
- | T_FOR "(" for_single_variable_decl T_IN expr ")"  stmt
-     { For ($1, $2, ForHeaderIn (ForVar $3, $4, $5), $6, $7) }
- | T_FOR "(" left_hand_side_expr T_OF assignment_expr ")" stmt
-     { For ($1, $2, ForHeaderOf (LHS2 $3, $4, $5), $6, $7) }
- | T_FOR "(" for_single_variable_decl T_OF assignment_expr ")"  stmt
-     { For ($1, $2, ForHeaderOf (ForVar $3, $4, $5), $6, $7) }
+ | T_FOR "(" left_hand_side_expr T_IN expr ")" stmt1
+     { For ($1, ForIn (Right $3, $4, $5), $7) }
+ | T_FOR "(" for_single_variable_decl T_IN expr ")"  stmt1
+     { For ($1, ForIn (Left $3, $4, $5), $7) }
+ | T_FOR "(" left_hand_side_expr T_OF assignment_expr ")" stmt1
+     { For ($1, ForOf (Right $3, $4, $5), $7) }
+ | T_FOR "(" for_single_variable_decl T_OF assignment_expr ")"  stmt1
+     { For ($1, ForOf (Left $3, $4, $5), $7) }
  (* sgrep-ext: *)
- | T_FOR "(" "..." ")"  stmt
-     { Flag_parsing.sgrep_guard (For ($1, $2, ForHeaderEllipsis $3, $4, $5)) }
+ | T_FOR "(" "..." ")"  stmt1
+     { Flag_parsing.sgrep_guard (For ($1, ForEllipsis $3, $5)) }
 
 
 initializer_no_in: "=" assignment_expr_no_in { $1, $2 }
@@ -945,7 +948,7 @@ with_stmt: T_WITH "(" expr ")" stmt1 { With ($1, $3, $5) }
 
 switch_stmt: T_SWITCH "(" expr ")" case_block { Switch ($1, $3, $5) }
 
-labelled_stmt: id ":" stmt { Labeled ($1, $2, $3) }
+labelled_stmt: id ":" stmt1 { Label ($1, $3) }
 
 
 throw_stmt: T_THROW expr sc { Throw ($1, $2) }
@@ -1092,16 +1095,16 @@ new_expr(x):
 
 member_expr(x):
  | primary_expr(x)                   { $1 }
- | member_expr(x) "[" expr "]"       { Bracket($1, ($2, $3, $4)) }
- | member_expr(x) "." field_name     { Period ($1, $2, $3) }
+ | member_expr(x) "[" expr "]"       { ArrAccess($1, ($2, $3, $4)) }
+ | member_expr(x) "." field_name     { ObjAccess ($1, $2, PN $3) }
  | T_NEW member_expr(d1) arguments   { Apply(special New $1 [$2], $3) }
  (* es6: *)
  | member_expr(x) template_literal   { mk_Encaps (Some $1) $2 }
- | T_SUPER "[" expr "]"    { Bracket(Super($1),($2,$3,$4))}
- | T_SUPER "." field_name { Period(Super($1), $2, $3) }
+ | T_SUPER "[" expr "]"    { ArrAccess(mk_Super($1),($2,$3,$4))}
+ | T_SUPER "." field_name { ObjAccess(mk_Super($1), $2, PN $3) }
  | T_NEW "." id { 
      if fst $3 = "target"
-     then NewTarget ($1, $2, snd $3)
+     then special NewTarget $1 []
      else raise (Parsing.Parse_error)
   }
 
@@ -1113,13 +1116,13 @@ d1: primary_with_stmt { $1 }
 
 primary_with_stmt:
  | object_literal            { Obj $1 }
- | function_expr             { mk_Fun $1 }
+ | function_expr             { $1 }
  (* es6: *)
  | class_expr                { $1 }
  (* es6: *)
- | generator_expr            { mk_Fun $1 }
+ | generator_expr            { $1 }
  (* es7: *)
- | async_function_expr       { mk_Fun $1 }
+ | async_function_expr       { $1 }
 
 
 primary_expr_no_braces:
@@ -1183,8 +1186,8 @@ array_literal:
 
 (* TODO: conflict on "," *)
 element_list_rev:
- | optl(elision)   element                { $2::$1 }
- | element_list_rev "," element     { $3:$1 }
+ | optl(elision)   element               { $2::$1 }
+ | element_list_rev "," element          { $3:$1 }
  | element_list_rev "," elision element  { $4:: ($3 @ $1) }
 
 element:
@@ -1198,21 +1201,16 @@ element:
 
 object_literal:
  | "{" "}"                                      { ($1, [], $2) }
- | "{" listc(property_name_and_value) ","? "}" { ($1, $2, $4) }
+ | "{" listc(property_name_and_value) ","? "}"  { ($1, $2, $4) }
 
 property_name_and_value:
- | property_name ":" assignment_expr  
-    { Field (mk_field $1 (Some $3)) }
- | method_definition                  
-    { $1 }
+ | property_name ":" assignment_expr    { Field (mk_field $1 (Some $3)) }
+ | method_definition                    { $1 }
  (* es6: *)
- | id                                 
-    { Field (mk_field (PN $1) (Some (Id ($1, ref NotResolved)))) }
+ | id           { Field (mk_field (PN $1) (Some (Id ($1, ref NotResolved)))) }
  (* es6: spread operator: *)
- | "..." assignment_expr              
-    { (FieldSpread ($1, $2)) }
- | "..."                              
-    { (FieldEllipsis $1 ) }
+ | "..." assignment_expr                { (FieldSpread ($1, $2)) }
+ | "..."                                { (FieldEllipsis $1 ) }
 
 (*----------------------------*)
 (* function call *)
@@ -1359,8 +1357,8 @@ assignment_expr_no_stmt:
  (* es6: *)
  | arrow_function { Arrow $1 }
  (* es6: *)
- | T_YIELD                               { Yield ($1, None, None) }
- | T_YIELD assignment_expr   { Yield ($1, None, Some $2) }
+ | T_YIELD                     { Yield ($1, None, None) }
+ | T_YIELD assignment_expr     { Yield ($1, None, Some $2) }
  | T_YIELD "*" assignment_expr { Yield ($1, Some $2, Some $3) }
 
 (* no object_literal here *)
