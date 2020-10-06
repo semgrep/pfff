@@ -155,9 +155,13 @@ let rec expr (x: expr) =
       G.L (G.String (v1))
   | EncodedStr (v1, pre) ->
       let v1 = wrap string v1 in
-      (* reuse same tok *)
-      let tok = snd v1 in
-      G.Call (G.IdSpecial (G.EncodedString (pre, tok), tok),
+      (* bugfix: do not reuse the same tok! otherwise in semgrep
+       * if a metavar is bound to an encoded string (e.g., r'foo'), and
+       * the metavar is used in the message, r'foo' will be displayed
+       * three times.
+       * todo: the right fix is to have EncodedStr of string wrap * string wrap
+       *)
+      G.Call (G.IdSpecial (G.EncodedString (pre), fake ""),
         fb [G.Arg (G.L (G.String (v1)))])
 
   | InterpolatedString xs ->

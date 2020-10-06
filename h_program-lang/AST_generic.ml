@@ -468,7 +468,7 @@ and expr =
 
    (* used for interpolated strings constructs *)
    | ConcatString of concat_string_kind
-   | EncodedString of string wrap (* only for Python for now (e.g., b"foo") *)
+   | EncodedString of string (* only for Python for now (e.g., b"foo") *)
    (* TaggedString? for Javascript, for styled.div`bla{xx}`?
     * We could have this TaggedString where the first arg of Call
     * will be the tagging function, and the rest will be a Call ConcatString. 
