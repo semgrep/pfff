@@ -129,6 +129,8 @@ type resolved_name =
 type expr =
   | Num of number (* n *)
   | Str of string wrap (* s *)
+  (* todo: we should split the token in r'foo' in two, one string wrap
+   * for the prefix and a string wrap for the string itself. *)
   | EncodedStr of string wrap * string (* prefix *)
   (* python3: now officially reserved keywords *)
   | Bool of bool wrap

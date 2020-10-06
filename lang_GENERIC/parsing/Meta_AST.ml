@@ -297,7 +297,7 @@ and vof_special =
   | Spread -> OCaml.VSum (("Spread", []))
   | HashSplat -> OCaml.VSum (("HashSplat", []))
   | EncodedString v1 ->
-      let v1 = vof_wrap OCaml.vof_string v1 in
+      let v1 = OCaml.vof_string v1 in
       OCaml.VSum (("EncodedString", [v1]))
   | Op v1 ->
       let v1 = vof_arithmetic_operator v1 in OCaml.VSum (("Op", [ v1 ]))
