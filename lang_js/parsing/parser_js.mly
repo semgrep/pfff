@@ -98,11 +98,14 @@ let mk_Encaps _ _ =
 let mk_Super tok =
   IdSpecial (Super, tok)
 
-
 let mk_pattern binding_pattern init_opt =
   match init_opt with
   | None -> binding_pattern
   | Some (t, e) -> Assign (binding_pattern, t, e)
+
+(* Javascript has implicit returns for arrows with expression body *)
+let mk_block_return e = 
+  fb [Return (G.fake "return", Some e)]
 
 let special spec tok xs = 
   Apply (IdSpecial (spec, tok), fb xs)
@@ -111,6 +114,12 @@ let bop op a b c = special (ArithOp op) b [a;c]
 let uop op tok x = special op tok [x]
 
 let seq (e1, t, e2) = special Seq t [e1; e2]
+
+let mk_Assign (e1, (tok, opopt), e2) =
+  match opopt with
+  | None -> Assign (e1, tok, e2)
+  (* less: should use intermediate? can unsugar like this? *)
+  | Some op -> Assign (e1, tok, special (ArithOp op) tok [e1;e2])
   
 
 %}
@@ -486,8 +495,8 @@ binding_property:
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id         initializeur? { mk_pattern (mk_Id $1) $2 }
- | binding_pattern    initializeur? { mk_pattern ($1)       $2 }
+ | binding_id         initializeur2? { mk_pattern (mk_Id $1) $2 }
+ | binding_pattern    initializeur2? { mk_pattern ($1)       $2 }
 
 (* array destructuring *)
 
@@ -655,13 +664,13 @@ access_modifiers:
 
 (* less: should impose an order? *)
 access_modifier:
- | T_STATIC    { Static }
+ | T_STATIC    { Static, $1 }
  (* typescript-ext: *)
- | T_PUBLIC    { Public }
- | T_PRIVATE   { Private }
- | T_PROTECTED { Protected }
+ | T_PUBLIC    { Public, $1 }
+ | T_PRIVATE   { Private, $1 }
+ | T_PROTECTED { Protected, $1 }
 
- | T_READONLY  { Readonly }
+ | T_READONLY  { Readonly, $1 }
 
 (*----------------------------*)
 (* Method definition (in class or object literal) *)
@@ -1005,14 +1014,15 @@ expr:
 (* coupling: see also assignment_expr_no_stmt and extend if can? *)
 assignment_expr:
  | conditional_expr(d1) { $1 }
- | left_hand_side_expr_(d1) assignment_operator assignment_expr { Assign($1,$2,$3)}
+ | left_hand_side_expr_(d1) assignment_operator assignment_expr 
+    { mk_Assign ($1,$2,$3) }
 
  (* es6: *)
- | arrow_function { Arrow $1 }
+ | arrow_function { $1 }
  (* es6: *)
- | T_YIELD                         { Yield ($1, None, None) }
- | T_YIELD     assignment_expr     { Yield ($1, None, Some $2) }
- | T_YIELD "*" assignment_expr     { Yield ($1, Some $2, Some $3) }
+ | T_YIELD                         { special Yield $1 [] }
+ | T_YIELD     assignment_expr     { special Yield $1  [$2] }
+ | T_YIELD "*" assignment_expr     { special YieldStar $1 [$3] }
  (* typescript-ext: 1.6, because <> cant be used in TSX files *)
  | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
 
@@ -1179,18 +1189,18 @@ string_literal: T_STRING { $1 }
 (*----------------------------*)
 
 assignment_operator:
- | "="         { A_eq , $1 }
- | T_MULT_ASSIGN    { A_mul, $1 }
- | T_DIV_ASSIGN     { A_div, $1 }
- | T_MOD_ASSIGN     { A_mod, $1 }
- | T_PLUS_ASSIGN    { A_add, $1 }
- | T_MINUS_ASSIGN   { A_sub, $1 }
- | T_LSHIFT_ASSIGN  { A_lsl, $1 }
- | T_RSHIFT_ASSIGN  { A_lsr, $1 }
- | T_RSHIFT3_ASSIGN { A_asr, $1 }
- | T_BIT_AND_ASSIGN { A_and, $1 }
- | T_BIT_XOR_ASSIGN { A_xor, $1 }
- | T_BIT_OR_ASSIGN  { A_or , $1 }
+ | "="              { $1, None }
+ | T_MULT_ASSIGN    { $1, Some G.Mult }
+ | T_DIV_ASSIGN     { $1, Some G.Div }
+ | T_MOD_ASSIGN     { $1, Some G.Mod  }
+ | T_PLUS_ASSIGN    { $1, Some G.Plus  }
+ | T_MINUS_ASSIGN   { $1, Some G.Minus }
+ | T_LSHIFT_ASSIGN  { $1, Some G.LSL }
+ | T_RSHIFT_ASSIGN  { $1, Some G.LSR }
+ | T_RSHIFT3_ASSIGN { $1, Some G.ASR  }
+ | T_BIT_AND_ASSIGN { $1, Some G.BitAnd }
+ | T_BIT_XOR_ASSIGN { $1, Some G.BitXor }
+ | T_BIT_OR_ASSIGN  { $1, Some G.BitOr }
 
 (*----------------------------*)
 (* array *)
@@ -1198,8 +1208,8 @@ assignment_operator:
 
 (* TODO: use elision below *)
 array_literal:
- | "[" optl(elision) "]"                   { Array($1, [], $3) }
- | "[" element_list_rev optl(elision) "]"  { Array($1, List.rev $2, $4) }
+ | "[" optl(elision) "]"                   { Arr($1, [], $3) }
+ | "[" element_list_rev optl(elision) "]"  { Arr($1, List.rev $2, $4) }
 
 (* TODO: conflict on ",", *)
 element_list_rev:
@@ -1294,29 +1304,25 @@ encaps:
 arrow_function:
  (* es7: *)
  | T_ASYNC id T_ARROW arrow_body
-     { { a_async = Some($1); a_params = ASingleParam (ParamClassic (mk_param $2));
-         a_return_type = None; a_tok = $3; a_body = $4 } }
+     { mk_Fun [Async, $1] ((), fb [ParamClassic (mk_param $2)], None) $4 }
  | id T_ARROW arrow_body
-     { { a_async = None; a_params = ASingleParam (ParamClassic (mk_param $1)); 
-         a_return_type = None; a_tok = $2; a_body = $3 } }
+     { mk_Fun [] ((), fb [ParamClassic (mk_param $1)], None) $3 }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
  (* es7: *)
  | T_ASYNC T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
-    { { a_async = Some($1); a_params = AParams ($2, $3, $4); a_return_type = $5;
-        a_tok = $6; a_body = $7; } }
+    { mk_Fun [Async, $1] ((), ($2, $3, $4), $5) $7 }
  | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
-    { { a_async = None; a_params = AParams ($1, $2, $3); a_return_type = $4;
-        a_tok = $5; a_body = $6; } }
+    { mk_Fun [] ((), ($1, $2, $3), $4) $6 }
+
 
 (* was called consise body in spec *)
 arrow_body:
- | block
-     { match $1 with Block (a,b,c) -> ABody (a,b,c) | _ -> raise Impossible }
+ | block  { match $1 with Block (a,b,c) -> (a,b,c) | _ -> raise Impossible }
  (* see conflicts.txt for why the %prec *)
- | assignment_expr_no_stmt (* %prec LOW_PRIORITY_RULE *) { AExpr $1 }
+ | assignment_expr_no_stmt (* %prec LOW_PRIORITY_RULE *) { mk_block_return $1 }
  (* ugly *)
- | function_expr { AExpr (Function $1) }
+ | function_expr { mk_block_return $1 }
 
 (*----------------------------*)
 (* no in *)
@@ -1328,7 +1334,7 @@ expr_no_in:
 assignment_expr_no_in:
  | conditional_expr_no_in { $1 }
  | left_hand_side_expr_(d1) assignment_operator assignment_expr_no_in
-     { Assign ($1, $2, $3) }
+     { mk_Assign ($1, $2, $3) }
 
 conditional_expr_no_in:
  | post_in_expr_no_in { $1 }
@@ -1366,13 +1372,13 @@ expr_no_stmt:
 assignment_expr_no_stmt:
  | conditional_expr(primary_no_stmt) { $1 }
  | left_hand_side_expr_(primary_no_stmt) assignment_operator assignment_expr
-     { Assign ($1, $2, $3) }
+     { mk_Assign ($1, $2, $3) }
  (* es6: *)
- | arrow_function { Arrow $1 }
+ | arrow_function { $1 }
  (* es6: *)
- | T_YIELD                     { Yield ($1, None, None) }
- | T_YIELD assignment_expr     { Yield ($1, None, Some $2) }
- | T_YIELD "*" assignment_expr { Yield ($1, Some $2, Some $3) }
+ | T_YIELD                     { special Yield $1 [] }
+ | T_YIELD assignment_expr     { special Yield $1 [$2] }
+ | T_YIELD "*" assignment_expr { special YieldStar $1 [$3] }
 
 (* no object_literal here *)
 primary_no_stmt: TUnknown TComment { raise Impossible }

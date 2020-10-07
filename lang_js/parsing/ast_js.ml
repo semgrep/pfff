@@ -105,7 +105,10 @@ type ident = string wrap
 type qualified_name = string
  [@@deriving show] (* with tarzan *)
 
-(* todo: use AST_generic.resolved_name at some point, and share the ref! *)
+(* TODO: use AST_generic.resolved_name at some point, and share the ref! 
+ * or just remove it! I already remove ast_js_build which was doing the
+ * resolve_js.ml
+ *)
 type resolved_name =
   (* this can be computed by ast_js_build.ml *)
   | Local
@@ -559,9 +562,11 @@ let special_of_id_opt s =
   | "arguments"   -> Some Arguments
   | _ -> None
 
+let idexp id = Id (id, ref NotResolved)
+
 let idexp_or_special id =
   match special_of_id_opt (fst id) with
-  | None -> Id (id, ref NotResolved)
+  | None -> idexp id
   | Some special -> IdSpecial (special, snd id)
 
 (* note that this should be avoided as much as possible for sgrep, because
