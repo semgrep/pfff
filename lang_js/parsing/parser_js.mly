@@ -382,36 +382,43 @@ sgrep_spatch_pattern:
 
 import_decl: 
  | T_IMPORT import_clause from_clause sc  
-    { (*$1, ImportFrom ($2, $3), $4*) raise Todo }
+    { let f = $2 in let (_t, path) = $3 in f $1 path }
  | T_IMPORT module_specifier sc           
-    { (*$1, ImportEffect $2, $3*) raise Todo }
+    { [ImportFile ($1, $2)] }
 
 import_clause: 
- | import_default                  { Some $1, None }
- | import_default "," import_names { Some $1, Some $3 }
- |                    import_names { None, Some $1 }
+ | import_default                     { $1 }
+ | import_default "," import_names    
+    { (fun t path -> $1 t path @ $3 t path) }
+ |                    import_names    { $1 }
 
-import_default: binding_id { $1 }
+import_default: binding_id 
+  { (fun t path -> [Import (t, (default_entity, snd $1), Some $1, path)]) }
 
 import_names:
- | "*" T_AS binding_id   { (* ImportNamespace ($1, $2, $3) *) raise Todo }
- | named_imports         { (*ImportNames $1*) raise Todo }
+ | "*" T_AS binding_id   
+     { (fun t path -> [ModuleAlias (t, $3, path)]) }
+ | named_imports         
+     { (fun t path -> $1 |> List.map (fun (n1, n2opt) -> 
+          Import (t, n1, n2opt, path)))
+     }
  (* typing-ext: *)
- | T_TYPE named_imports  { raise Todo }
+ | T_TYPE named_imports  
+     { (fun _t _path -> [] (* TODO *)) }
 
 named_imports:
- | "{" "}"                             { ($1, [], $2) }
- | "{" listc(import_specifier) "}"     { ($1, $2, $3) }
- | "{" listc(import_specifier) "," "}" { ($1, $2, $4) }
+ | "{" "}"                             { [] }
+ | "{" listc(import_specifier) "}"     { $2 }
+ | "{" listc(import_specifier) "," "}" { $2 }
 
 (* also valid for export *)
 from_clause: T_FROM module_specifier { ($1, $2) }
 
 import_specifier:
  | binding_id                 { $1, None }
- | id T_AS binding_id         { $1, Some ($2, $3) }
+ | id T_AS binding_id         { $1, Some ($3) }
  (* not in ECMA, not sure what it means *)
- | T_DEFAULT T_AS binding_id  { ("default",$1), Some ($2, $3) }
+ | T_DEFAULT T_AS binding_id  { ("default",$1), Some ($3) }
  | T_DEFAULT                  { ("default",$1), None }
 
 module_specifier: string_literal { $1 }
@@ -635,6 +642,7 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
 (* ugly: c_name is None only when part of an 'export default' decl 
  * TODO: use other tech to enforce this? extra rule after
  * T_EXPORT T_DEFAULT? but then many ambiguities.
+ * TODO: actually in tree-sitter-js, it's a binding_id without '?'
  *)
 class_decl: T_CLASS binding_id? generics? class_heritage class_body
    { $2, mk_Class $1 $2 $3 $4 $5 }
