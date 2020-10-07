@@ -64,6 +64,7 @@ let error_msg_tok tok =
  *    but Parsing.parser_env is abstract and no much API around it.
  *
  * see also top comment in tests/js/items.js
+ *
  *)
 let put_back_lookahead_token_if_needed tr item_opt =
   match item_opt with
@@ -78,6 +79,12 @@ let put_back_lookahead_token_if_needed tr item_opt =
      if not (PI.is_origintok info) || List.mem info iis
      then ()
      else begin
+       (* TODO: could sanity check that what we put back make sense, for
+        * example we should never put back a closing '}', which can
+        * happen if the item returned is incomplete and does not contain
+        * all the tokens (more risky now that we use ast_js.ml instead of
+        * cst_js.ml)
+        *)
        if !Flag.debug_lexer
        then pr2 (spf "putting back %s" (Common.dump current));
        tr.PI.rest <- current::tr.PI.rest;

@@ -58,6 +58,10 @@ module G = AST_generic (* for operators, fake, and now also type_ *)
 (*************************************************************************)
 let fb = G.fake_bracket
 
+let sndopt = function
+  | None -> None
+  | Some (_, x) -> Some x
+
 let fix_sgrep_module_item xs =
   match xs with
  (* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
@@ -197,10 +201,10 @@ let mk_Encaps opt (t1, xs, _t2) =
  T_SEMICOLON ";" T_COMMA "," T_PERIOD "." T_COLON ":"
  T_PLING "?"
  T_ARROW "->" 
- T_BACKQUOTE 
- T_DOLLARCURLY
  (* regular JS token and also semgrep: *)
  T_DOTS "..."
+ T_BACKQUOTE 
+ T_DOLLARCURLY
  (* semgrep: *)
  LDots RDots
 
@@ -297,6 +301,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 %type <Ast_js.expr> element binding_elision_element binding_element
 %type <Ast_js.property list> class_element
 %type <Ast_js.property> binding_property
+%type <Parse_info.t * Ast_js.expr> initializeur
 
 %%
 (*************************************************************************)
@@ -307,13 +312,13 @@ listc(X):
  | X              { [$1] }
  | listc(X) "," X { $1 @ [$3] }
 
+listc2(X):
+ | X              { [$1] }
+ | listc2(X) "," X { $1 @ [$3] }
+
 optl(X):
  | (* empty *) { [] }
  | X           { $1 }
-
-optl2(X):
- | (* empty *) { [] }
- | X           { List.flatten $1 }
 
 (*************************************************************************)
 (* Toplevel *)
@@ -321,11 +326,8 @@ optl2(X):
 
 main: program EOF { $1 }
 
-(* less: could restrict to literals and collections *)
-json: expr EOF { $1 }
-
 (* TODO: use module_item* ? *)
-program: optl2(module_item+) { $1 }
+program: optl(module_item+) { List.flatten $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
@@ -335,7 +337,7 @@ module_item_or_eof:
 module_item:
  | item        { $1 }
  | import_decl { $1 |> List.map (fun x -> M x) }
- | export_decl { $1 |> List.map (fun x -> M x) }
+ | export_decl { $1 }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
@@ -359,6 +361,9 @@ decl:
  | type_alias_decl { [] }
  | enum_decl       { [] }
 
+(* less: could restrict to literals and collections *)
+json: expr EOF { $1 }
+
 (*************************************************************************)
 (* sgrep *)
 (*************************************************************************)
@@ -366,11 +371,11 @@ decl:
 sgrep_spatch_pattern:
  (* copy-paste of object_literal rule but with T_LCURLY_SEMGREP *)
  | T_LCURLY_SEMGREP "}"    { Expr (Obj ($1, [], $2)) }
- | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
+ | T_LCURLY_SEMGREP listc2(property_name_and_value) ","? "}" 
      { Expr (Obj ($1, $2, $4)) }
 
  | assignment_expr_no_stmt  EOF  { Expr $1 }
- | module_item              EOF  { fix_sgrep_module_item $1}
+ | module_item              EOF  { fix_sgrep_module_item $1 }
  | module_item module_item+ EOF  { Stmts (List.flatten ($1::$2)) }
 
 (*************************************************************************)
@@ -430,10 +435,10 @@ module_specifier: string_literal { $1 }
 (* TODO *)
 export_decl:
  | T_EXPORT export_names       { [] (* $1, $2 *) }
- | T_EXPORT variable_stmt { [] (*$1, ExportDecl (St $2)*) }
- | T_EXPORT decl        { [] (*$1, ExportDecl $2*) }
+ | T_EXPORT variable_stmt { $2 |> List.map (fun x -> DefStmt x) (*$1, ExportDecl (St $2)*) }
+ | T_EXPORT decl        { $2 |> List.map (fun v -> DefStmt v) (*$1, ExportDecl $2*) }
  (* in theory just func/gen/class, no lexical_decl *)
- | T_EXPORT T_DEFAULT decl { [] (* $1, ExportDefaultDecl ($2, $3) *) }
+ | T_EXPORT T_DEFAULT decl { $3 |> List.map (fun v -> DefStmt v) (* $1, ExportDefaultDecl ($2, $3) *) }
  | T_EXPORT T_DEFAULT assignment_expr_no_stmt sc 
     { [] (* $1, ExportDefaultExpr ($2, $3, $4) *)  }
  (* ugly hack because should use assignment_expr above instead*)
@@ -467,13 +472,10 @@ lexical_decl:
 
 (* one var from a list of vars *)
 variable_decl:
- | id annotation? initializeur?               { Left $1, $2, $3 }
- | binding_pattern annotation? initializeur   { Right $1, $2, Some $3 }
+ | id annotation? initializeur?               { Left $1, $2, sndopt $3 }
+ | binding_pattern annotation? initializeur   { Right $1, $2, Some (snd $3) }
 
-initializeur: "=" assignment_expr { $2 }
-
-initializeur2: "=" assignment_expr { $1, $2 }
-
+initializeur: "=" assignment_expr { $1, $2 }
 
 for_variable_decl:
  | T_VAR listc(variable_decl_no_in)   { build_vars (Var, $1) $2 }
@@ -510,7 +512,7 @@ object_binding_pattern:
  | "{" listc(binding_property) ","?  "}" { Obj ($1, $2, $4) }
 
 binding_property:
- | binding_id initializeur?          { mk_Field (PN $1) $2 }
+ | binding_id initializeur?          { mk_Field (PN $1) (sndopt $2) }
  | property_name ":" binding_element { mk_Field $1 (Some $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
  | "..." binding_id      { FieldSpread ($1, mk_Id $2) }
@@ -518,8 +520,8 @@ binding_property:
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id         initializeur2? { mk_pattern (mk_Id $1) $2 }
- | binding_pattern    initializeur2? { mk_pattern ($1)       $2 }
+ | binding_id         initializeur? { mk_pattern (mk_Id $1) $2 }
+ | binding_pattern    initializeur? { mk_pattern ($1)       $2 }
 
 (* array destructuring *)
 
@@ -594,9 +596,9 @@ formal_parameter_list:
 formal_parameter:
  | id                { ParamClassic (mk_param $1) }
  (* es6: default parameter *)
- | id initializeur   { ParamClassic { (mk_param $1) with p_default = Some $2} }
+ | id initializeur   { ParamClassic { (mk_param $1) with p_default = Some (snd $2)} }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
-  | binding_pattern annotation? initializeur2? 
+  | binding_pattern annotation? initializeur? 
     { ParamPattern (mk_pattern $1 $3) (* annotation? *) }
 
  (* es6: spread *)
@@ -609,7 +611,7 @@ formal_parameter:
  | id "?" annotation { ParamClassic { (mk_param $1) with p_type = Some $3 } }
 
  | id annotation initializeur
-     { ParamClassic { (mk_param $1) with p_type = Some $2; p_default=Some $3}}
+     { ParamClassic { (mk_param $1) with p_type = Some $2; p_default=Some (snd $3)}}
 
  | "..." id annotation
     { ParamClassic { (mk_param $2) with p_dots = Some $1; p_type = Some $3;} }
@@ -619,8 +621,8 @@ formal_parameter:
 (*----------------------------*)
 (* generators *)
 (*----------------------------*)
-generator_decl: T_FUNCTION "*" id? call_signature "{" function_body "}"
-   { $3, mk_Fun [Generator, $2] $4 ($5, $6, $7) }
+generator_decl: T_FUNCTION "*" id call_signature "{" function_body "}"
+   { Some $3, mk_Fun [Generator, $2] $4 ($5, $6, $7) }
 
 (* the id really is optional here *)
 generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
@@ -629,8 +631,8 @@ generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
 (*----------------------------*)
 (* asynchronous functions *)
 (*----------------------------*)
-async_decl: T_ASYNC T_FUNCTION id? call_signature "{" function_body "}"
-   { $3, mk_Fun [Async, $1] $4 ($5, $6, $7) }
+async_decl: T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
+   { Some $3, mk_Fun [Async, $1] $4 ($5, $6, $7) }
 
 (* the id is really optional here *)
 async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
@@ -649,10 +651,10 @@ class_decl: T_CLASS binding_id? generics? class_heritage class_body
    { $2, mk_Class $1 $2 $3 $4 $5 }
 
 (* TODO: use class_element* then? and List.flatten that? *)
-class_body: "{" optl2(class_element+) "}" { ($1, $2, $3) }
+class_body: "{" optl(class_element+) "}" { ($1, List.flatten $2, $3) }
 
-class_heritage: extends_clause? optl(implements_clause)
-  { Common.opt_to_list $1, $2 }
+class_heritage: extends_clause? implements_clause?
+  { Common.opt_to_list $1, [] (* TODO! *) }
 
 extends_clause: T_EXTENDS type_or_expr { $2 }
 (* typescript-ext: *)
@@ -673,9 +675,9 @@ class_element:
  | access_modifiers method_definition  { [add_modifiers $1 $2] } 
 
  |                  property_name annotation? initializeur? sc 
-    { [mk_Field $1 ~fld_type:$2 $3] }
+    { [mk_Field $1 ~fld_type:$2 (sndopt $3)] }
  | access_modifiers property_name annotation? initializeur? sc 
-    { [mk_Field ~props:$1 $2 ~fld_type:$3 $4] }
+    { [mk_Field ~props:$1 $2 ~fld_type:$3 (sndopt $4)] }
 
  | sc    { [] }
   (* sgrep-ext: enable class body matching *)
@@ -934,7 +936,7 @@ type_or_expr:
 stmt:
  | block           { [$1] }
  | variable_stmt   { $1 |> List.map (fun x -> DefStmt x) }
- | empty_stmt      { [] }
+ | empty_stmt      { [$1] }
  | expr_stmt       { [$1] }
  | if_stmt         { [$1] }
  | iteration_stmt  { [$1] }
@@ -956,7 +958,7 @@ block: "{" optl(stmt_list) "}" { Block ($1, $2, $3) }
 
 stmt_list: item+ { List.flatten $1 }
 
-empty_stmt: sc { }
+empty_stmt: sc { Block ($1, [], $1) }
 
 (* less:
  *    | A.String("use strict", tok) -> 
@@ -972,10 +974,9 @@ iteration_stmt:
  | T_DO stmt1 T_WHILE "(" expr ")" sc   { Do ($1, $2, ($5)) }
  | T_WHILE "(" expr ")" stmt1           { While ($1, ($3), $5) }
 
- | T_FOR "(" expr_no_in ";" expr? ";" expr? ")" stmt1
-     { For ($1, ForClassic (Right $3, $5, $7), $9) }
- | T_FOR "("            ";" expr? ";" expr? ")" stmt1
-     { For ($1, ForClassic (Left [], $4, $6), $8) }
+ | T_FOR "(" expr_no_in? ";" expr? ";" expr? ")" stmt1
+     { let x = raise Todo in (* Right $3 *)
+       For ($1, ForClassic (x, $5, $7), $9) }
  | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt1
      { For ($1, ForClassic (Left $3, $5, $7), $9) }
 
@@ -1015,9 +1016,9 @@ try_stmt:
 
 catch:
  | T_CATCH "(" id ")" block              { BoundCatch ($1, mk_Id $3, $5) }
- | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($3), $5) }
  (* es2019 *)
  | T_CATCH block                         { UnboundCatch ($1, $2) }
+ | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($3), $5) }
 
 finally: T_FINALLY block { $1, $2 }
 
@@ -1261,7 +1262,7 @@ element:
 
 object_literal:
  | "{" "}"                                      { ($1, [], $2) }
- | "{" listc(property_name_and_value) ","? "}"  { ($1, $2, $4) }
+ | "{" listc2(property_name_and_value) ","? "}"  { ($1, $2, $4) }
 
 property_name_and_value:
  | property_name ":" assignment_expr    { Field (mk_field $1 (Some $3)) }
