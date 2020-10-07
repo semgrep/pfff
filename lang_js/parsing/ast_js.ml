@@ -524,31 +524,25 @@ and any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(* TODO: remove *)
 let str_of_name (s, _) = s
 let tok_of_name (_, tok) = tok
 
+(* TODO: remove *)
 let unwrap x = fst x
 
+(* TODO: move in separate file? ast_js_parsing_helper.ml? *)
+
+(* TODO: rename mk_def_var *)
 let mk_const_var id e = 
   { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None;
     v_resolved = ref NotResolved }
+
 let mk_field name body = 
   { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
+
 let mk_param id = 
   { p_name = id; p_default = None; p_type = None; p_dots = None; p_attrs = [] }
-
-(* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
-let var_pattern_to_var vkind pat tok init_opt = 
-  let s = AST_generic.special_multivardef_pattern in
-  let id = s, tok in
-  let init = 
-    match init_opt with
-    | Some init -> Assign (pat, tok, init) 
-    | None -> pat
-  in
-  (* less: use x.vpat_type *)
-  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None;
-    v_resolved = ref NotResolved}
 
 let special_of_id_opt s =
   match s with
@@ -564,12 +558,16 @@ let special_of_id_opt s =
   | "arguments"   -> Some Arguments
   | _ -> None
 
+let idexp id =
+  match special_of_id_opt (fst id) with
+  | None -> Id (id, ref NotResolved)
+  | Some special -> IdSpecial (special, snd id)
+
 (* note that this should be avoided as much as possible for sgrep, because
  * what was before a simple sequence of stmts in the same block can suddently
  * be in different blocks.
- * Use stmt_item_list when you can in ast_js_build.ml
  *)
-and stmt_of_stmts xs = 
+and stmt1 xs = 
   match xs with
   | [] -> Block (AST_generic.fake_bracket [])
   | [x] -> x
@@ -585,20 +583,28 @@ let mk_default_entity_var tok exp =
 let attr x = KeywordAttr x
 
 
-let idexp id =
-  match special_of_id_opt (fst id) with
-  | None -> Id (id, ref NotResolved)
-  | Some special -> IdSpecial (special, snd id)
+(* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
+let var_pattern_to_var vkind pat tok init_opt = 
+  let s = AST_generic.special_multivardef_pattern in
+  let id = s, tok in
+  let init = 
+    match init_opt with
+    | Some init -> Assign (pat, tok, init) 
+    | None -> pat
+  in
+  (* less: use x.vpat_type *)
+  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None;
+    v_resolved = ref NotResolved}
 
-let build_vars kwd vars =
-  vars |> List.map (fun (id_or_pat, ty_opt, initopt) ->
-      match id_or_pat with
-      | Left id ->
+let build_var kwd (id_or_pat, ty_opt, initopt) = 
+  match id_or_pat with
+  | Left id ->
       { v_name = id; v_kind = (kwd); v_init = initopt; v_type = ty_opt;
         v_resolved = ref NotResolved }
-      | Right pat ->
-        var_pattern_to_var kwd pat (snd kwd) initopt
-   )
+  | Right pat ->
+      var_pattern_to_var kwd pat (snd kwd) initopt
+
+let build_vars kwd vars = vars |> List.map (build_var kwd)
 
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
