@@ -718,15 +718,15 @@ method_definition:
  *)
 
 interface_decl: T_INTERFACE binding_id generics? interface_extends? object_type
-   { raise Todo }
+   { }
 
-interface_extends: T_EXTENDS listc(type_reference) { raise Todo }
+interface_extends: T_EXTENDS listc(type_reference) {  }
 
 (*************************************************************************)
 (* Type declaration *)
 (*************************************************************************)
 (* typescript-ext: *)
-type_alias_decl: T_TYPE id "=" type_ sc { raise Todo }
+type_alias_decl: T_TYPE id "=" type_ sc { }
 
 enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}" { $7 }
 
@@ -1475,9 +1475,9 @@ sc:
  | T_VIRTUAL_SEMICOLON { $1 }
 
 sc_or_comma:
- | sc  { raise Todo }
- | "," { raise Todo }
+ | sc  { $1 }
+ | "," { $1 }
 
 elision:
- | "," { [$1] }
+ | ","         { [$1] }
  | elision "," { $1 @ [$2] }
