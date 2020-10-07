@@ -559,7 +559,7 @@ let special_of_id_opt s =
   | "arguments"   -> Some Arguments
   | _ -> None
 
-let idexp id =
+let idexp_or_special id =
   match special_of_id_opt (fst id) with
   | None -> Id (id, ref NotResolved)
   | Some special -> IdSpecial (special, snd id)

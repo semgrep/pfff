@@ -74,10 +74,13 @@ let fix_sgrep_module_item _x =
   | _ -> ModuleItem x
 *)
 
+let mk_Id id =
+  Id (id, ref NotResolved)
 
 let mk_Fun ?(id=None) props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) = 
   let f_attrs = props |> List.map attr in
   Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
+
 let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
   let c_attrs = props |> List.map attr in
   Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body}, 
@@ -96,7 +99,7 @@ let mk_Super tok =
   IdSpecial (Super, tok)
 
 
-let mk_pattern binding_pattern _annot_opt init_opt =
+let mk_pattern binding_pattern init_opt =
   match init_opt with
   | None -> binding_pattern
   | Some (t, e) -> Assign (binding_pattern, t, e)
@@ -268,8 +271,9 @@ let seq (e1, t, e2) = special Seq t [e1; e2]
 %type <Ast_js.stmt list> stmt item module_item
 %type <Ast_js.entity list> decl
 %type <Parse_info.t> sc
-%type <Ast_js.expr> element
+%type <Ast_js.expr> element binding_elision_element binding_element
 %type <Ast_js.property list> class_element
+%type <Ast_js.property> binding_property
 
 %%
 (*************************************************************************)
@@ -474,20 +478,16 @@ object_binding_pattern:
  | "{" listc(binding_property) ","?  "}" { Obj ($1, $2, $4) }
 
 binding_property:
- | binding_id initializeur?          
-    { PatId ($1, $2) }
- | property_name ":" binding_element 
-    { PatProp ($1, $2, $3) }
+ | binding_id initializeur?          { mk_Field (PN $1) $2 }
+ | property_name ":" binding_element { mk_Field $1 (Some $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id         
-    { PatDots ($1, PatId ($2, None)) }
- | "..." binding_pattern    
-    { PatDots ($1, PatNest ($2, None)) }
+ | "..." binding_id      { FieldSpread ($1, mk_Id $2) }
+ | "..." binding_pattern { FieldSpread ($1, $2) }
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id         initializeur? { PatId ($1, $2) }
- | binding_pattern    initializeur? { PatNest ($1, $2) }
+ | binding_id         initializeur? { mk_pattern (mk_Id $1) $2 }
+ | binding_pattern    initializeur? { mk_pattern ($1)       $2 }
 
 (* array destructuring *)
 
@@ -496,8 +496,8 @@ binding_element:
  * type like for the (call)argument type.
  *)
 array_binding_pattern:
- | "[" "]"                      { PatArr ($1, [], $2) }
- | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
+ | "[" "]"                      { Arr ($1, [], $2) }
+ | "[" binding_element_list "]" { Arr ($1, $2, $3) }
 
 binding_start_element:
  | ","                  { [] (* TODO elision *) }
@@ -511,14 +511,14 @@ binding_start_list:
 (* can't use listc() here, it's $1 not [$1] below *)
 binding_element_list:
  | binding_start_list                         { $1 }
- | binding_elision_element                    { $1 }
- | binding_start_list binding_elision_element { $1 @ $2 }
+ | binding_elision_element                    { [$1] }
+ | binding_start_list binding_elision_element { $1 @ [$2] }
 
 binding_elision_element:
- | binding_element        { [$1] }
+ | binding_element        { $1 }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id       { [(PatDots ($1, PatId ($2, None)))] }
- | "..." binding_pattern  { [(PatDots ($1, PatNest ($2, None)))] }
+ | "..." binding_id       { special Spread $1 [mk_Id $2] }
+ | "..." binding_pattern  { special Spread $1 [$2] }
 
 (*************************************************************************)
 (* Function declarations (and exprs) *)
@@ -565,7 +565,7 @@ formal_parameter:
  | id initializeur   { ParamClassic { (mk_param $1) with p_default = Some $2} }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
   | binding_pattern annotation? initializeur2? 
-    { ParamPattern (mk_pattern $1 $2 $3) }
+    { ParamPattern (mk_pattern $1 $3) (* annotation? *) }
 
  (* es6: spread *)
  | "..." id          { ParamClassic { (mk_param $2) with p_dots = Some $1; } }
@@ -972,7 +972,7 @@ try_stmt:
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
 catch:
- | T_CATCH "(" id ")" block              { BoundCatch ($1, idexp $3, $5) }
+ | T_CATCH "(" id ")" block              { BoundCatch ($1, mk_Id $3, $5) }
  | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($3), $5) }
  (* es2019 *)
  | T_CATCH block                         { UnboundCatch ($1, $2) }
@@ -1103,7 +1103,7 @@ call_expr(x):
  | call_expr(x) "." method_name      { ObjAccess ($1, $2, PN $3) }
  (* es6: *)
  | call_expr(x) template_literal     { mk_Encaps (Some $1) $2 }
- | T_SUPER arguments                 { Apply(mk_Super($1), $2) }
+ | T_SUPER arguments                 { Apply (mk_Super($1), $2) }
 
 new_expr(x):
  | member_expr(x)    { $1 }
@@ -1112,7 +1112,7 @@ new_expr(x):
 member_expr(x):
  | primary_expr(x)                   { $1 }
  | member_expr(x) "[" expr "]"       { ArrAccess($1, ($2, $3, $4)) }
- | member_expr(x) "." field_name     { ObjAccess ($1, $2, PN $3) }
+ | member_expr(x) "." field_name     { ObjAccess($1, $2, PN $3) }
  | T_NEW member_expr(d1) arguments   { Apply(special New $1 [$2], $3) }
  (* es6: *)
  | member_expr(x) template_literal   { mk_Encaps (Some $1) $2 }
@@ -1143,7 +1143,7 @@ primary_with_stmt:
 
 primary_expr_no_braces:
  | T_THIS          { IdSpecial (This, $1) }
- | id              { idexp $1 }
+ | id              { idexp_or_special $1 }
 
  | null_literal    { IdSpecial (Null, $1) }
  | boolean_literal { Bool $1 }
@@ -1267,9 +1267,7 @@ xhp_child:
 
 xhp_attribute:
  | T_XHP_ATTR "=" xhp_attribute_value { XmlAttr ($1, $3) }
- | "{" "..." assignment_expr "}"       
-    { let e = Apply (IdSpecial (Spread, $2), fb [$3]) in 
-      XmlAttrExpr ($1, e, $4) }
+ | "{" "..." assignment_expr "}" { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
  (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
  | T_XHP_ATTR                         { XmlAttr ($1, Bool(true,G.fake "true"))}
 
