@@ -75,16 +75,26 @@ let fix_sgrep_module_item _x =
 *)
 
 
-let mk_Fun ?(id=None) props (_generics, f_params, f_rettype) (lc, xs, rc) = 
+let mk_Fun ?(id=None) props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) = 
   let f_attrs = props |> List.map attr in
   Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
-let mk_Field fld_name e =
-  Field { fld_name; fld_attrs = []; fld_body = Some e; fld_type = None }
+let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
+  let c_attrs = props |> List.map attr in
+  Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body}, 
+         idopt)
+
+let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
+  let fld_attrs = props |> List.map attr in
+  Field { fld_name; fld_attrs; fld_type; fld_body = eopt }
+
+let add_modifiers _propsTODO fld = 
+  fld
+
 let mk_Encaps _ _ = 
   raise Todo
 let mk_Super tok =
   IdSpecial (Super, tok)
-  
+
 
 let mk_pattern binding_pattern _annot_opt init_opt =
   match init_opt with
@@ -259,6 +269,7 @@ let seq (e1, t, e2) = special Seq t [e1; e2]
 %type <Ast_js.entity list> decl
 %type <Parse_info.t> sc
 %type <Ast_js.expr> element
+%type <Ast_js.property list> class_element
 
 %%
 (*************************************************************************)
@@ -480,6 +491,10 @@ binding_element:
 
 (* array destructuring *)
 
+(* TODO use elision below.
+ * invent a new Hole category or maybe an array_argument special 
+ * type like for the (call)argument type.
+ *)
 array_binding_pattern:
  | "[" "]"                      { PatArr ($1, [], $2) }
  | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
@@ -598,14 +613,13 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
  * T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
 class_decl: T_CLASS binding_id? generics? class_heritage class_body
-   { { c_tok = $1; c_name = $2; c_type_params = $3;
-       c_extends = fst $4; c_implements = snd $4;
-       c_body = $5 } }
+   { $2, mk_Class $1 $2 $3 $4 $5 }
 
-(* TODO: use class_element* then? *)
-class_body: "{" optl(class_element+) "}" { ($1, $2, $3) }
+(* TODO: use class_element* then? and List.flatten that? *)
+class_body: "{" optl2(class_element+) "}" { ($1, $2, $3) }
 
-class_heritage: extends_clause? implements_clause?  { $1, $2 }
+class_heritage: extends_clause? optl(implements_clause)
+  { Common.opt_to_list $1, $2 }
 
 extends_clause: T_EXTENDS type_or_expr { raise Todo }
 (* typescript-ext: *)
@@ -614,66 +628,62 @@ implements_clause: T_IMPLEMENTS listc(type_) { raise Todo }
 binding_id: id { $1 }
 
 class_expr: T_CLASS binding_id? generics? class_heritage class_body
-   { Class { c_tok = $1;  c_name = $2; c_type_params = $3;
-             c_extends = fst $4; c_implements = snd $4;
-             c_body = $5 } }
+   { mk_Class $1 $2 $3 $4 $5 }
 
 (*----------------------------*)
 (* Class elements *)
 (*----------------------------*)
 
-(* can't factorize with static_opt, or access_modifier_opt; ambiguities *)
+(* can't factorize with static_opt, or access_modifier_opt; ambiguities  *)
 class_element:
- |                  method_definition  { C_method (None, $1) }
- | access_modifiers method_definition  { C_method (None, $2) (* TODO $1 *) } 
+ |                  method_definition  { [$1] }
+ | access_modifiers method_definition  { [add_modifiers $1 $2] } 
 
  |                  property_name annotation? initializeur? sc 
-    { C_field ({ fld_static = None; fld_name = $1; fld_type = $2;
-                fld_init = $3 }, $4) }
+    { [mk_Field $1 ~fld_type:$2 $3] }
  | access_modifiers property_name annotation? initializeur? sc 
-    { C_field ({ fld_static = None(*TODO $1*); fld_name = $2; fld_type = $3;
-                fld_init = $4 }, $5) }
+    { [mk_Field ~props:$1 $2 ~fld_type:$3 $4] }
 
- | sc    { C_extrasemicolon $1 }
+ | sc    { [] }
   (* sgrep-ext: enable class body matching *)
- | "..." { Flag_parsing.sgrep_guard (CEllipsis $1) }
+ | "..." { Flag_parsing.sgrep_guard ([FieldEllipsis $1]) }
 
 (* TODO: cant use access_modifier+, conflict *)
 access_modifiers: 
- | access_modifiers access_modifier { }
- | access_modifier { }
+ | access_modifier                  { [$1] }
+ | access_modifiers access_modifier { $1 @ [$2] }
 
 (* less: should impose an order? *)
 access_modifier:
- | T_STATIC { }
+ | T_STATIC    { Static }
  (* typescript-ext: *)
- | T_PUBLIC { }
- | T_PRIVATE { }
- | T_PROTECTED { }
+ | T_PUBLIC    { Public }
+ | T_PRIVATE   { Private }
+ | T_PROTECTED { Protected }
 
- | T_READONLY { }
+ | T_READONLY  { Readonly }
 
 (*----------------------------*)
 (* Method definition (in class or object literal) *)
 (*----------------------------*)
 method_definition:
  |     property_name call_signature "{" function_body "}"
-    { mk_Field $1 (mk_Fun [] $2 ($3, $4, $5)) }
+    { mk_Field $1 (Some (mk_Fun [] $2 ($3, $4, $5))) }
 
  | "*" property_name call_signature "{" function_body "}"
-    { mk_Field $2 (mk_Fun [Generator, $1] $3 ($4, $5, $6)) }
+    { mk_Field $2 (Some (mk_Fun [Generator, $1] $3 ($4, $5, $6))) }
 
  (* we enforce 0 parameter here *)
  | T_GET property_name generics? "(" ")" annotation? "{" function_body "}"
-    { mk_Field $2 (mk_Fun [Get, $1] ($3, ([]), $6) ($7, $8, $9)) }
+    { mk_Field $2 (Some (mk_Fun [Get, $1] ($3, ($4,[],$5), $6) ($7, $8, $9))) }
  (* we enforce 1 parameter here *)
  | T_SET property_name  generics? "(" formal_parameter ")" annotation?
     "{" function_body "}"
-    { mk_Field $2 (mk_Fun [Set, $1] ($3,([$5]),$7) ($8,$9,$10)) }
+    { mk_Field $2 (Some (mk_Fun [Set, $1] ($3,($4,[$5],$6),$7) ($8,$9,$10))) }
 
  (* es7: *)
  | T_ASYNC property_name call_signature  "{" function_body "}"
-  { mk_Field $2 (mk_Fun [Async, $1] $3 ($4, $5, $6)) }
+  { mk_Field $2 (Some (mk_Fun [Async, $1] $3 ($4, $5, $6))) }
 
 (*************************************************************************)
 (* Interface declaration *)
@@ -962,10 +972,10 @@ try_stmt:
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
 catch:
- | T_CATCH "(" id ")" block { BoundCatch ($1, ($2, PatId ($3, None), $4), $5) }
+ | T_CATCH "(" id ")" block              { BoundCatch ($1, idexp $3, $5) }
+ | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($3), $5) }
  (* es2019 *)
- | T_CATCH block { UnboundCatch ($1, $2) }
- | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($2, $3, $4), $5) }
+ | T_CATCH block                         { UnboundCatch ($1, $2) }
 
 finally: T_FINALLY block { $1, $2 }
 
@@ -973,11 +983,12 @@ finally: T_FINALLY block { $1, $2 }
 (* auxillary stmts *)
 (*----------------------------*)
 
+(* TODO: use clase_clause* ? *)
 case_block:
  | "{" optl(case_clause+) "}"
-     { ($1, $2, $3) }
+     { ($2) }
  | "{" optl(case_clause+) default_clause optl(case_clause+) "}"
-     { ($1, $2 @ [$3] @ $4, $5) }
+     { ($2 @ [$3] @ $4) }
 
 case_clause: T_CASE expr ":" optl(stmt_list)  { Case ($1, $2, stmt1 $4) }
 
@@ -1088,11 +1099,11 @@ pre_in_expr(x):
 call_expr(x):
  | member_expr(x) arguments          { Apply ($1, $2) }
  | call_expr(x) arguments            { Apply ($1, $2) }
- | call_expr(x) "[" expr "]"         { Bracket($1, ($2, $3,$4))}
- | call_expr(x) "." method_name      { Period ($1, $2, $3) }
+ | call_expr(x) "[" expr "]"         { ArrAccess ($1, ($2, $3,$4))}
+ | call_expr(x) "." method_name      { ObjAccess ($1, $2, PN $3) }
  (* es6: *)
  | call_expr(x) template_literal     { mk_Encaps (Some $1) $2 }
- | T_SUPER arguments                 { Apply(Super($1), $2) }
+ | T_SUPER arguments                 { Apply(mk_Super($1), $2) }
 
 new_expr(x):
  | member_expr(x)    { $1 }

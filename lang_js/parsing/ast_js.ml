@@ -18,7 +18,7 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (* An Abstract Syntax Tree for Javascript and (partially) Typescript.
- * (for a Concrete Syntax Tree see old/cst_js_ml).
+ * (for a Concrete Syntax Tree see old/cst_js_ml or ocaml-tree-sitter-lang).
  * 
  * This file contains a simplified Javascript AST. The original
  * Javascript syntax tree (cst_js.ml) was good for code refactoring or
@@ -209,13 +209,14 @@ and expr =
    * This can also contain "holes" when the array is used in lhs of an assign
    *)
   | Arr of expr list bracket
-  | Class of class_definition * ident option (* when assigned in module.exports  *)
+  (* ident is None when assigned in module.exports  *)
+  | Class of class_definition * ident option
 
   | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr bracket
 
-  (* ident is a Some when recursive or assigned in module.exports *)
+  (* ident is a Some when recursive lambda or assigned in module.exports *)
   | Fun of function_definition * ident option 
   | Apply of expr * arguments
 
