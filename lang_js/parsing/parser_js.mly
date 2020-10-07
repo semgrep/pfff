@@ -62,17 +62,18 @@ let sndopt = function
   | None -> None
   | Some (_, x) -> Some x
 
+(* ugly *)
+let anon_semgrep_lambda = "!anon_semgrep_lambda!"
+
 let fix_sgrep_module_item xs =
   match xs with
  (* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
-  * function decl (because 'function_decl' accepts id_opt,
-  * see its comment to see the reason)
+  * function decl (because 'function_decl' accepts id_opt, see its comment).
   * This is why we intercept this case by returning instead an Expr pattern.
   *)
-(* TODO
-  | [It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
-      Expr (Function decl)
-*)
+  | [DefStmt ({v_name = (s, _); v_init = Some ((Fun _) as e); _})] 
+    when s = anon_semgrep_lambda ->
+      Expr e
   (* less: could check that sc is an ASI *)
   | [ExprStmt (e, _sc)] -> Expr e
   | [x] -> Stmt x
@@ -101,7 +102,7 @@ let mk_def (idopt, e) =
   (* TODO: fun default_opt -> ... *)
   let name = 
     match idopt with
-    | None -> raise Todo
+    | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, G.fake "")
     | Some id -> id
   in
   mk_const_var name e
