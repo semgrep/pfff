@@ -294,9 +294,14 @@ let mk_Encaps opt (t1, xs, _t2) =
 (*************************************************************************)
 (* Macros *)
 (*************************************************************************)
+
 listc(X):
- | X { (*[$1]*) raise Todo }
- | listc(X) "," X { (* $1 @ [$3] *) raise Todo }
+ | X              { [$1] }
+ | listc(X) "," X { $1 @ [$3] }
+
+listc2(X):
+ | X              { [$1] }
+ | listc2(X) "," X { $1 @ [$3] }
 
 optl(X):
  | (* empty *) { [] }
@@ -638,7 +643,7 @@ class_heritage: extends_clause? optl(implements_clause)
 
 extends_clause: T_EXTENDS type_or_expr { raise Todo }
 (* typescript-ext: *)
-implements_clause: T_IMPLEMENTS listc(type_) { raise Todo }
+implements_clause: T_IMPLEMENTS listc2(type_) { raise Todo }
 
 binding_id: id { $1 }
 
@@ -711,7 +716,7 @@ method_definition:
 interface_decl: T_INTERFACE binding_id generics? interface_extends? object_type
    { raise Todo }
 
-interface_extends: T_EXTENDS listc(type_reference) { raise Todo }
+interface_extends: T_EXTENDS listc2(type_reference) { raise Todo }
 
 (*************************************************************************)
 (* Type declaration *)
@@ -719,7 +724,7 @@ interface_extends: T_EXTENDS listc(type_reference) { raise Todo }
 (* typescript-ext: *)
 type_alias_decl: T_TYPE id "=" type_ sc { raise Todo }
 
-enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}" { $7 }
+enum_decl: T_CONST? T_ENUM id "{" listc2(enum_member) ","? "}" { $7 }
 
 enum_member:
  | property_name { }
@@ -773,9 +778,9 @@ primary_type:
 primary_type2:
  | predefined_type      { G.TyName (G.name_of_id $1) }
  (* TODO: could be TyApply if snd $1 is a Some *)
- | type_reference       { G.TyName(G.name_of_ids (fst $1)) }
+ | type_reference       { G.TyName(G.name_of_ids $1) }
  | object_type          { $1 }
- | "[" listc(type_) "]" { raise Todo }
+ | "[" listc2(type_) "]" { raise Todo }
  (* not in Typescript grammar *)
  | T_STRING              { raise Todo }
 
@@ -790,8 +795,8 @@ predefined_type:
 
 (* was called nominal_type in Flow *)
 type_reference:
- | type_name { ($1,None) }
- | type_name type_arguments { ($1, Some $2) }
+ | type_name { $1 }
+ | type_name type_arguments { $1 (* TODO type_arguments *) }
 
 (* was called type_reference in Flow *)
 type_name: 
@@ -849,7 +854,7 @@ rest_param_type: "..." id complex_annotation { raise Todo }
 (* Type parameters (type variables) *)
 (*----------------------------*)
 
-generics: T_LESS_THAN listc(type_parameter) T_GREATER_THAN { $1, $2, $3 }
+generics: T_LESS_THAN listc2(type_parameter) T_GREATER_THAN { () }
 
 type_parameter: T_ID { $1 }
 
@@ -858,8 +863,8 @@ type_parameter: T_ID { $1 }
 (*----------------------------*)
 
 type_arguments:
- | T_LESS_THAN listc(type_argument) T_GREATER_THAN { $1, $2, $3 }
- | mismatched_type_arguments { $1 }
+ | T_LESS_THAN listc2(type_argument) T_GREATER_THAN {  }
+ | mismatched_type_arguments { }
 
 type_argument: type_ { $1 }
 
@@ -870,22 +875,22 @@ mismatched_type_arguments:
  | T_LESS_THAN type_argument_list2 T_RSHIFT3 { $1, $2, $3 }
 
 type_argument_list1:
- | nominal_type1                              { [$1] }
- | listc(type_argument) "," nominal_type1     { $1 @ [$3]}
+ | nominal_type1                              {  }
+ | listc2(type_argument) "," nominal_type1     { }
 
 nominal_type1: type_name type_arguments1 { $1 }
 
 (* missing 1 closing > *)
-type_arguments1: T_LESS_THAN listc(type_argument)    { $1, $2, G.fake ">" }
+type_arguments1: T_LESS_THAN listc2(type_argument)    { (*$1, $2, G.fake ">"*) }
 
 type_argument_list2:
- | nominal_type2                            { [$1] }
- | listc(type_argument) "," nominal_type2   { $1 @ [$3]}
+ | nominal_type2                            { }
+ | listc2(type_argument) "," nominal_type2   { }
 
-nominal_type2: type_name type_arguments2 { $1 }
+nominal_type2: type_name type_arguments2 { }
 
 (* missing 2 closing > *)
-type_arguments2: T_LESS_THAN type_argument_list1    { $1, $2, G.fake ">" }
+type_arguments2: T_LESS_THAN type_argument_list1    { (*$1, $2, G.fake ">"*) }
 
 (*----------------------------*)
 (* Type or expr *)
@@ -969,7 +974,7 @@ iteration_stmt:
      { Flag_parsing.sgrep_guard (For ($1, ForEllipsis $3, $5)) }
 
 
-initializer_no_in: "=" assignment_expr_no_in { $1, $2 }
+initializer_no_in: "=" assignment_expr_no_in { $2 }
 
 continue_stmt: T_CONTINUE id? sc { Continue ($1, $2) }
 break_stmt:    T_BREAK    id? sc { Break ($1, $2) }
