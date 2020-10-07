@@ -312,10 +312,6 @@ listc(X):
  | X              { [$1] }
  | listc(X) "," X { $1 @ [$3] }
 
-listc2(X):
- | X              { [$1] }
- | listc2(X) "," X { $1 @ [$3] }
-
 optl(X):
  | (* empty *) { [] }
  | X           { $1 }
@@ -371,7 +367,7 @@ json: expr EOF { $1 }
 sgrep_spatch_pattern:
  (* copy-paste of object_literal rule but with T_LCURLY_SEMGREP *)
  | T_LCURLY_SEMGREP "}"    { Expr (Obj ($1, [], $2)) }
- | T_LCURLY_SEMGREP listc2(property_name_and_value) ","? "}" 
+ | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
      { Expr (Obj ($1, $2, $4)) }
 
  | assignment_expr_no_stmt  EOF  { Expr $1 }
@@ -975,7 +971,7 @@ iteration_stmt:
  | T_WHILE "(" expr ")" stmt1           { While ($1, ($3), $5) }
 
  | T_FOR "(" expr_no_in? ";" expr? ";" expr? ")" stmt1
-     { let x = raise Todo in (* Right $3 *)
+     { let x = match $3 with None -> Left [] | Some e -> Right e in
        For ($1, ForClassic (x, $5, $7), $9) }
  | T_FOR "(" for_variable_decl ";" expr? ";" expr? ")" stmt1
      { For ($1, ForClassic (Left $3, $5, $7), $9) }
@@ -1262,7 +1258,7 @@ element:
 
 object_literal:
  | "{" "}"                                      { ($1, [], $2) }
- | "{" listc2(property_name_and_value) ","? "}"  { ($1, $2, $4) }
+ | "{" listc(property_name_and_value) ","? "}"  { ($1, $2, $4) }
 
 property_name_and_value:
  | property_name ":" assignment_expr    { Field (mk_field $1 (Some $3)) }
