@@ -654,9 +654,9 @@ class_body: "{" optl2(class_element+) "}" { ($1, $2, $3) }
 class_heritage: extends_clause? optl(implements_clause)
   { Common.opt_to_list $1, $2 }
 
-extends_clause: T_EXTENDS type_or_expr { raise Todo }
+extends_clause: T_EXTENDS type_or_expr { $2 }
 (* typescript-ext: *)
-implements_clause: T_IMPLEMENTS listc(type_) { raise Todo }
+implements_clause: T_IMPLEMENTS listc(type_) { $2 }
 
 binding_id: id { $1 }
 
@@ -909,18 +909,23 @@ type_arguments2: T_LESS_THAN type_argument_list1    { (*$1, $2, G.fake ">"*) }
 (* Type or expr *)
 (*----------------------------*)
 
-(* Extends arguments can be any expr according to ES6 *)
-(* however, this causes ambiguities with type arguments a la TypeScript *)
-(* unfortunately, TypeScript enforces severe restrictions here, *)
-(* which e.g. do not admit mixins, which we want to support *)
-(* TODO ambiguity Xxx.yyy, a Period expr or a module path in TypeScript *)
+(* Extends arguments can be any expr according to ES6 
+ * However, this causes ambiguities with type arguments a la TypeScript.
+ * Unfortunately, TypeScript enforces severe restrictions here,
+ * which e.g. do not admit mixins, which we want to support 
+ * TODO ambiguity Xxx.yyy, a Period expr or a module path in TypeScript? 
+ *)
 type_or_expr:
 (* (* old: flow: *)
  | left_hand_side_expr_no_stmt { ($1,None) } 
  | type_name type_arguments { ($1, Some $2) }
 *)
  (* typescript-ext: *)
- | type_reference { $1 }
+ | type_reference 
+    { match $1 with
+     (* TODO: generate a Left expr? of simple id? or a ObjAccess? *)
+     | ids -> Right (G.TyName (G.name_of_ids ids))
+    }
 
 (*************************************************************************)
 (* Stmt *)
