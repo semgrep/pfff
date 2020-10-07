@@ -649,8 +649,8 @@ class_decl: T_CLASS binding_id? generics? class_heritage class_body
 (* TODO: use class_element* then? and List.flatten that? *)
 class_body: "{" optl(class_element+) "}" { ($1, List.flatten $2, $3) }
 
-class_heritage: extends_clause? implements_clause?
-  { Common.opt_to_list $1, [] (* TODO! *) }
+class_heritage: extends_clause? optl(implements_clause)
+  { Common.opt_to_list $1, $2 }
 
 extends_clause: T_EXTENDS type_or_expr { $2 }
 (* typescript-ext: *)
@@ -1476,7 +1476,6 @@ property_name:
  | ident_keyword   { PN $1 }
  (* es6: *)
  | "[" assignment_expr "]" { PN_Computed ($2) }
-
 
 (*************************************************************************)
 (* Misc *)
