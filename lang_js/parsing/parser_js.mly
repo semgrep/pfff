@@ -58,21 +58,21 @@ module G = AST_generic (* for operators, fake, and now also type_ *)
 (*************************************************************************)
 let fb = G.fake_bracket
 
-(* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
- * function decl (because 'function_decl' accepts id_opt,
- * see its comment to see the reason)
- * This is why we intercept this case by returning instead an Expr pattern.
- *)
-let fix_sgrep_module_item _x =
-  raise Todo
+let fix_sgrep_module_item xs =
+  match xs with
+ (* ugly, but in a sgrep pattern, anonymous functions are parsed as a toplevel
+  * function decl (because 'function_decl' accepts id_opt,
+  * see its comment to see the reason)
+  * This is why we intercept this case by returning instead an Expr pattern.
+  *)
 (* TODO
-  match x with
-  | It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
+  | [It (FunDecl ({ f_kind = F_func (_, None); _ } as decl)) ->
       Expr (Function decl)
-  (* less: could check that sc is an ASI *)
-  | It (St (ExprStmt (e, _sc))) -> Expr e
-  | _ -> ModuleItem x
 *)
+  (* less: could check that sc is an ASI *)
+  | [ExprStmt (e, _sc)] -> Expr e
+  | [x] -> Stmt x
+  | xs -> Stmts xs
 
 let mk_Id id =
   Id (id, ref NotResolved)
@@ -371,7 +371,7 @@ sgrep_spatch_pattern:
 
  | assignment_expr_no_stmt  EOF  { Expr $1 }
  | module_item              EOF  { fix_sgrep_module_item $1}
- | module_item module_item+ EOF  { Items (List.flatten ($1::$2)) }
+ | module_item module_item+ EOF  { Stmts (List.flatten ($1::$2)) }
 
 (*************************************************************************)
 (* Namespace *)
