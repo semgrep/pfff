@@ -517,10 +517,9 @@ and program = toplevel list
 and any = 
   | Expr of expr
   | Stmt of stmt
+  | Stmts of stmt list
   | Pattern of pattern
   | Type of type_
-  | Item of toplevel
-  | Items of toplevel list
   | Program of program
 
  [@@deriving show { with_path = false} ] (* with tarzan *)

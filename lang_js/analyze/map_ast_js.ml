@@ -461,8 +461,7 @@ and map_any =
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
   | Pattern v1 -> let v1 = map_pattern v1 in Pattern v1
   | Type v1 -> let v1 = map_type_ v1 in Type v1
-  | Items v1 -> let v1 = map_of_list map_toplevel v1 in Items ((v1))
-  | Item v1 -> let v1 = map_toplevel v1 in Item ((v1))
+  | Stmts v1 -> let v1 = map_of_list map_stmt v1 in Stmts ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
   
 
