@@ -508,7 +508,12 @@ object_binding_pattern:
  | "{" listc(binding_property) ","?  "}" { Obj ($1, $2, $4) }
 
 binding_property:
- | binding_id initializeur?          { mk_Field (PN $1) (sndopt $2) }
+ | binding_id initializeur?
+    { match $2 with 
+      (* { x } shorthand for { x: x }, like in OCaml *)
+      | None -> mk_Field (PN $1) (Some (mk_Id $1))
+      | Some (_, e) -> mk_Field (PN $1) (Some e)
+    }
  | property_name ":" binding_element { mk_Field $1 (Some $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
  | "..." binding_id      { FieldSpread ($1, mk_Id $2) }
