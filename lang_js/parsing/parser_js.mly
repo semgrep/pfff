@@ -79,6 +79,7 @@ let fix_sgrep_module_item xs =
   | [x] -> Stmt x
   | xs -> Stmts xs
 
+(* TODO: remove once got rid of resolved stuff in ast_js.ml *)
 let mk_Id id =
   Id (id, ref NotResolved)
 
@@ -761,12 +762,12 @@ enum_member:
 (* Annotations *)
 (*----------------------------*)
 
-annotation: ":" type_ { raise Todo }
+annotation: ":" type_ { $2 }
 
 complex_annotation:
  | annotation { $1 }
  | generics? "(" optl(param_type_list) ")" ":" type_ 
-     { raise Todo }
+     { $6 (* TODO *) }
 
 (*----------------------------*)
 (* Types *)
