@@ -427,23 +427,24 @@ module_specifier: string_literal { $1 }
 (* export *)
 (*----------------------------*)
 
+(* TODO *)
 export_decl:
- | T_EXPORT export_names       { raise Todo (* $1, $2 *) }
- | T_EXPORT variable_stmt { raise Todo (*$1, ExportDecl (St $2)*) }
- | T_EXPORT decl        { raise Todo (*$1, ExportDecl $2*) }
+ | T_EXPORT export_names       { [] (* $1, $2 *) }
+ | T_EXPORT variable_stmt { [] (*$1, ExportDecl (St $2)*) }
+ | T_EXPORT decl        { [] (*$1, ExportDecl $2*) }
  (* in theory just func/gen/class, no lexical_decl *)
- | T_EXPORT T_DEFAULT decl { raise Todo (* $1, ExportDefaultDecl ($2, $3) *) }
+ | T_EXPORT T_DEFAULT decl { [] (* $1, ExportDefaultDecl ($2, $3) *) }
  | T_EXPORT T_DEFAULT assignment_expr_no_stmt sc 
-    { raise Todo (* $1, ExportDefaultExpr ($2, $3, $4) *)  }
+    { [] (* $1, ExportDefaultExpr ($2, $3, $4) *)  }
  (* ugly hack because should use assignment_expr above instead*)
  | T_EXPORT T_DEFAULT object_literal sc
-    { raise Todo (* $1, ExportDefaultExpr ($2, Object $3, $4) *)  }
+    { [] (* $1, ExportDefaultExpr ($2, Object $3, $4) *)  }
 
 
 export_names:
- | "*"           from_clause sc { raise Todo(*ReExportNamespace ($1, $2, $3)*)}
- | export_clause from_clause sc { raise Todo (*ReExportNames ($1, $2, $3)*) }
- | export_clause sc             { raise Todo (*ExportNames ($1, $2)*) }
+ | "*"           from_clause sc { (*ReExportNamespace ($1, $2, $3)*)}
+ | export_clause from_clause sc {  (*ReExportNames ($1, $2, $3)*) }
+ | export_clause sc             {  (*ExportNames ($1, $2)*) }
 
 export_clause:
  | "{" "}"                              { ($1, [], $2) }
