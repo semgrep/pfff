@@ -485,9 +485,10 @@ and module_directive =
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of tok * ident * filename (* import * as 'name' from 'file' *)
 
-  | ImportCss of tok * filename
-  (* those should not exist (except for sgrep where they are useful) *)
-  | ImportEffect of tok * filename
+  (* those should not exist (except for sgrep where they are useful),
+   * unless file is a CSS file.
+   *)
+  | ImportFile of tok * filename
 
 (*  [@@deriving show { with_path = false} ] *)
 

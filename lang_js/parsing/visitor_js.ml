@@ -364,11 +364,8 @@ and v_module_directive x =
   | Import ((t, v1, v2, v3)) ->
       let t = v_tok t in
       let v1 = v_name v1 and v2 = v_option v_name v2 and v3 = v_filename v3 in ()
-  | ImportCss ((t, v1)) ->
+  | ImportFile ((t, v1)) ->
       let t = v_tok t in
-      let v1 = v_name v1 in ()
-  | ImportEffect ((v0, v1)) ->
-      let v0 = v_tok v0 in
       let v1 = v_name v1 in ()
   | ModuleAlias ((t, v1, v2)) ->
       let t = v_tok t in
