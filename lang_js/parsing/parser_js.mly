@@ -93,6 +93,14 @@ let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
 let add_modifiers _propsTODO fld = 
   fld
 
+let mk_def (idopt, e) =
+  (* TODO: fun default_opt -> ... *)
+  let name = 
+    match idopt with
+    | None -> raise Todo
+    | Some id -> id
+  in
+  mk_const_var name e
  
 let mk_Super tok =
   IdSpecial (Super, tok)
@@ -321,13 +329,13 @@ program: optl2(module_item+) { $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
- | module_item { raise Todo } 
+ | module_item { Some (stmt1 $1) } 
  | EOF         { None }
 
 module_item:
  | item        { $1 }
- | import_decl { raise Todo (* $1 |> List.map (fun x -> M x)*) }
- | export_decl { raise Todo (* $1 |> List.map (fun x -> M x)*) }
+ | import_decl { $1 |> List.map (fun x -> M x) }
+ | export_decl { $1 |> List.map (fun x -> M x) }
 
 (* item is also in stmt_list, inside every blocks *)
 item:
@@ -336,20 +344,20 @@ item:
 
 decl:
  (* part of hoistable_declaration in the ECMA grammar *)
- | function_decl  { raise Todo (* [ FunDecl $1] *) }
+ | function_decl  { [mk_def $1] }
  (* es6: *)
- | generator_decl { raise Todo }
+ | generator_decl { [mk_def $1] }
  (* es7: *)
- | async_decl     { raise Todo }
+ | async_decl     { [mk_def $1] }
 
  (* es6: *)
  | lexical_decl   { $1 }
- | class_decl     { raise Todo (* [ ClassDecl $1] *) }
+ | class_decl     { [mk_def $1] }
 
- (* typescript-ext: *)
- | interface_decl { raise Todo }
- | type_alias_decl { raise Todo }
- | enum_decl       { raise Todo }
+ (* typescript-ext: TODO *)
+ | interface_decl { [] }
+ | type_alias_decl { [] }
+ | enum_decl       { [] }
 
 (*************************************************************************)
 (* sgrep *)
