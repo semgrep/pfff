@@ -19,7 +19,6 @@ module G = Graph_code
 (*module PI = Parse_info*)
 
 open Ast_js
-module Ast = Ast_js
 
 (*****************************************************************************)
 (* Prelude *)
@@ -115,8 +114,8 @@ let error s tok =
   let err = spf "%s: %s" (Parse_info.string_of_info tok) s in 
   failwith err
 
-let s_of_n n = 
-  Ast.str_of_name n
+let s_of_n (s, _) = 
+  s
 
 let pos_of_tok tok file =
   { (Parse_info.token_location_of_info tok) with PI.file }

@@ -528,13 +528,6 @@ and any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-(* TODO: remove *)
-let str_of_name (s, _) = s
-let tok_of_name (_, tok) = tok
-
-(* TODO: remove *)
-let unwrap x = fst x
-
 (* TODO: move in separate file? ast_js_parsing_helper.ml? *)
 
 (* TODO: rename mk_def_var *)
