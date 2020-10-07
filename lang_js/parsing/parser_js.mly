@@ -93,8 +93,7 @@ let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
 let add_modifiers _propsTODO fld = 
   fld
 
-let mk_Encaps _ _ = 
-  raise Todo
+ 
 let mk_Super tok =
   IdSpecial (Super, tok)
 
@@ -120,7 +119,14 @@ let mk_Assign (e1, (tok, opopt), e2) =
   | None -> Assign (e1, tok, e2)
   (* less: should use intermediate? can unsugar like this? *)
   | Some op -> Assign (e1, tok, special (ArithOp op) tok [e1;e2])
-  
+
+let mk_Encaps opt (t1, xs, _t2) = 
+  let b, extra =
+    match opt with
+    | None -> false, []
+    | Some e -> true, [e]
+  in
+  special (Encaps b) t1 (extra @ xs)
 
 %}
 (*************************************************************************)
@@ -929,7 +935,11 @@ stmt_list: item+ { List.flatten $1 }
 
 empty_stmt: sc { }
 
-expr_stmt: expr_no_stmt sc { ExprStmt ($1, $2) (* less: generate a UseStrict*)}
+(* less:
+ *    | A.String("use strict", tok) -> 
+ *      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), fb []), t)]
+ *)
+expr_stmt: expr_no_stmt sc { ExprStmt ($1, $2) }
 
 if_stmt:
  | T_IF "(" expr ")" stmt1 T_ELSE stmt1 { If ($1, ($3), $5,Some($7)) }
