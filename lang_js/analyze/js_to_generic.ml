@@ -31,7 +31,6 @@ module G = AST_generic
 let id = fun x -> x
 let option = Common.map_opt
 let list = List.map
-let vref f x = ref (f !x)
 
 let bool = id
 let string = id
@@ -57,19 +56,6 @@ let ident x = name x
 let filename v = wrap string v
 
 let label v = wrap string v
-
-(* note: we do not care anymore about the language-specific tagger.
- * we use instead the generic naming_ast.ml *)
-let resolved_name _x = 
-(* old:
-  let _qualified_name x = [x, fake "TODO qualified name"] in
-  match x with
-  | Local -> Some (G.Local, G.sid_TODO)
-  | Param -> Some (G.Param, G.sid_TODO)
-  | Global x -> Some (G.ImportedEntity (qualified_name x), G.sid_TODO)
-  | NotResolved -> None
-*)
-  None
 
 type special_result = 
   | SR_Special of G.special wrap
@@ -192,11 +178,9 @@ and expr (x: expr) =
   | Num v1 -> let v1 = wrap string v1 in G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
   | Regexp v1 -> let v1 = wrap string v1 in G.L (G.Regexp v1)
-  | Id (v1, refresolved) -> 
+  | Id (v1) -> 
       let v1 = name v1 in
-      let v3 = { (G.empty_id_info ()) with
-                 G.id_resolved = vref resolved_name refresolved } in
-      G.Id (v1, v3)
+      G.Id (v1, G.empty_id_info())
 
   | IdSpecial (v1) -> 
       let x = special v1 in
@@ -365,7 +349,7 @@ and case =
 and type_ x = x 
 
 and def_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_resolved = x_resolved; v_type = ty } =
+                 v_init = x_init; v_type = ty } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
@@ -382,20 +366,16 @@ and def_of_var { v_name = x_name; v_kind = x_kind;
       { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
   | _ -> 
        let v3 = option expr x_init in 
-       let v4 = vref resolved_name x_resolved in
-       ent.G.info.G.id_resolved := !v4;
        ent, G.VarDef { G.vinit = v3; G.vtype = ty }
    )
 
 and var_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_resolved = x_resolved; v_type } =
+                 v_init = x_init; v_type } =
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in
   let v3 = option expr x_init in 
-  let v4 = vref resolved_name x_resolved in
   let v_type = option type_ v_type in
-  ent.G.info.G.id_resolved := !v4;
   ent, { G.vinit = v3; vtype = v_type }
 
 
@@ -535,13 +515,10 @@ and module_directive x =
   | ModuleAlias ((t, v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
-  | ImportCss ((_t, v1)) ->
-      let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportCss, [G.I v1])
   (* sgrep: we used to convert this in an OI_ImportEffect, but
    * we now want import "foo" to be used to match any form of import
    *)
-  | ImportEffect ((t, v1)) ->
+  | ImportFile ((t, v1)) ->
       let v1 = name v1 in
       (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
       G.ImportAs (t, G.FileName v1, None)
@@ -554,8 +531,7 @@ and any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
-  | Item v1 -> let v1 = toplevel v1 in G.S v1
-  | Items v1 -> let v1 = List.map toplevel v1 in G.Ss v1
+  | Stmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | Pattern v1 -> let v1 = pattern v1 in G.P v1
   | Type v1 -> let v1 = type_ v1 in G.T v1

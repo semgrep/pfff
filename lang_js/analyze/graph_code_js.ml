@@ -16,10 +16,9 @@ open Common
 
 module E = Entity_code
 module G = Graph_code
-module PI = Parse_info
+(*module PI = Parse_info*)
 
 open Ast_js
-module Ast = Ast_js
 
 (*****************************************************************************)
 (* Prelude *)
@@ -44,6 +43,16 @@ module Ast = Ast_js
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
+(* old: used to be in ast_js.ml *)
+(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
+ * I remove the filename extension for codegraph (which assumes
+ * the dot is a package separator), which is convenient to show 
+ * shorter names when exploring a codebase (and maybe also when hovering
+ * a function in codemap).
+ * This is computed after ast_js_build in graph_code_js.ml
+ *)
+type qualified_name = string
 
 (* for the extract_uses visitor *)
 type env = {
@@ -74,7 +83,7 @@ type env = {
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
   (* this is for the abstract interpreter *)
-  db: (Ast_js.qualified_name, Ast_js.var) Hashtbl.t;
+  db: (qualified_name, Ast_js.var) Hashtbl.t;
   asts: (Common.filename (* readable *)* Ast_js.program (* resolved*)) list ref;
 
   log: string -> unit;
@@ -97,19 +106,9 @@ let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
     try 
-      let cst = Parse_js.parse_program file in
-      (* far easier representation to work on than the CST *)
-      Ast_js_build.program cst
+      Parse_js.parse_program file
     with
     | Timeout -> raise Timeout
-    | Ast_js_build.TodoConstruct (s, tok)
-    | Ast_js_build.UnhandledConstruct (s, tok)
-      -> 
-        pr2 s;
-        pr2 (Parse_info.error_message_info tok);
-        if !error_recovery
-        then []
-        else failwith s
     | exn ->
       pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
       if !error_recovery 
@@ -125,8 +124,8 @@ let error s tok =
   let err = spf "%s: %s" (Parse_info.string_of_info tok) s in 
   failwith err
 
-let s_of_n n = 
-  Ast.str_of_name n
+let s_of_n (s, _) = 
+  s
 
 let pos_of_tok tok file =
   { (Parse_info.token_location_of_info tok) with PI.file }
@@ -262,7 +261,7 @@ let add_use_edge env (name, kind) =
   (* error *)
   | _ -> env.lookup_fail env dst loc
 
-let add_use_edge_candidates env (name, kind) scope =
+let add_use_edge_candidates env (name, kind) (*scope*) =
   let kind = 
     let s = qualified_name env name in
     let dst = (s, kind) in
@@ -278,8 +277,10 @@ let add_use_edge_candidates env (name, kind) scope =
       )
   in
   add_use_edge env (name, kind);
+(* old: I've removed scope info in ast_js, use the generic AST for that
   let s = qualified_name env name in
   scope := Global s;
+*)
   ()
 
 
@@ -322,8 +323,8 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | DefStmt {v_name; v_kind; v_init; v_resolved; v_type = _} ->
-       name_expr env v_name v_kind v_init v_resolved
+  | DefStmt {v_name; v_kind; v_init; v_type = _} ->
+       name_expr env v_name v_kind v_init
   | M x -> module_directive env x
 (*
   | S (tok, st) ->
@@ -377,21 +378,20 @@ and module_directive env x =
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
   | ReExportNamespace (_t, _, _, _file) -> ()
-  | ImportCss (_t, _file) -> ()
-  | ImportEffect (_, _file) -> ()
+  | ImportFile (_t, _file) -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and name_expr env name v_kind eopt v_resolved =
+and name_expr env name v_kind eopt (*v_resolved*) =
   let kind = kind_of_expr_opt v_kind eopt in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
   then begin 
     option (expr env) eopt;
     let (qualified, _kind) = env.current in
-    v_resolved := Global qualified;
+    (* v_resolved := Global qualified; *)
     Hashtbl.add env.db qualified
-     { v_name = name; v_kind; v_init = eopt; v_resolved; v_type = None; }
+     { v_name = name; v_kind; v_init = eopt; v_type = None; }
   end
 
 (* ---------------------------------------------------------------------- *)
@@ -512,11 +512,11 @@ and expr env e =
   | Ellipsis _ | DeepEllipsis _ -> ()
 
   | Bool _ | Num _ | String _ | Regexp _ -> ()
-  | Id (n, scope) -> 
+  | Id (n(*, scope*)) -> 
     if not (is_local env n)
     then 
      (* the big one! *)
-     add_use_edge_candidates env (n, E.Global) scope;
+     add_use_edge_candidates env (n, E.Global) (*scope*);
 
 
   | IdSpecial _ -> ()
@@ -535,23 +535,23 @@ and expr env e =
       | Some n -> 
         let v = { v_name = n; v_kind = Let, fake "let"; 
                   v_init = None; v_type = None;
-                  v_resolved = ref Local}
+                  (* v_resolved = ref Local *)}
         in
         add_locals env [v]
      in
      class_ env c
   | ObjAccess (e, _, prop) ->
     (match e with
-    | Id (n, scope) when not (is_local env n) -> 
-       add_use_edge_candidates env (n, E.Class) scope
+    | Id (n (*, scope*)) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) (*scope*)
     | _ -> 
       expr env e
     );
     property_name env prop
   | ArrAccess (e1, (_, e2, _)) ->
     (match e1 with
-    | Id (n, scope) when not (is_local env n) -> 
-       add_use_edge_candidates env (n, E.Class) scope
+    | Id (n(*, scope*)) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) (*scope*)
     | _ -> 
       expr env e1
     );
@@ -563,15 +563,15 @@ and expr env e =
       | None -> env
       | Some n -> 
         let v = { v_name = n; v_kind = Let, fake "let"; 
-                  v_init = None; v_type = None; v_resolved = ref Local}
+                  v_init = None; v_type = None; (*v_resolved = ref Local*)}
         in
         add_locals env [v]
     in
     fun_ env f
   | Apply (e, (_, es, _)) ->
     (match e with
-    | Id (n, scope) when not (is_local env n) ->
-        add_use_edge_candidates env (n, E.Function) scope
+    | Id (n(*, scope*)) when not (is_local env n) ->
+        add_use_edge_candidates env (n, E.Function) (*scope*)
     | IdSpecial (special, _tok) ->
        (match special, es with
        | New, _ -> (* TODO *) ()

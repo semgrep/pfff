@@ -12,17 +12,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* An Abstract Syntax Tree for Javascript and (partially) Typescript,
- * not a Concrete Syntax Tree as in cst_js.ml.
+(* An Abstract Syntax Tree for Javascript and (partially) Typescript.
+ * (for a Concrete Syntax Tree see old/cst_js_ml or ocaml-tree-sitter-lang).
  * 
  * This file contains a simplified Javascript AST. The original
- * Javascript syntax tree (cst_js.ml) is good for code refactoring or
+ * Javascript syntax tree (cst_js.ml) was good for code refactoring or
  * code visualization; the types used matches exactly the source. However,
- * for other algorithms, the nature of the CST makes the code a bit
+ * for other algorithms, the nature of the CST made the code a bit
  * redundant. Hence the idea of a real and simplified AST 
  * where certain constructions have been factorized or even removed.
  *
@@ -94,26 +95,9 @@ type todo_category = string wrap
 type ident = string wrap
  [@@deriving show]
 
-(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
- * I remove the filename extension for codegraph (which assumes
- * the dot is a package separator), which is convenient to show 
- * shorter names when exploring a codebase (and maybe also when hovering
- * a function in codemap).
- * This is computed after ast_js_build in graph_code_js.ml
+(* old: there used to be 'resolved_name' and 'qualified_name' types, but
+ * the name resolution is now done on the generic AST instead.
  *)
-type qualified_name = string
- [@@deriving show] (* with tarzan *)
-
-(* todo: use AST_generic.resolved_name at some point, and share the ref! *)
-type resolved_name =
-  (* this can be computed by ast_js_build.ml *)
-  | Local
-  | Param
-  (* this is computed in graph_code_js.ml in a "naming" phase *)
-  | Global of qualified_name
-  (* default case *)
-  | NotResolved
- [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type special = 
   (* Special values *)
@@ -186,10 +170,7 @@ and expr =
   | String of string wrap
   | Regexp of string wrap
 
-  (* For Global the ref is set after ast_js_build in a naming phase in 
-   * graph_code_js, hence the use of a ref.
-   *)
-  | Id of ident * resolved_name ref 
+  | Id of ident
   | IdSpecial of special wrap
   (* old: we used to have a Nop, without any token attached, which allowed
    * to simplify a bit the AST by replacing some 'expr option' into simply
@@ -208,13 +189,14 @@ and expr =
    * This can also contain "holes" when the array is used in lhs of an assign
    *)
   | Arr of expr list bracket
-  | Class of class_definition * ident option (* when assigned in module.exports  *)
+  (* ident is None when assigned in module.exports  *)
+  | Class of class_definition * ident option
 
   | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr bracket
 
-  (* ident is a Some when recursive or assigned in module.exports *)
+  (* ident is a Some when recursive lambda or assigned in module.exports *)
   | Fun of function_definition * ident option 
   | Apply of expr * arguments
 
@@ -375,7 +357,6 @@ and entity = {
 
   (* typescript-ext: *)
   v_type: type_ option;
-  v_resolved: resolved_name ref;
   (* TODO: put v_tparams here *)
 }
   and var_kind = Var | Let | Const
@@ -480,9 +461,10 @@ and module_directive =
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of tok * ident * filename (* import * as 'name' from 'file' *)
 
-  | ImportCss of tok * filename
-  (* those should not exist (except for sgrep where they are useful) *)
-  | ImportEffect of tok * filename
+  (* those should not exist (except for sgrep where they are useful),
+   * unless file is a CSS file.
+   *)
+  | ImportFile of tok * filename
 
 (*  [@@deriving show { with_path = false} ] *)
 
@@ -512,10 +494,9 @@ and program = toplevel list
 and any = 
   | Expr of expr
   | Stmt of stmt
+  | Stmts of stmt list
   | Pattern of pattern
   | Type of type_
-  | Item of toplevel
-  | Items of toplevel list
   | Program of program
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
@@ -523,35 +504,17 @@ and any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let str_of_name (s, _) = s
-let tok_of_name (_, tok) = tok
+(* TODO: move in separate file? ast_js_parsing_helper.ml? *)
 
-let unwrap x = fst x
-
-and string_of_xhp_tag s = s
-
+(* TODO: rename mk_def_var *)
 let mk_const_var id e = 
-  { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None;
-    v_resolved = ref NotResolved }
+  { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None; }
 
 let mk_field name body = 
   { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
-let mk_param id = 
-  { p_name = id; p_default = None; p_type = None; p_dots = None; 
-    p_attrs = [] }
 
-(* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
-let var_pattern_to_var vkind pat tok init_opt = 
-  let s = AST_generic.special_multivardef_pattern in
-  let id = s, tok in
-  let init = 
-    match init_opt with
-    | Some init -> Assign (pat, tok, init) 
-    | None -> pat
-  in
-  (* less: use x.vpat_type *)
-  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None;
-    v_resolved = ref NotResolved}
+let mk_param id = 
+  { p_name = id; p_default = None; p_type = None; p_dots = None; p_attrs = [] }
 
 let special_of_id_opt s =
   match s with
@@ -567,12 +530,18 @@ let special_of_id_opt s =
   | "arguments"   -> Some Arguments
   | _ -> None
 
+let idexp id = Id (id)
+
+let idexp_or_special id =
+  match special_of_id_opt (fst id) with
+  | None -> idexp id
+  | Some special -> IdSpecial (special, snd id)
+
 (* note that this should be avoided as much as possible for sgrep, because
  * what was before a simple sequence of stmts in the same block can suddently
  * be in different blocks.
- * Use stmt_item_list when you can in ast_js_build.ml
  *)
-and stmt_of_stmts xs = 
+and stmt1 xs = 
   match xs with
   | [] -> Block (AST_generic.fake_bracket [])
   | [x] -> x
@@ -580,9 +549,44 @@ and stmt_of_stmts xs =
 
 let mk_default_entity_var tok exp = 
   let n = default_entity, tok in
-  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; 
-            v_resolved = ref NotResolved; v_type = None } 
+  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; v_type = None} 
   in
   v, n
 
 let attr x = KeywordAttr x
+
+
+(* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
+let var_pattern_to_var vkind pat tok init_opt = 
+  let s = AST_generic.special_multivardef_pattern in
+  let id = s, tok in
+  let init = 
+    match init_opt with
+    | Some init -> Assign (pat, tok, init) 
+    | None -> pat
+  in
+  (* less: use x.vpat_type *)
+  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None; }
+
+let build_var kwd (id_or_pat, ty_opt, initopt) = 
+  match id_or_pat with
+  | Left id ->
+      { v_name = id; v_kind = (kwd); v_init = initopt; v_type = ty_opt; }
+  | Right pat ->
+      var_pattern_to_var kwd pat (snd kwd) initopt
+
+let build_vars kwd vars = vars |> List.map (build_var kwd)
+
+(*****************************************************************************)
+(* Helpers, could also be put in lib_parsing.ml instead *)
+(*****************************************************************************)
+module PI = Parse_info
+
+(* used both by Parsing_hacks_js and Parse_js *)
+let fakeInfoAttach info =
+  let info = PI.rewrap_str "';' (from ASI)" info in
+  let pinfo = PI.token_location_of_info info in
+  { PI.
+    token = PI.FakeTokStr (";", Some (pinfo, -1));
+    transfo = PI.NoTransfo;
+  }

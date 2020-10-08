@@ -17,9 +17,7 @@
 (* Prelude *)
 (*****************************************************************************)
 (* An Abstract Syntax Tree for OCaml.
- *
- * See old/cst_ml_ml for a Concrete Syntax Tree for OCaml (better for program
- * transformation purpose).
+ * (for a Concrete Syntax Tree see old/cst_ml_ml or ocaml-tree-sitter-lang).
  *)
 
 (*****************************************************************************)

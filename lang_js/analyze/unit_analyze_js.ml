@@ -1,6 +1,4 @@
-open Common
-
-module E = Entity_code
+(* module E = Entity_code *)
 
 open OUnit
 
@@ -40,6 +38,7 @@ function bar() {}
       )
     );
 
+(* TODO need Class_pre_es6
    "commonjs tags support" >:: (fun () ->
      let file_content = "
 /**
@@ -66,33 +65,6 @@ function foo() {}
            str
        else assert_failure "it should generate the write vi tags file"
      ));
-
- "AST js building regression files" >:: (fun () ->
-      let dir = Config_pfff.tests_path "js/parsing" in
-      let files = 
-        Common2.glob (spf "%s/*.js" dir) @
-(*
-        Common2.glob (spf "%s/jsx/*.js" dir) @
-        Common2.glob (spf "%s/typescript/*.js" dir) @
 *)
-        []
-      in
-      files |> List.iter (fun file ->
-        try
-          let cst = Parse_js.parse_program file in
-          Common.save_excursion Ast_js_build.transpile_xml false (fun () ->
-          Common.save_excursion Ast_js_build.transpile_pattern false (fun () ->
-            Ast_js_build.program cst  |> ignore
-          ))
-        with 
-        | Parse_info.Parsing_error _
-        | Parse_info.Lexical_error (_, _)
-        | Ast_js_build.TodoConstruct (_, _)
-        | Ast_js_build.UnhandledConstruct (_, _) 
-        | Common.Impossible
-              ->
-          assert_failure (spf "it should correctly parse %s" file)
-      )
-    );
 ]
 

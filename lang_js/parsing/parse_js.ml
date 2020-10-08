@@ -17,7 +17,7 @@ open Common
 
 module Flag = Flag_parsing
 module Flag_js = Flag_parsing_js
-module Ast = Cst_js
+module Ast = Ast_js
 module TH   = Token_helpers_js
 module PI = Parse_info
 
@@ -31,7 +31,7 @@ module PI = Parse_info
 
 (* the token list contains also the comment-tokens *)
 type program_and_tokens = 
-  Cst_js.program option * Parser_js.token list
+  Ast_js.program option * Parser_js.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
@@ -64,6 +64,7 @@ let error_msg_tok tok =
  *    but Parsing.parser_env is abstract and no much API around it.
  *
  * see also top comment in tests/js/items.js
+ *
  *)
 let put_back_lookahead_token_if_needed tr item_opt =
   match item_opt with
@@ -78,6 +79,12 @@ let put_back_lookahead_token_if_needed tr item_opt =
      if not (PI.is_origintok info) || List.mem info iis
      then ()
      else begin
+       (* TODO: could sanity check that what we put back make sense, for
+        * example we should never put back a closing '}', which can
+        * happen if the item returned is incomplete and does not contain
+        * all the tokens (more risky now that we use ast_js.ml instead of
+        * cst_js.ml)
+        *)
        if !Flag.debug_lexer
        then pr2 (spf "putting back %s" (Common.dump current));
        tr.PI.rest <- current::tr.PI.rest;
@@ -265,7 +272,7 @@ let parse2 ?(timeout=0) filename =
     | Left (Some x) -> 
         stat.PI.correct <- stat.PI.correct + lines;
         if !Flag_js.debug_asi
-        then pr2 (spf "parsed: %s" (Ast.Program [x] |> Cst_js.show_any));
+        then pr2 (spf "parsed: %s" (Ast.Program [x] |> Ast_js.show_any));
 
         x::aux tr 
     | Right err_tok ->
@@ -322,7 +329,7 @@ let parse_string (w : string) : Ast.program =
 (* Sub parsers *)
 (*****************************************************************************)
 
-let (program_of_string: string -> Cst_js.program) = fun s -> 
+let (program_of_string: string -> Ast_js.program) = fun s -> 
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     parse_program file
   )

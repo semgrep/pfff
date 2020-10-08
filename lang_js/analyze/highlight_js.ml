@@ -19,6 +19,7 @@ open Ast_js
 module T = Parser_js
 module E = Entity_code
 module H = Highlight_code
+module V = Visitor_js
 
 (*****************************************************************************)
 (* Prelude *)
@@ -37,7 +38,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_program ~tag_hook _prefs (cst, toks) =
+let visit_program ~tag_hook _prefs (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -70,22 +71,17 @@ let visit_program ~tag_hook _prefs (cst, toks) =
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
    *)
-  let ast = 
-     try Ast_js_build.program cst 
-     with Ast_js_build.TodoConstruct _ | Ast_js_build.UnhandledConstruct _ 
-       -> []
-  in
-  let visitor = Visitor_ast_js.mk_visitor { Visitor_ast_js.default_visitor with
-     Visitor_ast_js.ktop = (fun (k, _) t ->
+  let visitor = V.mk_visitor { V.default_visitor with
+     V.ktop = (fun (k, _) t ->
        (match t with
-       | DefStmt {v_name = name; v_kind; v_init; v_resolved = _resolved; _ } ->
+       | DefStmt {v_name = name; v_kind; v_init; _ } ->
            let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
        | _ -> ()
        );
        k t
      );
-     Visitor_ast_js.kprop = (fun (k,_) x ->
+     V.kprop = (fun (k,_) x ->
       (match x with
       | Field {fld_name = PN name; fld_body = Some (Fun _); _} ->
           tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
@@ -95,7 +91,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
       ); 
       k x
       );
-     Visitor_ast_js.kexpr = (fun (k,_) x ->
+     V.kexpr = (fun (k,_) x ->
       (match x with
       | ObjAccess (_, _, PN name) ->
           tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
@@ -104,6 +100,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
          | Eval -> tag ii BadSmell
          | _ -> tag ii Builtin
          )
+(* TODO: use generic AST based highlighter 
       | Id (name, scope) ->
          (match !scope with
          | NotResolved | Global _ -> 
@@ -116,6 +113,7 @@ let visit_program ~tag_hook _prefs (cst, toks) =
       | Apply (Id (_name, {contents = Local | Param}), _) ->
          (* todo: tag_name name PointerCall; *)
          ()
+*)
       | Apply (ObjAccess (_, _, PN name), _) ->
          tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
       | Fun (_, Some name) ->
@@ -123,14 +121,14 @@ let visit_program ~tag_hook _prefs (cst, toks) =
       | _ -> ()
       ); k x
      );
-     Visitor_ast_js.kstmt = (fun (k,_) x ->
+     V.kstmt = (fun (k,_) x ->
       (match x with
       | DefStmt ({v_name = name; _}) ->
           tag_name name (H.Local Def);
       | _ -> ()
       ); k x
      );
-     Visitor_ast_js.kparam = (fun (k, _) x ->
+     V.kparam = (fun (k, _) x ->
        (match x with
        | {p_name = name; _} ->
            tag_name name (H.Parameter Def);

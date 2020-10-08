@@ -1,6 +1,6 @@
 
 (* print utils *)
-val string_of_any : Cst_js.any -> string
+val string_of_any : Ast_js.any -> string
 
 (* Example: load file task
  * if file exists, unmarshal data in the file and return it
