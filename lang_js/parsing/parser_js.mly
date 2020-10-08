@@ -79,10 +79,6 @@ let fix_sgrep_module_item xs =
   | [x] -> Stmt x
   | xs -> Stmts xs
 
-(* TODO: remove once got rid of resolved stuff in ast_js.ml *)
-let mk_Id id =
-  Id (id, ref NotResolved)
-
 let mk_Fun ?(id=None) props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) = 
   let f_attrs = props |> List.map attr in
   Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
@@ -513,17 +509,17 @@ binding_property:
  | binding_id initializeur?
     { match $2 with 
       (* { x } shorthand for { x: x }, like in OCaml *)
-      | None -> mk_Field (PN $1) (Some (mk_Id $1))
+      | None -> mk_Field (PN $1) (Some (Id $1))
       | Some (_, e) -> mk_Field (PN $1) (Some e)
     }
  | property_name ":" binding_element { mk_Field $1 (Some $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id      { FieldSpread ($1, mk_Id $2) }
+ | "..." binding_id      { FieldSpread ($1, Id $2) }
  | "..." binding_pattern { FieldSpread ($1, $2) }
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id         initializeur? { mk_pattern (mk_Id $1) $2 }
+ | binding_id         initializeur? { mk_pattern (Id $1) $2 }
  | binding_pattern    initializeur? { mk_pattern ($1)       $2 }
 
 (* array destructuring *)
@@ -554,7 +550,7 @@ binding_element_list:
 binding_elision_element:
  | binding_element        { $1 }
  (* can appear only at the end of a binding_property_list in ECMA *)
- | "..." binding_id       { special Spread $1 [mk_Id $2] }
+ | "..." binding_id       { special Spread $1 [Id $2] }
  | "..." binding_pattern  { special Spread $1 [$2] }
 
 (*************************************************************************)
@@ -1018,7 +1014,7 @@ try_stmt:
  | T_TRY block catch finally { Try ($1, $2, Some $3, Some $4) }
 
 catch:
- | T_CATCH "(" id ")" block              { BoundCatch ($1, mk_Id $3, $5) }
+ | T_CATCH "(" id ")" block              { BoundCatch ($1, Id $3, $5) }
  (* es2019 *)
  | T_CATCH block                         { UnboundCatch ($1, $2) }
  | T_CATCH "(" binding_pattern ")" block { BoundCatch ($1, ($3), $5) }
@@ -1271,7 +1267,7 @@ property_name_and_value:
  | property_name ":" assignment_expr    { Field (mk_field $1 (Some $3)) }
  | method_definition                    { $1 }
  (* es6: *)
- | id           { Field (mk_field (PN $1) (Some (Id ($1, ref NotResolved)))) }
+ | id           { Field (mk_field (PN $1) (Some (Id ($1)))) }
  (* es6: spread operator: *)
  | "..." assignment_expr                { (FieldSpread ($1, $2)) }
  | "..."                                { (FieldEllipsis $1 ) }

@@ -148,7 +148,7 @@ and v_expr (x: expr) =
   | Num v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
-  | Id (v1, _) -> let v1 = v_name v1 in ()
+  | Id (v1) -> let v1 = v_name v1 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Assign ((v1, v2, v3)) -> 
         let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
@@ -258,12 +258,10 @@ and v_resolved_name _ = ()
 
 
 
-and v_var { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; 
-            v_resolved = v_v_resolved; v_type = vt } =
+and v_var { v_name = v_v_name; v_kind=v_v_kind; v_init = v_v_init; v_type=vt} =
   let arg = v_name v_v_name in
   let arg = v_wrap v_var_kind v_v_kind in 
   let arg = v_option v_expr v_v_init in 
-  let arg = v_ref_do_not_visit v_resolved_name v_v_resolved in
   v_option v_type_ vt;
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()

@@ -82,15 +82,6 @@ and map_bracket:'a. ('a -> 'a) -> 'a bracket -> 'a bracket =
 and map_name v = map_wrap map_of_string v
 and map_ident x = map_name x
   
-and map_qualified_name v = map_of_string v
-  
-and map_resolved_name =
-  function
-  | Local -> Local
-  | Param -> Param
-  | Global v1 -> let v1 = map_qualified_name v1 in Global ((v1))
-  | NotResolved -> NotResolved
-  
 and map_special =
   function
   | Null -> Null
@@ -178,10 +169,9 @@ and map_expr =
   | Num v1 -> let v1 = map_wrap map_of_string v1 in Num ((v1))
   | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
   | Regexp v1 -> let v1 = map_wrap map_of_string v1 in Regexp ((v1))
-  | Id ((v1, v2)) ->
+  | Id ((v1)) ->
       let v1 = map_name v1
-      and v2 = map_of_ref map_resolved_name v2
-      in Id ((v1, v2))
+      in Id ((v1))
   | IdSpecial v1 -> let v1 = map_wrap map_special v1 in IdSpecial ((v1))
   | Assign ((v1, v2, v3)) ->
       let v1 = map_expr v1 and v2 = map_tok v2 and v3 = map_expr v3 in
@@ -317,15 +307,12 @@ and
             v_kind = v_v_kind;
             v_init = v_v_init;
             v_type = vt;
-            v_resolved = v_v_resolved
           } =
-  let v_v_resolved = map_of_ref map_resolved_name v_v_resolved in
   let v_v_init = map_of_option map_expr v_v_init in
   let v_v_kind = map_wrap map_var_kind v_v_kind in
   let vt = map_of_option map_type_ vt in
   let v_v_name = map_name v_v_name in 
-    { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; v_type = vt;
-      v_resolved = v_v_resolved }
+  { v_name = v_v_name; v_kind = v_v_kind; v_init = v_v_init; v_type = vt; }
 
 (* TODO? call Map_AST with local kinfo? meh *)
 and map_type_ x = x
