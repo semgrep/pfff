@@ -171,6 +171,7 @@ and v_xml_attribute v =
   match v with
   | XmlAttr (v1, v2) -> let v1 = v_ident v1 and v2 = v_xml_attr v2 in ()
   | XmlAttrExpr v -> v_bracket v_expr v
+  | XmlEllipsis v -> v_tok v
 
 and
   v_xml { xml_tag = v_xml_tag; xml_attrs = v_xml_attrs; xml_body = vv_xml_body

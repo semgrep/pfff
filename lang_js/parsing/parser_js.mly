@@ -1313,6 +1313,7 @@ xhp_attribute:
  | "{" "..." assignment_expr "}" { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
  (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
  | T_XHP_ATTR                         { XmlAttr ($1, Bool(true,G.fake "true"))}
+ | "..."                              { XmlEllipsis $1 }
 
 xhp_attribute_value:
  | T_STRING           { String $1 }

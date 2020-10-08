@@ -144,6 +144,7 @@ and map_xml_attribute = function
   | XmlAttrExpr v ->
       let v = map_bracket map_expr v in
       XmlAttrExpr v
+  | XmlEllipsis v -> let v = map_tok v in XmlEllipsis v
 
 and map_xml_attr v = map_expr v
 and map_xml_body =

@@ -120,6 +120,9 @@ and vof_xml_attribute = function
   | XmlAttrExpr v1 ->
       let v1 = vof_bracket vof_expr v1 in
       OCaml.VSum ("XmlAttrExpr", [ v1 ])
+  | XmlEllipsis v1 ->
+      let v1 = vof_tok v1 in
+      OCaml.VSum ("XmlEllipsis", [ v1 ])
 
 and vof_xml_attr v = vof_expr v
 

@@ -574,6 +574,8 @@ and expr =
       (* less: XmlAttrNoValue of ident. <foo a /> <=> <foo a=true /> *)
       (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
       | XmlAttrExpr of expr bracket
+      (* sgrep: *)
+      | XmlEllipsis of tok
 (*e: type [[AST_generic.xml_attribute]] *)
 (*s: type [[AST_generic.xml_body]] *)
      and xml_body =
