@@ -229,7 +229,10 @@ and expr =
        | XmlAttr of ident * xml_attr_value
        (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
        | XmlAttrExpr of expr bracket
+       (* sgrep-ext: *)
+       | XmlEllipsis of tok
        and xml_attr_value = expr
+
      and xml_body =
       | XmlText of string wrap
       | XmlExpr of expr

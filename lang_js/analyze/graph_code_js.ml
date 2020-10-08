@@ -593,6 +593,7 @@ and xml env x =
     (* TODO add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field; *)
     expr env xhp_attr
   | XmlAttrExpr (_, e, _) -> expr env e
+  | XmlEllipsis _ -> ()
   );
   x.xml_body |> List.iter (xhp env)
 

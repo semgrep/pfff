@@ -151,6 +151,7 @@ and xml_attribute = function
   | XmlAttrExpr v ->
       let v = bracket expr v in
       G.XmlAttrExpr v
+  | XmlEllipsis v1 -> G.XmlEllipsis v1
 
 and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   let tag = ident xml_tag in
