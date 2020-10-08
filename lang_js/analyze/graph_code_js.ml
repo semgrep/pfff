@@ -44,6 +44,16 @@ open Ast_js
 (* Types *)
 (*****************************************************************************)
 
+(* old: used to be in ast_js.ml *)
+(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
+ * I remove the filename extension for codegraph (which assumes
+ * the dot is a package separator), which is convenient to show 
+ * shorter names when exploring a codebase (and maybe also when hovering
+ * a function in codemap).
+ * This is computed after ast_js_build in graph_code_js.ml
+ *)
+type qualified_name = string
+
 (* for the extract_uses visitor *)
 type env = {
   g: Graph_code.graph;
@@ -73,7 +83,7 @@ type env = {
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
   (* this is for the abstract interpreter *)
-  db: (Ast_js.qualified_name, Ast_js.var) Hashtbl.t;
+  db: (qualified_name, Ast_js.var) Hashtbl.t;
   asts: (Common.filename (* readable *)* Ast_js.program (* resolved*)) list ref;
 
   log: string -> unit;
@@ -251,7 +261,7 @@ let add_use_edge env (name, kind) =
   (* error *)
   | _ -> env.lookup_fail env dst loc
 
-let add_use_edge_candidates env (name, kind) scope =
+let add_use_edge_candidates env (name, kind) (*scope*) =
   let kind = 
     let s = qualified_name env name in
     let dst = (s, kind) in
@@ -267,8 +277,10 @@ let add_use_edge_candidates env (name, kind) scope =
       )
   in
   add_use_edge env (name, kind);
+(* old: I've removed scope info in ast_js, use the generic AST for that
   let s = qualified_name env name in
   scope := Global s;
+*)
   ()
 
 
@@ -311,8 +323,8 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | DefStmt {v_name; v_kind; v_init; v_resolved; v_type = _} ->
-       name_expr env v_name v_kind v_init v_resolved
+  | DefStmt {v_name; v_kind; v_init; v_type = _} ->
+       name_expr env v_name v_kind v_init
   | M x -> module_directive env x
 (*
   | S (tok, st) ->
@@ -370,16 +382,16 @@ and module_directive env x =
 
 and toplevels env xs = List.iter (toplevel env) xs
 
-and name_expr env name v_kind eopt v_resolved =
+and name_expr env name v_kind eopt (*v_resolved*) =
   let kind = kind_of_expr_opt v_kind eopt in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
   if env.phase = Uses 
   then begin 
     option (expr env) eopt;
     let (qualified, _kind) = env.current in
-    v_resolved := Global qualified;
+    (* v_resolved := Global qualified; *)
     Hashtbl.add env.db qualified
-     { v_name = name; v_kind; v_init = eopt; v_resolved; v_type = None; }
+     { v_name = name; v_kind; v_init = eopt; v_type = None; }
   end
 
 (* ---------------------------------------------------------------------- *)
@@ -500,11 +512,11 @@ and expr env e =
   | Ellipsis _ | DeepEllipsis _ -> ()
 
   | Bool _ | Num _ | String _ | Regexp _ -> ()
-  | Id (n, scope) -> 
+  | Id (n(*, scope*)) -> 
     if not (is_local env n)
     then 
      (* the big one! *)
-     add_use_edge_candidates env (n, E.Global) scope;
+     add_use_edge_candidates env (n, E.Global) (*scope*);
 
 
   | IdSpecial _ -> ()
@@ -523,23 +535,23 @@ and expr env e =
       | Some n -> 
         let v = { v_name = n; v_kind = Let, fake "let"; 
                   v_init = None; v_type = None;
-                  v_resolved = ref Local}
+                  (* v_resolved = ref Local *)}
         in
         add_locals env [v]
      in
      class_ env c
   | ObjAccess (e, _, prop) ->
     (match e with
-    | Id (n, scope) when not (is_local env n) -> 
-       add_use_edge_candidates env (n, E.Class) scope
+    | Id (n (*, scope*)) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) (*scope*)
     | _ -> 
       expr env e
     );
     property_name env prop
   | ArrAccess (e1, (_, e2, _)) ->
     (match e1 with
-    | Id (n, scope) when not (is_local env n) -> 
-       add_use_edge_candidates env (n, E.Class) scope
+    | Id (n(*, scope*)) when not (is_local env n) -> 
+       add_use_edge_candidates env (n, E.Class) (*scope*)
     | _ -> 
       expr env e1
     );
@@ -551,15 +563,15 @@ and expr env e =
       | None -> env
       | Some n -> 
         let v = { v_name = n; v_kind = Let, fake "let"; 
-                  v_init = None; v_type = None; v_resolved = ref Local}
+                  v_init = None; v_type = None; (*v_resolved = ref Local*)}
         in
         add_locals env [v]
     in
     fun_ env f
   | Apply (e, (_, es, _)) ->
     (match e with
-    | Id (n, scope) when not (is_local env n) ->
-        add_use_edge_candidates env (n, E.Function) scope
+    | Id (n(*, scope*)) when not (is_local env n) ->
+        add_use_edge_candidates env (n, E.Function) (*scope*)
     | IdSpecial (special, _tok) ->
        (match special, es with
        | New, _ -> (* TODO *) ()

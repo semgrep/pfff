@@ -74,7 +74,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
   let visitor = V.mk_visitor { V.default_visitor with
      V.ktop = (fun (k, _) t ->
        (match t with
-       | DefStmt {v_name = name; v_kind; v_init; v_resolved = _resolved; _ } ->
+       | DefStmt {v_name = name; v_kind; v_init; _ } ->
            let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
        | _ -> ()
@@ -100,6 +100,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
          | Eval -> tag ii BadSmell
          | _ -> tag ii Builtin
          )
+(* TODO: use generic AST based highlighter 
       | Id (name, scope) ->
          (match !scope with
          | NotResolved | Global _ -> 
@@ -112,6 +113,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
       | Apply (Id (_name, {contents = Local | Param}), _) ->
          (* todo: tag_name name PointerCall; *)
          ()
+*)
       | Apply (ObjAccess (_, _, PN name), _) ->
          tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
       | Fun (_, Some name) ->

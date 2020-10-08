@@ -95,29 +95,9 @@ type todo_category = string wrap
 type ident = string wrap
  [@@deriving show]
 
-(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
- * I remove the filename extension for codegraph (which assumes
- * the dot is a package separator), which is convenient to show 
- * shorter names when exploring a codebase (and maybe also when hovering
- * a function in codemap).
- * This is computed after ast_js_build in graph_code_js.ml
+(* old: there used to be 'resolved_name' and 'qualified_name' types, but
+ * the name resolution is now done on the generic AST instead.
  *)
-type qualified_name = string
- [@@deriving show] (* with tarzan *)
-
-(* TODO: use AST_generic.resolved_name at some point, and share the ref! 
- * or just remove it! I already remove ast_js_build which was doing the
- * resolve_js.ml
- *)
-type resolved_name =
-  (* this can be computed by ast_js_build.ml *)
-  | Local
-  | Param
-  (* this is computed in graph_code_js.ml in a "naming" phase *)
-  | Global of qualified_name
-  (* default case *)
-  | NotResolved
- [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type special = 
   (* Special values *)
@@ -190,10 +170,7 @@ and expr =
   | String of string wrap
   | Regexp of string wrap
 
-  (* For Global the ref is set after ast_js_build in a naming phase in 
-   * graph_code_js, hence the use of a ref.
-   *)
-  | Id of ident * resolved_name ref 
+  | Id of ident
   | IdSpecial of special wrap
   (* old: we used to have a Nop, without any token attached, which allowed
    * to simplify a bit the AST by replacing some 'expr option' into simply
@@ -380,7 +357,6 @@ and entity = {
 
   (* typescript-ext: *)
   v_type: type_ option;
-  v_resolved: resolved_name ref;
   (* TODO: put v_tparams here *)
 }
   and var_kind = Var | Let | Const
@@ -532,8 +508,7 @@ and any =
 
 (* TODO: rename mk_def_var *)
 let mk_const_var id e = 
-  { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None;
-    v_resolved = ref NotResolved }
+  { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None; }
 
 let mk_field name body = 
   { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
@@ -555,7 +530,7 @@ let special_of_id_opt s =
   | "arguments"   -> Some Arguments
   | _ -> None
 
-let idexp id = Id (id, ref NotResolved)
+let idexp id = Id (id)
 
 let idexp_or_special id =
   match special_of_id_opt (fst id) with
@@ -574,8 +549,7 @@ and stmt1 xs =
 
 let mk_default_entity_var tok exp = 
   let n = default_entity, tok in
-  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; 
-            v_resolved = ref NotResolved; v_type = None } 
+  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; v_type = None} 
   in
   v, n
 
@@ -592,14 +566,12 @@ let var_pattern_to_var vkind pat tok init_opt =
     | None -> pat
   in
   (* less: use x.vpat_type *)
-  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None;
-    v_resolved = ref NotResolved}
+  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None; }
 
 let build_var kwd (id_or_pat, ty_opt, initopt) = 
   match id_or_pat with
   | Left id ->
-      { v_name = id; v_kind = (kwd); v_init = initopt; v_type = ty_opt;
-        v_resolved = ref NotResolved }
+      { v_name = id; v_kind = (kwd); v_init = initopt; v_type = ty_opt; }
   | Right pat ->
       var_pattern_to_var kwd pat (snd kwd) initopt
 
