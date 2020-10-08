@@ -178,7 +178,7 @@ module PI = Parse_info
 %token <Cst_php.info> T_YIELD T_AWAIT
 %token <Cst_php.info> T_SUPER
 
-(* phpext: for hack and also for sgrep *)
+(* phpext: for hack and also for semgrep *)
 %token <Cst_php.info> T_ELLIPSIS "..."
 
 (* lexing hack to parse lambda params properly *)
@@ -386,7 +386,7 @@ statement:
  | T_DECLARE  "(" listc(declare) ")" declare_statement
      { Declare($1,($2,$3,$4),$5) }
 
- (* sgrep_ext: *)
+ (* semgrep-ext: *)
  | "..." { Flag_parsing.sgrep_guard (ExprStmt (Ellipsis $1, fakeInfo ";")) }
 
 inner_statement:
@@ -496,7 +496,7 @@ static_var:
  | T_VARIABLE                   { (DName $1, None) }
  | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
-unset_variable: expr    { $1 }
+unset_variable: expr_or_dots    { $1 }
 
 use_filename:
  |       T_CONSTANT_ENCAPSED_STRING     { UseDirect $1 }
@@ -966,7 +966,7 @@ variance_opt:
 
 type_php:
  | primary_type_php { $1 }
-(*facebook-ext: classes can define type constants referenced using `::`*)
+ (* facebook-ext: classes can define type constants referenced using `::`*)
  | type_php "::" primary_type_php { HintTypeConst ($1, $2, $3) }
  | T_SHAPE "(" shape_field_list ")" { HintShape ($1, ($2, $3, $4)) }
 
@@ -974,7 +974,7 @@ primary_type_php:
  | class_name { $1 }
  | T_SELF     { Hint (Self $1, None) }
  | T_PARENT   { Hint (Parent $1, None) }
- (* hack extensions *)
+ (* hack-ext: hack extensions *)
  | "?" type_php
      { HintQuestion ($1, $2)  }
  | "(" non_empty_type_php_list ")"
@@ -1167,7 +1167,7 @@ expr:
 
  | T_EVAL "(" expr ")"         { Eval($1,($2,$3,$4)) }
 
- | T_ISSET "(" listc(expr) ")" { Isset($1, ($2, $3, $4)) }
+ | T_ISSET "(" listc(expr_or_dots) ")" { Isset($1, ($2, $3, $4)) }
 
  | T_LIST "(" assignment_list ")" TEQ expr
      { AssignList($1,($2,$3,$4),$5,$6) }
@@ -1289,13 +1289,17 @@ array_pair:
 
 arguments: "(" function_call_argument_list ")" { ($1, $2, $3) }
 
+(* less: I would like that in primary_expr but it leads to many conflicts. *)
+(* semgrep-ext: *)
+expr_or_dots:
+ | expr  { $1 }
+ | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
+
 function_call_argument:
- | expr             { (Arg ($1)) }
+ | expr_or_dots             { (Arg ($1)) }
  | TAND expr        { (ArgRef($1, $2)) }
  | "..." expr       { (ArgUnpack($1, $2)) }
 
- (* sgrep_ext: *)
- | "..." { Flag_parsing.sgrep_guard (Arg (Ellipsis $1)) }
 
 (*----------------------------*)
 (* encaps *)
@@ -1382,7 +1386,7 @@ xhp_attribute_value:
  (* ugly: one cannot use T_IDENT here, because the lexer is still in
     * XHP mode which means every ident is transformed in a xhp attribute
     *)
- (* sgrep_ext: *)
+ (* semgrep-ext: *)
  | T_XHP_ATTR { Flag_parsing.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 (*----------------------------*)
