@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-module V = Visitor_ast_js
+module V = Visitor_js
 module M = Map_ast_js
 
 

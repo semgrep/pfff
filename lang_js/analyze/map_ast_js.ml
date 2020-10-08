@@ -436,14 +436,10 @@ and map_module_directive =
       and v2 = map_of_option map_name v2
       and v3 = map_filename v3
       in Import ((t, v1, v2, v3))
-  | ImportCss ((t, v1)) ->
+  | ImportFile ((t, v1)) ->
       let t = map_tok t in
       let v1 = map_name v1
-      in ImportCss ((t, v1))
-  | ImportEffect ((v0, v1)) ->
-      let v0 = map_tok v0 in
-      let v1 = map_name v1
-      in ImportEffect ((v0, v1))
+      in ImportFile ((t, v1))
   | ModuleAlias ((t, v1, v2)) ->
       let t = map_tok t in
       let v1 = map_name v1
@@ -461,8 +457,7 @@ and map_any =
   | Stmt v1 -> let v1 = map_stmt v1 in Stmt ((v1))
   | Pattern v1 -> let v1 = map_pattern v1 in Pattern v1
   | Type v1 -> let v1 = map_type_ v1 in Type v1
-  | Items v1 -> let v1 = map_of_list map_toplevel v1 in Items ((v1))
-  | Item v1 -> let v1 = map_toplevel v1 in Item ((v1))
+  | Stmts v1 -> let v1 = map_of_list map_stmt v1 in Stmts ((v1))
   | Program v1 -> let v1 = map_program v1 in Program ((v1))
   
 

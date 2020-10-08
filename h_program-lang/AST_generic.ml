@@ -1373,7 +1373,6 @@ and directive =
   and other_directive_operator = 
   (* Javascript *)
   | OI_Export | OI_ReExportNamespace
-  | OI_ImportCss | OI_ImportEffect (* less: not used anymore *)
 (*e: type [[AST_generic.other_directive_operator]] *)
   (* C/PHP *)
   (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)

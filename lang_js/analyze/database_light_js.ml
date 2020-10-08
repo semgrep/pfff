@@ -15,7 +15,7 @@
 
 open Common
 
-module Ast = Cst_js
+module Ast = Ast_js
 module E = Entity_code
 module HC = Highlight_code
 module T = Parser_js
@@ -134,7 +134,8 @@ let compute_database ?(verbose=false) files_or_dirs =
     let ast = astopt ||| [] in
 
     let hcomplete_name_of_info = 
-      Class_pre_es6.extract_complete_name_of_info ast 
+       failwith "Class_pre_es6 in TODO_more"
+      (* Class_pre_es6.extract_complete_name_of_info ast  *)
     in
 
     let prefs = Highlight_code.default_highlighter_preferences in

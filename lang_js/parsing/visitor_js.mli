@@ -1,10 +1,13 @@
-open Cst_js
+open Ast_js
 
 (* the hooks *)
 type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
-  kprop: (property -> unit) * visitor_out -> property -> unit;
+  ktop: (toplevel  -> unit) * visitor_out -> toplevel  -> unit;
+  kprop: (property  -> unit) * visitor_out -> property  -> unit;
+  kparam: (parameter_classic  -> unit) * visitor_out -> parameter_classic  -> unit;
+
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit

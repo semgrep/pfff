@@ -19,7 +19,7 @@ let unittest =
         try
           let _ = Parse_js.parse_program file in
           ()
-        with Parse_info.Parsing_error _ ->
+        with Parse_info.Parsing_error _ | Common.Todo ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
@@ -35,7 +35,7 @@ let unittest =
         try
           let _ = Parse_js.parse_program file in
           ()
-        with Parse_info.Parsing_error _ ->
+        with Parse_info.Parsing_error _  | Common.Todo ->
           assert_failure (spf "it should correctly parse %s" file)
       )
     );

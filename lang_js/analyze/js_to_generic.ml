@@ -535,13 +535,10 @@ and module_directive x =
   | ModuleAlias ((t, v1, v2)) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
-  | ImportCss ((_t, v1)) ->
-      let v1 = name v1 in
-      G.OtherDirective (G.OI_ImportCss, [G.I v1])
   (* sgrep: we used to convert this in an OI_ImportEffect, but
    * we now want import "foo" to be used to match any form of import
    *)
-  | ImportEffect ((t, v1)) ->
+  | ImportFile ((t, v1)) ->
       let v1 = name v1 in
       (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
       G.ImportAs (t, G.FileName v1, None)
@@ -554,8 +551,7 @@ and any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
-  | Item v1 -> let v1 = toplevel v1 in G.S v1
-  | Items v1 -> let v1 = List.map toplevel v1 in G.Ss v1
+  | Stmts v1 -> let v1 = List.map stmt v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | Pattern v1 -> let v1 = pattern v1 in G.P v1
   | Type v1 -> let v1 = type_ v1 in G.T v1
