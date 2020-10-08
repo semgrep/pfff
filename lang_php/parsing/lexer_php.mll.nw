@@ -919,7 +919,7 @@ and st_one_line_comment = parse
 <<symbol rules>>=
   | '+' { TPLUS(tokinfo lexbuf) }      | '-' { TMINUS(tokinfo lexbuf) }
   | '*' { TMUL(tokinfo lexbuf) }       | '/' { TDIV(tokinfo lexbuf) }
-  | '%' { TMOD(tokinfo lexbuf) }
+  | '%' { TMOD(tokinfo lexbuf) }       | "**" { TPOW(tokinfo lexbuf) }
 
   | "++" { T_INC(tokinfo lexbuf) }   | "--" { T_DEC(tokinfo lexbuf) }
 

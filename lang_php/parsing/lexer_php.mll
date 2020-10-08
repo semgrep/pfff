@@ -483,7 +483,7 @@ rule st_in_scripting = parse
   (* ----------------------------------------------------------------------- *)
     | '+' { TPLUS(tokinfo lexbuf) }      | '-' { TMINUS(tokinfo lexbuf) }
     | '*' { TMUL(tokinfo lexbuf) }       | '/' { TDIV(tokinfo lexbuf) }
-    | '%' { TMOD(tokinfo lexbuf) }
+    | '%' { TMOD(tokinfo lexbuf) }       | "**" { TPOW(tokinfo lexbuf) }
 
     | "++" { T_INC(tokinfo lexbuf) }   | "--" { T_DEC(tokinfo lexbuf) }
 

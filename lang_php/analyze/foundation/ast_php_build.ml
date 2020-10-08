@@ -467,6 +467,7 @@ and arith_op = function
   | Mul -> G.Mult
   | Div  -> G.Div  
   | Mod-> G.Mod
+  | Pow -> G.Pow
   | DecLeft -> G.LSL
   | DecRight-> G.LSR
   | And -> G.BitAnd 

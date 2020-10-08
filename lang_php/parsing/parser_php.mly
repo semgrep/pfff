@@ -139,7 +139,7 @@ module PI = Parse_info
  (* pad: was declared as left/right, without a token decl in orig gram *)
  TCOLON ":" TCOMMA "," TDOT "." TBANG TTILDE TQUESTION "?"
  TOBRA "["
- TPLUS TMINUS TMUL TDIV TMOD
+ TPLUS TMINUS TMUL TDIV TMOD TPOW
  TAND TOR TXOR
  TEQ
  (* now also used for types/generics, as in vector<int> *)
@@ -1066,6 +1066,7 @@ expr:
  | expr TMUL expr   { Binary($1,(Arith Mul,$2),$3) }
  | expr TDIV expr   { Binary($1,(Arith Div,$2),$3) }
  | expr TMOD expr   { Binary($1,(Arith Mod,$2),$3) }
+ | expr TPOW expr   { Binary($1,(Arith Pow,$2),$3) }
 
  | expr T_XHP_PERCENTID_DEF     { H.failwith_xhp_ambiguity_percent (snd $2) }
 

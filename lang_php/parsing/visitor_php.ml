@@ -462,6 +462,7 @@ and v_arithOp =
   | Mul -> ()
   | Div -> ()
   | Mod -> ()
+  | Pow -> ()
   | DecLeft -> ()
   | DecRight -> ()
   | And -> ()
