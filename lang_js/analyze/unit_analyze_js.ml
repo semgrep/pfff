@@ -1,5 +1,3 @@
-open Common
-
 (* module E = Entity_code *)
 
 open OUnit
@@ -68,26 +66,5 @@ function foo() {}
        else assert_failure "it should generate the write vi tags file"
      ));
 *)
-
- "AST js building regression files" >:: (fun () ->
-      let dir = Config_pfff.tests_path "js/parsing" in
-      let files = 
-        Common2.glob (spf "%s/*.js" dir) @
-(*
-        Common2.glob (spf "%s/jsx/*.js" dir) @
-        Common2.glob (spf "%s/typescript/*.js" dir) @
-*)
-        []
-      in
-      files |> List.iter (fun file ->
-        try
-          Parse_js.parse_program file |> ignore
-        with 
-        | Parse_info.Parsing_error _
-        | Parse_info.Lexical_error (_, _)
-        | Common.Impossible
-        -> assert_failure (spf "it should correctly parse %s" file)
-      )
-    );
 ]
 

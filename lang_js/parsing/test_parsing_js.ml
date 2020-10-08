@@ -49,6 +49,13 @@ let test_parse_common xs fullxs ext  =
       Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
         Parse_js.parse ~timeout:5 file
 
+      (* to have a better comparison with semgrep -lang js -test_parse_lang: *)
+      (* let _gen = Js_to_generic.program ast in *)
+      (* note that there's still Naming_AST.resolve and
+       * Constant_propafation.propagate done with -test_parse_lang.
+       * You may also want to remove the timeout and save_excursion above.
+       *)
+
       )) 
      ) with Stack_overflow as exn ->
        pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
