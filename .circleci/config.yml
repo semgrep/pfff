@@ -3,7 +3,7 @@ jobs:
 
   build:
     docker:
-      - image: returntocorp/sgrep-build:2.1
+      - image: returntocorp/ocaml:ubuntu
     steps:
       - checkout
       - run:
