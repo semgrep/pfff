@@ -258,7 +258,7 @@ module PI = Parse_info
 %left      T_SL T_SR
 %left      TPLUS TMINUS TDOT
 %left      TMUL TDIV TMOD
-
+%right     TPOW
 
 %right     TBANG
 %nonassoc  T_INSTANCEOF
