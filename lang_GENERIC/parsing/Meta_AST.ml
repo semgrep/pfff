@@ -336,6 +336,7 @@ and vof_arithmetic_operator =
   | RegexpMatch -> OCaml.VSum (("RegexpMatch", []))
   | NotMatch -> OCaml.VSum (("NotMatch", []))
   | Concat -> OCaml.VSum (("Concat", []))
+  | Append -> OCaml.VSum (("Append", []))
   | Plus -> OCaml.VSum (("Plus", []))
   | Minus -> OCaml.VSum (("Minus", []))
   | Mult -> OCaml.VSum (("Mult", []))

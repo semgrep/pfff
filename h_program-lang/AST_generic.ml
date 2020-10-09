@@ -513,7 +513,7 @@ and expr =
       | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
       | Cmp (* <=>, PHP *)
       (* todo: not really an arithmetic operator, maybe rename the type *)
-      | Concat (* '.' PHP *)
+      | Concat (* '.' PHP *) | Append (* x[] = ... in PHP, just in AssignOp *)
       | RegexpMatch (* =~, Ruby (and Perl) *) 
       | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
       | Range (* .. or ..., Ruby *)
@@ -1669,7 +1669,7 @@ let is_boolean_operator = function
  | Eq     | NotEq     
  | PhysEq | NotPhysEq 
  | Lt | LtE | Gt | GtE 
- | Cmp | Concat
+ | Cmp | Concat | Append
  | RegexpMatch | NotMatch
    -> true
 (*e: function [[AST_generic.is_boolean_operator]] *)

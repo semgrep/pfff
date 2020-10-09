@@ -23,7 +23,7 @@ module G = AST_generic
 (*****************************************************************************)
 (* Ast_php to AST_generic.
  *
- * See ast_generic.ml for more information.
+ * See AST_generic.ml for more information.
  *)
 
 (*****************************************************************************)
@@ -243,9 +243,9 @@ and expr =
   | Array_get ((v1, (t1, Some v2, t2))) ->
       let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, (t1, v2, t2))
-  | Array_get ((v1, (_, None, _))) ->
-      let _v1 = expr v1 in
-      raise Todo
+  | Array_get ((_v1, (t1, None, _))) ->
+      raise (Parse_info.Ast_builder_error 
+             ("should be handled in Assign caller", t1))
   | Obj_get ((v1, t, Id [v2])) -> 
       let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.FId v2)
@@ -261,6 +261,12 @@ and expr =
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(G.Instanceof, t), 
          fb([v1;v2] |> List.map G.expr_to_arg))
+  (* v[] = 1 --> v <append>= 1 *)
+  | Assign ((Array_get(v1, (_, None, _)), t, v3)) ->
+      let v1 = expr v1
+      and v3 = expr v3
+      in 
+      G.AssignOp (v1, (G.Append, t), v3)
   | Assign ((v1, t, v3)) ->
       let v1 = expr v1
       and v3 = expr v3
