@@ -36,6 +36,7 @@ let list     = List.map
 let bool   = id
 let string = id
 
+(* raise AST_generic.Error *)
 let error = AST_generic.error
 let fake  = AST_generic.fake
 let fb = AST_generic.fake_bracket
@@ -244,8 +245,7 @@ and expr =
       let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, (t1, v2, t2))
   | Array_get ((_v1, (t1, None, _))) ->
-      raise (Parse_info.Ast_builder_error 
-             ("should be handled in Assign caller", t1))
+      error t1 "$var[] should be handled in Assign caller"
   | Obj_get ((v1, t, Id [v2])) -> 
       let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.FId v2)
@@ -405,16 +405,21 @@ and hint_type =
              match v1 with
              | G.L (G.String (s, t)) -> 
                 G.basic_field (s,t) None (Some v2)
-             | _ -> error tok "HintShape with non-string keys not supported"
+             | _ -> 
+                G.FieldStmt (G.OtherStmt (G.OS_Todo, 
+                     [G.TodoK ("HintShape with non-string keys not supported",
+                        tok)]))
           )
           v1
       in 
       G.TyRecordAnon (tok, (t1, v1, t2))
 
   | HintTypeConst (_, tok,_) -> 
-    error tok "HintTypeConst not supported, facebook-ext"
+      G.OtherType (G.OT_Todo, 
+         [G.TodoK ("HintTypeConst not supported, facebook-ext", tok)])
   | HintVariadic (tok, _) -> 
-    error tok "HintVariadic not supported"
+      G.OtherType (G.OT_Todo, 
+         [G.TodoK ("HintVariadic not supported", tok)])
 
 and class_name v = hint_type v
 
