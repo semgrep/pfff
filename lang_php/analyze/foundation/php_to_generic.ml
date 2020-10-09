@@ -336,9 +336,13 @@ and expr =
       (match v1 with
       | { f_kind = (AnonLambda, t); f_ref = false; m_modifiers = [];
           f_name = _ignored;
-          l_uses = []; f_attrs = [];
+          l_uses = l_uses; f_attrs = [];
           f_params = ps; f_return_type = rett;
           f_body = body } ->
+            let _lusesTODO =
+              list (fun (v1, v2) -> let _v1 = bool v1 and _v2 = var v2 in ())
+              l_uses in
+
             let body = G.stmt1 (list stmt body) in
             let ps = parameters ps in
             let rett = option hint_type rett in
