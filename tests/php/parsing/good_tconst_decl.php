@@ -8,7 +8,8 @@ abstract class A {
   ) {}
 
   public function overriding(): Aint::vec {
-    return Vector {};
+    //return Vector {};
+    return array();
   }
 
   public function getID(): this::abs_class_by_class {
@@ -34,7 +35,8 @@ class Aint extends A {
   }
 
   public function overriding(): ImmVector<int> {
-    return ImmVector {};
+    //return ImmVector {};
+    return array();
   }
 }
 

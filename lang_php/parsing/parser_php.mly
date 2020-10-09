@@ -541,6 +541,7 @@ function_body:
  | "{" inner_statement* "}"     { ($1, $2, $3)  }
  | ";" { (* ugly: *) (fakeInfo"", [], $1) }
 
+%inline
 async_opt:
  | (*empty*) { [] }
  | T_ASYNC { [Async,($1)] }
@@ -1181,8 +1182,10 @@ simple_expr:
  (* TODO: 1 s/r conflict, can not be in primary_expr otherwise
   * $this->fld{...} is not parsed correctly
   *)
+(* commented for now; it's a facebook-hack extension anyway
  | qualified_class_name "{" array_pair_list "}"
      { Collection ($1, ($2, $3, $4)) }
+*)
 
 new_expr:
  | member_expr { $1 }
