@@ -341,7 +341,7 @@ and expr =
         | BinaryConcat (* . *) 
         | CombinedComparison
          and arithOp   =
-           | Plus | Minus | Mul | Div | Mod
+           | Plus | Minus | Mul | Div | Mod | Pow
            | DecLeft | DecRight
            | And | Or | Xor
 

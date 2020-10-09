@@ -154,6 +154,7 @@ let info_of_tok = function
   | TMUL ii -> ii
   | TDIV ii -> ii
   | TMOD ii -> ii
+  | TPOW ii -> ii
   | TAND ii -> ii
   | TOR ii -> ii
   | TEQ ii -> ii
@@ -356,6 +357,7 @@ let visitor_info_of_tok f = function
   | TOBRA ii -> TOBRA(f ii)
   | TPLUS ii -> TPLUS(f ii)
   | TMINUS ii -> TMINUS(f ii)
+  | TPOW ii -> TPOW(f ii)
   | TMUL ii -> TMUL(f ii)
   | TDIV ii -> TDIV(f ii)
   | TMOD ii -> TMOD(f ii)

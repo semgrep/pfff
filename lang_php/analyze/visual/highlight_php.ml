@@ -688,7 +688,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.T_MINUS_EQUAL ii  | T.T_PLUS_EQUAL ii
     | T.TGREATER ii   | T.TSMALLER ii
     | T.TEQ ii | T.TXOR ii | T.TOR ii | T.TAND ii
-    | T.TMOD ii | T.TDIV ii | T.TMUL ii | T.TMINUS ii | T.TPLUS ii
+    | T.TMOD ii | T.TDIV ii | T.TMUL ii | T.TMINUS ii | T.TPLUS ii | T.TPOW ii
       -> tag ii Operator
 
     | T.TQUESTION ii  | T.TTILDE ii  | T.TBANG ii  | T.TDOT ii

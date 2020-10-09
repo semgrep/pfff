@@ -567,7 +567,7 @@ and logic expressions inherited from C:
  and binaryOp    = Arith of arithOp | Logical of logicalOp 
    <<php concat operator>>
        and arithOp   = 
-         | Plus | Minus | Mul | Div | Mod
+         | Plus | Minus | Mul | Div | Mod | Exp
          | DecLeft | DecRight 
          | And | Or | Xor
 

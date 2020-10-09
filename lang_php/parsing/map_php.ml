@@ -385,6 +385,7 @@ and map_arithOp =
   | Mul -> Mul
   | Div -> Div
   | Mod -> Mod
+  | Pow -> Pow
   | DecLeft -> DecLeft
   | DecRight -> DecRight
   | And -> And
