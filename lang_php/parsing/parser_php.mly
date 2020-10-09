@@ -544,6 +544,7 @@ function_body:
 async_opt:
  | (*empty*) { [] }
  | T_ASYNC { [Async,($1)] }
+ | T_STATIC { [Static,($1)] }
 
 parameter_list:
  | (*empty*)                     { [] }
