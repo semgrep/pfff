@@ -397,6 +397,10 @@ and v_any =
   | Pattern v1 -> v_pattern v1
   | Type v1 -> v_type_ v1
   | Program v1 -> let v1 = v_program v1 in ()
+  | Partial v1 -> v_partial v1
+
+and v_partial = function
+  | PartialDef def -> v_def def
 
 and v_program v = v_list v_toplevel v
 

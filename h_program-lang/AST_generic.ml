@@ -1723,4 +1723,5 @@ let sc = Parse_info.fake_info ";"
 let exprstmt e = ExprStmt (e, sc)
 let fieldEllipsis t = FieldStmt (exprstmt (Ellipsis t))
 let empty_fbody = Block (fake_bracket [])
+let empty_cbody = fake_bracket []
 (*e: pfff/h_program-lang/AST_generic.ml *)

@@ -571,6 +571,9 @@ and v_def_as_partial ent defkind =
   | FuncDef def ->
      let partial_def = { def with fbody = empty_fbody } in
      v_partial ~recurse:false (PartialDef (ent, FuncDef partial_def))
+  | ClassDef def ->
+     let partial_def = { def with cbody = empty_cbody } in
+     v_partial ~recurse:false (PartialDef (ent, ClassDef partial_def))
   | _ -> ()
 
 (* The recurse argument is subtle. It is needed because we

@@ -530,6 +530,11 @@ and module_directive x =
 
 and program v = list toplevel v
 
+and partial = function
+  | PartialDef v1 -> 
+      let v1 = definition v1 in
+      G.PartialDef v1
+
 and any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
@@ -538,3 +543,6 @@ and any =
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | Pattern v1 -> let v1 = pattern v1 in G.P v1
   | Type v1 -> let v1 = type_ v1 in G.T v1
+  | Partial v1 -> 
+      let v1 = partial v1 in 
+      G.Partial v1
