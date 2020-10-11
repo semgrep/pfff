@@ -1075,7 +1075,11 @@ and definition = entity * definition_kind
      * local.
      *)
     | UseOuterDecl of tok (* 'global' or 'nonlocal' in Python, 'use' in PHP *)
+
+    | OtherDef of other_def_operator * any list
     (*e: [[AST_generic.definition_kind]] other cases *)
+
+ and other_def_operator = OD_Todo
 (*e: type [[AST_generic.definition_kind]] *)
 
 (* template/generics/polymorphic-type *)

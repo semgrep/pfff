@@ -624,6 +624,11 @@ and v_def_kind =
   | MacroDef v1 -> let v1 = v_macro_definition v1 in ()
   | Signature v1 -> let v1 = v_type_ v1 in ()
   | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
+  | OtherDef (v1, v2) -> 
+      v_other_def_operator v1;
+      v_list v_any v2
+
+and v_other_def_operator _ = ()
 
 and v_function_kind = function
  | Function | Method | Arrow | LambdaKind -> ()
