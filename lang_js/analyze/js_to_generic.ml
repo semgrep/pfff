@@ -244,7 +244,7 @@ and stmt x =
       let v2 = list any v2 in
       G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
   | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-  | DefStmt v1 -> let v1 = def_of_var v1 in G.DefStmt (v1)
+  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If ((t, v1, v2, v3)) ->
@@ -317,7 +317,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left {v_name = id; v_init = _NONE; _ } -> 
+        | Left ({name = id}, {v_init = _NONE; _ }) -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -328,7 +328,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left {v_name = id; v_init = _NONE; _ } -> 
+        | Left ({name = id}, {v_init = _NONE; _ }) -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -349,29 +349,31 @@ and case =
 (* already an AST_generic.type_, no conversion needed *)
 and type_ x = x 
 
-and def_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_type = ty } =
-  let v1 = name x_name in
-  let v2 = var_kind x_kind in 
-  let ent = G.basic_entity v1 [v2] in
-  let ty = option type_ ty in
-  (match x_init, fst x_kind with
-  (* ugly: ast_js.ml does not currently have a separate FuncDef and
-   * VarDef so we abuse the x_kind to differentiate them.
-   *)
-  | Some (Fun (v3, _nTODO)), Const   -> 
-      let def, more_attrs = fun_ v3 in
-      { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
-  | Some (Class (v3, _nTODO)), Const -> 
-      let def, more_attrs = class_ v3 in
-      { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
-  | _ -> 
-       let v3 = option expr x_init in 
-       ent, G.VarDef { G.vinit = v3; G.vtype = ty }
-   )
+and definition (ent, def) = 
+  let v1 = name ent.name in
+  match def with
+  | VarDef { v_kind = x_kind; v_init = x_init; v_type = ty}->
+    let v2 = var_kind x_kind in 
+    let ent = G.basic_entity v1 [v2] in
+    let ty = option type_ ty in
+    let v3 = option expr x_init in 
+    ent, G.VarDef { G.vinit = v3; G.vtype = ty }
+  | FuncDef def ->
+    let (def, more_attrs) = fun_ def in
+    let ent = G.basic_entity v1 [] in
+    { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
+  | ClassDef def ->
+    let (def, more_attrs) = class_ def in
+    let ent = G.basic_entity v1 [] in
+    { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
+  | DefTodo (v1, v2) ->
+      let ent = G.basic_entity v1 [] in
+      let v2 = list any v2 in
+      ent, G.OtherDef (G.OD_Todo, (G.TodoK v1)::(v2))
 
-and var_of_var { v_name = x_name; v_kind = x_kind; 
-                 v_init = x_init; v_type } =
+    
+
+and var_of_var ({ name = x_name},{ v_kind = x_kind; v_init = x_init; v_type })=
   let v1 = name x_name in
   let v2 = var_kind x_kind in 
   let ent = G.basic_entity v1 [v2] in

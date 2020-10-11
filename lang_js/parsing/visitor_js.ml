@@ -157,12 +157,12 @@ and v_expr (x: expr) =
   | Obj v1 -> let v1 = v_obj_ v1 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
-  | Class (v1, v2) -> let v1 = v_class_ v1 in let v2 = v_option v_name v2 in ()
+  | Class (v1, v2) -> let v1 = v_class_definition v1 in let v2 = v_option v_name v2 in ()
   | ObjAccess ((v1, t, v2)) ->
       let v1 = v_expr v1 and v2 = v_property_name v2 in
       let t = v_tok t in
       ()
-  | Fun ((v1, v2)) -> let v1 = v_fun_ v1 and v2 = v_option v_name v2 in ()
+  | Fun ((v1, v2)) -> let v1 = v_function_definition v1 and v2 = v_option v_name v2 in ()
   | Apply ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket (v_list v_expr) v2 in ()
   | Arr ((v1)) -> let v1 = v_bracket (v_list v_expr) v1 in ()
   | Conditional ((v1, v2, v3)) ->
@@ -175,7 +175,7 @@ and v_stmt x =
   let k x = match x with
   | StmtTodo (v1, v2) -> v_todo_category v1; v_list v_any v2
   | M v1 -> let v1 = v_module_directive v1 in ()
-  | DefStmt v1 -> let v1 = v_var v1 in ()
+  | DefStmt v1 -> let v1 = v_def v1 in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | ExprStmt (v1, t) -> let v1 = v_expr v1 in let t= v_tok t in ()
   | If ((t, v1, v2, v3)) ->
@@ -257,17 +257,33 @@ and v_case =
 
 and v_resolved_name _ = ()
 
+and v_def (ent, defkind) =
+  v_entity ent;
+  v_definition_kind defkind
+
+and v_entity { name; } =
+  v_ident name
+
+and v_definition_kind = function
+  | FuncDef def -> v_function_definition def
+  | ClassDef def -> v_class_definition def
+  | VarDef def -> v_variable_definition def
+  | DefTodo (v1, v2) -> v_todo_category v1; v_list v_any v2
 
 
-and v_var { v_name = v_v_name; v_kind=v_v_kind; v_init = v_v_init; v_type=vt} =
-  let arg = v_name v_v_name in
+and v_var (ent, def) = 
+  v_entity ent;
+  v_variable_definition def
+
+
+and v_variable_definition { v_kind=v_v_kind; v_init = v_v_init; v_type=vt} =
   let arg = v_wrap v_var_kind v_v_kind in 
   let arg = v_option v_expr v_v_init in 
   v_option v_type_ vt;
   ()
 and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
-and v_fun_ { f_attrs = v_f_props; f_params = v_f_params; 
+and v_function_definition { f_attrs = v_f_props; f_params = v_f_params; 
              f_body = v_f_body; f_rettype } =
   let arg = v_list v_attribute v_f_props in
   let arg = v_list v_parameter_binding v_f_params in 
@@ -316,7 +332,7 @@ and v_parent = function
  | Common.Right t -> v_type_ t
 
 and v_obj_ v = v_bracket (v_list v_property) v
-and v_class_ { c_extends = v_c_extends; c_body = v_c_body; 
+and v_class_definition { c_extends = v_c_extends; c_body = v_c_body; 
                c_kind; c_attrs; c_implements } =
   let arg = v_wrap v_class_kind c_kind in
   let arg = v_list v_parent v_c_extends in

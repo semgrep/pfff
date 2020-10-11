@@ -348,34 +348,35 @@ and attribute =
 (* Definitions *)
 (*****************************************************************************)
 
-and definition = entity_
-(* TODO: type definition = entity * definition_kind
- * TODO: separate VarDef and FuncDef. Do not abuse VarDef for regular
- * function definitions.
- *)
-(* TODO: put type parameters, attributes in entity
- *)
-
-and entity_ = { 
+(* similar to what we do in AST_generic *)
+and definition = entity * definition_kind
+  and entity = {
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
    * actually in a ForIn/ForOf the init will be just the pattern, not even
    * an Assign.
    *)
-  v_name: ident;
+    name: ident;
+   (* TODO: put type parameters, attributes in entity *)
+  }
 
-  (* move in VarDef? *)
+  and definition_kind = 
+  | FuncDef of function_definition
+  | VarDef of variable_definition
+  | ClassDef of class_definition
+
+  | DefTodo of todo_category * any list
+
+and variable_definition = { 
   v_kind: var_kind wrap;
   (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
-
   (* typescript-ext: *)
   v_type: type_ option;
-  (* TODO: put v_tparams here *)
 }
   and var_kind = Var | Let | Const
 
-and var = entity_
+and var = entity * variable_definition
 
 and function_definition = {
   (* TODO: f_kind: Ast_generic.function_kind wrap *)
@@ -520,10 +521,6 @@ and any =
 (*****************************************************************************)
 (* TODO: move in separate file? ast_js_parsing_helper.ml? *)
 
-(* TODO: rename mk_def_var *)
-let mk_const_var id e = 
-  { v_name = id; v_kind = Const, (snd id); v_init = Some e; v_type = None; }
-
 let mk_field name body = 
   { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
 
@@ -561,11 +558,14 @@ and stmt1 xs =
   | [x] -> x
   | xs -> Block (AST_generic.fake_bracket xs)
 
-let mk_default_entity_var tok exp = 
+let mk_default_entity_def tok exp = 
   let n = default_entity, tok in
-  let v = { v_name = n; v_kind = Const, tok; v_init = Some exp; v_type = None} 
+  (* TODO: look at exp and transform in FuncDef/ClassDef? *)
+  let def = { name = n }, 
+             VarDef { v_kind = Const, tok; v_init = Some exp; v_type = None}
   in
-  v, n
+  def, n
+
 
 let attr x = KeywordAttr x
 
@@ -580,16 +580,25 @@ let var_pattern_to_var vkind pat tok init_opt =
     | None -> pat
   in
   (* less: use x.vpat_type *)
-  {v_name = id; v_kind = vkind; v_init = Some init; v_type = None; }
+  { name = id}, {v_kind = vkind; v_init = Some init; v_type = None; }
 
 let build_var kwd (id_or_pat, ty_opt, initopt) = 
   match id_or_pat with
   | Left id ->
-      { v_name = id; v_kind = (kwd); v_init = initopt; v_type = ty_opt; }
+      { name = id}, { v_kind = (kwd); v_init = initopt; v_type =ty_opt;}
   | Right pat ->
       var_pattern_to_var kwd pat (snd kwd) initopt
 
 let build_vars kwd vars = vars |> List.map (build_var kwd)
+
+let vars_to_defs xs =
+  xs |> List.map (fun (ent, v) -> (ent, VarDef v))
+let vars_to_stmts xs =
+  xs |> vars_to_defs |> List.map (fun x -> DefStmt x)
+
+let mk_const_var id e = 
+  { name = id }, 
+  VarDef { v_kind = Const, (snd id); v_init = Some e; v_type = None; }
 
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
