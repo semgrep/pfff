@@ -247,7 +247,7 @@ and expr =
 (*****************************************************************************)
 and stmt = 
   (* covers VarDecl, method definitions, class defs, etc *)
-  | DefStmt of entity
+  | DefStmt of definition
 
   | Block of stmt list bracket
   | ExprStmt of expr * tok (* can be fake when ASI *)
@@ -348,6 +348,7 @@ and attribute =
 (* Definitions *)
 (*****************************************************************************)
 
+and definition = entity_
 (* TODO: type definition = entity * definition_kind
  * TODO: separate VarDef and FuncDef. Do not abuse VarDef for regular
  * function definitions.
@@ -355,7 +356,7 @@ and attribute =
 (* TODO: put type parameters, attributes in entity
  *)
 
-and entity = { 
+and entity_ = { 
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
    * actually in a ForIn/ForOf the init will be just the pattern, not even
@@ -374,7 +375,7 @@ and entity = {
 }
   and var_kind = Var | Let | Const
 
-and var = entity
+and var = entity_
 
 and function_definition = {
   (* TODO: f_kind: Ast_generic.function_kind wrap *)

@@ -294,7 +294,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 
 (* just for better type error *)
 %type <Ast_js.stmt list> stmt item module_item
-%type <Ast_js.entity list> decl
+%type <Ast_js.definition list> decl
 %type <Parse_info.t> sc
 %type <Ast_js.expr> element binding_elision_element binding_element
 %type <Ast_js.property list> class_element
