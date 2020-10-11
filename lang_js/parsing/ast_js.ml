@@ -18,7 +18,8 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (* An Abstract Syntax Tree for Javascript and (partially) Typescript.
- * (for a Concrete Syntax Tree see old/cst_js_ml or ocaml-tree-sitter-lang).
+ * (for a Concrete Syntax Tree see old/cst_js_ml or 
+ *  ocaml-tree-sitter-lang:javascript/lib/CST.ml).
  * 
  * This file contains a simplified Javascript AST. The original
  * Javascript syntax tree (cst_js.ml) was good for code refactoring or
@@ -41,13 +42,13 @@ open Common
  *  - old: no Period vs Bracket (actually good to differentiate)
  *  - old: no Object vs Array (actually good to differentiate)
  *  - old: no type (actually need that back for semgrep-typescript)
- *  - no func vs method vs arrow, just fun_
+ *  - no func vs method vs arrow, just a single function_definition type
  *  - no class elements vs object elements
  *  - No Nop (EmptyStmt); transformed in an empty Block,
  *  - optional pattern transpilation in transpile_js.ml
  *    (see Ast_js_build.transpile_pattern)
  *  - optional JSX transpilation
- *    (se Ast_js_build.transpile_xml)
+ *    (see Ast_js_build.transpile_xml)
  *  - no ForOf (see transpile_js.ml)
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
@@ -101,7 +102,7 @@ type ident = string wrap
 
 type special = 
   (* Special values *)
-  | Null | Undefined (* builtin not in grammar *)
+  | Null | Undefined (* builtins not in the grammar *)
 
   (* Special vars *)
   | This | Super
@@ -114,7 +115,7 @@ type special =
 
   (* Special apply *)
   | New | NewTarget
-  | Eval (* builtin not in grammar *)
+  | Eval (* builtin not in the grammar *)
   | Seq 
   (* a kind of cast operator: 
    * See https://stackoverflow.com/questions/7452341/what-does-void-0-mean
@@ -179,7 +180,7 @@ and expr =
    * not exist.
    *)
 
-  (* should be a statement ... lhs can be a pattern *)
+  (* should be a statement ... *)
   | Assign of pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
@@ -187,6 +188,8 @@ and expr =
   (* we could transform it in an Obj but it can be useful to remember 
    * the difference in further analysis (e.g., in the abstract interpreter).
    * This can also contain "holes" when the array is used in lhs of an assign
+   * called "elision" which currently are skipped
+   * TODO: have an (expr, elision) Common.either list bracket here.
    *)
   | Arr of expr list bracket
   (* ident is None when assigned in module.exports  *)
@@ -210,6 +213,7 @@ and expr =
   | Cast of expr * tok (* ':' *) * type_
   | TypeAssert of expr * tok (* 'as' or '<' *) * type_ (* X as T or <T> X *)
 
+  (* this is used mostly for unsupported typescript features *)
   | ExprTodo of todo_category * expr list
 
   (* sgrep-ext: *)
@@ -247,7 +251,7 @@ and stmt =
 
   | Block of stmt list bracket
   | ExprStmt of expr * tok (* can be fake when ASI *)
-  (* todo? EmptyStmt of tok *)
+  (* old: EmptyStmt of tok now transformed as an Block [] *)
 
   | If of tok * expr * stmt * stmt option
   | Do of tok * stmt * expr | While of tok * expr * stmt
@@ -261,14 +265,18 @@ and stmt =
  
   | Throw of tok * expr
   | Try of tok * stmt * catch option * (tok * stmt) option
+  (* javascript special features, not in other imperative languages *)
   | With of tok * expr * stmt
 
   (* ES6 modules can appear only at the toplevel,
    * but CommonJS require() can be inside ifs 
-   * and tree-sitter-javascript accepts directives there too.
+   * and tree-sitter-javascript accepts directives there too, so we allow
+   * them at the stmt level too.
+   * update: now toplevel = stmt, so definitely stmt-level material.
    *)
   | M of module_directive
 
+  (* again, mostly used for unsupported typescript features *)
   | StmtTodo of todo_category * any list
 
   (* less: could use some Special instead? *)
@@ -291,13 +299,15 @@ and stmt =
 
   and catch =
    | BoundCatch of tok * pattern * stmt
-   (* js-ext: es2019 *)
+   (* js-ext: es2019, catch {...} *)
    | UnboundCatch of tok * stmt
 
 (*****************************************************************************)
 (* Pattern (destructuring binding) *)
 (*****************************************************************************)
-(* reuse Obj, Arr, etc.
+(* 'pattern' used to be a different type than 'expr' in cst_js.ml with
+ * restrictions on what can be a pattern. But to simplify we now 
+ * reuse Obj, Arr, etc and so 'expr' to represent a pattern,
  * transpiled: to regular assignments when Ast_js_build.transpile_pattern.
  * sgrep: this is useful for sgrep to keep the ability to match over
  * JS destructuring patterns.
@@ -474,7 +484,7 @@ and module_directive =
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-(* this used to be a special type with only var, stmt, or module_directive
+(* This used to be a special type with only var, stmt, or module_directive
  * but tree-sitter allows module directives at stmt level, and anyway
  * we don't enforce those constraints on the generic AST so simpler to
  * move those at the stmt level.
