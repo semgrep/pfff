@@ -505,6 +505,11 @@ and program = toplevel list
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+
+and partial = 
+ (* the stmt will be empty in f_body and c_body *)
+ | PartialDef of definition
+
 (* this is now mutually recursive with the previous types because of StmtTodo*)
 and any = 
   | Expr of expr
@@ -513,6 +518,7 @@ and any =
   | Pattern of pattern
   | Type of type_
   | Program of program
+  | Partial of partial
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
 
