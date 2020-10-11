@@ -837,6 +837,13 @@ and vof_definition_kind =
       let v1 = vof_type_ v1 in OCaml.VSum (("Signature", [ v1 ]))
   | UseOuterDecl v1 ->
       let v1 = vof_tok v1 in OCaml.VSum (("UseOuterDecl", [ v1 ]))
+  | OtherDef (v1, v2) ->
+      let v1 = vof_other_def_operator v1 in
+      let v2 = OCaml.vof_list vof_any v2 in
+      OCaml.VSum ("OtherDef", [v1; v2])
+
+and vof_other_def_operator = function
+  | OD_Todo -> OCaml.VSum ("OD_Todo", [])
 
 and vof_module_definition { mbody = v_mbody } =
   let bnds = [] in

@@ -605,6 +605,12 @@ and map_definition_kind =
   | MacroDef v1 -> let v1 = map_macro_definition v1 in MacroDef ((v1))
   | Signature v1 -> let v1 = map_type_ v1 in Signature ((v1))
   | UseOuterDecl v1 -> let v1 = map_tok v1 in UseOuterDecl ((v1))
+  | OtherDef (v1, v2) -> 
+      let v1 = map_other_def_operator v1 in 
+      let v2 = map_of_list map_any v2 in
+      OtherDef (v1, v2)
+
+and map_other_def_operator x = x
 
 and map_module_definition { mbody = v_mbody } =
   let v_mbody = map_module_definition_kind v_mbody in 

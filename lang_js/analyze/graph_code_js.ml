@@ -170,13 +170,13 @@ let is_local env n =
   List.mem s env.locals || Hashtbl.mem env.vars s
 
 let add_locals env vs = 
-  let locals = vs |> Common.map_filter (fun v ->
-    let s = s_of_n v.v_name in
-    match fst v.v_kind with
-    | Let | Const -> Some s
-    | Var ->
+  let locals = vs |> Common.map_filter (fun (ent, def) ->
+    let s = s_of_n ent.name in
+    match def with
+    | VarDef { v_kind = (Var, _); _} ->
         Hashtbl.replace env.vars s true;
         None
+    | _ -> Some s
      ) in
   { env with locals = locals @ env.locals } 
 
@@ -310,8 +310,8 @@ let rec extract_defs_uses env ast =
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
-    | DefStmt v ->
-      let str = s_of_n v.v_name in
+    | DefStmt (ent, _def) ->
+      let str = s_of_n ent.name in
       Hashtbl.replace env.imports str 
         (mk_qualified_name env.file_readable str);
  (*    | M _ | S _ -> () *)
@@ -323,8 +323,9 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | DefStmt {v_name; v_kind; v_init; v_type = _} ->
-       name_expr env v_name v_kind v_init
+  | DefStmt ({name}, VarDef { v_kind; v_init; v_type = _}) ->
+       name_expr env name v_kind v_init
+  (* TODO: other DefStmt now that have separate FuncDef and ClassDef *)
   | M x -> module_directive env x
 (*
   | S (tok, st) ->
@@ -391,7 +392,7 @@ and name_expr env name v_kind eopt (*v_resolved*) =
     let (qualified, _kind) = env.current in
     (* v_resolved := Global qualified; *)
     Hashtbl.add env.db qualified
-     { v_name = name; v_kind; v_init = eopt; v_type = None; }
+     ({ name } ,{ v_kind; v_init = eopt; v_type = None; })
   end
 
 (* ---------------------------------------------------------------------- *)
@@ -400,7 +401,11 @@ and name_expr env name v_kind eopt (*v_resolved*) =
 and stmt env = function
  | DefStmt v ->
     let env = add_locals env [v] in
-    option (expr env) v.v_init
+    (match snd v with
+    | VarDef { v_init; _ } ->
+            option (expr env) v_init
+    | _ -> raise Todo
+    )
  | M m -> module_directive env m
  | Block (_, xs, _) -> stmts env xs
  | ExprStmt (e, _) -> expr env e
@@ -452,8 +457,8 @@ and for_header env = function
      match e1 with
      | Left vars ->
        (* less: need fold_with_env? *)
-       vars |> List.iter (fun v -> stmt env (DefStmt v));
-       add_locals env vars
+       vars |> vars_to_stmts |> List.iter (stmt env);
+       add_locals env (vars_to_defs vars)
      | Right e ->
        expr env e;
        env
@@ -466,8 +471,8 @@ and for_header env = function
      match e1 with
      | Left var ->
        (* less: need fold_with_env? *)
-       [var] |> List.iter (fun v -> stmt env (DefStmt v));
-       add_locals env [var]
+       [var] |> vars_to_stmts |> List.iter (stmt env);
+       add_locals env ([var] |> vars_to_defs)
      | Right e ->
        expr env e;
        env
@@ -533,9 +538,9 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let, fake "let"; 
-                  v_init = None; v_type = None;
-                  (* v_resolved = ref Local *)}
+        let v = { name = n }, VarDef { v_kind = Let, fake "let"; 
+                                       v_init = None; v_type = None;
+                                      (* v_resolved = ref Local *)}
         in
         add_locals env [v]
      in
@@ -562,8 +567,9 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { v_name = n; v_kind = Let, fake "let"; 
-                  v_init = None; v_type = None; (*v_resolved = ref Local*)}
+        let v = { name = n }, VarDef {v_kind = Let, fake "let"; 
+                                      v_init = None; v_type = None; 
+                                      (*v_resolved = ref Local*)}
         in
         add_locals env [v]
     in

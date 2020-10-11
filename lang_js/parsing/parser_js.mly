@@ -71,9 +71,9 @@ let fix_sgrep_module_item xs =
   * function decl (because 'function_decl' accepts id_opt, see its comment).
   * This is why we intercept this case by returning instead an Expr pattern.
   *)
-  | [DefStmt ({v_name = (s, _); v_init = Some ((Fun _) as e); _})] 
+  | [DefStmt ({name = (s, _);}, FuncDef def)]
     when s = anon_semgrep_lambda ->
-      Expr e
+      Expr (Fun (def, None))
   (* less: could check that sc is an ASI *)
   | [ExprStmt (e, _sc)] -> Expr e
   | [x] -> Stmt x
@@ -83,10 +83,18 @@ let mk_Fun ?(id=None) props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
   let f_attrs = props |> List.map attr in
   Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
 
+let mk_FuncDef props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) = 
+  let f_attrs = props |> List.map attr in
+  FuncDef { f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }
+
 let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
   let c_attrs = props |> List.map attr in
   Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body}, 
          idopt)
+
+let mk_ClassDef ?(props=[]) tok _generics (c_extends, c_implements) c_body =
+  let c_attrs = props |> List.map attr in
+  ClassDef ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body})
 
 let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
   let fld_attrs = props |> List.map attr in
@@ -95,14 +103,15 @@ let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
 let add_modifiers _propsTODO fld = 
   fld
 
-let mk_def (idopt, e) =
+let mk_def (idopt, defkind) =
   (* TODO: fun default_opt -> ... *)
   let name = 
     match idopt with
     | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, G.fake "")
     | Some id -> id
   in
-  mk_const_var name e
+  { name }, defkind
+
  
 let mk_Super tok =
   IdSpecial (Super, tok)
@@ -294,7 +303,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 
 (* just for better type error *)
 %type <Ast_js.stmt list> stmt item module_item
-%type <Ast_js.entity list> decl
+%type <Ast_js.definition list> decl
 %type <Parse_info.t> sc
 %type <Ast_js.expr> element binding_elision_element binding_element
 %type <Ast_js.property list> class_element
@@ -347,7 +356,7 @@ decl:
  | async_decl     { [mk_def $1] }
 
  (* es6: *)
- | lexical_decl   { $1 }
+ | lexical_decl   { vars_to_defs $1 }
  | class_decl     { [mk_def $1] }
 
  (* typescript-ext: TODO *)
@@ -429,10 +438,13 @@ module_specifier: string_literal { $1 }
 (* TODO *)
 export_decl:
  | T_EXPORT export_names       { [] (* $1, $2 *) }
- | T_EXPORT variable_stmt { $2 |> List.map (fun x -> DefStmt x) (*$1, ExportDecl (St $2)*) }
- | T_EXPORT decl        { $2 |> List.map (fun v -> DefStmt v) (*$1, ExportDecl $2*) }
+ | T_EXPORT variable_stmt 
+    { vars_to_stmts $2 (*$1, ExportDecl (St $2)*) }
+ | T_EXPORT decl        
+    { $2 |> List.map (fun v -> DefStmt v) (*$1, ExportDecl $2*) }
  (* in theory just func/gen/class, no lexical_decl *)
- | T_EXPORT T_DEFAULT decl { $3 |> List.map (fun v -> DefStmt v) (* $1, ExportDefaultDecl ($2, $3) *) }
+ | T_EXPORT T_DEFAULT decl 
+    { $3 |> List.map (fun v -> DefStmt v) (* $1, ExportDefaultDecl ($2, $3) *) }
  | T_EXPORT T_DEFAULT assignment_expr_no_stmt sc 
     { [] (* $1, ExportDefaultExpr ($2, $3, $4) *)  }
  (* ugly hack because should use assignment_expr above instead*)
@@ -562,7 +574,7 @@ binding_elision_element:
  *  T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
 function_decl: T_FUNCTION id? call_signature "{" function_body "}"
-   { $2, mk_Fun [] $3 ($4, $5, $6) }
+   { $2, mk_FuncDef [] $3 ($4, $5, $6) }
 
 (* the id is really optional here *)
 function_expr: T_FUNCTION id? call_signature  "{" function_body "}"
@@ -621,7 +633,7 @@ formal_parameter:
 (* generators *)
 (*----------------------------*)
 generator_decl: T_FUNCTION "*" id call_signature "{" function_body "}"
-   { Some $3, mk_Fun [Generator, $2] $4 ($5, $6, $7) }
+   { Some $3, mk_FuncDef [Generator, $2] $4 ($5, $6, $7) }
 
 (* the id really is optional here *)
 generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
@@ -631,7 +643,7 @@ generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
 (* asynchronous functions *)
 (*----------------------------*)
 async_decl: T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
-   { Some $3, mk_Fun [Async, $1] $4 ($5, $6, $7) }
+   { Some $3, mk_FuncDef [Async, $1] $4 ($5, $6, $7) }
 
 (* the id is really optional here *)
 async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
@@ -647,7 +659,7 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
  * TODO: actually in tree-sitter-js, it's a binding_id without '?'
  *)
 class_decl: T_CLASS binding_id? generics? class_heritage class_body
-   { $2, mk_Class $1 $2 $3 $4 $5 }
+   { $2, mk_ClassDef $1 $3 $4 $5 }
 
 (* TODO: use class_element* then? and List.flatten that? *)
 class_body: "{" optl(class_element+) "}" { ($1, List.flatten $2, $3) }
@@ -934,7 +946,7 @@ type_or_expr:
 
 stmt:
  | block           { [$1] }
- | variable_stmt   { $1 |> List.map (fun x -> DefStmt x) }
+ | variable_stmt   { vars_to_stmts $1 }
  | empty_stmt      { [$1] }
  | expr_stmt       { [$1] }
  | if_stmt         { [$1] }
