@@ -860,13 +860,18 @@ object_type: "{" optl(type_member+) "}"  { ($1, [](*TODO*), $3) }
 (* partial type annotations are not supported *)
 type_member: 
  | property_name_typescript complex_annotation sc_or_comma
-    {  }
+    { { fld_name = $1; fld_attrs = []; fld_type = Some $2; fld_body = None } }
  | property_name_typescript "?" complex_annotation sc_or_comma
-    {  }
+    { { fld_name = $1; fld_attrs = [attr (Optional, $2)]; fld_type = Some $3;
+        fld_body = None } }
  | "[" T_ID ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
-    {   }
+    { let fld_name = PN ("IndexMethod??TODO?", $1) in
+      { fld_name; fld_attrs = []; fld_type = Some $6; fld_body = None}
+    }
  | "[" T_ID ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
-    {  }
+    { let fld_name = PN ("IndexMethod??TODO?", $1) in
+      { fld_name; fld_attrs = []; fld_type = Some $6; fld_body = None}
+    }
 
 (* no [xxx] here *)
 property_name_typescript:
