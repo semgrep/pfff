@@ -362,7 +362,7 @@ decl:
  (* typescript-ext: TODO *)
  | interface_decl { [] }
  | type_alias_decl { [] }
- | enum_decl       { [] }
+ | enum_decl       { [mk_def $1] }
 
 (* less: could restrict to literals and collections *)
 json: expr EOF { $1 }
@@ -756,7 +756,8 @@ interface_extends: T_EXTENDS listc(type_reference) {  }
 (* typescript-ext: *)
 type_alias_decl: T_TYPE id "=" type_ sc { }
 
-enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}" { $7 }
+enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}" 
+  { Some $3, DefTodo (("enum", $2), [Stmt (Block ($4, [], $7))]) }
 
 enum_member:
  | property_name { }
