@@ -1,4 +1,4 @@
-export default class extends Component {
+class extends Component {
   users = [
     { id: 1, name: '1' },
     { id: 2, name: '2' },
@@ -16,4 +16,3 @@ export default class extends Component {
     this.props.onReady();
   }
 };
-

@@ -792,7 +792,7 @@ complex_annotation:
 (* can't use 'type'; generate syntax error in parser_js.ml *)
 type_:
  | primary_or_union_type { $1 }
- | "?" type_         { raise Todo }
+ | "?" type_             { G.TyQuestion ($2, $1) }
  | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
    { raise Todo }
 
@@ -806,17 +806,19 @@ primary_or_intersect_type:
 
 (* I introduced those intermediate rules to remove ambiguities *)
 primary_type:
- | primary_type2 { $1 }
- | primary_type "[" "]" { raise Todo }
+ | primary_type2        { $1 }
+ | primary_type "[" "]" { G.TyArray (($2, None, $3), $1) }
 
 primary_type2:
  | predefined_type      { G.TyName (G.name_of_id $1) }
  (* TODO: could be TyApply if snd $1 is a Some *)
  | type_reference       { G.TyName(G.name_of_ids $1) }
- | object_type          { $1 }
- | "[" listc(type_) "]" { raise Todo }
+ | object_type          { G.TyRecordAnon (G.fake "", $1) }
+ | "[" listc(type_) "]" { G.TyTuple (($1, $2, $3)) }
  (* not in Typescript grammar *)
- | T_STRING              { raise Todo }
+ | T_STRING
+     { G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1); 
+                                G.E (G.L (G.String $1))]) }
 
 predefined_type:
  | T_ANY_TYPE      { "any", $1 }
@@ -841,23 +843,25 @@ module_name:
  | T_ID { [$1] }
  | module_name "." T_ID { $1 @ [$3] } 
 
-union_type:     primary_or_union_type     T_BIT_OR primary_type { raise Todo }
+union_type: primary_or_union_type T_BIT_OR primary_type 
+    { G.TyOr ($1, $2, $3) }
 
-intersect_type: primary_or_intersect_type T_BIT_AND primary_type { raise Todo }
+intersect_type: primary_or_intersect_type T_BIT_AND primary_type 
+    { G.TyAnd ($1, $2, $3) }
 
 
-object_type: "{" optl(type_member+) "}"  { raise Todo } 
+object_type: "{" optl(type_member+) "}"  { ($1, [](*TODO*), $3) } 
 
 (* partial type annotations are not supported *)
 type_member: 
  | property_name_typescript complex_annotation sc_or_comma
-    { raise Todo }
+    {  }
  | property_name_typescript "?" complex_annotation sc_or_comma
-    { raise Todo }
+    {  }
  | "[" T_ID ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
-    { raise Todo  }
+    {   }
  | "[" T_ID ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
-    { raise Todo }
+    {  }
 
 (* no [xxx] here *)
 property_name_typescript:
