@@ -660,8 +660,8 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
 (*************************************************************************)
 
 (* ugly: c_name is None only when part of an 'export default' decl 
- * TODO: use other tech to enforce this? extra rule after
- * T_EXPORT T_DEFAULT? but then many ambiguities.
+ * less: use other tech to enforce this? extra rule after
+ *  T_EXPORT T_DEFAULT? but then many ambiguities.
  * TODO: actually in tree-sitter-js, it's a binding_id without '?'
  *)
 class_decl: T_CLASS binding_id? generics? class_heritage class_body
@@ -818,7 +818,9 @@ primary_type2:
  | predefined_type      { G.TyName (G.name_of_id $1) }
  (* TODO: could be TyApply if snd $1 is a Some *)
  | type_reference       { G.TyName(G.name_of_ids $1) }
- | object_type          { G.TyRecordAnon (G.fake "", $1) }
+ | object_type          
+    { let (t1, _xsTODO, t2) = $1 in
+      G.TyRecordAnon (G.fake "", (t1, [], t2)) }
  | "[" listc(type_) "]" { G.TyTuple (($1, $2, $3)) }
  (* not in Typescript grammar *)
  | T_STRING
@@ -855,7 +857,8 @@ intersect_type: primary_or_intersect_type T_BIT_AND primary_type
     { G.TyAnd ($1, $2, $3) }
 
 
-object_type: "{" optl(type_member+) "}"  { ($1, [](*TODO*), $3) } 
+object_type: "{" optl(type_member+) "}"  
+    { ($1, $2, $3) } 
 
 (* partial type annotations are not supported *)
 type_member: 
