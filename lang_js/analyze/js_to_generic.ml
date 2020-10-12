@@ -482,9 +482,10 @@ and property x =
         (match v3 with
         | Some (Fun (def, None)) ->
            let (def, more_attrs) = fun_ def in
+           let (_kind, tok) = def.G.fkind in
            G.FieldStmt (G.DefStmt
              ({ ent with G.attrs = ent.G.attrs @ more_attrs },
-              G.FuncDef def))
+              G.FuncDef { def with G.fkind = G.Method, tok} ))
         | _ ->
           let v3 = option expr v3 in
           G.FieldStmt (G.DefStmt 
