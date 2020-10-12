@@ -519,6 +519,7 @@ and any =
   | Type of type_
   | Program of program
   | Partial of partial
+  | Tk of tok
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
 

@@ -546,3 +546,4 @@ and any =
   | Partial v1 -> 
       let v1 = partial v1 in 
       G.Partial v1
+  | Tk v1 -> G.Tk v1
