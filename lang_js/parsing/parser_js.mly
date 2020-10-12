@@ -329,8 +329,7 @@ optl(X):
 
 main: program EOF { $1 }
 
-(* TODO: use module_item* ? *)
-program: optl(module_item+) { List.flatten $1 }
+program: module_item* { List.flatten $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
@@ -667,8 +666,7 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
 class_decl: T_CLASS binding_id? generics? class_heritage class_body
    { $2, mk_ClassDef $1 $3 $4 $5 }
 
-(* TODO: use class_element* then? and List.flatten that? *)
-class_body: "{" optl(class_element+) "}" { ($1, List.flatten $2, $3) }
+class_body: "{" class_element* "}" { ($1, List.flatten $2, $3) }
 
 class_heritage: extends_clause? optl(implements_clause)
   { Common.opt_to_list $1, $2 }
@@ -857,7 +855,7 @@ intersect_type: primary_or_intersect_type T_BIT_AND primary_type
     { G.TyAnd ($1, $2, $3) }
 
 
-object_type: "{" optl(type_member+) "}"  
+object_type: "{" type_member* "}"  
     { ($1, $2, $3) } 
 
 (* partial type annotations are not supported *)
@@ -1062,11 +1060,10 @@ finally: T_FINALLY block { $1, $2 }
 (* auxillary stmts *)
 (*----------------------------*)
 
-(* TODO: use clase_clause* ? *)
 case_block:
- | "{" optl(case_clause+) "}"
+ | "{" case_clause* "}"
      { ($2) }
- | "{" optl(case_clause+) default_clause optl(case_clause+) "}"
+ | "{" case_clause* default_clause case_clause* "}"
      { ($2 @ [$3] @ $4) }
 
 case_clause: T_CASE expr ":" optl(stmt_list)  { Case ($1, $2, stmt1 $4) }
@@ -1361,7 +1358,7 @@ xhp_attribute_value:
 (* interpolated strings *)
 (*----------------------------*)
 (* templated string (a.k.a interpolated strings) *)
-template_literal: T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { ($1, $2, $3) }
+template_literal: T_BACKQUOTE encaps* T_BACKQUOTE  { ($1, $2, $3) }
 
 encaps:
  | T_ENCAPSED_STRING        { String $1 }
