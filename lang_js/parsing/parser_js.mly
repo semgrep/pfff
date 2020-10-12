@@ -359,8 +359,8 @@ decl:
  | lexical_decl   { vars_to_defs $1 }
  | class_decl     { [mk_def $1] }
 
- (* typescript-ext: TODO *)
- | interface_decl { [] }
+ (* typescript-ext: *)
+ | interface_decl  { [mk_def $1] }
  | type_alias_decl { [mk_def $1] }
  | enum_decl       { [mk_def $1] }
 
@@ -745,10 +745,15 @@ method_definition:
  * Why? because [] can follow an interface_decl? 
  *)
 
-interface_decl: T_INTERFACE binding_id generics? interface_extends? object_type
-   { }
+interface_decl: T_INTERFACE binding_id generics? optl(interface_extends)
+  object_type
+   { let (t1, _xsTODO, t2) = $5 in
+      Some $2, ClassDef { c_kind = G.Interface, $1; 
+      c_extends = $4; c_implements = []; c_attrs = [];
+      c_body = (t1, [] (* TODO *), t2) } }
 
-interface_extends: T_EXTENDS listc(type_reference) {  }
+interface_extends: T_EXTENDS listc(type_reference) 
+  { $2 |> List.map (fun ids -> Right (G.TyName(G.name_of_ids ids))) }
 
 (*************************************************************************)
 (* Type declaration *)
@@ -794,7 +799,7 @@ type_:
  | primary_or_union_type { $1 }
  | "?" type_             { G.TyQuestion ($2, $1) }
  | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
-   { raise Todo }
+   { $5 (* TODO *) }
 
 primary_or_union_type:
  | primary_or_intersect_type { $1 }
@@ -872,21 +877,21 @@ property_name_typescript:
 
 
 param_type_list:
- | param_type "," param_type_list { $1::$3 }
+ | param_type "," param_type_list     { $1::$3 }
  | param_type                         { [$1] }
  | optional_param_type_list           { $1 }
 
 (* partial type annotations are not supported *)
-param_type: id complex_annotation { raise Todo }
+param_type: id complex_annotation { () (* TODO *) }
 
-optional_param_type: id "?" complex_annotation { raise Todo }
+optional_param_type: id "?" complex_annotation { () }
 
 optional_param_type_list:
  | optional_param_type "," optional_param_type_list { $1::$3 }
  | optional_param_type       { [$1] }
  | rest_param_type           { [$1] }
 
-rest_param_type: "..." id complex_annotation { raise Todo }
+rest_param_type: "..." id complex_annotation { () (* TODO *) }
 
 (*----------------------------*)
 (* Type parameters (type variables) *)
