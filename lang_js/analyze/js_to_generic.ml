@@ -475,16 +475,24 @@ and property x =
       let v1 = property_name v1
       and v2 = list attribute v2
       and vt = vt
-      and v3 = option expr v3
       in 
       (match v1 with
       | Left n ->
         let ent = G.basic_entity n v2 in
-       (* todo: could be a Lambda in which case we should return a FuncDef? *)
-        G.FieldStmt (G.DefStmt 
+        (match v3 with
+        | Some (Fun (def, None)) ->
+           let (def, more_attrs) = fun_ def in
+           G.FieldStmt (G.DefStmt
+             ({ ent with G.attrs = ent.G.attrs @ more_attrs },
+              G.FuncDef def))
+        | _ ->
+          let v3 = option expr v3 in
+          G.FieldStmt (G.DefStmt 
                 ((ent, G.FieldDef { G.vinit = v3; vtype = vt })))
+         )
 
       | Right e -> 
+        let v3 = option expr v3 in
         (match v3 with
          | None -> raise Impossible
          | Some x -> G.FieldDynamic (e, v2, x)
