@@ -750,7 +750,7 @@ interface_decl: T_INTERFACE binding_id generics? optl(interface_extends)
    { let (t1, _xsTODO, t2) = $5 in
       Some $2, ClassDef { c_kind = G.Interface, $1; 
       c_extends = $4; c_implements = []; c_attrs = [];
-      c_body = (t1, [] (* TODO *), t2) } }
+      c_body = (t1, [], t2) } }
 
 interface_extends: T_EXTENDS listc(type_reference) 
   { $2 |> List.map (fun ids -> Right (G.TyName(G.name_of_ids ids))) }
