@@ -329,8 +329,7 @@ optl(X):
 
 main: program EOF { $1 }
 
-(* TODO: use module_item* ? *)
-program: optl(module_item+) { List.flatten $1 }
+program: module_item* { List.flatten $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
@@ -359,8 +358,8 @@ decl:
  | lexical_decl   { vars_to_defs $1 }
  | class_decl     { [mk_def $1] }
 
- (* typescript-ext: TODO *)
- | interface_decl { [] }
+ (* typescript-ext: *)
+ | interface_decl  { [mk_def $1] }
  | type_alias_decl { [mk_def $1] }
  | enum_decl       { [mk_def $1] }
 
@@ -660,15 +659,14 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
 (*************************************************************************)
 
 (* ugly: c_name is None only when part of an 'export default' decl 
- * TODO: use other tech to enforce this? extra rule after
- * T_EXPORT T_DEFAULT? but then many ambiguities.
+ * less: use other tech to enforce this? extra rule after
+ *  T_EXPORT T_DEFAULT? but then many ambiguities.
  * TODO: actually in tree-sitter-js, it's a binding_id without '?'
  *)
 class_decl: T_CLASS binding_id? generics? class_heritage class_body
    { $2, mk_ClassDef $1 $3 $4 $5 }
 
-(* TODO: use class_element* then? and List.flatten that? *)
-class_body: "{" optl(class_element+) "}" { ($1, List.flatten $2, $3) }
+class_body: "{" class_element* "}" { ($1, List.flatten $2, $3) }
 
 class_heritage: extends_clause? optl(implements_clause)
   { Common.opt_to_list $1, $2 }
@@ -745,10 +743,15 @@ method_definition:
  * Why? because [] can follow an interface_decl? 
  *)
 
-interface_decl: T_INTERFACE binding_id generics? interface_extends? object_type
-   { }
+interface_decl: T_INTERFACE binding_id generics? optl(interface_extends)
+  object_type
+   { let (t1, _xsTODO, t2) = $5 in
+      Some $2, ClassDef { c_kind = G.Interface, $1; 
+      c_extends = $4; c_implements = []; c_attrs = [];
+      c_body = (t1, [], t2) } }
 
-interface_extends: T_EXTENDS listc(type_reference) {  }
+interface_extends: T_EXTENDS listc(type_reference) 
+  { $2 |> List.map (fun ids -> Right (G.TyName(G.name_of_ids ids))) }
 
 (*************************************************************************)
 (* Type declaration *)
@@ -792,9 +795,9 @@ complex_annotation:
 (* can't use 'type'; generate syntax error in parser_js.ml *)
 type_:
  | primary_or_union_type { $1 }
- | "?" type_         { raise Todo }
+ | "?" type_             { G.TyQuestion ($2, $1) }
  | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
-   { raise Todo }
+   { $5 (* TODO *) }
 
 primary_or_union_type:
  | primary_or_intersect_type { $1 }
@@ -806,17 +809,21 @@ primary_or_intersect_type:
 
 (* I introduced those intermediate rules to remove ambiguities *)
 primary_type:
- | primary_type2 { $1 }
- | primary_type "[" "]" { raise Todo }
+ | primary_type2        { $1 }
+ | primary_type "[" "]" { G.TyArray (($2, None, $3), $1) }
 
 primary_type2:
  | predefined_type      { G.TyName (G.name_of_id $1) }
  (* TODO: could be TyApply if snd $1 is a Some *)
  | type_reference       { G.TyName(G.name_of_ids $1) }
- | object_type          { $1 }
- | "[" listc(type_) "]" { raise Todo }
+ | object_type          
+    { let (t1, _xsTODO, t2) = $1 in
+      G.TyRecordAnon (G.fake "", (t1, [], t2)) }
+ | "[" listc(type_) "]" { G.TyTuple (($1, $2, $3)) }
  (* not in Typescript grammar *)
- | T_STRING              { raise Todo }
+ | T_STRING
+     { G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1); 
+                                G.E (G.L (G.String $1))]) }
 
 predefined_type:
  | T_ANY_TYPE      { "any", $1 }
@@ -841,23 +848,31 @@ module_name:
  | T_ID { [$1] }
  | module_name "." T_ID { $1 @ [$3] } 
 
-union_type:     primary_or_union_type     T_BIT_OR primary_type { raise Todo }
+union_type: primary_or_union_type T_BIT_OR primary_type 
+    { G.TyOr ($1, $2, $3) }
 
-intersect_type: primary_or_intersect_type T_BIT_AND primary_type { raise Todo }
+intersect_type: primary_or_intersect_type T_BIT_AND primary_type 
+    { G.TyAnd ($1, $2, $3) }
 
 
-object_type: "{" optl(type_member+) "}"  { raise Todo } 
+object_type: "{" type_member* "}"  
+    { ($1, $2, $3) } 
 
 (* partial type annotations are not supported *)
 type_member: 
  | property_name_typescript complex_annotation sc_or_comma
-    { raise Todo }
+    { { fld_name = $1; fld_attrs = []; fld_type = Some $2; fld_body = None } }
  | property_name_typescript "?" complex_annotation sc_or_comma
-    { raise Todo }
+    { { fld_name = $1; fld_attrs = [attr (Optional, $2)]; fld_type = Some $3;
+        fld_body = None } }
  | "[" T_ID ":" T_STRING_TYPE "]" complex_annotation sc_or_comma
-    { raise Todo  }
+    { let fld_name = PN ("IndexMethod??TODO?", $1) in
+      { fld_name; fld_attrs = []; fld_type = Some $6; fld_body = None}
+    }
  | "[" T_ID ":" T_NUMBER_TYPE "]" complex_annotation sc_or_comma
-    { raise Todo }
+    { let fld_name = PN ("IndexMethod??TODO?", $1) in
+      { fld_name; fld_attrs = []; fld_type = Some $6; fld_body = None}
+    }
 
 (* no [xxx] here *)
 property_name_typescript:
@@ -868,21 +883,21 @@ property_name_typescript:
 
 
 param_type_list:
- | param_type "," param_type_list { $1::$3 }
+ | param_type "," param_type_list     { $1::$3 }
  | param_type                         { [$1] }
  | optional_param_type_list           { $1 }
 
 (* partial type annotations are not supported *)
-param_type: id complex_annotation { raise Todo }
+param_type: id complex_annotation { () (* TODO *) }
 
-optional_param_type: id "?" complex_annotation { raise Todo }
+optional_param_type: id "?" complex_annotation { () }
 
 optional_param_type_list:
  | optional_param_type "," optional_param_type_list { $1::$3 }
  | optional_param_type       { [$1] }
  | rest_param_type           { [$1] }
 
-rest_param_type: "..." id complex_annotation { raise Todo }
+rest_param_type: "..." id complex_annotation { () (* TODO *) }
 
 (*----------------------------*)
 (* Type parameters (type variables) *)
@@ -1045,11 +1060,10 @@ finally: T_FINALLY block { $1, $2 }
 (* auxillary stmts *)
 (*----------------------------*)
 
-(* TODO: use clase_clause* ? *)
 case_block:
- | "{" optl(case_clause+) "}"
+ | "{" case_clause* "}"
      { ($2) }
- | "{" optl(case_clause+) default_clause optl(case_clause+) "}"
+ | "{" case_clause* default_clause case_clause* "}"
      { ($2 @ [$3] @ $4) }
 
 case_clause: T_CASE expr ":" optl(stmt_list)  { Case ($1, $2, stmt1 $4) }
@@ -1344,7 +1358,7 @@ xhp_attribute_value:
 (* interpolated strings *)
 (*----------------------------*)
 (* templated string (a.k.a interpolated strings) *)
-template_literal: T_BACKQUOTE optl(encaps+) T_BACKQUOTE  { ($1, $2, $3) }
+template_literal: T_BACKQUOTE encaps* T_BACKQUOTE  { ($1, $2, $3) }
 
 encaps:
  | T_ENCAPSED_STRING        { String $1 }
