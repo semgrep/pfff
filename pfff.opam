@@ -41,4 +41,5 @@ depends: [
   "uucp"
   "ounit2"
   "ANSITerminal"
+  "easy_logging_yojson"
 ]

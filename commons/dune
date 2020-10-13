@@ -2,6 +2,6 @@
  (public_name commons)
  (wrapped false)
  (libraries
-   yojson
+   yojson easy_logging_yojson
  )
 )
