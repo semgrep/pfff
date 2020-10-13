@@ -1,8 +1,6 @@
 
 type level = Easy_logging__.Logging_types.level
 
-module Handlers = Easy_logging_yojson.Handlers
-
 (* Mostly a copy paste of easy_logging.mli inlined here for 
  * quicker reference *)
 class type logger = 
@@ -62,10 +60,10 @@ class type logger =
       method set_level : level  -> unit
 
       (** Adds a handler to the logger instance. *)
-      method add_handler : Handlers.t -> unit
+      method add_handler : Easy_logging_yojson.Handlers.t -> unit
 
-      method get_handlers : Handlers.t list
-      method set_handlers : Handlers.t list -> unit
+      method get_handlers : Easy_logging_yojson.Handlers.t list
+      method set_handlers : Easy_logging_yojson.Handlers.t list -> unit
 
       (** Will add a tag to each log message, resulting from the call of the supplied fonction (called each time a message is logged)*)
       method add_tag_generator: (unit -> string) -> unit
@@ -77,7 +75,7 @@ class type logger =
 
       (** Returns the list of handlers of the logger, recursing with parents handlers
           if propagate is true*)
-      method get_handlers_propagate : Handlers.t list
+      method get_handlers_propagate : Easy_logging_yojson.Handlers.t list
 
       (** Returns this logger level if it is not [None], else searches amongst ancestors for the first defined level; returns [NoLevel] if no level can be found. *)
       method effective_level : level
