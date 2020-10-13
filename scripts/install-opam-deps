@@ -63,6 +63,7 @@ packages="
   uucp
   uutf
   yojson
+  easy_logging_yojson
 "
 
 # The docker images from the ocaml community ship with a stale (file://...)

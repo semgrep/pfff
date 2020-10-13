@@ -22,7 +22,7 @@ jobs:
         opam switch create 4.07.1
         opam switch 4.07.1
         eval $(opam env)
-        opam install -y yojson ounit2 menhir grain_dypgen ppx_deriving uucp uutf ANSITerminal
+        opam install -y yojson ounit2 menhir grain_dypgen ppx_deriving uucp uutf ANSITerminal easy_logging_yojson
         opam install -y pfff
     - name: Run Tests
       run: eval $(opam env); dune build && dune runtest -f
