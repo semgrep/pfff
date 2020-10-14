@@ -16,10 +16,11 @@
 open Common 
 
 module Flag = Flag_parsing
-module Flag_js = Flag_parsing_js
 module Ast = Ast_js
 module TH   = Token_helpers_js
 module PI = Parse_info
+
+let logger = Logging.get_logger [__MODULE__]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -85,8 +86,7 @@ let put_back_lookahead_token_if_needed tr item_opt =
         * all the tokens (more risky now that we use ast_js.ml instead of
         * cst_js.ml)
         *)
-       if !Flag.debug_lexer
-       then pr2 (spf "putting back %s" (Common.dump current));
+       logger#debug "putting back lookahead token %s" (Common.dump current);
        tr.PI.rest <- current::tr.PI.rest;
        tr.PI.passed <- List.tl tr.PI.passed;
      end
@@ -146,8 +146,7 @@ let asi_insert charpos last_charpos_error tr
     let info = TH.info_of_tok passed_offending in
     let virtual_semi = 
       Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
-    if !Flag_js.debug_asi
-    then pr2 (spf "insertion fake ';' at %s" (PI.string_of_info info));
+    logger#debug "ASI: insertion fake ';' at %s" (PI.string_of_info info);
   
     let toks = List.rev passed_after @
                [virtual_semi; passed_offending] @ 
@@ -271,8 +270,8 @@ let parse2 ?(timeout=0) filename =
         []
     | Left (Some x) -> 
         stat.PI.correct <- stat.PI.correct + lines;
-        if !Flag_js.debug_asi
-        then pr2 (spf "parsed: %s" (Ast.Program [x] |> Ast_js.show_any));
+        logger#ldebug (lazy 
+          (spf "parsed: %s" (Ast.Program [x] |> Ast_js.show_any)));
 
         x::aux tr 
     | Right err_tok ->
