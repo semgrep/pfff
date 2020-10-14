@@ -78,7 +78,21 @@ and v_tok x = v_info x
 
 and v_incr_decr _x = ()
 
-and v_modifiers _ = ()
+and v_modifiers xs = v_list (v_wrap v_modifier) xs
+
+and v_modifier = function
+  | Public | Protected | Private
+  | Abstract | Final
+  | Static
+  | Transient | Volatile | Native | StrictFP
+  | Synchronized
+  | Variadic
+  | DefaultModifier -> ()
+  | Annotation v1 -> v_annotation v1
+
+(* TODO: we should remove visitor_js anyway *)
+and v_annotation (_v1, _v2, _v3) = 
+  Common.pr2_once "TODO: Visitor_java.v_annotation"
 
 and v_directive_stmts s = (v_list v_import) s
 
@@ -90,6 +104,7 @@ and v_partial = function
   | PartialDecl x -> v_decl x
 
 and v_any x = match x with
+  | AMod x -> v_wrap v_modifier x
   | Partial x -> v_partial x
   | AIdent i   -> v_ident i
   | AExpr e   -> v_expr e

@@ -579,6 +579,7 @@ let partial = function
 
 let any =
   function
+  | AMod v1 -> let v1 = modifier v1 in G.At v1
   | Partial v1 -> let v1 = partial v1 in G.Partial v1
   | AIdent v1 -> let v1 = ident v1 in G.I v1
   | AExpr v1 -> let v1 = expr v1 in G.E v1

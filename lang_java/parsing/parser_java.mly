@@ -290,6 +290,9 @@ sgrep_spatch_pattern:
  | expression EOF                   { AExpr $1 }
  | item_no_dots EOF                 { mk_stmt_or_stmts $1 }
  | item_no_dots item_sgrep+ EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
+
+ | annotation EOF { AMod (Annotation $1, Common2.fst3 $1) }
+
  (* partials *)
  | CLASS identifier optl(type_parameters) super? optl(interfaces) EOF 
    { Partial (PartialDecl (Class 

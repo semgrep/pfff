@@ -485,6 +485,7 @@ type any =
   | AStmt of stmt
   | AStmts of stmt list
   | ATyp of typ
+  | AMod of modifier wrap
   | Partial of partial
 
   (* rest *)

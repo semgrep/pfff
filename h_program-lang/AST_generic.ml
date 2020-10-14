@@ -1427,12 +1427,12 @@ and any =
   (* also used for semgrep *)
   | T of type_
   | P of pattern
+  | At of attribute
 
   | Partial of partial
 
   (* misc *)
   | I of ident
-  | At of attribute
   | Def of definition
   | Dir of directive
   | Pr of program
