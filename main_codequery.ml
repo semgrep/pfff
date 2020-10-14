@@ -329,7 +329,7 @@ let main () =
   let usage_msg = 
     spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
       (Filename.basename Sys.argv.(0))
-      "https://github.com/facebook/pfff/wiki/Codequery"
+      "https://github.com/returntocorp/pfff/wiki/Codequery"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in

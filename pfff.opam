@@ -13,11 +13,11 @@ even TeX. There is also very good support for OCaml and noweb
 (literate programming) so that pfff can be used on the code of pfff
 itself.
 
-For more information see https://github.com/facebook/pfff/wiki/Main"""
+For more information see https://github.com/returntocorp/pfff/wiki/Main"""
 
 maintainer: "yoann.padioleau@gmail.com"
 authors: [ "Yoann Padioleau <yoann.padioleau@gmail.com>" ]
-homepage: "https://github.com/facebook/pfff/wiki/Main"
+homepage: "https://github.com/returntocorp/pfff/wiki/Main"
 bug-reports: "https://github.com/returntocorp/pfff/issues"
 dev-repo: "git+https://github.com/returntocorp/pfff.git"
 
