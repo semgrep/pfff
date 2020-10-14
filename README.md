@@ -39,7 +39,7 @@ A few pfff-related tools are now in their own repositories:
    the information computed previously by `codegraph_build`
 
 For more information, look at the pfff wiki here:
- http://github.com/facebook/pfff/wiki/Main
+ http://github.com/returntocorp/pfff/wiki/Main
 as well as the docs/manual/ directory.
 
 ## Usage for `pfff`
@@ -63,4 +63,4 @@ information (the database) in `/tmp/pfff.json`
 
 ## More information
 
-Look at the pfff wiki here: http://github.com/facebook/pfff/wiki/Main
+Look at the pfff wiki here: http://github.com/returntocorp/pfff/wiki/Main
