@@ -572,7 +572,7 @@ and v_def_as_partial ent defkind =
      let partial_def = { def with fbody = empty_fbody } in
      v_partial ~recurse:false (PartialDef (ent, FuncDef partial_def))
   | ClassDef def ->
-     let partial_def = { def with cbody = empty_cbody } in
+     let partial_def = { def with cbody = empty_body } in
      v_partial ~recurse:false (PartialDef (ent, ClassDef partial_def))
   | _ -> ()
 

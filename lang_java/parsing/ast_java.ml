@@ -93,6 +93,7 @@ type type_parameter =
 (* ------------------------------------------------------------------------- *)
 (* Modifier *)
 (* ------------------------------------------------------------------------- *)
+(* TODO: do as in AST_generic and have attribute = KeywordAttr | Annot of ...*)
 type modifier =
   | Public | Protected | Private
   | Abstract | Final
@@ -298,7 +299,9 @@ and resources = resource list bracket
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
-(* todo: use entity to factorize fields in method_decl, class_decl *)
+(* TODO: use entity to factorize fields in method_decl, class_decl like
+ * we do in AST_generic.ml
+ *)
 and entity = {
     name: ident;
     mods: modifiers;
@@ -471,14 +474,21 @@ type program = stmts
 (* Any *)
 (*****************************************************************************)
 
+type partial = 
+ (* the body will be empty in m_body or cl_body *)
+ | PartialDecl of decl
+ [@@deriving show { with_path = false }] (* with tarzan *)
+
 type any =
   (* useful one for semgrep *)
   | AExpr of expr
   | AStmt of stmt
   | AStmts of stmt list
+  | ATyp of typ
+  | Partial of partial
+
   (* rest *)
   | AIdent of ident
-  | ATyp of typ
   | AVar of var_definition
   | AInit of init
   | AMethod of method_decl

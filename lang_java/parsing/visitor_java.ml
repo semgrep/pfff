@@ -86,7 +86,11 @@ and v_program x =
   let k x = (v_list v_stmt) x in
   vin.kprogram (k, all_functions) x
 
+and v_partial = function
+  | PartialDecl x -> v_decl x
+
 and v_any x = match x with
+  | Partial x -> v_partial x
   | AIdent i   -> v_ident i
   | AExpr e   -> v_expr e
   | AStmt s    -> v_stmt s

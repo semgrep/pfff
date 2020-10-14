@@ -569,8 +569,17 @@ and directive = function
 
 let program v = stmts v
 
+let partial = function
+  | PartialDecl x ->
+      let x = decl x in
+      (match x with
+      | G.DefStmt def -> G.PartialDef def
+      | _ -> failwith "unsupported PartialDecl"
+      )
+
 let any =
   function
+  | Partial v1 -> let v1 = partial v1 in G.Partial v1
   | AIdent v1 -> let v1 = ident v1 in G.I v1
   | AExpr v1 -> let v1 = expr v1 in G.E v1
   | AStmt v1 -> let v1 = stmt v1 in G.S v1

@@ -290,6 +290,15 @@ sgrep_spatch_pattern:
  | expression EOF                   { AExpr $1 }
  | item_no_dots EOF                 { mk_stmt_or_stmts $1 }
  | item_no_dots item_sgrep+ EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
+ (* partials *)
+ | CLASS identifier optl(type_parameters) super? optl(interfaces) EOF 
+   { Partial (PartialDecl (Class 
+     { cl_name = $2; cl_kind = (ClassRegular, $1); cl_mods = [];
+       cl_tparams = $3; cl_extends = $4; cl_impls = $5; 
+       cl_body = G.empty_body })) }
+ | method_header EOF 
+    { Partial (PartialDecl (Method $1)) }
+
 
 item_no_dots:
  | statement_no_dots { [$1] }
