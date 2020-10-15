@@ -244,8 +244,13 @@ and expr =
   | Array_get ((v1, (t1, Some v2, t2))) ->
       let v1 = expr v1 and v2 = expr v2 in 
       G.ArrayAccess (v1, (t1, v2, t2))
-  | Array_get ((_v1, (t1, None, _))) ->
-      error t1 "$var[] should be handled in Assign caller"
+  (* $var[] = ... used to be handled in the Assign caller, but there are still
+   * other complex uses of $var[] in other contexts such as
+   * $var[][] = ... where we must generate something.
+   *)
+  | Array_get ((v1, (t1, None, _))) ->
+      let v1 = expr v1 in
+      G.OtherExpr (G.OE_ArrayAppend, [G.Tk t1; G.E v1])
   | Obj_get ((v1, t, Id [v2])) -> 
       let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.FId v2)
@@ -261,12 +266,17 @@ and expr =
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(G.Instanceof, t), 
          fb([v1;v2] |> List.map G.expr_to_arg))
-  (* v[] = 1 --> v <append>= 1 *)
-  | Assign ((Array_get(v1, (_, None, _)), t, v3)) ->
-      let v1 = expr v1
-      and v3 = expr v3
-      in 
-      G.AssignOp (v1, (G.Append, t), v3)
+  (* v[] = 1 --> v <append>= 1.
+   * update: because we must generate an OE_ArrayAppend in other contexts,
+   * this prevents the simple pattern '$x[]' to be matched in an Assign
+   * context, hence the commented code below.
+   *
+   * | Assign ((Array_get(v1, (_, None, _)), t, v3)) ->
+   *   let v1 = expr v1
+   *   and v3 = expr v3
+   *   in 
+   *   G.AssignOp (v1, (G.Append, t), v3)
+   *)
   | Assign ((v1, t, v3)) ->
       let v1 = expr v1
       and v3 = expr v3
