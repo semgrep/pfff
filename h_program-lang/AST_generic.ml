@@ -639,7 +639,11 @@ and expr =
     | OE_GetRefLabel
     | OE_ArrayInitDesignator (* [x] = ... todo? use ArrayAccess in container?*)
     (* PHP *)
-    | OE_Unpack
+    | OE_Unpack 
+    | OE_ArrayAppend (* $x[]. The AST for $x[] = 1 used to be
+                      * handled as an AssignOp with special Append, but we now
+                      * use OE_ArrayAppend for everything to simplify.
+                      *)
     (* OCaml *)
     | OE_RecordWith | OE_RecordFieldName
     (* Go *)

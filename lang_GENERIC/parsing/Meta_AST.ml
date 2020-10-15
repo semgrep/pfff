@@ -389,6 +389,7 @@ and vof_action (v1, v2) =
   let v1 = vof_pattern v1 and v2 = vof_expr v2 in OCaml.VTuple [ v1; v2 ]
 and vof_other_expr_operator =
   function
+  | OE_ArrayAppend -> OCaml.VSum (("OE_ArrayAppend", []))
   | OE_Todo -> OCaml.VSum (("OE_Todo", []))
   | OE_Annot -> OCaml.VSum (("OE_Annot", []))
   | OE_Send -> OCaml.VSum (("OE_Send", []))
