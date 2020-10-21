@@ -516,6 +516,7 @@ and any =
   | Stmt of stmt
   | Stmts of stmt list
   | Pattern of pattern
+  | Property of property
   | Type of type_
   | Program of program
   | Partial of partial

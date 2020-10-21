@@ -30,6 +30,7 @@ type visitor_in = {
   kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
+  kfield: (field  -> unit) * visitor_out -> field  -> unit;
   kpartial: (partial  -> unit) * visitor_out -> partial  -> unit;
 
   kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
@@ -55,6 +56,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     ktype_   = (fun (k,_) x -> k x);
     kpattern   = (fun (k,_) x -> k x);
+    kfield   = (fun (k,_) x -> k x);
     kpartial = (fun (k,_) x -> k x);
 
     kdef   = (fun (k,_) x -> k x);
@@ -696,8 +698,9 @@ and v_vardef_as_assign_expr ventity = function
     v_expr (vardef_to_assign (ventity, vdef))
   | _ -> ()
 
-and v_field =
-  function
+and v_field x =
+  let k x =
+  match x with
   | FieldDynamic ((v1, v2, v3)) ->
       let v1 = v_expr v1
       and v2 = v_list v_attribute v2
@@ -707,6 +710,8 @@ and v_field =
       let t = v_tok t in
       let v1 = v_expr v1 in ()
   | FieldStmt v1 -> let v1 = v_stmt v1 in ()
+  in
+  vin.kfield (k, all_functions) x
 
 and v_type_definition { tbody = v_tbody } =
   let arg = v_type_definition_kind v_tbody in ()

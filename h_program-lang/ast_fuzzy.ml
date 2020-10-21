@@ -70,6 +70,8 @@ open Common
  *  - xpath? but do programming languages need the full power of xpath?
  *    usually an AST just have 3 different kinds of nodes, Defs, Stmts,
  *    and Exprs.
+ *  - spacegrep by Martin Jambon, relies on indentation in addition to
+ *    bracket tokens (works great on files like YAML)
  * 
  * See also lang_cpp/parsing_cpp/test_parsing_cpp and its parse_cpp_fuzzy()
  * and dump_cpp_fuzzy() functions. Most of the code related to Ast_fuzzy
@@ -131,7 +133,16 @@ type tree =
    *)
   | Dots of tok
 
+  (* Should we split Tok in 
+   * | Kwd of string wrap 
+   * | Id of string wrap 
+   * | OtherTok of string wrap
+   * ?
+   * Maybe, but at least you can build a hash from the Parse_info.t to
+   * the origin token if you need a better classification of Tok.
+   *)
   | Tok of string wrap
+
 and trees = tree list
  (* with tarzan *)
 

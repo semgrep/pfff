@@ -1432,6 +1432,7 @@ and any =
   | T of type_
   | P of pattern
   | At of attribute
+  | Fld of field
 
   | Partial of partial
 
@@ -1449,7 +1450,6 @@ and any =
   | Ar of argument
   | Dk of definition_kind
   | Di of dotted_ident
-  | Fld of field
   | Lbli of label_ident
   | Fldi of field_ident
   | Tk of tok

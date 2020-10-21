@@ -96,6 +96,7 @@ let visitor_info_of_tok f = function
   | T_RCURLY ii -> T_RCURLY (f ii)
   | T_LPAREN ii -> T_LPAREN (f ii)
   | T_LPAREN_ARROW ii -> T_LPAREN_ARROW (f ii)
+  | T_LPAREN_METHOD_SEMGREP ii -> T_LPAREN_METHOD_SEMGREP (f ii)
   | T_LCURLY_SEMGREP ii -> T_LCURLY_SEMGREP (f ii)
   | T_RPAREN ii -> T_RPAREN (f ii)
   | T_LBRACKET ii -> T_LBRACKET (f ii)
