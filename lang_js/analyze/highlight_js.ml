@@ -239,7 +239,8 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     (* Punctuation *)
 
     | T.T_LCURLY (ii) | T.T_RCURLY (ii) | T.T_LCURLY_SEMGREP ii
-    | T.T_LPAREN (ii) | T.T_LPAREN_ARROW (ii) | T.T_RPAREN (ii)
+    | T.T_LPAREN (ii) | T.T_LPAREN_ARROW (ii) | T.T_LPAREN_METHOD_SEMGREP ii
+    | T.T_RPAREN (ii)
     | T.T_LBRACKET (ii) | T.T_RBRACKET (ii)
     | T.T_SEMICOLON (ii)
     | T.T_COMMA (ii)

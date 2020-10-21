@@ -546,6 +546,9 @@ and partial = function
 
 and any =
   function
+  | Property v1 -> 
+      let v1 = property v1 in 
+      G.Fld v1
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Stmts v1 -> let v1 = List.map stmt v1 in G.Ss v1

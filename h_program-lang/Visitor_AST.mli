@@ -10,6 +10,7 @@ type visitor_in = {
   kstmts: (stmt list  -> unit) * visitor_out -> stmt list -> unit;
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
+  kfield: (field  -> unit) * visitor_out -> field  -> unit;
   kpartial: (partial  -> unit) * visitor_out -> partial  -> unit;
 
   kdef: (definition  -> unit) * visitor_out -> definition  -> unit;

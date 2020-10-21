@@ -391,6 +391,7 @@ and v_module_directive x =
 
 and v_any =
   function
+  | Property v1 -> v_property v1
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt v1 -> let v1 = v_stmt v1 in ()
   | Stmts v1 -> let v1 = v_list v_stmt v1 in ()

@@ -87,6 +87,14 @@ let rparens_of_if toks =
   );
   !rparens_if
 
+(* alt: could have instead a better Ast_fuzzy type instead of putting
+ * everything in the Tok category?
+ *)
+let is_identifier horigin (info : Parse_info.t) =
+  match Hashtbl.find_opt horigin info with
+  | Some (T.T_ID _) -> true
+  | _ -> false
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -104,7 +112,10 @@ let fix_tokens toks =
      kind = TH.token_kind_of_tok;
   } toks 
   in
-  let retag_lparen = Hashtbl.create 101 in
+  let horigin = toks |> List.map (fun t -> TH.info_of_tok t, t) 
+   |> Common.hash_of_list in
+  let retag_lparen_arrow = Hashtbl.create 101 in
+  let retag_lparen_method = Hashtbl.create 101 in
   let retag_keywords = Hashtbl.create 101 in
   let retag_lbrace = Hashtbl.create 101 in
 
@@ -114,6 +125,9 @@ let fix_tokens toks =
    *)
   | F.Braces (t1, _body, _)::_ when !Flag_parsing.sgrep_mode ->
           Hashtbl.add retag_lbrace t1 true
+  | F.Tok(_s, info)::F.Parens(i1, _, _)::F.Braces(_, _, _)::_ 
+     when !Flag_parsing.sgrep_mode && is_identifier horigin info ->
+          Hashtbl.add retag_lparen_method i1 true
   | _ -> ()
   );
 
@@ -122,7 +136,7 @@ let fix_tokens toks =
     Lib_ast_fuzzy.ktrees = (fun (k, _) xs ->
       (match xs with
       | F.Parens (i1, _, _)::F.Tok ("=>",_)::_res ->
-          Hashtbl.add retag_lparen i1 true
+          Hashtbl.add retag_lparen_arrow i1 true
       (* TODO: also handle typed arrows! *)
       | F.Tok("import", i1)::F.Parens _::_res ->
           Hashtbl.add retag_keywords i1 true
@@ -136,8 +150,10 @@ let fix_tokens toks =
 
   (* use the tagged information and transform tokens *)
   toks |> List.map (function
-    | T.T_LPAREN info when Hashtbl.mem retag_lparen info ->
+    | T.T_LPAREN info when Hashtbl.mem retag_lparen_arrow info ->
       T.T_LPAREN_ARROW (info)
+    | T.T_LPAREN info when Hashtbl.mem retag_lparen_method info ->
+      T.T_LPAREN_METHOD_SEMGREP (info)
     | T.T_LCURLY info when Hashtbl.mem retag_lbrace info ->
       T.T_LCURLY_SEMGREP (info)
     | T.T_IMPORT info when Hashtbl.mem retag_keywords info ->

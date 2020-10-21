@@ -255,6 +255,9 @@ let mk_Encaps opt (t1, xs, _t2) =
 %token <Parse_info.t> T_VIRTUAL_SEMICOLON
 (* fresh_token: the opening '(' of the parameters preceding an '->' *)
 %token <Parse_info.t> T_LPAREN_ARROW
+
+(* fresh_token: the opening '(' of the parameters of a method in semgrep *)
+%token <Parse_info.t> T_LPAREN_METHOD_SEMGREP
 (* fresh_token: the first '{' in a semgrep pattern for objects *)
 %token <Parse_info.t> T_LCURLY_SEMGREP
 
@@ -375,6 +378,14 @@ sgrep_spatch_pattern:
  | T_LCURLY_SEMGREP "}"    { Expr (Obj ($1, [], $2)) }
  | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
      { Expr (Obj ($1, $2, $4)) }
+
+ (* we would like to just use method_definition, but too many r/r conflicts *)
+ | T_ID T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation? 
+    "{" function_body "}" EOF 
+   { let sig_ = (None, ($2, $3, $4), $5) in
+     let fun_ = mk_Fun [] sig_ ($6, $7, $8) in
+     Property (mk_Field (PN $1) (Some fun_))
+   }
 
  | assignment_expr_no_stmt  EOF  { Expr $1 }
  | module_item              EOF  { fix_sgrep_module_item $1 }
@@ -1481,7 +1492,8 @@ ident_semi_keyword:
 ident_keyword: ident_keyword_bis { PI.str_of_info $1, $1 }
 
 ident_keyword_bis:
- | T_FUNCTION { $1 } | T_CONST { $1 } | T_VAR { $1 } | T_LET { $1 }
+ | T_FUNCTION { $1 }
+ | T_CONST { $1 } | T_VAR { $1 } | T_LET { $1 }
  | T_IF { $1 } | T_ELSE { $1 }
  | T_WHILE { $1 } | T_FOR { $1 } | T_DO { $1 }
  | T_CONTINUE { $1 } | T_BREAK { $1 }
