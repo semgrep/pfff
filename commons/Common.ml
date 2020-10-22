@@ -1069,7 +1069,12 @@ let _temp_files_created = ref ([] : filename list)
 
 (* ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" *)
 let new_temp_file prefix suffix =
-  let processid = i_to_s (Unix.getpid ()) in
+  let pid = 
+    if !jsoo
+    then 42
+    else Unix.getpid ()
+  in
+  let processid = i_to_s pid in
   let tmp_file = Filename.temp_file (prefix ^ "-" ^ processid ^ "-") suffix in
   push tmp_file _temp_files_created;
   tmp_file

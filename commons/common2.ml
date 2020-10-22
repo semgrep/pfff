@@ -1149,7 +1149,7 @@ let acquire_file_lock filename =
 
 let release_file_lock filename =
   pr2 ("Releasing file: " ^ filename);
-  Unix.unlink filename;
+  Sys.remove filename;
   ()
 
 
@@ -3437,7 +3437,7 @@ let with_tmp_file ~(str: string) ~(ext: string) (f: string -> 'a) : 'a =
   Common.finalize (fun () ->
     f tmpfile
   ) (fun() ->
-    Unix.unlink tmpfile
+    Sys.remove tmpfile
   )
 
 
