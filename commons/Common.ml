@@ -16,6 +16,21 @@
 (* Prelude *)
 (*###########################################################################*)
 
+(* if set then certain functions like unwind_protect will not 
+ * do a try and finalize and instead just call the function, which
+ * helps in ocamldebug and also in getting better backtraces.
+ * This is also useful to set in a js_of_ocaml (jsoo) context to
+ * again get better backtraces.
+ *)
+let debugger = ref false
+
+(* You should set this to true when you run code compiled by js_of_ocaml
+ * so some functions here can change their implementation and rely
+ * less on non-portable API like Unix which does not work well under
+ * node or on the browser.
+ *)
+let jsoo = ref false
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -59,8 +74,6 @@ let enum x n =
 let push v l =
   l := v :: !l
 
-
-let debugger = ref false
 
 let unwind_protect f cleanup =
   if !debugger then f () else
@@ -799,7 +812,8 @@ let readable ~root s =
   else filename_without_leading_path root s
 
 let is_directory file =
-  (Unix.stat file).Unix.st_kind =*= Unix.S_DIR
+  (* old: (Unix.stat file).Unix.st_kind =*= Unix.S_DIR *)
+  Sys.is_directory file
 
 (*****************************************************************************)
 (* Dates *)
@@ -867,7 +881,11 @@ let write_file ~file s =
 (* could be in control section too *)
 
 let filemtime file =
-  (Unix.stat file).Unix.st_mtime
+  if !jsoo
+  then failwith "JSOO: Common.filemtime"
+  else (Unix.stat file).Unix.st_mtime
+
+
 
 (*
 Using an external C functions complicates the linking process of

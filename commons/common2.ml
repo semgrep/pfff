@@ -3033,10 +3033,21 @@ let unix_stat file =
   )
 
 let filesize file =
-  (unix_stat file).Unix.st_size
+  if not !Common.jsoo
+  (* this does not work well with jsoo *)
+  then (unix_stat file).Unix.st_size
+  (* src: https://rosettacode.org/wiki/File_size#OCaml *)
+  else begin
+      let ic = open_in file in
+      let i = in_channel_length ic in
+      close_in ic;
+      i
+  end
 
 let filemtime file =
-  (unix_stat file).Unix.st_mtime
+  if !Common.jsoo
+  then failwith "JSOO:filemtime"
+  else (unix_stat file).Unix.st_mtime
 
 (* opti? use wc -l ? *)
 let nblines_file file =
