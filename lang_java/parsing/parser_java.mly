@@ -294,13 +294,8 @@ sgrep_spatch_pattern:
  | annotation EOF { AMod (Annotation $1, Common2.fst3 $1) }
 
  (* partials *)
- | CLASS identifier optl(type_parameters) super? optl(interfaces) EOF 
-   { Partial (PartialDecl (Class 
-     { cl_name = $2; cl_kind = (ClassRegular, $1); cl_mods = [];
-       cl_tparams = $3; cl_extends = $4; cl_impls = $5; 
-       cl_body = G.empty_body })) }
- | method_header EOF 
-    { Partial (PartialDecl (Method $1)) }
+ | class_header  EOF { Partial (PartialDecl (Class $1)) }
+ | method_header EOF { Partial (PartialDecl (Method $1)) }
 
 
 item_no_dots:
@@ -1035,13 +1030,15 @@ expr1:
 (* Class *)
 (*************************************************************************)
 
-class_declaration:
+class_declaration: class_header class_body 
+  { { $1 with cl_body = $2 }  }
+
+class_header: 
  modifiers_opt CLASS identifier optl(type_parameters) super? optl(interfaces)
- class_body
   { { cl_name = $3; cl_kind = (ClassRegular, $2);
       cl_mods = $1; cl_tparams = $4;
       cl_extends = $5;  cl_impls = $6;
-      cl_body = $7;
+      cl_body = G.empty_body ;
      } }
 
 super: EXTENDS type_ (* was class_type *)  { $2 }
@@ -1049,10 +1046,11 @@ super: EXTENDS type_ (* was class_type *)  { $2 }
 (* was interface_type_list *)
 interfaces: IMPLEMENTS listc(reference_type)   { $2 }
 
+class_body: "{" class_body_declaration* "}"  { $1, List.flatten $2, $3 }
+
 (*----------------------------*)
 (* Class body *)
 (*----------------------------*)
-class_body: "{" class_body_declaration* "}"  { $1, List.flatten $2, $3 }
 
 class_body_declaration:
  | class_member_declaration  { $1 }
