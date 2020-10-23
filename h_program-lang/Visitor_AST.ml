@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019, 2020 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -31,12 +31,12 @@ type visitor_in = {
   ktype_: (type_  -> unit) * visitor_out -> type_  -> unit;
   kpattern: (pattern  -> unit) * visitor_out -> pattern  -> unit;
   kfield: (field  -> unit) * visitor_out -> field  -> unit;
+  kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kpartial: (partial  -> unit) * visitor_out -> partial  -> unit;
 
   kdef: (definition  -> unit) * visitor_out -> definition  -> unit;
   kdir: (directive  -> unit) * visitor_out -> directive  -> unit;
 
-  kattr: (attribute  -> unit) * visitor_out -> attribute  -> unit;
   kparam: (parameter  -> unit) * visitor_out -> parameter  -> unit;
   kident: (ident -> unit)  * visitor_out -> ident  -> unit;
   kname: (name -> unit)  * visitor_out -> name  -> unit;
@@ -82,6 +82,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
  * to trigger a few more artificial visits:
  *  - we call vardef_to_assign
  *  - we generate partial defs on the fly and call kpartial
+ *  - we call v_expr on nested XmlXml to give the chance for an
+ *    Xml pattern to also be matched against nested Xml elements
  *)
 
 
@@ -187,7 +189,11 @@ and v_xml_body =
   function
   | XmlText v1 -> let v1 = v_wrap v_string v1 in ()
   | XmlExpr v1 -> let v1 = v_expr v1 in ()
-  | XmlXml v1 -> let v1 = v_xml v1 in ()
+  | XmlXml v1 -> 
+      (* subtle: old: let v1 = v_xml v1 in ()
+       * We want a simple Expr (Xml ...) pattern to also be matched
+       * against nested XmlXml elements *)
+       v_expr (Xml v1)
 
 
 and v_expr x =
