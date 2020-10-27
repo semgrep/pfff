@@ -491,10 +491,17 @@ and expr =
     * regular calls even though they do not have parenthesis
     * (not all calls have parenthesis anyway, as in OCaml or Ruby).
     *)
-   (* inline list var, in Container or call context, a.k.a Splat in Ruby *)
+
+   (* "Inline" the content of a var containing a list (a.k.a a Splat in Ruby). 
+    * Used in a Container or Call argument context. 
+    * The corresponding constructor in a parameter context is ParamRest.
+    *)
    | Spread (* ...x in JS, *x in Python/Ruby *)
-   (* in hash or arguments *)
-   | HashSplat (* **x in Python/Ruby, not that Pow below is a Binary op *)
+   (* Similar to Spread, but for a var containing a hashtbl.
+    * The corresponding constructor in a parameter context is ParamHashSplat.
+    *)
+   | HashSplat (* **x in Python/Ruby 
+                * (not to confused with Pow below which is a Binary op *)
 
    | ForOf (* Javascript, for generators, used in ForEach *)
 
@@ -999,7 +1006,7 @@ and attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter 
-  (* for parameters (TODO: move to ParamSpread? ParamHashSplat? *)
+  (* for parameters (TODO: move to ParamRest and ParamHashSplat? *)
   | Variadic | VariadicHashSplat
 (*e: type [[AST_generic.keyword_attribute]] *)
 
@@ -1152,7 +1159,7 @@ and function_definition = {
      (*e: [[AST_generic.parameter]] other cases *)
      (*s: [[AST_generic.parameter]] semgrep extension cases *)
      (* sgrep: ... in parameters
-      * note: foo(...x) of Js/Go is using the Variadic attribute, not this *)
+      * note: foo(...x) of Js/Go is using the ParamRest, not this *)
      | ParamEllipsis of tok
      (*e: [[AST_generic.parameter]] semgrep extension cases *)
      (*s: [[AST_generic.parameter]] OtherXxx case *)
