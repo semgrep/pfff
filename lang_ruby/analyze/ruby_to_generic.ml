@@ -48,6 +48,9 @@ let fb = G.fake_bracket
 let stmt1 xs =
   G.Block (fb xs)
 
+let nonbasic_entity id_or_e =
+  { G.name = id_or_e; attrs = []; info = G.empty_id_info(); tparams = [] }
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -72,7 +75,8 @@ let rec expr = function
       | ID_Super -> G.IdSpecial (G.Super, (snd id))
       | _ -> G.Id (ident id, G.empty_id_info())
       )
-  | ScopedId x -> scope_resolution x
+  | ScopedId x -> let name = scope_resolution x in
+      G.IdQualified (name, G.empty_id_info())
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
   | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
   | Tuple xs -> G.Tuple (G.fake_bracket (list expr xs))
@@ -192,14 +196,16 @@ and scope_resolution = function
   | TopScope (t, v) -> 
       let id = variable v in
       let qualif = G.QTop t in
-      let name = id, { G.name_qualifier = Some qualif; name_typeargs = None }in
-      G.IdQualified (name, G.empty_id_info())
+      id, { G.name_qualifier = Some qualif; name_typeargs = None }
   | Scope (e, t, v_or_m) -> 
       let id = variable_or_method_name v_or_m in
+      (* TODO: use an 'expr_for_scope' instead of 'expr' below, because
+       * the expression itself could be another Scope ...
+       * in which case we could generate a QDots instead of a QEXpr
+       *)
       let e = expr e in
       let qualif = G.QExpr (e, t) in
-      let name = id, { G.name_qualifier = Some qualif; name_typeargs = None }in
-      G.IdQualified (name, G.empty_id_info())
+      id, { G.name_qualifier = Some qualif; name_typeargs = None }
 
 
 and variable (id, _kind) = 
@@ -505,36 +511,36 @@ and definition def =
                let e = expr e in
                [G.expr_to_type e]
          in
-         (match name with 
-         | NameConstant id -> 
-             let ent = G.basic_entity id [] in
-             let def = { G.ckind = (G.Class, t); cextends = extends;
-                         (* TODO: this is done by special include/require
-                           builtins *)
-                         cimplements = []; cmixins = []; 
-                         cbody = fb ([G.FieldStmt body]);
-                       } in
-             G.DefStmt (ent, G.ClassDef def)
-         | NameScope x -> 
-             let e = scope_resolution x in    
-             G.OtherStmt (G.OS_Todo, [G.E e; G.S body])
-         )
+         let ent = 
+            match name with 
+            | NameConstant id -> G.basic_entity id []
+            | NameScope x -> 
+                let name = scope_resolution x in
+                nonbasic_entity (G.EName name)
+          in
+          let def = { G.ckind = (G.Class, t); cextends = extends;
+                   (* TODO: this is done by special include/require builtins *)
+                      cimplements = []; cmixins = []; 
+                      cbody = fb ([G.FieldStmt body]);
+                     } in
+          G.DefStmt (ent, G.ClassDef def)
       | SingletonC (t, e) -> 
           let e = expr e in
           G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body])
       )
   | ModuleDef (_t, name, body) ->
       let body = body_exn body in
-      (match name with
-      | NameConstant id ->
-            let ent = G.basic_entity id [] in
-            let mkind = G.ModuleStruct (None, [body]) in
-            let def = { G.mbody = mkind } in
-            G.DefStmt (ent, G.ModuleDef def)
-      | NameScope x -> 
-            let e = scope_resolution x in    
-            G.OtherStmt (G.OS_Todo, [G.E e; G.S body])
-      )
+      let ent = 
+        match name with
+        | NameConstant id -> G.basic_entity id []
+        | NameScope x -> 
+            let name = scope_resolution x in    
+            nonbasic_entity (G.EName name)
+      in
+      let mkind = G.ModuleStruct (None, [body]) in
+      let def = { G.mbody = mkind } in
+      G.DefStmt (ent, G.ModuleDef def)
+
   | BeginBlock (_t, (t1, st, t2)) ->
       let st = stmts st in
       let st = G.Block (t1, st, t2) in
