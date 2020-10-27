@@ -100,8 +100,7 @@ and expr =
       let v1 = expr v1 in
       let v3 = type_ v3 in
       (match v1 with
-      (* less: when is_metavar id *)
-      | G.Id (id, _idinfo) -> 
+      | G.Id (id, _idinfo) when G.is_metavar_name (fst id) -> 
           G.TypedMetavar (id, v2, v3)
       | _ -> G.Cast (v3, v1)
       )

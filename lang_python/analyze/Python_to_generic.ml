@@ -510,7 +510,8 @@ and list_stmt1 xs =
    * in which case we remove the G.Block around it.
    * hacky ...
    *)
-  | [G.ExprStmt (G.Id (_), _) as x] -> x
+  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when G.is_metavar_name s
+      -> x
   | xs -> G.Block (fb xs)
 (*e: function [[Python_to_generic.list_stmt1]] *)
 

@@ -1759,4 +1759,12 @@ let exprstmt e = ExprStmt (e, sc)
 let fieldEllipsis t = FieldStmt (exprstmt (Ellipsis t))
 let empty_fbody = Block (fake_bracket [])
 let empty_body = fake_bracket []
+
+(* You should not use that! You should use Metavars_generic.is_metavar_name,
+ * and you use that this probably means you have an ugly dependency
+ * to semgrep in what should not depend on semgrep.
+ *)
+let is_metavar_name s =
+  s =~ "^\\(\\$[A-Z_][A-Z_0-9]*\\)$"
+
 (*e: pfff/h_program-lang/AST_generic.ml *)
