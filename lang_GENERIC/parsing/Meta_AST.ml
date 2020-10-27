@@ -967,11 +967,6 @@ and vof_variable_definition { vinit = v_vinit; vtype = v_vtype } =
   let bnd = ("vinit", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
 and vof_field =
   function
-  | FieldDynamic ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = OCaml.vof_list vof_attribute v2
-      and v3 = vof_expr v3
-      in OCaml.VSum (("FieldDynamic", [ v1; v2; v3 ]))
   | FieldSpread (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_expr v1 in OCaml.VSum (("FieldSpread", [ t; v1 ]))

@@ -707,11 +707,6 @@ and v_vardef_as_assign_expr ventity = function
 and v_field x =
   let k x =
   match x with
-  | FieldDynamic ((v1, v2, v3)) ->
-      let v1 = v_expr v1
-      and v2 = v_list v_attribute v2
-      and v3 = v_expr v3
-      in ()
   | FieldSpread (t, v1) -> 
       let t = v_tok t in
       let v1 = v_expr v1 in ()

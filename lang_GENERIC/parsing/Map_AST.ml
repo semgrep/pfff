@@ -706,11 +706,6 @@ and map_variable_definition { vinit = v_vinit; vtype = v_vtype } =
 
 and map_field =
   function
-  | FieldDynamic ((v1, v2, v3)) ->
-      let v1 = map_expr v1
-      and v2 = map_of_list map_attribute v2
-      and v3 = map_expr v3
-      in FieldDynamic ((v1, v2, v3))
   | FieldSpread (t, v1) -> 
       let t = map_tok t in
       let v1 = map_expr v1 in FieldSpread ((t, v1))

@@ -1286,7 +1286,6 @@ and type_definition = {
   and field = 
     | FieldStmt of stmt
     (*s: [[AST_generic.field]] other cases *)
-    | FieldDynamic of expr (* dynamic name *) * attribute list * expr (*value*)
     (* less: could abuse FieldStmt(ExprStmt(IdSpecial(Spread))) for that *)
     | FieldSpread of tok (* ... *) * expr (* usually a Name *)
     (*e: [[AST_generic.field]] other cases *)
