@@ -815,7 +815,7 @@ and
   let arg = OCaml.vof_list vof_attribute v_attrs in
   let bnd = ("attrs", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_ident v_name in
+  let arg = vof_ident_or_dynamic v_name in
   let bnd = ("name", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
 
 and vof_definition_kind =

@@ -1040,7 +1040,7 @@ and definition = entity * definition_kind
  *)
 (*s: type [[AST_generic.entity]] *)
   and entity = {
-    name: ident;
+    name: ident_or_dynamic;
     (*s: [[AST_generic.entity]] attribute field *)
     attrs: attribute list;
     (*e: [[AST_generic.entity]] attribute field *)
@@ -1590,7 +1590,7 @@ let param_of_type typ = {
 
 (*s: function [[AST_generic.basic_entity]] *)
 let basic_entity id attrs = {
-  name = id;
+  name = EId id;
   attrs = attrs;
   tparams = []; info = empty_id_info ();
 }
@@ -1700,10 +1700,17 @@ let is_boolean_operator = function
    -> true
 (*e: function [[AST_generic.is_boolean_operator]] *)
 
+let ident_or_dynamic_to_expr name idinfo =
+  match name with
+  | EId id -> Id (id, idinfo) 
+  | EName n -> IdQualified (n, idinfo)
+  | EDynamic e -> e
+  
+
 (*s: function [[AST_generic.vardef_to_assign]] *)
 (* used in controlflow_build and semgrep *)
 let vardef_to_assign (ent, def) =
-  let name = Id (ent.name, ent.info) in
+  let name = ident_or_dynamic_to_expr ent.name ent.info in
   let v = 
     match def.vinit with
    | Some v -> v
@@ -1716,7 +1723,7 @@ let vardef_to_assign (ent, def) =
 (* used in controlflow_build *)
 let funcdef_to_lambda (ent, def) resolved =
   let idinfo = { (empty_id_info()) with id_resolved = ref resolved } in
-  let name = Id (ent.name, idinfo) in
+  let name = ident_or_dynamic_to_expr ent.name idinfo in
   let v = Lambda def in
   Assign (name, Parse_info.fake_info "=", v)
 (*e: function [[AST_generic.funcdef_to_lambda]] *)

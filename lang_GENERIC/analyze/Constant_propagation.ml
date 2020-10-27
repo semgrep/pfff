@@ -97,7 +97,8 @@ let var_stats prog : var_stats =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name=id; info={ id_resolved = {contents = Some(_kind, sid)}; _}; _},
+      | { name=EId id; 
+          info={ id_resolved = {contents = Some(_kind, sid)}; _}; _},
         VarDef ({ vinit = Some _; _ }) ->
           let var = (Ast.str_of_ident id, sid) in
           let stat = get_stat_or_create var h in
@@ -239,7 +240,7 @@ let propagate2 lang prog =
 
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name = id;
+      | { name = EId id;
           info = { id_resolved = {contents = Some (_kind, sid)}; _} as id_info;
           attrs = attrs; _},
         (* note that some languages such as Python do not have VarDef.

@@ -139,8 +139,9 @@ let visit_program
   let v = V.mk_visitor { V.default_visitor with
 
     V.kdef = (fun (k, _) x ->
-      let ({ G.name = (_s, info); _}, def) = x in
-      match def with
+     match x with
+     | ({ G.name = G.EId (_s, info); _}, def) ->
+      (match def with
       | G.Signature ty -> 
           tag info (kind_of_ty ty);
           k x
@@ -171,9 +172,7 @@ let visit_program
             )
           | G.AndType (_, xs, _) ->
             xs |> List.iter (function
-              | G.FieldStmt (G.DefStmt (ent, _)) ->
-                let id = ent.G.name in
-                let info = info_of_id id in
+              | G.FieldStmt (G.DefStmt ({ G.name = G.EId (_id, info); _}, _))->
                 tag info (Entity (Field, (Def2 fake_no_def2)));
               | _ ->  ()
             );
@@ -200,6 +199,8 @@ let visit_program
           )
 
       | _ -> k x
+      )
+     | _ -> k x
     );
 
     V.kdir = (fun (k, _) x ->
@@ -325,8 +326,7 @@ let visit_program
       | G.Record (_, xs, _) ->
           xs |> List.iter (fun x ->
             match x with
-            | G.FieldStmt (G.DefStmt (ent, _)) ->
-               let info = snd ent.G.name in
+            | G.FieldStmt (G.DefStmt ({ G.name = G.EId (_, info); _}, _)) ->
                tag info (Entity (Field, (Use2 fake_no_use2)));
             | _ -> ()
           );

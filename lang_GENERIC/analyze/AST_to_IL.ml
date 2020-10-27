@@ -114,7 +114,9 @@ let lval_of_id_info _env id id_info =
 (*e: function [[AST_to_IL.lval_of_id_info]] *)
 (*s: function [[AST_to_IL.lval_of_ent]] *)
 let lval_of_ent env ent = 
-  lval_of_id_info env ent.G.name ent.G.info
+  match ent.G.name with
+  | G.EId id -> lval_of_id_info env id ent.G.info
+  | G.EName _ | G.EDynamic _ -> raise Todo
 (*e: function [[AST_to_IL.lval_of_ent]] *)
 
 (*s: function [[AST_to_IL.label_of_label]] *)
