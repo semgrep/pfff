@@ -382,7 +382,6 @@ and vof_argument =
       in OCaml.VSum (("ArgOther", [ v1; v2 ]))
 and vof_other_argument_operator =
   function
-  | OA_ArgPow -> OCaml.VSum (("OA_ArgPow", []))
   | OA_ArgComp -> OCaml.VSum (("OA_ArgComp", []))
   | OA_ArgQuestion -> OCaml.VSum (("OA_ArgQuestion", []))
 and vof_action (v1, v2) =

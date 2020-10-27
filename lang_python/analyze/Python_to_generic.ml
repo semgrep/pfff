@@ -306,10 +306,12 @@ and argument = function
   | Arg e -> let e = expr e in 
       G.Arg e
   | ArgStar e -> let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.expr_to_arg e]))
-  | ArgPow e -> 
-      let e = expr e in
-      G.ArgOther (G.OA_ArgPow, [G.E e])
+      G.Arg (G.Call (G.IdSpecial (G.Spread, fake "spread"), 
+          fb[G.expr_to_arg e]))
+  | ArgPow e ->  let e = expr e in
+      G.Arg (G.Call (G.IdSpecial (G.HashSplat, fake "**"), 
+          fb[G.expr_to_arg e]))
+
   | ArgKwd (n, e) -> let n = name n in let e = expr e in
       G.ArgKwd (n, e)
   | ArgComp (e, xs) ->

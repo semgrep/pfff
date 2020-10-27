@@ -626,7 +626,6 @@ and expr =
 (*s: type [[AST_generic.other_argument_operator]] *)
        and other_argument_operator =
         (* Python *)
-        | OA_ArgPow (* a kind of Spread, but for Dict instead of List *)
         | OA_ArgComp (* comprehension *)
         (* OCaml *)
         | OA_ArgQuestion
@@ -1165,8 +1164,6 @@ and function_definition = {
      (*s: [[AST_generic.parameter]] OtherXxx case *)
      | OtherParam of other_parameter_operator * any list
      (*e: [[AST_generic.parameter]] OtherXxx case *)
-
-
 (*e: type [[AST_generic.parameter]] *)
 
     (* less: could be merged with variable_definition, or pattern
