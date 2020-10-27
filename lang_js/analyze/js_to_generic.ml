@@ -398,7 +398,7 @@ and fun_ { f_attrs = f_props; f_params = f_params;
   }, v1
 
 and parameter_binding = function
- | ParamClassic x -> G.ParamClassic (parameter x)
+ | ParamClassic x -> parameter x
  | ParamPattern x -> G.ParamPattern (pattern x)
  | ParamEllipsis x -> G.ParamEllipsis x
 
@@ -414,13 +414,11 @@ and parameter x =
   let v3 = bool p_dots in
   let ptype = option type_ p_type in
   let pattrs = list attribute p_attrs in
-   { 
-    G.pname = Some v1; pdefault; ptype;
-    pattrs = 
-        (match v3 with None -> [] | Some tok -> [G.attr G.Variadic tok]) @ 
-        pattrs;
-    pinfo = G.empty_id_info ();
-  }
+  let pclassic = { G.pname = Some v1; pdefault; ptype; pattrs;
+                    pinfo = G.empty_id_info (); } in
+  match v3 with 
+  | None -> G.ParamClassic pclassic
+  | Some tok -> G.ParamRest (tok, pclassic)
   
 and argument x = expr x
 

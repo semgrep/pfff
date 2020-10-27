@@ -327,7 +327,7 @@ and map_type_ =
     TyAnd ((v1, v2, v3))
   | TyBuiltin v1 -> let v1 = map_wrap map_of_string v1 in TyBuiltin ((v1))
   | TyFun ((v1, v2)) ->
-      let v1 = map_of_list map_parameter_classic v1
+      let v1 = map_of_list map_parameter v1
       and v2 = map_type_ v2
       in TyFun ((v1, v2))
   | TyNameApply ((v1, v2)) ->
@@ -669,6 +669,12 @@ and map_parameter =
   function
   | ParamClassic v1 ->
       let v1 = map_parameter_classic v1 in ParamClassic ((v1))
+  | ParamRest (v0, v1) ->
+      let v0 = map_tok v0 in
+      let v1 = map_parameter_classic v1 in ParamRest ((v0, v1))
+  | ParamHashSplat (v0, v1) ->
+      let v0 = map_tok v0 in
+      let v1 = map_parameter_classic v1 in ParamHashSplat ((v0, v1))
   | ParamPattern v1 -> let v1 = map_pattern v1 in ParamPattern ((v1))
   | ParamEllipsis v1 -> let v1 = map_tok v1 in ParamEllipsis ((v1))
   | OtherParam ((v1, v2)) ->

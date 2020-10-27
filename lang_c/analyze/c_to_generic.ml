@@ -129,14 +129,15 @@ let rec type_ =
       G.TyName ((v1, G.empty_name_info))
 
 and function_type (v1, v2) =
-  let v1 = type_ v1 and v2 = list parameter v2 in 
+  let v1 = type_ v1 and 
+  v2 = list (fun x -> G.ParamClassic (parameter x)) v2 in 
   v1, v2
 
 and parameter { p_type = p_type; p_name = p_name } =
   let arg1 = type_ p_type in 
   let arg2 = option name p_name in 
-  { G.ptype = Some arg1; pname = arg2;
-    pattrs = []; pinfo = G.empty_id_info (); pdefault = None }
+  { G.ptype = Some arg1; pname = arg2; pattrs = []; pdefault = None;
+    pinfo = G.empty_id_info ();  }
 and struct_kind = function 
   | Struct -> G.OT_StructName
   | Union -> G.OT_UnionName
@@ -301,7 +302,7 @@ let func_def {
   let v4 = if f_static then [G.attr G.Static (fake "static")] else [] in
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef { G.
-    fparams = params |> List.map (fun x -> G.ParamClassic x);
+    fparams = params;
     frettype = Some ret;
     fbody = G.Block v3;
     fkind = G.Function, G.fake "";

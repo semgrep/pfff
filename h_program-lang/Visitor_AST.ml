@@ -334,7 +334,7 @@ and v_type_ x =
   | TyOr (v1, v2, v3) -> v_type_ v1; v_tok v2; v_type_ v3
   | TyAnd (v1, v2, v3) -> v_type_ v1; v_tok v2; v_type_ v3
   | TyBuiltin v1 -> let v1 = v_wrap v_string v1 in ()
-  | TyFun ((v1, v2)) -> let v1 = v_list v_parameter_classic v1 and 
+  | TyFun ((v1, v2)) -> let v1 = v_list v_parameter v1 and 
     v2 = v_type_ v2 in ()
   | TyNameApply ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_type_arguments v2 in ()
@@ -663,6 +663,8 @@ and v_parameter x =
   let k x =
   match x with
   | ParamClassic v1 -> let v1 = v_parameter_classic v1 in ()
+  | ParamRest (v1, v2) | ParamHashSplat (v1, v2) ->
+        v_tok v1; v_parameter_classic v2
   | ParamPattern v1 -> let v1 = v_pattern v1 in ()
   | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
   | OtherParam ((v1, v2)) ->

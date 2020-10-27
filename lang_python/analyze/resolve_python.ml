@@ -76,7 +76,8 @@ let params_of_parameters params =
   let collect_param_names (ix, out) = function
     | ParamPattern ((pat, _)) ->
       (ix + 1, (param_pattern_name ix pat)::out)
-    | ParamDefault ((name, _), _) | ParamStar (name, _) | ParamPow (name, _) ->
+    | ParamDefault ((name, _), _) 
+    | ParamStar (_, (name, _)) | ParamPow (_, (name, _)) ->
       (ix + 1, name::out)
     | ParamSingleStar _ | ParamSlash _ | ParamEllipsis _ ->
       (ix + 1, out)

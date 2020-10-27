@@ -273,20 +273,20 @@ type expr =
   and parameters = parameter list
 (*e: type [[AST_python.parameters]] *)
 (*s: type [[AST_python.parameter]] *)
-   and parameter = 
-      (* the first expr can be only a Name or a Tuple (pattern?),
+   and parameter =
+      (* the first expr can only be a Name or a Tuple (pattern?),
        * and the Name can have a type associated with it
        *)
      | ParamDefault of (name * type_ option) * expr (* default value *)
      (* pattern can be either a name or a tuple pattern *)
      | ParamPattern of param_pattern * type_ option
-     | ParamStar of (name * type_ option)
+     | ParamStar of tok (* '*' *)  * (name * type_ option)
+     | ParamPow  of tok (* '**' *) * (name * type_ option)
      (* python3: single star delimiter to force keyword-only arguments after.
       * reference: https://www.python.org/dev/peps/pep-3102/ *)
      | ParamSingleStar of tok
-     (* python3: single slash delimiter to force positional-only arguments prior. *)
+     (* python3: single slash delimiter to force positional-only arg prior. *)
      | ParamSlash of tok
-     | ParamPow  of (name * type_ option)
      (* sgrep-ext: *)
      | ParamEllipsis of tok
 (*e: type [[AST_python.parameter]] *)
@@ -295,12 +295,11 @@ type expr =
   and argument = 
     | Arg of expr (* this can be Ellipsis for sgrep *)
     | ArgKwd of name (* arg *) * expr (* value *)
-    | ArgStar of expr
-    | ArgPow of expr
+    | ArgStar of (* '*' *)  tok * expr
+    | ArgPow  of (* '**' *) tok * expr
     | ArgComp of expr * for_if list
 (*e: type [[AST_python.argument]] *)
- 
-  
+
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)

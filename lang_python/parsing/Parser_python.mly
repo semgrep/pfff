@@ -75,9 +75,6 @@ let tuple_expr_store l =
     | Some Param -> e
     | _ -> expr_store e
 
-let mk_name_param (name, t) =
-  name, t
-
 let mk_str ii =
   let s = Parse_info.str_of_info ii in
   Str (s, ii)
@@ -378,12 +375,12 @@ typedargslist:
 typed_parameter:
   | tfpdef_or_fpdef { ParamPattern (fst $1, snd $1) }
   (* TODO check default args come after variable args later *)
-  | tfpdef "=" test { ParamDefault (mk_name_param $1, $3) }
-  | "*" tfpdef      { ParamStar (fst $2, snd $2) }
+  | tfpdef "=" test { ParamDefault ($1, $3) }
+  | "*" tfpdef      { ParamStar ($1, $2) }
   | "*"             { ParamSingleStar $1 }
   (* python3-ext: https://www.python.org/dev/peps/pep-0570/ *)
   | "/"             { ParamSlash $1 }
-  | "**" tfpdef     { ParamPow (fst $2, snd $2) }
+  | "**" tfpdef     { ParamPow ($1, $2) }
   (* sgrep-ext: *)
   | "..."           { Flag_parsing.sgrep_guard (ParamEllipsis $1) }
 
@@ -411,10 +408,10 @@ varargslist:
 parameter:
   | fpdef           { ParamPattern ($1, None) }
   | NAME "=" test   { ParamDefault (($1, None), $3) }
-  | "*" NAME        { ParamStar ($2, None) }
+  | "*" NAME        { ParamStar ($1, ($2, None)) }
   (* python3-ext: https://www.python.org/dev/peps/pep-0570/ *)
   | "/"             { ParamSlash $1 }
-  | "**" NAME       { ParamPow ($2, None) }
+  | "**" NAME       { ParamPow ($1, ($2, None)) }
 
 fpdef:
   | NAME           { PatternName $1 }
@@ -992,8 +989,8 @@ argument:
 
   (* python3-ext: *)
   | test COLONEQ test  { Arg (NamedExpr ($1, $2, $3)) }
-  | "*" test           { ArgStar $2 }
-  | "**" test          { ArgPow $2 }
+  | "*" test           { ArgStar ($1, $2) }
+  | "**" test          { ArgPow  ($1, $2) }
 
   (* sgrep-ext: difficult to move in atom without s/r conflict so restricted
      * to argument for now *)

@@ -898,11 +898,11 @@ and type_ =
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
  
   (* old: was 'type_ list * type*' , but languages such as C and 
-   * Go allow also to name those parameters, and Go even allow Variadic 
+   * Go allow also to name those parameters, and Go even allow ParamRest 
    * parameters so we need at least 'type_ * attributes', at which point 
-   * it's better to just use parameter_classic
+   * it's better to just use parameter.
    *)
-  | TyFun of parameter_classic list * type_ (* return type *)
+  | TyFun of parameter list * type_ (* return type *)
 
   (* a special case of TApply, also a special case of TPointer *)
   | TyArray of (* const_expr *) expr option bracket * type_
@@ -1005,8 +1005,6 @@ and attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter 
-  (* for parameters (TODO: move to ParamRest and ParamHashSplat? *)
-  | Variadic | VariadicHashSplat
 (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
@@ -1156,6 +1154,17 @@ and function_definition = {
      (*s: [[AST_generic.parameter]] other cases *)
      | ParamPattern of pattern (* in OCaml, but also now JS, and Python2 *)
      (*e: [[AST_generic.parameter]] other cases *)
+     (* Both those ParamXxx used to be handled as a ParamClassic with special
+      * VariadicXxx attribute in p_attr, but they are used in so many 
+      * languages that it's better to move then in a separate type.
+      * We could do a ParamXxx of tok * ident, but some of those params
+      * may have attribute, they need a id_info, so simpler to reuse
+      * parameter_classic, but pname is always a Some (except for Ruby).
+      * ParamRest could be called ParamSpread.
+      * alt: move that in ParamPattern instead.
+      *)
+     | ParamRest of tok (* '...' in JS, '*' in Python *) * parameter_classic
+     | ParamHashSplat of tok (* '**' in Python *) * parameter_classic
      (*s: [[AST_generic.parameter]] semgrep extension cases *)
      (* sgrep: ... in parameters
       * note: foo(...x) of Js/Go is using the ParamRest, not this *)
@@ -1188,7 +1197,8 @@ and function_definition = {
 (*s: type [[AST_generic.other_parameter_operator]] *)
   and other_parameter_operator =
      (* Python *)
-     | OPO_KwdParam | OPO_SingleStarParam | OPO_SlashParam
+     (* single '*' or '/' to delimit regular parameters from special one *)
+     | OPO_SingleStarParam | OPO_SlashParam
      (* Go *)
      | OPO_Receiver (* of parameter_classic, used to tag the "self" parameter*)
      (* PHP/Ruby *) 

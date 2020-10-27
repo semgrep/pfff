@@ -404,7 +404,8 @@ and hint_type =
       G.TyTuple (t1, v1, t2)
   | HintCallback ((v1, v2)) ->
       let v1 = list hint_type v1 and v2 = option hint_type v2 in 
-      let params = v1 |> List.map G.param_of_type in
+      let params = 
+        v1 |> List.map (fun x -> G.ParamClassic (G.param_of_type x)) in
       let fret = 
         match v2 with
         | Some t -> t
@@ -487,17 +488,14 @@ and parameter {
   let p_name = var p_name in
   let p_default = option expr p_default in
   let p_attrs = list attribute p_attrs in
-  let attrs = p_attrs @ 
-    (match p_variadic with 
-    | None -> [] 
-    | Some tok -> [G.KeywordAttr (G.Variadic, tok)]
-    ) in
-  let pclassic = G.ParamClassic
+  let pclassic = 
   { G.pname = Some p_name; ptype = p_type; pdefault = p_default;
-    pattrs = attrs; pinfo = G.empty_id_info() } in
-  (match p_ref with
-  | None -> pclassic
-  | Some _tok -> G.OtherParam (G.OPO_Ref, [G.Pa pclassic])
+    pattrs = p_attrs; pinfo = G.empty_id_info() } in
+  (match p_variadic, p_ref with
+  | None, None -> G.ParamClassic pclassic
+  | _, Some _tok -> G.OtherParam (G.OPO_Ref, [G.Pa (G.ParamClassic pclassic)])
+  | Some tok, None -> G.ParamRest (tok, pclassic)
+        
   )
 
 and modifier v = wrap modifierbis v

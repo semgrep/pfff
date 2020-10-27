@@ -164,8 +164,8 @@ and v_expr (x: expr) =
 
 and v_argument = function
   | Arg e -> v_expr e
-  | ArgPow e -> v_expr e
-  | ArgStar e -> v_expr e
+  | ArgPow (t, e) -> v_tok t; v_expr e
+  | ArgStar (t, e) -> v_tok t; v_expr e
   | ArgKwd (n, e) -> v_name n; v_expr e
   | ArgComp ((e, xs)) -> v_comprehension v_expr (e, xs)
 
@@ -256,9 +256,11 @@ and v_parameter x =
       let v1 = v_param_pattern v1
       and v2 = v_option v_type_ v2
       in ()
-  | ParamStar ((v1, v2)) ->
+  | ParamStar (v0, (v1, v2)) ->
+      v_tok v0;
       let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
-  | ParamPow ((v1, v2)) ->
+  | ParamPow (v0, (v1, v2)) ->
+      v_tok v0;
       let v1 = v_name v1 and v2 = v_option v_type_ v2 in ()
   in
   vin.kparameter (k, all_functions) x

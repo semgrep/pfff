@@ -141,24 +141,20 @@ and formal_param = function
       let param = G.ParamClassic (G.param_of_id id) in
       G.OtherParam (G.OPO_Ref, [G.Tk t; G.Pa param])
   | Formal_star (t, id) ->
-      let attr = G.KeywordAttr (G.Variadic, t) in
-      let p = { (G.param_of_id id) with G.pattrs = [attr] } in
-      G.ParamClassic p
+      G.ParamRest (t, G.param_of_id id)
   | Formal_rest (t) ->
-      let attr = G.KeywordAttr (G.Variadic, t) in
-      let p = { G.pattrs = [attr]; pinfo = G.empty_id_info ();
+      let p = { G.pattrs = []; pinfo = G.empty_id_info ();
                 ptype = None; pname = None; pdefault = None } in
-      G.ParamClassic p
+      G.ParamRest (t, p)
   | Formal_hash_splat (t, idopt) ->
-      let attr = G.KeywordAttr (G.Variadic, t) in
       let p = 
         match idopt with
+        | Some id -> G.param_of_id id
         | None ->
-            { G.pattrs = [attr]; pinfo = G.empty_id_info ();
+            { G.pattrs = []; pinfo = G.empty_id_info ();
               ptype = None; pname = None; pdefault = None }
-        | Some id -> { (G.param_of_id id) with G.pattrs = [attr] }
        in
-       G.ParamClassic p
+       G.ParamHashSplat (t, p)
   | Formal_default (id, _t, e) ->
       let e = expr e in
       let p = { (G.param_of_id id) with G.pdefault = Some e } in

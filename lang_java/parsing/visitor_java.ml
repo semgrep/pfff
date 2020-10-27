@@ -86,7 +86,6 @@ and v_modifier = function
   | Static
   | Transient | Volatile | Native | StrictFP
   | Synchronized
-  | Variadic
   | DefaultModifier -> ()
   | Annotation v1 -> v_annotation v1
 

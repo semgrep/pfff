@@ -305,13 +305,10 @@ let rec expr (x: expr) =
 and argument = function
   | Arg e -> let e = expr e in 
       G.Arg e
-  | ArgStar e -> let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.Spread, fake "spread"), 
-          fb[G.expr_to_arg e]))
-  | ArgPow e ->  let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.HashSplat, fake "**"), 
-          fb[G.expr_to_arg e]))
-
+  | ArgStar (t, e) -> let e = expr e in
+      G.Arg (G.Call (G.IdSpecial (G.Spread, t), fb[G.expr_to_arg e]))
+  | ArgPow (t, e) ->  let e = expr e in
+      G.Arg (G.Call (G.IdSpecial (G.HashSplat, t), fb[G.expr_to_arg e]))
   | ArgKwd (n, e) -> let n = name n in let e = expr e in
       G.ArgKwd (n, e)
   | ArgComp (e, xs) ->
@@ -454,16 +451,14 @@ and parameters xs =
   | ParamPattern ((PatternTuple pat, _)) ->
      let pat = list param_pattern pat in
      G.ParamPattern (G.PatTuple (G.fake_bracket pat))
-  | ParamStar (n, topt) ->
+  | ParamStar (t, (n, topt)) ->
      let n = name n in
      let topt = option type_ topt in
-     G.ParamClassic { (G.param_of_id n) with
-       G.ptype = topt; pattrs = [G.attr G.Variadic (fake "...")]; }
-   | ParamPow (n, topt) ->
+     G.ParamRest (t, { (G.param_of_id n) with G.ptype = topt; })
+   | ParamPow (t, (n, topt)) ->
      let n = name n in
      let topt = option type_ topt in
-     G.OtherParam (G.OPO_KwdParam, 
-            [G.I n] @ (match topt with None -> [] | Some t -> [G.T t]))
+     G.ParamHashSplat (t, { (G.param_of_id n) with G.ptype = topt })
    | ParamEllipsis tok -> G.ParamEllipsis tok
    | ParamSingleStar tok ->
      G.OtherParam (G.OPO_SingleStarParam, [G.Tk tok])

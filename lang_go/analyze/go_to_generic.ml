@@ -130,10 +130,6 @@ let rec type_ =
         | None -> G.TyBuiltin (fake_id "void")
         | Some t -> t
       in
-      let params = params |> Common.map_filter (function
-           | G.ParamClassic x -> Some x
-           | _ -> None
-       ) in
       G.TyFun (params, ret)
   | TMap ((t, (_, v1, _), v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
@@ -163,7 +159,7 @@ and func_type { fparams = fparams; fresults = fresults } =
 
 and parameter_binding x = 
  match x with
- | ParamClassic x -> G.ParamClassic (parameter x)
+ | ParamClassic x -> parameter x
  | ParamEllipsis t -> G.ParamEllipsis t
 
 and parameter x = 
@@ -172,11 +168,12 @@ and parameter x =
   let arg1 = option ident pname in
   let arg2 = type_ ptype in 
   let arg3 = option tok pdots in 
-  { G.pname = arg1; ptype = Some arg2; 
-    pdefault = None; 
-    pattrs = (match arg3 with None -> [] | Some tok -> [G.attr G.Variadic tok]);
-    pinfo = G.empty_id_info ()
-    }
+  let pclassic = 
+    { G.pname = arg1; ptype = Some arg2;  pdefault = None; pattrs = [];
+      pinfo = G.empty_id_info () } in
+   match arg3 with 
+   | None -> G.ParamClassic pclassic
+   | Some tok -> G.ParamRest (tok, pclassic)
 
 
 and struct_field (v1, v2) =
@@ -559,7 +556,7 @@ and top_decl =
       and (params, ret) = func_type v3 and v4 = stmt v4 in
       let ent = G.basic_entity v1 [] in
       let def = mk_func_def (G.Method, t) params ret v4 in
-      let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (G.ParamClassic v2)])
+      let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (v2)])
       in
       G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams})
   | DTop v1 -> let v1 = decl v1 in v1

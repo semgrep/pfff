@@ -101,8 +101,6 @@ type modifier =
   | Transient | Volatile | Native | StrictFP
   | Synchronized
 
-  (* only for parameters, '...' *)
-  | Variadic
   (* java-ext: ?? *)
   | DefaultModifier
 

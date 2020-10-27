@@ -120,7 +120,6 @@ let type_parameter =
 
 let rec modifier (x, tok) =
   match x with
-  | Variadic -> G.attr G.Variadic tok
   | Public -> G.attr G.Public tok
   | Protected -> G.attr G.Protected tok
   | Private -> G.attr G.Private tok
@@ -455,8 +454,7 @@ and parameter_binding = function
   | ParamSpread (tk, v) ->
       let (ent, t) = var v in
       let p = entity_to_param ent t in
-      G.ParamClassic 
-        { p with G.pattrs = G.KeywordAttr (G.Variadic, tk)::p.G.pattrs }
+      G.ParamRest (tk, p)
   | ParamEllipsis t -> G.ParamEllipsis t
 
 and

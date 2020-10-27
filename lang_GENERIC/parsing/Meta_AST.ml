@@ -444,7 +444,7 @@ and vof_type_ =
       let v1 = vof_wrap OCaml.vof_string v1
       in OCaml.VSum (("TyBuiltin", [ v1 ]))
   | TyFun ((v1, v2)) ->
-      let v1 = OCaml.vof_list vof_parameter_classic v1
+      let v1 = OCaml.vof_list vof_parameter v1
       and v2 = vof_type_ v2
       in OCaml.VSum (("TyFun", [ v1; v2 ]))
   | TyNameApply ((v1, v2)) ->
@@ -514,8 +514,6 @@ and vof_keyword_attribute =
   | Dtor -> OCaml.VSum (("Dtor", []))
   | Getter -> OCaml.VSum (("Getter", []))
   | Setter -> OCaml.VSum (("Setter", []))
-  | Variadic -> OCaml.VSum (("Variadic", []))
-  | VariadicHashSplat -> OCaml.VSum (("VariadicHashSplat", []))
   | Optional -> OCaml.VSum (("Optional", []))
   | NotNull -> OCaml.VSum (("NotNull", []))
 
@@ -916,6 +914,14 @@ and vof_parameter =
   | ParamClassic v1 ->
       let v1 = vof_parameter_classic v1
       in OCaml.VSum (("ParamClassic", [ v1 ]))
+  | ParamRest (v0, v1) ->
+      let v0 = vof_tok v0 in
+      let v1 = vof_parameter_classic v1
+      in OCaml.VSum (("ParamRest", [ v0; v1 ]))
+  | ParamHashSplat (v0, v1) ->
+      let v0 = vof_tok v0 in
+      let v1 = vof_parameter_classic v1
+      in OCaml.VSum (("ParamHashSplat", [ v0; v1 ]))
   | ParamPattern v1 ->
       let v1 = vof_pattern v1 in OCaml.VSum (("ParamPattern", [ v1 ]))
   | ParamEllipsis v1 ->
@@ -952,7 +958,6 @@ and
 and vof_other_parameter_operator =
   function
   | OPO_Todo -> OCaml.VSum (("OPO_Todo", []))
-  | OPO_KwdParam -> OCaml.VSum (("OPO_KwdParam", []))
   | OPO_Ref -> OCaml.VSum (("OPO_Ref", []))
   | OPO_Receiver -> OCaml.VSum (("OPO_Receiver", []))
   | OPO_SingleStarParam -> OCaml.VSum ("OPO_SingleStarParam", [])
