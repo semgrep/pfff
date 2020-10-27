@@ -310,7 +310,7 @@ let visit_program
           (*tag tok_with (KeywordConditional); *)
           k x
 
-      | G.DotAccess (_e, tok, (G.FId (id) | G.FName (id, _))) ->
+      | G.DotAccess (_e, tok, (G.EId (id) | G.EName (id, _))) ->
           let info = snd id in
           (match PI.str_of_info tok with
           | "#" -> tag info (Entity (Method, (Use2 fake_no_use2)))

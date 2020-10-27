@@ -253,14 +253,14 @@ and expr =
       G.OtherExpr (G.OE_ArrayAppend, [G.Tk t1; G.E v1])
   | Obj_get ((v1, t, Id [v2])) -> 
       let v1 = expr v1 and v2 = ident v2 in
-      G.DotAccess (v1, t, G.FId v2)
+      G.DotAccess (v1, t, G.EId v2)
   | Obj_get ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = expr v2 in
-      G.DotAccess (v1, t, G.FDynamic v2)
+      G.DotAccess (v1, t, G.EDynamic v2)
   | Class_get ((v1, t, Id [v2])) -> let v1 = expr v1 and v2 = ident v2 in
-      G.DotAccess (v1, t, G.FId v2)
+      G.DotAccess (v1, t, G.EId v2)
   | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
-      G.DotAccess (v1, t, G.FDynamic v2)
+      G.DotAccess (v1, t, G.EDynamic v2)
   | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
       G.Call (G.IdSpecial(G.New, t), fb ((v1::v2) |> List.map G.expr_to_arg))
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in

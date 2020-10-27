@@ -138,8 +138,8 @@ and expr =
     let v1 = expr v1 in
     let vtok = tok vtok in
     (match v2 with
-    | [], id -> let id = ident id in G.DotAccess (v1, vtok, G.FId id)
-    | _ -> let v2 = name v2 in G.DotAccess (v1, vtok, G.FName v2)
+    | [], id -> let id = ident id in G.DotAccess (v1, vtok, G.EId id)
+    | _ -> let v2 = name v2 in G.DotAccess (v1, vtok, G.EName v2)
            
     )
   | FieldAssign ((v1, t1, v2, t2, v3)) ->
@@ -147,9 +147,9 @@ and expr =
     let t1 = tok t1 in let t2 = tok t2 in
     (match v2 with
     | [], id -> let id = ident id in 
-            G.Assign (G.DotAccess (v1, t1, G.FId id), t2, v3)
+            G.Assign (G.DotAccess (v1, t1, G.EId id), t2, v3)
     | _ -> let v2 = name v2 in 
-           G.Assign (G.DotAccess (v1, t1, G.FName v2), t2, v3)
+           G.Assign (G.DotAccess (v1, t1, G.EName v2), t2, v3)
     )
       
   | Record ((v1, v2)) ->
@@ -179,7 +179,7 @@ and expr =
   | ObjAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
-      G.DotAccess (v1, t, G.FId v2)
+      G.DotAccess (v1, t, G.EId v2)
   | LetIn ((tlet, v1, v2, v3)) ->
       let _v1 = rec_opt v1 in 
       let v2 = list let_binding v2 in

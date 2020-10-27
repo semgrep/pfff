@@ -194,7 +194,7 @@ and map_expr x =
   | LetPattern ((v1, v2)) ->
       let v1 = map_pattern v1 and v2 = map_expr v2 in LetPattern ((v1, v2))
   | DotAccess ((v1, t, v2)) ->
-      let v1 = map_expr v1 and t = map_tok t and v2 = map_field_ident v2 in
+      let v1 = map_expr v1 and t = map_tok t and v2 = map_ident_or_dynamic v2 in
       DotAccess ((v1, t, v2))
   | ArrayAccess ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_bracket map_expr v2 in 
@@ -246,10 +246,10 @@ and map_expr x =
   in
   vin.kexpr (k, all_functions) x
 
-and map_field_ident = function
- | FId v1 -> let v1 = map_ident v1 in FId v1
- | FName v1 -> let v1 = map_name v1 in FName v1
- | FDynamic v1 -> let v1 = map_expr v1 in FDynamic v1
+and map_ident_or_dynamic = function
+ | EId v1 -> let v1 = map_ident v1 in EId v1
+ | EName v1 -> let v1 = map_name v1 in EName v1
+ | EDynamic v1 -> let v1 = map_expr v1 in EDynamic v1
 
 and map_literal =
   function
@@ -847,7 +847,7 @@ and map_any =
   | Dk v1 -> let v1 = map_definition_kind v1 in Dk ((v1))
   | Pr v1 -> let v1 = map_program v1 in Pr ((v1))
   | Lbli v1 -> let v1 = map_label_ident v1 in Lbli ((v1))
-  | Fldi v1 -> let v1 = map_field_ident v1 in Fldi ((v1))
+  | IoD v1 -> let v1 = map_ident_or_dynamic v1 in IoD ((v1))
 
  and all_functions =
     {

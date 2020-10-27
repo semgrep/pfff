@@ -191,7 +191,7 @@ and vof_expr =
   | DotAccess ((v1, t, v2)) ->
       let v1 = vof_expr v1
       and t = vof_tok t
-      and v2 = vof_field_ident v2
+      and v2 = vof_ident_or_dynamic v2
       in OCaml.VSum (("DotAccess", [ v1; t; v2 ]))
   | ArrayAccess ((v1, v2)) ->
       let v1 = vof_expr v1
@@ -245,10 +245,10 @@ and vof_expr =
       and v2 = OCaml.vof_list vof_any v2
       in OCaml.VSum (("OtherExpr", [ v1; v2 ]))
 
-and vof_field_ident = function
- | FId (v1) -> let v1 = vof_ident v1 in OCaml.VSum (("FId", [v1]))
- | FName (v1) -> let v1 = vof_name v1 in OCaml.VSum (("FName", [v1]))
- | FDynamic (v1) -> let v1 = vof_expr v1 in OCaml.VSum (("FDynamic", [v1]))
+and vof_ident_or_dynamic = function
+ | EId (v1) -> let v1 = vof_ident v1 in OCaml.VSum (("EId", [v1]))
+ | EName (v1) -> let v1 = vof_name v1 in OCaml.VSum (("EName", [v1]))
+ | EDynamic (v1) -> let v1 = vof_expr v1 in OCaml.VSum (("EDynamic", [v1]))
 
 and vof_literal =
   function
@@ -1128,5 +1128,5 @@ and vof_any =
   | Dk v1 -> let v1 = vof_definition_kind v1 in OCaml.VSum (("Dk", [ v1 ]))
   | Pr v1 -> let v1 = vof_program v1 in OCaml.VSum (("Pr", [ v1 ]))
   | Lbli v1 -> let v1 = vof_label_ident v1 in OCaml.VSum ("Lbli", [v1])
-  | Fldi v1 -> let v1 = vof_field_ident v1 in OCaml.VSum ("Fldi", [v1])
+  | IoD v1 -> let v1 = vof_ident_or_dynamic v1 in OCaml.VSum ("IoD", [v1])
   

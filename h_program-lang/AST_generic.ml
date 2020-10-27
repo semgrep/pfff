@@ -25,14 +25,14 @@ open Common
  *
  * Right now this generic AST is mostly the factorized union of:
  *  - Python
- *  - Javascript
+ *  - Javascript, JSON, and Typescript
  *  - Java
- *  - C
+ *  - C (and some C++)
  *  - Go
  *  - PHP
  *  - OCaml
  *  - Ruby
- *  - TODO next: Csharp, Typescript
+ *  - TODO next: Csharp, Kotlin
  *
  * rational: In the end, programming languages have a lot in Common.
  * Even though most interesting analysis are probably better done on a
@@ -273,6 +273,21 @@ type name = ident * name_info
    | QExpr of expr * tok (* Ruby *)
 (*e: type [[AST_generic.qualifier]] *)
 
+(* This is used to represent field names, where sometimes the name
+ * can be a dynamic expression, or more recently also to
+ * represent entities like in Ruby where a class name can be dynamic.
+ *)
+and ident_or_dynamic = 
+  (* In the case of a field, hard to add '* id_info'; hard to resolve *)
+  | EId of ident
+  (* Useful for OCaml field access, but also for Ruby class entity name.
+   * Note that we could also use EDynamic (IdQualified) but better to
+   * add special case here.
+   *)
+  | EName of name
+  (* for PHP/JS fields (even though JS use ArrayAccess for that), or Ruby *)
+  | EDynamic of expr
+
 (*****************************************************************************)
 (* Naming/typing *)
 (*****************************************************************************)
@@ -372,7 +387,7 @@ and expr =
    * In the last case it should be rewritten as a IdQualified with a
    * qualifier though.
    *)
-  | DotAccess of expr * tok (* ., ::, ->, # *) * field_ident 
+  | DotAccess of expr * tok (* ., ::, ->, # *) * ident_or_dynamic 
 
   (*s: [[AST_generic.expr]] array access cases *)
   (* in Js ArrayAccess is also abused to perform DotAccess (..., FDynamic) *)
@@ -543,11 +558,7 @@ and expr =
      | FString (* Python *)
 
 (*s: type [[AST_generic.field_ident]] *)
-  and field_ident =
-    | FId of ident (* hard to add '* id_info' here, hard to resolve *)
     (*s: [[AST_generic.field_ident]] other cases *)
-    | FName of name (* OCaml *)
-    | FDynamic of expr (* PHP, JS (even though use ArrayAccess for that) *)
     (*e: [[AST_generic.field_ident]] other cases *)
 (*e: type [[AST_generic.field_ident]] *)
 
@@ -1451,7 +1462,7 @@ and any =
   | Dk of definition_kind
   | Di of dotted_ident
   | Lbli of label_ident
-  | Fldi of field_ident
+  | IoD of ident_or_dynamic
   | Tk of tok
   | TodoK of todo_kind
   (*e: [[AST_generic.any]] other cases *)

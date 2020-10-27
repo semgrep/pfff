@@ -182,8 +182,8 @@ let rec lval env eorig =
       in
       let offset = 
         match field with
-        | G.FId id -> Dot id
-        | G.FName _ | G.FDynamic _ -> todo (G.E eorig)
+        | G.EId id -> Dot id
+        | G.EName _ | G.EDynamic _ -> todo (G.E eorig)
       in
       { base; offset }
 
