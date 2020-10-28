@@ -1611,7 +1611,7 @@ let basic_entity id attrs = {
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
   let entity = basic_entity id [] in
-  FieldStmt(DefStmt (entity, FieldDef { vinit = vopt; vtype = typeopt}))
+  FieldStmt(DefStmt (entity, VarDef { vinit = vopt; vtype = typeopt}))
 (*e: function [[AST_generic.basic_field]] *)
 
 (*s: function [[AST_generic.attr]] *)
