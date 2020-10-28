@@ -821,8 +821,8 @@ and vof_definition_kind =
       let v1 = vof_function_definition v1 in OCaml.VSum (("FuncDef", [ v1 ]))
   | VarDef v1 ->
       let v1 = vof_variable_definition v1 in OCaml.VSum (("VarDef", [ v1 ]))
-  | FieldDef v1 ->
-      let v1 = vof_variable_definition v1 in OCaml.VSum (("FieldDef", [ v1 ]))
+  | FieldDefColon v1 ->
+      let v1 = vof_variable_definition v1 in OCaml.VSum (("FieldDefColon", [ v1 ]))
   | ClassDef v1 ->
       let v1 = vof_class_definition v1 in OCaml.VSum (("ClassDef", [ v1 ]))
   | TypeDef v1 ->

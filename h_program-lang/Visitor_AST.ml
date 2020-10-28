@@ -628,7 +628,7 @@ and v_def_kind =
   function
   | FuncDef v1 -> let v1 = v_function_definition v1 in ()
   | VarDef v1 -> let v1 = v_variable_definition v1 in ()
-  | FieldDef v1 -> let v1 = v_variable_definition v1 in ()
+  | FieldDefColon v1 -> let v1 = v_variable_definition v1 in ()
   | ClassDef v1 -> let v1 = v_class_definition v1 in ()
   | TypeDef v1 -> let v1 = v_type_definition v1 in ()
   | ModuleDef v1 -> let v1 = v_module_definition v1 in ()

@@ -1058,25 +1058,31 @@ and definition = entity * definition_kind
      * in a header file (called a prototype in C).
      *)
     | FuncDef   of function_definition
+
     (* newvar: can be used also for constants.
      * can contain special_multivardef_pattern ident in which case vinit
      * is the pattern assignment.
      *)
     | VarDef    of variable_definition
-    (* FieldDef can only be present inside a record/class (in a FieldStmt).
+    (* FieldDefColon can be used only inside a record (in a FieldStmt).
      * This used to be merged with VarDef, but in semgrep we don't want
-     * a VarDef to match a field definition for certain languages (e.g., JS).
+     * a VarDef to match a field definition for certain languages 
+     * (e.g., JS, OCaml), and we definitely don't want the 
+     * vardef_to_assign equivalence to be used on FieldDefColon.
      * TODO? maybe merge back with VarDef but add a field in 
-     *  variable_definition saying whether it's using a field syntax?
+     *  variable_definition saying whether it's using a colon syntax?
+     * TODO? merge instead JS objects with Containers? 
+     *
      * Note that we could have used a FieldVar in the field type instead
      * of this FieldDef here, which would be more precise, but 
      * this complicates things in semgrep where it's convenient to have
      * a uniform FieldStmt(DefStmt) that covers field and methods
      * (see m_list__m_field in semgrep).
-     * Note that FieldDef where vinit is a Lambda should really be converted
-     * in a FuncDef instead.
+     * Note that FieldDefColon where vinit is a Lambda instead be converted
+     * in a FuncDef!
      *)
-    | FieldDef  of variable_definition
+    | FieldDefColon  of variable_definition
+
     | ClassDef  of class_definition
     (*s: [[AST_generic.definition_kind]] other cases *)
     | TypeDef   of type_definition
