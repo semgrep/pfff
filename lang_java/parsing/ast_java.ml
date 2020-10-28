@@ -73,8 +73,8 @@ type typ =
 
   and type_argument =
     | TArgument of ref_type
-    (* TODO: of tok (* ? *) * bool wrap * ref_type) option *)
-    | TQuestion of (bool (* extends|super, true = super *) * ref_type) option
+    | TWildCard of tok (* '?' *) * 
+            (bool wrap (* extends|super, true = super *) * ref_type) option
 
   and type_arguments = type_argument list (* TODO bracket *)
    (* A ref type should be a class type or an array of whatever, but not a

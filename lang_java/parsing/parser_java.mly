@@ -391,9 +391,9 @@ array_type:
 (* javaext: 1? *)
 type_argument:
  | reference_type { TArgument $1 }
- | COND           { TQuestion None }
- | COND EXTENDS reference_type { TQuestion (Some (false, $3)) }
- | COND SUPER   reference_type { TQuestion (Some (true, $3))}
+ | COND           { TWildCard ($1, None) }
+ | COND EXTENDS reference_type { TWildCard ($1, Some ((false,$2), $3)) }
+ | COND SUPER   reference_type { TWildCard ($1, Some ((true, $2), $3)) }
 
 (*----------------------------*)
 (* Generics parameters *)

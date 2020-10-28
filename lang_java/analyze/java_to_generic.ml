@@ -32,9 +32,9 @@ let id = fun x -> x
 let option = Common.map_opt
 let list = List.map
 
-let string = id
-let bool = id
-let int = id
+let (string: string -> string) = id
+let (bool: bool -> bool) = id
+let (int: int -> int) = id
 
 let error = AST_generic.error
 
@@ -97,20 +97,16 @@ and class_type v =
 and type_argument =
   function
   | TArgument v1 -> let v1 = ref_type v1 in G.TypeArg v1
-  | TQuestion v1 ->
-      let v1 =
-        option
-          (fun (v1, v2) -> let v1 = bool v1 and v2 = ref_type v2 in (v1,v2))
-          v1
+  | TWildCard (v1, v2) ->
+      let v2 =
+        option (fun (v1, v2) -> 
+            let v1 = wrap bool v1 and v2 = ref_type v2 in 
+            (v1,v2))
+          v2
       in
-      let anys = 
-        match v1 with
-        | None ->  []
-        | Some (_boolTODO, t) -> [G.T t]
-      in
-      G.OtherTypeArg (G.OTA_Question, anys)
-and ref_type v = typ v
+      G.TypeWildcard (v1, v2)
 
+and ref_type v = typ v
 
 let type_parameter =
   function
@@ -547,7 +543,7 @@ and decl decl =
       G.DefStmt (ent, G.VarDef def)
   | Enum v1 -> let (ent, def) = enum_decl v1 in
       G.DefStmt (ent, G.TypeDef def)
-  | Init ((v1, v2)) -> let _v1TODO = bool v1 and v2 = stmt v2 in
+  | Init ((_v1TODO, v2)) -> let v2 = stmt v2 in
       v2
   | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1, G.sc)
   | EmptyDecl t -> G.Block (t, [], t)

@@ -948,15 +948,13 @@ and type_ =
 (*e: type [[AST_generic.type_arguments]] *)
 
 (*s: type [[AST_generic.type_argument]] *)
-    (* less: just alias to type_? get rid of OTA_Question? *)
     and type_argument = 
       | TypeArg of type_
-      | OtherTypeArg of other_type_argument_operator * any list
+      (* Java only *)
+      | TypeWildcard of tok (* '?' *) * 
+                 (bool wrap (* extends|super, true=super *) * type_) option
 (*e: type [[AST_generic.type_argument]] *)
-
 (*s: type [[AST_generic.other_type_argument_operator]] *)
-      and other_type_argument_operator =
-       | OTA_Question
 (*e: type [[AST_generic.other_type_argument_operator]] *)
 
 (*s: type [[AST_generic.other_type_operator]] *)

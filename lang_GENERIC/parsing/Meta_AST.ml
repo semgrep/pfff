@@ -476,12 +476,14 @@ and vof_type_arguments v = OCaml.vof_list vof_type_argument v
 and vof_type_argument =
   function
   | TypeArg v1 -> let v1 = vof_type_ v1 in OCaml.VSum (("TypeArg", [ v1 ]))
-  | OtherTypeArg ((v1, v2)) ->
-      let v1 = vof_other_type_argument_operator v1
-      and v2 = OCaml.vof_list vof_any v2
-      in OCaml.VSum (("OtherTypeArg", [ v1; v2 ]))
-and vof_other_type_argument_operator =
-  function | OTA_Question -> OCaml.VSum (("OTA_Question", []))
+  | TypeWildcard (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = OCaml.vof_option (fun (v1, v2) -> 
+            let v1 = vof_wrap OCaml.vof_bool v1 in
+            let v2 = vof_type_ v2 in
+            OCaml.VTuple [v1; v2]
+            ) v2 in
+      OCaml.VSum (("TypeWildcard", [ v1; v2 ]))
 and vof_other_type_operator =
   function
   | OT_Todo -> OCaml.VSum (("OT_Todo", []))

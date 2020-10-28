@@ -359,11 +359,14 @@ and v_type_arguments v = v_list v_type_argument v
 and v_type_argument =
   function
   | TypeArg v1 -> let v1 = v_type_ v1 in ()
-  | OtherTypeArg ((v1, v2)) ->
-      let v1 = v_other_type_argument_operator v1
-      and v2 = v_list v_any v2
-      in ()
-and v_other_type_argument_operator = function | OTA_Question -> ()
+  | TypeWildcard (v1, v2) ->
+      v_tok v1;
+      (match v2 with
+      | None -> ()
+      | Some (v1, v2) ->
+         v_wrap v_bool v1;
+         v_type_ v2
+      )
 
 and v_other_type_operator _ = ()
 

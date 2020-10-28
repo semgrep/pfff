@@ -361,13 +361,12 @@ and map_type_arguments v = map_of_list map_type_argument v
 and map_type_argument =
   function
   | TypeArg v1 -> let v1 = map_type_ v1 in TypeArg ((v1))
-  | OtherTypeArg ((v1, v2)) ->
-      let v1 = map_other_type_argument_operator v1
-      and v2 = map_of_list map_any v2
-      in OtherTypeArg ((v1, v2))
-
-and map_other_type_argument_operator =
-  function | OTA_Question -> OTA_Question
+  | TypeWildcard (v1, v2) -> 
+    let v1 = map_tok v1 in
+    let v2 = 
+      map_of_option (fun (v1, v2) -> map_wrap map_of_bool v1, map_type_ v2) v2
+    in
+    TypeWildcard (v1, v2)
 
 and map_other_type_operator x = x
 

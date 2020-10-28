@@ -162,12 +162,10 @@ and v_identifier_ =
 and v_type_argument =
   function
   | TArgument v1 -> let v1 = v_ref_type v1 in ()
-  | TQuestion v1 ->
-      let v1 =
-        v_option
-          (fun (v1, v2) -> let v1 = v_bool v1 and v2 = v_ref_type v2 in ())
-          v1
-      in ()
+  | TWildCard (v1, v2) ->
+      v_tok v1;
+      v_option (fun (v1, v2) -> v_wrap v_bool v1; v_ref_type v2) v2;
+      ()
 and v_type_arguments x = v_list v_type_argument x
 
 and v_literal =
