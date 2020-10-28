@@ -138,14 +138,12 @@ open Common
  *    used in a function (instead of having the first Assign play the role
  *    of a VarDef, as done in Python for example).
  *
- *
  * See also pfff/lang_GENERIC/
  *)
 
 (*****************************************************************************)
 (* Token (leaf) *)
 (*****************************************************************************)
-
 (*s: type [[AST_generic.tok]] *)
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
@@ -269,7 +267,7 @@ type name = ident * name_info
 (*s: type [[AST_generic.qualifier]] *)
   and qualifier = 
    | QTop of tok (* ::, Ruby, C++ *)
-   | QDots of dotted_ident (* Java *)
+   | QDots of dotted_ident (* Java, OCaml *)
    | QExpr of expr * tok (* Ruby *)
 (*e: type [[AST_generic.qualifier]] *)
 
@@ -950,9 +948,9 @@ and type_ =
 (*e: type [[AST_generic.type_arguments]] *)
 
 (*s: type [[AST_generic.type_argument]] *)
+    (* less: just alias to type_? get rid of OTA_Question? *)
     and type_argument = 
       | TypeArg of type_
-
       | OtherTypeArg of other_type_argument_operator * any list
 (*e: type [[AST_generic.type_argument]] *)
 
@@ -1037,6 +1035,11 @@ and definition = entity * definition_kind
  *)
 (*s: type [[AST_generic.entity]] *)
   and entity = {
+    (* In Ruby you can define a class with a qualified name as in
+     * class A::B::C, and even dynamically.
+     * In C++ you can define a method with a class qualifier outside a class,
+     * hence the use of ident_or_dynamic below.
+     *) 
     name: ident_or_dynamic;
     (*s: [[AST_generic.entity]] attribute field *)
     attrs: attribute list;
@@ -1109,11 +1112,9 @@ and definition = entity * definition_kind
 
 (* template/generics/polymorphic-type *)
 (*s: type [[AST_generic.type_parameter]] *)
-and type_parameter = ident * type_parameter_constraints
+and type_parameter = ident * type_parameter_constraint list
 (*e: type [[AST_generic.type_parameter]] *)
-
 (*s: type [[AST_generic.type_parameter_constraints]] *)
-  and type_parameter_constraints = type_parameter_constraint list
 (*e: type [[AST_generic.type_parameter_constraints]] *)
 (*s: type [[AST_generic.type_parameter_constraint]] *)
    and type_parameter_constraint = 
@@ -1277,21 +1278,22 @@ and type_definition = {
 (*e: type [[AST_generic.other_or_type_element_operator]] *)
 
 (* ------------------------------------------------------------------------- *)
-(* Object/struct/record field definition *)
+(* Object/struct/record/class field definition *)
 (* ------------------------------------------------------------------------- *)
 
  (* Field definition and use, for classes, objects, and records.
   * note: I don't call it field_definition because it's used both to
   * define the shape of a field (a definition), and when creating
   * an actual field (a value).
+  *
   * old: there used to be a FieldVar and FieldMethod similar to 
   * VarDef and FuncDef but they are now converted into a FieldStmt(DefStmt).
   * This simplifies semgrep so that a function pattern can match
   * toplevel functions, nested functions, and methods.
-  * Note that for FieldVar we sometimes converts it to a FieldDef 
+  * Note that for FieldVar we sometimes converts it to a FieldDefColon
   * (which is very similar to a VarDef) because some people don't want a VarDef
   * to match a field definition in certain languages (e.g., Javascript) where
-  * de variable declaration and field definition have a different syntax.
+  * the variable declaration and field definition have a different syntax.
   * Note: the FieldStmt(DefStmt(FuncDef(...))) can have empty body
   * for interface methods.
   *)
