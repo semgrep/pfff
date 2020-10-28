@@ -426,10 +426,11 @@ and class_definition = {
 
   and property = 
     (* field_classic.fld_body is a (Some Fun) for methods.
-     * None is possible only for class fields. For object there is
-     * always a value.
+     * None is possible only for class fields. For objects there is
+     * always a value and it's using FieldColon instead of Field.
      *)
     | Field of field_classic
+    | FieldColon of field_classic
     (* less: can unsugar? *)
     | FieldSpread of tok * expr
     (* This is present only when in pattern context.

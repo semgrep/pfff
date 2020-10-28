@@ -348,12 +348,8 @@ and v_property x =
   (* tweak *)
   let k x =  match x with
   | FieldTodo (v1, v2) -> v_todo_category v1; v_stmt v2
-  | Field { fld_name; fld_attrs; fld_type; fld_body} ->
-      let v1 = v_property_name fld_name
-      and v2 = v_list v_attribute fld_attrs
-      and ty = v_option v_type_ fld_type
-      and v3 = v_option v_expr fld_body
-      in ()
+  | Field v1 -> v_field_classic v1
+  | FieldColon v1 -> v_field_classic v1
   | FieldSpread (t, v1) -> let t = v_tok t in let v1 = v_expr v1 in ()
   | FieldEllipsis v1 -> let v1 = v_tok v1 in ()
   | FieldPatDefault (v1, v2, v3) ->
@@ -362,6 +358,13 @@ and v_property x =
         v_expr v3
   in
   vin.kprop (k, all_functions) x
+
+and v_field_classic { fld_name; fld_attrs; fld_type; fld_body} =
+      let v1 = v_property_name fld_name
+      and v2 = v_list v_attribute fld_attrs
+      and ty = v_option v_type_ fld_type
+      and v3 = v_option v_expr fld_body
+      in ()
 
 and v_property_prop _ = ()
 

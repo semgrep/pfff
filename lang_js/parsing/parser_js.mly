@@ -100,6 +100,10 @@ let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
   let fld_attrs = props |> List.map attr in
   Field { fld_name; fld_attrs; fld_type; fld_body = eopt }
 
+let mk_FieldColon ?(fld_type=None) ?(props=[]) fld_name eopt =
+  let fld_attrs = props |> List.map attr in
+  FieldColon { fld_name; fld_attrs; fld_type; fld_body = eopt }
+
 let add_modifiers _propsTODO fld = 
   fld
 
@@ -537,10 +541,10 @@ binding_property:
  | binding_id initializeur?
     { match $2 with 
       (* { x } shorthand for { x: x }, like in OCaml *)
-      | None -> mk_Field (PN $1) (Some (Id $1))
-      | Some (_, e) -> mk_Field (PN $1) (Some e)
+      | None -> mk_FieldColon (PN $1) (Some (Id $1))
+      | Some (_, e) -> mk_FieldColon (PN $1) (Some e)
     }
- | property_name ":" binding_element { mk_Field $1 (Some $3) }
+ | property_name ":" binding_element { mk_FieldColon $1 (Some $3) }
  (* can appear only at the end of a binding_property_list in ECMA *)
  | "..." binding_id      { FieldSpread ($1, Id $2) }
  | "..." binding_pattern { FieldSpread ($1, $2) }
@@ -1309,10 +1313,10 @@ object_literal:
  | "{" listc(property_name_and_value) ","? "}"  { ($1, $2, $4) }
 
 property_name_and_value:
- | property_name ":" assignment_expr    { Field (mk_field $1 (Some $3)) }
+ | property_name ":" assignment_expr    { FieldColon (mk_field $1 (Some $3)) }
  | method_definition                    { $1 }
  (* es6: *)
- | id           { Field (mk_field (PN $1) (Some (Id ($1)))) }
+ | id           { FieldColon (mk_field (PN $1) (Some (Id ($1)))) }
  (* es6: spread operator: *)
  | "..." assignment_expr                { (FieldSpread ($1, $2)) }
  | "..."                                { (FieldEllipsis $1 ) }

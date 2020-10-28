@@ -467,31 +467,46 @@ and class_ { c_extends; c_implements; c_body; c_kind; c_attrs;  } =
   let cimplements = list type_ c_implements in
   { G.ckind = c_kind; cextends; cimplements; 
     cmixins = []; cbody = v2;}, attrs
+
+
+and field_classic {fld_name=v1; fld_attrs = v2; fld_type = vt; fld_body = v3} =
+  let v1 = property_name v1 in
+  let v2 = list attribute v2 in
+  let vt = vt in
+  let ent = 
+    match v1 with
+    | Left n -> G.basic_entity n v2
+    | Right e ->
+       {G. name = G.EDynamic e; attrs = v2; tparams = []; 
+        info = G.empty_id_info()}
+  in
+  match v3 with
+  | Some (Fun (def, None)) ->
+       let (def, more_attrs) = fun_ def in
+       let (_kind, tok) = def.G.fkind in
+       { ent with G.attrs = ent.G.attrs @ more_attrs },
+       G.FuncDef { def with G.fkind = G.Method, tok}
+  | _ ->
+     let v3 = option expr v3 in
+     ent, G.VarDef { G.vinit = v3; vtype = vt }
+  
+
 and property x =
    match x with
-  | Field {fld_name = v1; fld_attrs = v2; fld_type = vt; fld_body = v3} ->
-      let v1 = property_name v1 in
-      let v2 = list attribute v2 in
-      let vt = vt in
-      let ent = 
-        match v1 with
-        | Left n -> G.basic_entity n v2
-        | Right e ->
-           {G. name = G.EDynamic e; attrs = v2; tparams = []; 
-            info = G.empty_id_info()}
-      in
-      (match v3 with
-      | Some (Fun (def, None)) ->
-           let (def, more_attrs) = fun_ def in
-           let (_kind, tok) = def.G.fkind in
-           G.FieldStmt (G.DefStmt
-             ({ ent with G.attrs = ent.G.attrs @ more_attrs },
-              G.FuncDef { def with G.fkind = G.Method, tok} ))
-      | _ ->
-          let v3 = option expr v3 in
-          G.FieldStmt (G.DefStmt 
-                ((ent, G.FieldDef { G.vinit = v3; vtype = vt })))
-      )
+  | Field v1 ->
+     let ent, def = field_classic v1 in
+     G.FieldStmt (G.DefStmt (ent, def))
+  | FieldColon v1 ->
+     let ent, def = field_classic v1 in
+     let def = 
+       match def with
+       (* ugly: this is to prevent assignment to match object field
+        * definitions in semgrep *)
+       | G.VarDef x -> G.FieldDefColon x
+       | _ -> def
+     in
+     G.FieldStmt (G.DefStmt (ent, def))
+
   | FieldSpread (t, v1) -> 
       let v1 = expr v1 in 
       G.FieldSpread (t, v1)

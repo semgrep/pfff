@@ -627,10 +627,13 @@ and class_ env c =
   List.iter (type_ env) c.c_implements;
   List.iter (property env) (unbracket c.c_body)
 
-and property env = function
-  | Field {fld_name = pname; fld_body = e; _} ->
+and field_classic env {fld_name = pname; fld_body = e; _} =
      property_name env pname;
      option (expr env) e
+
+and property env = function
+  | Field v1 -> field_classic env v1
+  | FieldColon v1 -> field_classic env v1
   | FieldSpread (_, e) ->
      expr env e
   | FieldPatDefault (pat, _, e) ->
