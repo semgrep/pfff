@@ -266,7 +266,7 @@ type name = ident * name_info
 (*e: type [[AST_generic.name_info]] *)
 (*s: type [[AST_generic.qualifier]] *)
   and qualifier = 
-   | QTop of tok (* ::, Ruby, C++ *)
+   | QTop of tok (* ::, Ruby, C++, also '`' abuse for PolyVariant in OCaml *)
    | QDots of dotted_ident (* Java, OCaml *)
    | QExpr of expr * tok (* Ruby *)
 (*e: type [[AST_generic.qualifier]] *)
@@ -324,7 +324,10 @@ and expr =
   (* And-type (field.vinit should be a Some) *)
   | Record of field list bracket
   (*x: [[AST_generic.expr]] other composite cases *)
-  (* Or-type (could be used instead of Container, Cons, Nil, etc.) *)
+  (* Or-type (could be used instead of Container, Cons, Nil, etc.).
+   * (ab)used also for polymorphic variants where qualifier is QTop with
+   * the '`' token.
+  *)
   | Constructor of name * expr list
   (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
   (*e: [[AST_generic.expr]] other composite cases *)

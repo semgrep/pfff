@@ -82,6 +82,7 @@ type expr =
   | Name of name
 
   | Constructor of name * expr option
+  | PolyVariant of (tok (* '`' *) * ident) * expr option
   (* special case of Constr *)
   | Tuple of expr list
   | List  of expr list bracket
@@ -159,6 +160,7 @@ and pattern =
   | PatVar of ident
   | PatLiteral of literal (* can be signed *)
   | PatConstructor of name * pattern option
+  | PatPolyVariant of (tok (* '`' *) * ident) * pattern option
  
   (* special cases of PatConstructor *)
   | PatConsInfix of pattern * tok (* :: *) * pattern
@@ -230,6 +232,7 @@ type type_declaration = {
 (* ------------------------------------------------------------------------- *)
 (* Class *)
 (* ------------------------------------------------------------------------- *)
+(* Nope ... represented via an ItemTodo "Class" *)
 
 (* ------------------------------------------------------------------------- *)
 (* Module *)

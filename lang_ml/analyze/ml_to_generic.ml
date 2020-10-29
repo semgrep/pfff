@@ -114,6 +114,13 @@ and expr =
   | Constructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
+  | PolyVariant ((v0, v1), v2) ->
+      let v0 = tok v0 in
+      let v1 = ident v1 and v2 = option expr v2 in
+      let name = v1, { G.name_qualifier = Some (G.QTop v0); 
+                         name_typeargs = None } in
+      (* TODO: introduce a new construct in AST_generic instead? *)
+      G.Constructor (name, Common.opt_to_list v2)
   | Tuple v1 -> let v1 = list expr v1 in G.Tuple (G.fake_bracket v1)
   | List v1 -> let v1 = bracket (list expr) v1 in G.Container (G.List, v1)
   | Sequence v1 -> let v1 = list expr v1 in G.Seq v1
@@ -299,6 +306,13 @@ and pattern =
   | PatConstructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option pattern v2 in
       G.PatConstructor (v1, Common.opt_to_list v2)
+  | PatPolyVariant ((v0, v1), v2) ->
+      let v0 = tok v0 in
+      let v1 = ident v1 in
+      let v2 = option pattern v2 in
+      let name = v1, { G.name_qualifier = Some (G.QTop v0); 
+                         name_typeargs = None } in
+      G.PatConstructor (name, Common.opt_to_list v2)
   | PatConsInfix ((v1, v2, v3)) ->
       let v1 = pattern v1 and v2 = tok v2 and v3 = pattern v3 in
       let n = ("::", v2), G.empty_name_info in

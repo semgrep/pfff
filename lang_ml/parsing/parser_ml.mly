@@ -563,7 +563,7 @@ expr:
  | Tassert simple_expr
      { ExprTodo (("Assert",$1), [$2]) }
  | name_tag simple_expr
-     { ExprTodo (("PolyVariant Call",fst $1), [$2]) }
+     { PolyVariant ($1, Some $2) }
  | Tlazy simple_expr
      { ExprTodo (("Lazy",$1), [$2]) }
   (* objects *)
@@ -621,7 +621,7 @@ simple_expr:
       { ExprTodo (("LiteralObj", $1), $2 |> optlist_to_list |> List.map snd) }
  (* name tag extension *)
  | name_tag        %prec prec_constant_constructor  
-     { ExprTodo (("PolyVariant", fst $1), []) }
+     { PolyVariant ($1, None) }
  (* misc *)
  | "(" seq_expr type_constraint ")"  
      { TypedExpr (seq1 $2, fst $3, snd $3)  }
@@ -725,7 +725,7 @@ pattern:
 
  (* name tag extension *)
  | name_tag pattern %prec prec_constr_appl        
-    { PatTodo (("PolyVariant", fst $1), [$2]) }
+    { PatPolyVariant ($1, Some $2) }
 
 
 
@@ -745,7 +745,7 @@ simple_pattern:
 
  (* extensions *)
  (* name tag extension *)
- | name_tag                    { PatTodo (("PolyVariant",fst $1), []) }
+ | name_tag                    { PatPolyVariant ($1, None) }
  (* range extension *)
  | TChar ".." TChar            { PatTodo (("Range", $2), []) }
  (* scoped open for pattern *)
