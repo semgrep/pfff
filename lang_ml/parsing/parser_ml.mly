@@ -491,6 +491,11 @@ expr:
      { let (params, (_tok, e)) = $3 in
        Fun ($1, $2::params, e) }
 
+ (* TODO: (type a) is ignored for now *)
+ | Tfun "(" Ttype TLowerIdent+ ")" fun_def
+     { let (params, (_tok, e)) = $6 in
+       Fun ($1, params, e) }
+
  | Tfunction "|"? match_cases                { Function ($1, $3) }
 
  | expr_comma_list        %prec below_COMMA  { Tuple $1 }
@@ -940,6 +945,8 @@ strict_binding:
  | "=" seq_expr  { [], (None, $1, $2) }
  (* function values, e.g. 'let x a b c = 1' *)
  | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
+ (* TODO: add in AST *)
+ | "(" Ttype TLowerIdent+ ")" fun_binding { $5 }
 
 fun_def:
  | "->" expr                       { [], ($1, $2) }
