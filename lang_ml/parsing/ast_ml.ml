@@ -131,6 +131,9 @@ type expr =
 
   | ExprTodo of todo_category * expr list
 
+ (* note that '()' is represented as a Constructor ("()"), and 
+  * 'true' (and 'false') as Constructor ("true").
+  *)
  and literal =
    | Int    of string wrap
    | Float  of string wrap
