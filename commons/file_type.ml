@@ -46,7 +46,7 @@ type file_type =
   | Script of string (* sh, csh, awk, sed, etc *)
 
   | C of string | Cplusplus of string 
-  | Java | Csharp
+  | Java | Kotlin | Csharp
   | ObjectiveC of string 
   | Swift
 
@@ -138,6 +138,7 @@ let file_type_of_file2 file =
   | "swift" -> PL Swift
 
   | "java" -> PL Java
+  | "kt" -> PL Kotlin
   | "cs" -> PL Csharp
 
   | "p" -> PL Pascal

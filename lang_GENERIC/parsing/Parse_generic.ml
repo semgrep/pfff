@@ -81,6 +81,8 @@ let parse_with_lang lang file =
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_build.program cst in
     Php_to_generic.program ast
+  | Lang.Kotlin ->
+      failwith "No Kotlin parser in pfff; use the one in tree-sitter"
 
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
@@ -132,6 +134,8 @@ let parse_pattern lang str =
       Php_to_generic.any any
   | Lang.Csharp ->
       failwith "No C# parser in pfff; use the one in tree-sitter"
+  | Lang.Kotlin ->
+      failwith "No Kotlin parser in pfff; use the one in tree-sitter"
   )
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)
