@@ -16,6 +16,7 @@ type t =
   | Ruby
   | Csharp
   | PHP
+  | Kotlin
 (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)

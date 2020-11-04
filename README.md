@@ -61,6 +61,27 @@ $ ./pfff_db -lang ml -o /tmp/pfff.json ~/pfff
 to analyze all the `.ml` and `.mli` files under `~/pfff` and store metadata
 information (the database) in `/tmp/pfff.json`
 
+## Adding a Language
+1. In `commons/file_type.ml`, add your language under the appropriate programming
+   language type in
+   `type file_type`
+   and add in matching to the file extension of your language in 
+   `file_type_of_file2`
+2. In `commons/file_type.mli`, add you language under the appropriate programming
+   language type in 
+   `type file_type`
+3. In `lang_GENERIC/parsing/Lang.ml`, add your language and necessary code in 
+   * `type t`
+   * `list_of_lang`
+   * `langs_of_filename`
+   * `string_of_lang`
+   * `ext_of_lang`
+4. In `lang_GENERIC/parsing/Lang.mli`, add your language in `type t`. 
+5. In `lang_GENERIC/parsing/Parse_generic.ml`, add you language
+   and necessary code into:
+   * `parse_pattern`
+   * `parse_with_lang`
+
 ## More information
 
 Look at the pfff wiki here: http://github.com/returntocorp/pfff/wiki/Main

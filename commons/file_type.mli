@@ -14,7 +14,7 @@ type file_type =
   | Prolog of string
   | Makefile
   | Script of string
-  | C of string | Cplusplus of string | Java | Csharp | ObjectiveC of string 
+  | C of string | Cplusplus of string | Java | Kotlin | Csharp | ObjectiveC of string 
   | Swift
   | Perl | Python | Ruby | Lua
   | Erlang | Go | Rust
