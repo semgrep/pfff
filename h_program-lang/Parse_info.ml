@@ -588,8 +588,13 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
     { ii with token =
       (* could assert pinfo.filename = file ? *)
        match ii.token with
-       | OriginTok pi -> OriginTok(complete_token_location_large file table pi)
-       | _ -> raise Todo
+       | OriginTok pi -> 
+         OriginTok(complete_token_location_large file table pi)
+       | ExpandedTok (pi,vpi, off) ->
+         ExpandedTok(complete_token_location_large file table pi,vpi,  off)
+       | FakeTokStr (s,vpi_opt) -> 
+         FakeTokStr (s,vpi_opt)
+       | Ab -> raise Impossible
     }      
   in
   let rec tokens_aux acc = 

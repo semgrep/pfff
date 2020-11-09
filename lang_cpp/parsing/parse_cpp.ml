@@ -119,40 +119,10 @@ let is_same_line_or_close line tok =
 (*****************************************************************************)
 
 (* called by parse below *)
-let tokens2 file = 
- let table     = Parse_info.full_charpos_to_pos_large file in
-
- Common.with_open_infile file (fun chan -> 
-  let lexbuf = Lexing.from_channel chan in
-
-    let rec tokens_aux () = 
-      let tok = Lexer.token lexbuf in
-      (* fill in the line and col information *)
-      let tok = tok |> TH.visitor_info_of_tok (fun ii -> 
-        { ii with PI.token=
-          (* could assert pinfo.filename = file ? *)
-          match ii.PI.token with
-          |  PI.OriginTok pi ->
-             PI.OriginTok (Parse_info.complete_token_location_large file 
-                             table pi)
-          | PI.ExpandedTok (pi,vpi, off) ->
-              PI.ExpandedTok(
-                (Parse_info.complete_token_location_large file table pi),vpi, 
-                off)
-          | PI.FakeTokStr (s,vpi_opt) -> PI.FakeTokStr (s,vpi_opt)
-          | PI.Ab -> raise Impossible
-      })
-      in
-
-      if TH.is_eof tok
-      then [tok]
-      else tok::(tokens_aux ())
-    in
-    tokens_aux ()
- )
-   
-let tokens a = 
-  Common.profile_code "Parse_cpp.tokens" (fun () -> tokens2 a)
+let tokens file = 
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:false
+    file Lexer.token TH.visitor_info_of_tok TH.is_eof
+[@@profiling]
 
 (*****************************************************************************)
 (* Fuzzy parsing *)
