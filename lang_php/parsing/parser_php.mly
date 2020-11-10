@@ -1166,9 +1166,9 @@ expr:
  | T_REQUIRE      expr             { Require($1,$2) }
  | T_REQUIRE_ONCE expr             { RequireOnce($1,$2) }
 
- | T_EMPTY "(" expr ")"        { Empty($1,($2,$3,$4)) }
+ | T_EMPTY "(" expr_or_dots ")"        { Empty($1,($2,$3,$4)) }
 
- | T_EVAL "(" expr ")"         { Eval($1,($2,$3,$4)) }
+ | T_EVAL "(" expr_or_dots ")"         { Eval($1,($2,$3,$4)) }
 
  | T_ISSET "(" listc(expr_or_dots) ")" { Isset($1, ($2, $3, $4)) }
 
@@ -1452,7 +1452,7 @@ dim_offset: expr? { $1 }
 exit_expr:
  | (*empty*)    { None }
  | "(" ")"      { Some($1, None, $2) }
- | "(" expr ")" { Some($1, Some $2, $3) }
+ | "(" expr_or_dots ")" { Some($1, Some $2, $3) }
 
 
 (*************************************************************************)
