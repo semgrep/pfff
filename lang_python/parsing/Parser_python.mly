@@ -786,11 +786,7 @@ interpolant:
   | tuple(test) { tuple_expr $1 }
 
 (* todo: maybe need another lexing state when ":" inside FSTRING_LBRACE*)
-format_specifier: format_token_list { $1 }
-
-format_token_list:
- | format_token                   { [$1] }
- | format_token format_token_list { $1::$2 }
+format_specifier: format_token+ { $1 }
 
 (* see "Format Specification Mini-Language" at 
  * https://docs.python.org/3/library/string.html#format-string-syntax
@@ -798,13 +794,14 @@ format_token_list:
 format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
-  | "."   { mk_str $1 }
   | NAME  { mk_str (snd $1) }
   | LT { mk_str $1 } | GT { mk_str $1 } 
-  | "=" { mk_str $1 } | BITXOR { mk_str $1 }
+  | BITXOR { mk_str $1 }
   | ADD  { mk_str $1 } | SUB { mk_str $1 }
+  | MOD { mk_str $1 } | DIV { mk_str $1 }
+  | "."   { mk_str $1 }
+  | "=" { mk_str $1 } 
   | "," { mk_str $1 }
-  | MOD { mk_str $1 }
 
   | "{" test "}" { $2 }
 
