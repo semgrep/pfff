@@ -234,6 +234,7 @@ let parse2 ?(timeout=0) filename =
      Left item
 
    with Parsing.Parse_error ->
+      (* coupling: update also any_of_string if you modify the code below *)
       let cur = tr.PI.current in
       let info = TH.info_of_tok cur in
       let charpos = Parse_info.pos_of_info info in
@@ -338,14 +339,27 @@ let any_of_string s =
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     let toks = tokens file in
     let toks = Parsing_hacks_js.fix_tokens toks in
-    (* note that this does not trigger the ASI done during
-     * error recovery, so there is still a different behavior regarding
-     * ASI between parsing code and semgrep patterns. This is why
-     * we still need to assignment_expr_no_stmt sgrep_spatch_pattern rule
-     * and at few places allow the 'sc' to be optional because in semgrep
-     * patterns they are not always inserted.
-     *)
     let toks = Parsing_hacks_js.fix_tokens_ASI toks in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
-    Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
+
+    let tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+    let last_charpos_error = ref 0 in
+
+    let rec parse_pattern tr =
+        try 
+          Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
+
+        with Parsing.Parse_error ->
+          let cur = tr.PI.current in
+          let info = TH.info_of_tok cur in
+          let charpos = Parse_info.pos_of_info info in
+          (* try Automatic Semicolon Insertion *)
+          (match asi_opportunity charpos last_charpos_error cur tr with
+          | None -> raise Parsing.Parse_error
+          | Some (passed_before, passed_offending, passed_after) ->
+            asi_insert charpos last_charpos_error tr
+               (passed_before, passed_offending, passed_after);
+            parse_pattern tr
+          )
+    in
+    parse_pattern tr
   )
