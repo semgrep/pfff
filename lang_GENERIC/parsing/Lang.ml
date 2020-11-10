@@ -41,7 +41,7 @@ type t =
   | Javascript | Typescript | JSON
   | Java
   | Go
-  | C
+  | C | Cplusplus
   | OCaml
   | Ruby
   | Csharp
@@ -70,6 +70,8 @@ let list_of_lang = [
     "golang", Go;
 
     "c", C;
+    "cpp", Cplusplus;
+    "c++", Cplusplus;
     "ml", OCaml;
     "ocaml", OCaml;
     "java", Java;
@@ -99,7 +101,9 @@ let langs_of_filename filename =
  | FT.PL (FT.Web (FT.TSX)) -> [Typescript]
  | FT.PL (FT.Python) -> [Python;Python2;Python2]
  (* .h could also be Cpp at some point *)
- | FT.PL (FT.C ("c" | "h" )) -> [C]
+ | FT.PL (FT.C ("c")) -> [C]
+ | FT.PL (FT.C ("h")) -> [C;Cplusplus]
+ | FT.PL (FT.Cplusplus _) -> [Cplusplus]
  | FT.PL (FT.ML _) -> [OCaml]
  | FT.PL (FT.Java) -> [Java]
  | FT.PL (FT.Go) -> [Go]
@@ -121,6 +125,7 @@ let string_of_lang = function
   | JSON -> "JSON"
   | Java -> "Java"
   | C -> "C"
+  | Cplusplus -> "C++"
   | OCaml -> "OCaml"
   | Go -> "Golang"
   | Ruby -> "Ruby"
@@ -138,6 +143,7 @@ let ext_of_lang = function
   | JSON -> ["json"]
   | Java -> ["java"]
   | C -> ["c"]
+  | Cplusplus -> ["cc";"cpp"]
   | OCaml -> ["mli"; "ml"] (* this is not parsed yet: "mly"; "mll" *)
   | Go -> ["go"]
   | Ruby -> ["rb"]

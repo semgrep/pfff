@@ -11,7 +11,7 @@ type t =
   | Javascript | Typescript | JSON
   | Java
   | Go
-  | C
+  | C | Cplusplus
   | OCaml
   | Ruby
   | Csharp
