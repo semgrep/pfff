@@ -125,6 +125,7 @@ let fix_tokens toks =
    *)
   | F.Braces (t1, _body, _)::_ when !Flag_parsing.sgrep_mode ->
           Hashtbl.add retag_lbrace t1 true
+  (* TODO: skip keywords, attributes that may be before the method id *)
   | F.Tok(_s, info)::F.Parens(i1, _, _)::F.Braces(_, _, _)::_ 
      when !Flag_parsing.sgrep_mode && is_identifier horigin info ->
           Hashtbl.add retag_lparen_method i1 true

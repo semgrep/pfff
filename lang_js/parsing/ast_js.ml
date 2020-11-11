@@ -357,7 +357,8 @@ and definition = entity * definition_kind
    * an Assign.
    *)
     name: ident;
-   (* TODO: put type parameters, attributes in entity *)
+   (* TODO: put type parameters *)
+    attrs: attribute list;
   }
 
   and definition_kind = 
@@ -417,7 +418,7 @@ and class_definition = {
   c_extends: parent list;
   (* typescript-ext: interfaces *)
   c_implements: type_ list;
-
+  (* less: move in entity? *)
   c_attrs: attribute list;
   c_body: property list bracket;
 }
@@ -567,10 +568,13 @@ and stmt1 xs =
   | [x] -> x
   | xs -> Block (AST_generic.fake_bracket xs)
 
+let basic_entity id = 
+  { name = id; attrs = [] }
+
 let mk_default_entity_def tok exp = 
   let n = default_entity, tok in
   (* TODO: look at exp and transform in FuncDef/ClassDef? *)
-  let def = { name = n }, 
+  let def = basic_entity n, 
              VarDef { v_kind = Const, tok; v_init = Some exp; v_type = None}
   in
   def, n
@@ -589,12 +593,12 @@ let var_pattern_to_var vkind pat tok init_opt =
     | None -> pat
   in
   (* less: use x.vpat_type *)
-  { name = id}, {v_kind = vkind; v_init = Some init; v_type = None; }
+  (basic_entity id, {v_kind = vkind; v_init = Some init; v_type = None; })
 
 let build_var kwd (id_or_pat, ty_opt, initopt) = 
   match id_or_pat with
   | Left id ->
-      { name = id}, { v_kind = (kwd); v_init = initopt; v_type =ty_opt;}
+      basic_entity id, { v_kind = (kwd); v_init = initopt; v_type = ty_opt;}
   | Right pat ->
       var_pattern_to_var kwd pat (snd kwd) initopt
 
@@ -606,8 +610,9 @@ let vars_to_stmts xs =
   xs |> vars_to_defs |> List.map (fun x -> DefStmt x)
 
 let mk_const_var id e = 
-  { name = id }, 
-  VarDef { v_kind = Const, (snd id); v_init = Some e; v_type = None; }
+  (basic_entity id, 
+   VarDef { v_kind = Const, (snd id); v_init = Some e; v_type = None; }
+  )
 
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)

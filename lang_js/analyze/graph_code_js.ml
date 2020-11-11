@@ -323,7 +323,7 @@ and toplevels_entities_adjust_imports env xs =
 (* ---------------------------------------------------------------------- *)
 and toplevel env x =
   match x with
-  | DefStmt ({name}, VarDef { v_kind; v_init; v_type = _}) ->
+  | DefStmt ({name; _}, VarDef { v_kind; v_init; v_type = _}) ->
        name_expr env name v_kind v_init
   (* TODO: other DefStmt now that have separate FuncDef and ClassDef *)
   | M x -> module_directive env x
@@ -392,7 +392,7 @@ and name_expr env name v_kind eopt (*v_resolved*) =
     let (qualified, _kind) = env.current in
     (* v_resolved := Global qualified; *)
     Hashtbl.add env.db qualified
-     ({ name } ,{ v_kind; v_init = eopt; v_type = None; })
+     (basic_entity name ,{ v_kind; v_init = eopt; v_type = None; })
   end
 
 (* ---------------------------------------------------------------------- *)
@@ -538,8 +538,8 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { name = n }, VarDef { v_kind = Let, fake "let"; 
-                                       v_init = None; v_type = None;
+        let v = basic_entity n, VarDef { v_kind = Let, fake "let"; 
+                                         v_init = None; v_type = None;
                                       (* v_resolved = ref Local *)}
         in
         add_locals env [v]
@@ -567,7 +567,7 @@ and expr env e =
       match nopt with
       | None -> env
       | Some n -> 
-        let v = { name = n }, VarDef {v_kind = Let, fake "let"; 
+        let v = basic_entity n, VarDef {v_kind = Let, fake "let"; 
                                       v_init = None; v_type = None; 
                                       (*v_resolved = ref Local*)}
         in

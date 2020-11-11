@@ -71,7 +71,7 @@ let fix_sgrep_module_item xs =
   * function decl (because 'function_decl' accepts id_opt, see its comment).
   * This is why we intercept this case by returning instead an Expr pattern.
   *)
-  | [DefStmt ({name = (s, _);}, FuncDef def)]
+  | [DefStmt ({name = (s, _); _}, FuncDef def)]
     when s = anon_semgrep_lambda ->
       Expr (Fun (def, None))
   (* less: could check that sc is an ASI *)
@@ -115,7 +115,7 @@ let mk_def (idopt, defkind) =
     | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, G.fake "")
     | Some id -> id
   in
-  { name }, defkind
+  basic_entity name, defkind
 
  
 let mk_Super tok =
@@ -387,7 +387,11 @@ sgrep_spatch_pattern:
      { Expr (Obj ($1, $2, $4)) }
 
  (* we would like to just use method_definition, but too many r/r conflicts *)
- | T_ID T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation? 
+ | (* TODO decorators ioption(T_ASYNC) ioption(method_get_set_star)
+    * but need also to modify parsing hack for T_LPAREN_METHOD_SEMGREP 
+    *)
+    T_ID 
+    T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation? 
     "{" function_body "}" EOF 
    { let sig_ = (None, ($2, $3, $4), $5) in
      let fun_ = mk_Fun sig_ ($6, $7, $8) in

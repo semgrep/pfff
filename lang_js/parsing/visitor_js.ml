@@ -261,8 +261,9 @@ and v_def (ent, defkind) =
   v_entity ent;
   v_definition_kind defkind
 
-and v_entity { name; } =
-  v_ident name
+and v_entity { name; attrs } =
+  v_ident name;
+  v_list v_attribute attrs
 
 and v_definition_kind = function
   | FuncDef def -> v_function_definition def

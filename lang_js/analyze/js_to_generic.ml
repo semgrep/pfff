@@ -317,7 +317,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left ({name = id}, {v_init = _NONE; _ }) -> 
+        | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -328,7 +328,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
-        | Left ({name = id}, {v_init = _NONE; _ }) -> 
+        | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -349,34 +349,37 @@ and case =
 (* already an AST_generic.type_, no conversion needed *)
 and type_ x = x 
 
+and entity { name = n; attrs } = 
+  let n = name n in
+  let attrs = list attribute attrs in
+  G.basic_entity n attrs
+
 and definition (ent, def) = 
-  let v1 = name ent.name in
+  let ent = entity ent in
   match def with
   | VarDef { v_kind = x_kind; v_init = x_init; v_type = ty}->
     let v2 = var_kind x_kind in 
-    let ent = G.basic_entity v1 [v2] in
     let ty = option type_ ty in
     let v3 = option expr x_init in 
-    ent, G.VarDef { G.vinit = v3; G.vtype = ty }
+    { ent with G.attrs = v2::ent.G.attrs }, 
+    G.VarDef { G.vinit = v3; G.vtype = ty }
   | FuncDef def ->
     let (def, more_attrs) = fun_ def in
-    let ent = G.basic_entity v1 [] in
     { ent with G.attrs = ent.G.attrs @ more_attrs}, G.FuncDef def
   | ClassDef def ->
     let (def, more_attrs) = class_ def in
-    let ent = G.basic_entity v1 [] in
     { ent with G.attrs = ent.G.attrs @ more_attrs}, G.ClassDef def
   | DefTodo (v1, v2) ->
-      let ent = G.basic_entity v1 [] in
       let v2 = list any v2 in
       ent, G.OtherDef (G.OD_Todo, (G.TodoK v1)::(v2))
 
     
 
-and var_of_var ({ name = x_name},{ v_kind = x_kind; v_init = x_init; v_type })=
+and var_of_var ({ name = x_name; attrs}, { v_kind = x_kind; v_init = x_init; v_type })=
   let v1 = name x_name in
+  let attrs = list attribute attrs in
   let v2 = var_kind x_kind in 
-  let ent = G.basic_entity v1 [v2] in
+  let ent = G.basic_entity v1 (v2::attrs) in
   let v3 = option expr x_init in 
   let v_type = option type_ v_type in
   ent, { G.vinit = v3; vtype = v_type }

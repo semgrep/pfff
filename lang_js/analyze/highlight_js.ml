@@ -75,7 +75,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
      V.ktop = (fun (k, _) t ->
        (match t with
        (* TODO: after split VarDef FuncDef ClasDef, no need kind_of_expr_opt *)
-       | DefStmt ({name}, VarDef { v_kind; v_init; _ }) ->
+       | DefStmt ({name; _}, VarDef { v_kind; v_init; _ }) ->
            let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
            tag_name name (Entity (kind, (Def2 fake_no_def2)));
        | _ -> ()
