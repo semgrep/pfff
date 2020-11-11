@@ -247,6 +247,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     | T.T_PERIOD (ii)
     | T.T_DOTS ii | T.LDots ii | T.RDots ii
         -> tag ii Punctuation
+    | T.T_AT ii -> tag ii Attribute
 
     (* Operators *)
 

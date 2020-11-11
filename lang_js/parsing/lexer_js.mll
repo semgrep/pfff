@@ -351,6 +351,8 @@ rule initial = parse
   | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
   | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
+  (* https://tc39.es/proposal-decorators/ *)
+  | "@"  { T_AT (tokinfo lexbuf)  }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -368,11 +370,6 @@ rule initial = parse
       | Some f -> f info
       | None -> T_ID (s, info)
     }
-
-  (* very incomplete hack to support https://tc39.es/proposal-decorators/ *)
-  | "@" ['a'-'z''A'-'Z' '$' '_']['a'-'z''A'-'Z''$''_''0'-'9']* as s {
-      T_ID (s, tokinfo lexbuf)
-   }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

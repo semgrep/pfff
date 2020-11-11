@@ -92,8 +92,8 @@ let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
   Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body}, 
          idopt)
 
-let mk_ClassDef ?(props=[]) tok _generics (c_extends, c_implements) c_body =
-  let c_attrs = props |> List.map attr in
+let mk_ClassDef ?(attrs=[]) ?(props=[]) tok _generics (c_extends, c_implements) c_body =
+  let c_attrs = (props |> List.map attr) @ attrs in
   ClassDef ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body})
 
 let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
@@ -216,6 +216,8 @@ let mk_Encaps opt (t1, xs, _t2) =
  T_DOTS "..."
  T_BACKQUOTE 
  T_DOLLARCURLY
+ (* decorators: https://tc39.es/proposal-decorators/ *)
+ T_AT "@"
  (* semgrep: *)
  LDots RDots
 
@@ -678,8 +680,8 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
  *  T_EXPORT T_DEFAULT? but then many ambiguities.
  * TODO: actually in tree-sitter-js, it's a binding_id without '?'
  *)
-class_decl: T_CLASS binding_id? generics? class_heritage class_body
-   { $2, mk_ClassDef $1 $3 $4 $5 }
+class_decl: decorators T_CLASS binding_id? generics? class_heritage class_body
+   { $3, mk_ClassDef ~attrs:$1 $2 $4 $5 $6 }
 
 class_body: "{" class_element* "}" { ($1, List.flatten $2, $3) }
 
@@ -786,6 +788,20 @@ enum_member:
 (* Declare (ambient) declaration *)
 (*************************************************************************)
 (* typescript-ext: *)
+
+(*************************************************************************)
+(* Decorators *)
+(*************************************************************************)
+%inline
+decorators:
+ | (* empty *) { [] }
+ | decorator+   { $1 }
+
+decorator_name:
+ | T_ID { [$1] }
+ | decorator_name "." T_ID { $1 @ [$3] }
+
+decorator: "@" decorator_name arguments?  { NamedAttr ($1, $2, $3) }
 
 (*************************************************************************)
 (* Types *)

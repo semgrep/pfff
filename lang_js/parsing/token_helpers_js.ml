@@ -54,6 +54,7 @@ let token_kind_of_tok t =
 
 (* generated via an Emacs macro from the type definition in parser_js.mli *)
 let visitor_info_of_tok f = function
+  | T_AT ii -> T_AT (f ii)
   | TUnknown ii -> TUnknown(f ii)
   | TCommentSpace ii -> TCommentSpace(f ii)
   | TCommentNewline ii -> TCommentNewline(f ii)
