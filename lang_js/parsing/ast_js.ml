@@ -584,7 +584,12 @@ let attr x = KeywordAttr x
 
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
-let var_pattern_to_var vkind pat tok init_opt = 
+let var_pattern_to_var v_kind pat tok init_opt = 
+  match pat, init_opt with
+  (* no need special_multivardef_pattern trick here *)
+  | Id id, None ->
+      basic_entity id, {v_kind; v_init = None; v_type = None}
+  | _ ->
   let s = AST_generic.special_multivardef_pattern in
   let id = s, tok in
   let init = 
@@ -593,7 +598,7 @@ let var_pattern_to_var vkind pat tok init_opt =
     | None -> pat
   in
   (* less: use x.vpat_type *)
-  (basic_entity id, {v_kind = vkind; v_init = Some init; v_type = None; })
+  (basic_entity id, {v_kind; v_init = Some init; v_type = None; })
 
 let build_var kwd (id_or_pat, ty_opt, initopt) = 
   match id_or_pat with
