@@ -317,6 +317,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
+        (* TODO: v_init is not always _NONE! when we use multivardef!!! *)
         | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
@@ -328,6 +329,7 @@ and for_header =
       let v2 = expr v2 in
       let pattern = 
         match v1 with
+        (* TODO: v_init is not always _NONE! when we use multivardef!!! *)
         | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) -> 
             G.PatId (id, G.empty_id_info())
         | Right e ->
