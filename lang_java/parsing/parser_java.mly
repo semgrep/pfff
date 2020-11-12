@@ -283,13 +283,9 @@ declaration:
 
 
 sgrep_spatch_pattern:
- | import_declaration EOF           { AStmt (DirectiveStmt $1) }
- | import_declaration import_declaration+ EOF  
-    { AStmts (($1::$2) |> List.map (fun x -> DirectiveStmt x)) }
- | package_declaration EOF          { AStmt (DirectiveStmt $1) }
- | expression EOF                   { AExpr $1 }
- | item_no_dots EOF                 { mk_stmt_or_stmts $1 }
- | item_no_dots item_sgrep+ EOF { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
+ | expression   EOF              { AExpr $1 }
+ | item_no_dots EOF              { mk_stmt_or_stmts $1 }
+ | item_no_dots item+ EOF        { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
 
  | annotation EOF { AMod (Annotation $1, Common2.fst3 $1) }
 
@@ -298,9 +294,18 @@ sgrep_spatch_pattern:
  | method_header EOF { Partial (PartialDecl (Method $1)) }
 
 
+item:
+ | statement { [$1] }
+ | item_other { $1 }
+
 item_no_dots:
  | statement_no_dots { [$1] }
- | declaration       { [DeclStmt $1] }
+ | item_other { $1 }
+
+item_other:
+ | declaration         { [DeclStmt $1] }
+ | import_declaration  { [DirectiveStmt $1] }
+ | package_declaration { [DirectiveStmt $1] }
  | local_variable_declaration_statement { $1 }
 
 (* coupling: copy paste of statement, without dots *)
@@ -311,11 +316,6 @@ statement_no_dots:
  | if_then_else_statement  { $1 }
  | while_statement  { $1 }
  | for_statement  { $1 }
-
-item_sgrep:
- | statement { [$1] }
- | declaration { [DeclStmt $1] }
- | local_variable_declaration_statement { $1 }
 
 (*************************************************************************)
 (* Package, Import, Type *)
@@ -1023,8 +1023,7 @@ element_value_array_initializer:
  | "{" listc(element_value) "," "}" { $2 }
 
 (* should be statically a constant expression; can contain '+', '*', etc.*)
-expr1: 
- | conditional_expression { $1 }
+expr1: conditional_expression { $1 }
 
 (*************************************************************************)
 (* Class *)
