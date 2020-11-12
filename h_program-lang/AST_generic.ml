@@ -169,6 +169,13 @@ type 'a bracket = tok * 'a * tok
 (*e: type [[AST_generic.bracket]] *)
  [@@deriving show] (* with tarzan *)
 
+(* semicolon, a FakeTok in languages that do not require them (e.g., Python).
+ * alt: tok option.
+ * See the sc value aslo at the end of this file to build an sc.
+ *)
+type sc = tok
+ [@@deriving show] (* with tarzan *)
+
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
@@ -179,6 +186,7 @@ type ident = string wrap
  [@@deriving show]
 
 (*s: type [[AST_generic.dotted_ident]] *)
+(* usually separated by a '.', but can be used also with '::' separators *)
 type dotted_ident = ident list (* at least 1 element *)
 (*e: type [[AST_generic.dotted_ident]] *)
  [@@deriving show] (* with tarzan *)
@@ -680,7 +688,7 @@ and expr =
 and stmt =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
    * separate expr, instr, and stmt types *)
-  | ExprStmt of expr * tok (* fake tok in Python, but alsoin JS/Go with ASI *)
+  | ExprStmt of expr * sc (* fake tok in Python, but also in JS/Go with ASI *)
 
   (* newscope: in C++/Java/Go *)
   | Block of stmt list bracket (* can be fake {} in Python where use layout *)
