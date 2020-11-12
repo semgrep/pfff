@@ -121,6 +121,11 @@ let fake_info str : token_mutable = {
   transfo = NoTransfo;
   }
 
+let is_fake tok =
+  match tok.token with
+  | FakeTokStr _ -> true
+  | _ -> false
+
 type token_kind =
   (* for the fuzzy parser and sgrep/spatch fuzzy AST *)
   | LPar | RPar

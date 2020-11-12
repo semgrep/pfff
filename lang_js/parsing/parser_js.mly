@@ -74,8 +74,10 @@ let fix_sgrep_module_item xs =
   | [DefStmt ({name = (s, _); _}, FuncDef def)]
     when s = anon_semgrep_lambda ->
       Expr (Fun (def, None))
-  (* less: could check that sc is an ASI *)
-  | [ExprStmt (e, _sc)] -> Expr e
+  | [ExprStmt (e, sc) as x] -> 
+      if PI.is_fake sc
+      then Expr e
+      else Stmt x
   | [x] -> Stmt x
   | xs -> Stmts xs
 

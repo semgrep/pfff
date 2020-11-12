@@ -117,6 +117,7 @@ val fake_token_location : token_location
 (*s: signature [[Parse_info.fake_info]] *)
 val fake_info : string -> t
 (*e: signature [[Parse_info.fake_info]] *)
+val is_fake: t -> bool
 (*s: signature [[Parse_info.first_loc_of_file]] *)
 val first_loc_of_file: Common.filename -> token_location
 (*e: signature [[Parse_info.first_loc_of_file]] *)
