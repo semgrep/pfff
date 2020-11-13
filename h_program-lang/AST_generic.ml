@@ -698,8 +698,7 @@ and stmt =
   | If of tok (* 'if' or 'elif' *) * expr * stmt * stmt option
   | While   of tok * expr * stmt
 
-  (* todo: add tok option for ending semicolon there too? *)
-  | Return   of tok * expr option
+  | Return   of tok * expr option * sc
   (*s: [[AST_generic.stmt]] other cases *)
   | DoWhile of tok * stmt * expr
   (* newscope: *)
@@ -710,15 +709,15 @@ and stmt =
   | Switch of tok (* 'switch' or also 'select' in Go *) * expr option * 
      case_and_body list
 
-  | Continue of tok * label_ident
-  | Break    of tok * label_ident
+  | Continue of tok * label_ident * sc
+  | Break    of tok * label_ident * sc
 
   | Label of label * stmt
   | Goto of tok * label
 
-  | Throw of tok (* 'raise' in OCaml, 'throw' in Java/PHP *) * expr
+  | Throw of tok (* 'raise' in OCaml, 'throw' in Java/PHP *) * expr * sc
   | Try of tok * stmt * catch list * finally option
-  | Assert of tok * expr * expr option (* message *)
+  | Assert of tok * expr * expr option (* message *) * sc
   (*e: [[AST_generic.stmt]] other cases *)
   (*s: [[AST_generic.stmt]] toplevel and nested construct cases *)
   | DefStmt of definition

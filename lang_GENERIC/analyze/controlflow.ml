@@ -182,7 +182,7 @@ let short_string_of_node node =
 let simple_node_of_stmt_opt stmt =
   match stmt with
   | A.ExprStmt (e, _)      -> Some (ExprStmt e)
-  | A.Assert (t, e1, e2) -> Some (Assert (t, e1, e2))
+  | A.Assert (t, e1, e2, _sc) -> Some (Assert (t, e1, e2))
   | A.DefStmt x       -> Some (DefStmt x)
   | A.DirectiveStmt x -> Some (DirectiveStmt x)
   | A.OtherStmt (a,b) -> Some (OtherStmt (a,b))
@@ -198,7 +198,7 @@ let simple_node_of_stmt_opt stmt =
 
 let any_of_simple_node = function
   | ExprStmt (e)      -> A.S (A.ExprStmt (e, A.sc))
-  | Assert (t, e1, e2) -> A.S (A.Assert (t, e1, e2))
+  | Assert (t, e1, e2) -> A.S (A.Assert (t, e1, e2, A.sc))
   | DefStmt x       -> A.S (A.DefStmt x)
   | DirectiveStmt x -> A.S (A.DirectiveStmt x)
   | OtherStmt (a,b) -> A.S (A.OtherStmt (a,b))

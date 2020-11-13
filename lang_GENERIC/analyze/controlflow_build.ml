@@ -342,7 +342,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
            Some lasti
        )
 
-   | Return (_, e) ->
+   | Return (_, e, _) ->
        let newi = state.g#add_node { F.n = F.Return e;i=i() } in
        state.g |> add_arc_opt (previ, newi);
        state.g |> add_arc (newi, state.exiti);
@@ -350,7 +350,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
         * this new node *)
        None
 
-   | Continue (_, _TODOlabelid) | Break (_, _TODOlabelid) ->
+   | Continue (_, _TODOlabelid, _) | Break (_, _TODOlabelid, _) ->
 
        let is_continue, node =
          match stmt with
@@ -561,7 +561,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
     * path sensitive analysis to be more precise (so that we would remove
     * certain edges)
     *)
-   | Throw (_, e) ->
+   | Throw (_, e, _) ->
        let newi = state.g#add_node { F.n = F.Throw e; i=i() } in
        state.g |> add_arc_opt (previ, newi);
 

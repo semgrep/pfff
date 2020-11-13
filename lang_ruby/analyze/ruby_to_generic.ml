@@ -408,17 +408,17 @@ and stmt st =
 
   | Return (t, es) ->
       let eopt = exprs_to_eopt es in
-      G.Return (t, eopt)
+      G.Return (t, eopt, G.sc)
   | Yield (t, es) ->
       let eopt = exprs_to_eopt es in
       G.ExprStmt (G.Yield (t, eopt, false), fake ";")
 
   | Break (t, es) ->
       let lbl = exprs_to_label_ident es in
-      G.Break (t, lbl)
+      G.Break (t, lbl, G.sc)
   | Next (t, es) ->
       let lbl = exprs_to_label_ident es in
-      G.Continue (t, lbl)
+      G.Continue (t, lbl, G.sc)
   | Redo (t, es) ->
       let lbl = exprs_to_label_ident es in
       G.OtherStmt (G.OS_Redo, [G.Tk t; G.Lbli lbl])

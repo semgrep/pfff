@@ -418,34 +418,43 @@ and map_stmt x =
       let v1 = map_of_option map_expr v1
       and v2 = map_of_list map_case_and_body v2
       in Switch ((v0, v1, v2))
-  | Return (t, v1) -> 
+  | Return (t, v1, sc) -> 
       let t = map_tok t in
-      let v1 = map_of_option map_expr v1 in Return ((t, v1))
-  | Continue (t, v1) -> 
+      let v1 = map_of_option map_expr v1 in 
+      let sc = map_tok sc in
+      Return ((t, v1, sc))
+  | Continue (t, v1, sc) -> 
       let t = map_tok t in
-        let v1 = map_label_ident v1 in Continue ((t, v1))
-  | Break (t, v1) -> 
+      let v1 = map_label_ident v1 in 
+      let sc = map_tok sc in
+      Continue ((t, v1, sc))
+  | Break (t, v1, sc) -> 
       let t = map_tok t in
-        let v1 = map_label_ident v1 in Break ((t, v1))
+      let v1 = map_label_ident v1 in 
+      let sc = map_tok sc in
+      Break ((t, v1, sc))
   | Label ((v1, v2)) ->
       let v1 = map_label v1 and v2 = map_stmt v2 in Label ((v1, v2))
   | Goto (t, v1) -> 
       let t = map_tok t in
         let v1 = map_label v1 in Goto ((t, v1))
-  | Throw (t, v1) -> 
+  | Throw (t, v1, sc) -> 
       let t = map_tok t in
-        let v1 = map_expr v1 in Throw ((t, v1))
+      let v1 = map_expr v1 in 
+      let sc = map_tok sc in
+      Throw ((t, v1, sc))
   | Try ((t, v1, v2, v3)) ->
       let t = map_tok t in
       let v1 = map_stmt v1
       and v2 = map_of_list map_catch v2
       and v3 = map_of_option map_finally v3
       in Try ((t, v1, v2, v3))
-  | Assert ((t, v1, v2)) ->
+  | Assert ((t, v1, v2, sc)) ->
       let t = map_tok t in
-      let v1 = map_expr v1
-      and v2 = map_of_option map_expr v2
-      in Assert ((t, v1, v2))
+      let v1 = map_expr v1 in
+      let v2 = map_of_option map_expr v2 in
+      let sc = map_tok sc in
+      Assert ((t, v1, v2, sc))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = map_other_stmt_with_stmt_operator v1
       and v2 = map_of_option map_expr v2

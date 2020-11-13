@@ -252,9 +252,9 @@ let rec stmt =
       let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
       let header = G.ForClassic (init, v2, v3) in
       G.For (t, header, v4)
-  | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1)
-  | Continue t -> G.Continue (t, G.LNone)
-  | Break t -> G.Break (t, G.LNone)
+  | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1, G.sc)
+  | Continue t -> G.Continue (t, G.LNone, G.sc)
+  | Break t -> G.Break (t, G.LNone, G.sc)
   | Label ((v1, v2)) -> let v1 = name v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)

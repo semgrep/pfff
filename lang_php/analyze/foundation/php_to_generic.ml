@@ -141,13 +141,13 @@ let rec stmt_aux =
       in 
       [G.For (t, G.ForEach (v2, t2, v1), G.stmt1 v3)]
   | Return (t, v1) -> let v1 = option expr v1 in 
-      [G.Return (t, v1)]
+      [G.Return (t, v1, G.sc)]
   | Break (t, v1) -> 
-      [G.Break (t, opt_expr_to_label_ident v1)]
+      [G.Break (t, opt_expr_to_label_ident v1, G.sc)]
   | Continue (t, v1) -> 
-      [G.Continue (t, opt_expr_to_label_ident v1)]
+      [G.Continue (t, opt_expr_to_label_ident v1, G.sc)]
   | Throw (t, v1) -> let v1 = expr v1 in
-      [G.Throw (t, v1)]
+      [G.Throw (t, v1, G.sc)]
   | Try ((t, v1, v2, v3)) ->
       let v1 = list stmt v1
       and v2 = list catch v2

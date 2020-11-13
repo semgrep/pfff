@@ -461,13 +461,13 @@ and stmt_aux =
       )
   | Return ((v1, v2)) ->
       let v1 = tok v1 and v2 = option (list expr) v2 in
-      [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr))]
+      [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr), G.sc)]
   | Break ((v1, v2)) -> 
       let v1 = tok v1 and v2 = option ident v2 in 
-      [G.Break (v1, G.opt_to_label_ident v2)]
+      [G.Break (v1, G.opt_to_label_ident v2, G.sc)]
   | Continue ((v1, v2)) ->
       let v1 = tok v1 and v2 = option ident v2 in
-      [G.Continue (v1, G.opt_to_label_ident v2)]
+      [G.Continue (v1, G.opt_to_label_ident v2, G.sc)]
   | Goto ((v1, v2)) -> 
       let v1 = tok v1 and v2 = ident v2 in 
       [G.Goto (v1, v2)]

@@ -582,18 +582,21 @@ and vof_stmt =
       let v1 = OCaml.vof_option vof_expr v1
       and v2 = OCaml.vof_list vof_case_and_body v2
       in OCaml.VSum (("Switch", [ v0; v1; v2 ]))
-  | Return (t, v1) -> 
+  | Return (t, v1, sc) -> 
       let t = vof_tok t in
       let v1 = OCaml.vof_option vof_expr v1 in 
-      OCaml.VSum (("Return", [ t; v1 ]))
-  | Continue (t, v1) ->
-      let t = vof_tok t in
-      let v1 = vof_label_ident v1
-      in OCaml.VSum (("Continue", [ t; v1 ]))
-  | Break (t, v1) ->
+      let sc = vof_tok sc in
+      OCaml.VSum (("Return", [ t; v1; sc ]))
+  | Continue (t, v1, sc) ->
       let t = vof_tok t in
       let v1 = vof_label_ident v1 in
-      OCaml.VSum (("Break", [ t; v1 ]))
+      let sc = vof_tok sc in
+      OCaml.VSum (("Continue", [ t; v1; sc ]))
+  | Break (t, v1, sc) ->
+      let t = vof_tok t in
+      let v1 = vof_label_ident v1 in
+      let sc = vof_tok sc in
+      OCaml.VSum (("Break", [ t; v1; sc ]))
   | Label ((v1, v2)) ->
       let v1 = vof_label v1
       and v2 = vof_stmt v2
@@ -601,20 +604,23 @@ and vof_stmt =
   | Goto (t, v1) -> 
       let t = vof_tok t in
       let v1 = vof_label v1 in OCaml.VSum (("Goto", [ t; v1 ]))
-  | Throw (t, v1) -> 
+  | Throw (t, v1, sc) -> 
       let t = vof_tok t in
-      let v1 = vof_expr v1 in OCaml.VSum (("Throw", [ t; v1 ]))
+      let v1 = vof_expr v1 in 
+      let sc = vof_tok sc in
+      OCaml.VSum (("Throw", [ t; v1; sc ]))
   | Try ((t, v1, v2, v3)) ->
       let t = vof_tok t in
       let v1 = vof_stmt v1
       and v2 = OCaml.vof_list vof_catch v2
       and v3 = OCaml.vof_option vof_finally v3
       in OCaml.VSum (("Try", [ t; v1; v2; v3 ]))
-  | Assert ((t, v1, v2)) ->
+  | Assert ((t, v1, v2, sc)) ->
       let t = vof_tok t in
-      let v1 = vof_expr v1
-      and v2 = OCaml.vof_option vof_expr v2
-      in OCaml.VSum (("Assert", [ t; v1; v2 ]))
+      let v1 = vof_expr v1 in
+      let v2 = OCaml.vof_option vof_expr v2 in
+      let sc = vof_tok sc in
+      OCaml.VSum (("Assert", [ t; v1; v2; sc ]))
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = vof_other_stmt_with_stmt_operator v1
       and v2 = OCaml.vof_option vof_expr v2

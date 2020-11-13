@@ -590,7 +590,7 @@ let rec stmt env st =
       sgrep_construct (G.S st)
 
   (* TODO: repeat env work of controlflow_build.ml *)
-  | G.Continue (_, _) | G.Break (_, _)
+  | G.Continue _ | G.Break _
    -> todo (G.S st)
     
   | G.Label (lbl, st) ->
@@ -601,11 +601,11 @@ let rec stmt env st =
       let lbl = lookup_label env lbl in
       [mk_s (Goto (tok, lbl))]
 
-  | G.Return (tok, eopt) ->
+  | G.Return (tok, eopt, _) ->
       let ss, e = expr_with_pre_stmts_opt env eopt in
       ss @ [mk_s (Return (tok, e))]
 
-  | G.Assert (tok, e, eopt) ->
+  | G.Assert (tok, e, eopt, _) ->
       let ss1, e' = expr_with_pre_stmts env e in
       let ss2, eopt' = expr_with_pre_stmts_opt env eopt in
       let special = Assert, tok in
@@ -615,7 +615,7 @@ let rec stmt env st =
       ss1 @ ss2 @
       [mk_s (Instr (mk_i (CallSpecial (None, special, [e'; eopt'])) e))]
 
-  | G.Throw (tok, e) ->
+  | G.Throw (tok, e, _) ->
       let ss, e = expr_with_pre_stmts env e in
       ss @ [mk_s (Throw (tok, e))]
   | G.Try (_, _, _, _) 

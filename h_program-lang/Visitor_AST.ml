@@ -432,31 +432,36 @@ and v_stmt x =
           (fun (v1, v2) -> let v1 = v_list v_case v1 and v2 = v_stmt v2 in ())
           v2
       in ()
-  | Return (t, v1) -> 
+  | Return (t, v1, sc) -> 
         let t = v_tok t in
-        let v1 = v_option v_expr v1 in ()
-  | Continue (t, v1) -> 
+        let v1 = v_option v_expr v1 in 
+        v_tok sc
+  | Continue (t, v1, sc) -> 
         let t = v_tok t in
-        let v1 = v_label_ident v1 in ()
-  | Break (t, v1) -> 
+        let v1 = v_label_ident v1 in 
+        v_tok sc
+  | Break (t, v1, sc) -> 
         let t = v_tok t in
-        let v1 = v_label_ident v1 in ()
+        let v1 = v_label_ident v1 in
+        v_tok sc
   | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
   | Goto (t, v1) -> 
         let t = v_tok t in
         let v1 = v_label v1 in ()
-  | Throw (t, v1) -> 
+  | Throw (t, v1, sc) -> 
         let t = v_tok t in
-        let v1 = v_expr v1 in ()
+        let v1 = v_expr v1 in
+        v_tok sc
   | Try ((t, v1, v2, v3)) ->
       let t = v_tok t in
       let v1 = v_stmt v1
       and v2 = v_list v_catch v2
       and v3 = v_option v_finally v3
       in ()
-  | Assert ((t, v1, v2)) -> 
+  | Assert (t, v1, v2, sc) -> 
         let t = v_tok t in
-        let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
+        let v1 = v_expr v1 and v2 = v_option v_expr v2 in 
+        v_tok sc
   | OtherStmtWithStmt ((v1, v2, v3)) ->
       let v1 = v_other_stmt_with_stmt_operator v1 
       and v2 = v_option v_expr v2 

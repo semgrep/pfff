@@ -556,7 +556,7 @@ and stmt_aux x =
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       [G.exprstmt (G.AssignOp (v1, (v2, tok), v3))]
   | Return (t, v1) -> let v1 = option expr v1 in 
-      [G.Return (t, v1)]
+      [G.Return (t, v1, G.sc)]
 
   | Delete (_t, v1) -> let v1 = list expr v1 in
       [G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))]
@@ -611,18 +611,18 @@ and stmt_aux x =
       (match v1 with
       | Some (e, None) ->
         let e = expr e in
-        [G.Throw (t, e)]
+        [G.Throw (t, e, G.sc)]
       | Some (e, Some from) ->
         let e = expr e in
         let from = expr from in
-        let st = G.Throw (t, e) in
+        let st = G.Throw (t, e, G.sc) in
         [G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])]
       | None ->
         [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t])]
       )
   | RaisePython2 (t, e, v2, v3) ->
     let e = expr e in
-    let st = G.Throw (t, e) in
+    let st = G.Throw (t, e, G.sc) in
     (match (v2, v3) with
     | (Some args, Some loc) ->
       let args = expr args
@@ -656,7 +656,7 @@ and stmt_aux x =
       [G.Try (t, v1, [], Some (t2, v2))]
 
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
-      [G.Assert (t, v1, v2)]
+      [G.Assert (t, v1, v2, G.sc)]
 
   | ImportAs (t, v1, v2) -> 
       let mname = module_name v1 and nopt = option name v2 in
@@ -692,8 +692,8 @@ and stmt_aux x =
       )
 
   | Pass t -> [G.OtherStmt (G.OS_Pass, [G.Tk t])]
-  | Break t -> [G.Break (t, G.LNone)]
-  | Continue t -> [G.Continue (t, G.LNone)]
+  | Break t -> [G.Break (t, G.LNone, G.sc)]
+  | Continue t -> [G.Continue (t, G.LNone, G.sc)]
 
   (* python2: *)
   | Print (tok, _dest, vals, _nl) -> 

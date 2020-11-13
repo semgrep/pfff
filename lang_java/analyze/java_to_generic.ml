@@ -344,11 +344,11 @@ and stmt =
   | For ((t, v1, v2)) -> let v1 = for_control t v1 and v2 = stmt v2 in
       G.For (t, v1, v2)
   | Break (t, v1) -> let v1 = G.opt_to_label_ident v1 in
-      G.Break (t, v1)
+      G.Break (t, v1, G.sc)
   | Continue (t, v1) -> let v1 = G.opt_to_label_ident v1 in
-      G.Continue (t, v1)
+      G.Continue (t, v1, G.sc)
   | Return (t, v1) -> let v1 = option expr v1 in
-      G.Return (t, v1)
+      G.Return (t, v1, G.sc)
   | Label ((v1, v2)) -> let v1 = ident v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Sync ((v1, v2)) -> 
@@ -361,13 +361,13 @@ and stmt =
       in
       G.Try (t,v1, v2, v3)
   | Throw (t, v1) -> let v1 = expr v1 in
-      G.Throw (t, v1)
+      G.Throw (t, v1, G.sc)
   | LocalVar v1 -> let (ent, v) = var_with_init v1 in
       G.DefStmt (ent, G.VarDef v)
   | DeclStmt v1 -> decl v1
   | DirectiveStmt v1 -> directive v1
   | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
-      G.Assert (t, v1, v2)
+      G.Assert (t, v1, v2, G.sc)
 
 
 and tok_and_stmt (t, v) = 
