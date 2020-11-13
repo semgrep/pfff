@@ -260,16 +260,16 @@ and stmt x =
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
-  | Continue (t, v1) -> let v1 = option label v1 in 
-     G.Continue (t, G.opt_to_label_ident v1, G.sc)
-  | Break (t, v1) -> let v1 = option label v1 in
-     G.Break (t, G.opt_to_label_ident v1, G.sc)
-  | Return (t, v1) -> 
+  | Continue (t, v1, sc) -> let v1 = option label v1 in 
+     G.Continue (t, G.opt_to_label_ident v1, sc)
+  | Break (t, v1, sc) -> let v1 = option label v1 in
+     G.Break (t, G.opt_to_label_ident v1, sc)
+  | Return (t, v1, sc) -> 
       let v1 = option expr v1 in 
-      G.Return (t, v1, G.sc)
+      G.Return (t, v1, sc)
   | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
-  | Throw (t, v1) -> let v1 = expr v1 in G.Throw (t, v1, G.sc)
+  | Throw (t, v1, sc) -> let v1 = expr v1 in G.Throw (t, v1, sc)
   | Try ((t, v1, v2, v3)) ->
       let v1 = stmt v1
       and v2 = option catch_block v2

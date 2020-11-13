@@ -89,6 +89,10 @@ type 'a bracket = tok * 'a * tok
 type todo_category = string wrap
  [@@deriving show] (* with tarzan *)
 
+(* real or fake when ASI (automatic semicolon insertion) *)
+type sc = AST_generic.sc
+ [@@deriving show] (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
@@ -250,7 +254,7 @@ and stmt =
   | DefStmt of definition
 
   | Block of stmt list bracket
-  | ExprStmt of expr * tok (* can be fake when ASI *)
+  | ExprStmt of expr * sc
   (* old: EmptyStmt of tok now transformed as an Block [] *)
 
   | If of tok * expr * stmt * stmt option
@@ -258,12 +262,12 @@ and stmt =
   | For of tok * for_header * stmt
 
   | Switch of tok * expr * case list
-  | Continue of tok * label option | Break of tok * label option
-  | Return of tok * expr option
+  | Continue of tok * label option * sc | Break of tok * label option * sc
+  | Return of tok * expr option * sc
 
   | Label of label * stmt
  
-  | Throw of tok * expr
+  | Throw of tok * expr * sc
   | Try of tok * stmt * catch option * (tok * stmt) option
   (* javascript special features, not in other imperative languages *)
   | With of tok * expr * stmt

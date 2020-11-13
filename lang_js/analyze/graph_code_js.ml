@@ -425,16 +425,14 @@ and stmt env = function
  | Switch (_tok, e, xs) ->
    expr env e;
    cases env xs
- | Continue (_, lopt) ->
+ | Continue (_, lopt, _) | Break (_, lopt, _) ->
    Common.opt (label env) lopt
- | Break (_, lopt) ->
-   Common.opt (label env) lopt
- | Return (_, eopt) ->
+ | Return (_, eopt, _) ->
    option (expr env) eopt
  | Label (l, st) ->
    label env l;
    stmt env st
- | Throw (_, e) ->
+ | Throw (_, e, _) ->
    expr env e
  | Try (_, st1, catchopt, finalopt) ->
    stmt env st1;

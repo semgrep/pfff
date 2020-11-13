@@ -130,7 +130,7 @@ let mk_pattern binding_pattern init_opt =
 
 (* Javascript has implicit returns for arrows with expression body *)
 let mk_block_return e = 
-  fb [Return (G.fake "return", Some e)]
+  fb [Return (G.fake "return", Some e, G.sc)]
 
 let special spec tok xs = 
   Apply (IdSpecial (spec, tok), fb xs)
@@ -1069,10 +1069,10 @@ iteration_stmt:
 
 initializer_no_in: "=" assignment_expr_no_in { $2 }
 
-continue_stmt: T_CONTINUE id? sc { Continue ($1, $2) }
-break_stmt:    T_BREAK    id? sc { Break ($1, $2) }
+continue_stmt: T_CONTINUE id? sc { Continue ($1, $2, $3) }
+break_stmt:    T_BREAK    id? sc { Break ($1, $2, $3) }
 
-return_stmt: T_RETURN expr? sc { Return ($1, $2) }
+return_stmt: T_RETURN expr? sc { Return ($1, $2, $3) }
 
 with_stmt: T_WITH "(" expr ")" stmt1 { With ($1, $3, $5) }
 
@@ -1081,7 +1081,7 @@ switch_stmt: T_SWITCH "(" expr ")" case_block { Switch ($1, $3, $5) }
 labelled_stmt: id ":" stmt1 { Label ($1, $3) }
 
 
-throw_stmt: T_THROW expr sc { Throw ($1, $2) }
+throw_stmt: T_THROW expr sc { Throw ($1, $2, $3) }
 
 try_stmt:
  | T_TRY block catch         { Try ($1, $2, Some $3, None)  }
