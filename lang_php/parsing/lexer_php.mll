@@ -556,10 +556,13 @@ rule st_in_scripting = parse
 
     | ":" { TCOLON(tokinfo lexbuf) }
     | "?" { TQUESTION(tokinfo lexbuf) }
-    (* semantic grep or var args extension *)
+    (* semgrep-ext: or var args extension *)
     | "..." { T_ELLIPSIS(tokinfo lexbuf) }
     (* facebook-ext: short lambdas *)
     | "==>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
+    (* sgrep-ext: *)
+    | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
+    | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
     (* we may come from a st_looking_for_xxx context, like in string
      * interpolation, so seeing a } we pop_mode!

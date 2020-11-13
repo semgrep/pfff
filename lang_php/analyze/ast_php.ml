@@ -229,6 +229,7 @@ type expr =
 
   (* sgrep-ext: *)
   | Ellipsis of tok
+  | DeepEllipsis of expr bracket
 
   and special =
   (* often transformed in Var "$this" in the analysis *)

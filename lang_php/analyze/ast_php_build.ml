@@ -307,6 +307,8 @@ and stmt_and_def env st acc = stmt env st acc
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 and expr env = function
+  | DeepEllipsis (x) -> A.DeepEllipsis (bracket (expr env) x)
+
   | Sc sc -> scalar env sc
 
   | Id n -> A.Id (name env n)

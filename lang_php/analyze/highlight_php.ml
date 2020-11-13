@@ -646,7 +646,9 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation
 
-    | T.T_ELLIPSIS ii -> tag ii Punctuation
+    | T.T_ELLIPSIS ii 
+    | T.LDots ii | T.RDots ii
+    -> tag ii Punctuation
     | T.TANTISLASH ii -> tag ii KeywordModule
     | T.T_NAMESPACE ii -> tag ii Keyword
 

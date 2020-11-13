@@ -60,213 +60,10 @@ let token_kind_of_tok t =
  * emacs macro working on the type definition of token in parser_php.mli
  *)
 
-let info_of_tok = function
-  | TUnknown ii -> ii
-  | TSpaces ii -> ii
-  | TNewline ii -> ii
-  | TCommentPP ii -> ii
-  | T_LNUMBER (_s, ii) -> ii
-  | T_DNUMBER (_s, ii) -> ii
-  | T_IDENT (_s, ii) -> ii
-  | T_STRING_VARNAME (_s, ii) -> ii
-  | T_VARIABLE (_s, ii) -> ii
-  | T_NUM_STRING (_s, ii) -> ii
-  | T_INLINE_HTML (_s, ii) -> ii
-  | T_ENCAPSED_AND_WHITESPACE (_s, ii) -> ii
-  | T_CONSTANT_ENCAPSED_STRING (_s, ii) -> ii
-  | T_ECHO ii -> ii
-  | T_PRINT ii -> ii
-  | T_DO ii -> ii
-  | T_WHILE ii -> ii
-  | T_ENDWHILE ii -> ii
-  | T_FOR ii -> ii
-  | T_ENDFOR ii -> ii
-  | T_FOREACH ii -> ii
-  | T_ENDFOREACH ii -> ii
-  | T_SWITCH ii -> ii
-  | T_ENDSWITCH ii -> ii
-  | T_CASE ii -> ii
-  | T_DEFAULT ii -> ii
-  | T_BREAK ii -> ii
-  | T_CONTINUE ii -> ii
-  | T_RETURN ii -> ii
-  | T_TRY ii -> ii
-  | T_CATCH ii -> ii
-  | T_FINALLY ii -> ii
-  | T_THROW ii -> ii
-  | T_DECLARE ii -> ii
-  | T_ENDDECLARE ii -> ii
-  | T_USE ii -> ii
-  | T_GLOBAL ii -> ii
-  | T_AS ii -> ii
-  | T_SUPER ii -> ii
-  | T_FUNCTION ii -> ii
-  | T_CONST ii -> ii
-  | T_STATIC ii -> ii
-  | T_ABSTRACT ii -> ii
-  | T_FINAL ii -> ii
-  | T_ASYNC ii -> ii
-  | T_PRIVATE ii -> ii
-  | T_PROTECTED ii -> ii
-  | T_PUBLIC ii -> ii
-  | T_VAR ii -> ii
-  | T_UNSET ii -> ii
-  | T_ISSET ii -> ii
-  | T_EMPTY ii -> ii
-  | T_CLASS ii -> ii
-  | T_ENUM ii -> ii
-  | T_INTERFACE ii -> ii
-  | T_EXTENDS ii -> ii
-  | T_IMPLEMENTS ii -> ii
-  | T_OBJECT_OPERATOR ii -> ii
-  | T_ARROW ii -> ii
-  | T_DOUBLE_ARROW ii -> ii
-  | T_LIST ii -> ii
-  | T_ARRAY ii -> ii
-  | T_CLASS_C ii -> ii
-  | T_METHOD_C ii -> ii
-  | T_FUNC_C ii -> ii
-  | T_LINE ii -> ii
-  | T_FILE ii -> ii
-  | T_DIR ii -> ii
-  | T_COMMENT ii -> ii
-  | T_DOC_COMMENT ii -> ii
-  | T_OPEN_TAG ii -> ii
-  | T_OPEN_TAG_WITH_ECHO ii -> ii
-  | T_CLOSE_TAG_OF_ECHO ii -> ii
-  | T_CLOSE_TAG ii -> ii
-  | T_START_HEREDOC ii -> ii
-  | T_END_HEREDOC ii -> ii
-  | T_DOLLAR_OPEN_CURLY_BRACES ii -> ii
-  | T_CURLY_OPEN ii -> ii
-  | TCOLCOL ii -> ii
-  | T_EXIT ii -> ii
-  | T_IF ii -> ii
-  | TCOLON ii -> ii
-  | TCOMMA ii -> ii
-  | TDOT ii -> ii
-  | TBANG ii -> ii
-  | TTILDE ii -> ii
-  | TQUESTION ii -> ii
-  | TOBRA ii -> ii
-  | TPLUS ii -> ii
-  | TMINUS ii -> ii
-  | TMUL ii -> ii
-  | TDIV ii -> ii
-  | TMOD ii -> ii
-  | TPOW ii -> ii
-  | TAND ii -> ii
-  | TOR ii -> ii
-  | TEQ ii -> ii
-  | TSMALLER ii -> ii
-  | TGREATER ii -> ii
-  | T_PLUS_EQUAL ii -> ii
-  | T_MINUS_EQUAL ii -> ii
-  | T_MUL_EQUAL ii -> ii
-  | T_DIV_EQUAL ii -> ii
-  | T_CONCAT_EQUAL ii -> ii
-  | T_MOD_EQUAL ii -> ii
-  | T_AND_EQUAL ii -> ii
-  | T_OR_EQUAL ii -> ii
-  | T_XOR_EQUAL ii -> ii
-  | T_SL_EQUAL ii -> ii
-  | T_SR_EQUAL ii -> ii
-  | T_INC ii -> ii
-  | T_DEC ii -> ii
-  | T_BOOLEAN_OR ii -> ii
-  | T_BOOLEAN_AND ii -> ii
-  | T_BOOLEAN_PIPE ii -> ii
-  | T_LOGICAL_OR ii -> ii
-  | T_LOGICAL_AND ii -> ii
-  | T_LOGICAL_XOR ii -> ii
-  | T_SL ii -> ii
-  | T_SR ii -> ii
-  | T_IS_SMALLER_OR_EQUAL ii -> ii
-  | T_IS_GREATER_OR_EQUAL ii -> ii
-  | T_BOOL_CAST ii -> ii
-  | T_INT_CAST ii -> ii
-  | T_DOUBLE_CAST ii -> ii
-  | T_STRING_CAST ii -> ii
-  | T_ARRAY_CAST ii -> ii
-  | T_OBJECT_CAST ii -> ii
-  | T_UNSET_CAST ii -> ii
-  | T_IS_IDENTICAL ii -> ii
-  | T_IS_NOT_IDENTICAL ii -> ii
-  | T_IS_EQUAL ii -> ii
-  | T_IS_NOT_EQUAL ii -> ii
-  | TXOR ii -> ii
-  | T__AT ii -> ii
-  | T_NEW ii -> ii
-  | T_CLONE ii -> ii
-  | T_INSTANCEOF ii -> ii
-  | T_INCLUDE ii -> ii
-  | T_INCLUDE_ONCE ii -> ii
-  | T_REQUIRE ii -> ii
-  | T_REQUIRE_ONCE ii -> ii
-  | T_EVAL ii -> ii
-  | T_ELSE ii -> ii
-  | T_ELSEIF ii -> ii
-  | T_ENDIF ii -> ii
-  | TOPAR ii -> ii
-  | TCPAR ii -> ii
-  | T_LAMBDA_OPAR ii -> ii
-  | T_LAMBDA_CPAR ii -> ii
-  | TOBRACE ii -> ii
-  | TCBRACE ii -> ii
-  | TCBRA ii -> ii
-  | TBACKQUOTE ii -> ii
-  | TSEMICOLON ii -> ii
-  | TDOLLAR ii -> ii
-  | TDOLLARDOLLAR ii -> ii
-  | TGUIL ii -> ii
-
-  | T_ELLIPSIS (ii) -> ii
-  | T_CLASS_XDEBUG (ii) -> ii
-  | T_RESOURCE_XDEBUG (ii) -> ii
-
-  | T_XHP_COLONID_DEF (_s, ii) -> ii
-  | T_XHP_PERCENTID_DEF (_s, ii) -> ii
-
-  | T_XHP_OPEN_TAG (_xs, ii) -> ii
-  | T_XHP_CLOSE_TAG (_xs, ii) -> ii
-
-  | T_XHP_GT (ii) -> ii
-  | T_XHP_SLASH_GT (ii) -> ii
-
-  | T_XHP_ATTR (_s, ii) -> ii
-  | T_XHP_TEXT (_s, ii) -> ii
-
-  | T_XHP_ATTRIBUTE (ii) -> ii
-  | T_XHP_CHILDREN (ii) -> ii
-  | T_XHP_CATEGORY (ii) -> ii
-
-
-  | T_XHP_REQUIRED (ii) -> ii
-
-  | T_XHP_ANY (ii) -> ii
-  | T_XHP_PCDATA (ii) -> ii
-
-  | T_YIELD (ii) -> ii
-  | T_AWAIT (ii) -> ii
-  | T_SELF(ii) -> ii
-  | T_PARENT(ii) -> ii
-
-  | T_TRAIT(ii) -> ii
-  | T_INSTEADOF(ii) -> ii
-  | T_TRAIT_C(ii) -> ii
-
-  | T_TYPE(ii) -> ii
-  | T_NEWTYPE(ii) -> ii
-  | T_SHAPE(ii) -> ii
-
-  | T_NAMESPACE(ii) -> ii
-  | TANTISLASH(ii) -> ii
-  | T_NAMESPACE_C(ii) -> ii
-
-  | EOF ii -> ii
-  | T_ROCKET ii -> ii
-
 let visitor_info_of_tok f = function
+  | LDots (ii) -> LDots (f ii)
+  | RDots (ii) -> RDots (f ii)
+
   | TUnknown ii -> TUnknown(f ii)
   | TSpaces ii -> TSpaces(f ii)
   | TNewline ii -> TNewline(f ii)
@@ -470,6 +267,13 @@ let visitor_info_of_tok f = function
 
   | EOF ii -> EOF(f ii)
   | T_ROCKET ii -> T_ROCKET(f ii)
+
+let info_of_tok tok = 
+  let res = ref None in
+  visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
+  match !res with
+  | Some x -> x
+  | None -> Parse_info.fake_info "NOTOK"
 
 (*****************************************************************************)
 (* Accessors *)

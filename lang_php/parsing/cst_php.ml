@@ -297,6 +297,7 @@ and expr =
 
   (* semgrep-ext:  *)
   | Ellipsis of tok
+  | DeepEllipsis of expr bracket
   (* unparser: *)
   | ParenExpr of expr paren
 

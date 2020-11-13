@@ -180,6 +180,9 @@ module PI = Parse_info
 
 (* phpext: for hack and also for semgrep *)
 %token <Cst_php.info> T_ELLIPSIS "..."
+(* semgrep-ext: *)
+%token <Cst_php.info> LDots "<..." RDots "...>"
+
 
 (* lexing hack to parse lambda params properly *)
 %token <Cst_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
@@ -1255,6 +1258,8 @@ primary_expr:
  | xhp_html { XhpHtml $1 }
 
  | "(" expr ")"     { ParenExpr($1,$2,$3) }
+ (* semgrep-ext: *)
+ | "<..." expr "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 
 
