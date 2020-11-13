@@ -60,9 +60,11 @@ let test regexp =
 (* TODO dune .opam file
       Unit_pretty_print_php.unittest;
 *)
+(*
       Unit_foundation_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
+*)
 (*      Unit_analyze_db_php.unittest; *)
 (*      Unit_static_analysis_simple_php.unittest;*)
 (* TODO need extra deps to swipl
@@ -292,7 +294,9 @@ let all_actions () =
  Test_parsing_generic.actions()@
  Test_analyze_generic.actions()@
  Test_program_lang.actions()@
+(*
  Builtins_php.actions()@
+*)
   []
 
 let options () = [

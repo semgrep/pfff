@@ -24,7 +24,6 @@ module Ast = Cst_php
 module Flag = Flag_parsing
 (*e: basic pfff module open and aliases *)
 module V = Visitor_php 
-module V2 = Map_php 
 
 module PI = Parse_info
 
@@ -131,25 +130,6 @@ let extract_info_visitor recursor =
 let ii_of_any any = 
   extract_info_visitor (fun visitor -> visitor any)
 (*e: extract infos *)
-
-(*****************************************************************************)
-(* Abstract position *)
-(*****************************************************************************)
-(*s: abstract infos *)
-let abstract_position_visitor recursor = 
-  let hooks = { V2.default_visitor with
-    V2.kinfo = (fun (_k, _) i -> 
-      { i with Parse_info.token = Parse_info.Ab }
-    )
-  } in
-  begin
-    let vout = V2.mk_visitor hooks in
-    recursor vout;
-  end
-(*x: abstract infos *)
-let abstract_position_info_any x = 
-  abstract_position_visitor (fun visitor -> visitor.V2.vany x)
-(*e: abstract infos *)
 
 (*****************************************************************************)
 (* Max min, range *)

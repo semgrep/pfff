@@ -102,6 +102,7 @@ let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let highlight_funcall_simple ~tag ~hentities f args info =
+(*
   if Hashtbl.mem Env_php.hdynamic_call_wrappers f
   then begin
     match args with
@@ -115,10 +116,13 @@ let highlight_funcall_simple ~tag ~hentities f args info =
         let ii = Lib_parsing_php.ii_of_any (Argument x) in
         ii |> List.iter (fun info -> tag info PointerCall);
   end;
+*)
   (match () with
   (* security: *)
+(*
   | _ when Hashtbl.mem Env_php.hbad_functions f ->
       tag info BadSmell
+*)
   | _ ->
       (match Hashtbl.find_all hentities f with
       | [e] ->
@@ -299,9 +303,12 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
 
         | MethodRegular | MethodAbstract ->
           tag def.f_tok KeywordObject;
+(*
           if Class_php.is_static_method def
           then StaticMethod (Def2 fake_no_def2)
-          else Entity (Method, (Def2 fake_no_def2))
+          else
+*)
+           Entity (Method, (Def2 fake_no_def2))
       in
       tag info kind;
       k def

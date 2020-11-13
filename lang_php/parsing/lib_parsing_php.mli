@@ -16,8 +16,6 @@ val find_source_files_of_dir_or_files:
 (* returns only origin tokens, filter fake tokens *)
 val ii_of_any: Cst_php.any -> Cst_php.tok list
 (*x: lib_parsing_php.mli *)
-(* do via side effects *)
-val abstract_position_info_any: Cst_php.any -> Cst_php.any
 
 (*x: lib_parsing_php.mli *)
 val range_of_origin_ii: tok list -> (int * int) option
