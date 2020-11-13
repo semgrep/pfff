@@ -2,7 +2,6 @@
 open Common
 
 module Flag = Flag_parsing
-module Ast = Cst_php
 
 (*****************************************************************************)
 (* Lexing/Parsing *)
@@ -109,6 +108,7 @@ let test_dump_php file =
 (* Misc *)
 (*****************************************************************************)
 (*s: test_visit_php *)
+(*
 let test_visit_php file = 
   let ast = Parse_php.parse_program file in
 
@@ -128,8 +128,9 @@ let test_visit_php file =
   } in
   let visitor = Visitor_php.mk_visitor hooks in
   visitor (Ast.Program ast)
+*)
 (*e: test_visit_php *)
-
+(*
 let test_unparse_php file = 
   let (ast2, _stat) = Parse_php.parse file in
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
@@ -153,6 +154,7 @@ let test_parse_xhp_with_xhpize file =
 let test_parse_xdebug_expr s = 
   let _e = Parse_php.xdebug_expr_of_string s in
   raise Todo
+*)
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -162,8 +164,10 @@ let actions () = [
     "-parse_php", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_php;
   (*x: test_parsing_php actions *)
+(*
     "-visit_php", "   <file>", 
       Common.mk_action_1_arg test_visit_php;
+*)
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
 (*
@@ -184,7 +188,7 @@ let actions () = [
     "-tokens_php", "   <file>", 
     Common.mk_action_1_arg test_tokens_php;
   (*e: test_parsing_php actions *)
-
+(*
     "-unparse_php", "   <file>", 
     Common.mk_action_1_arg test_unparse_php;
     "-pretty_print_php", "   <file>", 
@@ -193,5 +197,6 @@ let actions () = [
     Common.mk_action_1_arg test_parse_xdebug_expr;
     "-parse_xhp_with_xhpize", "   <file>", 
     Common.mk_action_1_arg test_parse_xhp_with_xhpize;
+*)
 ]
 (*e: test_parsing_php.ml *)

@@ -17,20 +17,15 @@
 (*e: Facebook copyright *)
 open Common
 
-(*s: basic pfff module open and aliases *)
-open Cst_php 
-
-module Ast = Cst_php
-module Flag = Flag_parsing
-(*e: basic pfff module open and aliases *)
-module V = Visitor_php 
-
 module PI = Parse_info
+(*s: basic pfff module open and aliases *)
+(*module Ast = Cst_php*)
+(*e: basic pfff module open and aliases *)
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing.verbose_parsing
 
 (*****************************************************************************)
 (* Filenames *)
@@ -103,6 +98,7 @@ let find_source_files_of_dir_or_files ?(verbose=false) ?(include_hack=false) xs 
 (* Extract infos *)
 (*****************************************************************************)
 (*s: extract infos *)
+(*
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
@@ -126,9 +122,12 @@ let extract_info_visitor recursor =
     recursor vout;
     List.rev !globals
   end
+*)
 (*x: extract infos *)
+(*
 let ii_of_any any = 
   extract_info_visitor (fun visitor -> visitor any)
+*)
 (*e: extract infos *)
 
 (*****************************************************************************)
@@ -155,6 +154,7 @@ let (range_of_origin_ii: Cst_php.tok list -> (int * int) option) =
 (* Ast getters *)
 (*****************************************************************************)
 (*s: ast getters *)
+(*
 let get_funcalls_any any = 
   let h = Hashtbl.create 101 in
   
@@ -173,8 +173,10 @@ let get_funcalls_any any =
   let visitor = V.mk_visitor hooks in
   visitor any;
   Common.hashset_to_list h
+*)
 (*x: ast getters *)
 (*x: ast getters *)
+(*
 let get_constant_strings_any any = 
   let h = Hashtbl.create 101 in
 
@@ -195,8 +197,9 @@ let get_constant_strings_any any =
   in
   (V.mk_visitor hooks) any;
   Common.hashset_to_list h
+*)
 (*e: ast getters *)
-
+(*
 let get_static_vars_any any =
   any |> V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kstmt = (fun (k,_vx) x ->
@@ -239,11 +242,13 @@ let get_vars_any any =
       | _ -> k x
     );
   }) any
+*)
 
 (*****************************************************************************)
 (* Ast adapters *)
 (*****************************************************************************)
 
+(*
 let top_statements_of_program ast = 
   ast |> List.map (function
   | StmtList xs -> xs
@@ -331,5 +336,5 @@ let get_vars_assignements_any recursor =
       );
     }
   ) recursor |> Common.group_assoc_bykey_eff
-
+*)
 (*e: lib_parsing_php.ml *)

@@ -216,6 +216,7 @@ let unittest =
      * subelements, even when they are deep inside the AST tree (e.g. 
      * sub-sub expressions inside parenthesis).
      *)
+(*
     "visitor" >:: (fun () ->
       let ast = Parse_php.program_of_string "echo 1+2+(3+4);" in
 
@@ -234,7 +235,7 @@ let unittest =
       visitor (Program ast);
       assert_equal 4 !cnt ;
     );
-
+*)
     "checking column numbers" >:: (fun () ->
       
       (* See bug reported by dreiss, because the lexer had a few todos

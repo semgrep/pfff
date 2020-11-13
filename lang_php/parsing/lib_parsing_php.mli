@@ -13,14 +13,17 @@ val find_source_files_of_dir_or_files:
   Common.path list -> Common.filename list
 
 (*x: lib_parsing_php.mli *)
+(*
 (* returns only origin tokens, filter fake tokens *)
 val ii_of_any: Cst_php.any -> Cst_php.tok list
+*)
 (*x: lib_parsing_php.mli *)
 
 (*x: lib_parsing_php.mli *)
 val range_of_origin_ii: tok list -> (int * int) option
 
 (*x: lib_parsing_php.mli *)
+(*
 val get_funcalls_any         : any -> string list
 val get_constant_strings_any : any -> string list
 val get_vars_any              : any -> dname list
@@ -34,5 +37,5 @@ val top_statements_of_program:
 val functions_methods_or_topstms_of_program:
   program -> 
   (func_def list * method_def list * stmt list list) 
-
+*)
 (*e: lib_parsing_php.mli *)

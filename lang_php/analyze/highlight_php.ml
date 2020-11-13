@@ -16,11 +16,9 @@ open Common
 
 open Cst_php
 module Ast = Cst_php
-module V = Visitor_php
 module T = Parser_php
 
 open Entity_code open Highlight_code
-module S = Scope_code
 module E = Entity_code
 module Db = Database_code
 
@@ -98,10 +96,10 @@ let use_arity_ident_function_or_macro s db =
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
  *)
-let fake_no_def2 = NoUse
+let _fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-let highlight_funcall_simple ~tag ~hentities f args info =
+let _highlight_funcall_simple ~tag ~hentities f _args info =
 (*
   if Hashtbl.mem Env_php.hdynamic_call_wrappers f
   then begin
@@ -137,6 +135,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
           );
 
           (* args by ref *)
+(*
           ps |> List.iter (function
           | E.TakeArgNByRef i ->
               (try
@@ -149,6 +148,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
           | E.ContainDynamicCall -> ()
           | _ -> raise Todo
           );
+*)
           ()
       | _x::_y::_xs ->
           pr2_once ("highlight_php: multiple entities for: " ^ f);
@@ -184,13 +184,14 @@ let tag_name ~tag name =
   | LateStatic tok ->
       tag tok BadSmell
 
-let tag_class_name_reference ~tag qualif =
+let _tag_class_name_reference ~tag qualif =
   match qualif with
   | Id name -> tag_name ~tag name
-  | _ ->
+  | _ -> ()
+(*
     let ii = Lib_parsing_php.ii_of_any (Expr qualif) in
     ii |> List.iter (fun info -> tag info PointerCall)
-
+*)
 
 (*****************************************************************************)
 (* PHP Code highlighter *)
@@ -215,7 +216,7 @@ let tag_class_name_reference ~tag qualif =
  *  - I was using emacs_mode_xxx before but now have inlined the code
  *    and extended it.
  *)
-let visit_program ~tag _prefs  hentities (ast, toks) =
+let visit_program ~tag _prefs  _hentities (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -276,6 +277,8 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
+
+(* TODO: use generic AST highlighter 
 
   (* less: some of the logic duplicates what is in check_variables_php.ml
    * where we differentiate the diffent variables uses (parameters, static,
@@ -615,6 +618,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     visitor (Program ast)
   with Cst_php.TodoNamespace _ -> ()
   );
+*)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
