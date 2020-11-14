@@ -79,17 +79,6 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
         | Lexer_php.ST_START_NOWDOC s ->
             Lexer_php.st_start_nowdoc s lexbuf
 
-        (* xhp: *)
-        | Lexer_php.ST_IN_XHP_TAG current_tag ->
-            if not !Flag_php.xhp_builtin
-            then raise Impossible;
-
-            Lexer_php.st_in_xhp_tag current_tag lexbuf
-        | Lexer_php.ST_IN_XHP_TEXT current_tag ->
-            if not !Flag_php.xhp_builtin
-            then raise Impossible;
-
-            Lexer_php.st_in_xhp_text current_tag lexbuf
         )
      in
      if not (TH.is_comment tok)
@@ -169,7 +158,8 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
   let toks = 
     if filename = orig_filename
     then toks
-    else Pp_php.adapt_tokens_pp ~tokenizer:tokens ~orig_filename toks
+    else (* Pp_php.adapt_tokens_pp ~tokenizer:tokens ~orig_filename toks *)
+      failwith "no more pp"
   in
   let toks = Parsing_hacks_php.fix_tokens toks in
 

@@ -803,27 +803,6 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
       (* should been handled in Constant *)
     | T.T_DNUMBER _ii | T.T_LNUMBER _ii -> ()
 
-    | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
-    | T.T_XHP_REQUIRED ii
-    | T.T_XHP_CATEGORY ii | T.T_XHP_CHILDREN ii
-    | T.T_XHP_ATTRIBUTE ii
-      -> tag ii KeywordObject
-
-    | T.T_XHP_TEXT (_, ii) -> tag ii String
-    | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))
-
-    | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_CLOSE_TAG (_, ii)
-    | T.T_XHP_SLASH_GT ii | T.T_XHP_GT ii
-      -> tag ii EmbededHtml
-
-    (* should have been transformed into a XhpName or XhpInherit in Ast *)
-    | T.T_XHP_PERCENTID_DEF (_, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Error
-    | T.T_XHP_COLONID_DEF (_, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Error
-
     | T.T_RESOURCE_XDEBUG _ii | T.T_CLASS_XDEBUG _ii -> ()
 
   );

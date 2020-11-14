@@ -171,7 +171,7 @@ let xhp_field str =
 let xhp_data_field str =
   (str =~ ".*\\.\\(data\\|aria\\|srvr\\)-.*=")
 
-let addpostfix (str, tok) =
+let _addpostfix (str, tok) =
   (str ^ "=", tok)
 
 (* todo: handle __call and the dynamicYield idiom instead of this whitelist *)
@@ -798,9 +798,6 @@ and class_def env def =
   def.c_uses |> List.iter (fun c2 ->
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class (*E.Trait*));
   );
-  def.c_xhp_attr_inherit |> List.iter (fun c2 ->
-    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class);
-  );
 
   let self = Ast.str_of_ident def.c_name in
   let in_trait = match def.c_kind with Trait, _ -> true | _ -> false in
@@ -816,13 +813,6 @@ and class_def env def =
   def.c_constants |> List.iter (fun def ->
     let env = add_node_and_has_edge env (def.cst_name, E.ClassConstant) in
     Common2.opt (expr env) def.cst_body;
-  );
-  (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
-  def.c_xhp_fields |> List.iter (fun (def, req) ->
-    let node = (addpostfix def.cv_name, E.Field) in
-    let props = if req then [E.Required] else [] in
-    let env = add_node_and_has_edge ~props env node in
-    Common2.opt (expr env) def.cv_value;
   );
   def.c_variables |> List.iter (fun fld ->
     let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
@@ -1057,7 +1047,6 @@ and expr env x =
   | Collection (name, (_, xs, _)) ->
       add_use_edge env (name, E.Class);
       array_valuel env xs
-  | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
@@ -1066,19 +1055,6 @@ and expr env x =
     -> raise Impossible
 
 and array_value env x = expr env x
-
-and xml env x =
-  add_use_edge env ([x.xml_tag], E.Class);
-  x.xml_attrs |> List.iter (fun (ident, xhp_attr) ->
-    add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field;
-    expr env xhp_attr
-  );
-  x.xml_body |> List.iter (xhp env)
-
-and xhp env = function
-  | XhpText _s -> ()
-  | XhpExpr e -> expr env e
-  | XhpXml x -> xml env x
 
 and exprl         env xs = List.iter (expr env) xs
 and array_valuel  env xs = List.iter (array_value env) xs

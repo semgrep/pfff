@@ -219,7 +219,6 @@ type expr =
 
   | ConsArray of array_value list bracket
   | Collection of name * array_value list bracket
-  | Xhp of xml
 
   | CondExpr of expr * expr * expr
   | Cast of Cst_php.ptype wrap * expr
@@ -242,19 +241,6 @@ type expr =
    | CombinedComparison
    | ArithOp of AST_generic.operator
   and unaryOp = AST_generic.operator
-
-  (* pad: do we need that? could convert into something more basic *)
-  and xhp =
-    | XhpText of string wrap
-    | XhpExpr of expr
-    | XhpXml of xml
-
-    and xml = {
-      xml_tag: ident;
-      xml_attrs: (ident * xhp_attr_value) list;
-      xml_body: xhp list;
-    }
-     and xhp_attr_value = expr
 
 (* only Var, List, or Arrow, and apparently also Array_get is ok, so
  * basically any lvalue
@@ -405,12 +391,11 @@ and class_def = {
 
   c_modifiers: modifier list;
   c_attrs: attribute list;
-  (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
-  c_xhp_fields: xhp_field list;
-  c_xhp_attr_inherit: class_name list;
+
   c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
+
   c_braces: unit bracket;
 }
 

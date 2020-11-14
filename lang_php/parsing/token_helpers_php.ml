@@ -227,27 +227,6 @@ let visitor_info_of_tok f = function
   | T_CLASS_XDEBUG (ii) -> T_CLASS_XDEBUG (f ii)
   | T_RESOURCE_XDEBUG (ii) -> T_RESOURCE_XDEBUG (f ii)
 
-  | T_XHP_COLONID_DEF (s, ii) -> T_XHP_COLONID_DEF (s, f ii)
-  | T_XHP_PERCENTID_DEF (s, ii) -> T_XHP_PERCENTID_DEF (s, f ii)
-
-  | T_XHP_OPEN_TAG (xs, ii) -> T_XHP_OPEN_TAG (xs, f ii)
-  | T_XHP_CLOSE_TAG (xs, ii) -> T_XHP_CLOSE_TAG (xs, f ii)
-
-  | T_XHP_GT (ii) -> T_XHP_GT (f ii)
-  | T_XHP_SLASH_GT (ii) -> T_XHP_SLASH_GT (f ii)
-
-  | T_XHP_ATTR (s, ii) -> T_XHP_ATTR (s, f ii)
-  | T_XHP_TEXT (s, ii) -> T_XHP_TEXT (s, f ii)
-
-  | T_XHP_ATTRIBUTE (ii) -> T_XHP_ATTRIBUTE (f ii)
-  | T_XHP_CHILDREN (ii) -> T_XHP_CHILDREN (f ii)
-  | T_XHP_CATEGORY (ii) -> T_XHP_CATEGORY (f ii)
-
-  | T_XHP_REQUIRED (ii) -> T_XHP_REQUIRED (f ii)
-
-  | T_XHP_ANY (ii) -> T_XHP_ANY (f ii)
-  | T_XHP_PCDATA (ii) -> T_XHP_PCDATA (f ii)
-
   | T_YIELD (ii) -> T_YIELD (f ii)
   | T_AWAIT (ii) -> T_AWAIT (f ii)
   | T_SELF (ii) -> T_SELF (f ii)

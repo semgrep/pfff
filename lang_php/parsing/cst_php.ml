@@ -24,6 +24,7 @@ open Common
  * PHP 5.4 (e.g. traits) as well as support for many Facebook
  * extensions (XHP, generators, annotations, generics, collections,
  * type definitions, implicit fields via constructor parameters).
+ * update: I removed XHP to simplify.
  *
  * A CST is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
@@ -84,19 +85,9 @@ let pp_phpscope _fmt _ =  "??"
 (* ------------------------------------------------------------------------- *)
 (* See also analyze_php/namespace_php.ml *)
 
-(* Why not factorize Name and XhpName together? Because I was not
- * sure originally some analysis should also be applied on Xhp
- * classes. Moreover there is two syntax for xhp: :x:base for 'defs'
- * and <x:base for 'uses', so having this xhp_tag allow us to easily do
- * comparison between xhp identifiers.
- *)
-type ident =
-    (* was called T_STRING in Zend, which are really just LABEL, see lexer.mll*)
-    | Name of string wrap
-    (* xhp: for :x:foo the list is ["x";"foo"] *)
-    | XhpName of xhp_tag wrap
- (* for :x:foo the list is ["x";"foo"] *)
- and xhp_tag = string list
+(* todo: was using XhpName but could simplify now that removed XHP *)
+type ident = Name of string wrap
+   (* was called T_STRING in Zend, which are really just LABEL, see lexer.mll*)
  [@@deriving show { with_path = false }]
 
 (* The string does not contain the '$'. The info itself will usually
@@ -110,9 +101,9 @@ type ident =
  * you may have to normalize this 'string wrap' before moving it
  * to another context !!!
  *)
-type dname =
+type dname = DName of string wrap
    (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer *)
-   | DName of string wrap
+   
  [@@deriving show { with_path = false }]
 
 (* The antislash is a separator but it can also be in the leading position.
@@ -279,8 +270,6 @@ and expr =
   | Empty of tok * lvalue paren
   | Isset of tok * lvalue comma_list paren
 
-  (* xhp: *)
-  | XhpHtml of xhp_html
   (* php-facebook-ext:
    *
    * todo: this should be at the statement level as there are only a few
@@ -370,23 +359,6 @@ and expr =
      | ArrayRef of tok (* & *) * lvalue
      | ArrayArrowExpr of expr * tok (* => *) * expr
      | ArrayArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
-
- and xhp_html =
-   | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
-            xhp_body list * xhp_tag option wrap
-   | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
-
-   and xhp_attribute = xhp_attr_name * tok (* = *) * xhp_attr_value
-    and xhp_attr_name = string wrap (* e.g. task-bar *)
-    and xhp_attr_value =
-      | XhpAttrString of tok (* '"' *) * encaps list * tok (* '"' *)
-      | XhpAttrExpr of expr brace
-      (* semgrep-ext: *)
-      | SgrepXhpAttrValueMvar of string wrap
-   and xhp_body =
-     | XhpText of string wrap
-     | XhpExpr of expr brace
-     | XhpNested of xhp_html
 
     and argument =
       | Arg    of expr
@@ -655,7 +627,6 @@ and class_def = {
           hint_type option *
         class_variable comma_list * tok (* ; *)
     | Method of method_def
-    | XhpDecl of xhp_decl
     (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
     | UseTrait of tok (*use*) * class_name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
@@ -677,48 +648,6 @@ and class_def = {
  and modifier =
    | Public  | Private | Protected
    | Static  | Abstract | Final | Async
-
- and xhp_decl =
-    | XhpAttributesDecl of
-        tok (* attribute *) * xhp_attribute_decl comma_list * tok (*;*)
-    (* there is normally only one 'children' declaration in a class *)
-    | XhpChildrenDecl of
-        tok (* children *) * xhp_children_decl * tok (*;*)
-    | XhpCategoriesDecl of
-        tok (* category *) * xhp_category_decl comma_list * tok (*;*)
-
- and xhp_attribute_decl =
-   | XhpAttrInherit of xhp_tag wrap
-   | XhpAttrDecl of xhp_attribute_type * xhp_attr_name *
-       xhp_value_affect option * tok option (* is required *)
-   and xhp_attribute_type =
-     | XhpAttrType of hint_type
-     | XhpAttrVar of tok
-     | XhpAttrEnum of tok (* enum *) * constant comma_list brace
-  and xhp_value_affect = tok (* = *) * static_scalar
-
- (* Regexp-like syntax. The grammar actually restricts what kinds of
-  * regexps can be written. For instance pcdata must be nested. But
-  * here I simplified the type.
-  *)
- and xhp_children_decl =
-   | XhpChild of xhp_tag wrap (* :x:frag *)
-   | XhpChildCategory of xhp_tag wrap (* %x:frag *)
-
-   | XhpChildAny of tok
-   | XhpChildEmpty of tok
-   | XhpChildPcdata of tok
-
-   | XhpChildSequence    of xhp_children_decl * tok (*,*) * xhp_children_decl
-   | XhpChildAlternative of xhp_children_decl * tok (*|*) * xhp_children_decl
-
-   | XhpChildMul    of xhp_children_decl * tok (* * *)
-   | XhpChildOption of xhp_children_decl * tok (* ? *)
-   | XhpChildPlus   of xhp_children_decl * tok (* + *)
-
-   | XhpChildParen of xhp_children_decl paren
-
- and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
 (* those are bad features ... noone should use them. *)
 and trait_rule =
@@ -835,7 +764,6 @@ type entity =
 
   | ClassConstantE of class_constant
   | ClassVariableE of class_variable * modifier list
-  | XhpAttrE of xhp_attribute_decl
 
   | MiscE of tok list
  [@@deriving show { with_path = false }]
@@ -862,11 +790,6 @@ type any =
   | ListAssign of list_assign
   | ColonStmt2 of colon_stmt
   | Case2 of case
-
-  | XhpAttribute of xhp_attribute
-  | XhpAttrValue of xhp_attr_value
-  | XhpHtml2 of xhp_html
-  | XhpChildrenDecl2 of xhp_children_decl
 
   | Info of tok
   | InfoList of tok list
@@ -953,11 +876,9 @@ let al_info x =
 let str_of_ident e =
   match e with
   | Name x -> unwrap x
-  | XhpName (xs, _tok) -> ":" ^ (Common.join ":" xs)
 let info_of_ident e =
   match e with
   | (Name (_x,y)) -> y
-  | (XhpName (_x,y)) -> y
 
 let str_of_dname (DName x) = unwrap x
 let info_of_dname (DName (_x,y)) = y

@@ -335,8 +335,6 @@ and expr =
       G.Call (G.IdSpecial (G.New, fake "new"),
         fb[G.Arg (G.IdQualified (v1, G.empty_id_info()));
          G.Arg (G.Container (G.Dict, v2))])
-  | Xhp v1 -> let v1 = xml v1 in 
-      G.Xml v1
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -368,23 +366,6 @@ and argument e = let e = expr e in G.expr_to_arg e
 and special = function
   | This -> G.This
   | Eval -> G.Eval
-
-and xhp =
-  function
-  | XhpText v1 -> let v1 = string v1 in G.XmlText v1
-  | XhpExpr v1 -> let v1 = expr v1 in G.XmlExpr v1
-  | XhpXml v1 -> let v1 = xml v1 in G.XmlXml v1
-
-and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
-  let tag = ident xml_tag in
-  let attrs =
-    list (fun (v1, v2) -> let v1 = ident v1 and v2 = xhp_attr v2 in 
-        G.XmlAttr (v1, v2))
-    xml_attrs in
-  let body = list xhp xml_body in 
-  { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }
-
-and xhp_attr v          = expr v
 
 and foreach_pattern v   = 
   let v = expr v in
@@ -533,8 +514,6 @@ and class_def {
                 c_uses = c_uses;
                 c_enum_type = c_enum_type;
                 c_attrs = c_attrs;
-                c_xhp_fields = c_xhp_fields;
-                c_xhp_attr_inherit = c_xhp_attr_inherit;
                 c_constants = c_constants;
                 c_variables = c_variables;
                 c_methods = c_methods;
@@ -549,8 +528,6 @@ and class_def {
   let uses       = list class_name c_uses in
 
   let _enum = option (enum_type tok) c_enum_type in
-  let _xhp1 = list xhp_field c_xhp_fields in
-  let _xhp2 = list class_name c_xhp_attr_inherit in
 
   let modifiers = list modifier c_modifiers
     |> List.map (fun m -> G.KeywordAttr m) in
@@ -585,8 +562,6 @@ and class_kind (x, t) =
   | Interface -> G.Interface, t
   | Trait -> G.Trait, t
   | Enum -> error t "Enum not supported"
-
-and xhp_field (v1, v2) = let _v1 = class_var v1 and _v2 = bool v2 in ()
 
 and class_var {
                 cv_name = cname;

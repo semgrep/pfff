@@ -136,42 +136,6 @@ let unittest =
     );
 
     (*-----------------------------------------------------------------------*)
-    (* XHP *)
-    (*-----------------------------------------------------------------------*)
-
-    "parsing xhp code" >:: (fun () ->
-      (* old: 
-       * The PHP parser now understands PHP code containing XHP elements.
-       * In the past, pfff would call a preprocessor before parsing a file. By
-       * setting the preprocessor to "xhpize", the XHP command line 
-       * preprocessor, we could then parse the regular preprocessed code.
-       * Now pfff can directly parse XHP code.
-       * 
-       * Flag_parsing_php.pp_default := Some "xhpize"; 
-       *)
-      let _ast = Parse_php.program_of_string "return <x:frag />;"  in
-      let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
-      ()
-    );
-
-
-    (* XHP was mainly a preprocessor to allow embbeding HTML-like tags in
-     * PHP. It also fixes some limitations of the original PHP grammar 
-     * regarding array access. You can do foo()['fld'] in XHP, which is 
-     * not allowed in PHP (for stupid reasons IMHO).
-     * The pfff PHP parser must handle  this syntactic sugar too.
-     *)
-    "parsing xhp fn_idx sugar code" >:: (fun () ->
-
-      let _ast = Parse_php.program_of_string "return foo()[2];"  in
-      (* If the rule is added in the wrong place in the grammar, then
-       * the previous test will work but not this one.
-       *)
-      let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
-      ()
-    );
-
-    (*-----------------------------------------------------------------------*)
     (* Types *)
     (*-----------------------------------------------------------------------*)
 
@@ -252,7 +216,7 @@ let unittest =
     (*-----------------------------------------------------------------------*)
     (* Sgrep *)
     (*-----------------------------------------------------------------------*)
-
+(*
     "parsing sgrep expressions" >:: (fun () ->
       
       let _e = Parse_php.any_of_string "debug_rlog(1)" in
@@ -289,7 +253,7 @@ let unittest =
       assert_bool "it should be the AST of an expression" ok;
 
     );
-
+*)
   (* todo: 
    *  - ? sexp and json output
    *  - ? correctness of Ast (too many cases)

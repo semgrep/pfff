@@ -155,8 +155,6 @@ and name env = function
 
 and ident _env = function
   | Name (s, tok) -> s, wrap tok
-  | XhpName (tl, tok) ->
-      A.string_of_xhp_tag tl, wrap tok
 
 and qualified_ident env xs =
   let leading, rest =
@@ -450,7 +448,6 @@ and expr env = function
   | Isset (tok, (lp, lvl, rp)) ->
       A.Call (A.Id [A.builtin "isset", wrap tok],
              (lp, List.map (lvalue env) (comma_list lvl), rp))
-  | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
 
   | Yield (tok, e) ->
       A.Call (A.Id [A.builtin "yield", wrap tok], fb[array_pair env e])
@@ -664,8 +661,6 @@ and class_def env c =
     A.c_modifiers = modifiers;
     A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
-    A.c_xhp_fields = List.fold_right (xhp_fields env) body [];
-    A.c_xhp_attr_inherit = List.fold_right (xhp_attr_inherit env) body [];
     A.c_extends =
       (match c.c_extends with
       | None -> None
@@ -749,54 +744,6 @@ and class_variables env st acc =
        ) cvl @ acc
   | _ -> acc
 
-and xhp_fields env st acc =
-  match st with
-  | XhpDecl (XhpAttributesDecl (_, xal, _)) ->
-    (comma_list xal) |> List.fold_left (fun acc xhp_attr ->
-      match xhp_attr with
-      | XhpAttrDecl (attr_type, attr_name, eopt, req_tok_opt) ->
-        let ht =
-          match attr_type with
-          | XhpAttrType attr_type -> Some(hint_type env attr_type)
-          | XhpAttrVar _tok -> None
-          | XhpAttrEnum (_tok, _) -> None
-        in
-        let value =
-          match eopt with
-          | None -> None
-          | Some (_tok,sc) -> Some(static_scalar env sc)
-        in
-        let required =
-          match req_tok_opt with
-          | None -> false
-          | Some _ -> true
-        in
-        let attr_name =
-          match attr_name with
-          | (str, tok) -> (str, wrap tok)
-        in
-        ({
-          A.cv_name = attr_name;
-          A.cv_value = value;
-          A.cv_modifiers = [];
-          A.cv_type = ht;
-        }, required)::acc
-      | XhpAttrInherit _ -> acc
-     ) acc
-  | _ -> acc
-
-and xhp_attr_inherit env st acc =
-  match st with
-  | XhpDecl (XhpAttributesDecl(_, xal, _)) ->
-    (comma_list xal) |> List.fold_left (fun acc xhp_attr ->
-      match xhp_attr with
-      | XhpAttrInherit (source, tok) ->
-        A.Hint [ident env (Cst_php.XhpName (source, tok))]::acc
-      | XhpAttrDecl _ -> acc
-     ) acc
-  | _ -> acc
-
-
 
 and class_body env st (mets, flds) =
   match st with
@@ -805,7 +752,7 @@ and class_body env st (mets, flds) =
     met::mets, more_flds @ flds
 
   | ClassVariables _ | ClassConstants _ | UseTrait _
-  | XhpDecl _ | TraitConstraint _ | ClassType _
+  | TraitConstraint _ | ClassType _
     -> (mets, flds)
 
 and method_def env m =
@@ -874,40 +821,6 @@ and parameter env
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
-
-and xhp_html env = function
-  | Xhp (tag, attrl, _, body, _) ->
-      let tag, tok = tag in
-      let attrl = List.map (xhp_attribute env) attrl in
-      { A.xml_tag = (A.string_of_xhp_tag tag, wrap tok);
-        A.xml_attrs = attrl;
-        A.xml_body = List.map (xhp_body env) body;
-      }
-  | XhpSingleton (tag, attrl, _) ->
-      let tag, tok = tag in
-      let attrl = List.map (xhp_attribute env) attrl in
-      { A.xml_tag = (A.string_of_xhp_tag tag, wrap tok);
-        A.xml_attrs = attrl;
-        A.xml_body = [];
-      }
-
-and xhp_attribute env ((n, tok), _, v) =
-  (n, wrap tok), xhp_attr_value env v
-
-and xhp_attr_value env = function
-  | XhpAttrString (t1, l, t2) ->
-      A.Guil (t1, List.map (encaps env) l, t2)
-  | XhpAttrExpr (_, e, _) ->
-      (expr env e)
-  | SgrepXhpAttrValueMvar _ ->
-      (* should never use the abstract interpreter on a sgrep pattern *)
-      raise Common.Impossible
-
-and xhp_body env = function
-  | XhpText x -> A.XhpText x
-  | XhpExpr (_, e, _) -> A.XhpExpr (expr env e)
-  | XhpNested xml -> A.XhpXml (xhp_html env xml)
-
 
 and encaps env = function
   | EncapsString (s, tok) -> A.String (s, wrap tok)

@@ -66,12 +66,6 @@ let case_str s =
   then s
   else String.lowercase_ascii s
 
-
-let xhp_or_t_ident ii fii =
-  if !Flag_php.xhp_builtin
-  then fii ii
-  else T_IDENT(case_str (PI.str_of_info ii), ii)
-
 let lang_ext_or_t_ident ii fii =
   if !Flag_php.facebook_lang_extensions
   then fii ii
@@ -88,9 +82,6 @@ let lang_ext_or_t_ident ii fii =
  * note: PHP is case insensitive so this hash table is used on
  * a lowercased string so don't put strings in uppercase below because
  * such keyword would never be reached!
- *
- * coupling: if you add a new keyword, don't forget to also modify
- * the xhp_attr_name_atom grammar rule in parser_php.mly
  *
  * http://php.net/manual/en/reserved.keywords.php
  *
@@ -195,27 +186,8 @@ let keyword_table = Common.hash_of_list [
   "newtype", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_NEWTYPE x));
   "shape", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_SHAPE x));
 
-  (* xhp: having those XHP keywords handled here could mean they can not
-   * be used for entities like functions or class names. We could
-   * avoid this by introducing some lexer/parser hacks so that those
-   * keywords are recognized only in certain contexts (e.g. just after
-   * the '{' of a class) but that complicates the full parser (note
-   * also that IMHO it's better to not let the user overload those
-   * special names). A simpler solution, instead of extending the lexer,
-   * is to extend the grammar by having a 'ident:' rule that allows
-   * the regular T_IDENT as well as those XHP tokens. See parser_php.mly.
-   *)
-  "attribute",  (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_ATTRIBUTE x));
-  "children",  (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_CHILDREN x));
-  "category",  (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_CATEGORY x));
-
   (* for attribute declarations and Hack first class enums *)
-  "enum", (fun ii -> xhp_or_t_ident ii (fun x -> T_ENUM x));
-
-  (* for children declarations *)
-  "any", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_ANY x));
-  (* "empty" is already a PHP keyword, see T_EMPTY *)
-  "pcdata", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_PCDATA x));
+  "enum", (fun ii -> T_ENUM ii);
 
   (* obsolete: now that use hphp instead of xdebug for coverage analysis *)
   "class_xdebug",    (fun ii -> T_CLASS_XDEBUG ii);
@@ -279,14 +251,6 @@ type state_mode =
   | ST_START_HEREDOC of string
   (* started with <<<'XXX', finished by XXX; *)
   | ST_START_NOWDOC of string
-
-  (* started with <xx when preceded by a certain token (e.g. 'return' '<xx'),
-   * finished by '>' by transiting to ST_IN_XHP_TEXT, or really finished
-   * by '/>'.
-   *)
-  | ST_IN_XHP_TAG of Cst_php.xhp_tag (* the current tag, e,g, ["x";"frag"] *)
-  (* started with the '>' of an opening tag, finished when '</x>' *)
-  | ST_IN_XHP_TEXT of Cst_php.xhp_tag (* the current tag *)
 
 
 let default_state = INITIAL
@@ -353,31 +317,6 @@ let set_mode mode =
 let push_token tok =
   _pending_tokens := tok::!_pending_tokens
 
-(* xhp: the function below is used to disambiguate the use
- * of ":" and "%" as either a way to start an XHP identifier or as
- * a binary operator. Note that we use a whitelist approach
- * for detecting ':' as a binary operator whereas HPHP and
- * XHPAST use a whitelist approach for detecting ':' as the
- * start of an XHP identifier.
- *
- * How to know the following lists of tokens is correct ?
- * We should compute FOLLOW(tok) for  all tokens and check
- * if "%" or ":" can be in it ?
- *)
-let is_in_binary_operator_position last_tok =
-  match last_tok with
-  | Some (
-      (* if we are after a number or any kind of scalar, then it's ok to
-       * have a binary operator *)
-        T_LNUMBER _ | T_DNUMBER _
-      | T_CONSTANT_ENCAPSED_STRING _ | TGUIL _ | TBACKQUOTE _
-      (* same for ']' or ')'; anything that "terminates" an expression *)
-      | TCBRA _ | TCPAR _
-
-      | T_IDENT _ | T_VARIABLE _
-    )
-      -> true
-  | _ -> false
 
 (* ugly: in code like 'function foo( (function(string):string) $callback){}'
  * we want to parse the '(string)' not as a T_STRING_CAST but
@@ -398,7 +337,6 @@ let lang_ext_or_cast t lexbuf =
       t
     )
   else t
-
 }
 
 (*****************************************************************************)
@@ -607,105 +545,6 @@ rule st_in_scripting = parse
     | "$" { TDOLLAR(tokinfo lexbuf) }
     | "$$" { TDOLLARDOLLAR(tokinfo lexbuf) }
 
-   (* XHP "elements".
-    *
-    * In XHP the ":" and "%" characters are used to identify
-    * XHP tags, e.g. :x:frag. There is some possible ambiguity though
-    * with their others use in PHP: ternary expr and cases for ":" and
-    * the modulo binary operator for "%". It is legal in PHP to do
-    * e?1:null; or case 1:null. We thus can not blindly considerate ':null'
-    * as a single token. Fortunately it's not too hard
-    * to disambiguate by looking at the token before and see if ":" or "%"
-    * is used as a unary or binary operator.
-    *
-    * An alternative would be to return the same token in both cases
-    * (TCOLON) and let the grammar disambiguate and build XHP tags
-    * from multiple tokens (e.g. [TCOLON ":"; T_IDENT "x"; TCOLON ":";
-    * TIDENT "frag"]). But this would force in the grammar to check
-    * if there is no space between those tokens. This would also add
-    * extra rules for things that really should be more handled at a
-    * lexical level.
-    *)
-    | ":" (XHPTAG as tag) {
-        if !Flag_php.xhp_builtin &&
-          not (is_in_binary_operator_position !_last_non_whitespace_like_token)
-        then
-          let xs = Common.split ":" tag in
-          T_XHP_COLONID_DEF (xs, tokinfo lexbuf)
-        else begin
-          yyback (String.length tag) lexbuf;
-          TCOLON(tokinfo lexbuf)
-        end
-      }
-
-    | "%" (XHPTAG as tag) {
-        if !Flag_php.xhp_builtin &&
-          not (is_in_binary_operator_position !_last_non_whitespace_like_token)
-        then
-          let xs = Common.split ":" tag in
-          T_XHP_PERCENTID_DEF (xs, tokinfo lexbuf)
-        else begin
-          yyback (String.length tag) lexbuf;
-          TMOD(tokinfo lexbuf)
-        end
-      }
-
-     (* xhp: we need to disambiguate the different use of '<' to know whether
-      * we are in a position where an XHP construct can be started. Knowing
-      * what was the previous token seems enough; no need to hack the
-      * grammar to have a global shared by the lexer and parser.
-      *
-      * We could maybe even return a TSMALLER in both cases and still
-      * not generate any conflict in the grammar, but it feels cleaner to
-      * generate a different token, because we will really change the lexing
-      * mode when we will see a '>' which makes the parser enter in the
-      * ST_IN_XHP_TEXT state where it's ok to write "I don't like you"
-      * in which the quote does not need to be ended.
-      *
-      * note: no leading ":" for the tag when in "use" position.
-      *)
-      | "<" (XHPTAG as tag) {
-
-         let xs = Common.split ":" tag in
-
-          match !_last_non_whitespace_like_token with
-          (* todo? How to compute the correct list of tokens that
-           * are possibly before a XHP construct ? trial-and-error ?
-           * Usually having a '<' after a punctuation means XHP.
-           * Indeed '<' is a binary operator which excepts scalar.
-           *
-           * TCPAR? no, because it's ok to do (1) < (2)!
-           *)
-          | Some (
-                TOPAR _
-              | T_ECHO _ | T_PRINT _ | T_CLONE _
-              | TSEMICOLON _ | TCOMMA _
-              | TOBRACE _ | TCBRACE _
-              | T_RETURN _ | T_YIELD _ | T_AWAIT _
-              | TEQ _ | T_CONCAT_EQUAL _
-              | T_ARROW _ | T_DOUBLE_ARROW _
-              | TQUESTION _ | TCOLON _
-            )
-          | None (* when in sgrep/spatch mode, < is the first token *)
-            when !Flag_php.xhp_builtin ->
-              push_mode (ST_IN_XHP_TAG xs);
-              T_XHP_OPEN_TAG(xs, tokinfo lexbuf)
-          | _ ->
-              yyback (String.length tag) lexbuf;
-              TSMALLER(tokinfo lexbuf)
-        }
-
-    | "@required" {
-         let s = tok lexbuf in
-         if !Flag_php.xhp_builtin
-         then T_XHP_REQUIRED (tokinfo lexbuf)
-         else begin
-           yyback (String.length s - 1) lexbuf;
-           T__AT(tokinfo lexbuf)
-         end
-      }
-
-
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
@@ -904,14 +743,12 @@ rule st_in_scripting = parse
               raise Impossible
         }
 
-
   (* ----------------------------------------------------------------------- *)
     | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
-
 
 (*****************************************************************************)
 (* Rule initial (html) *)
@@ -1241,138 +1078,6 @@ and st_start_nowdoc stopdoc = parse
        error ("unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
     }
-
-(*****************************************************************************)
-(* Rules for XHP *)
-(*****************************************************************************)
-(* XHP lexing states and rules *)
-
-and st_in_xhp_tag current_tag = parse
-
-  (* The original XHP parser have some special handlings of
-   * whitespace and enforce to use certain whitespace at
-   * certain places. Not sure I need to enforce this too.
-   * Simpler to ignore whitespaces.
-   *
-   * todo? factorize with st_in_scripting rule?
-   *)
-  | [' ' '\t']+ { TSpaces(tokinfo lexbuf) }
-  | ['\n' '\r'] { TNewline(tokinfo lexbuf) }
-  | "/*" {
-        let info = tokinfo lexbuf in
-        let com = st_comment lexbuf in
-        T_COMMENT(info |> tok_add_s com)
-      }
-  | "/**/" { T_COMMENT(tokinfo lexbuf) }
-
-  | "/**" { (* RESET_DOC_COMMENT(); *)
-      let info = tokinfo lexbuf in
-      let com = st_comment lexbuf in
-      T_DOC_COMMENT(info |> tok_add_s com)
-    }
-  | "//" {
-      let info = tokinfo lexbuf in
-      let com = st_one_line_comment lexbuf in
-      T_COMMENT(info |> tok_add_s com)
-    }
-
-
-  (* attribute management *)
-  | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
-  | "="     { TEQ(tokinfo lexbuf) }
-
-  (* not sure if XHP strings needs the interpolation support *)
-  | ['"'] {
-      push_mode ST_DOUBLE_QUOTES;
-      TGUIL(tokinfo lexbuf)
-    }
-  | "{" {
-      push_mode ST_IN_SCRIPTING;
-      TOBRACE(tokinfo lexbuf)
-    }
-
-  (* a singleton tag *)
-  | "/>" {
-      pop_mode ();
-      T_XHP_SLASH_GT (tokinfo lexbuf)
-    }
-
-  (* When we see a ">", it means it's just the end of
-   * the opening tag. Transit to IN_XHP_TEXT.
-   *)
-  | ">" {
-      set_mode (ST_IN_XHP_TEXT current_tag);
-      T_XHP_GT (tokinfo lexbuf)
-    }
-
-  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
-  | _  {
-        error("unrecognised symbol, in XHP tag:"^tok lexbuf);
-        TUnknown (tokinfo lexbuf)
-    }
-
-(* ----------------------------------------------------------------------- *)
-and st_in_xhp_text current_tag = parse
-
-  (* a nested xhp construct *)
-  | "<" (XHPTAG as tag) {
-      let xs = Common.split ":" tag in
-
-      push_mode (ST_IN_XHP_TAG xs);
-      T_XHP_OPEN_TAG(xs, tokinfo lexbuf)
-    }
-
-  | "<" "/" (XHPTAG as tag) ">" {
-      let xs = Common.split ":" tag in
-      if (xs <> current_tag)
-      then begin
-        error (spf "XHP: wrong closing tag for, %s != %s"
-                     (Common.join ":" xs)
-                     (Common.join ":" current_tag));
-      end;
-      pop_mode ();
-      T_XHP_CLOSE_TAG(Some xs, tokinfo lexbuf)
-
-    }
-  (* shortcut for closing tag ? *)
-  | "<" "/" ">" {
-      (* no check :( *)
-      pop_mode ();
-      T_XHP_CLOSE_TAG(None, tokinfo lexbuf)
-    }
-  | "<!--" {
-      let info = tokinfo lexbuf in
-      let com = st_xhp_comment lexbuf in
-      (* less: make a special token T_XHP_COMMENT? *)
-      T_COMMENT(info |> tok_add_s com)
-  }
-
-  (* PHP interpolation. How the user can produce a { ? &;something ? *)
-  | "{" {
-      push_mode ST_IN_SCRIPTING;
-      TOBRACE(tokinfo lexbuf)
-    }
-
-  (* opti: *)
-  | [^'<' '{']+ { T_XHP_TEXT (tok lexbuf, tokinfo lexbuf) }
-
-
-  | eof { EOF (tokinfo lexbuf |> PI.rewrap_str "") }
-  | _  {
-      error ("unrecognised symbol, in XHP text:"^tok lexbuf);
-      TUnknown (tokinfo lexbuf)
-    }
-
-and st_xhp_comment = parse
-  | "-->" { tok lexbuf }
-  | [^'-']+ { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
-  | "-"     { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
-  | eof { error "end of file in xhp comment"; "-->"}
-  | _  {
-    let s = tok lexbuf in
-    error("unrecognised symbol in xhp comment:"^s);
-    s ^ st_xhp_comment lexbuf
-  }
 
 (*****************************************************************************)
 (* Rule comment *)

@@ -33,6 +33,8 @@
  *  - added support for implicit fields via constructor parameters
  *    (facebook extension)
  *  - added support for namespace (a PHP 5.3 extension)
+ * updates:
+ *  - removed XHP, to simplify (I'm not working at facebook anymore)
  (*
   * +----------------------------------------------------------------------+
   * | Zend Engine                                                          |
@@ -84,10 +86,7 @@ module PI = Parse_info
 (*-----------------------------------------*)
 %token <string * Cst_php.info>
  T_LNUMBER T_DNUMBER
- (* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
-   * Note that with XHP if you want to add a rule using T_IDENT, you should
-   * probably use 'ident' instead.
-   *)
+ (* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident. *)
  T_IDENT T_VARIABLE
  T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML
  (* used only for offset of array access inside strings *)
@@ -187,34 +186,7 @@ module PI = Parse_info
 (* lexing hack to parse lambda params properly *)
 %token <Cst_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
 
-(*-----------------------------------------*)
-(* XHP tokens *)
-(*-----------------------------------------*)
-
-(* xhp: token for ':frag:foo'; quite similiar to T_IDENT *)
-%token <string list * Cst_php.info> T_XHP_COLONID_DEF
-(* xhp: token for '%frag:foo' *)
-%token <string list * Cst_php.info> T_XHP_PERCENTID_DEF
-
-(* xhp: e.g. for '<x:frag', note that the real end of the tag is
-   * in another token, either T_XHP_GT or T_XHP_SLASH_GT.
-   *)
-%token <Cst_php.xhp_tag * Cst_php.info> T_XHP_OPEN_TAG
-
-(* ending part of the opening tag *)
-%token <Cst_php.info> T_XHP_GT T_XHP_SLASH_GT
-
-(* xhp: e.g. for '</x:frag>'. The 'option' is for closing tags like </> *)
-%token <Cst_php.xhp_tag option * Cst_php.info> T_XHP_CLOSE_TAG
-
-%token <string * Cst_php.info> T_XHP_ATTR T_XHP_TEXT
-
-(* xhp keywords. If you add one don't forget to update the 'ident' rule. *)
-%token <Cst_php.info>
- T_XHP_ATTRIBUTE T_XHP_CHILDREN T_XHP_CATEGORY
- T_ENUM T_XHP_REQUIRED
- T_XHP_ANY (* T_XHP_EMPTY is T_EMPTY *)
- T_XHP_PCDATA
+%token <Cst_php.info> T_ENUM
 
 (*************************************************************************)
 (* Priorities *)
@@ -236,7 +208,7 @@ module PI = Parse_info
 %left      T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
 (* php-facebook-ext: lambda (short closure) syntax *)
 %right     T_DOUBLE_ARROW
-%left      TCOMMA
+(*%left      TCOMMA*)
 %left      T_LOGICAL_OR
 %left      T_LOGICAL_XOR
 %left      T_LOGICAL_AND
@@ -274,11 +246,6 @@ module PI = Parse_info
 (* not in original grammar *)
 %left TCOLCOL
 
-(* xhp: this is used only to remove some shift/reduce ambiguities on the
- * error-rule trick.
- *)
-%left T_XHP_PERCENTID_DEF
-
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
@@ -305,18 +272,20 @@ main: top_statement* EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
 
 top_statement:
  | statement                            { StmtList [$1] }
- | constant_declaration_statement       { ConstantDef $1 }
+
  | function_declaration_statement       { FuncDef $1 }
  | class_declaration_statement          { ClassDef $1 }
+
+ | constant_declaration_statement       { ConstantDef $1 }
  | type_declaration                     { TypeDef $1 }
  | namespace_declaration                { $1 }
  | use_declaration                      { $1 }
 
 sgrep_spatch_pattern:
- | expr EOF      { Expr $1 }
- | top_statement EOF { Toplevel $1 }
+ | expr                         EOF { Expr $1 }
+ | top_statement                EOF { Toplevel $1 }
  | top_statement top_statement+ EOF { Toplevels ($1::$2) }
- | ":" type_php EOF { Hint2 $2 }
+ | ":" type_php                 EOF { Hint2 $2 }
 
 (*************************************************************************)
 (* Statements *)
@@ -394,6 +363,7 @@ statement:
 
 inner_statement:
  | statement                        { $1 }
+
  | function_declaration_statement   { FuncDefNested $1 }
  | class_declaration_statement      { ClassDefNested $1 }
 
@@ -422,8 +392,6 @@ switch_case_list:
  | ":" ";"  case_list T_ENDSWITCH ";"
      { CaseColonList($1, Some $2, $3, $4, $5) }
 
- | T_XHP_COLONID_DEF { H.failwith_xhp_ambiguity_colon (snd $1) }
-
 case_list: case_list_rev { List.rev $1 }
 case_list_rev:
  | (*empty*)    { [] }
@@ -437,23 +405,21 @@ case_separator:
  (* ugly php ... but reported in check_misc_php.ml *)
  | ";" { $1 }
 
- | T_XHP_COLONID_DEF { H.failwith_xhp_ambiguity_colon (snd $1) }
-
 
 while_statement:
- | statement                                         { SingleStmt $1 }
+ | statement                           { SingleStmt $1 }
  | ":" inner_statement* T_ENDWHILE ";" { ColonStmt($1,$2,$3,$4) }
 
 for_statement:
- | statement                                       { SingleStmt $1 }
+ | statement                         { SingleStmt $1 }
  | ":" inner_statement* T_ENDFOR ";" { ColonStmt($1,$2,$3,$4) }
 
 foreach_statement:
- | statement                                           { SingleStmt $1 }
+ | statement                             { SingleStmt $1 }
  | ":" inner_statement* T_ENDFOREACH ";" { ColonStmt($1,$2,$3,$4)}
 
 declare_statement:
- | statement                                           { SingleStmt $1 }
+ | statement                             { SingleStmt $1 }
  | ":" inner_statement* T_ENDDECLARE ";" { ColonStmt($1,$2,$3,$4)}
 
 elseif_list:
@@ -467,11 +433,11 @@ new_elseif_list:
 
 (* classic dangling else ambiguity resolved by a %prec. See conflicts.txt*)
 else_single:
- | T_ELSE statement                        { Some($1,$2) }
+ | T_ELSE statement                    { Some($1,$2) }
  | (*empty*)  %prec LOW_PRIORITY_RULE  { None }
 
 new_else_single:
- | (*empty*)                      { None }
+ | (*empty*)                   { None }
  | T_ELSE ":" inner_statement* { Some($1,$2,$3) }
 
 
@@ -674,15 +640,15 @@ class_entry_type:
  | T_FINAL    T_CLASS         { ClassFinal ($1, $2) }
 
 extends_from:
- | (*empty*)             { None }
+ | (*empty*)                     { None }
  | T_EXTENDS class_name_no_array { Some ($1, $2)  }
 
 interface_extends_list:
- | (*empty*)            { None }
+ | (*empty*)                 { None }
  | T_EXTENDS class_name_list { Some($1,$2) }
 
 implements_list:
- | (*empty*)               { None }
+ | (*empty*)                    { None }
  | T_IMPLEMENTS class_name_list { Some($1, $2) }
 
 (*----------------------------*)
@@ -748,14 +714,6 @@ class_statement:
  |            method_declaration { Method $1 }
  | attributes method_declaration { Method { $2 with f_attrs = Some $1 } }
 
-(* XHP *)
- | T_XHP_ATTRIBUTE listc(xhp_attribute_decl) ";"
-     { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
- | T_XHP_CHILDREN  xhp_children_decl  ";"
-     { XhpDecl (XhpChildrenDecl ($1, $2, $3)) }
- | T_XHP_CATEGORY listc(xhp_category) ";"
-     { XhpDecl (XhpCategoriesDecl ($1, $2, $3)) }
-
 (* php 5.4 traits *)
  | T_USE class_name_list ";"
      { UseTrait ($1, $2, Left $3) }
@@ -783,10 +741,10 @@ method_declaration:
         })
      }
 
-class_constant_declaration: ident TEQ static_scalar { ((Name $1), Some ($2, $3)) }
+class_constant_declaration: ident TEQ static_scalar { ((Name $1),Some ($2,$3))}
 
 variable_modifiers:
- | T_VAR                { NoModifiers $1 }
+ | T_VAR                  { NoModifiers $1 }
  | member_modifier+       { VModifiers $1 }
 
 
@@ -795,107 +753,17 @@ class_variable:
  | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
 member_modifier:
- | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
+ | T_PUBLIC    { Public,($1) } 
+ | T_PROTECTED { Protected,($1) }
  | T_PRIVATE   { Private,($1) }
  | T_STATIC    { Static,($1) }
- | T_ABSTRACT { Abstract,($1) } | T_FINAL{ Final,($1) }
- | T_ASYNC { Async,($1) }
+ | T_ABSTRACT  { Abstract,($1) } 
+ | T_FINAL     { Final,($1) }
+ | T_ASYNC     { Async,($1) }
 
 method_body:
  | "{" inner_statement* "}" { ($1, $2, $3), MethodRegular }
- | ";" { (* ugly: *) (fakeInfo"", [], $1), MethodAbstract }
-
-(*----------------------------*)
-(* XHP attributes *)
-(*----------------------------*)
-(* mostly a copy paste of the original XHP grammar *)
-
-xhp_attribute_decl:
- | T_XHP_COLONID_DEF
-     { XhpAttrInherit $1 }
- | xhp_attribute_decl_type xhp_attr_name xhp_attribute_default
-     xhp_attribute_is_required
-     { XhpAttrDecl ($1, ((PI.str_of_info $2, $2)), $3, $4) }
-
-xhp_attribute_decl_type:
- | T_ENUM "{" listc(xhp_enum) "}"  { XhpAttrEnum ($1, ($2, $3, $4)) }
- | T_VAR                           { XhpAttrVar $1 }
- | type_php                        { XhpAttrType $1 }
-
-xhp_attribute_default:
- | (*empty*)     { None }
- | TEQ static_scalar { Some ($1, $2) }
-
-xhp_attribute_is_required: T_XHP_REQUIRED? { $1 }
-
-xhp_enum: constant { $1 }
-
-(* was called xhp_label_pass in original grammar *)
-xhp_attr_name:
- | ident_xhp_attr_name_atom { $1 }
- (* ugly, but harder to lex foo-name as a single token without
-    * introducing lots of ambiguities. It's ok for :foo:bar but not
-    * for attribute name.
-    *
-    * less: could check that there is no whitespace between those
-    * tokens.
-    *)
- | xhp_attr_name TMINUS ident_xhp_attr_name_atom
-     { let s = PI.str_of_info $1 ^  PI.str_of_info $2 ^ PI.str_of_info $3 in
-       PI.rewrap_str s $1
-     }
- (* this is used by only one attribute right now, xlink:href which
-    * the w3 spec imposed to have this format *)
- | xhp_attr_name ":" ident_xhp_attr_name_atom
-     { let s = PI.str_of_info $1 ^  PI.str_of_info $2 ^ PI.str_of_info $3 in
-       PI.rewrap_str s $1
-     }
-
-(*----------------------------*)
-(* XHP children *)
-(*----------------------------*)
-(* Mostly a copy paste of the original XHP grammar.
-   * Not sure why it needs to be that complicated. We could factorize
-   * rules for instance for the parenthesis stuff.
-   *)
-xhp_children_decl:
- | T_XHP_ANY { XhpChildAny $1 }
- | T_EMPTY   { XhpChildEmpty $1 }
- | xhp_children_paren_expr { $1 }
-
-xhp_children_paren_expr:
- | "(" xhp_children_decl_expr ")"
-     { XhpChildParen ($1, $2, $3) }
- | "(" xhp_children_decl_expr ")" TMUL
-     { XhpChildMul (XhpChildParen ($1, $2, $3), $4) }
- | "(" xhp_children_decl_expr ")" "?"
-     { XhpChildOption (XhpChildParen ($1, $2, $3), $4) }
- | "(" xhp_children_decl_expr ")" TPLUS
-     { XhpChildPlus (XhpChildParen ($1, $2, $3), $4) }
-
-xhp_children_decl_expr:
- | xhp_children_paren_expr { $1 }
- | xhp_children_decl_tag { $1 }
- | xhp_children_decl_tag TMUL      { XhpChildMul ($1, $2)  }
- | xhp_children_decl_tag "?" { XhpChildOption ($1, $2) }
- | xhp_children_decl_tag TPLUS     { XhpChildPlus ($1, $2) }
-
- | xhp_children_decl_expr "," xhp_children_decl_expr
-     { XhpChildSequence ($1, $2, $3) }
- | xhp_children_decl_expr TOR xhp_children_decl_expr
-     { XhpChildAlternative ($1, $2, $3) }
-
-xhp_children_decl_tag:
- | T_XHP_ANY           { XhpChildAny ($1) }
- | T_XHP_PCDATA        { XhpChildPcdata ($1) }
- | T_XHP_COLONID_DEF   { XhpChild $1 }
- | T_XHP_PERCENTID_DEF { XhpChildCategory $1 }
-
-(*----------------------------*)
-(* XHP category *)
-(*----------------------------*)
-
-xhp_category: T_XHP_PERCENTID_DEF { $1 }
+ | ";"                      { (* ugly: *) (fakeInfo"",[], $1), MethodAbstract }
 
 (*----------------------------*)
 (* Traits *)
@@ -963,7 +831,6 @@ variance_opt:
   | (*nothing*) {None}
   | TMINUS{ Some $1 }
   | TPLUS { Some $1 }
-
 
 (*************************************************************************)
 (* Types *)
@@ -1073,8 +940,6 @@ expr:
  | expr TMOD expr   { Binary($1,(Arith Mod,$2),$3) }
  | expr TPOW expr   { Binary($1,(Arith Pow,$2),$3) }
 
- | expr T_XHP_PERCENTID_DEF     { H.failwith_xhp_ambiguity_percent (snd $2) }
-
  | expr TAND expr   { Binary($1,(Arith And,$2),$3) }
  | expr TOR expr    { Binary($1,(Arith Or,$2),$3) }
  | expr TXOR expr   { Binary($1,(Arith Xor,$2),$3) }
@@ -1102,18 +967,6 @@ expr:
  (* PHP 5.3 *)
  | expr "?"  ":"  expr   { CondExpr($1,$2,None,$3,$4) }
  | expr "?" "?" expr { CondExpr($1,$2,None,$3,$4) }
-
- (* I don't parse XHP elements defs in the same way than the original
-  * XHP parser, which simplifies the grammar, but introduce possible
-  * ambiguities. See tests/xhp_pb_but_ok/colon_ambiguity*.php
-  * I don't want to solve those ambiguities but I can at least print a
-  * useful parsing error message with those fake rules.
-  *
-  * Everywhere in this grammar where we use ":" we should add
-  * an error rule similar to the one below.
-  *)
- | expr "?"  expr T_XHP_COLONID_DEF
-     { H.failwith_xhp_ambiguity_colon (snd $4) }
 
  | expr T_INSTANCEOF expr  { InstanceOf($1, $2, $3) }
 
@@ -1252,11 +1105,6 @@ primary_expr:
     *)
   (* | T_STRING_VARNAME {  } *)
 
- (* xhp: do not put in 'expr', otherwise can't have xhp
-    * in function arguments
-    *)
- | xhp_html { XhpHtml $1 }
-
  | "(" expr ")"     { ParenExpr($1,$2,$3) }
  (* semgrep-ext: *)
  | "<..." expr "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
@@ -1374,32 +1222,6 @@ encaps_var_offset:
    }
 
 (*----------------------------*)
-(* XHP embedded html *)
-(*----------------------------*)
-xhp_html:
- | T_XHP_OPEN_TAG xhp_attribute* T_XHP_GT xhp_child* T_XHP_CLOSE_TAG
-     { Xhp ($1, $2, $3, $4, $5)  }
- | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
-     { XhpSingleton ($1, $2, $3) }
-
-xhp_child:
- | T_XHP_TEXT       { XhpText $1 }
- | xhp_html         { XhpNested $1 }
- | "{" expr "}"     { XhpExpr ($1, $2, $3) }
-
-xhp_attribute: T_XHP_ATTR TEQ xhp_attribute_value { $1, $2, $3 }
-
-xhp_attribute_value:
- | TGUIL encaps* TGUIL { XhpAttrString ($1, $2, $3) }
- | "{" expr "}"    { XhpAttrExpr ($1, $2, $3) }
-
- (* ugly: one cannot use T_IDENT here, because the lexer is still in
-    * XHP mode which means every ident is transformed in a xhp attribute
-    *)
- (* semgrep-ext: *)
- | T_XHP_ATTR { Flag_parsing.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
-
-(*----------------------------*)
 (* Lambda: succinct closure syntax *)
 (*----------------------------*)
 
@@ -1466,33 +1288,12 @@ exit_expr:
 
 ident:
  | T_IDENT { $1 }
-(* xhp: it is ok to use XHP keywords in place where regular PHP names
-   * are expected as in 'function children($x) { ... }'.
-   *
-   * We extend here the grammar to support those "overloading". An
-   * alternative would be to extend the lexer to only lex XHP keywords
-   * in certain context, but this would force to share some states between
-   * the lexer and parser.
-   *
-   * less? emit a warning when the user use XHP keywords for regular idents ?
-   *)
- | T_XHP_ATTRIBUTE { PI.str_of_info $1, $1 }
- | T_XHP_CATEGORY  { PI.str_of_info $1, $1 }
- | T_XHP_CHILDREN  { PI.str_of_info $1, $1 }
  | T_ENUM   { PI.str_of_info $1, $1 }
- | T_XHP_ANY    { PI.str_of_info $1, $1 }
- | T_XHP_PCDATA { PI.str_of_info $1, $1 }
-
  | T_TYPE      { PI.str_of_info $1, $1 }
  | T_NEWTYPE   { PI.str_of_info $1, $1 }
  | T_SUPER     { PI.str_of_info $1, $1 }
 
-ident_class_name:
-  | ident             { Name $1 }
- (*s: class_name grammar rule hook *)
-  (* xhp: an XHP element def *)
-  | T_XHP_COLONID_DEF { XhpName $1 }
- (*e: class_name grammar rule hook *)
+ident_class_name: ident          { Name $1 }
 
 (* ugly, php allows method names which should be IMHO reserved keywords *)
 ident_method_name:
@@ -1500,42 +1301,6 @@ ident_method_name:
  | T_PARENT { "parent", $1 }
  | T_SELF   { "self", $1 }
  | T_ASYNC  { "async", $1 }
-
-ident_xhp_attr_name_atom:
- (* could put T_IDENT but even XHP keywords are accepted as XHP attributes*)
- | ident { snd $1 }
-
- (* Just like it's ok (but not good IMHO) to use XHP keywords in place
-    * of regular PHP idents, it's ok to use PHP keywords in place
-    * of XHP attribute names (but again not good IMHO).
-    *
-    * The list of tokens below are all identifier-like keywords mentioned in
-    * the 'keyword tokens' section at the beginning of this file
-    * (which roughly correspond to the tokens in Lexer_php.keywords_table).
-    * There is no conflict introducing this big list of tokens.
-    *
-    * less? emit a warning when the user use PHP keywords for XHP attribute ?
-    *)
- | T_ECHO { $1 } | T_PRINT { $1 } | T_IF { $1 } | T_ELSE { $1 }
- | T_ELSEIF { $1 } | T_ENDIF { $1 } | T_DO { $1 } | T_WHILE { $1 }
- | T_ENDWHILE { $1 } | T_FOR { $1 } | T_ENDFOR { $1 } | T_FOREACH { $1 }
- | T_ENDFOREACH { $1 } | T_SWITCH { $1 } | T_ENDSWITCH { $1 } | T_CASE { $1 }
- | T_DEFAULT { $1 } | T_BREAK { $1 } | T_CONTINUE { $1 } | T_RETURN { $1 }
- | T_TRY { $1 } | T_CATCH { $1 } | T_FINALLY { $1 } | T_THROW { $1 }
- | T_EXIT { $1 } | T_DECLARE { $1 } | T_ENDDECLARE { $1 } | T_USE { $1 }
- | T_GLOBAL { $1 } | T_AS { $1 } | T_FUNCTION { $1 } | T_CONST { $1 }
- | T_STATIC { $1 } | T_ABSTRACT { $1 } | T_FINAL { $1 } | T_PRIVATE { $1 }
- | T_PROTECTED { $1 } | T_PUBLIC { $1 } | T_VAR { $1 } | T_UNSET { $1 }
- | T_ISSET { $1 } | T_EMPTY { $1 } | T_CLASS { $1 }
- | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_IMPLEMENTS { $1 } | T_LIST { $1 }
- | T_ARRAY { $1 } | T_CLASS_C { $1 } | T_METHOD_C { $1 } | T_FUNC_C { $1 }
- | T_LINE { $1 } | T_FILE { $1 } | T_LOGICAL_OR { $1 } | T_LOGICAL_AND { $1 }
- | T_LOGICAL_XOR { $1 } | T_NEW { $1 } | T_CLONE { $1 } | T_INSTANCEOF { $1 }
- | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
- | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }
- | T_TRAIT { $1 } | T_INSTEADOF { $1 } | T_TRAIT_C { $1 }
- | T_NAMESPACE { $1 } | T_NAMESPACE_C { $1 }
- | T_ASYNC { $1 } | T_AWAIT { $1 }
 
 (*************************************************************************)
 (* Namespace *)
@@ -1557,7 +1322,7 @@ namespace_name:
  | namespace_name TANTISLASH ident { $1 @ [QITok $2; QI (Name $3)] }
 
 use_declaration_name:
- | namespace_name { ImportNamespace $1 }
+ | namespace_name            { ImportNamespace $1 }
  | namespace_name T_AS ident { AliasNamespace ($1, $2, Name $3) }
  | TANTISLASH namespace_name { ImportNamespace (QITok $1::$2) }
  | TANTISLASH namespace_name T_AS ident
@@ -1577,10 +1342,7 @@ qualified_name:
    * This is currently equivalent to 'ident_class_name' but adding
    * namespace at some point may change that.
    *)
-qualified_class_name:
-  | qualified_name { $1 }
-  (* xhp: an XHP element use *)
-  | T_XHP_COLONID_DEF { XName [QI (XhpName $1)] }
+qualified_class_name: qualified_name { $1 }
 
 qualified_class_name_or_array:
  | qualified_class_name { $1 }
