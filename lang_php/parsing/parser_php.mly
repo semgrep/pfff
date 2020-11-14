@@ -35,6 +35,7 @@
  *  - added support for namespace (a PHP 5.3 extension)
  * updates:
  *  - removed XHP, to simplify (I'm not working at facebook anymore)
+ *  - removed facebook-ext class abstract constants
  (*
   * +----------------------------------------------------------------------+
   * | Zend Engine                                                          |
@@ -123,7 +124,7 @@ module PI = Parse_info
  (* not in original grammar *)
  T_SELF T_PARENT
  (* facebook extension *)
- T_TYPE T_NEWTYPE T_SHAPE
+ T_TYPE
 
 (*-----------------------------------------*)
 (* Punctuation tokens *)
@@ -592,7 +593,7 @@ class_declaration_statement:
 unticked_class_declaration_statement:
  | class_entry_type  ident_class_name  type_params_opt
      extends_from   implements_list
-     "{" class_statement* "}"
+     "{" member_declaration* "}"
      { { c_type = $1; c_name = $2; c_extends = $4; c_tparams = $3;
          c_implements = $5; c_body = $6, $7, $8;
          c_attrs = None;
@@ -601,7 +602,7 @@ unticked_class_declaration_statement:
      }
  | T_INTERFACE ident_class_name type_params_opt
      interface_extends_list
-     "{" class_statement* "}"
+     "{" member_declaration* "}"
      { { c_type = Interface $1; c_name = $2; c_extends = None; c_tparams = $3;
          (* we use c_implements for interface extension because
           * it can be a list. ugly?
@@ -612,7 +613,7 @@ unticked_class_declaration_statement:
      } }
  | T_TRAIT ident_class_name type_params_opt
    implements_list
-    "{" class_statement* "}"
+    "{" member_declaration* "}"
      { { c_type = Trait $1; c_name = $2; c_extends = None; c_tparams = $3;
          c_implements = $4; c_body = ($5, $6, $7);
          c_attrs = None;
@@ -668,41 +669,11 @@ implements_list:
  | T_IMPLEMENTS class_name_list { Some($1, $2) }
 
 (*----------------------------*)
-(* class statement *)
+(* Member declaration *)
 (*----------------------------*)
 
-class_statement:
-(* facebook-ext: abstract constants *)
- | T_ABSTRACT T_CONST          ident  ";"
-     { let const = (Name $3, None) in
-       let const_list = [Left const] in
-       ClassConstants(Some $1, $2, None, const_list, $4) }
- | T_ABSTRACT T_CONST type_php ident  ";"
-     { let const = (Name $4, None) in
-       let const_list = [Left const] in
-       ClassConstants(Some $1, $2, Some $3, const_list, $5) }
-
+member_declaration:
 (* facebook-ext: type constants *)
- | T_ABSTRACT T_CONST T_TYPE T_IDENT T_AS type_php ";"
-     { ClassType (* TODO (t6384084) add some fields here *) {
-         t_tok = $3;
-         t_name = Name $4;
-         t_tparams = None;
-         t_tconstraint = Some($5, $6);
-         t_tokeq = $5; (* doesn't exist here *)
-         t_kind = ClassConstType None;
-         t_sc = $7; }
-     }
- | T_ABSTRACT T_CONST T_TYPE T_IDENT ";"
-     { ClassType (* TODO (t6384084) add some fields here *) {
-         t_tok = $3;
-         t_name = Name $4;
-         t_tparams = None;
-         t_tconstraint = None;
-         t_tokeq = $5; (* doesn't exist here *)
-         t_kind = ClassConstType None;
-         t_sc = $5; }
-     }
  | T_CONST T_TYPE T_IDENT type_constr_opt TEQ type_php ";"
      { ClassType (* TODO (t6384084) add some fields here *) {
          t_tok = $2;
@@ -735,6 +706,7 @@ class_statement:
      { UseTrait ($1, $2, Left $3) }
  | T_USE class_name_list "{" trait_rule* "}"
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
+
 (* facebook-ext: *)
  | T_REQUIRE trait_constraint_kind type_php ";"
      { TraitConstraint ($1, $2, $3, $4) }
@@ -803,10 +775,6 @@ type_declaration:
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
          t_tokeq = $5; t_kind = Alias $6; t_sc = $7; }
      }
- | T_NEWTYPE ident type_params_opt type_constr_opt TEQ type_php ";"
-     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
-         t_tokeq = $5; t_kind = Newtype $6; t_sc = $7; }
-     }
 
 type_constr_opt:
  | T_AS type_php  { Some ($1, $2) }
@@ -843,7 +811,6 @@ type_php:
  | primary_type_php { $1 }
  (* facebook-ext: classes can define type constants referenced using `::`*)
  | type_php "::" primary_type_php { HintTypeConst ($1, $2, $3) }
- | T_SHAPE "(" shape_field_list ")" { HintShape ($1, ($2, $3, $4)) }
 
 primary_type_php:
  | class_name { $1 }
@@ -1090,8 +1057,6 @@ primary_expr:
 
  | T_ARRAY "(" array_pair_list ")"
      { ArrayLong($1,($2,$3,$4)) }
- | T_SHAPE "(" array_pair_list ")"
-     { ArrayLong($1,($2,$3,$4)) }
  | "[" array_pair_list "]"
      { ArrayShort($1, $2, $3) }
 
@@ -1293,7 +1258,6 @@ ident:
  | T_IDENT { $1 }
  | T_ENUM   { PI.str_of_info $1, $1 }
  | T_TYPE      { PI.str_of_info $1, $1 }
- | T_NEWTYPE   { PI.str_of_info $1, $1 }
  | T_SUPER     { PI.str_of_info $1, $1 }
 
 ident_class_name: ident          { Name $1 }
@@ -1397,16 +1361,6 @@ function_call_argument_list:
 non_empty_function_call_argument_list: listc(function_call_argument) { $1 }
 
 assignment_list: listc(assignment_list_element) { $1 }
-
-shape_field_list:
- | (*empty*) { [] }
- | non_empty_shape_field_list { $1 }
- | non_empty_shape_field_list "," { $1 @ [Right $2] }
-
-%inline
-non_empty_shape_field_list: listc(shape_field) { $1 }
-
-shape_field: expr "=>" type_php { $1, $2, $3 }
 
 non_empty_array_pair_list_rev:
  | array_pair { [Left $1] }

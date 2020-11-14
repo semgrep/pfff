@@ -739,7 +739,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
 
     | T.T_INSTEADOF ii -> tag ii KeywordObject
 
-    | T.T_TYPE ii | T.T_NEWTYPE ii | T.T_SHAPE ii -> tag ii Keyword
+    | T.T_TYPE ii -> tag ii Keyword
 
     | T.T_EMPTY ii  | T.T_ISSET ii | T.T_UNSET ii -> tag ii Builtin
 

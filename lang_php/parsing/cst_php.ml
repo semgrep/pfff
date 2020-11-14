@@ -142,9 +142,6 @@ type hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * (tok * tok option * hint_type) option (* return type *)
      ) paren
- | HintShape of (* a.k.a record *)
-     tok (* "shape" *) *
-     (string_const_expr * tok (* '=>' *) * hint_type) comma_list paren
  | HintTypeConst of
      hint_type   (* lhs *)
      * tok       (* '::' *)
@@ -673,7 +670,7 @@ and enum_type = {
 (* ------------------------------------------------------------------------- *)
 (* facebook-ext: *)
 and type_def = {
-  t_tok: tok; (* type/newtype *)
+  t_tok: tok; (* type *)
   t_name: ident;
   t_tparams: type_params option;
   t_tconstraint: (tok (* as *) * hint_type) option;
@@ -683,7 +680,6 @@ and type_def = {
 }
   and type_def_kind =
   | Alias   of hint_type
-  | Newtype of hint_type
   | ClassConstType of hint_type option
 
 (* ------------------------------------------------------------------------- *)

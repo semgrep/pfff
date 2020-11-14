@@ -552,11 +552,6 @@ and hint_type env = function
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
       let ret  = Common2.fmap (fun (_, _, t) -> hint_type env t) ret in
       A.HintCallback (args, ret)
-  | HintShape (tok, (t1, xs, t2)) ->
-    A.HintShape (tok, (t1,
-      xs |> comma_list |> List.map (fun (e, _tok, t) ->
-        expr env e, hint_type env t
-      ), t2))
   | HintTypeConst (lhs, tok, rhs) ->
     A.HintTypeConst (hint_type env lhs, tok, hint_type env rhs)
   | HintVariadic (tok, hint) ->
@@ -644,7 +639,6 @@ and type_def env def =
   }
 and type_def_kind env = function
   | Alias t -> A.Alias (hint_type env t)
-  | Newtype t -> A.Newtype (hint_type env t)
   | ClassConstType v1 -> A.ClassConstType
     (match v1 with
     | Some x -> Some (hint_type env x)

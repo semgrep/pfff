@@ -183,8 +183,6 @@ let keyword_table = Common.hash_of_list [
 
   (* php-facebook-ext: *)
   "type",    (fun ii -> lang_ext_or_t_ident ii (fun x -> T_TYPE x));
-  "newtype", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_NEWTYPE x));
-  "shape", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_SHAPE x));
 
   (* for attribute declarations and Hack first class enums *)
   "enum", (fun ii -> T_ENUM ii);

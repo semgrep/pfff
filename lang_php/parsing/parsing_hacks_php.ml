@@ -281,7 +281,7 @@ let fix_tokens2 xs =
         *)
         | (T_CLASS _ | T_TRAIT _ | T_INTERFACE _),        Toplevel::_rest ->
             ClassHeader::env.stack
-        | (T_TYPE _ | T_NEWTYPE _),    Toplevel::_rest  ->
+        | (T_TYPE _ ),    Toplevel::_rest  ->
             TypeHeader::env.stack
         | T_FUNCTION _, (Toplevel|ClassHeader)::_rest ->
             FunctionHeader::env.stack
