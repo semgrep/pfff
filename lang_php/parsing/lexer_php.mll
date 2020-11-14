@@ -186,10 +186,6 @@ let keyword_table = Common.hash_of_list [
 
   (* for attribute declarations and Hack first class enums *)
   "enum", (fun ii -> T_ENUM ii);
-
-  (* obsolete: now that use hphp instead of xdebug for coverage analysis *)
-  "class_xdebug",    (fun ii -> T_CLASS_XDEBUG ii);
-  "resource_xdebug", (fun ii -> T_RESOURCE_XDEBUG ii);
 ]
 
 let _ = assert ((Common2.hkeys keyword_table) |>

@@ -514,8 +514,6 @@ and constant env = function
   | Double x -> A.Double x
   | String x -> A.String x
   | PreProcess (cpp, tok) -> cpp_directive env tok cpp
-  (* no reason to use the abstract interpreter on xdebug traces *)
-  | XdebugClass _ | XdebugResource -> raise Common.Impossible
 
 and cpp_directive _env tok = function
   | Line      -> A.Id [A.builtin "__LINE__", wrap tok]

@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2009-2013 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -17,8 +18,7 @@
 (* src: originally ocamlyaccified from zend_language_parser.y in Zend PHP.
  * updates:
  *  - extended to deal with XHP based on the XHP bison grammar
- *  - added support for a few PHP 5.3 extensions (e.g. lambda, const), but
- *    not namespace
+ *  - added support for a few PHP 5.3 extensions (e.g. lambda, const)
  *  - added support for yield (facebook extension)
  *  - added support for a few PHP 5.4 extensions (e.g. traits, short array)
  *  - added support for generics (another facebook extension)
@@ -33,9 +33,10 @@
  *  - added support for implicit fields via constructor parameters
  *    (facebook extension)
  *  - added support for namespace (a PHP 5.3 extension)
- * updates:
- *  - removed XHP, to simplify (I'm not working at facebook anymore)
- *  - removed facebook-ext class abstract constants
+ *
+ * updates after 2020:
+ *  - removed XHP, to simplify (I'm not working at Facebook anymore)
+ *  - removed facebook-ext class abstract constants, newtype, shape, etc.
  (*
   * +----------------------------------------------------------------------+
   * | Zend Engine                                                          |
@@ -168,11 +169,6 @@ module PI = Parse_info
  T_ROCKET
 
 (*-----------------------------------------*)
-(* Extra tokens: *)
-(*-----------------------------------------*)
-%token <Cst_php.info> T_CLASS_XDEBUG  T_RESOURCE_XDEBUG
-
-(*-----------------------------------------*)
 (* PHP language extensions: *)
 (*-----------------------------------------*)
 %token <Cst_php.info> T_YIELD T_AWAIT
@@ -192,9 +188,6 @@ module PI = Parse_info
 (*************************************************************************)
 (* Priorities *)
 (*************************************************************************)
-
-%left T_TYPE
-%left T_IDENT
 
 (* must be at the top so that it has the lowest priority *)
 %nonassoc LOW_PRIORITY_RULE
@@ -673,17 +666,6 @@ implements_list:
 (*----------------------------*)
 
 member_declaration:
-(* facebook-ext: type constants *)
- | T_CONST T_TYPE T_IDENT type_constr_opt TEQ type_php ";"
-     { ClassType (* TODO (t6384084) add some fields here *) {
-         t_tok = $2;
-         t_name = Name $3;
-         t_tparams = None;
-         t_tconstraint = $4;
-         t_tokeq = $5;
-         t_kind = ClassConstType (Some $6);
-         t_sc = $7; }
-     }
 
 (* class constants *)
  | T_CONST          listc(class_constant_declaration)  ";"
@@ -707,9 +689,6 @@ member_declaration:
  | T_USE class_name_list "{" trait_rule* "}"
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
 
-(* facebook-ext: *)
- | T_REQUIRE trait_constraint_kind type_php ";"
-     { TraitConstraint ($1, $2, $3, $4) }
 
 enum_statement:
    class_constant_declaration ";"
@@ -762,10 +741,6 @@ trait_alias_rule:
 trait_alias_rule_method:
  | qualified_name_for_traits "::" T_IDENT { Right ($1, $2, Name $3) }
  | T_IDENT { Left (Name $1) }
-
-trait_constraint_kind:
- | T_EXTENDS    { MustExtend, $1 }
- | T_IMPLEMENTS { MustImplement, $1 }
 
 (*************************************************************************)
 (* Type definitions *)

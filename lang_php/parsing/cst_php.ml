@@ -305,9 +305,6 @@ and expr =
          *)
         | String of string wrap
         | PreProcess of cpp_directive wrap
-        (* only appear when process xdebug coverage file *)
-        | XdebugClass of name * class_stmt list
-        | XdebugResource
         (* http://php.net/manual/en/language.constants.predefined.php *)
           and cpp_directive =
               | Line  | File | Dir

@@ -224,8 +224,6 @@ let visitor_info_of_tok f = function
   | TGUIL ii -> TGUIL(f ii)
 
   | T_ELLIPSIS (ii) -> T_ELLIPSIS (f ii)
-  | T_CLASS_XDEBUG (ii) -> T_CLASS_XDEBUG (f ii)
-  | T_RESOURCE_XDEBUG (ii) -> T_RESOURCE_XDEBUG (f ii)
 
   | T_YIELD (ii) -> T_YIELD (f ii)
   | T_AWAIT (ii) -> T_AWAIT (f ii)

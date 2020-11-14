@@ -802,9 +802,6 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
 
       (* should been handled in Constant *)
     | T.T_DNUMBER _ii | T.T_LNUMBER _ii -> ()
-
-    | T.T_RESOURCE_XDEBUG _ii | T.T_CLASS_XDEBUG _ii -> ()
-
   );
 
   (* -------------------------------------------------------------------- *)
