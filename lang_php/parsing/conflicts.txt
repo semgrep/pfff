@@ -74,6 +74,8 @@ we can not factorize with a ext_type_hint_opt because seing an IDENT,
 one does not know if it should reduce ext_type_hint because it's
 the ident of a type or shift because maybe it's the ident of the const.
 
+update: can use ioption in menhir to solve the problem
+
 * short lambdas
 
 When we parse '_ ==> $x + 1' it could potentially be parsed as

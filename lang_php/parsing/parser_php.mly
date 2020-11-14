@@ -265,15 +265,15 @@ listc(X): list_sep(X, ",") { $1 }
 main: top_statement* EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
 
 top_statement:
- | statement                            { StmtList [$1] }
+ | statement                  { StmtList [$1] }
 
- | function_declaration_statement       { FuncDef $1 }
- | class_declaration_statement          { ClassDef $1 }
+ | function_declaration       { FuncDef $1 }
+ | class_declaration          { ClassDef $1 }
 
- | constant_declaration_statement       { ConstantDef $1 }
- | type_declaration                     { TypeDef $1 }
- | namespace_declaration                { $1 }
- | use_declaration                      { $1 }
+ | constant_declaration       { ConstantDef $1 }
+ | type_declaration           { TypeDef $1 }
+ | namespace_declaration      { $1 }
+ | use_declaration            { $1 }
 
 sgrep_spatch_pattern:
  | expr                         EOF { Expr $1 }
@@ -358,8 +358,8 @@ statement:
 inner_statement:
  | statement                        { $1 }
 
- | function_declaration_statement   { FuncDefNested $1 }
- | class_declaration_statement      { ClassDefNested $1 }
+ | function_declaration   { FuncDefNested $1 }
+ | class_declaration      { ClassDefNested $1 }
 
 (*----------------------------*)
 (* auxillary statements *)
@@ -470,25 +470,16 @@ use_filename:
 (*************************************************************************)
 
 (* PHP 5.3 *)
-constant_declaration_statement:
- | T_CONST           ident TEQ static_scalar ";"
-   { { cst_toks = ($1, $3, $5); cst_name = Name $2; cst_val = $4;
-       cst_type = None} }
- (* can not factorize with a 'type_opt', see conflict.txt *)
- | T_CONST type_php  ident TEQ static_scalar ";"
-   { { cst_toks = ($1, $4, $6); cst_name = Name $3; cst_val = $5;
-       cst_type = Some $2 } }
+constant_declaration: T_CONST ioption(type_php)  ident TEQ static_scalar ";"
+   { { cst_toks = ($1,$4,$6); cst_name = Name $3; cst_val = $5; cst_type = $2}}
 
 (*************************************************************************)
 (* Function declaration *)
 (*************************************************************************)
-function_declaration_statement:
- |            unticked_function_declaration_statement { $1 }
- (* can not factorize with a 'attributes_opt', see conflict.txt *)
- | attributes unticked_function_declaration_statement
-     { { $2 with f_attrs = Some $1 } }
+function_declaration: ioption(attributes) unticked_function_declaration
+   { { $2 with f_attrs = $1 } }
 
-unticked_function_declaration_statement:
+unticked_function_declaration:
  async_opt T_FUNCTION is_reference ident type_params_opt
    "(" parameter_list ")"
    return_type? function_body
@@ -577,13 +568,10 @@ lexical_var: TAND? T_VARIABLE  { ($1, DName $2) }
 (*************************************************************************)
 (* Class declaration *)
 (*************************************************************************)
-class_declaration_statement:
- |            unticked_class_declaration_statement
-     { $1 }
- | attributes unticked_class_declaration_statement
-     { { $2 with c_attrs = Some $1 } }
+class_declaration: ioption(attributes) unticked_class_declaration
+     { { $2 with c_attrs = $1 } }
 
-unticked_class_declaration_statement:
+unticked_class_declaration:
  | class_entry_type  ident_class_name  type_params_opt
      extends_from   implements_list
      "{" member_declaration* "}"
@@ -666,22 +654,16 @@ implements_list:
 (*----------------------------*)
 
 member_declaration:
-
-(* class constants *)
- | T_CONST          listc(class_constant_declaration)  ";"
-     { ClassConstants(None, $1, None, $2, $3) }
- | T_CONST type_php listc(class_constant_declaration)  ";"
-     { ClassConstants(None, $1, Some $2, $3, $4) }
+ (* class constants *)
+ | T_CONST ioption(type_php) listc(class_constant_declaration)  ";"
+     { ClassConstants(None, $1, $2, $3, $4) }
 
 (* class variables (aka properties) *)
- | variable_modifiers          listc(class_variable) ";"
-     { ClassVariables($1, None, $2, $3) }
- | variable_modifiers type_php listc(class_variable) ";"
-     { ClassVariables($1, Some $2, $3, $4)  }
+ | variable_modifiers ioption(type_php) listc(class_variable) ";"
+     { ClassVariables($1, $2, $3, $4)  }
 
 (* class methods *)
- |            method_declaration { Method $1 }
- | attributes method_declaration { Method { $2 with f_attrs = Some $1 } }
+ | ioption(attributes) method_declaration { Method { $2 with f_attrs = $1 } }
 
 (* php 5.4 traits *)
  | T_USE class_name_list ";"
@@ -690,12 +672,11 @@ member_declaration:
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
 
 
-enum_statement:
-   class_constant_declaration ";"
+enum_statement: class_constant_declaration ";"
      { ClassConstants(None, $2, None, [Left $1], $2) }
 
 method_declaration:
-     member_modifier* T_FUNCTION is_reference ident_method_name type_params_opt
+  member_modifier* T_FUNCTION is_reference ident_method_name type_params_opt
      "(" parameter_list ")"
      return_type?
      method_body
@@ -746,7 +727,7 @@ trait_alias_rule_method:
 (* Type definitions *)
 (*************************************************************************)
 type_declaration:
- | T_TYPE   ident type_params_opt type_constr_opt TEQ type_php ";"
+ | T_TYPE  ident type_params_opt type_constr_opt TEQ type_php ";"
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
          t_tokeq = $5; t_kind = Alias $6; t_sc = $7; }
      }
@@ -759,7 +740,7 @@ type_constr_opt:
 (* Generics parameters *)
 (*************************************************************************)
 type_params_opt:
-  | (*empty*)                      { None }
+  | (*empty*)                { None }
   | "<" type_params_list ">" { Some ($1, $2, $3) }
 
 type_params_list:
@@ -774,9 +755,9 @@ type_param:
   | variance_opt ident T_SUPER class_name { TParamConstraint (Name $2, $3, $4) }
 
 variance_opt:
-  | (*nothing*) {None}
-  | TMINUS{ Some $1 }
-  | TPLUS { Some $1 }
+  | (* empty *) { None}
+  | TMINUS      { Some $1 }
+  | TPLUS       { Some $1 }
 
 (*************************************************************************)
 (* Types *)
@@ -980,13 +961,6 @@ expr:
 simple_expr:
  | new_expr { $1 }
  | call_expr { $1 }
- (* TODO: 1 s/r conflict, can not be in primary_expr otherwise
-  * $this->fld{...} is not parsed correctly
-  *)
-(* commented for now; it's a facebook-hack extension anyway
- | qualified_class_name "{" array_pair_list "}"
-     { Collection ($1, ($2, $3, $4)) }
-*)
 
 new_expr:
  | member_expr { $1 }
@@ -999,8 +973,7 @@ call_expr:
  | call_expr "[" dim_offset "]" { ArrayGet($1, ($2, $3, $4)) }
  | call_expr "{" expr "}"   { HashGet($1, ($2, $3, $4)) }
  | call_expr "->" primary_expr { ObjGet($1, $2, $3) }
- | call_expr "->" "{" expr "}"
-     { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
+ | call_expr "->" "{" expr "}" { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
 
 member_expr:
  | primary_expr { $1 }
@@ -1030,18 +1003,12 @@ primary_expr:
  | "$" primary_expr         { Deref($1, $2) }
  | "$" "{" expr "}" { Deref($1, BraceIdent($2, $3, $4)) }
 
- | T_ARRAY "(" array_pair_list ")"
-     { ArrayLong($1,($2,$3,$4)) }
- | "[" array_pair_list "]"
-     { ArrayShort($1, $2, $3) }
+ | T_ARRAY "(" array_pair_list ")"    { ArrayLong($1,($2,$3,$4)) }
+ | "[" array_pair_list "]"            { ArrayShort($1, $2, $3) }
 
-
- | TGUIL encaps* TGUIL
-     { Sc (Guil ($1, $2, $3)) }
- | TBACKQUOTE encaps* TBACKQUOTE
-     { BackQuote($1,$2,$3) }
- | T_START_HEREDOC encaps* T_END_HEREDOC
-     { Sc (HereDoc ($1, $2, $3)) }
+ | TGUIL encaps* TGUIL                { Sc (Guil ($1, $2, $3)) }
+ | TBACKQUOTE encaps* TBACKQUOTE      { BackQuote($1,$2,$3) }
+ | T_START_HEREDOC encaps* T_END_HEREDOC  { Sc (HereDoc ($1, $2, $3)) }
  (* generated by lexer for special case of ${beer}s. So it's really
     * more a variable than a constant. So I've decided to inline this
     * special case rule in encaps. Maybe this is too restrictive.
@@ -1051,7 +1018,6 @@ primary_expr:
  | "(" expr ")"     { ParenExpr($1,$2,$3) }
  (* semgrep-ext: *)
  | "<..." expr "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
-
 
 
 constant:
@@ -1066,7 +1032,6 @@ constant:
  | T_NAMESPACE_C { PreProcess(NamespaceC, $1) }
 
 static_scalar: expr { $1 }
-
 
 (*----------------------------*)
 (* list/array *)
@@ -1100,7 +1065,6 @@ function_call_argument:
  | expr_or_dots             { (Arg ($1)) }
  | TAND expr        { (ArgRef($1, $2)) }
  | "..." expr       { (ArgUnpack($1, $2)) }
-
 
 (*----------------------------*)
 (* encaps *)
@@ -1256,8 +1220,8 @@ namespace_declaration:
  | T_NAMESPACE                "{" top_statement* "}"
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
-use_declaration:
- | T_USE listc(use_declaration_name) ";" { NamespaceUse ($1, $2, $3) }
+use_declaration: T_USE listc(use_declaration_name) ";" 
+  { NamespaceUse ($1, $2, $3) }
 
 namespace_name:
  | ident                           { [QI (Name $1)] }
