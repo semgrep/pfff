@@ -554,10 +554,7 @@ parameter_bis:
      { Middle3 $1 }
 
 (* php-facebook-ext: implicit field via constructor parameter *)
-ctor_modifier:
- | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
- | T_PRIVATE   { Private,($1) }
-
+ctor_modifier: visibility_modifier { $1 }
 
 is_reference: TAND?  { $1 }
 
@@ -634,10 +631,29 @@ unticked_class_declaration_statement:
 
 class_entry_type:
  | T_CLASS                    { ClassRegular $1 }
- | T_ABSTRACT T_FINAL T_CLASS { ClassAbstractFinal ($1, $2, $3) }
- | T_FINAL T_ABSTRACT T_CLASS { ClassAbstractFinal ($1, $2, $3) }
  | T_ABSTRACT T_CLASS         { ClassAbstract ($1, $2) }
  | T_FINAL    T_CLASS         { ClassFinal ($1, $2) }
+
+
+visibility_modifier:
+ | T_PUBLIC    { Public,($1) } 
+ | T_PROTECTED { Protected,($1) }
+ | T_PRIVATE   { Private,($1) }
+
+class_modifier:
+ | T_ABSTRACT { Abstract, $1 }
+ | T_FINAL    { Final, $1 }
+
+variable_modifiers:
+ | T_VAR                  { NoModifiers $1 }
+ | member_modifier+       { VModifiers $1 }
+
+member_modifier:
+ | class_modifier { $1 }
+ | visibility_modifier { $1 }
+ | T_STATIC    { Static,($1) }
+ | T_ASYNC     { Async,($1) }
+
 
 extends_from:
  | (*empty*)                     { None }
@@ -743,23 +759,10 @@ method_declaration:
 
 class_constant_declaration: ident TEQ static_scalar { ((Name $1),Some ($2,$3))}
 
-variable_modifiers:
- | T_VAR                  { NoModifiers $1 }
- | member_modifier+       { VModifiers $1 }
-
 
 class_variable:
  | T_VARIABLE           { (DName $1, None) }
  | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
-
-member_modifier:
- | T_PUBLIC    { Public,($1) } 
- | T_PROTECTED { Protected,($1) }
- | T_PRIVATE   { Private,($1) }
- | T_STATIC    { Static,($1) }
- | T_ABSTRACT  { Abstract,($1) } 
- | T_FINAL     { Final,($1) }
- | T_ASYNC     { Async,($1) }
 
 method_body:
  | "{" inner_statement* "}" { ($1, $2, $3), MethodRegular }

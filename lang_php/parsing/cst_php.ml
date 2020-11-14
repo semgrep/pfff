@@ -599,7 +599,6 @@ and class_def = {
 }
     and class_type =
       | ClassRegular       of tok (* class *)
-      | ClassAbstractFinal of tok * tok * tok (* abstract final class *)
       | ClassFinal         of tok * tok (* final class *)
       | ClassAbstract      of tok * tok (* abstract class *)
 
@@ -613,6 +612,7 @@ and class_def = {
       | Enum of tok (* enum *)
     and extend =    tok * class_name
     and interface = tok * class_name comma_list
+
   and class_stmt =
     (* This is abused to represent class constants in enums, so sometimes
      * tok is actually fakeInfo. *)
@@ -647,7 +647,9 @@ and class_def = {
  and method_def = func_def
  and modifier =
    | Public  | Private | Protected
-   | Static  | Abstract | Final | Async
+   | Static
+   | Abstract | Final
+   | Async
 
 (* those are bad features ... noone should use them. *)
 and trait_rule =

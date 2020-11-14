@@ -695,8 +695,6 @@ and class_type _env = function
   | ClassRegular tok -> (A.Class, tok), []
   | ClassFinal (tokf, tok) -> (A.Class, tok), [Final, tokf]
   | ClassAbstract (toka, tok) -> (A.Class, tok), [Abstract, toka]
-  | ClassAbstractFinal (toka, tokf, tok) -> 
-    (A.Class, tok), [Abstract, toka; Final, tokf]
   | Interface tok -> (A.Interface, tok), []
   | Trait tok -> (A.Trait, tok), []
   | Enum tok -> (A.Enum, tok), []
