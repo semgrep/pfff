@@ -611,7 +611,7 @@ and class_def = {
     (* This is abused to represent class constants in enums, so sometimes
      * tok is actually fakeInfo. *)
     | ClassConstants of
-        tok option (* abstract *) *
+        modifier wrap list *
         tok (* const *) *
         hint_type option *
         class_constant comma_list * tok (*;*)

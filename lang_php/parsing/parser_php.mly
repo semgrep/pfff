@@ -62,6 +62,8 @@ open Cst_php
 module H = Parser_php_mly_helper
 module PI = Parse_info
 
+let o2l = Common.opt_to_list
+
 %}
 
 (*************************************************************************)
@@ -323,7 +325,7 @@ statement:
      { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
        let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
-       Try($1, try_block, [catch] @ $13, Common.opt_to_list $14)
+       Try($1, try_block, [catch] @ $13, o2l $14)
      }
  | T_TRY "{" inner_statement* "}" finally_clause
      { let try_block = ($2,$3,$4) in
@@ -655,8 +657,9 @@ implements_list:
 
 member_declaration:
  (* class constants *)
- | T_CONST ioption(type_php) listc(class_constant_declaration)  ";"
-     { ClassConstants(None, $1, $2, $3, $4) }
+ | visibility_modifier?
+   T_CONST ioption(type_php) listc(class_constant_declaration)  ";"
+     { ClassConstants(o2l $1, $2, $3, $4, $5) }
 
 (* class variables (aka properties) *)
  | variable_modifiers ioption(type_php) listc(class_variable) ";"
@@ -673,7 +676,7 @@ member_declaration:
 
 
 enum_statement: class_constant_declaration ";"
-     { ClassConstants(None, $2, None, [Left $1], $2) }
+     { ClassConstants([], $2, None, [Left $1], $2) }
 
 method_declaration:
   member_modifier* T_FUNCTION is_reference ident_method_name type_params_opt
@@ -689,7 +692,7 @@ method_declaration:
         })
      }
 
-class_constant_declaration: ident TEQ static_scalar { ((Name $1),Some ($2,$3))}
+class_constant_declaration: ident TEQ static_scalar { ((Name $1), ($2,$3))}
 
 
 class_variable:
