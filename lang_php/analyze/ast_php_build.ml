@@ -561,7 +561,7 @@ and hint_type env = function
 (* ------------------------------------------------------------------------- *)
 and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = (tok,_,_)}=
   let name = ident env cst_name in
-  let value = Some (expr env cst_val) in
+  let value = (expr env cst_val) in
   { A.cst_tok = tok; A.cst_name = name; A.cst_body = value }
 
 and func_def env f =
@@ -706,7 +706,7 @@ and class_constants env st acc =
   | ClassConstants (_, tok, _, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
-        let body = opt static_scalar_affect env ss in
+        let body = static_scalar_affect env ss in
         let cst = {A.cst_name = ident env n; cst_body = body; cst_tok = tok} in
         cst::acc
      ) (comma_list cl) acc

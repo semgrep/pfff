@@ -812,7 +812,7 @@ and class_def env def =
 
   def.c_constants |> List.iter (fun def ->
     let env = add_node_and_has_edge env (def.cst_name, E.ClassConstant) in
-    Common2.opt (expr env) def.cst_body;
+    (expr env) def.cst_body;
   );
   def.c_variables |> List.iter (fun fld ->
     let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
@@ -839,7 +839,7 @@ and class_def env def =
 
 and constant_def env def =
   let env = add_node_and_has_edge env (def.cst_name, E.Constant) in
-  Common2.opt (expr env) def.cst_body
+  (expr env) def.cst_body
 
 and type_def env def =
  let env = add_node_and_has_edge env (def.t_name, E.Type) in

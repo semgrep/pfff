@@ -368,8 +368,8 @@ and func_def = {
 and constant_def = {
   cst_tok: tok;
   cst_name: ident;
-  (* normally a static scalar; None for abstract const *)
-  cst_body: expr option;
+  (* normally a static scalar *)
+  cst_body: expr;
 }
 
 and enum_type = {

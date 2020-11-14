@@ -628,7 +628,7 @@ and class_def = {
     | TraitConstraint of
         tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
     | ClassType of type_def
- and class_constant = ident * static_scalar_affect option
+ and class_constant = ident * static_scalar_affect
  and class_variable = dname * static_scalar_affect option
  and class_var_modifier =
    | NoModifiers of tok (* 'var' *)
@@ -640,9 +640,12 @@ and class_def = {
           *)
  and method_def = func_def
  and modifier =
+   (* for constants, methods, variables *)
    | Public  | Private | Protected
-   | Static
+   (* for classes, ?? *)
    | Abstract | Final
+   (* for ?? *)
+   | Static
    | Async
 
 (* those are bad features ... noone should use them. *)

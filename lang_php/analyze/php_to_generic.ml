@@ -495,10 +495,10 @@ and attribute v =
                  
 
 and constant_def { cst_name = cst_name; cst_body = cst_body; cst_tok = tok } =
-  let id = ident cst_name in let body = option expr cst_body in
+  let id = ident cst_name in let body = expr cst_body in
   let attr = [G.KeywordAttr (G.Const, tok)] in
   let ent = G.basic_entity id attr in
-  ent, { G.vinit = body; vtype = None }
+  ent, { G.vinit = Some body; vtype = None }
 
 and enum_type tok { e_base = e_base; e_constraint = e_constraint } =
   let _ = hint_type e_base in
