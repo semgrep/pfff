@@ -1210,6 +1210,10 @@ ident_method_name:
  | T_PARENT { "parent", $1 }
  | T_SELF   { "self", $1 }
  | T_ASYNC  { "async", $1 }
+ | T_INCLUDE { "include", $1 }
+ | T_PUBLIC { "public", $1 }
+ | T_DEFAULT { "default", $1 }
+ | T_INSTANCEOF { "instanceof", $1 }
 
 (*************************************************************************)
 (* Namespace *)
