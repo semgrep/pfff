@@ -5,7 +5,8 @@ class A {
 }
 
 interface I {
-  abstract const ABS_TEST;
+ // facebook-ext:
+//  abstract const ABS_TEST;
   const NORM_TEST = 1;
 }
 
