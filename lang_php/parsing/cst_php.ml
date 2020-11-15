@@ -732,7 +732,8 @@ and toplevel =
     | NamespaceDef of tok * qualified_ident * tok (* ; *)
     (* when there is no qualified_ident, this means global scope *)
     | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
-    | NamespaceUse of tok * namespace_use_rule comma_list * tok (* ; *)
+    | NamespaceUse of tok * tok option (* 'function|const' *) * 
+             namespace_use_rule comma_list * tok (* ; *)
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
 
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)

@@ -135,7 +135,7 @@ and toplevel env st =
         | None -> [A.special "ROOT", wrap tok]
       in
       [A.NamespaceDef (tok, qi, (t1, toplevels env xs, t2))]
-  | NamespaceUse (tok, xs, _) ->
+  | NamespaceUse (tok, _kwdopt, xs, _) ->
       xs |> uncomma |> List.map (function
       | ImportNamespace qu ->
           A.NamespaceUse (tok, qualified_ident env qu, None)

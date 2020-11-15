@@ -275,7 +275,7 @@ top_statement:
  | constant_declaration       { ConstantDef $1 }
  | type_declaration           { TypeDef $1 }
  | namespace_declaration      { $1 }
- | use_declaration            { $1 }
+ | namespace_use_declaration            { $1 }
 
 sgrep_spatch_pattern:
  | expr                         EOF { Expr $1 }
@@ -1223,8 +1223,13 @@ namespace_declaration:
  | T_NAMESPACE                "{" top_statement* "}"
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
-use_declaration: T_USE listc(use_declaration_name) ";" 
-  { NamespaceUse ($1, $2, $3) }
+namespace_use_declaration: 
+  T_USE use_keyword? listc(use_declaration_name) ";" 
+  { NamespaceUse ($1, $2, $3, $4) }
+
+use_keyword:
+  | T_CONST { $1 }
+  | T_FUNCTION { $1 }
 
 namespace_name:
  | ident                           { [QI (Name $1)] }
