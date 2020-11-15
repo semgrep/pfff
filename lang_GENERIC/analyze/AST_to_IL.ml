@@ -112,12 +112,12 @@ let lval_of_id_info _env id id_info =
   let var = id, sid in
   { base = Var var; offset = NoOffset }
 (*e: function [[AST_to_IL.lval_of_id_info]] *)
-(*s: function [[AST_to_IL.lval_of_ent]] *)
-let lval_of_ent env ent = 
-  match ent.G.name with
-  | G.EId id -> lval_of_id_info env id ent.G.info
-  | G.EName _ | G.EDynamic _ -> raise Todo
-(*e: function [[AST_to_IL.lval_of_ent]] *)
+
+(*s: function [[AST_to_IL.lval_of_id_qualified]] *)
+let lval_of_id_qualified env name id_info =
+  let id, _ = name in
+  lval_of_id_info env id id_info
+(*e: function [[AST_to_IL.lval_of_id_qualified]] *)
 
 (*s: function [[AST_to_IL.label_of_label]] *)
 (* TODO: should do first pass on body to get all labels and assign
@@ -170,6 +170,9 @@ let rec lval env eorig =
   | G.Id (id, id_info) ->
       let lval = lval_of_id_info env id id_info in
       lval
+  | G.IdQualified (name, id_info) ->
+      let lval = lval_of_id_qualified env name id_info in
+      lval
 
   | G.DotAccess (e1orig, tok, field) ->
       let lval = lval env e1orig in
@@ -185,7 +188,12 @@ let rec lval env eorig =
       let offset = 
         match field with
         | G.EId id -> Dot id
-        | G.EName _ | G.EDynamic _ -> todo (G.E eorig)
+        | G.EName gname ->
+          let attr = expr env (G.id_of_name gname) in
+          Index attr
+        | G.EDynamic e2orig ->
+          let attr = expr env e2orig in
+          Index attr
       in
       { base; offset }
 
@@ -203,6 +211,10 @@ let rec lval env eorig =
             fresh.base
       in
       { base; offset = Index e2 }
+
+  | G.DeRef (_, e1orig) ->
+      let e1 = expr env e1orig in
+      { base = Mem e1; offset = NoOffset }
 
   | _ -> todo (G.E eorig)
 
@@ -227,12 +239,9 @@ and pattern_assign_statements env exp eorig pat =
 (* Assign *)
 (*****************************************************************************)
 and assign env lhs _tok rhs_exp eorig =
-  match lhs with
-  | G.Id (_, _) ->
-      let lval = lval env lhs in
-      add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
-      mk_e (Lvalue lval) lhs
-  | _ -> todo (G.E lhs)
+  let lval = lval env lhs in
+  add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
+  mk_e (Lvalue lval) lhs
 
 (*****************************************************************************)
 (* Expression *)
@@ -303,8 +312,9 @@ and expr env eorig =
 
   | G.L lit -> mk_e (Literal lit) eorig
 
-  | G.Id (_, _) 
-  | G.DotAccess (_, _, _) | G.ArrayAccess (_, _) 
+  | G.Id (_, _) | G.IdQualified (_, _)
+  | G.DotAccess (_, _, _) | G.ArrayAccess (_, _)
+  | G.DeRef (_, _)
     ->
       let lval = lval env eorig in
       mk_e (Lvalue lval) eorig
@@ -402,7 +412,6 @@ and expr env eorig =
   | G.Xml _
   -> todo (G.E eorig)
 
-  | G.IdQualified (_, _)
   | G.Constructor (_, _)
   | G.LetPattern (_, _)
   | G.MatchPattern (_, _)
@@ -416,7 +425,6 @@ and expr env eorig =
       mk_e (Cast (typ, e)) eorig
 
   | G.Ref (_, _)
-  | G.DeRef (_, _)
   -> todo (G.E eorig)
 
   | G.Ellipsis _ |G.TypedMetavar (_, _, _)|G.DisjExpr (_, _)|G.DeepEllipsis _
@@ -459,6 +467,15 @@ and argument env arg =
   match arg with
   | G.Arg e -> expr env e
   | _ -> todo (G.Ar arg)
+
+(*s: function [[AST_to_IL.lval_of_ent]] *)
+let lval_of_ent env ent =
+  match ent.G.name with
+  | G.EId id -> lval_of_id_info env id ent.G.info
+  | G.EName gname -> lval env (G.IdQualified(gname,ent.G.info))
+  | G.EDynamic eorig -> lval env eorig
+(*e: function [[AST_to_IL.lval_of_ent]] *)
+
 
 (*****************************************************************************)
 (* Exprs and instrs *)

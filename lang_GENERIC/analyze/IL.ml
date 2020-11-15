@@ -100,7 +100,7 @@ type 'a bracket = tok * 'a * tok
 (*****************************************************************************)
 
 (*s: type [[IL.ident]] *)
-type ident = string wrap
+type ident = G.ident
 (*e: type [[IL.ident]] *)
  [@@deriving show] (* with tarzan *)
 
@@ -133,7 +133,7 @@ type lval = {
   and base = 
     | Var of name
     | VarSpecial of var_special wrap
-    (* for C *)
+    (* aka DeRef, e.g. *E in C *)
     | Mem of exp
 (*e: type [[IL.base]] *)
 

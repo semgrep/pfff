@@ -1588,6 +1588,11 @@ let basic_id_info resolved =
   }
 (*e: function [[AST_generic.basic_id_info]] *)
 
+let id_of_name (id, nameinfo) =
+  match nameinfo.name_qualifier with
+  | None | Some (QDots []) -> Id (id, empty_id_info ())
+  | _ -> IdQualified ((id, nameinfo), empty_id_info())
+
 let name_of_id id = 
   (id, empty_name_info)
 
