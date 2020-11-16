@@ -64,6 +64,10 @@ module PI = Parse_info
 
 let o2l = Common.opt_to_list
 
+let qiopt a b = 
+  match a with
+  | None -> b
+  | Some t -> QITok t::b
 %}
 
 (*************************************************************************)
@@ -1248,11 +1252,10 @@ namespace_name:
  | namespace_name TANTISLASH ident { $1 @ [QITok $2; QI (Name $3)] }
 
 use_declaration_name:
- | namespace_name            { ImportNamespace $1 }
- | namespace_name T_AS ident { AliasNamespace ($1, $2, Name $3) }
- | TANTISLASH namespace_name { ImportNamespace (QITok $1::$2) }
- | TANTISLASH namespace_name T_AS ident
-     { AliasNamespace (QITok $1::$2, $3, Name $4) }
+ | TANTISLASH? namespace_name            
+    { ImportNamespace (qiopt $1 $2) }
+ | TANTISLASH? namespace_name T_AS ident 
+    { AliasNamespace (qiopt $1 $2, $3, Name $4) }
 
 
 qualified_name:
