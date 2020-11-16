@@ -313,7 +313,7 @@ top_statement:
  | constant_declaration       { [ConstantDef $1] }
  | type_declaration           { [TypeDef $1] }
  | namespace_declaration      { [$1] }
- | namespace_use_declaration  { [$1] }
+ | namespace_use_declaration  { $1 }
 
 sgrep_spatch_pattern:
  | expr                         EOF { Expr $1 }
@@ -1275,7 +1275,7 @@ namespace_declaration:
 
 namespace_use_declaration: 
  | T_USE use_keyword? listc(namespace_use_clause) ";" 
-   { NamespaceUse ($1, $2, $3, $4) }
+   { [NamespaceUse ($1, $2, $3, $4)] }
  | T_USE use_keyword?
    TANTISLASH? namespace_name TANTISLASH 
    "{" listc(namespace_use_group_clause) "}"
