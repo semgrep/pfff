@@ -754,31 +754,8 @@ and toplevel =
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
-(* Entity and any *)
+(* Any *)
 (*****************************************************************************)
-
-(* The goal of the entity type is to lift up important entities which
- * are originally nested in the AST such as methods.
- *
- * history: was in ast_entity_php.ml before but better to put everything
- * in one file.
- *)
-type entity =
-  | FunctionE of func_def
-  | ClassE of class_def
-  | ConstantE of constant_def
-  | TypedefE of type_def
-
-  | StmtListE of stmt list
-
-  | MethodE of method_def
-
-  | ClassConstantE of class_constant
-  | ClassVariableE of class_variable * modifier list
-
-  | MiscE of tok list
- [@@deriving show { with_path = false }]
-
 
 type any =
   | Expr of expr
@@ -787,7 +764,6 @@ type any =
   | Toplevel of toplevel
   | Toplevels of toplevel list
   | Program of program
-  | Entity of entity
 
   | Argument of argument
   | Arguments of argument comma_list

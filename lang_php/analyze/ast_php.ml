@@ -100,11 +100,7 @@
  *  - ...
  *
  * todo:
- *  - support for generics of hack, and also type constraints
- *  - support for TraitConstraint? but it's relevant only for typechecking
- *    so maybe ok to skip here
- *  - more XHP class declaration e.g. children, @required, etc?
- *  - less: factorize more? string vs Guil vs xhp?
+ *  - less: factorize more? string vs Guil?
  *)
 
 (*****************************************************************************)
