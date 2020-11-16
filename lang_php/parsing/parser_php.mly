@@ -1240,8 +1240,10 @@ namespace_declaration:
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 namespace_use_declaration: 
-  T_USE use_keyword? listc(use_declaration_name) ";" 
-  { NamespaceUse ($1, $2, $3, $4) }
+ | T_USE use_keyword? listc(use_declaration_name) ";" 
+   { NamespaceUse ($1, $2, $3, $4) }
+ | T_USE use_keyword?  ";" 
+   { NamespaceUse ($1, $2, $3, $4) }
 
 use_keyword:
   | T_CONST { $1 }

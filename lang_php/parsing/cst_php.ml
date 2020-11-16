@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2009-2013 Facebook
+ * Copyright (C) 2020 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -32,6 +33,9 @@ open Common
  * For example, use Foo\Bar\{A, B} is not represented faithfully anymore
  * in this CST, and it's unsugared in use Foo\Bar\A and use Foo\Bar\B
  * (like in ast_php.ml).
+ * The main requirement for this hybrid CST/AST
+ * is to get the range of an expr/stmt/... correct so you must keep
+ * the first and last token of an expr/stmt/... in the AST.
  * 
  *
  * A CST is convenient in a refactoring context or code visualization
