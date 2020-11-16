@@ -509,18 +509,17 @@ parameter_list:
  (* php-facebook-ext: trailing comma *)
  | parameter "," parameter_list   { $1 :: (Right3 $2) :: $3 }
 
-parameter: attributes? ctor_modifier? "@"? type_php? parameter_bis
-      {
-        match $5 with
-          Left3 param ->
-            let hint = match param.p_type with
-              | Some(HintVariadic (tok, _)) -> Some(HintVariadic (tok, $4))
-              | _ -> $4
-            in
-            Left3 { param with p_modifier = $2; p_attrs = $1; p_type = hint; p_soft_type= $3; }
-        | _ -> match ($1, $2, $3, $4) with
-                 (None, None, None, None) -> $5
-               | _ -> raise Parsing.Parse_error
+parameter: attributes? ctor_modifier? type_php? parameter_bis
+   { match $4 with
+     | Left3 param ->
+         let hint = match param.p_type with
+              | Some(HintVariadic (tok, _)) -> Some(HintVariadic (tok, $3))
+              | _ -> $3
+         in
+         Left3 { param with p_modifier = $2; p_attrs = $1; p_type = hint; }
+      | _ -> match ($1, $2, $3) with
+             | (None, None, None) -> $4
+             | _ -> raise Parsing.Parse_error
       }
 
 parameter_bis:
@@ -809,7 +808,7 @@ type_arg_list:
   | type_php                       { [Left $1]}
   | type_php "," type_arg_list     { (Left $1)::(Right $2):: $3 }
 
-return_type: ":" "@"? type_php                 { $1, $2, $3 }
+return_type: ":" type_php                 { $1, $2 }
 
 (*************************************************************************)
 (* Attributes *)

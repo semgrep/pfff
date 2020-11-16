@@ -557,7 +557,7 @@ and hint_type env = function
       A.HintTuple (t1, List.map (hint_type env) (comma_list v1), t2)
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
-      let ret  = Common2.fmap (fun (_, _, t) -> hint_type env t) ret in
+      let ret  = Common2.fmap (fun (_, t) -> hint_type env t) ret in
       A.HintCallback (args, ret)
   | HintTypeConst (lhs, tok, rhs) ->
     A.HintTypeConst (hint_type env lhs, tok, hint_type env rhs)
@@ -582,7 +582,7 @@ and func_def env f =
     A.f_attrs = attributes env f.f_attrs;
     A.f_params = List.map (parameter env) params;
     A.f_return_type =
-      Common2.fmap (fun (_, _, t) -> hint_type env t) f.f_return_type;
+      Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = (A.Function, f.f_tok) ;
     A.m_modifiers = [];
@@ -792,7 +792,7 @@ and method_def env m =
     A.f_attrs = attributes env m.f_attrs;
     A.f_params = List.map (parameter env) params ;
     A.f_return_type =
-      Common2.fmap (fun (_, _, t) -> hint_type env t) m.f_return_type;
+      Common2.fmap (fun (_, t) -> hint_type env t) m.f_return_type;
     A.f_body = implicit_assigns @ method_body env m.f_body;
     A.f_kind = (A.Method, m.f_tok);
     A.l_uses = [];
@@ -805,8 +805,6 @@ and method_body env (_, stl, _) =
 and parameter env
  { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a;
    p_modifier = _mTODO;
-   (* don't care about the soft type annot, it's useful only for the runtime *)
-   p_soft_type = _;
    p_variadic = variadic;
  } =
   { A.p_type = opt hint_type env t;

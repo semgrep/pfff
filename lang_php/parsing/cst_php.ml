@@ -140,7 +140,7 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * (tok * tok option * hint_type) option (* return type *)
+      * (tok * hint_type) option (* return type *)
      ) paren
  | HintTypeConst of
      hint_type   (* lhs *)
@@ -509,7 +509,7 @@ and func_def = {
   (* the dots should be only at the end (unless in semgrep mode) *)
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
-  f_return_type: (tok (* : *) * tok option (* @ *) * hint_type) option;
+  f_return_type: (tok (* : *) * hint_type) option;
   (* the opening/closing brace can be (fakeInfo(), ';') for abstract methods *)
   f_body: stmt_and_def list brace;
 }
@@ -526,8 +526,6 @@ and func_def = {
        * can be only Public or Protected or Private (but never Static, etc).
        *)
       p_modifier: modifier wrap option;
-      (* php-facebook-ext: to not generate runtime errors if wrong type hint *)
-      p_soft_type: tok (* @ *) option;
       p_type: hint_type option;
       p_ref: is_ref;
       p_name: dname;
