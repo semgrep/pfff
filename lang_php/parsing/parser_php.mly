@@ -97,6 +97,11 @@ let qiopt a b =
   | None -> b
   | Some t -> QITok t::b
 
+let mk_Toplevel x =
+  match x with
+  | [] -> raise Impossible
+  | [x] -> Toplevel x
+  | xs -> Toplevels xs
 %}
 
 (*************************************************************************)
@@ -297,23 +302,23 @@ listc(X): list_sep(X, ",") { $1 }
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
-main: top_statement* EOF { $1 @ [FinalDef $2] }
+main: top_statement* EOF { List.flatten $1 @ [FinalDef $2] }
 
 top_statement:
- | statement                  { StmtList [$1] }
+ | statement                  { [TopStmt $1] }
 
- | function_declaration       { FuncDef $1 }
- | class_declaration          { ClassDef $1 }
+ | function_declaration       { [FuncDef $1] }
+ | class_declaration          { [ClassDef $1] }
 
- | constant_declaration       { ConstantDef $1 }
- | type_declaration           { TypeDef $1 }
- | namespace_declaration      { $1 }
- | namespace_use_declaration  { $1 }
+ | constant_declaration       { [ConstantDef $1] }
+ | type_declaration           { [TypeDef $1] }
+ | namespace_declaration      { [$1] }
+ | namespace_use_declaration  { [$1] }
 
 sgrep_spatch_pattern:
  | expr                         EOF { Expr $1 }
- | top_statement                EOF { Toplevel $1 }
- | top_statement top_statement+ EOF { Toplevels ($1::$2) }
+ | top_statement                EOF { mk_Toplevel $1 }
+ | top_statement top_statement+ EOF { Toplevels ($1 @ List.flatten $2) }
  | ":" type_php                 EOF { Hint2 $2 }
 
 (*************************************************************************)
@@ -1264,9 +1269,9 @@ namespace_declaration:
  | T_NAMESPACE namespace_name ";"
      { NamespaceDef ($1, $2, $3) }
  | T_NAMESPACE namespace_name "{" top_statement* "}"
-     { NamespaceBracketDef ($1, Some $2, ($3, $4, $5)) }
+     { NamespaceBracketDef ($1, Some $2, ($3, List.flatten $4, $5)) }
  | T_NAMESPACE                "{" top_statement* "}"
-     { NamespaceBracketDef ($1, None, ($2, $3, $4)) }
+     { NamespaceBracketDef ($1, None, ($2, List.flatten $3, $4)) }
 
 namespace_use_declaration: 
  | T_USE use_keyword? listc(namespace_use_clause) ";" 

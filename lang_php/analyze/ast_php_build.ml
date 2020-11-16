@@ -118,7 +118,7 @@ and toplevels env xs =
 
 and toplevel env st =
   match st with
-  | StmtList stmtl -> List.fold_right (stmt env) stmtl []
+  | TopStmt x -> stmt env x []
   | FuncDef fd -> [A.FuncDef (func_def env fd)]
   | ClassDef cd -> [A.ClassDef (class_def env cd)]
   | ConstantDef x -> [A.ConstantDef (constant_def env x)]

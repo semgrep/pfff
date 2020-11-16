@@ -246,7 +246,7 @@ let (expr_of_string: string -> Cst_php.expr) = fun s ->
 
   let res = 
     (match ast with
-    | [Ast.StmtList [Ast.ExprStmt (e, _tok)];Ast.FinalDef _] -> e
+    | [Ast.TopStmt (Ast.ExprStmt (e, _tok));Ast.FinalDef _] -> e
   | _ -> failwith "only expr pattern are supported for now"
   )
   in

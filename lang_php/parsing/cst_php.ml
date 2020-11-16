@@ -700,10 +700,6 @@ and global_var =
 and static_var = dname * static_scalar_affect option
    and static_scalar_affect = tok (* = *) * static_scalar
 
-(* the qualified_ident can have a leading '\' *)
-and namespace_use_rule = qualified_ident * alias option
-  and alias = tok (* as *) * ident
-
 (*****************************************************************************)
 (* User attributes, a.k.a annotations *)
 (*****************************************************************************)
@@ -719,25 +715,21 @@ and attributes = attribute comma_list angle
 (* The toplevels elements *)
 (*****************************************************************************)
 
-(* For parsing reasons and estet I think it's better to differentiate
- * nested functions and toplevel functions.
- * update: sure? ast_php_simple simplify things.
- * Also it's better to group the toplevel statements together (StmtList below),
- * so that in the database later they share the same id.
- * update: meh
- *
- * Note that nested functions are usually under a if(defined(...)) at
+(* Note that nested functions are usually under a if(defined(...)) at
  * the toplevel. There is no ifdef in PHP so they reuse 'if'.
  *)
 and toplevel =
-    | StmtList of stmt list
+    | TopStmt of stmt
+
     | FuncDef of func_def
     | ClassDef of class_def
     (* PHP 5.3, see http://us.php.net/const *)
     | ConstantDef of constant_def
     (* facebook extension *)
     | TypeDef of type_def
-    (* PHP 5.3, see http://www.php.net/manual/en/language.namespaces.rules.php*)
+   
+    (* less: move in directive type? *)
+    (* see http://www.php.net/manual/en/language.namespaces.rules.php*)
     (* the qualified_ident below can not have a leading '\' *)
     | NamespaceDef of tok * qualified_ident * tok (* ; *)
     (* when there is no qualified_ident, this means global scope *)
@@ -748,6 +740,10 @@ and toplevel =
 
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)
+
+    (* the qualified_ident can have a leading '\' *)
+    and namespace_use_rule = qualified_ident * alias option
+      and alias = tok (* as *) * ident
 
  and program = toplevel list
  [@@deriving show { with_path = false }] (* with tarzan *)
