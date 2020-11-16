@@ -592,14 +592,10 @@ and type_def { t_name = t_name; t_kind = t_kind } =
   let ent = G.basic_entity id [] in
   ent, { G.tbody = kind }
 
-and type_def_kind tok =
+and type_def_kind _tok =
   function
   | Alias v1 -> let v1 = hint_type v1 in
       G.AliasType v1
-  | Newtype v1 -> let v1 = hint_type v1 in
-      G.NewType v1
-  | ClassConstType _v1 -> 
-    error tok "ClassConstType not supported, facebook-ext"
       
 
 and program v = 

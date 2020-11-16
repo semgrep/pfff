@@ -650,10 +650,6 @@ and type_def env def =
   }
 and type_def_kind env = function
   | Alias t -> A.Alias (hint_type env t)
-  | ClassConstType v1 -> A.ClassConstType
-    (match v1 with
-    | Some x -> Some (hint_type env x)
-    | None -> None)
 
 
 and class_def env c =
