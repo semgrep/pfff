@@ -100,6 +100,8 @@
  *  - ...
  *
  * todo:
+ *  - put back types! at least the basic one like f_return_type
+ *    with no generics
  *  - less: factorize more? string vs Guil?
  *)
 

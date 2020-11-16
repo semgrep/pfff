@@ -920,16 +920,16 @@ expr:
  | T_CLONE expr { Clone($1,$2) }
 
  (* PHP 5.3 Closures *)
- | async_opt T_FUNCTION is_reference "(" parameter_list ")" return_type?
-   lexical_vars
+ | async_opt T_FUNCTION is_reference "(" parameter_list ")" 
+   lexical_vars return_type?
    "{" inner_statement* "}"
    { H.validate_parameter_list $5;
      let params = ($4, $5, $6) in
        let body = ($9, $10, $11) in
-       Lambda ($8, { f_tok = $2;f_ref = $3;f_params = params; f_body = body;
+       Lambda ($7, { f_tok = $2;f_ref = $3;f_params = params; f_body = body;
                      f_tparams = None;
                      f_name = Name("__lambda__", $2);
-                     f_return_type = $7; f_type = FunctionLambda;
+                     f_return_type = $8; f_type = FunctionLambda;
                      f_modifiers = $1;
                      f_attrs = None;
        })

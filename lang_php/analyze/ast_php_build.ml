@@ -596,7 +596,8 @@ and lambda_def env (l_use, ld) =
   { A.f_ref = ld.f_ref <> None;
     A.f_name = (A.special "_lambda", wrap ld.f_tok);
     A.f_params = List.map (parameter env) params;
-    A.f_return_type = None;
+    A.f_return_type =
+      Common2.fmap (fun (_, t) -> hint_type env t) ld.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.AnonLambda, ld.f_tok;
     A.m_modifiers = [];
