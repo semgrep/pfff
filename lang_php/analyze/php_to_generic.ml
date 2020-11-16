@@ -336,12 +336,6 @@ and expr =
         fb (v1 |> List.map G.expr_to_arg))
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)
-  | Collection ((v1, v2)) ->
-      let v1 = name_of_qualified_ident v1 
-      and v2 = bracket (list array_value) v2 in 
-      G.Call (G.IdSpecial (G.New, fake "new"),
-        fb[G.Arg (G.IdQualified (v1, G.empty_id_info()));
-         G.Arg (G.Container (G.Dict, v2))])
   | CondExpr ((v1, v2, v3)) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -379,7 +373,6 @@ and foreach_pattern v   =
   G.expr_to_pattern v
 
 and array_value v       = expr v
-and string_const_expr v = expr v
 
 and hint_type =
   function
@@ -401,22 +394,6 @@ and hint_type =
         | None -> G.TyBuiltin ("void", fake "void")
       in
       G.TyFun (params, fret)
-  | HintShape (tok, (t1, v1, t2)) ->
-      let v1 =
-        list
-          (fun (v1, v2) ->
-             let v1 = string_const_expr v1 and v2 = hint_type v2 in
-             match v1 with
-             | G.L (G.String (s, t)) -> 
-                G.basic_field (s,t) None (Some v2)
-             | _ -> 
-                G.FieldStmt (G.OtherStmt (G.OS_Todo, 
-                     [G.TodoK ("HintShape with non-string keys not supported",
-                        tok)]))
-          )
-          v1
-      in 
-      G.TyRecordAnon (tok, (t1, v1, t2))
 
   | HintTypeConst (_, tok,_) -> 
       G.OtherType (G.OT_Todo, 

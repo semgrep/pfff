@@ -383,11 +383,6 @@ and expr env = function
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
       A.ConsArray (t1, apl, t2)
-  | Collection (n, (t1, vel, t2)) ->
-      let n = name env n in
-      let vel = comma_list vel in
-      let vel = List.map (array_pair env) vel in
-      A.Collection (n, (t1, vel, t2))
   | New (tok, cn, args) ->
       let args =
         match args with
@@ -751,7 +746,7 @@ and class_body env st (mets, flds) =
     met::mets, more_flds @ flds
 
   | ClassVariables _ | ClassConstants _ | UseTrait _
-  | TraitConstraint _ | ClassType _
+  | ClassType _
     -> (mets, flds)
 
 and method_def env m =

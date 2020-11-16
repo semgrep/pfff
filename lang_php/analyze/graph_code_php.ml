@@ -862,10 +862,6 @@ and hint_type env t =
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;
       Common.opt (hint_type env) tret_opt
-  | HintShape (_, (_, xs, _)) ->
-    xs |> List.iter (fun (_ket, t) ->
-      hint_type env t
-    )
   | HintTypeConst (x1, _, x2) ->
     hint_type env x1;
     hint_type env x2
@@ -1044,9 +1040,6 @@ and expr env x =
   | Guil (_, xs, _) -> exprl env xs
   | Ref (_, e) | Unpack e -> expr env e
   | ConsArray (_, xs, _) -> array_valuel env xs
-  | Collection (name, (_, xs, _)) ->
-      add_use_edge env (name, E.Class);
-      array_valuel env xs
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e

@@ -245,8 +245,6 @@ and expr =
   | ArrayLong of tok (* array | shape *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
-  (* facebook-ext: *)
-  | Collection of name * array_pair comma_list brace
 
   | New of tok * class_name_reference * arguments option
   | NewAnonClass of tok * arguments option * class_def (* c_name = "!ANON!" *)
@@ -637,9 +635,7 @@ and class_def = {
     (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
     | UseTrait of tok (*use*) * class_name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
-    (* facebook-ext: 'require' can appear only in traits *)
-    | TraitConstraint of
-        tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
+    (* ?? *)
     | ClassType of type_def
  and class_constant = ident * static_scalar_affect
  and class_variable = dname * static_scalar_affect option
