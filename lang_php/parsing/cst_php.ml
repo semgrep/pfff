@@ -88,9 +88,6 @@ and 'a comma_list_dots =
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
  [@@deriving show] (* with tarzan *)
 
-type phpscope = Scope_php.phpscope
-let pp_phpscope _fmt _ =  "??"
-
 (* ------------------------------------------------------------------------- *)
 (* Ident/Name/LongName   *)
 (* ------------------------------------------------------------------------- *)
@@ -212,7 +209,7 @@ and expr =
    * note that IdVar is used not only for local variables
    * but also for globals, class variables, parameters, etc.
    *)
-  | IdVar of dname * phpscope ref
+  | IdVar of dname
   | This of tok
 
   | Call of expr * arguments

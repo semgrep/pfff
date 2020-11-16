@@ -311,7 +311,7 @@ and expr env = function
 
   | Id n -> A.Id (name env n)
 
-  | IdVar (dn, _scope) -> A.Var (dname dn)
+  | IdVar (dn) -> A.Var (dname dn)
   | This tok -> A.IdSpecial (A.This, tok)
 
   (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)

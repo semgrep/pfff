@@ -1242,8 +1242,10 @@ namespace_declaration:
 namespace_use_declaration: 
  | T_USE use_keyword? listc(use_declaration_name) ";" 
    { NamespaceUse ($1, $2, $3, $4) }
+(* TODO
  | T_USE use_keyword?  ";" 
    { NamespaceUse ($1, $2, $3, $4) }
+*)
 
 use_keyword:
   | T_CONST { $1 }

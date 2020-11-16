@@ -159,7 +159,7 @@ let mk_e e = e
 let mk_var (s, tok) = 
   match s with
   | "this" -> This tok
-  | _ -> IdVar (DName(s, tok), Cst_php.noScope())
+  | _ -> IdVar (DName(s, tok))
 
 let rec validate_parameter_list = function
   | [] -> ()
