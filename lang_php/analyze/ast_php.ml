@@ -180,6 +180,7 @@ type expr =
   | Class_get of expr * tok * expr
 
   | New of tok * expr * expr list
+  | NewAnonClass of tok * expr list * class_def
   | InstanceOf of tok * expr * expr
 
   (* pad: could perhaps be at the statement level? The left expr

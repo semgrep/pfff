@@ -207,7 +207,7 @@ and expr =
   | IdVar of dname * phpscope ref
   | This of tok
 
-  | Call of expr * argument comma_list paren
+  | Call of expr * arguments
   | ObjGet of expr * tok (* -> *) * expr
   | ClassGet of class_name_reference * tok (* :: *) * expr
   | ArrayGet of expr * expr option bracket
@@ -243,12 +243,12 @@ and expr =
   (* facebook-ext: *)
   | Collection of name * array_pair comma_list brace
 
-  | New of tok * class_name_reference * argument comma_list paren option
+  | New of tok * class_name_reference * arguments option
+  | NewAnonClass of tok * arguments option * class_def (* c_name = "!ANON!" *)
   | Clone of tok * expr
   | AssignRef of lvalue * tok (* = *) * tok (* & *) * lvalue
   | AssignNew of lvalue * tok (* = *) * tok (* & *) * tok (* new *) *
-        class_name_reference *
-        argument comma_list paren option
+        class_name_reference * arguments option
   | Cast of castOp wrap * expr
   | CastUnset of tok * expr (* ??? *)
   | InstanceOf of expr * tok * class_name_reference
@@ -359,6 +359,7 @@ and expr =
       | Arg    of expr
       | ArgRef of tok * w_variable
       | ArgUnpack of tok * expr
+    and arguments = argument comma_list paren
 
 (* now unified with expr *)
 and lvalue = expr

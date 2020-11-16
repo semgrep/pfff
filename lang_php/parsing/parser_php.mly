@@ -967,8 +967,17 @@ simple_expr:
 
 new_expr:
  | member_expr { $1 }
- | T_NEW member_expr { New ($1, $2, None) }
- | T_NEW member_expr arguments { New ($1, $2, Some $3) }
+ | T_NEW member_expr arguments? { New ($1, $2, $3) }
+ | T_NEW T_CLASS arguments? extends_from implements_list 
+   "{" member_declaration* "}"
+     { let class_ = 
+         { c_type = ClassRegular $2; c_name = Name ("!ANON!", $2); 
+           c_extends = $4; c_tparams = None;
+           c_implements = $5; c_body = $6, $7, $8;
+           c_attrs = None; c_enum_type = None; }
+       in
+       NewAnonClass ($1, $3, class_)
+     }
 
 call_expr:
  | member_expr arguments { Call ($1, $2) }

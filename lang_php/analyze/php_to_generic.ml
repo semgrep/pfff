@@ -264,6 +264,13 @@ and expr =
       G.DotAccess (v1, t, G.EDynamic v2)
   | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
       G.Call (G.IdSpecial(G.New, t), fb ((v1::v2) |> List.map G.expr_to_arg))
+
+  | NewAnonClass (t, args, cdef) -> 
+      let (_ent, cdef) = class_def cdef in
+      let args = list expr args in
+      let anon_class = G.AnonClass cdef in
+      G.Call (G.IdSpecial(G.New, t), 
+        fb ((anon_class::args) |> List.map G.expr_to_arg))
   | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(G.Instanceof, t), 
          fb([v1;v2] |> List.map G.expr_to_arg))

@@ -1016,6 +1016,7 @@ and expr env x =
 
   | New (tok, e, es) ->
       expr env (Call (Class_get(e, tok, Id[ ("__construct", tok)]), fb es))
+  | NewAnonClass _ -> raise Todo
 
   (* -------------------------------------------------- *)
   | InstanceOf (_, e1, e2) ->

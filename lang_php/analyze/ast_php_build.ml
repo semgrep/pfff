@@ -393,6 +393,15 @@ and expr env = function
       in
       let cn = class_name_reference env cn in
       A.New (tok, cn, args)
+  | NewAnonClass (tok, args, cdef) ->
+      let args =
+        match args with
+        | None -> []
+        | Some (_, cl, _) -> List.map (argument env) (comma_list cl)
+      in
+      let cdef = class_def env cdef in
+      A.NewAnonClass (tok, args, cdef)
+      
   | Clone (tok, e) ->
       A.Call (A.Id [A.builtin "clone", wrap tok], fb [expr env e])
   | AssignRef (e1, tokeq, tokref, e2) ->
