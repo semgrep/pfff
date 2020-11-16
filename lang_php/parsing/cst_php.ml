@@ -52,7 +52,7 @@ open Common
  *)
 
 (*****************************************************************************)
-(* The AST related types *)
+(* Token (leaf) *)
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
@@ -127,9 +127,9 @@ type name =
    | LateStatic of tok
   [@@deriving show { with_path = false }] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Types *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 type hint_type =
  | Hint of name (* only self/parent, no static *) *
@@ -168,9 +168,10 @@ and ptype =
   | ArrayTy
   | ObjectTy
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Expression *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+
 (* I used to have a 'type expr = exprbis * exp_type_info' but it complicates
  * many patterns when working on expressions, and it turns out I never
  * implemented the type annotater. It's easier to do such an annotater on
@@ -384,9 +385,10 @@ and w_variable = lvalue
   * literal strings or class constants. *)
  and string_const_expr = expr
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Statement *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+
 (* By introducing Lambda, expr and stmt are now mutually recursive *)
 and stmt =
     | ExprStmt of expr * tok (* ; *)
@@ -482,6 +484,13 @@ and stmt =
  * type.
  *)
 and stmt_and_def = stmt
+
+(*****************************************************************************)
+(* Definitions *)
+(*****************************************************************************)
+(* todo: split in entity * def_kind, like in AST_generic, which would
+ * allow anon classes.
+ *)
 
 (* ------------------------------------------------------------------------- *)
 (* Function (and method) definition *)
@@ -697,9 +706,10 @@ and namespace_use_rule =
  | ImportNamespace of qualified_ident
  | AliasNamespace of qualified_ident * tok (* as *) * ident
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* User attributes, a.k.a annotations *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+
 (* HPHP extension similar to http://en.wikipedia.org/wiki/Java_annotation *)
 and attribute =
   | Attribute of string wrap
@@ -707,9 +717,10 @@ and attribute =
 
 and attributes = attribute comma_list angle
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* The toplevels elements *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+
 (* For parsing reasons and estet I think it's better to differentiate
  * nested functions and toplevel functions.
  * update: sure? ast_php_simple simplify things.
@@ -742,9 +753,10 @@ and toplevel =
  and program = toplevel list
  [@@deriving show { with_path = false }] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Entity and any *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+
 (* The goal of the entity type is to lift up important entities which
  * are originally nested in the AST such as methods.
  *
