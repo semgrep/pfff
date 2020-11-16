@@ -299,6 +299,16 @@ list_sep(X,Sep):
 %inline
 listc(X): list_sep(X, ",") { $1 }
 
+(* Like above, but skipping the separate tokens.
+ * We deviate from pure CST towards an AST for a few constructs 
+ *)
+list_sep2(X,Sep):
+ | X                      { [$1] }
+ | list_sep2(X,Sep) Sep X  { $1 @ [$3] }
+
+%inline
+listc2(X): list_sep2(X, ",") { $1 }
+
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
@@ -1278,9 +1288,14 @@ namespace_use_declaration:
    { [NamespaceUse ($1, $2, $3, $4)] }
  | T_USE use_keyword?
    TANTISLASH? namespace_name TANTISLASH 
-   "{" listc(namespace_use_group_clause) "}"
+   "{" listc2(namespace_use_group_clause) "}"
   ";" 
-   { raise Todo }
+   { $7 |> List.map (fun (_use_kwd_opt_TODO, name, alias_opt) ->
+       let full_name = (qiopt $3 $4) @ name in
+       NamespaceUse ($1, $2, [Left (full_name, alias_opt)], $9)
+      )
+   }
+
 
 use_keyword:
   | T_CONST { $1 }
