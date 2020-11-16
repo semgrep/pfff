@@ -53,7 +53,8 @@ module G = AST_generic
  * 
  * Note that we still want to be close to the original code so that
  * error reported on the IL can be mapped back to error on the original code
- * (source "maps").
+ * (source "maps"), or more importantly semantic information computed
+ * on the IL (e.g., types, constness) can be mapped back to the generic AST.
  *
  * history:
  *  - cst_php.ml (was actually called ast_php.ml)
@@ -164,7 +165,7 @@ type lval = {
 (* Expression *)
 (*****************************************************************************)
 
-(* We use use 'exp' instead of 'expr' to accentuate the difference 
+(* We use 'exp' instead of 'expr' to accentuate the difference 
  * with AST_generic.expr. 
  * Here 'exp' does not contain any side effect!
  *)
