@@ -70,25 +70,25 @@ let o2l = Common.opt_to_list
 (* Tokens *)
 (*************************************************************************)
 
-%token <Cst_php.info> TUnknown (* unrecognized token *)
-%token <Cst_php.info> EOF
+%token <Parse_info.t> TUnknown (* unrecognized token *)
+%token <Parse_info.t> EOF
 
 (*-----------------------------------------*)
 (* The space/comment tokens *)
 (*-----------------------------------------*)
 (* coupling: Token_helpers.is_real_comment *)
-%token <Cst_php.info> TSpaces TNewline
+%token <Parse_info.t> TSpaces TNewline
 
 (* not mentionned in this grammar. filtered in parse_php.ml *)
-%token <Cst_php.info> T_COMMENT T_DOC_COMMENT
+%token <Parse_info.t> T_COMMENT T_DOC_COMMENT
 
 (* when use preprocessor and want to mark removed tokens as commented *)
-%token <Cst_php.info> TCommentPP
+%token <Parse_info.t> TCommentPP
 
 (*-----------------------------------------*)
 (* The normal tokens *)
 (*-----------------------------------------*)
-%token <string * Cst_php.info>
+%token <string * Parse_info.t>
  T_LNUMBER T_DNUMBER
  (* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident. *)
  T_IDENT T_VARIABLE
@@ -96,13 +96,13 @@ let o2l = Common.opt_to_list
  (* used only for offset of array access inside strings *)
  T_NUM_STRING
  T_STRING_VARNAME
-(*in original: %token <Cst_php.info> T_CHARACTER T_BAD_CHARACTER *)
+(*in original: %token <Parse_info.t> T_CHARACTER T_BAD_CHARACTER *)
 
 (*-----------------------------------------*)
 (* Keyword tokens *)
 (*-----------------------------------------*)
 
-%token <Cst_php.info>
+%token <Parse_info.t>
  T_IF T_ELSE T_ELSEIF T_ENDIF
  T_DO  T_WHILE   T_ENDWHILE  T_FOR     T_ENDFOR T_FOREACH T_ENDFOREACH
  T_SWITCH  T_ENDSWITCH T_CASE T_DEFAULT    T_BREAK T_CONTINUE
@@ -133,7 +133,7 @@ let o2l = Common.opt_to_list
 (* Punctuation tokens *)
 (*-----------------------------------------*)
 
-%token <Cst_php.info>
+%token <Parse_info.t>
  T_OBJECT_OPERATOR "->" T_ARROW "=>" T_DOUBLE_ARROW "==>"
  T_OPEN_TAG  T_CLOSE_TAG T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
  T_START_HEREDOC    T_END_HEREDOC
@@ -173,19 +173,19 @@ let o2l = Common.opt_to_list
 (*-----------------------------------------*)
 (* PHP language extensions: *)
 (*-----------------------------------------*)
-%token <Cst_php.info> T_YIELD T_AWAIT
-%token <Cst_php.info> T_SUPER
+%token <Parse_info.t> T_YIELD T_AWAIT
+%token <Parse_info.t> T_SUPER
 
 (* phpext: for hack and also for semgrep *)
-%token <Cst_php.info> T_ELLIPSIS "..."
+%token <Parse_info.t> T_ELLIPSIS "..."
 (* semgrep-ext: *)
-%token <Cst_php.info> LDots "<..." RDots "...>"
+%token <Parse_info.t> LDots "<..." RDots "...>"
 
 
 (* lexing hack to parse lambda params properly *)
-%token <Cst_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
+%token <Parse_info.t> T_LAMBDA_OPAR T_LAMBDA_CPAR
 
-%token <Cst_php.info> T_ENUM
+%token <Parse_info.t> T_ENUM
 
 (*************************************************************************)
 (* Priorities *)
@@ -275,7 +275,7 @@ top_statement:
  | constant_declaration       { ConstantDef $1 }
  | type_declaration           { TypeDef $1 }
  | namespace_declaration      { $1 }
- | namespace_use_declaration            { $1 }
+ | namespace_use_declaration  { $1 }
 
 sgrep_spatch_pattern:
  | expr                         EOF { Expr $1 }

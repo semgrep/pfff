@@ -24,7 +24,15 @@ open Common
  * PHP 5.4 (e.g. traits) as well as support for many Facebook
  * extensions (XHP, generators, annotations, generics, collections,
  * type definitions, implicit fields via constructor parameters).
- * update: I removed XHP to simplify.
+ * 
+ * Update: I removed many facebook extensions to simplify (e.g., XHP).
+ * Moreover, this CST is mostly used for semgrep now, so we may
+ * gradually transform it into ast_php.ml to avoid an extra intermediate
+ * when converting from PHP to the generic AST. 
+ * For example, use Foo\Bar\{A, B} is not represented faithfully anymore
+ * in this CST, and it's unsugared in use Foo\Bar\A and use Foo\Bar\B
+ * (like in ast_php.ml).
+ * 
  *
  * A CST is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
@@ -63,7 +71,6 @@ open Common
  * transformation field that makes possible spatch.
  *)
 type tok = Parse_info.t
-and info = tok
 
 (* shortcuts to annotate some information with token/position information *)
 and 'a wrap = 'a * tok
@@ -142,10 +149,7 @@ type hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * (tok * hint_type) option (* return type *)
      ) paren
- | HintTypeConst of
-     hint_type   (* lhs *)
-     * tok       (* '::' *)
-     * hint_type (* rhs *)
+ | HintTypeConst of  hint_type   (* lhs *) * tok (*'::'*) * hint_type (* rhs *)
  | HintVariadic of tok * hint_type option
 
  and type_args = hint_type comma_list single_angle
@@ -725,6 +729,7 @@ and attributes = attribute comma_list angle
  * update: sure? ast_php_simple simplify things.
  * Also it's better to group the toplevel statements together (StmtList below),
  * so that in the database later they share the same id.
+ * update: meh
  *
  * Note that nested functions are usually under a if(defined(...)) at
  * the toplevel. There is no ifdef in PHP so they reuse 'if'.

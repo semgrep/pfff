@@ -7,9 +7,9 @@ val token_kind_of_tok: Parser_php.token -> Parse_info.token_kind
 
 (*x: token_helpers_php.mli *)
 val info_of_tok : 
-  Parser_php.token -> Cst_php.info
+  Parser_php.token -> Parse_info.t
 val visitor_info_of_tok : 
-  (Cst_php.info -> Cst_php.info) -> Parser_php.token -> Parser_php.token
+  (Parse_info.t -> Parse_info.t) -> Parser_php.token -> Parser_php.token
 (*x: token_helpers_php.mli *)
 val line_of_tok  : Parser_php.token -> int
 (*x: token_helpers_php.mli *)
