@@ -59,8 +59,36 @@
 open Common
 
 open Cst_php
-module H = Parser_php_mly_helper
 module PI = Parse_info
+
+let mk_param s =
+  { p_type = None;
+    p_attrs = None;
+    p_ref = None;
+    p_name = DName s;
+    p_default = None;
+    p_modifier = None;
+    p_variadic = None;
+  }
+
+let mk_var (s, tok) = 
+  match s with
+  | "this" -> This tok
+  | _ -> IdVar (DName(s, tok))
+
+let rec validate_parameter_list = function
+  | [] -> ()
+  | Middle3 _ :: params  -> validate_parameter_list_empty params
+  | Left3 param :: params ->
+      if param.p_variadic <> None 
+      then validate_parameter_list_empty params
+      else validate_parameter_list params
+  | Right3 _ :: params -> validate_parameter_list params
+
+and validate_parameter_list_empty = function
+  | [] -> ()
+  | Right3 _ :: params -> validate_parameter_list_empty params
+  | _ -> raise Parsing.Parse_error
 
 let o2l = Common.opt_to_list
 
@@ -68,6 +96,7 @@ let qiopt a b =
   match a with
   | None -> b
   | Some t -> QITok t::b
+
 %}
 
 (*************************************************************************)
@@ -268,7 +297,7 @@ listc(X): list_sep(X, ",") { $1 }
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
-main: top_statement* EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
+main: top_statement* EOF { $1 @ [FinalDef $2] }
 
 top_statement:
  | statement                  { StmtList [$1] }
@@ -489,7 +518,7 @@ unticked_function_declaration:
  async_opt T_FUNCTION is_reference ident type_params_opt
    "(" parameter_list ")"
    return_type? function_body
-   {  H.validate_parameter_list $7;
+   {  validate_parameter_list $7;
       { f_tok = $2; f_ref = $3; f_name = Name $4; f_params = ($6, $7, $8);
        f_tparams = $5;
        f_return_type = $9; f_body = $10;
@@ -528,17 +557,17 @@ parameter: attributes? ctor_modifier? type_php? parameter_bis
 
 parameter_bis:
  | T_VARIABLE
-     { Left3 (H.mk_param $1) }
+     { Left3 (mk_param $1) }
  | TAND T_VARIABLE
-     { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1} }
+     { let p = mk_param $2 in Left3 {p with p_ref=Some $1} }
  | T_VARIABLE TEQ static_scalar
-     { let p = H.mk_param $1 in Left3 {p with p_default=Some($2,$3)} }
+     { let p = mk_param $1 in Left3 {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
-     { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
+     { let p = mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
  | "..." T_VARIABLE
-     { let p = H.mk_param $2 in Left3 {p with p_variadic=Some $1; p_type=Some(HintVariadic ($1, None))} }
+     { let p = mk_param $2 in Left3 {p with p_variadic=Some $1; p_type=Some(HintVariadic ($1, None))} }
  | TAND "..." T_VARIABLE
-     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2; p_type=Some(HintVariadic ($2, None))} }
+     { let p = mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2; p_type=Some(HintVariadic ($2, None))} }
  (* varargs extension *)
  | "..."
      { Middle3 $1 }
@@ -686,7 +715,7 @@ method_declaration:
      "(" parameter_list ")"
      return_type?
      method_body
-     { H.validate_parameter_list $7;
+     { validate_parameter_list $7;
        let body, function_type = $10 in
        ({ f_tok = $2; f_ref = $3; f_name = Name $4; f_tparams = $5;
           f_params = ($6, $7, $8); f_return_type = $9;
@@ -927,7 +956,7 @@ expr:
  | async_opt T_FUNCTION is_reference "(" parameter_list ")" 
    lexical_vars return_type?
    "{" inner_statement* "}"
-   { H.validate_parameter_list $5;
+   { validate_parameter_list $5;
      let params = ($4, $5, $6) in
        let body = ($9, $10, $11) in
        Lambda ($7, { f_tok = $2;f_ref = $3;f_params = params; f_body = body;
@@ -1012,8 +1041,8 @@ primary_expr:
 (* php 5.3 late static binding *)
  | T_STATIC             { Id (LateStatic $1) }
 
- | T_VARIABLE { H.mk_var $1 }
- | "$$" { H.mk_var ("$$", $1) }
+ | T_VARIABLE { mk_var $1 }
+ | "$$" { mk_var ("$$", $1) }
 
  | "$" primary_expr         { Deref($1, $2) }
  | "$" "{" expr "}" { Deref($1, BraceIdent($2, $3, $4)) }
@@ -1089,11 +1118,11 @@ encaps:
  | T_ENCAPSED_AND_WHITESPACE
      { EncapsString $1 }
  | T_VARIABLE
-     { EncapsVar (H.mk_var $1)  }
+     { EncapsVar (mk_var $1)  }
  | T_VARIABLE "[" encaps_var_offset "]"
-     { EncapsVar (ArrayGet (H.mk_var $1,($2,Some $3,$4)))}
+     { EncapsVar (ArrayGet (mk_var $1,($2,Some $3,$4)))}
  | T_VARIABLE "->" T_IDENT
-     { EncapsVar (ObjGet(H.mk_var $1, $2, Id (XName [QI (Name $3)])))}
+     { EncapsVar (ObjGet(mk_var $1, $2, Id (XName [QI (Name $3)])))}
 
  (* for ${beer}s. Note that this rule does not exist in the original PHP
     * grammar. Instead only the case with a "[" after the T_STRING_VARNAME
@@ -1107,13 +1136,13 @@ encaps:
        (* this is not really a T_VARIABLE, bit it's still conceptually
         * a variable so we build it almost like above
         *)
-       let var = H.mk_var $2 in
+       let var = mk_var $2 in
        EncapsDollarCurly ($1, var, $3)
      }
 
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  "[" expr "]"  "}"
      {
-       let lval = ArrayGet(H.mk_var $2, ($3, Some $4, $5))
+       let lval = ArrayGet(mk_var $2, ($3, Some $4, $5))
        in
        EncapsDollarCurly ($1,  lval, $6)
      }
@@ -1134,7 +1163,7 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
- | T_VARIABLE   { H.mk_var $1 }
+ | T_VARIABLE   { mk_var $1 }
  | T_NUM_STRING {
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...
@@ -1152,25 +1181,25 @@ lambda_expr:
  | T_VARIABLE lambda_body
      {
        let sl_tok, sl_body = $2 in
-       let sl_params = SLSingleParam (H.mk_param $1) in
+       let sl_params = SLSingleParam (mk_param $1) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [] }
      }
  | T_ASYNC T_VARIABLE lambda_body
      {
        let sl_tok, sl_body = $3 in
-       let sl_params = SLSingleParam (H.mk_param $2) in
+       let sl_params = SLSingleParam (mk_param $2) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)] }
      }
  | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type? lambda_body
      {
-       H.validate_parameter_list $2;
+       validate_parameter_list $2;
        let sl_tok, sl_body = $5 in
        let sl_params = SLParams ($1, $2, $3) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = []; }
      }
  | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type? lambda_body
      {
-       H.validate_parameter_list $3;
+       validate_parameter_list $3;
        let sl_tok, sl_body = $6 in
        let sl_params = SLParams ($2, $3, $4) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)]; }
@@ -1235,17 +1264,18 @@ namespace_declaration:
  | T_NAMESPACE namespace_name ";"
      { NamespaceDef ($1, $2, $3) }
  | T_NAMESPACE namespace_name "{" top_statement* "}"
-     { NamespaceBracketDef ($1, Some $2, ($3, H.squash_stmt_list $4, $5)) }
+     { NamespaceBracketDef ($1, Some $2, ($3, $4, $5)) }
  | T_NAMESPACE                "{" top_statement* "}"
-     { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
+     { NamespaceBracketDef ($1, None, ($2, $3, $4)) }
 
 namespace_use_declaration: 
- | T_USE use_keyword? listc(use_declaration_name) ";" 
+ | T_USE use_keyword? listc(namespace_use_clause) ";" 
    { NamespaceUse ($1, $2, $3, $4) }
-(* TODO
- | T_USE use_keyword?  ";" 
-   { NamespaceUse ($1, $2, $3, $4) }
-*)
+ | T_USE use_keyword?
+   TANTISLASH? namespace_name TANTISLASH 
+   "{" listc(namespace_use_group_clause) "}"
+  ";" 
+   { raise Todo }
 
 use_keyword:
   | T_CONST { $1 }
@@ -1255,12 +1285,15 @@ namespace_name:
  | ident                           { [QI (Name $1)] }
  | namespace_name TANTISLASH ident { $1 @ [QITok $2; QI (Name $3)] }
 
-use_declaration_name:
- | TANTISLASH? namespace_name            
-    { ImportNamespace (qiopt $1 $2) }
- | TANTISLASH? namespace_name T_AS ident 
-    { AliasNamespace (qiopt $1 $2, $3, Name $4) }
+namespace_use_clause: 
+  TANTISLASH? namespace_name namespace_aliasing_clause?
+    { (qiopt $1 $2, $3) }
 
+namespace_use_group_clause: 
+ use_keyword? namespace_name namespace_aliasing_clause? 
+ { $1, $2, $3 }
+
+namespace_aliasing_clause: T_AS ident { $1, Name $2 }
 
 qualified_name:
  | namespace_name                        { XName $1 }

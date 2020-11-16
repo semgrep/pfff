@@ -706,9 +706,8 @@ and static_var = dname * static_scalar_affect option
    and static_scalar_affect = tok (* = *) * static_scalar
 
 (* the qualified_ident can have a leading '\' *)
-and namespace_use_rule =
- | ImportNamespace of qualified_ident
- | AliasNamespace of qualified_ident * tok (* as *) * ident
+and namespace_use_rule = qualified_ident * alias option
+  and alias = tok (* as *) * ident
 
 (*****************************************************************************)
 (* User attributes, a.k.a annotations *)

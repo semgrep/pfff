@@ -136,11 +136,14 @@ and toplevel env st =
       in
       [A.NamespaceDef (tok, qi, (t1, toplevels env xs, t2))]
   | NamespaceUse (tok, _kwdopt, xs, _) ->
-      xs |> uncomma |> List.map (function
-      | ImportNamespace qu ->
-          A.NamespaceUse (tok, qualified_ident env qu, None)
-      | AliasNamespace (qu, _tok, id) ->
-          A.NamespaceUse (tok, qualified_ident env qu, Some (ident env id))
+      xs |> uncomma |> List.map (fun (qu, alias_opt) ->
+          let qu = qualified_ident env qu in
+          let alias_opt = 
+            match alias_opt with
+            | None -> None
+            | Some (_t, id) -> Some (ident env id)
+          in
+          A.NamespaceUse (tok, qu, alias_opt)
       )
 
 (* ------------------------------------------------------------------------- *)
