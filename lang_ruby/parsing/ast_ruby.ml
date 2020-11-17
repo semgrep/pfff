@@ -161,6 +161,10 @@ type binary_op =
   | Op_MATCH    (* =~ *)
   | Op_NMATCH   (* !~ *)
 
+  (* note that one of the binary argument might be a fake nil, because
+   * 42.. is equivalent to 42..nil. 
+   * See https://ruby-doc.org/core-2.6.1/Range.html
+   *)
   | Op_DOT2     (* .. *)
 
   (* only in DotAccess method_name or MethodDef; Never in Binop *)
@@ -466,6 +470,9 @@ let sm = function
 let cmn = function
   | NameConstant id -> Id (id, ID_Uppercase)
   | NameScope x -> ScopedId x
+
+(* use in endless range, to convert (42..) in (42..nil) *)
+let fake_nil tok = Literal (Nil tok)
 
 let opt_stmts_to_stmts = function
   | None -> []
