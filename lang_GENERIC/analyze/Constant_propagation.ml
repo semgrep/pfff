@@ -287,8 +287,8 @@ let propagate2 lang prog =
                 with Not_found -> raise Impossible
               in
               if (!(stats.lvalue) = 1) &&
-                (* restrict to Python Globals for now, but could be extended *)
-                lang = Lang.Python &&
+                (* restrict to Python/Ruby Globals for now *)
+                (lang = Lang.Python || lang = Lang.Ruby) &&
                 kind = Global
               then begin
                   id_info.id_const_literal := Some literal;

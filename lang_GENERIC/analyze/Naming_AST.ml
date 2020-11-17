@@ -569,7 +569,7 @@ let resolve2 lang prog =
              (match !(env.in_lvalue), lang with
              (* first use of a variable can be a VarDef in some languages *)
              (* type propagation not necessary because this does not hold true for Java or Go *)
-             | true, Lang.Python (* Ruby? PHP? *) 
+             | true, (Lang.Python | Lang.Ruby) (* PHP? *) 
                when is_local_or_global_ctx env lang ->
                (* mostly copy-paste of VarDef code *)
                let sid = Ast.gensym () in
