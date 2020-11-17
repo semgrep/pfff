@@ -45,9 +45,6 @@ let string = id
 let fake s = Parse_info.fake_info s
 let fb = G.fake_bracket
 
-let stmt1 xs =
-  G.Block (fb xs)
-
 let nonbasic_entity id_or_e =
   { G.name = id_or_e; attrs = []; info = G.empty_id_info(); tparams = [] }
 
@@ -113,7 +110,7 @@ let rec expr = function
   | CodeBlock ((t1,_,t2), params_opt, xs) ->
       let params = match params_opt with None -> [] | Some xs -> xs in
       let params = list formal_param params in
-      let st = G.Block (t1, stmts xs, t2) in
+      let st = G.Block (t1, list_stmts xs, t2) in
       let def = { G.fparams = params; frettype = None; fbody = st;
                   fkind = G.LambdaKind, t1} in
       G.Lambda def
@@ -375,26 +372,26 @@ and expr_as_stmt = function
 and stmt st = 
   match st with
   | Block (t1, xs, t2) -> 
-      let xs = stmts xs in
+      let xs = list_stmts xs in
       G.Block (t1, xs, t2)
   | If (t, e, st, elseopt) ->
       let e = expr e in
-      let st = stmts st |> stmt1 in
+      let st = list_stmt1 st in
       let elseopt = option_tok_stmts elseopt in
       G.If (t, e, st, elseopt)
   | While (t, _bool, e, st) ->
       let e = expr e in
-      let st = stmts st |> stmt1 in
+      let st = list_stmt1 st in
       G.While (t, e, st)
   | Until (t, _bool, e, st) ->
       let e = expr e in
       let special = G.IdSpecial (G.Op (G.Not), t) in
       let e = G.Call (special, fb [G.Arg e]) in
-      let st = stmts st |> stmt1 in
+      let st = list_stmt1 st in
       G.While (t, e, st)
   | Unless (t, e, st, elseopt) ->
       let e = expr e in
-      let st = stmts st |> stmt1 in
+      let st = list_stmt1 st in
       let elseopt = option_tok_stmts elseopt in
       let special = G.IdSpecial (G.Op (G.Not), t) in
       let e = G.Call (special, fb [G.Arg e]) in
@@ -407,7 +404,7 @@ and stmt st =
   | For (t1, pat, t2, e, st) ->
       let pat = pattern pat in
       let e = expr e in
-      let st = stmts st |> stmt1 in
+      let st = list_stmt1 st in
       let header = G.ForEach (pat, t2, e) in
       G.For (t1, header, st)
 
@@ -438,7 +435,7 @@ and stmt st =
         match stopt with
         | None -> []
         | Some (t, sts) ->
-            let st = stmts sts |> stmt1 in
+            let st = list_stmt1 sts in
             [[G.Default t], st]
       in
       G.Switch (t, eopt, whens @ default)
@@ -447,7 +444,7 @@ and stmt st =
 
 and when_clause (t, pats, sts) = 
   let pats = list pattern pats in
-  let st = stmts sts |> stmt1 in
+  let st = list_stmt1 sts in
   pats |> List.map (fun pat ->
       G.Case (t, pat)),
   st
@@ -477,7 +474,7 @@ and type_ e =
 and option_tok_stmts x =
   match x with 
   | None -> None
-  | Some (_t, xs) -> Some (stmts xs |> stmt1)
+  | Some (_t, xs) -> Some (list_stmt1 xs)
 
 and definition def = 
   match def with
@@ -543,11 +540,11 @@ and definition def =
       G.DefStmt (ent, G.ModuleDef def)
 
   | BeginBlock (_t, (t1, st, t2)) ->
-      let st = stmts st in
+      let st = list_stmts st in
       let st = G.Block (t1, st, t2) in
       G.OtherStmtWithStmt (G.OSWS_BEGIN, None, st)
   | EndBlock (_t, (t1, st, t2)) ->
-      let st = stmts st in
+      let st = list_stmts st in
       let st = G.Block (t1, st, t2) in
       G.OtherStmtWithStmt (G.OSWS_END, None, st)
 
@@ -562,23 +559,23 @@ and definition def =
 and body_exn x = 
   match x with
   | { body_exprs = xs; rescue_exprs = []; ensure_expr = None; else_expr = None}
-    -> stmts xs |> stmt1
+    -> list_stmt1 xs
   | { body_exprs = xs; 
       rescue_exprs = catches; ensure_expr = finally_opt; 
       else_expr = elseopt} -> 
-      let body = stmts xs |> stmt1 in
+      let body = list_stmt1 xs in
       let catches = list rescue_clause catches in
       let finally_opt =
         match finally_opt with
         | None -> None
         | Some (t, sts) -> 
-            let st = stmts sts |> stmt1 in
+            let st = list_stmt1 sts in
             Some (t, st)
       in
       (match elseopt with
       | None -> G.Try (fake "try", body, catches, finally_opt)
       | Some (_t, sts) -> 
-         let st = stmts sts |> stmt1 in
+         let st = list_stmt1 sts in
          let try_ = G.Try (fake "try", body, catches, finally_opt) in
          let st = G.Block (fb [try_; st]) in
          G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st)
@@ -586,7 +583,7 @@ and body_exn x =
       )
 
 and rescue_clause (t, exns, exnvaropt, sts) = 
-  let st = stmts sts |> stmt1 in
+  let st = list_stmt1 sts in
   let exns = list exception_ exns in
   match exns, exnvaropt with
   | [], None -> 
@@ -608,11 +605,47 @@ and exception_ e =
   (* TODO: should pass the possible id in exnvaropt above here? *)
   G.PatVar (t, None)
 
-and stmts xs = 
+(* similar to Python_to_generic.list_stmt1 *)
+and list_stmt1 xs =
+  match (list expr_as_stmt xs) with
+  (* bugfix: We do not want actually to optimize and remove the
+   * intermediate Block because otherwise sgrep will not work
+   * correctly with a list of stmt. 
+   *
+   * old: | [e] -> e
+   *
+   * For example
+   * if $E:
+   *   ...
+   *   foo()
+   *
+   * will not match code like
+   *
+   * if True:
+   *   foo()
+   * 
+   * because above we have a Block ([Ellipsis; foo()] and down we would
+   * have just (foo()). We do want Block ([foo()]].
+   *
+   * Unless the body is actually just a metavar, in which case we probably
+   * want to match a list of stmts, as in
+   *
+   *  if $E:
+   *    $S
+   *
+   * in which case we remove the G.Block around it.
+   * hacky ...
+   *)
+  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when G.is_metavar_name s
+      -> x
+  | xs -> G.Block (fb xs)
+
+(* was called stmts, but you should either use list_stmt1 or list_stmts *)
+and list_stmts xs = 
   list expr_as_stmt xs
 
 let  program xs = 
-  stmts xs
+  list_stmts xs
 
 let any x = 
   match x with
@@ -623,8 +656,8 @@ let any x =
       | _ -> G.E (expr x)
       )
   | S2 x -> G.S (stmt x)
-  | Ss xs -> G.Ss (stmts xs)
-  | Pr xs -> G.Ss (stmts xs)
+  | Ss xs -> G.Ss (list_stmts xs)
+  | Pr xs -> G.Ss (list_stmts xs)
   (* sgrep_spatch_pattern just generate E/S2/Ss *)
   | _ -> raise Impossible
 
