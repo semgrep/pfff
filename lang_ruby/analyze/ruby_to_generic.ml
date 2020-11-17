@@ -347,9 +347,13 @@ and literal x =
   | String (skind) ->
       (match skind with
       | Single x -> G.L (G.String x)
+      | Double (l, [], r) -> 
+            let t = PI.combine_infos l [r] in
+            G.L (G.String ("", t))
       | Double (l, [StrChars (s, t2)], r) -> 
             let t = PI.combine_infos l [t2;r] in
             G.L (G.String (s, t))
+      (* TODO: generate interpolation Special *)
       | Double xs -> string_contents_list xs
       | Tick xs -> string_contents_list xs
       )
