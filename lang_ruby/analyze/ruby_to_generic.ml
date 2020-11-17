@@ -236,9 +236,10 @@ and method_name mn =
       ) 
     )
 
-and string_contents_list (_l, xs, _r) =
+and string_contents_list (t1, xs, t2) =
   let xs = list string_contents xs in
-  G.OtherExpr (G.OE_Todo, xs |> List.map (fun e -> G.E e))
+  G.OtherExpr (G.OE_Todo, 
+     [G.Tk t1] @ (xs |> List.map (fun e -> G.E e)) @ [G.Tk t2])
 
 and string_contents = function
   | StrChars s -> G.L (G.String s)
