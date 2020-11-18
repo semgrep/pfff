@@ -370,6 +370,8 @@ and expr env = function
   | Infix ((fop, tok), v) -> A.Infix ((fop, tok), lvalue env v)
   | CondExpr (e1, _, None, _, e3) ->
       let e = expr env e1 in
+      (* less: actually not equivalent if 'e' is a complex expression with
+       * side effect *)
       A.CondExpr (e, e, expr env e3);
   | CondExpr (e1, _, Some e2, _, e3) ->
       A.CondExpr (expr env e1, expr env e2, expr env e3)

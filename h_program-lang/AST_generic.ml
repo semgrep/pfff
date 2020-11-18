@@ -547,10 +547,15 @@ and expr =
       | Concat (* '.' PHP *) | Append (* x[] = ... in PHP, just in AssignOp *)
       | RegexpMatch (* =~, Ruby (and Perl) *) 
       | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
-      | Range (* .. or ..., Ruby *)
-      | Nullish (* ?? in Javascript *)
+      | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
       | NotNullPostfix (* ! in Typescript, postfix operator *)
+      (* See https://en.wikipedia.org/wiki/Elvis_operator.
+       * In PHP we currently generate a Conditional instead of a Binary Elvis.
+       * It looks like the Nullish operator is quite similar to the Elvis
+       * operator, so we may want to merge those operators at some point.
+       *)
       | Elvis (* ?: in Kotlin, can compare possible null value *)
+      | Nullish (* ?? in Javascript *)
 (*e: type [[AST_generic.arithmetic_operator]] *)
 (*s: type [[AST_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
