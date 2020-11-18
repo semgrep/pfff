@@ -550,6 +550,7 @@ and expr =
       | Range (* .. or ..., Ruby *)
       | Nullish (* ?? in Javascript *)
       | NotNullPostfix (* ! in Typescript, postfix operator *)
+      | Elvis (* ?: in Kotlin, nullable string *)
 (*e: type [[AST_generic.arithmetic_operator]] *)
 (*s: type [[AST_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
@@ -1711,7 +1712,7 @@ let is_boolean_operator = function
  | Pow | FloorDiv | MatMult (* Python *)
  | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *) 
  | BitOr | BitXor | BitAnd | BitNot | BitClear (* unary *)
- | Range | Nullish | NotNullPostfix
+ | Range | Nullish | NotNullPostfix | Elvis
   -> false
  | And | Or | Xor | Not
  | Eq     | NotEq     
