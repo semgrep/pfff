@@ -330,6 +330,7 @@ and vof_prepost =
 
 and vof_arithmetic_operator =
   function
+  | Elvis -> OCaml.VSum (("Elvis", []))
   | NotNullPostfix -> OCaml.VSum (("NotNullPostfix", []))
   | Nullish -> OCaml.VSum (("Nullish", []))
   | Range -> OCaml.VSum (("Range", []))
