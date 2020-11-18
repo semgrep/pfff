@@ -102,6 +102,9 @@ module V = Visitor_AST
  *    * check_variables_xxx.ml
  *  - get rid of or unify scope_code.ml, scope_php.ml, and 
  *    ast_generic.resolved_name
+ *  - resolve also types! in java if you import org.foo.Bar then later
+ *    you can simply use Bar x; for a type, but we don't currently resolve
+ *    those.
  *
  * history:
  *  - PHP deadcode detector with global analysis and global code database
