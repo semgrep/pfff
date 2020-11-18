@@ -458,7 +458,10 @@ import_specifier:
  | T_DEFAULT T_AS binding_id  { ("default",$1), Some ($3) }
  | T_DEFAULT                  { ("default",$1), None }
 
-module_specifier: string_literal { $1 }
+module_specifier: 
+  | string_literal { $1 }
+  (* sgrep-ext: allow metavar after 'from', transform it as a string "$X" *)
+  | T_ID { Flag_parsing.sgrep_guard ($1) }
 
 (*----------------------------*)
 (* export *)
