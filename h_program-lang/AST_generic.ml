@@ -550,7 +550,7 @@ and expr =
       | Range (* .. or ..., Ruby *)
       | Nullish (* ?? in Javascript *)
       | NotNullPostfix (* ! in Typescript, postfix operator *)
-      | Elvis (* ?: in Kotlin, nullable string *)
+      | Elvis (* ?: in Kotlin, can compare possible null value *)
 (*e: type [[AST_generic.arithmetic_operator]] *)
 (*s: type [[AST_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
