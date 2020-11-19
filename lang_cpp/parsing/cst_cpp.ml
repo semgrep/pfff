@@ -788,11 +788,15 @@ type program = toplevel list
 (* Any *)
 (*****************************************************************************)
 type any = 
-  | Program of program
-  | Toplevel of toplevel
-  | Cpp of cpp_directive
-  | Stmt of stmt
+  (* for semgrep *)
   | Expr of expr
+  | Stmt of stmt
+  | Stmts of stmt list
+  | Toplevel of toplevel
+  | Toplevels of toplevel list
+
+  | Program of program
+  | Cpp of cpp_directive
   | Type of type_
   | Name of name
 
@@ -803,7 +807,6 @@ type any =
   | ClassMember of class_member
   | OneDecl of onedecl
   | Init of initialiser
-  | Stmts of stmt list
 
   | Constant of constant
 

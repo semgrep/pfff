@@ -245,7 +245,8 @@ rule token = parse
      [' ' '\t']*) as includes) 
     (('"' ([^ '"']+) '"' | 
      '<' [^ '>']+ '>' | 
-      ['A'-'Z''_']+ 
+      (* semgrep: added $ *)
+      ['A'-'Z''_''$']+ 
     ) as filename)
       { (* less: generate 2 info so highlight_cpp.ml can colorize the
          * directive and the filename differently

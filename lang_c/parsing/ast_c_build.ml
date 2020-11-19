@@ -354,7 +354,10 @@ and cpp_directive env x =
         match inc_kind with
         | Local -> "\"" ^ path ^ "\""
         | Standard -> "<" ^ path ^ ">"
-        | Weird -> debug (Cpp x); raise Todo
+        | Weird when AST_generic.is_metavar_name path ->
+            path
+        | Weird -> 
+            debug (Cpp x); raise Todo
       in
       [A.Include (tok, (s, tok))]
   | Undef _ -> debug (Cpp x); raise Todo
@@ -780,4 +783,15 @@ let any any =
   | Expr x -> A.Expr (expr env x)
   | Stmt x -> A.Stmt (stmt env x)
   | Stmts xs -> A.Stmts (List.map (stmt env) xs)
-  | _ -> failwith "Ast_c_simple_build.any: only Expr/Stmt/Stmts handled"
+  | Toplevel x -> 
+      (match toplevel env x with
+      | [x] -> A.Toplevel x
+      | xs -> A.Toplevels xs
+      )
+  | Toplevels xs -> A.Toplevels (List.map (toplevel env) xs |> List.flatten)
+
+  | (Program _|Cpp _|Type _|Name _|BlockDecl2 _|ClassDef _|FuncDef _|
+    FuncOrElse _|ClassMember _|OneDecl _|Init _|Constant _|Argument _|
+    Parameter _|Body _|Info _|InfoList _
+    )
+   -> failwith "Ast_c_simple_build.any: only Expr/Stmt/Stmts handled"

@@ -317,9 +317,11 @@ toplevel_aux:
 (*************************************************************************)
 
 sgrep_spatch_pattern:
- | expr      EOF { Expr $1 }
- | statement EOF { Stmt $1 }
- | statement statement+ EOF { Stmts ($1::$2) }
+ | expr                 EOF  { Expr $1 }
+ | statement            EOF  { Stmt $1 }
+ | statement statement+ EOF  { Stmts ($1::$2) }
+
+ | cpp_directive        EOF  { Toplevel (CppDirectiveDecl $1) }
 
 (*************************************************************************)
 (* Ident, scope *)

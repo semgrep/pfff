@@ -297,11 +297,14 @@ type program = toplevel list
 (* Any *)
 (* ------------------------------------------------------------------------- *)
 type any =
+  (* for semgrep *)
   | Expr of expr
   | Stmt of stmt
   | Stmts of stmt list
-  | Type of type_
   | Toplevel of toplevel
+  | Toplevels of toplevel list
+
+  | Type of type_
   | Program of program
 
  [@@deriving show { with_path = false }] (* with tarzan *)

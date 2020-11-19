@@ -391,5 +391,6 @@ let any =
   | Stmts v1 -> let v1 = list stmt v1 in G.Ss v1
   | Type v1 -> let v1 = type_ v1 in G.T v1
   | Toplevel v1 -> let v1 = toplevel v1 in G.S v1
+  | Toplevels v1 -> let v1 = list toplevel v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
 

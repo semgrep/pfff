@@ -253,6 +253,7 @@ and v_any =
   | Stmts v1 -> let v1 = v_list v_stmt v1 in ()
   | Type v1 -> let v1 = v_type_ v1 in ()
   | Toplevel v1 -> let v1 = v_toplevel v1 in ()
+  | Toplevels v1 -> let v1 = v_list v_toplevel v1 in ()
   | Program v1 -> let v1 = v_program v1 in ()
 
 and v_program v = v_list v_toplevel v
