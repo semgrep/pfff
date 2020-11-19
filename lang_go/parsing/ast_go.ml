@@ -406,7 +406,7 @@ let package_and_imports_of_program xs =
   package, imports
 
 (* used in parser_go.mly and Parse_go_tree_sitter.ml *)
-let mk_vars_or_consts ~rev xs type_opt exprs_opt mk_var_or_const = 
+let mk_vars_or_consts ?(rev=false) xs type_opt exprs_opt mk_var_or_const = 
   let xs = if rev then List.rev xs else xs in
   let ys = 
     match exprs_opt with
@@ -424,10 +424,10 @@ let mk_vars_or_consts ~rev xs type_opt exprs_opt mk_var_or_const =
   in
   aux xs ys
 
-let mk_vars ~rev xs type_opt exprs_opt =
-  mk_vars_or_consts ~rev xs type_opt exprs_opt 
+let mk_vars ?rev xs type_opt exprs_opt =
+  mk_vars_or_consts ?rev xs type_opt exprs_opt 
     (fun a b c -> DVar (a,b,c))
 
-let mk_consts ~rev xs type_opt exprs_opt =
-  mk_vars_or_consts ~rev xs type_opt exprs_opt 
+let mk_consts ?rev xs type_opt exprs_opt =
+  mk_vars_or_consts ?rev xs type_opt exprs_opt 
     (fun a b c -> DConst (a,b,c))

@@ -252,28 +252,35 @@ let rev_and_fix_items xs =
 (* Macros *)
 (*************************************************************************)
 
-(* todo: note that this is quadratic, but it avoid the use of List.rev *)
 list_sep(X,Sep):
  | X                      { [$1] }
  | list_sep(X,Sep) Sep X  { $3 :: $1  }
 
+(* TODO: use List.rev here to avoid forcing it at the caller?
+ * Or maybe rewrite to avoid using List.rev (even if quadratic @)
+ * because if the X returns a list (e.g., mk_vars does), then
+ * you may reverse it wrong or just partially!
+ *)
 listsc(X): list_sep(X, ";") { $1 }
 listc(X): list_sep(X, ",") { $1 }
 
-list_sep2(X,Sep):
- | X                      { $1 }
- | list_sep2(X,Sep) Sep X  { $3 @ $1  }
 
-listsc2(X): list_sep2(X, ";") { $1 }
+(* list separated by Sep and possibly terminated by trailing Sep.
+ * This has to be recursive on the right, otherwise s/r conflict.
+ *)
+list_sep_term(X,Sep):
+ | X                       { [$1] }
+ | X Sep                   { [$1] }
+ | X Sep list_sep_term(X,Sep)  { $1 :: $3 }
+
+listsc_t(X): list_sep_term(X, ";") { $1 }
 
 (*************************************************************************)
 (* Toplevel *)
 (*************************************************************************)
 
 file: package ";" imports xdcl_list EOF 
-  { ($1)::
-    (List.rev $3 |> List.map (fun x -> Import x)) @
-    (List.rev $4) }
+  { ($1)::($3 |> List.map (fun x -> Import x)) @ (List.rev $4) }
 
 package: LPACKAGE sym { Package ($1, $2) }
 
@@ -319,8 +326,8 @@ item_list:
 import:
 |   LIMPORT import_stmt 
       { [$2 $1] }
-|   LIMPORT "(" import_stmt_list ";"? ")" 
-      { List.rev $3 |> List.map (fun f -> f $1) }
+|   LIMPORT "(" listsc_t(import_stmt) ")" 
+      {List.map (fun f -> f $1) $3 }
 |   LIMPORT "(" ")" { [] }
 
 import_stmt:
@@ -343,26 +350,25 @@ xdcl:
 |   xfndcl     { [$1] }
 
 common_dcl:
-|   LVAR vardcl  { $2 }
-|   LVAR "(" vardcl_list ";"? ")" { List.rev $3 }
-|   LVAR "(" ")" { [] }
+|   LVAR vardcl                   { $2 }
+|   LVAR "(" listsc_t(vardcl) ")" { List.flatten $3 }
+|   LVAR "(" ")"                  { [] }
 
     (* at least the first const has a value *)
 |   LCONST constdcl { $2 }
 |   LCONST "(" constdcl ";"? ")" { $3 }
-|   LCONST "(" constdcl ";" constdcl1_list ";"? ")" 
-      { $3 @ (List.rev $5) }
+|   LCONST "(" constdcl ";" constdcl1_list ";"? ")"   { $3 @ (List.rev $5) }
 |   LCONST "(" ")" { [] }
 
-|   LTYPE typedcl { [$2] }
-|   LTYPE "(" typedcl_list ";"? ")" { List.rev $3 }
-|   LTYPE "(" ")" { [] }
+|   LTYPE typedcl                   { [$2] }
+|   LTYPE "(" listsc_t(typedcl) ")" { $3 }
+|   LTYPE "(" ")"                   { [] }
 
 
 vardcl:
-|   listc(dcl_name) ntype               { mk_vars ~rev $1 (Some $2) None }
-|   listc(dcl_name) ntype "=" listc(expr) { mk_vars ~rev $1 (Some $2) (Some $4) }
-|   listc(dcl_name)       "=" listc(expr) { mk_vars ~rev $1 None      (Some $3) }
+|   listc(dcl_name) ntype               { mk_vars $1 (Some $2) None }
+|   listc(dcl_name) ntype "=" listc(expr) { mk_vars $1 (Some $2) (Some $4) }
+|   listc(dcl_name)       "=" listc(expr) { mk_vars $1 None      (Some $3) }
 
 (* this enforces the const has a value *)
 constdcl:
@@ -857,23 +863,23 @@ non_expr_type:
 (*************************************************************************)
 
 structtype:
-|   LSTRUCT lbrace structdcl_list ";"? "}" 
-    { TStruct ($1, ($2, List.rev $3, $5)) }
+|   LSTRUCT lbrace listsc_t(structdcl) "}" 
+    { TStruct ($1, ($2, List.flatten $3, $4)) }
 |   LSTRUCT lbrace "}"                      
     { TStruct ($1, ($2, [], $3)) }
 
 structdcl:
 |   listc(new_name) ntype LSTR? 
     { $1 |> List.map (fun id -> Field (id, $2), $3) }
-|         packname      LSTR? { [EmbeddedField (None, $1), $2] }
+|       packname      LSTR? { [EmbeddedField (None, $1), $2] }
 |   "*" packname      LSTR? { [EmbeddedField (Some $1, $2), $3] }
 (* sgrep-ext: *)
 | "..." { [FieldEllipsis $1, None] }
 
 
 interfacetype:
-|   LINTERFACE lbrace interfacedcl_list ";"? "}" 
-    { TInterface ($1, ($2, List.rev $3, $5)) }
+|   LINTERFACE lbrace listsc_t(interfacedcl) "}" 
+    { TInterface ($1, ($2, $3, $4)) }
 |   LINTERFACE lbrace "}"                         
     { TInterface ($1, ($2, [], $3)) }
 
@@ -964,43 +970,24 @@ xdcl_list:
 | (*empty*)    { [] }
 |   xdcl_list xdcl ";" { $2 @ $1 }
 
+(* note that this does not require List.rev in the caller! *)
 imports:
-| (* empty *) { [] }
-| imports import ";" { $2 @ $1 }
+| (* empty *)        { [] }
+| imports import ";" { $1 @ $2 }
 
 (* lists with ";" separator, at least 1 element, usually followed
  * by trailing ; which currently cause s/r conflict when trying
  * to use the listsc() macro. Maybe have to do like in parser_ml.mly
  * to a right recursive rules intead of left-recursive.
  *)
-import_stmt_list:
-|   import_stmt                             { [$1] }
-|   import_stmt_list ";" import_stmt { $3::$1 }
-
-vardcl_list: 
-|   vardcl { $1 }
-|   vardcl_list ";" vardcl { $3 @ $1 }
-
 constdcl1_list:
 |   constdcl1 { $1 }
 |   constdcl1_list ";" constdcl1 { $3 @ $1 }
 
-typedcl_list:
-|   typedcl { [$1] }
-|   typedcl_list ";" typedcl { $3::$1 }
-
-structdcl_list:
-|   structdcl { $1 }
-|   structdcl_list ";" structdcl { $3 @ $1 }
-
-interfacedcl_list:
-|   interfacedcl { [$1] }
-|   interfacedcl_list ";" interfacedcl { $3::$1 }
 
 (*
  * optional things
  *)
 oexpr_list:
-|(*empty*) { None }
-|   listc(expr)  { Some (List.rev $1) }
-
+| (*empty*)    { None }
+| listc(expr)  { Some (List.rev $1) }
