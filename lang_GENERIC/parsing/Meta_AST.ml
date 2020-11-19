@@ -330,6 +330,10 @@ and vof_prepost =
 
 and vof_arithmetic_operator =
   function
+  | NotIs -> OCaml.VSum (("NotIs", []))
+  | Is -> OCaml.VSum (("Is", []))
+  | NotIn -> OCaml.VSum (("NotIn", []))
+  | In -> OCaml.VSum (("In", []))
   | Elvis -> OCaml.VSum (("Elvis", []))
   | NotNullPostfix -> OCaml.VSum (("NotNullPostfix", []))
   | Nullish -> OCaml.VSum (("Nullish", []))
