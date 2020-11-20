@@ -556,6 +556,8 @@ and expr =
        *)
       | Elvis (* ?: in Kotlin, can compare possible null value *)
       | Nullish (* ?? in Javascript *)
+      | In (* in: checks that value belongs to a collection *) | NotIn (* !in *) 
+      | Is (* is: checks value has type *)| NotIs (* !is: *)
 (*e: type [[AST_generic.arithmetic_operator]] *)
 (*s: type [[AST_generic.incr_decr]] *)
     and incr_decr = Incr | Decr (* '++', '--' *)
@@ -1725,6 +1727,7 @@ let is_boolean_operator = function
  | Lt | LtE | Gt | GtE 
  | Cmp | Concat | Append
  | RegexpMatch | NotMatch
+ | In | NotIn | Is | NotIs
    -> true
 (*e: function [[AST_generic.is_boolean_operator]] *)
 

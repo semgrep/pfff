@@ -5,6 +5,10 @@ open AST_generic
 
 let vof_arithmetic_operator =
   function
+  | In -> OCaml.VSum (("In", []))
+  | NotIn -> OCaml.VSum (("NotIn", []))
+  | Is -> OCaml.VSum (("Is", []))
+  | NotIs -> OCaml.VSum (("NotIs", []))
   | Elvis -> OCaml.VSum (("Elvis", []))
   | NotNullPostfix -> OCaml.VSum (("NotNullPostfix", []))
   | Nullish -> OCaml.VSum (("Nullish", []))
