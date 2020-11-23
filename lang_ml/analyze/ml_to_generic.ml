@@ -43,11 +43,6 @@ let fake = G.fake
 
 let add_attrs ent attrs = 
   { ent with G.attrs = attrs }
-
-let id_of_name (id, nameinfo) = 
-  match nameinfo.G.name_qualifier with
-  | None | Some (G.QDots []) -> G.Id (id, G.empty_id_info ())
-  | _ -> G.IdQualified ((id, nameinfo), G.empty_id_info())
   
 (*****************************************************************************)
 (* Entry point *)
@@ -110,7 +105,7 @@ and expr =
       let v3 = tok v3 in
       G.DeepEllipsis (v1, v2, v3)
   | L v1 -> let v1 = literal v1 in G.L v1
-  | Name v1 -> let v1 = name v1 in id_of_name v1
+  | Name v1 -> let v1 = name v1 in G.id_of_name v1
   | Constructor ((v1, v2)) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
@@ -181,7 +176,7 @@ and expr =
       )
   | New ((v1, v2)) -> let v1 = tok v1 and v2 = name v2 in 
                       G.Call (G.IdSpecial (G.New, v1), 
-                              G.fake_bracket [G.Arg (id_of_name v2)])
+                              G.fake_bracket [G.Arg (G.id_of_name v2)])
   | ObjAccess ((v1, t, v2)) -> 
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in
