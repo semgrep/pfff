@@ -36,6 +36,9 @@ open Common2.Infix
  *    braces, commas, semicolons, etc. No ParenExpr. No FinalDef. No
  *    NotParsedCorrectly. The only token information kept is for identifiers
  *    for error reporting. See name below.
+ *    update: actually we keep more tokens now because of semgrep.
+ *  - Few C++ constructs and no ifdefs (they are skipped, and just
+ *    one branch is converted to ast_c)
  *  - ...
  *  - no nested struct, they are lifted to the toplevel
  *  - no anonymous structure (an artificial name is gensym'ed)
