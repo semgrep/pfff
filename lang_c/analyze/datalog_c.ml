@@ -160,7 +160,7 @@ let instrs_of_expr env e =
 
   let rec instr_of_expr e =
   match e with
-  | A.Int _ | A.Float _ | A.String _ | A.Char _ 
+  | A.Int _ | A.Float _ | A.String _ | A.Char _  | A.Bool _ | A.Null _
   | A.Id _
   | A.Unary (_, (A2.DeRef, _)) 
   | A.Call _ | A.ArrayAccess _ | A.RecordPtAccess _

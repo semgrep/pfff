@@ -817,7 +817,7 @@ and expr_toplevel env x =
 
 (* can assume we are in Uses phase *)
 and expr env = function
-  | Int _ | Float _ | Char _ -> ()
+  | Int _ | Float _ | Char _ | Bool _ | Null _ -> ()
   | String _  -> ()
  
   (* Note that you should go here only when it's a constant. You should

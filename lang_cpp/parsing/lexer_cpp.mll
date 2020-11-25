@@ -70,9 +70,15 @@ let keyword_table = Common.hash_of_list [
   "short",  (fun ii -> Tshort ii); "int",    (fun ii -> Tint ii); 
   "long",   (fun ii -> Tlong ii); 
   "float",  (fun ii -> Tfloat ii); "double", (fun ii -> Tdouble ii);  
+
   (* c++ext: *)
   "bool", (fun ii -> Tbool ii);
   "true", (fun ii -> Ttrue ii); "false", (fun ii -> Tfalse ii);
+
+  (* tree-sitter-c: *)
+  "TRUE", (fun ii -> Ttrue ii); "FALSE", (fun ii -> Tfalse ii);
+  "NULL", (fun ii -> Tnull ii);
+
   "wchar_t", (fun ii -> Twchar_t ii);
   (* c++0x: TODO *)
   "char16_t", (fun ii -> Twchar_t ii); "char32_t", (fun ii -> Twchar_t ii);
@@ -89,6 +95,7 @@ let keyword_table = Common.hash_of_list [
 
   "const",    (fun ii -> Tconst ii); 
   "volatile", (fun ii -> Tvolatile ii); 
+
   (* c99:  *)
   "__restrict__",    (fun ii -> Trestrict ii);  
   (* gccext: and also a c++ext: *)
@@ -98,6 +105,7 @@ let keyword_table = Common.hash_of_list [
   "explicit", (fun ii -> Texplicit ii);
   "mutable", (fun ii -> Tmutable ii);
   "virtual", (fun ii -> Tvirtual ii);
+
   (* c++0x:  *)
   "constexpr", (fun ii -> Tconstexpr ii);
   "thread_local", (fun ii -> Tthread_local ii);
@@ -121,6 +129,7 @@ let keyword_table = Common.hash_of_list [
   "sizeof", (fun ii -> Tsizeof ii);   
   (* gccext: *)
   "typeof", (fun ii -> Ttypeof ii);
+
   (* c++ext: *)
   "typename" ,   (fun ii -> Ttypename ii);
   (* c++0x: *)
@@ -158,7 +167,6 @@ let keyword_table = Common.hash_of_list [
   "static_cast"      , (fun ii -> Tstatic_cast ii);
   "reinterpret_cast" , (fun ii -> Treinterpret_cast ii);
 
-  (* c++0x: *)
  ]
 
 let error_radix s = 
@@ -491,7 +499,6 @@ rule token = parse
         then error ("identifier with dollar: "  ^ s) lexbuf;
         TIdent (s, tokinfo lexbuf)
       }
-
 
   (* ----------------------------------------------------------------------- *)
   (* C constant *)

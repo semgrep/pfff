@@ -296,6 +296,7 @@ let token_kind_of_tok t =
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
+  | Tnull ii -> Tnull (f ii)
   | LDots (ii) -> LDots (f ii)
   | RDots (ii) -> RDots (f ii)
   | Tdecltype i -> Tdecltype (f i)

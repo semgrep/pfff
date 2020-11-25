@@ -346,6 +346,7 @@ and expr =
     | MultiString of string wrap list  (* can contain MacroString *)
     (* c++ext: *)
     | Bool of bool wrap
+    | Nullptr of tok
 
     and isWchar = IsWchar | IsChar
 

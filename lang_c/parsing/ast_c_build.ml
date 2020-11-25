@@ -589,8 +589,8 @@ and constant _env x =
   | Float ((s, ii), _) -> A.Float (s, ii)
   | Char ((s, ii), _) -> A.Char (s, ii)
   | String ((s, ii), _) -> A.String (s, ii)
-
-  | Bool _ -> raise CplusplusConstruct
+  | Nullptr ii -> A.Null ii
+  | Bool x -> A.Bool x
   | MultiString iis -> A.String ("TODO", iis |> List.hd |> snd)
 
 and argument env x =

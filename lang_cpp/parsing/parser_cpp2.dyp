@@ -310,6 +310,8 @@ let dyp_merge xs =
 %token <Parse_info.t> TPtrOpStar
 %token <Parse_info.t> TDotStar
 
+%token <Parse_info.t> Tnull
+
 %token <Parse_info.t> TColCol 
 
 /*(* fresh_token: for constructed object, in parsing_hacks_cpp.ml *)*/

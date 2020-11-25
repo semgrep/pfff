@@ -181,6 +181,8 @@ module PI = Parse_info
    Texplicit Tmutable
 %token <Parse_info.t> TPtrOpStar TDotStar
 
+%token <Parse_info.t> Tnull
+
 %token <Parse_info.t> TColCol "::"
 
 (* fresh_token: for constructed object, in parsing_hacks_cpp.ml *)
@@ -606,7 +608,8 @@ literal:
  | Ttrue   { C (Bool (true, $1)) }
  | Tfalse  { C (Bool (false, $1)) }
  (*c++0x: *)
- | Tnullptr { ExprTodo $1 }
+ | Tnullptr { C (Nullptr $1) }
+ | Tnull    { C (Nullptr $1) }
 
 (*----------------------------*)
 (* c++ext: *)

@@ -131,7 +131,9 @@ and expr =
   | Float of string wrap
   | String of string wrap
   | Char of string wrap
-  (* c-ext:? Bool, Null *)
+  (* c-ext:? *)
+  | Null of tok
+  | Bool of bool wrap
 
   (* can be a cpp or enum constant (e.g. FOO), or a local/global/parameter
    * variable, or a function name.

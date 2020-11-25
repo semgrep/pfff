@@ -469,7 +469,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii String
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean
-    | T.Tnullptr ii -> 
+    | T.Tnullptr ii | T.Tnull ii -> 
         tag ii Null
 
     | T.TPtVirg ii

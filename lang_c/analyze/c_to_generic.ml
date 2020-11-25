@@ -149,6 +149,8 @@ and expr =
   | Float v1 -> let v1 = wrap string v1 in G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
   | Char v1 -> let v1 = wrap string v1 in G.L (G.Char v1)
+  | Bool v1 -> let v1 = wrap id v1 in G.L (G.Bool v1)
+  | Null v1 -> G.L (G.Null v1)
 
   | Id v1 -> let v1 = name v1 in 
              G.Id (v1, G.empty_id_info())
