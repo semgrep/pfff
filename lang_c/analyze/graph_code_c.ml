@@ -517,26 +517,38 @@ let rec extract_defs_uses env ast =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 
-and toplevel env x =
+and toplevel env x = 
+  match x with
+  | DefStmt x -> definition env x
+  | DirStmt x -> directive env x
+
+and directive env x =
   match x with
   | Define (name, body) ->
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
-      hook_def env x;
+      hook_def env (DirStmt x);
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
   | Macro (name, params, body) -> 
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
-      hook_def env x;
+      hook_def env (DirStmt x);
       let env = { env with locals = ref 
             (params |> List.map (fun p -> Ast.str_of_name p, None(*TAny*)))
       } in
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
+  (* less: should analyze if s has the form "..." and not <> and
+   * build appropriate link? but need to find the real File
+   * corresponding to the string, so may need some -I
+   *)
+  | Include _ -> ()
 
+and definition env x = 
+  match x with
   | FuncDef def | Prototype def -> 
       let name = def.f_name in
       let typ = Some (TFunction def.f_type) in
@@ -570,7 +582,7 @@ and toplevel env x =
           let name = if static then new_name_if_defs env name else name in
           let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
           type_ env (TFunction def.f_type);
-          hook_def env x;
+          hook_def env (DefStmt x);
           let xs = snd def.f_type |> Common.map_filter (fun x -> 
             match x.p_name with 
             | None -> None 
@@ -583,7 +595,7 @@ and toplevel env x =
       | _ -> raise Impossible
       )
 
-  | Global v -> 
+  | VarDef v -> 
       let { v_name = name; v_type = t; v_storage = sto; v_init = eopt } = v in
       (* can have code like 'Readfn chardraw;' that looks like a global but
        * is actually a Prototype. 
@@ -615,7 +627,7 @@ and toplevel env x =
       | E.Global ->
           let name = if static then new_name_if_defs env name else name in
           let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
-          hook_def env x;
+          hook_def env (DefStmt x);
           type_ env t;
           if env.phase = Uses
           then 
@@ -655,7 +667,7 @@ and toplevel env x =
         else begin
           Hashtbl.add env.structs s def;
           let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
-          hook_def env x;
+          hook_def env (DefStmt x);
           (* this is used for InitListExpr *)
           let fields = flds |> unbracket |> Common.map_filter (function
             | { fld_name = Some name; _ } -> Some (Ast.str_of_name name)
@@ -697,7 +709,7 @@ and toplevel env x =
         then Common2.opt (expr_toplevel env) eopt
       );
       (* subtle: called here after all the local renames have been created! *)
-      hook_def env x;
+      hook_def env (DefStmt x);
 
 
   (* I am not sure about the namespaces, so I prepend strings *)
@@ -725,12 +737,6 @@ and toplevel env x =
       (* no hook_def here *)
       (* type_ env typ; *)
       ()
-
-  (* less: should analyze if s has the form "..." and not <> and
-   * build appropriate link? but need to find the real File
-   * corresponding to the string, so may need some -I
-   *)
-  | Include _ -> ()
  
 
 and toplevels env xs = List.iter (toplevel env) xs

@@ -230,8 +230,6 @@ and var_decl = {
  and initialiser = expr
  and storage = Extern | Static | DefaultStorage
 
- [@@deriving show { with_path = false }] (* with tarzan *)
-
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
@@ -241,13 +239,23 @@ and var_decl = {
  * Anyway, AST_generic allows this too.
  *)
 
+and definition = 
+  (* less: what about ForwardStructDecl? for mutually recursive structures? 
+   * probably can deal with it by using typedefs as intermediates.
+   *)
+  | StructDef of struct_def
+  | TypeDef of type_def
+  | EnumDef of enum_def
+  | FuncDef of func_def
+  | VarDef of var_decl (* also contain extern decl *)
+  | Prototype of func_def (* empty body *)
+
 and func_def = {
   f_name: name;
   f_type: function_type;
   f_body: stmt list bracket;
   f_static: bool;
 }
-
 
 
 and struct_def = {
@@ -275,18 +283,7 @@ and type_def = name * type_
 (* Cpp *)
 (*****************************************************************************)
 
-and define_body = 
-  | CppExpr of expr (* actually const_expr when in Define context *)
-  (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
-   * We have no way to reference a CppStmt in 'stmt' since MacroStmt
-   * is not here? So we can probably remove this constructor no?
-   *)
-  | CppStmt of stmt
-
-(*****************************************************************************)
-(* Program *)
-(*****************************************************************************)
-and toplevel =
+and directive =
   | Include of tok * string wrap (* path *)
   (* todo: tok * name * define_body *)
   | Define of name * define_body 
@@ -294,15 +291,21 @@ and toplevel =
   | Macro of name * (name list) * define_body
   (* todo: OtherDirective *)
 
-  (* less: what about ForwardStructDecl? for mutually recursive structures? 
-   * probably can deal with it by using typedefs as intermediates.
-   *)
-  | StructDef of struct_def
-  | TypeDef of type_def
-  | EnumDef of enum_def
-  | FuncDef of func_def
-  | Global of var_decl (* also contain extern decl *)
-  | Prototype of func_def (* empty body *)
+  and define_body = 
+    | CppExpr of expr (* actually const_expr when in Define context *)
+    (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
+     * We have no way to reference a CppStmt in 'stmt' since MacroStmt
+     * is not here? So we can probably remove this constructor no?
+     *)
+    | CppStmt of stmt
+
+(*****************************************************************************)
+(* Program *)
+(*****************************************************************************)
+and toplevel =
+  | DefStmt of definition
+  | DirStmt of directive
+
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 type program = toplevel list

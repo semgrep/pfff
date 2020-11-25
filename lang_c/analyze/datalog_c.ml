@@ -606,7 +606,21 @@ let return_fact env instr =
 (* ------------------------------------------------------------------------- *)
 (* Defs *)
 (* ------------------------------------------------------------------------- *)
-let facts_of_def env def =
+let rec facts_of_def env x =
+ match x with
+ | DefStmt x -> facts_of_definition env x
+ | DirStmt x -> facts_of_directive env x
+
+and facts_of_directive env def =
+  match def with
+  | Define (name, _body) ->
+      [D.PointTo (var_of_global env name, heap_of_cst env name)]
+  | Macro _ ->
+      (* todo? *)
+      []
+  | Include _ -> raise Impossible
+
+and facts_of_definition env def =
   match def with
   | StructDef def -> 
       def.s_flds |> AST_generic.unbracket |> Common.map_filter (fun fld ->
@@ -625,16 +639,12 @@ let facts_of_def env def =
           | _ -> None
           )
       )
-  | Define (name, _body) ->
-      [D.PointTo (var_of_global env name, heap_of_cst env name)]
+
   | EnumDef def ->
       let (_name, xs) = def in
       xs |> List.map (fun (name, _eopt) ->
         D.PointTo (var_of_global env name, heap_of_cst env name)
       )
-  | Macro _ ->
-      (* todo? *)
-      []
   | FuncDef def ->
       let (_ret, params) = def.f_type in
       (params |> Common.index_list_1 |> Common.map_filter (fun (p, i) ->
@@ -656,7 +666,7 @@ let facts_of_def env def =
         D.PointTo (var_of_global env def.f_name, var_of_global env def.f_name);
        ]
        )
-  | Global var ->      
+  | VarDef var ->      
       let name = var.v_name in
 
       let rec aux current_v current_type =
@@ -684,4 +694,4 @@ let facts_of_def env def =
       in
       aux name var.v_type
 
-  | Include _ | TypeDef _ | Prototype _ -> raise Impossible
+  | TypeDef _ | Prototype _ -> raise Impossible

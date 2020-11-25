@@ -353,7 +353,7 @@ let define_body =
   | CppExpr v1 -> let v1 = expr v1 in G.E v1
   | CppStmt v1 -> let v1 = stmt v1 in G.S v1
 
-let toplevel =
+let directive =
   function
   | Include (t, v1) -> let v1 = wrap string v1 in 
       G.DirectiveStmt (G.ImportAs (t, G.FileName v1, None))
@@ -368,6 +368,8 @@ let toplevel =
       in
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.MacroDef { G.macroparams = v2; G.macrobody = [v3]})
+
+and definition = function
   | StructDef v1 -> let v1 = struct_def v1 in
       G.DefStmt v1
   | TypeDef v1 -> let v1 = type_def v1 in
@@ -376,10 +378,14 @@ let toplevel =
       G.DefStmt v1
   | FuncDef v1 -> let v1 = func_def v1 in
       G.DefStmt v1
-  | Global v1 -> let v1 = var_decl v1 in
+  | VarDef v1 -> let v1 = var_decl v1 in
       G.DefStmt v1
   | Prototype v1 -> let v1 = func_def v1 in 
       G.DefStmt v1
+
+let toplevel = function
+  | DefStmt x -> definition x
+  | DirStmt x -> directive x
 
 let program v = 
  list toplevel v

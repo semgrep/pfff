@@ -132,8 +132,10 @@ and toplevels env xs =
 
 and toplevel env x =
   match x with
-  | DeclElem decl -> declaration env decl
-  | CppDirectiveDecl x -> cpp_directive env x
+  | DeclElem decl -> 
+      declaration env decl |> List.map (fun x -> A.DefStmt x)
+  | CppDirectiveDecl x -> 
+      [A.DirStmt (cpp_directive env x)]
 
   | (MacroVarTop (_, _)|MacroTop (_, _, _)) ->
       debug (Toplevel x); raise Todo
@@ -177,7 +179,7 @@ and declaration env x =
                   f_static = (storage =*= A.Static);
                   f_body = G.fake_bracket [];
                 }
-            | _ -> A.Global x
+            | _ -> A.VarDef x
           ))
       | _ -> 
         debug (Toplevel (DeclElem x)); raise Todo
@@ -341,13 +343,13 @@ and cpp_directive env x =
       let v = cpp_def_val x env def_val in
       (match def_kind with
       | DefineVar ->
-          [A.Define (name, v)]
+          A.Define (name, v)
       | DefineFunc(args) ->
-          [A.Macro(name, 
+          A.Macro(name, 
                  args |> unparen |> uncomma |> List.map (fun (s, ii) ->
                    (s, ii)
                  ),
-                 v)]
+                 v)
       )
   | Include (tok, inc_kind, path) ->
       let s =
@@ -359,9 +361,9 @@ and cpp_directive env x =
         | Weird -> 
             debug (Cpp x); raise Todo
       in
-      [A.Include (tok, (s, tok))]
+      A.Include (tok, (s, tok))
   | Undef _ -> debug (Cpp x); raise Todo
-  | PragmaAndCo _ -> []
+  | PragmaAndCo _ -> raise Todo
 
 and cpp_def_val for_debug env x = 
   match x with
