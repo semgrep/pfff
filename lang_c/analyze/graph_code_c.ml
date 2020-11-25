@@ -940,7 +940,7 @@ and expr env = function
   | GccConstructor (t, e) ->
       type_ env t;
       expr env e
-  | Defined (_t, e) -> expr env e
+  | Defined (_t, _id) -> ()
   | Ellipses _ | DeepEllipsis _ -> ()
 
 

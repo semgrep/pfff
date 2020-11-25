@@ -164,8 +164,8 @@ and expr =
   | ConcatString xs ->
       G.Call (G.IdSpecial (G.ConcatString (G.SequenceConcat), fake " "),
         fb (xs |> List.map (fun x -> G.Arg (G.L (G.String x)))))
-  | Defined (t, e) -> 
-      let e = expr e in
+  | Defined (t, id) -> 
+      let e = G.Id (id, G.empty_id_info()) in
       G.Call (G.IdSpecial (G.Defined, t), fb [G.Arg e])
 
   | Id v1 -> let v1 = name v1 in 

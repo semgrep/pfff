@@ -185,7 +185,7 @@ and expr =
    * only valid in cpp boolean expression context (e.g., #if argument).
    * This is actually not used because we skip ifdef directives anyway.
    *)
-  | Defined of tok * expr
+  | Defined of tok * name
 
   (* sgrep-ext: *)
   | Ellipses of tok
