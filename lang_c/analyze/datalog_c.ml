@@ -78,8 +78,10 @@ let long_format = ref true
 (*****************************************************************************)
 let debug any =
   let s = Ast_c.show_any any in
+(*
   let ii = Lib_parsing_c.ii_of_any any in
   pr2 (spf "PB: %s" (Parse_info.string_of_info (List.hd ii)));
+*)
   pr2 s
 
 (* location are unique normally so nice to generate unique readable names *)
@@ -97,11 +99,17 @@ let loc_of env tok =
  * TODO: good enough with the way types are represented? Need 
  * Ast_c.Pointer of tok * type_ ? 
  *)
-let tok_of_type t =
+let tok_of_type _t =
+  raise Todo
+(*
   List.hd (Lib_parsing_c.ii_of_any (A.Type t))
+*)
 
-let tokwrap_of_expr e =
+let tokwrap_of_expr _e =
+  raise Todo
+(*
   (), List.hd (Lib_parsing_c.ii_of_any (A.Expr e))
+*)
 
 let var_of_instr instr =
   match instr with

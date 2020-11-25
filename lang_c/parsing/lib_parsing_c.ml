@@ -14,7 +14,7 @@
  *)
 
 module FT = File_type
-module V = Visitor_c
+(*module V = Visitor_c*)
 
 (*****************************************************************************)
 (* Filenames *)
@@ -35,7 +35,7 @@ let find_source_files_of_dir_or_files xs =
 (*****************************************************************************)
 (* ii_of_any *)
 (*****************************************************************************)
-
+(*
 let ii_of_any any =
   let globals = ref [] in
   let visitor = V.mk_visitor { V.default_visitor with
@@ -44,5 +44,5 @@ let ii_of_any any =
   in
   visitor any;
   List.rev !globals
-
+*)
 

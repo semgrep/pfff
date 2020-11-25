@@ -1,13 +1,13 @@
 open Common
 
-module V = Visitor_c
+(*module V = Visitor_c*)
 
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
 
 let test_dump_cil file =
-  let ast = Parse_c.parse_program file in
+  let _ast = Parse_c.parse_program file in
 
   let env = { Datalog_c.
      (* only thing that actually matters *)
@@ -22,7 +22,9 @@ let test_dump_cil file =
      facts = ref [];
   }
   in
-
+  ignore(env);
+  raise Todo
+(*
   (* todo: actually need to build a correct set of locals! 
    * also when do int v = ...; we just see the ... in kexpr,
    * and so there will be a _v_xx = ... but not the  = _v_xx;
@@ -39,6 +41,7 @@ let test_dump_cil file =
   in
   visitor (Ast_c.Program ast);
   ()
+*)
   
 
 let test_dataflow_c file =
