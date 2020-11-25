@@ -35,7 +35,6 @@ module UTF8 = struct
     let buf = Buffer.create 4096 in
     let dec =
       Uutf.decoder
-        ~nln:(`ASCII (Uchar.of_char '\n'))
         ~encoding:`UTF_8 src
     in
     let rec translate () =
