@@ -75,7 +75,7 @@ open Common2.Infix
  *)
 
 (*****************************************************************************)
-(* The AST related types *)
+(* Tokens *)
 (*****************************************************************************)
 
 type tok = Parse_info.t
@@ -88,16 +88,16 @@ type 'a wrap = 'a * tok
 type 'a bracket = tok * 'a * tok
  [@@deriving show] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Name *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 type name = string wrap
  [@@deriving show] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Types *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 (* less: qualifier (const/volatile) *)
 type type_ =
@@ -112,7 +112,7 @@ type type_ =
   | TEnumName of name
   | TTypeName of name
 
- (* less:  '...' varargs support *)
+ (* todo:  '...' varargs support, ParamClassic, ParamDots *)
  and function_type = (type_ * parameter list)
 
   and parameter = {
@@ -123,14 +123,15 @@ type type_ =
 
  and struct_kind = Struct | Union
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Expression *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 and expr =
   | Int of string wrap
   | Float of string wrap
   | String of string wrap
   | Char of string wrap
+  (* c-ext:? Bool, Null *)
 
   (* can be a cpp or enum constant (e.g. FOO), or a local/global/parameter
    * variable, or a function name.
@@ -158,10 +159,12 @@ and expr =
   | Unary of expr * Cst_cpp.unaryOp wrap
   | Binary of expr * Cst_cpp.binaryOp wrap * expr
 
+  (* todo: tok *)
   | CondExpr of expr * expr * expr
   (* should be a statement ... *)
   | Sequence of expr * expr
 
+  (* todo: tok *)
   | SizeOf of (expr, type_) Common.either
 
   (* should appear only in a variable initializer, or after GccConstructor *)
@@ -169,6 +172,8 @@ and expr =
   | RecordInit of (name * expr) list bracket
   (* gccext: kenccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
+
+  (* todo: Defined, only in cpp context *)
 
   (* sgrep-ext: *)
   | Ellipses of tok
@@ -181,13 +186,14 @@ and const_expr = expr
 
  [@@deriving show { with_path = false }] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Statement *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 type stmt = 
   | ExprSt of expr * tok
   | Block of stmt list bracket
 
+  (* todo: tok * stmt option *)
   | If of tok * expr * stmt * stmt option
   | Switch of tok * expr * case list
 
@@ -209,13 +215,14 @@ type stmt =
     | Case of tok * expr * stmt list
     | Default of tok * stmt list
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Variables *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 and var_decl = {
   v_name: name;
   v_type: type_;
+  (* todo: wrap? make it a more general v_attr? *)
   v_storage: storage;
   v_init: initialiser option;
 }
@@ -225,20 +232,25 @@ and var_decl = {
 
  [@@deriving show { with_path = false }] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Definitions *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
-type func_def = {
+(* This used to not be mutually recursive with stmt, but tree-sitter-c
+ * allows nested directives and defs so simpler to allow this too.
+ * Anyway, AST_generic allows this too.
+ *)
+
+and func_def = {
   f_name: name;
   f_type: function_type;
   f_body: stmt list bracket;
   f_static: bool;
 }
- [@@deriving show { with_path = false }] (* with tarzan *)
 
 
-type struct_def = {
+
+and struct_def = {
   s_name: name;
   s_kind: struct_kind;
   s_flds: field_def list bracket;
@@ -247,40 +259,40 @@ type struct_def = {
   and field_def = { 
    (* less: bitfield annotation
     * kenccext: the option on fld_name is for inlined anonymous structure.
+    * less: nested include/macros
     *)
     fld_name: name option;
     fld_type: type_;
   }
- [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* less: use a record *)
-type enum_def = name * (name * const_expr option) list
- [@@deriving show { with_path = false }] (* with tarzan *)
+and enum_def = name * (name * const_expr option) list
 
 (* less: use a record *)
-type type_def = name * type_
- [@@deriving show { with_path = false }] (* with tarzan *)
+and type_def = name * type_
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Cpp *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 
-type define_body = 
+and define_body = 
   | CppExpr of expr (* actually const_expr when in Define context *)
   (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
    * We have no way to reference a CppStmt in 'stmt' since MacroStmt
    * is not here? So we can probably remove this constructor no?
    *)
   | CppStmt of stmt
- [@@deriving show { with_path = false }] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Program *)
-(* ------------------------------------------------------------------------- *)
-type toplevel =
+(*****************************************************************************)
+and toplevel =
   | Include of tok * string wrap (* path *)
+  (* todo: tok * name * define_body *)
   | Define of name * define_body 
+  (* todo: tok * name, and handle also '...' paramater *)
   | Macro of name * (name list) * define_body
+  (* todo: OtherDirective *)
 
   (* less: what about ForwardStructDecl? for mutually recursive structures? 
    * probably can deal with it by using typedefs as intermediates.
@@ -296,9 +308,9 @@ type toplevel =
 type program = toplevel list
  [@@deriving show] (* with tarzan *)
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Any *)
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
 type any =
   (* for semgrep *)
   | Expr of expr
