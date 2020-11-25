@@ -37,7 +37,7 @@ open Common2.Infix
  *    NotParsedCorrectly. The only token information kept is for identifiers
  *    for error reporting. See name below.
  *    update: actually we keep more tokens now because of semgrep.
- *  - Few C++ constructs and no ifdefs (they are skipped, and just
+ *  - Few cpp constructs and no ifdefs (they are skipped, and just
  *    one branch is converted to ast_c)
  *  - ...
  *  - no nested struct, they are lifted to the toplevel
@@ -48,7 +48,7 @@ open Common2.Infix
  *  - no Case/Default in statement but instead a focused 'case' type
  * 
  * less: ast_c_simple_build.ml is probably incomplete, but for now
- * is good enough for codegraph purposes on xv6, plan9 and other small C
+ * good enough for codegraph purposes on xv6, plan9 and other small C
  * projects.
  * 
  * related work: 
@@ -70,7 +70,7 @@ open Common2.Infix
  *    library form yet.
  *  - we could also use the AST used by cc in plan9 :)
  * 
- * See lang_cpp/parsing/cst_cpp.ml.
+ * See also lang_cpp/parsing/cst_cpp.ml.
  *
  *)
 
@@ -259,8 +259,9 @@ and func_def = {
 
 
 and struct_def = {
-  s_name: name;
   s_kind: struct_kind;
+  (* gensym'ed when anonymous struct *)
+  s_name: name;
   s_flds: field_def list bracket;
 }
   (* less: could merge with var_decl, but field have no storage normally *)
@@ -285,7 +286,7 @@ and type_def = name * type_
 
 and directive =
   | Include of tok * string wrap (* path *)
-  (* todo: tok * name * define_body *)
+  (* todo: tok * name * define_body option *)
   | Define of name * define_body 
   (* todo: tok * name, and handle also '...' paramater *)
   | Macro of name * (name list) * define_body
