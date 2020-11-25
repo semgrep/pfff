@@ -269,12 +269,11 @@ let rec stmt =
   | DoWhile ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
       G.DoWhile (t, v1, v2)
   | For ((t, v1, v2, v3, v4)) ->
-      let v1 = option expr v1
+      let init = expr_or_vars v1
       and v2 = option expr v2
       and v3 = option expr v3
       and v4 = stmt v4
       in
-      let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
       let header = G.ForClassic (init, v2, v3) in
       G.For (t, header, v4)
   | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1, G.sc)
@@ -287,6 +286,14 @@ let rec stmt =
       G.stmt1 (v1 |> List.map (fun v -> G.DefStmt v))
   | Asm v1 -> let v1 = list expr v1 in 
       G.OtherStmt (G.OS_Asm, v1 |> List.map (fun e -> G.E e))
+
+and expr_or_vars v1 = 
+  match v1 with
+  | Right e ->
+      let e = expr e in
+      [G.ForInitExpr e]
+  | Left _varsTODO ->
+      []
 
 (* todo: should use OtherStmtWithStmt really *)
 and case_stmt = function

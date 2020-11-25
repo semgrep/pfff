@@ -211,7 +211,11 @@ type stmt =
 
   | While of tok * expr * stmt
   | DoWhile of tok * stmt * expr
-  | For of tok * expr option * expr option * expr option * stmt
+  | For of tok * 
+          (var_decl list, expr) Common.either * 
+          expr option * 
+          expr option * 
+          stmt
 
   | Return of tok * expr option
   | Continue of tok | Break of tok

@@ -395,6 +395,11 @@ and cpp_def_val for_debug env x =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 
+and expr_or_vars env x = 
+  match x with
+  | Some e -> let e = expr env e in Right e
+  | None -> Left []
+
 and stmt env st =
   match st with
   | Compound x -> A.Block (compound env x)
@@ -412,7 +417,7 @@ and stmt env st =
           A.DoWhile (t, stmt env st, expr env e)
       | For (t, (_, (est1, _, est2, _, est3), _), st) ->
           A.For (t,
-            Common2.fmap (expr env) est1,
+            expr_or_vars env est1,
             Common2.fmap (expr env) est2,
             Common2.fmap (expr env) est3,
             stmt env st

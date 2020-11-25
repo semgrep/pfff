@@ -776,7 +776,7 @@ and stmt env = function
       expr_toplevel env e;
       stmt env st
   | For (_, e1, e2, e3, st) ->
-      Common2.opt (expr_toplevel env) e1;
+      expr_or_vars env e1;
       Common2.opt (expr_toplevel env) e2;
       Common2.opt (expr_toplevel env) e3;
       stmt env st
@@ -803,6 +803,10 @@ and stmt env = function
         )
 
       )
+
+ and expr_or_vars env = function
+  | Right e -> expr_toplevel env e
+  | Left _vars -> raise Todo
 
  and case env = function
    | Case (_, e, xs) -> 
