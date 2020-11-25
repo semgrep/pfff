@@ -66,6 +66,12 @@ let empty_env () = {
 (* Helpers *)
 (*****************************************************************************)
 
+let gensym_struct cnt = 
+  spf "__anon_struct_%d" cnt
+
+let gensym_enum cnt =
+  spf "__anon_enum_%d" cnt
+
 let debug any =
   let s = Cst_cpp.show_any any in
   pr2 s
@@ -661,7 +667,7 @@ and full_type env x =
           match name_opt with
           | None ->
               incr cnt;
-              let s = spf "__anon_struct_%d" !cnt in
+              let s = gensym_struct !cnt in
               (s, tok)
           | Some n -> name env n
         in
@@ -681,7 +687,7 @@ and full_type env x =
         match name_opt with
         | None ->
             incr cnt;
-            let s = spf "__anon_enum_%d" !cnt in
+            let s = gensym_enum !cnt in
             (s, tok)
         | Some n -> n
       in
