@@ -219,6 +219,7 @@ type stmt =
   | Label of name * stmt
   | Goto of tok * name
 
+  (* todo? remove and use DefStmt VarDef? *)
   | Vars of var_decl list
   (* todo: it's actually a special kind of format, not just an expr *)
   | Asm of expr list
@@ -268,8 +269,13 @@ and definition =
 
 and func_def = {
   f_name: name;
+  (* less: in theory in C you can define 'typedef int F();' and then define a
+   * function like 'F foo { return 1; }' which does not use parenthesis, so we
+   * should not force function_type here and also allow typedefs.
+   *)
   f_type: function_type;
   f_body: stmt list bracket;
+  (* important for codegraph global name resolution to avoid conflicts *)
   f_static: bool;
 }
 
