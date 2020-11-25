@@ -17,8 +17,7 @@ open Common2.Infix
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * A (real) Abstract Syntax Tree for C, not a Concrete Syntax Tree
+(* A (real) Abstract Syntax Tree for C, not a Concrete Syntax Tree
  * as in cst_cpp.ml.
  * 
  * This file contains a simplified C abstract syntax tree. The original
@@ -224,6 +223,10 @@ type stmt =
   (* todo: it's actually a special kind of format, not just an expr *)
   | Asm of expr list
 
+  (* tree-sitter-c: used to be restricted to the toplevel *)
+  | DefStmt of definition
+  | DirStmt of directive
+
   and case =
     | Case of tok * expr * stmt list
     | Default of tok * stmt list
@@ -315,9 +318,8 @@ and directive =
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
-and toplevel =
-  | DefStmt of definition
-  | DirStmt of directive
+(* tree-sitter-c: used to be just DefStmt or DirStmt *)
+and toplevel = stmt
 
  [@@deriving show { with_path = false }] (* with tarzan *)
 
@@ -332,8 +334,6 @@ type any =
   | Expr of expr
   | Stmt of stmt
   | Stmts of stmt list
-  | Toplevel of toplevel
-  | Toplevels of toplevel list
 
   | Type of type_
   | Program of program

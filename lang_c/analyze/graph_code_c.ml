@@ -520,10 +520,7 @@ let rec extract_defs_uses env ast =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 
-and toplevel env x = 
-  match x with
-  | DefStmt x -> definition env x
-  | DirStmt x -> directive env x
+and toplevel env x = stmt env x
 
 and directive env x =
   match x with
@@ -761,6 +758,9 @@ and define_body env v =
  * any entities (expressions do).
  *)
 and stmt env = function
+  | DefStmt x -> definition env x
+  | DirStmt x -> directive env x
+
   | ExprSt (e, _) -> expr_toplevel env e
   | Block (_, xs, _) -> stmts env xs
   | Asm xs -> List.iter (expr_toplevel env) xs

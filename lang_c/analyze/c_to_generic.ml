@@ -250,6 +250,9 @@ and const_expr v =
   
 let rec stmt =
   function
+  | DefStmt x -> definition x
+  | DirStmt x -> directive x
+
   | ExprSt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | If ((t, v1, v2, v3)) ->
@@ -310,7 +313,7 @@ and storage = function
   | Static -> [G.attr G.Static (fake "static")]
   | DefaultStorage -> []
 
-let func_def {
+and func_def {
                  f_name = f_name;
                  f_type = f_type;
                  f_body = f_body;
@@ -328,8 +331,7 @@ let func_def {
     fkind = G.Function, G.fake "";
     }
 
-let rec
-  struct_def { s_name = s_name; s_kind = s_kind; s_flds = s_flds } =
+and struct_def { s_name = s_name; s_kind = s_kind; s_flds = s_flds } =
   let v1 = name s_name in
   let v3 = bracket (list field_def) s_flds in 
   let entity = G.basic_entity v1 [] in
@@ -351,7 +353,7 @@ and field_def { fld_name = fld_name; fld_type = fld_type } =
   opt_to_ident v1, v2
   
 
-let enum_def (v1, v2) =
+and enum_def (v1, v2) =
   let v1 = name v1
   and v2 =
     list
@@ -364,17 +366,17 @@ let enum_def (v1, v2) =
   in
   entity, G.TypeDef ({ G.tbody = G.OrType ors})
 
-let type_def (v1, v2) = let v1 = name v1 and v2 = type_ v2 in
+and type_def (v1, v2) = let v1 = name v1 and v2 = type_ v2 in
   let entity = G.basic_entity v1 [] in
   entity, G.TypeDef ({ G.tbody = G.AliasType v2 })
 
-let define_body =
+and define_body =
   function
   | None -> []
   | Some (CppExpr v1) -> let v1 = expr v1 in [G.E v1]
   | Some (CppStmt v1) -> let v1 = stmt v1 in [G.S v1]
 
-let directive =
+and directive =
   function
   | Include (t, v1) -> let v1 = wrap string v1 in 
       G.DirectiveStmt (G.ImportAs (t, G.FileName v1, None))
@@ -413,9 +415,7 @@ and definition = function
   | Prototype v1 -> let v1 = func_def v1 in 
       G.DefStmt v1
 
-let toplevel = function
-  | DefStmt x -> definition x
-  | DirStmt x -> directive x
+let toplevel x = stmt x
 
 let program v = 
  list toplevel v
@@ -426,7 +426,5 @@ let any =
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
   | Stmts v1 -> let v1 = list stmt v1 in G.Ss v1
   | Type v1 -> let v1 = type_ v1 in G.T v1
-  | Toplevel v1 -> let v1 = toplevel v1 in G.S v1
-  | Toplevels v1 -> let v1 = list toplevel v1 in G.Ss v1
   | Program v1 -> let v1 = program v1 in G.Pr v1
 

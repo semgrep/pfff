@@ -616,6 +616,7 @@ let rec facts_of_def env x =
  match x with
  | DefStmt x -> facts_of_definition env x
  | DirStmt x -> facts_of_directive env x
+ | _ -> raise Impossible
 
 and facts_of_directive env def =
   match def with

@@ -787,10 +787,10 @@ let any any =
   | Stmts xs -> A.Stmts (List.map (stmt env) xs)
   | Toplevel x -> 
       (match toplevel env x with
-      | [x] -> A.Toplevel x
-      | xs -> A.Toplevels xs
+      | [x] -> A.Stmt x
+      | xs -> A.Stmts xs
       )
-  | Toplevels xs -> A.Toplevels (List.map (toplevel env) xs |> List.flatten)
+  | Toplevels xs -> A.Stmts (List.map (toplevel env) xs |> List.flatten)
 
   | (Program _|Cpp _|Type _|Name _|BlockDecl2 _|ClassDef _|FuncDef _|
     FuncOrElse _|ClassMember _|OneDecl _|Init _|Constant _|Argument _|
