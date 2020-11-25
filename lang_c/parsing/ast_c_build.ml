@@ -238,7 +238,7 @@ and parameter env x =
     | None -> ()
     | Some _ -> debug (Parameter x); raise CplusplusConstruct
     );
-    { A.
+    A.ParamClassic { A.
       p_name = 
         (match n with
         (* probably a prototype where didn't specify the name *)
@@ -339,13 +339,13 @@ and storage _env x =
   
 and cpp_directive env x =
   match x with
-  | Define (_tok, name, def_kind, def_val) ->
+  | Define (tok, name, def_kind, def_val) ->
       let v = cpp_def_val x env def_val in
       (match def_kind with
       | DefineVar ->
-          A.Define (name, v)
+          A.Define (tok, name, v)
       | DefineFunc(args) ->
-          A.Macro(name, 
+          A.Macro(tok, name, 
                  args |> unparen |> uncomma |> List.map (fun (s, ii) ->
                    (s, ii)
                  ),
@@ -367,22 +367,22 @@ and cpp_directive env x =
 
 and cpp_def_val for_debug env x = 
   match x with
-  | DefineExpr e -> A.CppExpr (expr env e)
-  | DefineStmt st -> A.CppStmt (stmt env st)
-  | DefineDoWhileZero (_, st, _, _) -> A.CppStmt (stmt env st)
+  | DefineExpr e -> Some (A.CppExpr (expr env e))
+  | DefineStmt st -> Some (A.CppStmt (stmt env st))
+  | DefineDoWhileZero (_, st, _, _) -> Some (A.CppStmt (stmt env st))
   | DefinePrintWrapper (_, (_, e, _), id) -> 
-    A.CppExpr (
+    Some (A.CppExpr (
       A.CondExpr (expr env e,
                   A.Id (name env id),
-                  A.Id (name env id)))
+                  A.Id (name env id))))
 
-  | DefineInit init -> A.CppExpr (initialiser env init)
+  | DefineInit init -> Some (A.CppExpr (initialiser env init))
 
-  | DefineEmpty (* A.CppEmpty*) 
-  | ( DefineFunction _
-    | DefineType _
-    | DefineTodo
-    ) -> 
+  | DefineEmpty -> None
+  | DefineFunction _
+  | DefineType _
+  | DefineTodo
+   -> 
       debug (Cpp for_debug); raise Todo
 
 (* ---------------------------------------------------------------------- *)
@@ -556,10 +556,10 @@ and expr env e =
       A.Call (expr env e,
              (t1, Common.map_filter (argument env) (args |> uncomma), t2))
 
-  | SizeOfExpr (_tok, e) ->
-      A.SizeOf(Left (expr env e))
-  | SizeOfType (_tok, (_, ft, _)) ->
-      A.SizeOf(Right (full_type env ft))
+  | SizeOfExpr (tok, e) ->
+      A.SizeOf(tok, Left (expr env e))
+  | SizeOfType (tok, (_, ft, _)) ->
+      A.SizeOf(tok, Right (full_type env ft))
   | GccConstructor ((_, ft, _), xs) ->
       A.GccConstructor (full_type env ft,
                        initialiser env (InitList xs))
@@ -595,7 +595,7 @@ and constant _env x =
 
 and argument env x =
   match x with
-  | Arg e -> Some (expr env e)
+  | Arg e -> Some (A.Arg (expr env e))
   (* TODO! can't just skip it ... *)
   | ArgType _  | ArgAction _ -> 
       pr2 ("type argument, maybe wrong typedef inference!");

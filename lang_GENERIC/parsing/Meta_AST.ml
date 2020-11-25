@@ -1093,6 +1093,10 @@ and vof_directive =
   | PackageEnd (t) ->
       let t = vof_tok t in
       OCaml.VSum (("PackageEnd", [ t ]))
+  | Pragma ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = OCaml.vof_list vof_any v2
+      in OCaml.VSum (("Pragma", [ v1; v2 ]))
   | OtherDirective ((v1, v2)) ->
       let v1 = vof_other_directive_operator v1
       and v2 = OCaml.vof_list vof_any v2

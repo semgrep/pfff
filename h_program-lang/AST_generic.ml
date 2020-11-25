@@ -1418,6 +1418,7 @@ and directive =
    *)
   | PackageEnd of tok
   (*e: [[AST_generic.directive]] package cases *)
+  | Pragma of ident * any list
   (*s: [[AST_generic.directive]] OtherXxx cases *)
   | OtherDirective of other_directive_operator * any list
   (*e: [[AST_generic.directive]] OtherXxx cases *)
@@ -1432,8 +1433,8 @@ and directive =
   (* Javascript *)
   | OI_Export | OI_ReExportNamespace
 (*e: type [[AST_generic.other_directive_operator]] *)
-  (* C/PHP *)
-  (* TODO: Pragma/Declare, move OE_UseStrict here for JS? *)
+  (* PHP *)
+  (* TODO: Declare, move OE_UseStrict here for JS? *)
   (* Ruby *)
   | OI_Alias | OI_Undef
 

@@ -811,6 +811,10 @@ and map_directive =
       let v1 = map_other_directive_operator v1
       and v2 = map_of_list map_any v2
       in OtherDirective ((v1, v2))
+  | Pragma ((v1, v2)) ->
+      let v1 = map_ident v1
+      and v2 = map_of_list map_any v2
+      in Pragma ((v1, v2))
   | Package ((t, v1)) ->
       let t = map_tok t in
       let v1 = map_dotted_ident v1

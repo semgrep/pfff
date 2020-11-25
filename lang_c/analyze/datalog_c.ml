@@ -161,9 +161,11 @@ let instrs_of_expr env e =
   let rec instr_of_expr e =
   match e with
   | A.Int _ | A.Float _ | A.String _ | A.Char _  | A.Bool _ | A.Null _
+  | A.ConcatString _
   | A.Id _
   | A.Unary (_, (A2.DeRef, _)) 
   | A.Call _ | A.ArrayAccess _ | A.RecordPtAccess _
+  | A.Defined _
   | A.Binary _ 
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
   | A.SizeOf _
@@ -304,11 +306,11 @@ let instrs_of_expr env e =
   (* todo: xalloc, smalloc, and other wrappers? *)
   | A.Call (A.Id ("malloc", tok), (_, es, _)) ->
       (match es with
-      | [SizeOf(Right(t))] -> Alloc (t)
-      | [Binary(e, (Cst_cpp.Arith(Cst_cpp.Mul), _), SizeOf(Right(t)))] ->
+      | [Arg (SizeOf(_, Right(t)))] -> Alloc (t)
+      | [Arg (Binary(e, (Cst_cpp.Arith(Cst_cpp.Mul), _), SizeOf(_, Right(t))))] ->
           let v = var_of_expr e in
           AllocArray(v,t)
-      | [SizeOf(Left(_e))] ->
+      | [Arg (SizeOf(_, Left(_e)))] ->
           (* todo: need potentially to resolve the type of e *)
           (* debug (Expr e); *)
           Alloc (A.TBase ("_unknown_", tok))
@@ -319,7 +321,7 @@ let instrs_of_expr env e =
       )
 
   | A.Call (e, (_, es, _)) ->
-      let vs = List.map var_of_expr es in
+      let vs = List.map var_of_arg es in
       (match e with
       | A.Id name ->
           if is_local env (fst name)
@@ -364,11 +366,11 @@ let instrs_of_expr env e =
       let v = var_of_expr e in
       Lv (ObjField (v, name))
 
-  | A.SizeOf (Left e) ->
+  | A.SizeOf (_t, Left e) ->
       let instr = instr_of_expr e in
       Common.push instr instrs;
       Int ("0_sizeof", tokwrap_of_expr e |> snd)
-  | A.SizeOf (Right t) ->
+  | A.SizeOf (_t, Right t) ->
       Int ("0_sizeof", tok_of_type t)
 
   (* can be in macro context, e.g. #define SEG (struct x) { ... } *)
@@ -377,6 +379,10 @@ let instrs_of_expr env e =
   | _ -> 
     (* hmmm maybe better to have this function return a rvalue option *)
     raise NotSimpleExpr
+
+  and var_of_arg x = 
+    match x with
+    | Arg e -> var_of_expr e
 
   and var_of_expr e =
   match e with
@@ -613,12 +619,12 @@ let rec facts_of_def env x =
 
 and facts_of_directive env def =
   match def with
-  | Define (name, _body) ->
+  | Define (_, name, _body) ->
       [D.PointTo (var_of_global env name, heap_of_cst env name)]
   | Macro _ ->
       (* todo? *)
       []
-  | Include _ -> raise Impossible
+  | Include _ | OtherDirective _ -> raise Impossible
 
 and facts_of_definition env def =
   match def with
@@ -647,7 +653,9 @@ and facts_of_definition env def =
       )
   | FuncDef def ->
       let (_ret, params) = def.f_type in
-      (params |> Common.index_list_1 |> Common.map_filter (fun (p, i) ->
+      (params |> Common.index_list_1 |> Common.map_filter (function
+       | ParamDots _, _ -> None
+       | ParamClassic p, i ->
         match p.p_name with
         | None -> None
         | Some name ->

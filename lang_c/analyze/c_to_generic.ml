@@ -127,17 +127,27 @@ let rec type_ =
   | TTypeName v1 -> 
       let v1 = name v1 in 
       G.TyName ((v1, G.empty_name_info))
+  | TMacroApply (v1, (_lp, v2, _rp)) ->
+      let v1 = name v1 in
+      let v2 = type_ v2 in
+      G.TyNameApply((v1, G.empty_name_info), [G.TypeArg v2])
 
 and function_type (v1, v2) =
   let v1 = type_ v1 and 
   v2 = list (fun x -> G.ParamClassic (parameter x)) v2 in 
   v1, v2
 
-and parameter { p_type = p_type; p_name = p_name } =
+and parameter x =
+  match x with
+  | ParamClassic x -> parameter_classic x
+  | ParamDots _ -> raise Todo
+
+and parameter_classic { p_type = p_type; p_name = p_name } =
   let arg1 = type_ p_type in 
   let arg2 = option name p_name in 
   { G.ptype = Some arg1; pname = arg2; pattrs = []; pdefault = None;
     pinfo = G.empty_id_info ();  }
+
 and struct_kind = function 
   | Struct -> G.OT_StructName
   | Union -> G.OT_UnionName
@@ -151,6 +161,12 @@ and expr =
   | Char v1 -> let v1 = wrap string v1 in G.L (G.Char v1)
   | Bool v1 -> let v1 = wrap id v1 in G.L (G.Bool v1)
   | Null v1 -> G.L (G.Null v1)
+  | ConcatString xs ->
+      G.Call (G.IdSpecial (G.ConcatString (G.SequenceConcat), fake " "),
+        fb (xs |> List.map (fun x -> G.Arg (G.L (G.String x)))))
+  | Defined (t, e) -> 
+      let e = expr e in
+      G.Call (G.IdSpecial (G.Defined, t), fb [G.Arg e])
 
   | Id v1 -> let v1 = name v1 in 
              G.Id (v1, G.empty_id_info())
@@ -193,8 +209,8 @@ and expr =
       G.Conditional (v1, v2, v3)
   | Sequence ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
       G.Seq [v1;v2]
-  | SizeOf v1 -> let v1 = either expr type_ v1 in
-      G.Call (G.IdSpecial (G.Sizeof, fake "sizeof"), 
+  | SizeOf (t, v1) -> let v1 = either expr type_ v1 in
+      G.Call (G.IdSpecial (G.Sizeof, t), 
        (match v1 with
        | Left e -> fb[G.Arg e]
        | Right t -> fb[G.ArgType t]
@@ -224,8 +240,10 @@ and expr =
         fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
 
 and argument v = 
-  let v = expr v in
-  G.Arg v
+  match v with
+  | Arg v  -> 
+    let v = expr v in
+    G.Arg v
 
 and const_expr v = 
   expr v
@@ -352,24 +370,34 @@ let type_def (v1, v2) = let v1 = name v1 and v2 = type_ v2 in
 
 let define_body =
   function
-  | CppExpr v1 -> let v1 = expr v1 in G.E v1
-  | CppStmt v1 -> let v1 = stmt v1 in G.S v1
+  | None -> []
+  | Some (CppExpr v1) -> let v1 = expr v1 in [G.E v1]
+  | Some (CppStmt v1) -> let v1 = stmt v1 in [G.S v1]
 
 let directive =
   function
   | Include (t, v1) -> let v1 = wrap string v1 in 
       G.DirectiveStmt (G.ImportAs (t, G.FileName v1, None))
-  | Define ((v1, v2)) -> 
+  | Define (_t, v1, v2) -> 
     let v1 = name v1 and v2 = define_body v2 in
     let ent = G.basic_entity v1 [] in
-    G.DefStmt (ent, G.MacroDef { G.macroparams = []; G.macrobody = [v2]})
-  | Macro ((v1, v2, v3)) ->
+    G.DefStmt (ent, G.MacroDef { G.macroparams = []; G.macrobody = v2})
+  | Macro (_t, v1, v2, v3) ->
       let v1 = name v1
       and v2 = list name v2
       and v3 = define_body v3
       in
       let ent = G.basic_entity v1 [] in
-      G.DefStmt (ent, G.MacroDef { G.macroparams = v2; G.macrobody = [v3]})
+      G.DefStmt (ent, G.MacroDef { G.macroparams = v2; G.macrobody = v3})
+  | OtherDirective (v1, v2) -> 
+      let v1 = name v1 in
+      let v2 = 
+        match v2 with
+        | None -> []
+        | Some s -> [G.E (G.L (G.String s))]
+      in
+      G.DirectiveStmt (G.Pragma (v1, v2))
+
 
 and definition = function
   | StructDef v1 -> let v1 = struct_def v1 in

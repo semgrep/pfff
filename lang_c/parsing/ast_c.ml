@@ -111,11 +111,17 @@ type type_ =
    *)
   | TEnumName of name
   | TTypeName of name
+  (* tree-sitter-c: kind of poor's man generic via cpp *)
+  | TMacroApply of name * type_ bracket
 
- (* todo:  '...' varargs support, ParamClassic, ParamDots *)
  and function_type = (type_ * parameter list)
 
-  and parameter = {
+  and parameter = 
+   | ParamClassic of parameter_classic
+   (* varargs of c or semgrep ellipsis *)
+   | ParamDots of tok
+
+  and parameter_classic = {
     p_type: type_;
     (* when part of a prototype, the name is not always mentionned *)
     p_name: name option;
@@ -134,6 +140,7 @@ and expr =
   (* c-ext:? *)
   | Null of tok
   | Bool of bool wrap
+  | ConcatString of string wrap list
 
   (* can be a cpp or enum constant (e.g. FOO), or a local/global/parameter
    * variable, or a function name.
@@ -157,7 +164,7 @@ and expr =
   (* less: transform into Call (builtin ...) ? *)
   | Postfix of expr * Cst_cpp.fixOp wrap
   | Infix of expr * Cst_cpp.fixOp wrap
-  (* contains GetRef and Deref!! todo: lift up? *)
+  (* less: contains GetRef and Deref!! lift up? *)
   | Unary of expr * Cst_cpp.unaryOp wrap
   | Binary of expr * Cst_cpp.binaryOp wrap * expr
 
@@ -166,8 +173,7 @@ and expr =
   (* should be a statement ... *)
   | Sequence of expr * expr
 
-  (* todo: tok *)
-  | SizeOf of (expr, type_) Common.either
+  | SizeOf of tok * (expr, type_) Common.either
 
   (* should appear only in a variable initializer, or after GccConstructor *)
   | ArrayInit of (expr option * expr) list bracket
@@ -175,13 +181,18 @@ and expr =
   (* gccext: kenccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
 
-  (* todo: Defined, only in cpp context *)
+  (* tree-sitter-c: 
+   * only valid in cpp boolean expression context (e.g., #if argument).
+   * This is actually not used because we skip ifdef directives anyway.
+   *)
+  | Defined of tok * expr
 
   (* sgrep-ext: *)
   | Ellipses of tok
   | DeepEllipsis of expr bracket
 
-and argument = expr
+and argument = 
+  | Arg of expr
 
 (* really should just contain constants and Id that are #define *)
 and const_expr = expr
@@ -288,11 +299,10 @@ and type_def = name * type_
 
 and directive =
   | Include of tok * string wrap (* path *)
-  (* todo: tok * name * define_body option *)
-  | Define of name * define_body 
-  (* todo: tok * name, and handle also '...' paramater *)
-  | Macro of name * (name list) * define_body
-  (* todo: OtherDirective *)
+  | Define of tok * name * define_body option
+  (* less:  handle also '...' paramater *)
+  | Macro of tok * name * (name list) * define_body option
+  | OtherDirective of string wrap * string wrap option
 
   and define_body = 
     | CppExpr of expr (* actually const_expr when in Define context *)

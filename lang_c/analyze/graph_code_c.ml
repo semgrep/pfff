@@ -228,9 +228,12 @@ let rec expand_typedefs env t =
   | TArray (eopt, x) -> TArray (eopt, expand_typedefs env x)
   | TFunction (ret, params) -> 
       TFunction (expand_typedefs env ret,
-                params |> List.map (fun p ->
-                  { p with p_type = expand_typedefs env p.p_type }
+                params |> List.map (function
+                  | ParamClassic p ->
+                  ParamClassic { p with p_type = expand_typedefs env p.p_type }
+                  | ParamDots t -> ParamDots t
                 ))
+  | TMacroApply _ -> raise Todo
 
 let final_type env t =
   if env.conf.typedefs_dependencies
@@ -524,14 +527,14 @@ and toplevel env x =
 
 and directive env x =
   match x with
-  | Define (name, body) ->
+  | Define (_t, name, body) ->
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
       hook_def env (DirStmt x);
       if env.phase = Uses && env.conf.macro_dependencies
-      then define_body env body
-  | Macro (name, params, body) -> 
+      then Common.do_option (define_body env) body
+  | Macro (_t, name, params, body) -> 
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
@@ -540,12 +543,13 @@ and directive env x =
             (params |> List.map (fun p -> Ast.str_of_name p, None(*TAny*)))
       } in
       if env.phase = Uses && env.conf.macro_dependencies
-      then define_body env body
+      then Common.do_option (define_body env) body
   (* less: should analyze if s has the form "..." and not <> and
    * build appropriate link? but need to find the real File
    * corresponding to the string, so may need some -I
    *)
   | Include _ -> ()
+  | OtherDirective _ -> ()
 
 and definition env x = 
   match x with
@@ -583,7 +587,9 @@ and definition env x =
           let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
           type_ env (TFunction def.f_type);
           hook_def env (DefStmt x);
-          let xs = snd def.f_type |> Common.map_filter (fun x -> 
+          let xs = snd def.f_type |> Common.map_filter (function
+          | ParamDots _ -> None
+          | ParamClassic x -> 
             match x.p_name with 
             | None -> None 
             | Some n -> Some (Ast.str_of_name n, Some x.p_type)
@@ -817,8 +823,8 @@ and expr_toplevel env x =
 
 (* can assume we are in Uses phase *)
 and expr env = function
-  | Int _ | Float _ | Char _ | Bool _ | Null _ -> ()
-  | String _  -> ()
+  | Int _ | Float _ | Char _ | Bool _ | Null _  -> ()
+  | String _ | ConcatString _ -> ()
  
   (* Note that you should go here only when it's a constant. You should
    * catch the use of Id in other contexts before. For instance you
@@ -867,13 +873,13 @@ and expr env = function
              *)
             kind_opt |> Common.do_option (fun kind ->
               add_use_edge { env with ctx = P.NoCtx } (name, kind);
-              exprs { env with ctx = (P.CallCtx (fst name, kind)) } es
+              args { env with ctx = (P.CallCtx (fst name, kind)) } es
             )
            
       (* todo: unexpected form of call? function pointer call? add to stats *)
       | _ -> 
         expr env e;
-        exprs env es
+        args env es
       )
   | Assign (_, e1, e2) -> 
       (* mostly for generating use/read or use/write in prolog *)
@@ -912,7 +918,7 @@ and expr env = function
   (* todo: add deps on field *)
   | RecordInit xs -> xs |> unbracket |> List.map snd |> exprs env
 
-  | SizeOf x ->
+  | SizeOf (_, x) ->
       (match x with
       (* ugly: because of bad typedef inference what we think is an Id 
        * could actually be a TTypename. So add a hack here.
@@ -934,11 +940,15 @@ and expr env = function
   | GccConstructor (t, e) ->
       type_ env t;
       expr env e
+  | Defined (_t, e) -> expr env e
   | Ellipses _ | DeepEllipsis _ -> ()
 
 
-and exprs env xs = List.iter (expr env) xs
+and exprs env xs = xs |> List.iter (expr env)
 
+and args env xs = xs |> List.iter (function
+  | Arg e -> expr env e
+ )
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
@@ -991,7 +1001,11 @@ and type_ env typ =
           aux x
       | TFunction (t, xs) ->
         aux t;
-        xs |> List.iter (fun p -> aux p.p_type)
+        xs |> List.iter (function
+            | ParamDots _ -> ()
+            | ParamClassic p -> aux p.p_type
+        )
+      | TMacroApply _ -> raise Todo
     in
     aux t
   end
