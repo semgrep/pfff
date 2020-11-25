@@ -583,7 +583,14 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
     if unicode_hack then
       let string =
         Common.profile_code "Unicode.input_and_replace_non_ascii" (fun () ->
-          Unicode.input_and_replace_non_ascii chan
+          (*
+             This breaks java (and perhaps other) characters constants.
+             UTF-8 characters become something invalid like this:
+               char c = 'ZZZ'
+             There's a hack in the java lexer to support such invalid
+             character literals.
+          *)
+          Unicode.input_and_replace_non_ascii ~replacement_byte:'Z' chan
         ) in
       Lexing.from_string string
     else

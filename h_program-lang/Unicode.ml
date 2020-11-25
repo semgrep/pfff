@@ -8,7 +8,7 @@ let input_all ic =
   close_in ic;
   s
 
-let input_and_replace_non_ascii ?(replacement_byte = 'X') ic =
+let input_and_replace_non_ascii ~replacement_byte ic =
   input_all ic
   |> String.map (fun c ->
     if Char.code c >= 128 then replacement_byte
