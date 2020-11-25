@@ -228,6 +228,9 @@ type stmt =
   | DefStmt of definition
   | DirStmt of directive
 
+  (* this should never appear! this should be only inside Switch *)
+  | CaseStmt of case
+
   and case =
     | Case of tok * expr * stmt list
     | Default of tok * stmt list

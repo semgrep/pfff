@@ -758,6 +758,8 @@ and define_body env v =
  * any entities (expressions do).
  *)
 and stmt env = function
+  | CaseStmt _ -> raise Todo
+
   | DefStmt x -> definition env x
   | DirStmt x -> directive env x
 

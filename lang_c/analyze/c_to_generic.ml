@@ -247,11 +247,13 @@ and argument v =
 
 and const_expr v = 
   expr v
-  
+
 let rec stmt =
   function
   | DefStmt x -> definition x
   | DirStmt x -> directive x
+
+  | CaseStmt x -> case_stmt x
 
   | ExprSt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
@@ -285,6 +287,16 @@ let rec stmt =
       G.stmt1 (v1 |> List.map (fun v -> G.DefStmt v))
   | Asm v1 -> let v1 = list expr v1 in 
       G.OtherStmt (G.OS_Asm, v1 |> List.map (fun e -> G.E e))
+
+(* todo: should use OtherStmtWithStmt really *)
+and case_stmt = function
+  | Case (t, e, st) ->
+    let e = expr e in
+    let st = list stmt st in
+    G.OtherStmt (G.OS_Todo, [G.TodoK ("case", t); G.E e; G.Ss st])
+  | Default (t, st) ->
+    let st = list stmt st in
+    G.OtherStmt (G.OS_Todo, [G.TodoK ("default", t); G.Ss st])
 
 and case =
   function
