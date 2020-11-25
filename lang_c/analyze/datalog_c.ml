@@ -648,7 +648,7 @@ and facts_of_definition env def =
       )
 
   | EnumDef def ->
-      let (_name, xs) = def in
+      let { e_name = _name; e_consts = xs } = def in
       xs |> List.map (fun (name, _eopt) ->
         D.PointTo (var_of_global env name, heap_of_cst env name)
       )

@@ -701,7 +701,7 @@ and definition env x =
         )
       end
         
-  | EnumDef (name, xs) ->
+  | EnumDef {e_name = name; e_consts = xs } ->
       let name = add_prefix "E__" name in
       let env =  add_node_and_edge_if_defs_mode env (name, E.Type) None in
       xs |> List.iter (fun (name, eopt) ->
@@ -716,7 +716,7 @@ and definition env x =
 
 
   (* I am not sure about the namespaces, so I prepend strings *)
-  | TypeDef (name, t) -> 
+  | TypeDef {t_name = name; t_type = t } -> 
       let s = Ast.str_of_name name in
       let name = add_prefix "T__" name in
       if env.phase = Defs 

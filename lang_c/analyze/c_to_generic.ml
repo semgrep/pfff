@@ -353,7 +353,7 @@ and field_def { fld_name = fld_name; fld_type = fld_type } =
   opt_to_ident v1, v2
   
 
-and enum_def (v1, v2) =
+and enum_def {e_name = v1; e_consts = v2 } =
   let v1 = name v1
   and v2 =
     list
@@ -366,7 +366,7 @@ and enum_def (v1, v2) =
   in
   entity, G.TypeDef ({ G.tbody = G.OrType ors})
 
-and type_def (v1, v2) = let v1 = name v1 and v2 = type_ v2 in
+and type_def {t_name = v1; t_type = v2} = let v1 = name v1 and v2 = type_ v2 in
   let entity = G.basic_entity v1 [] in
   entity, G.TypeDef ({ G.tbody = G.AliasType v2 })
 

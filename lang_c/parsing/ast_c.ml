@@ -296,11 +296,17 @@ and struct_def = {
     fld_type: type_;
   }
 
-(* less: use a record *)
-and enum_def = name * (name * const_expr option) list
+and enum_def = { 
+  (*e_tok: tok;*)
+  e_name: name;
+  e_consts: (name * const_expr option) list
+}
 
-(* less: use a record *)
-and type_def = name * type_
+and type_def = {
+  (*t_tok: tok;*)
+  t_name: name;
+  t_type: type_
+}
 
 (*****************************************************************************)
 (* Cpp *)

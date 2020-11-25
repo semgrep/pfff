@@ -274,7 +274,7 @@ and onedecl env d =
           v_init = init_opt;
         }
     | Some (n, None), (StoTypedef _) ->
-        let def = (name env n, full_type env ft) in
+        let def = { A.t_name = name env n; t_type = full_type env ft } in
         env.typedefs_toadd <- def :: env.typedefs_toadd;
         None
     | None, NoSto ->
@@ -694,7 +694,7 @@ and full_type env x =
           | Some (_tok, e) -> Some (expr env e)
         )
       in
-      let def = name, xs' in
+      let def = { A.e_name = name; e_consts = xs' } in
       env.enum_defs_toadd <- def :: env.enum_defs_toadd;
       A.TEnumName (name)
 
