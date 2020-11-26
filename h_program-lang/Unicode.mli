@@ -2,17 +2,12 @@
    Utilities for dealing with Unicode issues.
 *)
 
-val file_contains_non_ascii: Common.filename -> bool
+(*
+   Convert each non-ascii byte by one ascii byte.
+   The default replacement byte is 'X'.
 
-module UTF8 : sig
-  (*
-     Convert non-ascii whitespace to space characters and
-     other characters to 'Z' characters. The number of replacement
-     characters is adjusted to as to match the number of bytes of the original
-     character.
-
-     This is meant to be used as a hack to tolerate non-ascii input in
-     lexers that only support ascii.
-  *)
-  val asciify : in_channel -> string
-end
+   This is meant to be used as a hack to tolerate non-ascii input in
+   lexers that only support ascii.
+*)
+val input_and_replace_non_ascii :
+  replacement_byte:char -> in_channel -> string
