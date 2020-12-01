@@ -3,15 +3,15 @@ open Figures
 
 (* tree -> treemap -> treemap_rendering *)
 
-type ('dir, 'file) tree = 
+type ('dir, 'file) tree =
   ('dir, 'file) Common2.tree
 
 (*s: type treemap *)
-type ('dir, 'file) treemap = 
+type ('dir, 'file) treemap =
  (treemap_data * 'dir, treemap_data * 'file) tree
-    and treemap_data = { 
-      size : int; 
-      color : Simple_color.color; 
+    and treemap_data = {
+      size : int;
+      color : Simple_color.color;
       label: string;
     }
 (*e: type treemap *)
@@ -46,19 +46,19 @@ val xy_ratio : float ref
 val rect_ortho: unit -> rectangle
 
 (*s: type algorithm *)
-type algorithm = 
+type algorithm =
   | Classic
   | Squarified
   | SquarifiedNoSort
   | Ordered of pivot
 
-  and pivot = 
+  and pivot =
     | PivotBySize
     | PivotByMiddle
 (*e: type algorithm *)
 
 (*s: type layout_func *)
-type ('a, 'b) layout_func = 
+type ('a, 'b) layout_func =
   (float * ('a, 'b) treemap) list ->
   int ->
   rectangle ->
@@ -73,8 +73,8 @@ val layoutf_of_algo: algorithm -> ('a, 'b) layout_func
 (*e: signature algos *)
 
 (* treemap -> treemap_rendering *)
-val render_treemap: 
-  ?algo:algorithm -> 
+val render_treemap:
+  ?algo:algorithm ->
   ?big_borders:bool ->
   ('dir, 'file) treemap -> treemap_rendering
 
@@ -90,7 +90,7 @@ val treemap_of_tree :
 (*e: signature treemap_of_tree *)
 
 (*s: signature tree_of_dir *)
-type directory_sort = 
+type directory_sort =
   | NoSort
   | SortDirThenFiles
   | SortDirAndFiles
@@ -103,8 +103,8 @@ val tree_of_dirs_or_files:
   ?filter_file:(Common.filename -> bool) ->
   ?filter_dir:(Common.dirname -> bool) ->
   ?sort:directory_sort ->
-  file_hook:(Common.filename -> 'a) -> 
-  Common2.path list -> 
+  file_hook:(Common.filename -> 'a) ->
+  Common2.path list ->
   (Common.dirname, Common.filename * 'a) tree
 
 

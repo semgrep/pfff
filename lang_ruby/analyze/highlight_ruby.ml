@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -46,22 +46,22 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     Hashtbl.replace already_tagged ii true
   )
   in
-  let tag_name (_s, ii) categ = 
+  let tag_name (_s, ii) categ =
     (* so treat the most specific in the enclosing code and then
      * do not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
      *)
     if not (Hashtbl.mem already_tagged ii)
-    then tag ii categ 
+    then tag ii categ
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)    
+   if not (Hashtbl.mem already_tagged ii)
    then tag ii categ
   in
 
   (* -------------------------------------------------------------------- *)
-  (* AST phase 1 *) 
+  (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
@@ -72,18 +72,18 @@ let visit_program ~tag_hook _prefs (_program, toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     (* specials *)
     | T.T_SPACE _
-    | T.T_EOF _ -> 
+    | T.T_EOF _ ->
        ()
     | T.T_UNKNOWN ii ->
        tag ii Error
 
     (* comments *)
-    (* in lexer_ruby.mll comments and space and newlines are sometimes 
+    (* in lexer_ruby.mll comments and space and newlines are sometimes
      * put together *)
     | T.T_COMMENT ii
     | T.T_EOL ii ->
@@ -107,7 +107,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
 
     | T.T_REGEXP (_,_, ii) | T.T_REGEXP_BEG ii ->
        tag ii Regexp
-    | T.T_REGEXP_MOD (_, ii) -> 
+    | T.T_REGEXP_MOD (_, ii) ->
        tag ii Regexp
 
     (* ident  *)
@@ -122,7 +122,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
        tag ii (Entity (E.Global, use2))
 
     (* keywords  *)
-    | T.K_DEF ii | T.K_ALIAS ii -> 
+    | T.K_DEF ii | T.K_ALIAS ii ->
        tag ii Keyword
     | T.K_lBEGIN ii | T.K_lEND ii | T.K_RETURN ii ->
        tag ii Keyword
@@ -146,12 +146,12 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.K_DO ii
     | T.K_IN ii
       -> tag ii Keyword
-    
+
     | T.K_BEGIN ii
     | T.K_END ii
      -> tag ii BadSmell
 
-    | T.K_UNDEF ii 
+    | T.K_UNDEF ii
      -> tag ii BadSmell
 
     | T.T_TICK_BEG ii

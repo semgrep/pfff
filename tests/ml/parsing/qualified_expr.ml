@@ -1,4 +1,4 @@
 
 
-let x = 
+let x =
   Foo.(C1, e, C2)

@@ -233,9 +233,9 @@ type expr =
   | This
   (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
   | Eval
-  
-  and binaryOp = 
-   | BinaryConcat 
+
+  and binaryOp =
+   | BinaryConcat
    | CombinedComparison
    | ArithOp of AST_generic.operator
   and unaryOp = AST_generic.operator
@@ -479,11 +479,11 @@ let builtin x = "__builtin__" ^ x
 let special x = "__special__" ^ x
 
 (* AST helpers *)
-let has_modifier cv = 
+let has_modifier cv =
   List.length cv.cv_modifiers > 0
-let is_static modifiers  = 
+let is_static modifiers  =
   List.mem Cst_php.Static  (List.map unwrap modifiers)
-let is_private modifiers = 
+let is_private modifiers =
   List.mem Cst_php.Private (List.map unwrap modifiers)
 
 let string_of_xhp_tag xs = ":" ^ Common.join ":" xs

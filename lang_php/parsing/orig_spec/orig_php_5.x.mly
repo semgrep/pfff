@@ -156,7 +156,7 @@ exception Parsing of string
 %left TMUL TDIV TMOD
 %right TBANG
 %nonassoc T_INSTANCEOF
-%right TTILDE T_INC T_DEC T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST T_BOOL_CAST T_UNSET_CAST 
+%right TTILDE T_INC T_DEC T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST T_BOOL_CAST T_UNSET_CAST
 %right TAT
 %right TOBRA
 %nonassoc T_NEW T_CLONE
@@ -217,11 +217,11 @@ unticked_statement:
 	|	T_FOR
 			TOPAR
 				for_expr
-			TSEMICOLON 
+			TSEMICOLON
 				for_expr
-			TSEMICOLON 
+			TSEMICOLON
 				for_expr
-			TCPAR 
+			TCPAR
 			for_statement {  }
 	|	T_SWITCH TOPAR expr TCPAR	switch_case_list {}
 	|	T_BREAK TSEMICOLON				{}
@@ -239,18 +239,18 @@ unticked_statement:
 	|	T_USE use_filename TSEMICOLON		{}
 	|	T_UNSET TOPAR unset_variables TCPAR TSEMICOLON { }
 	|	T_FOREACH TOPAR variable T_AS
-		foreach_variable foreach_optional_arg TCPAR 
+		foreach_variable foreach_optional_arg TCPAR
 		foreach_statement {}
 	|	T_FOREACH TOPAR expr_without_variable T_AS
-		variable foreach_optional_arg TCPAR 
+		variable foreach_optional_arg TCPAR
 		foreach_statement {}
 	|	T_DECLARE  TOPAR declare_list TCPAR declare_statement {}
 	|	TSEMICOLON		/* empty statement */ { }
 	|	T_TRY  TOBRACE inner_statement_list TCBRACE
-		T_CATCH TOPAR 
-		fully_qualified_class_name 
-		T_VARIABLE TCPAR 
-		TOBRACE inner_statement_list TCBRACE 
+		T_CATCH TOPAR
+		fully_qualified_class_name
+		T_VARIABLE TCPAR
+		TOBRACE inner_statement_list TCBRACE
 		additional_catches { }
 	|	T_THROW expr TSEMICOLON {}
 ;
@@ -303,7 +303,7 @@ is_reference:
 
 
 unticked_function_declaration_statement:
-		T_FUNCTION is_reference T_STRING 
+		T_FUNCTION is_reference T_STRING
 			TOPAR parameter_list TCPAR TOBRACE inner_statement_list TCBRACE { }
 ;
 
@@ -369,7 +369,7 @@ for_statement:
 
 
 foreach_statement:
-		statement { } 
+		statement { }
 	|	TCOLON inner_statement_list T_ENDFOREACH TSEMICOLON { }
 ;
 
@@ -395,7 +395,7 @@ switch_case_list:
 
 
 case_list:
-		/* empty */	{} 
+		/* empty */	{}
 	|	case_list T_CASE expr case_separator inner_statement_list {}
 	|	case_list T_DEFAULT case_separator inner_statement_list {}
 ;
@@ -623,8 +623,8 @@ expr_without_variable:
 	|	expr T_IS_GREATER_OR_EQUAL expr {}
 	|	expr T_INSTANCEOF class_name_reference {}
 	|	TOPAR expr TCPAR 	{}
-	|	expr TQUESTION 
-		expr TCOLON 
+	|	expr TQUESTION
+		expr TCOLON
 		expr	 {}
 	|	internal_functions_in_yacc {}
 	|	T_INT_CAST expr 	{}
@@ -643,16 +643,16 @@ expr_without_variable:
 ;
 
 function_call:
-		T_STRING	TOPAR 
+		T_STRING	TOPAR
 				function_call_parameter_list
 				TCPAR {}
-	|	fully_qualified_class_name T_PAAMAYIM_NEKUDOTAYIM T_STRING TOPAR 
+	|	fully_qualified_class_name T_PAAMAYIM_NEKUDOTAYIM T_STRING TOPAR
 			function_call_parameter_list
 			TCPAR {}
-	|	fully_qualified_class_name T_PAAMAYIM_NEKUDOTAYIM variable_without_objects TOPAR 
+	|	fully_qualified_class_name T_PAAMAYIM_NEKUDOTAYIM variable_without_objects TOPAR
 			function_call_parameter_list
 			TCPAR {}
-	|	variable_without_objects  TOPAR 
+	|	variable_without_objects  TOPAR
 			function_call_parameter_list TCPAR
 			{}
 ;
@@ -668,7 +668,7 @@ class_name_reference:
 
 
 dynamic_class_name_reference:
-		base_variable T_OBJECT_OPERATOR 
+		base_variable T_OBJECT_OPERATOR
 			object_property dynamic_class_name_variable_properties
 			{}
 	|	base_variable {}
@@ -770,7 +770,7 @@ rw_variable:
 ;
 
 variable:
-		base_variable_with_function_calls T_OBJECT_OPERATOR 
+		base_variable_with_function_calls T_OBJECT_OPERATOR
 			object_property method_or_not variable_properties
 			{}
 	|	base_variable_with_function_calls {}
@@ -787,7 +787,7 @@ variable_property:
 ;
 
 method_or_not:
-		TOPAR 
+		TOPAR
 				function_call_parameter_list TCPAR
 			{ }
 	|	/* empty */ {}

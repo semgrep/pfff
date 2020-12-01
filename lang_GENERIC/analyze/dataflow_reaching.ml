@@ -26,7 +26,7 @@ module VarSet = Dataflow.VarSet
 (*****************************************************************************)
 (* Reaching definitions dataflow analysis.
  *
- * A definition will "reach" another program point if there is no 
+ * A definition will "reach" another program point if there is no
  * intermediate assignment between this definition and this program point.
  *)
 
@@ -93,7 +93,7 @@ let (gens: F.flow -> VarSet.t array) = fun flow ->
 
 let (kills:
    NodeiSet.t Dataflow.env -> F.flow -> (NodeiSet.t Dataflow.env) array) =
- fun defs flow -> 
+ fun defs flow ->
   let arr = DataflowX.new_node_array flow (Dataflow.empty_env()) in
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
@@ -129,7 +129,7 @@ let (transfer:
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
-  let in' = 
+  let in' =
     (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
        union acc mapping.(ni_pred).D.out_env
      ) VarMap.empty in

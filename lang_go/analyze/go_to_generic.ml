@@ -42,7 +42,7 @@ let error = AST_generic.error
 
 let name_of_qualified_ident = function
   | Left id -> id, G.empty_name_info
-  | Right (xs, id) -> id, 
+  | Right (xs, id) -> id,
       { G.name_qualifier = Some (G.QDots xs); name_typeargs = None }
 
 let fake s = Parse_info.fake_info s
@@ -54,7 +54,7 @@ let mk_name s tok = (s, tok), G.empty_name_info
 let ii_of_any = Lib_parsing_go.ii_of_any
 
 (* TODO? do results "parameters" can have names? *)
-let return_type_of_results results = 
+let return_type_of_results results =
   match results with
   | [] | [G.ParamClassic {G. ptype = None; _}] -> None
   | [G.ParamClassic {G. ptype = Some t; _}] -> Some t
@@ -63,7 +63,7 @@ let return_type_of_results results =
             | G.ParamClassic { G.ptype = None; _ } -> raise Impossible
             | _ -> raise Impossible
             ) |> fb))
-  
+
 
 let list_to_tuple_or_expr xs =
   match xs with
@@ -90,24 +90,24 @@ let wrap_init_in_block_maybe x v =
 
 let tok v = v
 
-let wrap _of_a (v1, v2) = 
-  let v1 = _of_a v1 and v2 = tok v2 in 
+let wrap _of_a (v1, v2) =
+  let v1 = _of_a v1 and v2 = tok v2 in
   (v1, v2)
 
 let bracket of_a (t1, x, t2) = (tok t1, of_a x, tok t2)
 
 let ident v = wrap string v
 
-let qualified_ident v = 
+let qualified_ident v =
   match list ident v with
   | [x] -> Left x
   | [x;y] -> Right ([x], y)
   | _ -> raise Impossible
 
-let top_func () = 
+let top_func () =
 let anon_types = ref [] in
 let cnt = ref 0 in
-let gensym () = 
+let gensym () =
   incr cnt;
   spf "_anon%d" !cnt
 in
@@ -116,40 +116,40 @@ let rec type_ =
   function
   | TName v1 -> let v1 = qualified_ident v1 in
       G.TyName (name_of_qualified_ident v1)
-  | TPtr (t, v1) -> let v1 = type_ v1 in 
+  | TPtr (t, v1) -> let v1 = type_ v1 in
       G.TyPointer (t, v1)
-  | TArray (v1, v2) -> 
-      let v1 = bracket (option expr) v1 and v2 = type_ v2 in 
+  | TArray (v1, v2) ->
+      let v1 = bracket (option expr) v1 and v2 = type_ v2 in
       G.TyArray (v1, v2)
-  | TArrayEllipsis (v1, v2) -> 
+  | TArrayEllipsis (v1, v2) ->
       let (t1, _v1, t2) = bracket tok v1 and v2 = type_ v2 in
       G.TyArray ((t1, None, t2), v2)
-  | TFunc v1 -> let (params, ret) = func_type v1 in 
-      let ret = 
+  | TFunc v1 -> let (params, ret) = func_type v1 in
+      let ret =
         match ret with
         | None -> G.TyBuiltin (fake_id "void")
         | Some t -> t
       in
       G.TyFun (params, ret)
-  | TMap ((t, (_, v1, _), v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
+  | TMap ((t, (_, v1, _), v2)) -> let v1 = type_ v1 and v2 = type_ v2 in
       G.TyNameApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
-  | TChan (t, v1, v2) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
+  | TChan (t, v1, v2) -> let v1 = chan_dir v1 and v2 = type_ v2 in
       G.TyNameApply (mk_name "chan" t, [G.TypeArg v1; G.TypeArg v2])
 
-  | TStruct (t, v1) -> let v1 = bracket (list struct_field) v1 in 
+  | TStruct (t, v1) -> let v1 = bracket (list struct_field) v1 in
       G.TyRecordAnon (t, v1)
-  | TInterface (t, v1) -> let v1 = bracket (list interface_field) v1 in 
+  | TInterface (t, v1) -> let v1 = bracket (list interface_field) v1 in
       let s = gensym () in
       let ent = G.basic_entity (s, t) [] in
-      let def = G.ClassDef { G.ckind = (G.Interface, t); 
+      let def = G.ClassDef { G.ckind = (G.Interface, t);
           cextends = []; cimplements = []; cmixins = [];
           cbody = v1; } in
       Common.push (ent, def) anon_types;
       G.TyName (mk_name s t)
 
-and chan_dir = function 
+and chan_dir = function
   | TSend -> G.TyName (fake_name "send")
-  | TRecv -> G.TyName (fake_name "recv") 
+  | TRecv -> G.TyName (fake_name "recv")
   | TBidirectional -> G.TyName (fake_name "bidirectional")
 
 and func_type { fparams = fparams; fresults = fresults } =
@@ -157,21 +157,21 @@ and func_type { fparams = fparams; fresults = fresults } =
   let fresults = list parameter_binding fresults in
   fparams, return_type_of_results fresults
 
-and parameter_binding x = 
+and parameter_binding x =
  match x with
  | ParamClassic x -> parameter x
  | ParamEllipsis t -> G.ParamEllipsis t
 
-and parameter x = 
+and parameter x =
   match x with
   { pname = pname; ptype = ptype; pdots = pdots } ->
   let arg1 = option ident pname in
-  let arg2 = type_ ptype in 
-  let arg3 = option tok pdots in 
-  let pclassic = 
+  let arg2 = type_ ptype in
+  let arg3 = option tok pdots in
+  let pclassic =
     { G.pname = arg1; ptype = Some arg2;  pdefault = None; pattrs = [];
       pinfo = G.empty_id_info () } in
-   match arg3 with 
+   match arg3 with
    | None -> G.ParamClassic pclassic
    | Some tok -> G.ParamRest (tok, pclassic)
 
@@ -182,7 +182,7 @@ and struct_field (v1, v2) =
 
 and struct_field_kind =
   function
-  | Field (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in 
+  | Field (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in
       G.basic_field v1 None (Some v2)
   | EmbeddedField (v1, v2) ->
       let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
@@ -195,14 +195,14 @@ and tag v = wrap string v
 
 and interface_field =
   function
-  | Method (v1, v2) -> 
+  | Method (v1, v2) ->
       let v1 = ident v1 in
       let (params, ret) = func_type v2 in
       let ent = G.basic_entity v1 [] in
-      G.FieldStmt (G.DefStmt 
-          (ent, G.FuncDef (mk_func_def (G.Method, G.fake "") params ret 
+      G.FieldStmt (G.DefStmt
+          (ent, G.FuncDef (mk_func_def (G.Method, G.fake "") params ret
                               G.empty_fbody)))
-  | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in 
+  | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in
       let name = name_of_qualified_ident v1 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
   | FieldEllipsis2 t ->
@@ -214,9 +214,9 @@ and expr_or_type v = either expr type_ v
 
 and expr =
   function
-  | BasicLit v1 -> let v1 = literal v1 in 
+  | BasicLit v1 -> let v1 = literal v1 in
       G.L v1
-  | Id (v1, vref) -> let v1 = ident v1 in 
+  | Id (v1, vref) -> let v1 = ident v1 in
       G.Id (v1,
            (* we share the resolved_name ref! so any naming done on the
            * generic AST will have a (wanted) side effect on the Go AST *)
@@ -226,7 +226,7 @@ and expr =
       G.DotAccess (v1, v2, G.EId v3)
   | Index (v1, v2) -> let v1 = expr v1 and v2 = bracket index v2 in
       G.ArrayAccess (v1, v2)
-  | Call v1 -> let (e, args) = call_expr v1 in 
+  | Call v1 -> let (e, args) = call_expr v1 in
       G.Call (e, args)
   | Cast (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
@@ -247,7 +247,7 @@ and expr =
       G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
   | CompositeLit (v1, v2) ->
       let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init_for_composite_lit) v2 in
-      G.Call (G.IdSpecial (G.New, fake "new"), 
+      G.Call (G.IdSpecial (G.New, fake "new"),
         fb((G.ArgType v1)::(v2)))
   | Slice (v1, v2) ->
       let e = expr v1 in
@@ -255,25 +255,25 @@ and expr =
       let v1 = option expr v1
       and v2 = option expr v2
       and v3 = option expr v3
-      in 
+      in
       G.SliceAccess (e, v1, v2, v3)
   | TypeAssert (v1, v2) -> let v1 = expr v1 and v2 = type_ v2 in
       G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
         fb[G.Arg v1; G.ArgType v2])
-  | Ellipsis v1 -> let v1 = tok v1 in 
+  | Ellipsis v1 -> let v1 = tok v1 in
       G.Ellipsis v1
-  | DeepEllipsis v1 -> let v1 = bracket expr v1 in 
+  | DeepEllipsis v1 -> let v1 = bracket expr v1 in
       G.DeepEllipsis v1
   | TypedMetavar (v1, v2, v3) ->
       let v1 = ident v1 in
       let v3 = type_ v3 in
       G.TypedMetavar (v1, v2, v3)
-  | FuncLit (v1, v2) -> 
-      let (params, ret) = func_type v1 
-      and v2 = stmt v2 
+  | FuncLit (v1, v2) ->
+      let (params, ret) = func_type v1
+      and v2 = stmt v2
       in
       G.Lambda (mk_func_def (G.LambdaKind, G.fake "") params ret v2)
-  | Receive (v1, v2) -> let _v1 = tok v1 and v2 = expr v2 in 
+  | Receive (v1, v2) -> let _v1 = tok v1 and v2 = expr v2 in
       G.OtherExpr (G.OE_Recv, [G.E v2])
   | Send (v1, v2, v3) ->
       let v1 = expr v1 and _v2 = tok v2 and v3 = expr v3 in
@@ -281,20 +281,20 @@ and expr =
   | TypeSwitchExpr (v1, v2) -> let _v1 = expr v1 and v2 = tok v2 in
       error v2 "TypeSwitchExpr should be handled in Switch statement"
   | ParenType v1 -> let _v1 = type_ v1 in
-      error (ii_of_any (T v1) |> List.hd) 
+      error (ii_of_any (T v1) |> List.hd)
         ("ParenType should disappear" ^ Common.dump v1)
 
 and literal =
   function
-  | Int v1 -> let v1 = wrap string v1 in 
+  | Int v1 -> let v1 = wrap string v1 in
       G.Int v1
-  | Float v1 -> let v1 = wrap string v1 in 
+  | Float v1 -> let v1 = wrap string v1 in
       G.Float v1
-  | Imag v1 -> let v1 = wrap string v1 in 
+  | Imag v1 -> let v1 = wrap string v1 in
       G.Imag v1
-  | Rune v1 -> let v1 = wrap string v1 in 
+  | Rune v1 -> let v1 = wrap string v1 in
       G.Char v1
-  | String v1 -> let v1 = wrap string v1 in 
+  | String v1 -> let v1 = wrap string v1 in
       G.String v1
 
 and index v = expr v
@@ -302,9 +302,9 @@ and index v = expr v
 and arguments v = list argument v
 and argument =
   function
-  | Arg v1 -> let v1 = expr v1 in 
+  | Arg v1 -> let v1 = expr v1 in
       G.Arg v1
-  | ArgType v1 -> let v1 = type_ v1 in 
+  | ArgType v1 -> let v1 = type_ v1 in
       G.ArgType v1
   | ArgDots (v1, v2) -> let v1 = expr v1 in let v2 = tok v2 in
       let special = G.Call (G.IdSpecial (G.Spread, v2), fb[G.expr_to_arg v1]) in
@@ -324,7 +324,7 @@ and init_for_composite_lit =
    | InitExpr v1 -> let v1 = expr v1 in G.Arg v1
    | InitKeyValue (v1, v2, v3) ->
        let _v2 = tok v2 and v3 = init v3 in
-       (match v1 with 
+       (match v1 with
         | InitExpr (Id (id, _id_info)) -> G.ArgKwd (id, v3)
         | _ ->
           G.Arg (G.Tuple (G.fake_bracket [init v1; v3])))
@@ -334,7 +334,7 @@ and init_for_composite_lit =
 and constant_expr v = expr v
 
 and simple = function
-  | ExprStmt v1 -> let v1 = expr v1 in 
+  | ExprStmt v1 -> let v1 = expr v1 in
       v1
   (* nice language! Assigns are at statement level! *)
   | Assign (v1, v2, v3) ->
@@ -352,7 +352,7 @@ and simple = function
        * so better to not generate an Assign there too.
        * less: could define a ColonEq operator in AST_generic.ml
        *)
-      (G.AssignOp (list_to_tuple_or_expr v1, (G.Eq, v2), 
+      (G.AssignOp (list_to_tuple_or_expr v1, (G.Eq, v2),
                    list_to_tuple_or_expr v3))
   | AssignOp (v1, v2, v3) ->
       let v1 = expr v1
@@ -365,21 +365,21 @@ and simple = function
       and (v2, tok) = wrap incr_decr v2
       and v3 = prefix_postfix v3
       in
-      (G.Call (G.IdSpecial (G.IncrDecr (v2, v3), tok), 
+      (G.Call (G.IdSpecial (G.IncrDecr (v2, v3), tok),
           fb[G.Arg v1]))
 
 
 (* invariant: you should not use 'list stmt', but instead always
  * use list stmt_aux ... |> List.flatten
  *)
-and stmt x = 
+and stmt x =
   G.stmt1 (stmt_aux x)
 
 and stmt_aux =
   function
-  | DeclStmts v1 -> 
-   (* bugfix: 
-    *  old: let v1 = list decl v1 in 
+  | DeclStmts v1 ->
+   (* bugfix:
+    *  old: let v1 = list decl v1 in
     *       G.Block v1
     * but in sgrep with
     *   var $X = "...";
@@ -390,11 +390,11 @@ and stmt_aux =
     * to return a list of stmts that may or may not be put inside
     * a Block depending on the context (Ss and Items will not).
     *)
-      let v1 = list decl v1 in 
+      let v1 = list decl v1 in
       v1
-  | Block (t1, v1, t2) -> let v1 = list stmt_aux v1 |> List.flatten in 
+  | Block (t1, v1, t2) -> let v1 = list stmt_aux v1 |> List.flatten in
       [G.Block (t1, v1, t2)]
-  | Empty -> 
+  | Empty ->
       [G.Block (fb[])]
   | SimpleStmt v1 ->
       let v1 = simple v1 in
@@ -404,13 +404,13 @@ and stmt_aux =
       and v2 = expr v2
       and v3 = stmt v3
       and v4 = option stmt v4
-      in 
-      wrap_init_in_block_maybe v1 
+      in
+      wrap_init_in_block_maybe v1
        (G.If (t, v2, v3, v4))
   | Switch (v0, v1, v2, v3) ->
       let v0 = tok v0 in
       let v1 = option simple v1
-      and v2 = 
+      and v2 =
         match v2 with
         | None -> None
         | Some s ->
@@ -425,13 +425,13 @@ and stmt_aux =
                 G.Call (G.IdSpecial (G.Typeof, tok2), fb[G.Arg e])
                   )
             | s -> simple s
-            )   
+            )
       and v3 = list case_clause v3
       in
-      wrap_init_in_block_maybe v1 
+      wrap_init_in_block_maybe v1
         (G.Switch (v0, v2, v3))
   | Select (v1, v2) ->
-      let v1 = tok v1 and v2 = list comm_clause v2 in 
+      let v1 = tok v1 and v2 = list comm_clause v2 in
       [G.Switch (v1, None, v2)]
   | For (t, (v1, v2, v3), v4) ->
       let v1 = option simple v1
@@ -442,53 +442,53 @@ and stmt_aux =
       (* TODO: some of v1 are really ForInitVar *)
       let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
       [G.For (t, G.ForClassic (init, v2, v3), v4)]
-        
+
   | Range (t, v1, v2, v3, v4) ->
-      let opt =  option 
-          (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in 
+      let opt =  option
+          (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in
             v1, v2) v1
       and v2 = tok v2
       and v3 = expr v3
       and v4 = stmt v4
-      in 
+      in
       (match opt with
-      | None -> 
+      | None ->
          let pattern = G.PatUnderscore (fake "_") in
          [G.For (t, G.ForEach (pattern, v2, v3), v4)]
-      | Some (xs, _tokEqOrColonEqTODO) -> 
+      | Some (xs, _tokEqOrColonEqTODO) ->
           let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern |> G.fake_bracket) in
           [G.For (t, G.ForEach (pattern, v2, v3), v4)]
       )
   | Return (v1, v2) ->
       let v1 = tok v1 and v2 = option (list expr) v2 in
       [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr), G.sc)]
-  | Break (v1, v2) -> 
-      let v1 = tok v1 and v2 = option ident v2 in 
+  | Break (v1, v2) ->
+      let v1 = tok v1 and v2 = option ident v2 in
       [G.Break (v1, G.opt_to_label_ident v2, G.sc)]
   | Continue (v1, v2) ->
       let v1 = tok v1 and v2 = option ident v2 in
       [G.Continue (v1, G.opt_to_label_ident v2, G.sc)]
-  | Goto (v1, v2) -> 
-      let v1 = tok v1 and v2 = ident v2 in 
+  | Goto (v1, v2) ->
+      let v1 = tok v1 and v2 = ident v2 in
       [G.Goto (v1, v2)]
-  | Fallthrough v1 -> 
-      let v1 = tok v1 in 
+  | Fallthrough v1 ->
+      let v1 = tok v1 in
       [G.OtherStmt (G.OS_Fallthrough, [G.Tk v1])]
-  | Label (v1, v2) -> 
-      let v1 = ident v1 and v2 = stmt v2 in 
+  | Label (v1, v2) ->
+      let v1 = ident v1 and v2 = stmt v2 in
       [G.Label (v1, v2)]
-  | Go (v1, v2) -> 
-      let _v1 = tok v1 and (e, args) = call_expr v2 in 
+  | Go (v1, v2) ->
+      let _v1 = tok v1 and (e, args) = call_expr v2 in
       [G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))])]
-  | Defer (v1, v2) -> 
-      let _v1 = tok v1 and (e, args) = call_expr v2 in 
+  | Defer (v1, v2) ->
+      let _v1 = tok v1 and (e, args) = call_expr v2 in
       [G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])]
 
-and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in 
+and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in
   v1, v2
 and expr_or_type_to_pattern = function
   (* can't call expr_or_type because we want to intercept this one *)
-  | Left (ParenType t) -> 
+  | Left (ParenType t) ->
       let t = type_ t in
      G.PatType t
   | x ->
@@ -499,7 +499,7 @@ and expr_or_type_to_pattern = function
 
 and case_kind =
   function
-  | CaseExprs (tok, v1) -> 
+  | CaseExprs (tok, v1) ->
       v1 |> List.map (fun x -> (G.Case (tok, expr_or_type_to_pattern x)))
   | CaseAssign (tok, v1, v2, v3) ->
       let v1 = list expr_or_type v1
@@ -515,8 +515,8 @@ and case_kind =
 
 and comm_clause v = case_clause v
 
-and call_expr (v1, v2) = 
-  let v1 = expr v1 and v2 = bracket arguments v2 in 
+and call_expr (v1, v2) =
+  let v1 = expr v1 and v2 = bracket arguments v2 in
   v1, v2
 
 
@@ -526,7 +526,7 @@ and decl =
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option constant_expr v3
-      in 
+      in
       let ent = G.basic_entity v1 [G.attr G.Const (fake "const")] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
   | DVar (v1, v2, v3) ->
@@ -537,21 +537,21 @@ and decl =
       let ent = G.basic_entity v1 [G.attr G.Var (fake "var")] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
   | DTypeAlias (v1, v2, v3) ->
-      let v1 = ident v1 and _v2 = tok v2 and v3 = type_ v3 in 
+      let v1 = ident v1 and _v2 = tok v2 and v3 = type_ v3 in
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.TypeDef { G.tbody = G.AliasType v3 })
-  | DTypeDef (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in 
+  | DTypeDef (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.TypeDef { G.tbody = G.NewType v2 })
 
 and top_decl =
   function
   | DFunc ((t, v1, (v2, v3))) ->
-      let v1 = ident v1 and (params, ret) = func_type v2 and v3 = stmt v3 in 
+      let v1 = ident v1 and (params, ret) = func_type v2 and v3 = stmt v3 in
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.FuncDef (mk_func_def (G.Function, t) params ret v3))
   | DMethod ((t, v1, v2, (v3, v4))) ->
-      let v1 = ident v1 
+      let v1 = ident v1
       and v2 = parameter v2
       and (params, ret) = func_type v3 and v4 = stmt v4 in
       let ent = G.basic_entity v1 [] in
@@ -561,7 +561,7 @@ and top_decl =
       G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams})
   | DTop v1 -> let v1 = decl v1 in v1
   | STop v1 -> stmt v1
-  | Package (t1, id) -> 
+  | Package (t1, id) ->
       let id = ident id in
       G.DirectiveStmt (G.Package (t1, [id]))
   | Import x ->
@@ -572,18 +572,18 @@ and import { i_path = i_path; i_kind = i_kind; i_tok } =
   let module_name = G.FileName (wrap string i_path) in
   let (s,tok) = i_path in
   import_kind i_tok i_kind module_name (Filename.basename s, tok)
-  
+
 and import_kind itok kind module_name _id_no_more_used =
   match kind with
-  | ImportOrig -> 
+  | ImportOrig ->
      (* old: in Go, import "a/b/c" is really equivalent to import c "a/b/c",
       * but we don't do return anymore G.ImportAs (itok, module_name, Some id)
       * otherwise sgrep can not know if an alias was explicitely given or not
       *)
       G.ImportAs (itok, module_name, None)
-  | ImportNamed v1 -> let v1 = ident v1 in 
+  | ImportNamed v1 -> let v1 = ident v1 in
       G.ImportAs (itok, module_name, Some v1)
-  | ImportDot v1 -> let v1 = tok v1 in 
+  | ImportDot v1 -> let v1 = tok v1 in
       G.ImportAll (itok, module_name, v1)
 
 and program xs =
@@ -598,20 +598,20 @@ and item_aux = function
  | IImport x -> let x = import x in [G.DirectiveStmt x]
  | IStmt x -> stmt_aux x
 
-and item x  = 
+and item x  =
   G.stmt1 (item_aux x)
 
 and partial = function
-  | PartialDecl x -> 
+  | PartialDecl x ->
       let x = top_decl x in
       (match x with
       | G.DefStmt def -> G.PartialDef def
       | _ -> failwith "partial supported only for definitions"
       )
-  
+
 and any x =
   anon_types := [];
-  let res = 
+  let res =
   match x with
   | Partial v1 -> let v1 = partial v1 in G.Partial v1
   | E v1 -> let v1 = expr v1 in G.E v1
@@ -634,10 +634,10 @@ in
 program, any
 
 
-let program x = 
+let program x =
   let p, _ = top_func () in
   p x
 
-let any x = 
+let any x =
   let _, a = top_func () in
   a x

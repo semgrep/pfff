@@ -243,7 +243,7 @@ let visitor_info_of_tok f = function
   | EOF ii -> EOF(f ii)
   | T_ROCKET ii -> T_ROCKET(f ii)
 
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with

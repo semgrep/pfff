@@ -5,7 +5,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,15 +20,15 @@ module TH = Token_helpers_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * This module transforms certain tokens like '>>', normally a T_SR
  * into two TGREATER tokens which helps avoid using ugly tricks in the grammar
  * regarding generics.
- * 
- * This is similar to what we do for C/C++. 
+ *
+ * This is similar to what we do for C/C++.
  * See pfff/lang_cpp/parsing/parsing_hacks.ml for more information.
- * 
- * In Hack they maintain those different states (InToplevel, InFunction, 
+ *
+ * In Hack they maintain those different states (InToplevel, InFunction,
  * InBlock, ...) in the lexer itself, I prefer for now to separate
  * concerns and do that entirely post-lexing (which introduces some performance
  * degradation, from 195s to parse www to 209s).
@@ -41,7 +41,7 @@ type env = {
   stack: ctx list;
   misc: unit;
 }
-and ctx = 
+and ctx =
  | Toplevel
 
  | ClassHeader
@@ -193,8 +193,8 @@ let find_typehint toks =
 
 let fix_tokens2 xs =
 
-  let rec aux env acc xs = 
-    
+  let rec aux env acc xs =
+
     match xs with
     (* need an acc, to be tail recursive, otherwise get some stack overflow *)
     | [] -> List.rev acc
@@ -205,7 +205,7 @@ let fix_tokens2 xs =
     | T_SR ii::xs ->
 
       (match env.stack with
-      (* type context, those are the only places where types allowed for 
+      (* type context, those are the only places where types allowed for
        * now, which makes the job easier than in parsing_hacks_java.ml
        *)
       | (ClassHeader | ClassBody | TypeHeader | FunctionHeader)::_ ->
@@ -271,11 +271,11 @@ let fix_tokens2 xs =
       in
       aux env (T_DOUBLE_ARROW arrow::(replaced @ rest)) xs
 
-    | x::xs -> 
+    | x::xs ->
       let stack =
         (* quite similar to hack/lexing_modes.ml *)
         match x, env.stack with
-       (* ugly: we check we are at toplevel because the keyword 'class' 
+       (* ugly: we check we are at toplevel because the keyword 'class'
         * could be used in a different context as part of an XHP attribute
         * name, see ident_xhp_attr_name_atom rule in parser_php.mly
         *)
@@ -325,7 +325,7 @@ let fix_tokens2 xs =
     misc = ();
   } [] xs
 
-    
+
 
 let fix_tokens a =
   Common.profile_code "Parse_php.fix_tokens" (fun () -> fix_tokens2 a)

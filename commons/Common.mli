@@ -110,11 +110,11 @@ val read_file : filename -> string
 (*e: signature [[Common.read_file]] *)
 
 (*s: signature [[Common.with_open_outfile]] *)
-val with_open_outfile : 
+val with_open_outfile :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
 (*e: signature [[Common.with_open_outfile]] *)
 (*s: signature [[Common.with_open_infile]] *)
-val with_open_infile : 
+val with_open_infile :
   filename -> (in_channel -> 'a) -> 'a
 (*e: signature [[Common.with_open_infile]] *)
 
@@ -227,7 +227,7 @@ val hash_to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 (*e: signature [[Common.hash_to_list]] *)
 
 (*s: type [[Common.hashset]] *)
-type 'a hashset = ('a, bool) Hashtbl.t 
+type 'a hashset = ('a, bool) Hashtbl.t
 (*e: type [[Common.hashset]] *)
 (*s: signature [[Common.hashset_of_list]] *)
 val hashset_of_list : 'a list -> 'a hashset
@@ -295,10 +295,10 @@ type cmdline_sections = options_with_title list
 (*e: type [[Common.cmdline_sections]] *)
 
 (*s: signature [[Common.parse_options]] *)
-(* A wrapper around Arg modules that have more logical argument order, 
+(* A wrapper around Arg modules that have more logical argument order,
  * and returns the remaining args.
  *)
-val parse_options : 
+val parse_options :
   cmdline_options -> Arg.usage_msg -> string array -> string list
 (* Another wrapper that does Arg.align automatically *)
 (*e: signature [[Common.parse_options]] *)
@@ -311,12 +311,12 @@ val usage : Arg.usage_msg -> cmdline_options -> unit
 (* Work with the options_with_title type way to organize a long
  * list of command line switches.
  *)
-val short_usage : 
+val short_usage :
   Arg.usage_msg -> short_opt:cmdline_options -> unit
 (*e: signature [[Common.short_usage]] *)
 (*s: signature [[Common.long_usage]] *)
-val long_usage : 
-  Arg.usage_msg -> short_opt:cmdline_options -> long_opt:cmdline_sections -> 
+val long_usage :
+  Arg.usage_msg -> short_opt:cmdline_options -> long_opt:cmdline_sections ->
   unit
 (*e: signature [[Common.long_usage]] *)
 
@@ -327,8 +327,8 @@ val long_usage :
 val arg_align2 : cmdline_options -> cmdline_options
 (*e: signature [[Common.arg_align2]] *)
 (*s: signature [[Common.arg_parse2]] *)
-val arg_parse2 : 
-  cmdline_options -> Arg.usage_msg -> (unit -> unit) (* short_usage func *) -> 
+val arg_parse2 :
+  cmdline_options -> Arg.usage_msg -> (unit -> unit) (* short_usage func *) ->
   string list
 (*e: signature [[Common.arg_parse2]] *)
 
@@ -338,7 +338,7 @@ val arg_parse2 :
 type flag_spec   = Arg.key * Arg.spec * Arg.doc
 (*e: type [[Common.flag_spec]] *)
 (*s: type [[Common.action_spec]] *)
-type action_spec = Arg.key * Arg.doc * action_func 
+type action_spec = Arg.key * Arg.doc * action_func
 (*e: type [[Common.action_spec]] *)
 (*s: type [[Common.action_func]] *)
    and action_func = (string list -> unit)
@@ -364,7 +364,7 @@ val mk_action_2_arg : (string -> string -> unit)           -> action_func
 val mk_action_3_arg : (string -> string -> string -> unit) -> action_func
 (*e: signature [[Common.mk_action_3_arg]] *)
 (*s: signature [[Common.mk_action_4_arg]] *)
-val mk_action_4_arg : (string -> string -> string -> string -> unit) -> 
+val mk_action_4_arg : (string -> string -> string -> string -> unit) ->
   action_func
 (*e: signature [[Common.mk_action_4_arg]] *)
 
@@ -373,21 +373,21 @@ val mk_action_n_arg : (string list -> unit) -> action_func
 (*e: signature [[Common.mk_action_n_arg]] *)
 
 (*s: signature [[Common.options_of_actions]] *)
-val options_of_actions: 
+val options_of_actions:
   string ref (* the action ref *) -> cmdline_actions -> cmdline_options
 (*e: signature [[Common.options_of_actions]] *)
 (*s: signature [[Common.do_action]] *)
-val do_action: 
+val do_action:
   Arg.key -> string list (* args *) -> cmdline_actions -> unit
 (*e: signature [[Common.do_action]] *)
 (*s: signature [[Common.action_list]] *)
-val action_list: 
+val action_list:
   cmdline_actions -> Arg.key list
 (*e: signature [[Common.action_list]] *)
 
 
 (*s: signature [[Common.debugger]] *)
-(* if set then certain functions like unwind_protect will not 
+(* if set then certain functions like unwind_protect will not
  * do a try and finalize and instead just call the function, which
  * helps in ocamldebug and also in getting better backtraces.
  * This is also useful to set in a js_of_ocaml (jsoo) context to
@@ -411,12 +411,12 @@ val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 (*e: signature [[Common.save_excursion]] *)
 
 (*s: signature [[Common.memoized]] *)
-val memoized : 
+val memoized :
    ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 (*e: signature [[Common.memoized]] *)
 
 (*s: exception [[Common.UnixExit]] *)
-exception UnixExit of int 
+exception UnixExit of int
 (*e: exception [[Common.UnixExit]] *)
 
 (*s: exception [[Common.Timeout]] *)
@@ -462,8 +462,8 @@ val profile_code2 : string -> (unit -> 'a) -> 'a
 (*e: signature [[Common.profile_code2]] *)
 
 (*s: signature [[Common._temp_files_created]] *)
-(* creation of /tmp files, a la gcc 
- * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" 
+(* creation of /tmp files, a la gcc
+ * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c"
  *)
 val _temp_files_created : string list ref
 (*e: signature [[Common._temp_files_created]] *)
@@ -486,8 +486,8 @@ val fullpath: filename -> filename
 (*e: signature [[Common.fullpath]] *)
 
 (*s: signature [[Common.cache_computation]] *)
-val cache_computation : 
-  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) -> 
+val cache_computation :
+  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) ->
   (unit -> 'a) -> 'a
 (*e: signature [[Common.cache_computation]] *)
 

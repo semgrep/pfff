@@ -6,8 +6,8 @@ module Flag = Flag_parsing
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_tokens_sql file = 
-  if not (file =~ ".*\\.sql") 
+let test_tokens_sql file =
+  if not (file =~ ".*\\.sql")
   then pr2 "warning: seems not a .sql file";
 
   Flag.verbose_lexing := true;
@@ -26,16 +26,16 @@ let test_parse_sql file  =
 (* ------------------------------------------------------------------------ *)
 let stress_parse_sql file =
   let xs = Common.cat file in
-  
+
   let ys = Common2.split_list_regexp "^-----------" xs in
-  let bad = ref 0 in 
-  let nbtotal = List.length ys in 
+  let bad = ref 0 in
+  let nbtotal = List.length ys in
 
   ys |> List.iter (fun (_heading, xs) ->
     let s = Common.join " " xs in
-    try 
-      let _ = 
-        Parse_sql.parse_string s 
+    try
+      let _ =
+        Parse_sql.parse_string s
       in
       ()
     with exn ->
@@ -49,11 +49,11 @@ let stress_parse_sql file =
 (* Main entry for Arg *)
 (*****************************************************************************)
 let actions () = [
-    "-lexer_sql", "   <file>", 
+    "-lexer_sql", "   <file>",
       Common.mk_action_1_arg test_tokens_sql;
-    "-parse_sql", "   <file>", 
+    "-parse_sql", "   <file>",
     Common.mk_action_1_arg test_parse_sql;
-    "-stress_sql", "   <file>", 
+    "-stress_sql", "   <file>",
     Common.mk_action_1_arg stress_parse_sql;
-] 
+]
 

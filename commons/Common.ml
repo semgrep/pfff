@@ -16,7 +16,7 @@
 (* Prelude *)
 (*###########################################################################*)
 
-(* if set then certain functions like unwind_protect will not 
+(* if set then certain functions like unwind_protect will not
  * do a try and finalize and instead just call the function, which
  * helps in ocamldebug and also in getting better backtraces.
  * This is also useful to set in a js_of_ocaml (jsoo) context to
@@ -725,14 +725,14 @@ let rec find_some_opt p = function
       |	Some v -> Some v
       |	None -> find_some_opt p l
 
-let find_some p xs = 
+let find_some p xs =
   match find_some_opt p xs with
   | None -> raise Not_found
   | Some x -> x
 
-let find_opt f xs = 
+let find_opt f xs =
   find_some_opt (fun x -> if f x then Some x else None) xs
-  
+
 
 (*****************************************************************************)
 (* Regexp, can also use PCRE *)
@@ -901,7 +901,7 @@ let realpath2 path =
 
 let realpath2 path =
   let stat = Unix.stat path in
-  let dir, suffix = 
+  let dir, suffix =
     match stat.Unix.st_kind with
     | Unix.S_DIR -> path, ""
     | _ -> Filename.dirname path, Filename.basename path
@@ -1042,7 +1042,7 @@ let timeout_function ?(verbose=false) timeoutval = fun f ->
 let timeout_function_float ?(verbose=false) timeoutval = fun f ->
   try
     Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
-    Unix.setitimer Unix.ITIMER_REAL 
+    Unix.setitimer Unix.ITIMER_REAL
         { Unix.it_value = timeoutval; it_interval = 0. } |> ignore;
     let x = f () in
     Unix.setitimer Unix.ITIMER_REAL { Unix.it_value = 0.; it_interval = 0. }
@@ -1069,7 +1069,7 @@ let _temp_files_created = ref ([] : filename list)
 
 (* ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" *)
 let new_temp_file prefix suffix =
-  let pid = 
+  let pid =
     if !jsoo
     then 42
     else Unix.getpid ()
@@ -1128,7 +1128,7 @@ let group_by f xs =
 
   (* could use Set *)
   let hkeys = Hashtbl.create 101 in
-  
+
   xs |> List.iter (fun x ->
     let k = f x in
     Hashtbl.replace hkeys k true;
@@ -1142,7 +1142,7 @@ let group_by_multi fkeys xs =
 
   (* could use Set *)
   let hkeys = Hashtbl.create 101 in
-  
+
   xs |> List.iter (fun x ->
     let ks = fkeys x in
     ks |> List.iter (fun k ->
@@ -1347,7 +1347,7 @@ let main_boilerplate f =
         ))
        (fun()->
          if !profile <> ProfNone
-         then begin 
+         then begin
            pr2 (profile_diagnostic ());
            Gc.print_stat stderr;
          end;

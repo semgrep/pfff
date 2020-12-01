@@ -1,11 +1,11 @@
 open Ast_html
 
-let rec vof_info v = 
+let rec vof_info v =
   Meta_parse_info.vof_info_adjustable_precision v
 
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_info v2 in OCaml.VTuple [ v1; v2 ]
-  
+
 let rec vof_html_tree =
   function
   | Element (v1, v2, v3) ->

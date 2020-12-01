@@ -28,11 +28,11 @@ let main_action _file =
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
-let test_matcher_gen s = 
+let test_matcher_gen s =
   let t = OCaml.get_type s in
   Gen_ml_code.gen_matcher (s, t)
 
-let test_matcher_all () = 
+let test_matcher_all () =
 
   let all_types = [
     "tok";
@@ -192,10 +192,10 @@ let test_matcher_all () =
     "switch_case_list";
   ]
   in
-  all_types |> List.iter (fun t -> 
-    try 
+  all_types |> List.iter (fun t ->
+    try
       test_matcher_gen t
-    with 
+    with
     | Todo ->
         pr2 ("PB TODO with : " ^ t);
     | Not_found ->
@@ -214,13 +214,13 @@ let ffi_extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
   ffi_extra_actions() @
  []
 
-let options () = 
+let options () =
   [
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Set verbose,
     " ";
   ] @
   Common.options_of_actions action (all_actions()) @
@@ -230,18 +230,18 @@ let options () =
 *)
   [
 (*
-  "-version",   Arg.Unit (fun () -> 
+  "-version",   Arg.Unit (fun () ->
     pr2 (spf "XXX version: %s" Config.version);
     exit 0;
-  ), 
+  ),
     "  guess what";
 *)
 
   (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
+  "-date",   Arg.Unit (fun () ->
     pr2 "version: $Date: 2008/10/26 00:44:57 $";
     raise (Common.UnixExit 0)
-    ), 
+    ),
   "   guess what";
   ] @
   []
@@ -250,42 +250,42 @@ let options () =
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
-  let usage_msg = 
-    "Usage: " ^ Filename.basename Sys.argv.(0) ^ 
+let main () =
+  let usage_msg =
+    "Usage: " ^ Filename.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
 
     (match args with
-   
+
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | [] when !action = "-yyy" -> 
+    | [] when !action = "-yyy" ->
         pr2 "yyy"
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | x::_xs -> 
+    | x::_xs ->
         main_action x
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
     )
   )
@@ -294,6 +294,6 @@ let main () =
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
       main ();
   )

@@ -1,6 +1,6 @@
 
-type program_and_tokens = 
-  Ast_csharp.program (* NotParsedCorrectly if parse error *) * 
+type program_and_tokens =
+  Ast_csharp.program (* NotParsedCorrectly if parse error *) *
   Parser_csharp.token list
 
 (* This is the main function *)

@@ -1,9 +1,9 @@
 
-val find_ifdef_funheaders: 
+val find_ifdef_funheaders:
   Token_views_cpp.ifdef_grouped list -> unit
-val find_ifdef_bool: 
+val find_ifdef_bool:
   Token_views_cpp.ifdef_grouped list -> unit
-val find_ifdef_mid: 
+val find_ifdef_mid:
   Token_views_cpp.ifdef_grouped list -> unit
 
 

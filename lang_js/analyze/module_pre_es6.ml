@@ -1,6 +1,6 @@
 
 (* The goal is to gather module-level information from a Javascript file.
- * Given this toy Javascript file: 
+ * Given this toy Javascript file:
  *
  * /* @providesModule Foo */
  *
@@ -10,7 +10,7 @@
  * copyProperties(Foo.prototype, Bar.prototype)
  * module.exports = Foo;
  *
- * the infered moduleinfo is of the form (shape, local_state) 
+ * the infered moduleinfo is of the form (shape, local_state)
  *
  * where shape (eliding a few details) =
  *
@@ -18,17 +18,17 @@
  *   ObjectShape({"x" => ...}),
  *	 ObjectShape({
  *	   "prototype" => ObjectShape(
- *	     { "f" => FunctionShape (...) }, 
+ *	     { "f" => FunctionShape (...) },
  *	     [ PropertyShape(RequireShape("Bar"),"prototype") ]
  *	   )
  *   })
  * ))
  *
  * and local_state =
- * { 
+ * {
  *   module_ = "Foo",
  *	 local_requires = ["Bar"],
- * 	 local_bindings = { 
+ * 	 local_bindings = {
  *	   "Bar" => Require("Bar"),
  *	   "Foo" => shape
  *	 }
@@ -123,12 +123,12 @@ let mk_indent n s = (indent n) ^ s ^ "\n"
 
 let mk_id id = "#" ^ (string_of_int id)
 
-let rec string_of_shape_ n stack shape = 
+let rec string_of_shape_ n stack shape =
 	match shape with
 
 	| LiteralShape -> mk_indent n "literal"
 
-	| FunctionShape (_,shape) -> 
+	| FunctionShape (_,shape) ->
 		(mk_indent n "function") ^
 		(string_of_shape_ (n+1) stack shape)
 
@@ -145,8 +145,8 @@ let rec string_of_shape_ n stack shape =
 			map (mk_indent n ((mk_id id) ^ " {"))
 		) ^
 		(List.fold_left
-			(fun str -> fun map -> 
-				str ^ 
+			(fun str -> fun map ->
+				str ^
 				(mk_indent (n+1) ("|")) ^
 				(string_of_shape_ (n+2) (id::stack) map)
 			)

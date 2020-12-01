@@ -19,7 +19,7 @@ open Common2.Infix
 (*****************************************************************************)
 (* A (real) Abstract Syntax Tree for C, not a Concrete Syntax Tree
  * as in cst_cpp.ml.
- * 
+ *
  * This file contains a simplified C abstract syntax tree. The original
  * C/C++ syntax tree (cst_cpp.ml) is good for code refactoring or
  * code visualization; the types used match exactly the source. However,
@@ -31,7 +31,7 @@ open Common2.Infix
 
  * Here is a list of the simplications/factorizations:
  *  - no C++ constructs, just plain C
- *  - no purely syntactical tokens in the AST like parenthesis, brackets, 
+ *  - no purely syntactical tokens in the AST like parenthesis, brackets,
  *    braces, commas, semicolons, etc. No ParenExpr. No FinalDef. No
  *    NotParsedCorrectly. The only token information kept is for identifiers
  *    for error reporting. See name below.
@@ -45,19 +45,19 @@ open Common2.Infix
  *  - sugar is removed, no RecordAccess vs RecordPtAccess, ...
  *  - no init vs expr
  *  - no Case/Default in statement but instead a focused 'case' type
- * 
+ *
  * less: ast_c_simple_build.ml is probably incomplete, but for now
  * good enough for codegraph purposes on xv6, plan9 and other small C
  * projects.
- * 
- * related work: 
+ *
+ * related work:
  *  - CIL, but it works after preprocessing; it makes it harder to connect
  *    analysis results to tools like codemap. It also does not handle some of
  *    the kencc extensions and does not allow to analyze cpp constructs.
  *    CIL has two pointer analysis but they were written with bug finding
- *    in mind I think, not code comprehension which we really care about 
+ *    in mind I think, not code comprehension which we really care about
  *    in pfff.
- *    In the end I thought generating datalog facts for plan9 using lang_c/ 
+ *    In the end I thought generating datalog facts for plan9 using lang_c/
  *    was simpler that modifying CIL (moreover fixing lang_cpp/ and lang_c/
  *    to handle plan9 code was anyway needed for codemap).
  *  - SIL's monoidics. SIL looks a bit complicated, but it might be a good
@@ -68,7 +68,7 @@ open Common2.Infix
  *    clang-ocaml though but it's not easily accessible in a findlib
  *    library form yet.
  *  - we could also use the AST used by cc in plan9 :)
- * 
+ *
  * See also lang_cpp/parsing/cst_cpp.ml.
  *
  *)
@@ -106,7 +106,7 @@ type type_ =
   | TFunction of function_type
   | TStructName of struct_kind * name
   (* hmmm but in C it's really like an int no? but scheck could be
-   * extended at some point to do more strict type checking! 
+   * extended at some point to do more strict type checking!
    *)
   | TEnumName of name
   | TTypeName of name
@@ -115,7 +115,7 @@ type type_ =
 
  and function_type = (type_ * parameter list)
 
-  and parameter = 
+  and parameter =
    | ParamClassic of parameter_classic
    (* varargs of c or semgrep ellipsis *)
    | ParamDots of tok
@@ -180,7 +180,7 @@ and expr =
   (* gccext: kenccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
 
-  (* tree-sitter-c: 
+  (* tree-sitter-c:
    * only valid in cpp boolean expression context (e.g., #if argument).
    * This is actually not used because we skip ifdef directives anyway.
    *)
@@ -190,7 +190,7 @@ and expr =
   | Ellipses of tok
   | DeepEllipsis of expr bracket
 
-and argument = 
+and argument =
   | Arg of expr
 
 (* really should just contain constants and Id that are #define *)
@@ -201,7 +201,7 @@ and const_expr = expr
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-type stmt = 
+type stmt =
   | ExprSt of expr * tok
   | Block of stmt list bracket
 
@@ -211,10 +211,10 @@ type stmt =
 
   | While of tok * expr * stmt
   | DoWhile of tok * stmt * expr
-  | For of tok * 
-          (var_decl list, expr) Common.either * 
-          expr option * 
-          expr option * 
+  | For of tok *
+          (var_decl list, expr) Common.either *
+          expr option *
+          expr option *
           stmt
 
   | Return of tok * expr option
@@ -263,8 +263,8 @@ and var_decl = {
  * Anyway, AST_generic allows this too.
  *)
 
-and definition = 
-  (* less: what about ForwardStructDecl? for mutually recursive structures? 
+and definition =
+  (* less: what about ForwardStructDecl? for mutually recursive structures?
    * probably can deal with it by using typedefs as intermediates.
    *)
   | StructDef of struct_def
@@ -294,7 +294,7 @@ and struct_def = {
   s_flds: field_def list bracket;
 }
   (* less: could merge with var_decl, but field have no storage normally *)
-  and field_def = { 
+  and field_def = {
    (* less: bitfield annotation
     * kenccext: the option on fld_name is for inlined anonymous structure.
     * less: nested include/macros
@@ -303,7 +303,7 @@ and struct_def = {
     fld_type: type_;
   }
 
-and enum_def = { 
+and enum_def = {
   (*e_tok: tok;*)
   e_name: name;
   e_consts: (name * const_expr option) list
@@ -326,7 +326,7 @@ and directive =
   | Macro of tok * name * (name list) * define_body option
   | OtherDirective of string wrap * string wrap option
 
-  and define_body = 
+  and define_body =
     | CppExpr of expr (* actually const_expr when in Define context *)
     (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
      * We have no way to reference a CppStmt in 'stmt' since MacroStmt

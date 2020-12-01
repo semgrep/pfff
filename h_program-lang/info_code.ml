@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,7 +19,7 @@
 (*
  * history:
  *  - was in main_codestat.ml
- * 
+ *
  * Example of project information:
  *  - http://www.gnu.org/manual/blurbs.html
  *)
@@ -40,19 +40,19 @@ let load file =
   Outline.parse_outline file
 
 (* old:
-  let xs = 
+  let xs =
     Common.cat file
     +> List.map (Str.global_replace (Str.regexp "#.*") "" )
     +> List.map (Str.global_replace (Str.regexp "\\*+ -----.*") "" )
-    +> Common.exclude Common.is_blank_string 
+    +> Common.exclude Common.is_blank_string
   in
   let xxs = Common.split_list_regexp "^\\*+ " xs in
   xxs +> List.map (fun (s, body) ->
     if s =~ "^\\*+ \\([^ ]+\\)[ \t]*$"
-    then 
+    then
       let dir = Common.matched1 s in
       dir, body
-    else 
+    else
       failwith (spf "wrong format in %s, entry: %s" file s)
   )
 

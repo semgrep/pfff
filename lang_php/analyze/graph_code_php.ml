@@ -872,7 +872,7 @@ and hint_type env t =
 (* ---------------------------------------------------------------------- *)
 and expr env x =
   match x with
-  | Int _ | Double _ 
+  | Int _ | Double _
     -> ()
 
   (* A String in PHP can actually hide a class (or a function).

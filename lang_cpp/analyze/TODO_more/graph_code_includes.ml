@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,10 +26,10 @@ module T = Parser_cpp
 (*
  * Graph of dependencies for Objective C. See graph_code.ml and
  * main_codegraph.ml for more information.
- * 
- * 
+ *
+ *
  * schema:
- *  Root -> Dir -> File (.m|.h) 
+ *  Root -> Dir -> File (.m|.h)
  *       -> Dir -> SubDir -> ...
  *)
 
@@ -48,11 +48,11 @@ type env = {
 
 let parse ~show_parse_error file =
   ignore(show_parse_error);
-  try 
+  try
     Common.save_excursion Flag.verbose_lexing false (fun () ->
       Parse_cpp.tokens file
     )
-  with 
+  with
   | Timeout -> raise Timeout
   | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
@@ -62,13 +62,13 @@ let add_use_edge env (name, kind) =
   let src = env.current in
   let dst = (name, kind) in
   (match () with
-  | _ when G.has_node dst env.g -> 
+  | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
-  | _ -> 
+  | _ ->
     G.add_node dst env.g;
     let parent_target = G.not_found in
-    pr2 (spf "PB: lookup fail on %s (in %s)" 
+    pr2 (spf "PB: lookup fail on %s (in %s)"
            (G.string_of_node dst) (G.string_of_node src));
     env.g |> G.add_edge (parent_target, dst) G.Has;
     env.g |> G.add_edge (src, dst) G.Use;
@@ -122,7 +122,7 @@ let build ?(verbose=true) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let readable = Common.readable root file in
@@ -132,7 +132,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
      k();
      let readable = Common.readable root file in

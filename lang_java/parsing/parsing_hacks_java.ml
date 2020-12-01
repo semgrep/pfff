@@ -6,7 +6,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -26,8 +26,8 @@ module T = Parser_java
 (* This module transforms certain tokens like '<', normally a LT
  * into a LT_GENERIC, which helps solving conflicts in the original
  * Java grammar.
- * 
- * This is similar to what we do for C/C++. 
+ *
+ * This is similar to what we do for C/C++.
  * See pfff/lang_cpp/parsing/parsing_hacks.ml for more information.
  *)
 
@@ -41,16 +41,16 @@ module T = Parser_java
 
 let fix_tokens_generics xs =
 
-  let rec aux env xs = 
+  let rec aux env xs =
     let depth_angle = env in
-    if depth_angle < 0 
-    then begin 
+    if depth_angle < 0
+    then begin
       pr2 (spf "depth_angle < 0, %d" depth_angle);
       pr2_gen (List.hd xs);
       (* failwith "depth < 0" *)
       aux 0 xs
     end
-    else 
+    else
 
     match xs with
     | [] -> []
@@ -88,7 +88,7 @@ let fix_tokens_generics xs =
           aux (depth_angle + 1) xs
 
 (* too many FPs
-    | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::xs 
+    | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::xs
        when s =~ "^[A-Z]" ->
         IDENTIFIER (s, ii1)::TCommentSpace iispace::LT_GENERIC ii2::
           aux (depth_angle + 1) xs
@@ -140,7 +140,7 @@ let fix_tokens_generics xs =
         (* todo: split ii *)
         GT ii::GT ii::GT ii::aux (depth_angle - 3) xs
 
-      
+
   | x::xs -> x::aux env xs
   in
   aux 0 xs
@@ -149,11 +149,11 @@ let fix_tokens_generics xs =
 (* Lambdas *)
 (*****************************************************************************)
 let fix_tokens_fuzzy toks =
- try 
+ try
   let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
-  } toks 
+  } toks
   in
   let retag_lparen = Hashtbl.create 101 in
   let retag_default = Hashtbl.create 101 in
@@ -161,7 +161,7 @@ let fix_tokens_fuzzy toks =
   let rec aux env trees =
       match trees with
       | [] -> ()
-      (* (...) -> *) 
+      (* (...) -> *)
       | F.Parens (lp, xs, _rp)::F.Tok ("->", _)::ys ->
           Hashtbl.add retag_lparen lp true;
           iter_parens () xs;
@@ -170,11 +170,11 @@ let fix_tokens_fuzzy toks =
       | F.Tok ("default", ii)::F.Tok(":", _)::ys ->
           Hashtbl.add retag_default ii true;
           aux () ys
-      | x::xs -> 
+      | x::xs ->
           (match x with
           | F.Parens (_, xs, _) -> iter_parens env xs
           | F.Braces (_, xs, _) -> aux env xs
-          | F.Angle _ | F.Bracket _ 
+          | F.Angle _ | F.Bracket _
           | F.Metavar _ | F.Dots _ | F.Tok _ -> ()
           );
           aux env xs
@@ -205,7 +205,7 @@ let fix_tokens_fuzzy toks =
 (* Entry point *)
 (*****************************************************************************)
 
-let fix_tokens xs = 
+let fix_tokens xs =
   let xs = fix_tokens_generics xs in
   let xs = fix_tokens_fuzzy xs in
   xs

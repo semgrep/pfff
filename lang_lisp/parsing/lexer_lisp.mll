@@ -7,13 +7,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 module Flag = Flag_parsing
 open Parser_lisp
@@ -37,10 +37,10 @@ let letter = ['a'-'z''A'-'Z']
 let digit = ['0'-'9']
 
 let symbol =
-  ['-' '+' '=' '~'  '.'  ',' '/' ':' '<' '>' '*' ';' '#' 
-   '_'  '?' '^' '|' '!' '&' 
+  ['-' '+' '=' '~'  '.'  ',' '/' ':' '<' '>' '*' ';' '#'
+   '_'  '?' '^' '|' '!' '&'
    '%' '@' '{' '}' '$'
-  ] 
+  ]
 (*
 '\\'
 '@'
@@ -54,7 +54,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-  | ";" [^'\n' '\r']* { 
+  | ";" [^'\n' '\r']* {
       TComment(tokinfo lexbuf)
     }
   | [' ''\t']+ { TCommentSpace (tokinfo lexbuf) }
@@ -124,8 +124,8 @@ rule token = parse
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
-  | _ { 
-        if !Flag.verbose_lexing 
+  | _ {
+        if !Flag.verbose_lexing
         then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
     }
@@ -135,12 +135,12 @@ rule token = parse
 and string buf = parse
   | '"'           { Buffer.add_string buf "" }
   (* opti: *)
-  | [^ '"' '\\']+ { 
+  | [^ '"' '\\']+ {
       Buffer.add_string buf (tok lexbuf);
-      string buf lexbuf 
+      string buf lexbuf
     }
 
-  | ("\\" (_ as v)) as x { 
+  | ("\\" (_ as v)) as x {
       (* todo: check char ? *)
       (match v with
       | _ -> ()
@@ -148,6 +148,6 @@ and string buf = parse
       Buffer.add_string buf x;
       string buf lexbuf
     }
-  | eof { 
+  | eof {
       pr2 "LEXER: WIERD end of file in double quoted string";
     }

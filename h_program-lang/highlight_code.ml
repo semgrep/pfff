@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,62 +19,62 @@ module E = Entity_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * Emacs-like font-lock-mode, or SourceInsight-like display.
- * 
+ *
  * This file contains the generic part of a code highlighter
- * that is programming language independent. 
+ * that is programming language independent.
  * See highlight_xxx.ml for the code specific to the 'xxx'
  * programming language.
- * 
- * This source code viewer is based on good semantic information, 
- * not fragile regexps (as in Emacs), or partial parsing 
+ *
+ * This source code viewer is based on good semantic information,
+ * not fragile regexps (as in Emacs), or partial parsing
  * (as in SourceInsight, probably because they call cpp).
- *  
+ *
  * Augmented visual! Augmented intellect! See what can not see, like in
  * movies where HUD show invisible things.
- * 
- * history: 
+ *
+ * history:
  * Some code such as the visitor code was using Emacs_mode_xxx
- * visitors before, but now we use directly the raw visitor, cos 
+ * visitors before, but now we use directly the raw visitor, cos
  * emacs_mode_xxx was not a big win as we must colorize
  * and so visit and so get hooks for almost every programming constructs.
- * 
+ *
  * Moreover there was some duplication, such as for the different
  * categories: I had notes in emacs_mode_xxx and also notes in this file
  * about those categories like yacfe_imprecision, cpp, etc. So
  * better and cleaner to put all related code in the same file.
- * 
- * 
+ *
+ *
  * Why better to have such visualisation ? cf via_pram_readbyte example:
  * - better to see that use global via1, and that global to module
  * - better to see local macro
  * - better to see that some func are local too, the via_pram_writebyte
  * - better to see if local, or parameter
- * - better to see in comments that important words such as interrupts, 
+ * - better to see in comments that important words such as interrupts,
  *   and 'disabled', and 'must'
- * 
- * 
+ *
+ *
  * SEMI do first like gtk source view
  * SEMI do first like emacs
  * SEMI do like my pad emacs mode extension
  * SEMI do for yacfe specific stuff
  *
  * less: level of font-lock-mode ? so can colorify a lot the current function
- * and less the rest (so maybe avoid some of the bugs of GText ? 
- * 
+ * and less the rest (so maybe avoid some of the bugs of GText ?
+ *
  * Take more ideas from Source Insight ?
  *  - variable size parens depending on depth of nestedness
  *  - do same for curly braces ?
- * 
+ *
  * TODO estet: I often revisit in very similar way the code, and do
  * some matching to know if pointercall, methodcall, to know if
- * prototype or decl extern, to know if typedef inside, or structdef 
+ * prototype or decl extern, to know if typedef inside, or structdef
  * inside. Could
  * perhaps define helpers so not redo each time same things ?
- * 
+ *
  * estet?: redundant with - place_code ?  - entity_c ?
- * 
+ *
  * related-work:
  *  - http://pygments.org/
  *)
@@ -84,12 +84,12 @@ module E = Entity_code
 (*****************************************************************************)
 
 (* will be italic vs non-italic (could be large vs small ? or bolder ? *)
-type usedef = 
-  | Use 
+type usedef =
+  | Use
   | Def
 
 (* colors will be adjusted (degrade de couleurs) (could also do size? *)
-type place = 
+type place =
   | PlaceLocal
   | PlaceSameDir
   | PlaceExternal
@@ -103,14 +103,14 @@ type place =
 
 
 (* will be underlined or strikedthrough *)
-type def_arity = 
+type def_arity =
   | UniqueDef
   | DoubleDef
   | MultiDef
   | NoDef
 
 (* will be different colors *)
-type use_arity = 
+type use_arity =
   | NoUse
   | UniqueUse
   | SomeUse
@@ -121,7 +121,7 @@ type use_arity =
 
 type use_info = place * def_arity * use_arity
 type def_info = use_arity
-type usedef2 = 
+type usedef2 =
   | Use2 of use_info
   | Def2 of def_info
 
@@ -132,9 +132,9 @@ type usedef2 =
 (* coupling: if you add constructor, don't forget to add its
  * handling in 2 places below, for its color and associated string
  * representation.
- * 
+ *
  * If you look at usedef below, you should get all the way C programmer
- * can name things: 
+ * can name things:
  *   - macro, macrovar
  *   - functions
  *   - variables (global/param/local)
@@ -150,7 +150,7 @@ type usedef2 =
  *)
 
 (* color, foreground or background will be changed *)
-type category =  
+type category =
   (* pad's addons (actually Pixel added a special font in Emacs for numbers) *)
   | Boolean | Number
   | String | Regexp
@@ -182,8 +182,8 @@ type category =
    * still can have some global/local dichotomy but at the module level.
    *)
   | Entity of Entity_code.entity_kind * usedef2
-     
-  (* kind of specific case of Global of Local which we know are really 
+
+  (* kind of specific case of Global of Local which we know are really
    * really local. Don't really need a def_arity and place here. *)
   | Local of usedef
   | Parameter of usedef
@@ -217,10 +217,10 @@ type category =
    * the use of a global. Moreover using a ref in OCaml is really bad
    * which is why I want to highlight it specially.
    *)
-  | UseOfRef 
+  | UseOfRef
 
   | PointerCall (* a.k.a dynamic call *)
-  | CallByRef 
+  | CallByRef
   | ParameterRef
 
   | IdentUnknown
@@ -230,7 +230,7 @@ type category =
   | Ifdef
   | Include
   | IncludeFilePath
-  | Define 
+  | Define
   | CppOther
   (* metaprogramming related *)
   | Attribute
@@ -253,7 +253,7 @@ type category =
   | CommentSection0
   | CommentSection1
   | CommentSection2
-  | CommentSection3 
+  | CommentSection3
   | CommentSection4
   | CommentEstet
   | CommentCopyright
@@ -277,7 +277,7 @@ type category =
 
 
   (* basic *)
-  | BackGround | ForeGround 
+  | BackGround | ForeGround
 
   (* parsing imprecision *)
   | NotParsed | Passed | Expanded | Error
@@ -290,7 +290,7 @@ type category =
 type highlighter_preferences = {
   mutable show_type_error: bool;
   mutable show_local_global: bool;
-  
+
 }
 let default_highlighter_preferences = {
   show_type_error = false;
@@ -302,15 +302,15 @@ let default_highlighter_preferences = {
 (* Color and font settings *)
 (*****************************************************************************)
 
-(* 
+(*
  * capabilities: (cf also pango.ml)
- *  - colors, and can provide semantic information by 
- *    * using opposite colors 
- *    * using close colors, 
+ *  - colors, and can provide semantic information by
+ *    * using opposite colors
+ *    * using close colors,
  *    * using degrade color
  *    * using tone (darker, brighter)
  *    * can also use background/foreground
- *    
+ *
  *  - fontsize
  *  - bold, italic, slanted, normal
  *  - underlined/strikedthrough, pango can even do double underlined
@@ -318,13 +318,13 @@ let default_highlighter_preferences = {
  *    in addition of different colors ?
  *  - casse, smallcaps ? (but can confondre avec macro ?)
  *  - stretch? (condenset)
- * 
+ *
  * Recurrent conventions, which would be counter productive to change maybe:
  *  - string: green
  *  - keywords: red/orange
- * 
+ *
  * Emacs C-mode conventions:
- *  - entities declarations: light/dark blue 
+ *  - entities declarations: light/dark blue
  *    (dark for param and local, light for func)
  *  - types: green
  *  - keywords: orange/dark-orange, this include:
@@ -335,11 +335,11 @@ let default_highlighter_preferences = {
  *  - entities used: basic
  *  - comments: grey
  *  - strings: dark green
- * 
+ *
  * pad:
  *  - punctuation: blue
  *  - numbers: yellow
- * 
+ *
  * semantic variable:
  *   - global
  *   - parameter
@@ -348,7 +348,7 @@ let default_highlighter_preferences = {
  *   - local, defined in file
  *   - global
  *   - global and multidef
- *   - global and utilities, so kind of keyword, like my Common.map or 
+ *   - global and utilities, so kind of keyword, like my Common.map or
  *     like kprintf
  * semantic types:
  *   - local/specific
@@ -358,7 +358,7 @@ let default_highlighter_preferences = {
  *   - arithmetic
  *   - bits
  *   - memory
- * 
+ *
  * notions:
  *  declaration vs use (italic vs non italic, or large vs small)
  *  type vs values (use color?)
@@ -366,64 +366,64 @@ let default_highlighter_preferences = {
  *  local vs global (bold vs non bold, also can use degarde de couleur)
  *  module vs program (use font size ?)
  *  unique vs multi (use underline ? and strikedthrough ?)
- * 
+ *
  * more and more distant => darker ?
  * less and less unique => bigger ?
  * (but both notions of distant and unique are strongly correlated ?)
- * 
+ *
  * Normally can leverage indentation and place in file. We know when
  * we are not at the toplevel because of the indentation, so can overload
  * some colors.
- * 
- * 
- * 
+ *
+ *
+ *
  * final:
  *  (total colors)
  *  - blanc
  *      wheat: default (but what remains default??)
  *  - noir
  *      gray: comments
- * 
- * 
- * 
+ *
+ *
+ *
  *  (primary colors)
- *  - rouge: 
+ *  - rouge:
  *      control,  conditional vs loop vs jumps, functions
- *  - bleue: 
+ *  - bleue:
  *     variables, values
- *  - vert: 
+ *  - vert:
  *       types
  *      - vert-dark: string, chars
- * 
- * 
- *  (secondary colors) 
- *  - jaune (rouge-vert): 
+ *
+ *
+ *  (secondary colors)
+ *  - jaune (rouge-vert):
  *      numbers, value
- *  - magenta (rouge-bleu): 
- *  
- *  - cyan (vert-bleu): 
- * 
- * 
+ *  - magenta (rouge-bleu):
+ *
+ *  - cyan (vert-bleu):
+ *
+ *
  *  (tertiary colors)
  *  - orange (rouge-jaune):
- * 
+ *
  *  - pourpre (rouge-violet)
- * 
- *  - rose: 
- * 
+ *
+ *  - rose:
+ *
  *  - turquoise:
- * 
+ *
  *  - marron
- * 
+ *
  *)
 
 let legend_color_codes = "
-The big principles for the colors, fonts, and strikes are: 
-  - italic: for definitions, 
+The big principles for the colors, fonts, and strikes are:
+  - italic: for definitions,
     normal: for uses
-  - doubleline: double def, 
-    singleline: multi def, 
-    strike:     no def, 
+  - doubleline: double def,
+    singleline: multi def,
+    strike:     no def,
     normal:     single def
   - big fonts: use of global variables, or function pointer calls
   - lighter: distance of definitions (very light means in same file)
@@ -438,12 +438,12 @@ The big principles for the colors, fonts, and strikes are:
   - blue:   globals, variables
   - pink:   constants, macros
 
-  - cyan and big:      global, 
+  - cyan and big:      global,
     turquoise and big: remote global,
-    dark blue:         parameters, 
+    dark blue:         parameters,
     blue:              locals
-  - yellow and big: function pointer, 
-    light yellow:   local call (in same file), 
+  - yellow and big: function pointer,
+    light yellow:   local call (in same file),
     dark yellow:    remote module call (in same dir)
   - salmon: many uses, probably a utility function (e.g. printf)
 
@@ -451,20 +451,20 @@ The big principles for the colors, fonts, and strikes are:
 "
 
 
-let info_of_usedef usedef = 
+let info_of_usedef usedef =
   match usedef with
   | Def -> [`STYLE `ITALIC]
   | Use -> []
 
-let info_of_def_arity defarity = 
+let info_of_def_arity defarity =
   match defarity with
   | UniqueDef  -> []
   | DoubleDef -> [`UNDERLINE `DOUBLE]
   | MultiDef -> [`UNDERLINE `SINGLE]
 
-  | NoDef -> [`STRIKETHROUGH true] 
+  | NoDef -> [`STRIKETHROUGH true]
 
-let info_of_place _defplace = 
+let info_of_place _defplace =
   raise Todo
 
 let info_of_entity_kind_and_usedef2 kind defkind =
@@ -486,16 +486,16 @@ let info_of_entity_kind_and_usedef2 kind defkind =
     | E.Exception, (Use2 _) -> [`FOREGROUND "Orchid2"] @ info_of_usedef (Use)
 
     (* defs *)
-    | E.Function, (Def2 _) -> [`FOREGROUND "gold"; 
+    | E.Function, (Def2 _) -> [`FOREGROUND "gold";
                                `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
                               ]
-    | E.Macro, (Def2 _) -> [`FOREGROUND "gold"; 
+    | E.Macro, (Def2 _) -> [`FOREGROUND "gold";
                             `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
                            ]
-    | E.Global, (Def2 _) -> [`FOREGROUND "cyan"; 
+    | E.Global, (Def2 _) -> [`FOREGROUND "cyan";
                              `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
                             ]
-    | E.Constant, (Def2 _) -> [`FOREGROUND "pink"; 
+    | E.Constant, (Def2 _) -> [`FOREGROUND "pink";
                                `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
                               ]
     | E.Method, (Def2 _) -> [`FOREGROUND "gold3";
@@ -504,11 +504,11 @@ let info_of_entity_kind_and_usedef2 kind defkind =
     | E.Class, (Def2 _) ->  [`FOREGROUND "coral"] @ info_of_usedef (Def)
 
     (* uses *)
-    | E.Function, (Use2 (defplace,def_arity,use_arity)) -> 
+    | E.Function, (Use2 (defplace,def_arity,use_arity)) ->
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "gold";]
       | PlaceSameDir -> [`FOREGROUND "goldenrod";]
-      | PlaceExternal -> 
+      | PlaceExternal ->
           (match use_arity with
           | MultiUse -> [`FOREGROUND "DarkGoldenrod"]
 
@@ -520,12 +520,12 @@ let info_of_entity_kind_and_usedef2 kind defkind =
       | NoInfoPlace -> [`FOREGROUND "LightGoldenrod";]
       ) @ info_of_def_arity def_arity
 
-    | E.Global, (Use2 (defplace, def_arity, use_arity)) -> 
+    | E.Global, (Use2 (defplace, def_arity, use_arity)) ->
       [`SCALE `X_LARGE] @
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "cyan";]
       | PlaceSameDir -> [`FOREGROUND "turquoise3";]
-      | PlaceExternal -> 
+      | PlaceExternal ->
           (match use_arity with
           | MultiUse -> [`FOREGROUND "turquoise4"]
           | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
@@ -537,11 +537,11 @@ let info_of_entity_kind_and_usedef2 kind defkind =
 
       ) @ info_of_def_arity def_arity
 
-    | E.Constant, (Use2 (defplace, def_arity, use_arity)) -> 
+    | E.Constant, (Use2 (defplace, def_arity, use_arity)) ->
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "pink";]
       | PlaceSameDir -> [`FOREGROUND "LightPink";]
-      | PlaceExternal -> 
+      | PlaceExternal ->
           (match use_arity with
           | MultiUse -> [`FOREGROUND "PaleVioletRed"]
 
@@ -556,11 +556,11 @@ let info_of_entity_kind_and_usedef2 kind defkind =
       ) @ info_of_def_arity def_arity
 
     (* copy paste of MacroVarUse for now *)
-    | E.Macro, (Use2 (defplace, def_arity, use_arity)) -> 
+    | E.Macro, (Use2 (defplace, def_arity, use_arity)) ->
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "pink";]
       | PlaceSameDir -> [`FOREGROUND "LightPink";]
-      | PlaceExternal -> 
+      | PlaceExternal ->
           (match use_arity with
           | MultiUse -> [`FOREGROUND "PaleVioletRed"]
 
@@ -583,11 +583,11 @@ let info_of_entity_kind_and_usedef2 kind defkind =
     (* see dircolors.ml *)
     | E.Dir, _ -> [`FOREGROUND "CornFlowerBlue"]
     | E.MultiDirs, _ -> [`FOREGROUND "DarkSlateBlue"]
-        
-    | _ -> 
+
+    | _ ->
       failwith (spf "info_of_entity_kind_and_usedef2: missing case for '%s'"
                   (Entity_code.string_of_entity_kind kind))
-    
+
 
 
 (*****************************************************************************)
@@ -603,28 +603,28 @@ let info_of_category = function
   (* background *)
   | BackGround -> [`BACKGROUND "DarkSlateGray"]
   | ForeGround -> [`FOREGROUND "wheat";]
-      
+
   | NotParsed -> [`BACKGROUND "grey42" (*"lightgray"*)]
   | NoType ->    [`BACKGROUND "DimGray"]
   | Passed ->    [`BACKGROUND "DarkSlateGray4"]
   | Expanded ->  [`BACKGROUND "red"]
   | Error ->     [`BACKGROUND "red2"]
 
-  (* a flashy one that hurts the eye :) *) 
-  | BadSmell -> [`FOREGROUND "magenta"] 
+  (* a flashy one that hurts the eye :) *)
+  | BadSmell -> [`FOREGROUND "magenta"]
 
   | UseOfRef -> [`FOREGROUND "magenta"]
 
-  | PointerCall -> 
+  | PointerCall ->
       [`FOREGROUND "firebrick";
-       `WEIGHT `BOLD; 
+       `WEIGHT `BOLD;
        `SCALE `XX_LARGE;
       ]
 
   | ParameterRef -> [`FOREGROUND "magenta"]
-  | CallByRef ->   
-      [`FOREGROUND "orange"; 
-       `WEIGHT `BOLD; 
+  | CallByRef ->
+      [`FOREGROUND "orange";
+       `WEIGHT `BOLD;
        `SCALE `XX_LARGE;
       ]
   | IdentUnknown ->   [`FOREGROUND "red";]
@@ -661,12 +661,12 @@ let info_of_category = function
   | Entity (kind, defkind) ->
    info_of_entity_kind_and_usedef2 kind defkind
 
-  | FunctionDecl _ -> [`FOREGROUND "gold2"; 
+  | FunctionDecl _ -> [`FOREGROUND "gold2";
                          `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
                         ]
 
   | Parameter usedef -> [`FOREGROUND "SteelBlue2";] @ info_of_usedef usedef
-  | Local usedef  ->    [`FOREGROUND "SkyBlue1";] @ info_of_usedef usedef 
+  | Local usedef  ->    [`FOREGROUND "SkyBlue1";] @ info_of_usedef usedef
 
   (* | FunCallMultiDef ->[`FOREGROUND "LightGoldenrod";] *)
 
@@ -684,8 +684,8 @@ let info_of_category = function
   | ConstructorMatch _ -> [`FOREGROUND "pink1";]
   | FunctionEquation -> [`FOREGROUND "LightSkyBlue";]
 
-  | StructName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
-  | EnumName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
+  | StructName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef
+  | EnumName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef
 
 
   | Ifdef -> [`FOREGROUND "chocolate";]
@@ -719,9 +719,9 @@ let info_of_category = function
   | Null -> [`FOREGROUND "cyan3";]
 
 
-  | CommentWordImportantNotion ->  
+  | CommentWordImportantNotion ->
       [`FOREGROUND "red"; `SCALE `LARGE;`UNDERLINE `SINGLE; ]
-  | CommentWordImportantModal ->  
+  | CommentWordImportantModal ->
       [`FOREGROUND "green"; `SCALE `LARGE; `UNDERLINE `SINGLE;]
 
   | Punctuation -> [`FOREGROUND "cyan";]
@@ -733,20 +733,20 @@ let info_of_category = function
 
 
   (* to be consistent with Archi_code.Ui color *)
-  | EmbededHtml -> [`FOREGROUND "RosyBrown"] 
-  | EmbededHtmlAttr ->[`FOREGROUND "burlywood3"] 
+  | EmbededHtml -> [`FOREGROUND "RosyBrown"]
+  | EmbededHtmlAttr ->[`FOREGROUND "burlywood3"]
 
   | EmbededUrl ->
       (* yellow-like color, like function, because it's often
        * used as a method call in method programming
        *)
-      [`FOREGROUND "DarkGoldenrod2"] 
+      [`FOREGROUND "DarkGoldenrod2"]
 
-  | EmbededCode ->   [`FOREGROUND "yellow3"] 
-  | EmbededStyle ->  [`FOREGROUND "peru"] 
-  | Verbatim ->      [`FOREGROUND "plum"] 
+  | EmbededCode ->   [`FOREGROUND "yellow3"]
+  | EmbededStyle ->  [`FOREGROUND "peru"]
+  | Verbatim ->      [`FOREGROUND "plum"]
 
-  | GrammarRule ->   [`FOREGROUND "plum"] 
+  | GrammarRule ->   [`FOREGROUND "plum"]
 
   | Normal -> [`FOREGROUND "wheat";]
 
@@ -754,14 +754,14 @@ let info_of_category = function
 (* Generic helpers *)
 (*****************************************************************************)
 
-let arity_ids ids  = 
+let arity_ids ids  =
   match ids with
   | [] -> NoDef
   | [_] -> UniqueDef
   | [_;_] -> DoubleDef
   | _::_::_::_ -> MultiDef
 
-let rewrap_arity_def2_category arity categ = 
+let rewrap_arity_def2_category arity categ =
   match categ with
   | Entity (kind, (Def2 _)) -> Entity (kind, (Def2 arity))
   | FunctionDecl _ ->  FunctionDecl arity

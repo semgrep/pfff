@@ -13,7 +13,7 @@
  *     * Neither the name of the <organization> nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,14 +31,14 @@
 (*****************************************************************************)
 (* Abstract Syntax Tree for Ruby 1.9
  *
- * Most of the code in this file derives from code from 
+ * Most of the code in this file derives from code from
  * Mike Furr in diamondback-ruby.
  *
- * less: 
+ * less:
  *  - [AST Format of the Whitequark parser](https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md)
  *  - https://rubygems.org/gems/ast
  *  - new AST format in RubyVM in ruby 2.6 (see wikipedia page on Ruby)
- * 
+ *
  * history:
  *  - 2010 diamondback-ruby latest version
  *  - 2020 integrate in pfff diamondback-ruby parser, AST and IL (called cfg)
@@ -46,7 +46,7 @@
  *  - lots of big refactorings when using this file to generate the AST
  *    from the tree-sitter CST for Ruby, use more precise types
  *    like method_name, method_kind, rescue_clause, scope_resolution instead
- *    of the very broad 'expr'. This will help also when converting to 
+ *    of the very broad 'expr'. This will help also when converting to
  *    the generic AST.
  *)
 
@@ -81,14 +81,14 @@ type 'a bracket = tok * 'a * tok
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 type ident = string wrap
-  and uident = ident 
+  and uident = ident
   and _lident = ident
  [@@deriving show, eq, ord]
 
 (* less: Self of tok | Id of lident | Cst of uident | ...  *)
-type variable = ident * id_kind 
- and id_kind = 
-  | ID_Self 
+type variable = ident * id_kind
+ and id_kind =
+  | ID_Self
   (* treesitter: *)
   | ID_Super
   | ID_Lowercase (* prefixed by [a-z] or _ *)
@@ -96,7 +96,7 @@ type variable = ident * id_kind
   | ID_Uppercase (* prefixed by [A-Z] *) (* a.k.a "constant" in Ruby *)
   | ID_Instance  (* prefixed by @ *)
   | ID_Class     (* prefixed by @@ *)
-  (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))" 
+  (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))"
    * old: was split in 2 before with a ID_Builtin but was not in tree-sitter
    *)
   | ID_Global    (* prefixed by $ *)
@@ -105,7 +105,7 @@ type variable = ident * id_kind
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
 (* ------------------------------------------------------------------------- *)
-type unary_op = 
+type unary_op =
   (* unary and msg_id *)
   | U of unary_msg
   (* not in msg_id *)
@@ -113,17 +113,17 @@ type unary_op =
   | Op_DefinedQuestion (* defined? *)
 
   (* only in argument *)
-  | Op_UAmper    (* & *) 
+  | Op_UAmper    (* & *)
   (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
 
-  and unary_msg = 
+  and unary_msg =
   | Op_UMinus    (* -x, -@ when in msg_id *)  | Op_UPlus (* +x, +@ in msg_id *)
   | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
  [@@deriving show { with_path = false }, eq, ord]
 
 
-type binary_op = 
+type binary_op =
   | B of binary_msg
   (* not in msg_id, like op_AND/Op_OR but lower precedence *)
   | Op_kAND     (* and *)  | Op_kOR      (* or *)
@@ -140,7 +140,7 @@ type binary_op =
   (* sugar for .. and = probably *)
   | Op_DOT3     (* ... *)
 
-  and binary_msg = 
+  and binary_msg =
   (* binary and msg_id and assign op *)
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
@@ -162,7 +162,7 @@ type binary_op =
   | Op_NMATCH   (* !~ *)
 
   (* note that one of the binary argument might be a fake nil, because
-   * 42.. is equivalent to 42..nil. 
+   * 42.. is equivalent to 42..nil.
    * See https://ruby-doc.org/core-2.6.1/Range.html
    *)
   | Op_DOT2     (* .. *)
@@ -182,7 +182,7 @@ type binary_op =
 (* Expression *)
 (*****************************************************************************)
 
-type expr = 
+type expr =
   | Literal of literal
   (* used to be in literal, but some atoms/strings are interpolated and contain
    * expressions, so better to separate from really simple literals *)
@@ -225,11 +225,11 @@ type expr =
   | TypedMetavar of ident * tok * type_
 
   (* less: use for Assign, can be Id, Tuple, Array, more? *)
-  and lhs = expr 
+  and lhs = expr
 
 (* the pattern: below are copy pasted from tree-sitter-ruby, they may not be
  * the one actually used in lexer_ruby.mll *)
-and literal = 
+and literal =
   (* [tT]rue, [fF]alse *)
   | Bool of bool wrap
   (* pattern: 0[bB][01](_?[01])*|0[oO]?[0-7](_?[0-7])*|(0[dD])?\d(_?\d)*|0x[0-9a-fA-F](_?[0-9a-fA-F])* *)
@@ -240,29 +240,29 @@ and literal =
   (* treesitter: TODO add in dyp *)
   (* pattern: (\d+)?(\+|-)?(\d+)i *)
   | Complex of string wrap
-  | Rational of string wrap * tok (* r *) 
- 
+  | Rational of string wrap * tok (* r *)
+
   | String of string_kind
   | Regexp of (interp list * string) wrap
   (* treesitter: TODO add in dyp *)
   (* pattern: \?(\\\S({[0-9]*}|[0-9]*|-\S([MC]-\S)?)?|\S) *)
-  | Char of string wrap 
+  | Char of string wrap
 
-  | Nil of tok 
+  | Nil of tok
 
-  and atom = 
+  and atom =
   (* the atom string includes the ':' prefix *)
   | AtomSimple of string wrap
   (* less: tok for ':' ? *)
   | AtomFromString of interp list bracket (* '' or "" *)
 
-  and string_kind = 
+  and string_kind =
     | Single of string wrap
     | Double of interp list bracket
     | Tick of interp list bracket
 
     (* interpolated strings (a.k.a encapsulated/template strings) *)
-    and interp = 
+    and interp =
       | StrChars of string wrap
       | StrExpr of expr
 
@@ -271,7 +271,7 @@ and literal =
 (* ------------------------------------------------------------------------- *)
 
 (* old: was just expr before *)
-and method_name = 
+and method_name =
   | MethodId of variable (* all except Self and Super *)
   | MethodIdAssign of ident * tok * id_kind (* = *)
   | MethodAtom of atom
@@ -283,15 +283,15 @@ and method_name =
 (* ------------------------------------------------------------------------- *)
 (* Class or module name *)
 (* ------------------------------------------------------------------------- *)
-and class_or_module_name = 
-   | NameConstant of uident 
+and class_or_module_name =
+   | NameConstant of uident
    | NameScope of scope_resolution
 
 (* ------------------------------------------------------------------------- *)
 (* Scope resolution *)
 (* ------------------------------------------------------------------------- *)
 (* The variable below is actually either an ID_Lowercase or ID_Uppercase
- * less: replace variable with ident? 
+ * less: replace variable with ident?
  *)
 and scope_resolution =
   (* old: was called Op_UScope before *)
@@ -299,7 +299,7 @@ and scope_resolution =
   (* old: was called Op_SCOPE before *)
   | Scope of expr * tok (* :: *) * variable_or_method_name
 
-  and variable_or_method_name = 
+  and variable_or_method_name =
    | SV of variable
    (* TODO: this is not in tree-sitter *)
    | SM of method_name
@@ -350,12 +350,12 @@ and stmt =
   and case_block = {
     case_guard : expr option;
     (* the pattern list is a comma separated list of expressions and
-     * is converted in a || list by Ruby. The use of such comma is 
+     * is converted in a || list by Ruby. The use of such comma is
      * actually deprecated *)
     case_whens: (tok (* when *) * pattern list * stmts) list;
     case_else: (tok (* else *) * stmts) option;
   }
-  
+
   (* tokens around body_exn are usually begin/end or do/end or
    * <nothing>/end for class and module defs *)
   and body_exn = {
@@ -366,7 +366,7 @@ and stmt =
   }
     (* less: the list can be empty, in which case it maybe mean
      * implicitely StandardError exn? *)
-    and rescue_clause = 
+    and rescue_clause =
       tok * exception_ list * exception_variable option * stmts
         (* usually an Id, or a Splat *)
         and exception_ = expr
@@ -390,7 +390,7 @@ and definition =
   | Undef of tok * method_name list
 
   (* treesitter: TODO stuff with ; and identifier list? in block params? *)
-  and formal_param = 
+  and formal_param =
     (* old: was of expr before *)
     | Formal_id of ident (* usually just xx but sometimes also @xx or $xx *)
     | Formal_amp of tok * ident
@@ -408,8 +408,8 @@ and definition =
 
      (* sgrep-ext: *)
      | ParamEllipsis of tok
-  
-  and class_kind = 
+
+  and class_kind =
    | C of class_or_module_name * (tok (* < *) * expr) option
    | SingletonC of tok (* << *) * expr
 
@@ -424,7 +424,7 @@ and definition =
 (* Type *)
 (*****************************************************************************)
 (* Was called Annotation in diamondback-ruby but was using its own specific
- * comment format. 
+ * comment format.
  * less: maybe leverage the new work on gradual typing of Ruby in
  * Sorbet and steep?
  *)
@@ -440,7 +440,7 @@ type program = stmts
 (* Any *)
 (*****************************************************************************)
 
-type any = 
+type any =
   (* main any for semgrep *)
   | E of expr
   | S2 of stmt

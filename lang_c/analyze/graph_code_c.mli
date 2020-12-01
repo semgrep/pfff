@@ -4,10 +4,10 @@ val build:
   Graph_code.graph
 
 (* if want prolog facts generation *)
-val hook_use_edge: 
-  (Graph_code_prolog.context -> bool (* in_assign *) -> 
-  (Graph_code.node * Graph_code.node) -> 
-   Graph_code.graph -> 
+val hook_use_edge:
+  (Graph_code_prolog.context -> bool (* in_assign *) ->
+  (Graph_code.node * Graph_code.node) ->
+   Graph_code.graph ->
    Parse_info.token_location ->
    unit)
   ref

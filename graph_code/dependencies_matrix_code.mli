@@ -10,14 +10,14 @@ type dm = {
   and tree =
     | Node of Graph_code.node * tree list
 
-type partition_constraints = 
+type partition_constraints =
   (string, string list) Hashtbl.t
 type cell_coord =
   (int * int)
 
 val verbose: bool ref
 
-val explain_cell_list_use_edges: 
+val explain_cell_list_use_edges:
   cell_coord -> dm -> Graph_code_opti.graph ->
   (Graph_code.node * Graph_code.node) list
 
@@ -25,10 +25,10 @@ val explain_cell_list_use_edges:
 val basic_config: Graph_code.graph -> config
 val basic_config_opti: Graph_code_opti.graph -> config
 
-type config_path_elem = 
+type config_path_elem =
   | Expand of Graph_code.node
   | Focus of Graph_code.node * deps_style
- and deps_style = 
+ and deps_style =
   | DepsIn
   | DepsOut
   | DepsInOut
@@ -37,18 +37,18 @@ type config_path = config_path_elem list
 val string_of_config_path: config_path -> string
 
 (* tree config manipulation *)
-val expand_node: 
+val expand_node:
   Graph_code.node -> tree -> Graph_code.graph -> tree
-val expand_node_opti: 
+val expand_node_opti:
   Graph_code.node -> tree -> Graph_code_opti.graph -> tree
 val focus_on_node:
   Graph_code.node -> deps_style -> tree -> dm -> tree
 
 
 (* matrix analysis *)
-val is_dead_column: 
+val is_dead_column:
   int -> dm -> bool
-val is_dead_line: 
+val is_dead_line:
   int -> dm -> bool
 val is_internal_helper:
   int -> dm -> bool

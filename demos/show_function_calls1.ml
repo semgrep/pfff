@@ -5,7 +5,7 @@ open Cst_php
 (*e: basic pfff modules open *)
 
 (*s: show_function_calls v1 *)
-let show_function_calls file = 
+let show_function_calls file =
   let ast = Parse_php.parse_program file in
 
   (*s: iter on asts manually *)
@@ -16,7 +16,7 @@ let show_function_calls file =
           stmts |> List.iter (fun stmt ->
             (match stmt with
             | ExprStmt (e, _ptvirg) ->
-      
+
                 (match e with
                 | Call(Id funcname, args) ->
                   (*s: print funcname *)
@@ -36,6 +36,6 @@ let show_function_calls file =
   (*e: iter on asts manually *)
 (*e: show_function_calls v1 *)
 
-let main = 
+let main =
   show_function_calls Sys.argv.(1)
 (*e: show_function_calls1.ml *)

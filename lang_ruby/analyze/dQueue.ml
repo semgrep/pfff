@@ -40,44 +40,44 @@ let pop_back = function
       match List.rev fs with
     | [] -> assert false
     | r::rs -> (queue [f] rs), r
-    
+
 let length (f,r) = (List.length f) + (List.length r)
 
-let append (f1,r1) (f2,r2) = 
+let append (f1,r1) (f2,r2) =
   let r = List.rev_append f2 r1 in
   let r = List.append r2 r in
     queue f1 r
 
 let rev (f,r) = queue r f
 
-let iter func (f,r) = 
+let iter func (f,r) =
   List.iter func f;
   List.iter func (List.rev r)
 
 let fold func acc (f,r) =
   List.fold_left func (List.fold_left func acc f) (List.rev r)
 
-let rev_map func (f,r) = 
+let rev_map func (f,r) =
   (List.rev_map func r), (List.rev_map func f)
 
-let map func (f,r) = 
-  (List.rev (List.rev_map func f)), 
+let map func (f,r) =
+  (List.rev (List.rev_map func f)),
   (List.rev (List.rev_map func r))
 
-let to_list (f,r) = 
+let to_list (f,r) =
   List.rev_append (List.rev f) (List.rev r)
 
 let from_list l = (l,[])
 
-let rec flatten t = 
+let rec flatten t =
   if is_empty t then empty
-  else 
+  else
     let x,xs = pop t in
       append x (flatten xs)
 (*
-let flatten (f,r) = 
+let flatten (f,r) =
   let f'= List.fold_left
-    (fun acc (x,y) -> List.append x (List.rev_append y acc)) [] f 
+    (fun acc (x,y) -> List.append x (List.rev_append y acc)) [] f
   in
   let r' = List.fold_left
     (fun acc (f,r) ->
@@ -108,18 +108,18 @@ let list_to_string to_s = function
     (to_s hd)
     (List.fold_left (fun acc t -> acc ^ ", " ^ (to_s t)) "" tl)
 
-let to_string to_s (f,r) = 
-  "Q" ^ (list_to_string to_s f) ^ 
+let to_string to_s (f,r) =
+  "Q" ^ (list_to_string to_s f) ^
     (list_to_string to_s (List.rev r))
 
-let rec gen_list (gen : ?size:int -> Random.State.t -> 'a) 
-    ?(size=50) (r : Random.State.t) : 'a list = 
+let rec gen_list (gen : ?size:int -> Random.State.t -> 'a)
+    ?(size=50) (r : Random.State.t) : 'a list =
   let size = abs size in
     if (Random.State.int r size) = 0
     then []
     else (gen r) :: (gen_list ~size:(size-1) gen r)
 
-let gen (gena: ?size:int -> Random.State.t -> 'a) ?size rs : 'a t = 
+let gen (gena: ?size:int -> Random.State.t -> 'a) ?size rs : 'a t =
   (gen_list ?size gena rs), (gen_list ?size gena rs)
 
 type 'a path =
@@ -146,11 +146,11 @@ let move_left (p,t) = match p with
   | Top -> failwith "move_left"
   | Path(p, hd) -> p, (cons hd t)
 
-let rec goto_front c = 
+let rec goto_front c =
   if at_left c then c
   else goto_front (move_left c)
 
-let rec goto_back c = 
+let rec goto_back c =
   if at_right c then c
   else goto_back (move_right c)
 

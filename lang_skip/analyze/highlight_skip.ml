@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -23,7 +23,7 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (* Syntax highlighting for Skip code for codemap (and now also for efuns).
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -51,7 +51,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   )
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)    
+   if not (Hashtbl.mem already_tagged ii)
    then tag ii categ
   in
 
@@ -62,7 +62,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
    in
 
   (* -------------------------------------------------------------------- *)
-  (* AST phase 1 *) 
+  (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
@@ -71,7 +71,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   (* note: all TCommentSpace are filtered in xs so it should be easier to
    * write rules (but regular comments are kept as well as newlines).
    *)
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
@@ -110,10 +110,10 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
 
     (* When we get a parse error, the AST does not contain the definitions, but
      * we can still try to tag certain things. Here is a
-     * poor's man semantic tagger. We try to infer if an ident is a func, 
+     * poor's man semantic tagger. We try to infer if an ident is a func,
      * or class, or module based on the few tokens around.
-     * 
-     * This may look ridiculous to do such semantic tagging using tokens 
+     *
+     * This may look ridiculous to do such semantic tagging using tokens
      * instead of the full AST but sometimes Skip files could not parse with
      * the default parser because of ??? so having
      * a solid token-based tagger is still useful as a last resort.
@@ -183,7 +183,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
         tag_if_lexer ii (Entity (E.Field, use2));
         aux_toks xs;
 
-    (* recurse *)       
+    (* recurse *)
     | _x::xs ->
         aux_toks xs
   in
@@ -198,7 +198,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-   toks |> List.iter (fun tok -> 
+   toks |> List.iter (fun tok ->
     match tok with
     (* specials *)
 
@@ -243,26 +243,26 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
        -> tag ii KeywordModule
     | T.Tclass ii | T.Textends ii | T.Tuses ii
 
-    | T.Ttrait ii 
+    | T.Ttrait ii
     | T.Tthis ii
-    | T.Tchildren ii 
+    | T.Tchildren ii
     | T.Textension ii
        -> tag ii KeywordObject
     | T.Tfun ii | T.Ttype ii | T.Tconst ii
     | T.Tasync ii | T.Tawait ii
-    | T.Tyield ii 
+    | T.Tyield ii
     | T.Tbreak ii | T.Tcontinue ii
        -> tag ii Keyword
-    | T.Tvoid ii 
+    | T.Tvoid ii
        -> tag ii TypeVoid
 
-    | T.Tfinal ii 
+    | T.Tfinal ii
     | T.Tmutable ii
     | T.Tnative ii
     | T.Tstatic ii
     | T.Tprivate ii | T.Tprotected ii
-    | T.Toverridable ii 
-    | T.Treadonly ii 
+    | T.Toverridable ii
+    | T.Treadonly ii
        -> tag ii Attribute
 
     | T.Tmacro ii -> tag ii CppOther
@@ -272,7 +272,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.Twhen ii
     | T.Twith ii
      -> tag ii Keyword
-   
+
     (* conditional keywords *)
     | T.Tbase ii -> tag ii KeywordObject
     | T.Tinst ii -> tag ii TypeVoid
@@ -283,7 +283,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.Tuntracked ii
      -> tag ii Keyword
 
-    | T.Tvalue _ -> 
+    | T.Tvalue _ ->
       ()
 
     (* not in original spec *)
@@ -298,7 +298,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
 
     | T.TEq ii ->
         tag ii Punctuation
-        
+
     | T.TSemiColon ii | T.TPipe ii | T.TComma ii
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
@@ -312,7 +312,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.TEqDot ii
     | T.TTildeArrow ii
     | T.TEqualArrow ii
-    | T.TEqEq ii 
+    | T.TEqEq ii
     | T.TLessEq ii
     | T.TGreaterEq ii
     | T.THat ii
@@ -339,7 +339,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
 
     (* Idents *)
 
-    | T.TLowerIdent (s, _ii) -> 
+    | T.TLowerIdent (s, _ii) ->
         (match s with
 (*
         | _ when Hashtbl.mem h_pervasives_pad s ->

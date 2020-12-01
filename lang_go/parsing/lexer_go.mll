@@ -7,13 +7,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 open Parser_go
 module PI = Parse_info
@@ -75,10 +75,10 @@ let binary_lit = "0" ['b' 'B'] '_'? binary_digits
 let octal_lit = "0" ['o' 'O']? '_'? octal_digits
 let hex_lit = "0" ['x' 'X'] '_'? hex_digits
 
-let int_lit = 
-   decimal_lit 
- | binary_lit 
- | octal_lit 
+let int_lit =
+   decimal_lit
+ | binary_lit
+ | octal_lit
  | hex_lit
 
 let decimal_exponent = ['e' 'E'] ['+' '-']? decimal_digits
@@ -87,7 +87,7 @@ let decimal_float_lit =
  | decimal_digits decimal_exponent
  | '.' decimal_digits decimal_exponent?
 
-let hex_mantissa = 
+let hex_mantissa =
    '_'? hex_digits '.' hex_digits?
  | '_'? hex_digits
  | '.' hex_digits
@@ -107,16 +107,16 @@ let big_u_value =    '\\' 'U' hex_digit hex_digit hex_digit hex_digit
 (* the Go ref says just unicode_char, but this can not work, hence the
  * use of various xxx_no_yyy below
  *)
-let unicode_value_no_quote = 
+let unicode_value_no_quote =
   unicode_char_no_quote
-| little_u_value 
-| big_u_value 
+| little_u_value
+| big_u_value
 | escaped_char
 
-let unicode_value_no_double_quote = 
+let unicode_value_no_double_quote =
   unicode_char_no_double_quote
-| little_u_value 
-| big_u_value 
+| little_u_value
+| big_u_value
 | escaped_char
 
 let octal_byte_value = '\\' octal_digit octal_digit octal_digit
@@ -251,22 +251,22 @@ rule token = parse
         (* declared in the "universe block"
          *  - true, false
          *  - iota
-         *  - new, make, 
+         *  - new, make,
          *    panic (CFG effect, like goto), recover,
          *    print, println
          *    complex, imag, real
-         *    append, cap, 
-         *    close, delete, copy, 
+         *    append, cap,
+         *    close, delete, copy,
          *    len,
          *  - nil
          *  - _ (blank identifier)
          *)
-      
-        | _          -> LNAME (id, (tokinfo lexbuf)) 
+
+        | _          -> LNAME (id, (tokinfo lexbuf))
     }
 
   (* sgrep-ext: *)
-  | '$' identifier 
+  | '$' identifier
     { let s = tok lexbuf in
       if not !Flag_parsing.sgrep_mode
       then error ("identifier with dollar: "  ^ s) lexbuf;

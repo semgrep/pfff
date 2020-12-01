@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -20,45 +20,45 @@ open Common
 (*
  * There are multiple libraries for graphs in OCaml, incorporating each
  * different graph algorithms:
- * 
+ *
  *  - OCamlGraph, by Filliatre, Signoles, et al. It has transitive closure,
  *    Kruskal, Floyd, topological sort, CFC, etc. Probably the best. But it is
  *    heavily functorized. I thought it was too complicated because of all
  *    those functors but they also provide an easy interface without functor
  *    in pack.mli and sig_pack.mli which makes it almost usable
  *    (see paper from jfla05 on ocamlgraph).
- * 
+ *
  *  - A small graph library in ocamldot by Trevor Jim to compute the
  *    transitive reduction of a graph, aka its kernel.
- * 
+ *
  *  - A small library in ocamldoc by Guesdon, who ported into ocamldoc
- *    the functionality of ocamldot, and apparently uses the opportunity 
+ *    the functionality of ocamldot, and apparently uses the opportunity
  *    to rewrite too his own graph library. Has also the transitive
  *    reduction.
- * 
+ *
  *  - Camllib by jeannet ?
- * 
+ *
  *  - probably more on the caml hump.
- * 
+ *
  * I have also developed a few graph libraries in commons/, but really just
  * to have a data type with successors/predecessors accessors:
- * 
+ *
  *  - common.ml type 'a graph. No algorithm, just builder/accessors.
  *  - ograph.ml object version of Common.graph, just the interface.
- * 
+ *
  *  - ograph2way.ml a generic version, inherit ograph.
  *  - ograph_extended.ml, implicit nodei = int for key.
  *  - ograph_simple.ml, key can be specified, for instance can be a string,
  *    so dont have to pass through the intermediate nodei for everything.
- * 
+ *
  * I have also included in commons/ the small code from ocamldot/ocamldoc in:
- *  - ocamlextra/graph_ocamldot.ml 
+ *  - ocamlextra/graph_ocamldot.ml
  *  - ocamlextra/graph_ocamldoc.ml
- * 
+ *
  * ograph_simple and ograph_extended and ograph2way show that there is not
  * a single graph that can accomodate all needs while still being convenient.
  * ograph_extended is more generic, but you pay a little for that by
- * forcing the user to have this intermediate 'nodei'. The people 
+ * forcing the user to have this intermediate 'nodei'. The people
  * from ocamlgraph have well realized that and made it possible
  * to have different graph interface (imperative/pure, directed/undirected,
  * with/witout nodes, parametrized vertex or not, ...) and reuse
@@ -68,24 +68,24 @@ open Common
  * be the default that are not always good, and they do not allow
  * polymorphic nodes, which I think is quite useful (especially when
  * you want to display your graph with dot, you want to see the label
- * of the nodes, and not just integers. 
- * 
- * 
- * So, this module is a small wrapper around ocamlgraph, to have 
+ * of the nodes, and not just integers.
+ *
+ *
+ * So, this module is a small wrapper around ocamlgraph, to have
  * more polymorphic graphs with some defaults that makes sense most
  * of the time (Directed graph, Imperative, vertex ints with mapping
- * to node information), and which can use algorithms defined in 
+ * to node information), and which can use algorithms defined in
  * other libraries by making some small converters from one representation
  * to the other (e.g. from my ograph_simple to ocamlgraph, and vice versa).
- * 
+ *
  * Note that even if ocamlgraph is really good and even if this file is useful,
- * for quick and dirty trivial graph stuff then ograph_simple 
- * should be simpler (less dependencies). You can 
+ * for quick and dirty trivial graph stuff then ograph_simple
+ * should be simpler (less dependencies). You can
  * use it directly from common.cma. Then with the converter to ocamlgraph,
  * you can start with ograph_simple, and if in a few places you need
  * to use the graph algorithm provided by ocamlgraph or ocamldot, then
  * use the adapters.
- * 
+ *
  * Alternatives in other languages:
  *  - boost C++ BGL,
  *    http://www.boost.org/doc/libs/1_45_0/libs/graph/doc/index.html
@@ -281,30 +281,30 @@ DONE    val display_with_gv : t -> unit
 (* Graph construction *)
 (*****************************************************************************)
 
-let create () = { 
+let create () = {
   og = OG.create ();
   key_of_vertex = Hashtbl.create 101;
   vertex_of_key = Hashtbl.create 101;
   cnt = ref 0;
 }
 
-let add_vertex_if_not_present key g = 
+let add_vertex_if_not_present key g =
   if Hashtbl.mem g.vertex_of_key key
   then ()
   else begin
     incr g.cnt;
-    let v = OG.V.create !(g.cnt) in 
+    let v = OG.V.create !(g.cnt) in
     Hashtbl.replace g.key_of_vertex v key;
     Hashtbl.replace g.vertex_of_key key v;
     (* not necessary as add_edge automatically do that *)
-    OG.add_vertex g.og v; 
+    OG.add_vertex g.og v;
   end
 let vertex_of_key key g =
   Hashtbl.find g.vertex_of_key key
 let key_of_vertex v g =
   Hashtbl.find g.key_of_vertex v
 
-let add_edge k1 k2 g = 
+let add_edge k1 k2 g =
   let vx = g |> vertex_of_key k1 in
   let vy = g |> vertex_of_key k2 in
   OG.add_edge g.og vx vy;
@@ -314,7 +314,7 @@ let add_edge k1 k2 g =
 (* Graph access *)
 (*****************************************************************************)
 
-let nodes g = 
+let nodes g =
   Common2.hkeys g.vertex_of_key
 
 let out_degree k g = OG.out_degree g.og (g |> vertex_of_key k)
@@ -323,23 +323,23 @@ let in_degree k g  = OG.in_degree  g.og (g |> vertex_of_key k)
 let nb_nodes g = OG.nb_vertex g.og
 let nb_edges g = OG.nb_edges g.og
 
-let succ k g = OG.succ g.og (g |> vertex_of_key k) 
+let succ k g = OG.succ g.og (g |> vertex_of_key k)
   |> List.map (fun k -> key_of_vertex k g)
 (* this seems slow on the version of ocamlgraph I currently have *)
 let pred k g  = OG.pred  g.og (g |> vertex_of_key k)
   |> List.map (fun k -> key_of_vertex k g)
 
-let ivertex k g = 
+let ivertex k g =
   let v = vertex_of_key k g in
   OG.V.label v
 
 let has_node k g =
-  try 
+  try
     let _ = ivertex k g in
     true
   with Not_found -> false
 
-let entry_nodes2 g = 
+let entry_nodes2 g =
   (* old: slow: nodes g +> List.filter (fun n -> pred n g = [])
    * Once I use a better underlying graph implementation maybe I
    * will not need this kind of things.
@@ -361,7 +361,7 @@ let entry_nodes2 g =
 
 let entry_nodes a =
   Common.profile_code "Graph.entry_nodes" (fun () -> entry_nodes2 a)
-  
+
 (*****************************************************************************)
 (* Iteration *)
 (*****************************************************************************)
@@ -403,8 +403,8 @@ let remove_edge k1 k2 g =
  * which forces the caller to write in an imperative way and use functions
  * like this 'copy()'. Look at launchbary haskell paper?
  *)
-let copy oldg = 
-(* 
+let copy oldg =
+(*
  * bugfix: we can't just OG.copy the graph and Hashtbl.copy the vertex because
  * the vertex will actually be different in the copied graph, and so the
  * vertex_of_key will return a vertex in the original graph, not in
@@ -421,7 +421,7 @@ let copy oldg =
   let g = create () in
   let nodes = nodes oldg in
   nodes |> List.iter (fun n -> add_vertex_if_not_present n g);
-  nodes |> List.iter (fun n -> 
+  nodes |> List.iter (fun n ->
     (* bugfix: it's oldg, not 'g', wow, copying stuff is error prone *)
     let succ = succ n oldg in
     succ |> List.iter (fun n2 -> add_edge n n2 g)
@@ -432,18 +432,18 @@ let copy oldg =
 (* Graph algorithms *)
 (*****************************************************************************)
 
-let shortest_path k1 k2 g = 
+let shortest_path k1 k2 g =
   let vx = g |> vertex_of_key k1 in
   let vy = g |> vertex_of_key k2 in
 
   let (edges, _len) = OG.shortest_path g.og vx vy in
-  let vertexes = 
+  let vertexes =
     vx::(edges |> List.map (fun edge -> OG.E.dst edge))
   in
   vertexes |> List.map (fun v -> key_of_vertex v g)
 
 
-(* todo? this works? I get some 
+(* todo? this works? I get some
  * Fatal error: exception Invalid_argument("[ocamlgraph] fold_succ")
  * when doing:
  *   let g = ...
@@ -452,9 +452,9 @@ let shortest_path k1 k2 g =
  *   let succ = succ node g2
  *  is it because node references something from g? Is is the same
  *  issue that for copy?
- *  
+ *
  *)
-let transitive_closure g = 
+let transitive_closure g =
 
   let label_to_vertex = Hashtbl.create 101 in
   g.og |> OG.iter_vertex (fun v ->
@@ -475,7 +475,7 @@ let transitive_closure g =
   { g' with og = og'  }
 
 
-let mirror g = 
+let mirror g =
   let og' = OG.mirror g.og in
   (* todo: have probably to do the same gymnastic than for transitive_closure*)
   { g with og = og';  }
@@ -484,14 +484,14 @@ let mirror g =
 (* http://en.wikipedia.org/wiki/Strongly_connected_component *)
 let strongly_connected_components2 g =
   let scc_array_vt = OG.Components.scc_array g.og in
-  let scc_array = 
-    scc_array_vt |> Array.map (fun xs -> xs |> List.map (fun vt -> 
+  let scc_array =
+    scc_array_vt |> Array.map (fun xs -> xs |> List.map (fun vt ->
       key_of_vertex vt g
     ))
   in
   let h = Hashtbl.create 101 in
-  scc_array |> Array.iteri (fun i xs -> 
-    xs |> List.iter (fun k -> 
+  scc_array |> Array.iteri (fun i xs ->
+    xs |> List.iter (fun k ->
       if Hashtbl.mem h k
       then failwith "the strongly connected components should be disjoint";
       Hashtbl.add h k i
@@ -527,8 +527,8 @@ let depth_nodes2 g =
   let hres = Hashtbl.create 101 in
 
   (* do in toplogical order *)
-  g.og |> OG.Topological.iter (fun v -> 
-    let ncurrent = 
+  g.og |> OG.Topological.iter (fun v ->
+    let ncurrent =
       if not (Hashtbl.mem hres v)
       then 0
       else Hashtbl.find hres v
@@ -567,22 +567,22 @@ let display_with_gv g =
   OG.display_with_gv g.og
 
 let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
- filename g = 
+ filename g =
   Common.with_open_outfile filename (fun (pr,_) ->
     pr "digraph misc {\n" ;
     (* pr "size = \"10,10\";\n" ; *)
     pr extra_string;
     pr "\n";
 
-    g.og |> OG.iter_vertex (fun v -> 
+    g.og |> OG.iter_vertex (fun v ->
       let k = key_of_vertex v g in
       (* todo? could also use the str_of_key to represent the node *)
-      pr (spf "%d [label=\"%s\"];\n" 
+      pr (spf "%d [label=\"%s\"];\n"
              (OG.V.label v)
              (str_of_key k));
     );
 
-    g.og |> OG.iter_vertex (fun v -> 
+    g.og |> OG.iter_vertex (fun v ->
       let succ = OG.succ g.og v in
       succ |> List.iter (fun v2 ->
         pr (spf "%d -> %d;\n" (OG.V.label v) (OG.V.label v2));
@@ -590,7 +590,7 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
     );
     pr "}\n" ;
     );
-  if launch_gv 
+  if launch_gv
   then failwith "TODO: Ograph_extended.launch_gv_cmd filename";
     (* Ograph_extended.launch_gv_cmd filename; *)
   ()

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -20,13 +20,13 @@ module G = Graphe
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * A program can be seen as a hierarchy of entities
  * (directory/package/module/file/class/function/method/field/...)
  * linked to each other through different mechanisms
  * (import/reference/extend/implement/instantiate/call/access/...).
  * This module is the basis for 'codegraph', a tool to help
- * visualize code dependencies or code relationships. 
+ * visualize code dependencies or code relationships.
  * It provides one of the core data structure of codegraph
  * an (hyper)graph of all the entities in a program linked
  * either via a 'has-a' relation, which represent the
@@ -34,9 +34,9 @@ module G = Graphe
  * 'use-a', which represent the dependencies
  * (the other core data structure of codegraph is in
  * dependencies_matrix_code.ml).
- * 
+ *
  * Is this yet another code database? For PHP we already have
- * database_php.ml, tags_php.ml, database_light_php.ml, 
+ * database_php.ml, tags_php.ml, database_light_php.ml,
  * and now even a Prolog database, ... that's a lot of code database.
  * They all have things in common, but by focusing here on one thing,
  * by just having a single graph, it's then
@@ -44,14 +44,14 @@ module G = Graphe
  * I could have probably done the DSM using database_php.ml
  * but it was not made for that. Here the graph is
  * the core and simplest data structure that is needed.
- * 
+ *
  * This graph also unifies many things. For instance there is no
  * special code to handle directories or files, they are
- * just considered regular entities like module or classes 
+ * just considered regular entities like module or classes
  * and can have sub-entities. Moreover like database_light.ml,
  * this file is language independent so one can have one tool
  * that can handle ML, PHP, C++, etc.
- * 
+ *
  * todo:
  *  - how to handle duplicate entities (e.g. we can have two different
  *    files with the same module name, or two functions with the same
@@ -60,21 +60,21 @@ module G = Graphe
  *    Or just have one node with multiple parents :) But having
  *    multiple parents would not solve the problem because then
  *    an edge will increment unrelated cells in the DSM.
- * 
+ *
  *  - change API to allow by default to automatically create nodes
  *    when create edges with unexisting nodes? After all graphviz
  *    allow to specify graphs like this, which shorten graph
- *    description significantly. Can still have a 
+ *    description significantly. Can still have a
  *    add_edge_throw_exn_if_not_present for the cases where we
  *    want extra security.
- * 
+ *
  *  - maybe I can generate the light database from this graph_code.ml
  *    (I already do a bit for prolog with graph_code_prolog.ml)
- * 
+ *
  *  - opti: faster implem of parent? have a lock_graph() that forbid any
- *    further modifications on Has but then provide optimized operations 
+ *    further modifications on Has but then provide optimized operations
  *    like parent the precompute or memoize the parent relation
- * 
+ *
  * related work:
  *  - grok: by steve yegge http://www.youtube.com/watch?v=KTJs-0EInW8
  *)
@@ -91,7 +91,7 @@ type edge =
   | Has
   (* A class Use(extends) another class, a method Use(calls) another method,
    * etc.
-   * todo? refine by having different cases? Use of `Call|`Extend|...? 
+   * todo? refine by having different cases? Use of `Call|`Extend|...?
    * I didn't feel the need yet, because it's easy to know if it's
    * a Call or Extend by looking at the src and dst of the edge.
    * But it could be useful for instance for field access to know
@@ -100,26 +100,26 @@ type edge =
    *)
   | Use
 
-type nodeinfo = { 
+type nodeinfo = {
   pos: Parse_info.token_location;
   props: E.property list;
   (* would be better to have a more structured form than string at some point *)
-  typ: string option; 
+  typ: string option;
 }
 
 (* could also have a pos: and props: here *)
 type edgeinfo = {
-  write: bool; 
+  write: bool;
   read: bool;
 }
 
-(* 
+(*
  * We use an imperative, directed, without intermediate node-index, graph.
- * 
+ *
  * We use two different graphs because we need an efficient way to
  * go up in the hierarchy to increment cells in the dependency matrix
  * so it's better to separate the two usages.
- * 
+ *
  * note: file information are in readable path format in Dir and File
  * nodes (and should also be in readable format in the nodeinfo).
  *)
@@ -149,7 +149,7 @@ exception Error of error
 type statistics = {
   parse_errors: Common.filename list ref;
  (* could be Parse_info.token_location*)
-  lookup_fail: (Parse_info.t * node) list ref; 
+  lookup_fail: (Parse_info.t * node) list ref;
   method_calls: (Parse_info.t * resolved) list ref;
   field_access: (Parse_info.t * resolved) list ref;
   unresolved_class_access: Parse_info.t list ref;
@@ -200,10 +200,10 @@ let string_of_error = function
 
 let node_of_string s =
   if s =~ "\\([^:]*\\):\\(.*\\)"
-  then 
+  then
     let (s1, s2) = Common.matched2 s in
     s2, E.entity_kind_of_string s1
-  else 
+  else
     failwith (spf "node_of_string: wrong format '%s'" s)
 
 let display_with_gv g =
@@ -224,12 +224,12 @@ let create () =
 let add_node n g =
   Common.profile_code "Graph_code.add_node" (fun () ->
   if G.has_node n g.has
-  then begin 
+  then begin
     pr2_gen n;
     raise (Error (NodeAlreadyPresent n))
   end;
   if G.has_node n g.use
-  then begin 
+  then begin
     pr2_gen n;
     raise (Error (NodeAlreadyPresent n))
   end;
@@ -334,7 +334,7 @@ let succ n e g =
 let mk_eff_use_pred g =
   (* we use its find_all property *)
   let h = Hashtbl.create 101 in
-  
+
   g |> iter_nodes (fun n1 ->
     let uses = succ n1 Use g in
     uses |> List.iter (fun n2 ->
@@ -361,14 +361,14 @@ let children n g =
 
 let rec node_and_all_children n g =
   let xs = G.succ n g.has in
-  if null xs 
+  if null xs
   then [n]
-  else 
+  else
     n::(xs |> List.map (fun n -> node_and_all_children n g) |> List.flatten)
 
 
 
-let nb_nodes g = 
+let nb_nodes g =
   G.nb_nodes g.has
 let nb_use_edges g =
   G.nb_edges g.use
@@ -389,13 +389,13 @@ let edgeinfo_opt (n1, n2) e g =
  * also to have absolute path here, so not sure if can assert anything.
  *)
 let file_of_node n g =
-  try 
+  try
     let info = nodeinfo n g in
     info.pos.Parse_info.file
   with Not_found ->
     (match n with
     | str, E.File -> str
-    | _ -> 
+    | _ ->
       raise Not_found
       (* todo: BAD no? *)
       (* spf "NOT_FOUND_FILE (for node %s)" (string_of_node n) *)
@@ -415,15 +415,15 @@ let shortname_of_node (s, _kind) =
   let s = Common2.list_last xs in
   (* undo what was in gensym, otherwise codemap for instance will not
    * recognize the entity as one hovers on its name in a file. *)
-  let s = 
+  let s =
     if s =~ "\\(.*\\)__[0-9]+"
     then Common.matched1 s
     else s
   in
   let s =
     (* see graph_code_clang.ml handling of struct/typedef/unions *)
-    if s =~ "^[STU]__\\(.*\\)" 
-    then begin 
+    if s =~ "^[STU]__\\(.*\\)"
+    then begin
       (* assert (kind =*= E.Type);, hmm have constructor like T__AT *)
       Common.matched1 s
     end
@@ -517,13 +517,13 @@ let strongly_connected_components_use_graph g =
   scc, hscc
 
 let top_down_numbering g =
-  let (scc, hscc) = 
+  let (scc, hscc) =
     G.strongly_connected_components g.use in
-  let g2 = 
+  let g2 =
     G.strongly_connected_components_condensation g.use (scc, hscc) in
-  let hdepth = 
+  let hdepth =
     G.depth_nodes g2 in
-  
+
   let hres = Hashtbl.create 101 in
   hdepth |> Hashtbl.iter (fun k v ->
     let nodes_at_k = scc.(k) in
@@ -532,15 +532,15 @@ let top_down_numbering g =
   hres
 
 let bottom_up_numbering g =
-  let (scc, hscc) = 
+  let (scc, hscc) =
     G.strongly_connected_components g.use in
-  let g2 = 
+  let g2 =
     G.strongly_connected_components_condensation g.use (scc, hscc) in
-  let g3 = 
+  let g3 =
     G.mirror g2 in
-  let hdepth = 
+  let hdepth =
     G.depth_nodes g3 in
-  
+
   let hres = Hashtbl.create 101 in
   hdepth |> Hashtbl.iter (fun k v ->
     let nodes_at_k = scc.(k) in
@@ -552,8 +552,8 @@ let bottom_up_numbering g =
 (* Graph adjustments *)
 (*****************************************************************************)
 let load_adjust file =
-  Common.cat file 
-  |> Common.exclude (fun s -> 
+  Common.cat file
+  |> Common.exclude (fun s ->
     s =~ "#.*" || s =~ "^[ \t]*$"
   )
   |> List.map (fun s ->
@@ -637,7 +637,7 @@ let graph_of_dotfile dotfile =
   deps |> List.iter (fun (src, dst) ->
     let srcdir = Filename.dirname src in
     let dstdir = Filename.dirname dst in
-    try 
+    try
       create_intermediate_directories_if_not_present g srcdir;
       create_intermediate_directories_if_not_present g dstdir;
       if not (has_node (src, E.File) g) then begin
@@ -656,7 +656,7 @@ let graph_of_dotfile dotfile =
   deps |> List.iter (fun (src, dst) ->
     let src_node = (src, E.File) in
     let dst_node = (dst, E.File) in
-    
+
     g |> add_edge (src_node, dst_node) Use;
   );
   g
@@ -670,18 +670,18 @@ let print_statistics stats g =
   pr (spf "parse errors = %d" (!(stats.parse_errors) |> List.length));
   pr (spf "lookup fail = %d" (!(stats.lookup_fail) |> List.length));
 
-  pr (spf "unresolved method calls = %d" 
+  pr (spf "unresolved method calls = %d"
    (!(stats.method_calls) |> List.filter (fun (_, x) -> not x) |> List.length));
-  pr (spf "(resolved method calls = %d)" 
+  pr (spf "(resolved method calls = %d)"
    (!(stats.method_calls) |> List.filter (fun (_, x) -> x ) |> List.length));
 
-  pr (spf "unresolved field access = %d" 
+  pr (spf "unresolved field access = %d"
    (!(stats.field_access) |> List.filter (fun (_, x) -> not x) |> List.length));
-  pr (spf "(resolved field access) = %d)" 
+  pr (spf "(resolved field access) = %d)"
    (!(stats.field_access) |> List.filter (fun (_, x) -> x ) |> List.length));
 
-  pr (spf "unresolved class access = %d" 
+  pr (spf "unresolved class access = %d"
         (!(stats.unresolved_class_access) |> List.length));
-  pr (spf "unresolved calls = %d" 
+  pr (spf "unresolved calls = %d"
         (!(stats.unresolved_calls) |> List.length));
   ()

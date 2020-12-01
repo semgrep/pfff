@@ -52,17 +52,17 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     Hashtbl.add already_tagged ii true
   )
   in
-  let tag_name (_s, ii) categ = 
+  let tag_name (_s, ii) categ =
     (* so treat the most specific in the enclosing code and then
      * do not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
      *)
     if not (Hashtbl.mem already_tagged ii)
-    then tag ii categ 
+    then tag ii categ
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)    
+   if not (Hashtbl.mem already_tagged ii)
    then tag ii categ
   in
   (* -------------------------------------------------------------------- *)
@@ -89,7 +89,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
       | Field {fld_name = PN name; _ } ->
           tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
       | _ -> ()
-      ); 
+      );
       k x
       );
      V.kexpr = (fun (k,_) x ->
@@ -101,10 +101,10 @@ let visit_program ~tag_hook _prefs (ast, toks) =
          | Eval -> tag ii BadSmell
          | _ -> tag ii Builtin
          )
-(* TODO: use generic AST based highlighter 
+(* TODO: use generic AST based highlighter
       | Id (name, scope) ->
          (match !scope with
-         | NotResolved | Global _ -> 
+         | NotResolved | Global _ ->
             tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
          | Local -> tag_name name (H.Local Use)
          | Param -> tag_name name (H.Parameter Use)
@@ -179,9 +179,9 @@ let visit_program ~tag_hook _prefs (ast, toks) =
 
     (* keywords *)
 
-    | T.T_FUNCTION ii 
+    | T.T_FUNCTION ii
       ->  tag ii Keyword
-    | T.T_VAR (ii) | T.T_LET (ii) | T.T_CONST ii 
+    | T.T_VAR (ii) | T.T_LET (ii) | T.T_CONST ii
       -> tag ii Keyword
     | T.T_IF (ii)  | T.T_SWITCH (ii) | T.T_ELSE ii
       ->  tag ii KeywordConditional
@@ -200,17 +200,17 @@ let visit_program ~tag_hook _prefs (ast, toks) =
       -> tag ii KeywordExn
     | T.T_YIELD ii | T.T_ASYNC ii | T.T_AWAIT ii
       -> tag ii Keyword
-    | T.T_TYPEOF ii 
+    | T.T_TYPEOF ii
       -> tag ii Keyword
     | T.T_CLASS ii | T.T_INTERFACE ii
     | T.T_EXTENDS ii | T.T_IMPLEMENTS ii
      -> tag ii KeywordObject
     | T.T_CONSTRUCTOR ii    | T.T_GET ii | T.T_SET ii
      -> tag ii KeywordObject
-    | T.T_IMPORT ii | T.T_EXPORT ii 
+    | T.T_IMPORT ii | T.T_EXPORT ii
     | T.T_FROM ii | T.T_AS ii
       -> tag ii KeywordModule
-    | T.T_STATIC ii | T.T_WITH ii 
+    | T.T_STATIC ii | T.T_WITH ii
        -> tag ii Keyword
     | T.T_TYPE ii | T.T_ENUM ii | T.T_DECLARE ii
       -> tag ii Keyword

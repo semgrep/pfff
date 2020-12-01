@@ -1,3 +1,3 @@
 
-val gen_matcher: 
+val gen_matcher:
   (string * OCaml.t) -> unit

@@ -93,8 +93,8 @@ let vof_info
   let bnd = ("transfo", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_token_origin v_token in
-  let bnd = ("token", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("token", arg) in
+  let bnds = bnd :: bnds in
   OCaml.VDict bnds
 
 
@@ -112,7 +112,7 @@ let vof_info_adjustable_precision x =
   if !_current_precision.full_info
   then vof_info x
   else if !_current_precision.token_info
-       then 
+       then
         OCaml.VDict [
           "line", OCaml.VInt (line_of_info x);
           "col", OCaml.VInt (col_of_info x);

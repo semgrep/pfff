@@ -6,7 +6,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,11 +30,11 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* This file gathers parsing heuristics related to C++.
  *
- * See also Token_views_cpp.set_context_tag and 
+ * See also Token_views_cpp.set_context_tag and
  * Parsing_hacks_typedef.filter_for_typedef that have also some
  * heuristics specific to C++.
- * 
- * TODO: * TIdent_TemplatenameInQualifier 
+ *
+ * TODO: * TIdent_TemplatenameInQualifier
  *)
 
 (*****************************************************************************)
@@ -50,15 +50,15 @@ let no_space_between i1 i2 =
 (*****************************************************************************)
 
 let templateLOOKAHEAD = 30
-  
-(* note: no need to check for TCPar to stop for instance the search, 
+
+(* note: no need to check for TCPar to stop for instance the search,
  * this is will be done automatically because we would be inside a
  * Parenthised expression.
  *)
 let rec have_a_tsup_quite_close xs =
   match xs with
   | [] -> false
-  | x::xs -> 
+  | x::xs ->
       (match x with
       | {t=TSup _} -> true
 
@@ -66,10 +66,10 @@ let rec have_a_tsup_quite_close xs =
       | {t=tok} when TH.is_static_cast_like tok -> false
 
       (* ugly: *)
-      | {t=(TOBrace _ | TPtVirg _ | TCol _ | TAssign _ )} -> 
+      | {t=(TOBrace _ | TPtVirg _ | TCol _ | TAssign _ )} ->
           false
 
-      | {t=TInf _} -> 
+      | {t=TInf _} ->
           (* probably nested template, still try
            * TODO: bug when have i < DEG<...>::foo(...)
            *  we should recurse!
@@ -84,25 +84,25 @@ let rec have_a_tsup_quite_close xs =
 
 
 (* precondition: there is a tsup *)
-let rec find_tsup_quite_close tok_open xs = 
+let rec find_tsup_quite_close tok_open xs =
   let rec aux acc xs =
     match xs with
-    | [] -> 
-        raise (UnclosedSymbol 
+    | [] ->
+        raise (UnclosedSymbol
                   (spf "PB: find_tsup_quite_close, no > for < at line %d"
                      (TH.line_of_tok tok_open.t)))
-    | x::xs -> 
+    | x::xs ->
         (match x with
-        | {t=TSup ii} -> 
+        | {t=TSup ii} ->
             List.rev acc, (x,ii), xs
-              
-        | {t=TInf _} -> 
+
+        | {t=TInf _} ->
             (* recurse *)
             let (before, (tsuptok,_), after) = find_tsup_quite_close x xs in
-            (* we don't care about this one, it will be eventually be 
+            (* we don't care about this one, it will be eventually be
              * transformed by the caller *)
             aux (tsuptok:: (List.rev before) @(x::acc)) after
-              
+
         | x -> aux (x::acc) xs
         )
   in
@@ -111,7 +111,7 @@ let rec find_tsup_quite_close tok_open xs =
 
 (* note: some macros in standard.h may expand to static_cast, so perhaps
  * better to do template detection after macro expansion ?
- * 
+ *
  * C-s for TInf_Template in the grammar and you will see all cases
  * should be covered by the patterns below.
  *)
@@ -123,37 +123,37 @@ let find_template_inf_sup xs =
   (* template<...> *)
   | {t=Ttemplate _}::({t=TInf i2} as tok2)::xs ->
       change_tok tok2 (TInf_Template i2);
-      let (before_sup, (toksup, toksupi), rest) = 
+      let (before_sup, (toksup, toksupi), rest) =
         find_tsup_quite_close tok2 xs in
       change_tok toksup (TSup_Template toksupi);
-      
+
       (* recurse *)
       aux before_sup;
       aux rest
 
   (* static_cast<...> *)
   | {t=tok1}::({t=TInf i2} as tok2)::xs
-    when TH.is_static_cast_like tok1 -> 
+    when TH.is_static_cast_like tok1 ->
       change_tok tok2 (TInf_Template i2);
-      let (before_sup, (toksup, toksupi), rest) = 
+      let (before_sup, (toksup, toksupi), rest) =
         find_tsup_quite_close tok2 xs in
       change_tok toksup (TSup_Template toksupi);
-      
+
       (* recurse *)
       aux before_sup;
       aux rest
 
-  (* 
+  (*
    * TODO: have_a_tsup_quite_close does not handle a relational < followed
    *  by a regular template.
   *)
   | {t=TIdent (_,i1)}::({t=TInf i2} as tok2)::xs
     when
       no_space_between i1 i2 && (* safe guard, and good style anyway *)
-      have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) 
-     -> 
+      have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs)
+     ->
       change_tok tok2 (TInf_Template i2);
-      let (before_sup, (toksup, toksupi), rest) = 
+      let (before_sup, (toksup, toksupi), rest) =
         find_tsup_quite_close tok2 xs in
       change_tok toksup (TSup_Template toksupi);
 
@@ -161,7 +161,7 @@ let find_template_inf_sup xs =
        * to do the typedef inference and then can transform the
        * TIdent_Typedef into a TIdent_Templatename
        *)
-      
+
       (* recurse *)
       aux before_sup;
       aux rest
@@ -171,7 +171,7 @@ let find_template_inf_sup xs =
    * | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)
    *  ::tok3::({t=TSup i4} as tok4)::xs ->
    *  ...
-   * 
+   *
    *)
 
   (* recurse *)
@@ -186,7 +186,7 @@ let find_template_inf_sup xs =
 
 let reclassify_tokens_before_idents_or_typedefs xs =
   let groups = List.rev xs in
-  
+
   let rec aux xs =
     match xs with
     | [] -> ()
@@ -200,7 +200,7 @@ let reclassify_tokens_before_idents_or_typedefs xs =
         change_tok tok2 (TIdent_ClassnameInQualifier (s2, i2));
         aux ((Tok tok2)::xs)
 
-    (* xx::t      wher et is a type 
+    (* xx::t      wher et is a type
      * TODO need to do that recursively! if have a::b::c
      *)
     | Tok{t=TIdent_Typedef _}::Tok({t=TColCol icolcol} as tcolcol)
@@ -223,11 +223,11 @@ let reclassify_tokens_before_idents_or_typedefs xs =
         (* recurse with tok1 too! *)
         aux (Tok tok1::xs)
 
-(* TODO 
+(* TODO
  * TIdent_TemplatenameInQualifier ?
  *)
 
-    | x::xs -> 
+    | x::xs ->
         (match x with
         | Tok _ -> ()
         | Braces (_, xs, _)
@@ -241,12 +241,12 @@ let reclassify_tokens_before_idents_or_typedefs xs =
   ()
 
 
-(* quite similar to filter_for_typedef 
+(* quite similar to filter_for_typedef
  * TODO: at some point need have to remove this and instead
  *  have a correct filter_for_typedef that also returns
  *  nested types in template arguments (and some
  *  typedef heuristics that work on template_arguments too)
- * 
+ *
  * TODO: once you don't use it, remove certain grammar rules (C-s TODO)
  *)
 let find_template_commentize groups =
@@ -260,7 +260,7 @@ let find_template_commentize groups =
     | TV.Angle (_, _xs, _) as angle ->
         (* let's commentize everything *)
         [angle] |> TV.iter_token_multi (fun tok ->
-          change_tok tok 
+          change_tok tok
             (TComment_Cpp (Token_cpp.CplusplusTemplate, TH.info_of_tok tok.t))
         )
 
@@ -271,7 +271,7 @@ let find_template_commentize groups =
          *)
         (match tok.t with
         | Ttemplate _ ->
-            change_tok tok 
+            change_tok tok
               (TComment_Cpp (Token_cpp.CplusplusTemplate, TH.info_of_tok tok.t))
         | _ -> ()
         )
@@ -281,9 +281,9 @@ let find_template_commentize groups =
 
 (* assumes a view without:
  * - template arguments
- * 
+ *
  * TODO: once you don't use it, remove certain grammar rules (C-s TODO)
- * 
+ *
  * note: passing qualifiers is slightly less important than passing template
  * arguments because they are before the name (as opposed to templates
  * which are after) and most of our heuristics for typedefs
@@ -296,7 +296,7 @@ let find_qualifier_commentize xs =
 
     | ({t=TIdent _} as t1)::({t=TColCol _} as t2)::xs ->
         [t1; t2] |> List.iter (fun tok ->
-          change_tok tok 
+          change_tok tok
             (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
         );
         aux xs
@@ -304,7 +304,7 @@ let find_qualifier_commentize xs =
     (* need also to pass the top :: *)
     | ({t=TColCol _} as t2)::xs ->
         [t2] |> List.iter (fun tok ->
-          change_tok tok 
+          change_tok tok
             (TComment_Cpp (Token_cpp.CplusplusQualifier, TH.info_of_tok tok.t))
         );
         aux xs
@@ -322,7 +322,7 @@ let find_qualifier_commentize xs =
  *  have a filter_for_constructor?
  *)
 let find_constructor xs =
-  let rec aux xs = 
+  let rec aux xs =
   match xs with
   | [] -> ()
 
@@ -333,7 +333,7 @@ let find_constructor xs =
       change_tok tok1 (TIdent_Constructor(s1, i1));
       aux xs
 
-  (* public: Foo(...   could also filter the privacy directives so 
+  (* public: Foo(...   could also filter the privacy directives so
    * need only one rule
    *)
   | {t=(Tpublic _ | Tprotected _ | Tprivate _)}::{t=TCol _}
@@ -355,11 +355,11 @@ let find_constructor_outside_class xs =
     match xs with
     | [] -> ()
 
-    | {t=TIdent (s1, _);_}::{t=TColCol _}::({t=TIdent (s2,i2);_} as tok)::xs 
+    | {t=TIdent (s1, _);_}::{t=TColCol _}::({t=TIdent (s2,i2);_} as tok)::xs
       when s1 = s2 ->
         change_tok tok (TIdent_Constructor (s2, i2));
         aux (tok::xs)
-                        
+
 
     (* recurse *)
     | _::xs -> aux xs
@@ -371,7 +371,7 @@ let find_constructor_outside_class xs =
 (* assumes have:
  * - the typedefs
  * - the right context
- * 
+ *
  * TODO: filter the TCppDirectiveOther,  have a filter_for_constructed?
  *)
 let find_constructed_object_and_more xs =
@@ -384,7 +384,7 @@ let find_constructed_object_and_more xs =
         change_tok tok1 (TOCro_new i1);
         change_tok tok2 (TCCro_new i2);
         aux xs
-        
+
     (* xx yy(1 ... *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
         ({t=TOPar ii;where=InArgument::_;_} as tok1)::xs ->
@@ -394,8 +394,8 @@ let find_constructed_object_and_more xs =
 
     (* int yy(1 ... *)
     | {t=tok;_}::{t=TIdent _;_}::
-      ({t=TOPar ii;where=InArgument::_;_} as tok1)::xs 
-      when TH.is_basic_type tok 
+      ({t=TOPar ii;where=InArgument::_;_} as tok1)::xs
+      when TH.is_basic_type tok
       ->
         change_tok tok1 (TOPar_CplusplusInit ii);
         aux xs
@@ -439,19 +439,19 @@ let find_constructed_object_and_more xs =
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs
 
-    (* int(), probably part of operator declaration 
+    (* int(), probably part of operator declaration
      * could check that token before is a 'operator'
      *)
-    | ({t=kind})::{t=TOPar _}::{t=TCPar _}::xs 
+    | ({t=kind})::{t=TOPar _}::{t=TCPar _}::xs
      when TH.is_basic_type kind ->
         aux xs
 
     (* int(...)  unless it's int( * xxx ) *)
     | ({t=_kind})::{t=TOPar _}::{t=TMul _}::xs ->
       aux xs
-    | ({t=kind} as tok1)::{t=TOPar _}::xs 
+    | ({t=kind} as tok1)::{t=TOPar _}::xs
      when TH.is_basic_type kind ->
-        let newone = 
+        let newone =
           match kind with
           | Tchar ii -> Tchar_Constr ii
           | Tshort ii -> Tshort_Constr ii

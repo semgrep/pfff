@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -49,13 +49,13 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
   )
   in
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   let rec visit = function
 
     | Element ((Tag (s_tag, _tok_t)), attrs, xs) ->
-        attrs |> List.iter 
+        attrs |> List.iter
           (fun (Attr (s_attr, _tok_a), (Val (_s_val, tok_v))) ->
             match s_attr with
             | "href" | "xmlns" -> tag tok_v EmbededUrl
@@ -102,7 +102,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
   (* -------------------------------------------------------------------- *)
-  (* 
+  (*
    * note: all TCommentSpace are filtered in xs so easier to write
    * rules (but regular comments are kept as well as newlines).
    *)
@@ -110,7 +110,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -140,7 +140,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
     | T.Relement_empty _ii ->
         ()
 
-    | T.Literal (ii, _s) -> 
+    | T.Literal (ii, _s) ->
         (* can be a href *)
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
@@ -149,7 +149,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
 
     | T.Cdata (ii, _s) | T.CdataSpecial (ii, _s) ->
         (* can be js code, css code *)
- 
+
         if not (Hashtbl.mem already_tagged ii)
         then () (* tag ii String ? *)
 
@@ -160,7 +160,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
   );
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
   (* -------------------------------------------------------------------- *)
 
   ()

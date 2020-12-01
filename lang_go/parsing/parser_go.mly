@@ -4,14 +4,14 @@
  * // license that can be found in the LICENSE file.
  *
  * // Go language grammar.
- * // 
+ * //
  * // The Go semicolon rules are:
- * // 
+ * //
  * //  1. all statements and declarations are terminated by semicolons.
  * //  2. semicolons can be omitted before a closing ) or }.
  * //  3. semicolons are inserted by the lexer before a newline
  * //      following a specific list of tokens.
- * // 
+ * //
  * // Rules #1 and #2 are accomplished by writing the lists as
  * // semicolon-separated lists with an optional trailing semicolon.
  * // Rule #3 is implemented in yylex.
@@ -32,11 +32,11 @@ open Ast_go
 let error tok s =
   raise (Parse_info.Other_error (s, tok))
 
-let rev = true 
+let rev = true
 
 let mk_bin e1 op tok e2 =
   Binary (e1, (op, tok), e2)
-let mk_unary op tok e = 
+let mk_unary op tok e =
   Unary ((op, tok), e)
 let mk_arg x =
   match x with
@@ -48,7 +48,7 @@ let condition_of_stmt tok stmt =
   | ExprStmt e -> e
   | _ -> error tok "condition is not an expression"
 
-let mk_else elseifs else_ = 
+let mk_else elseifs else_ =
   let elseifs = List.rev elseifs in
   List.fold_right (fun elseif accu ->
       let ((tok, stopt, cond), body) = elseif in
@@ -63,12 +63,12 @@ let rec expr_to_type tok e =
   | ParenType t -> t
   | _ -> error tok ("TODO: expr_to_type: " ^ Common.dump e)
 
-let expr_or_type_to_type tok x = 
+let expr_or_type_to_type tok x =
   match x with
   | Right t -> t
   | Left e -> expr_to_type tok e
 
-(* some casts such as ( *byte)(foo) are actually parsed as 
+(* some casts such as ( *byte)(foo) are actually parsed as
  * Calls with a ParenType. We need to convert back those in
  * Cast.
  *)
@@ -84,28 +84,28 @@ let type_to_id x =
 
 (* see golang spec on signatures. If you have
  * func foo(a, b, c) then it means a, b, and c are types. If you have once
- * an identifier and a type, as in 
+ * an identifier and a type, as in
  * func foo(a, b, c, d e) this means a, b, c, and d are of type e.
  *)
 let adjust_signatures params =
   let params = List.rev params in
-  let all_types = 
+  let all_types =
    params |> List.for_all (function ParamClassic {pname = None; _} -> true | _ ->false) in
   if all_types
   then params
-  else 
+  else
     let rec aux acc xs =
       match xs with
-      | [] -> if acc = [] 
-              then [] 
-              else begin 
+      | [] -> if acc = []
+              then []
+              else begin
                 failwith ("last parameter should have a type and id" ^
                     Common.dump acc)
               end
       | x::xs ->
         (match x with
           | ParamClassic { pname = Some _; ptype = t; _ } ->
-             ((acc |> List.rev |> List.map (fun id -> 
+             ((acc |> List.rev |> List.map (fun id ->
                ParamClassic { pname = Some id; ptype = t; pdots = None })) @
                [x]) @
                aux [] xs
@@ -160,25 +160,25 @@ let rev_and_fix_items xs =
 
 (* tokens with "values" (was LLITERAL before) *)
 %token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
-%token  <AST_generic.operator * Ast_go.tok> LASOP 
-%token  <string * Ast_go.tok> LNAME 
+%token  <AST_generic.operator * Ast_go.tok> LASOP
+%token  <string * Ast_go.tok> LNAME
 
 (*-----------------------------------------*)
 (* Keyword tokens *)
 (*-----------------------------------------*)
 
-%token  <Ast_go.tok> 
-  LIF LELSE 
+%token  <Ast_go.tok>
+  LIF LELSE
   LFOR
   LRETURN LBREAK LCONTINUE LFALL
   LSWITCH LCASE LDEFAULT
   LGOTO
-  LFUNC LCONST LVAR LTYPE LSTRUCT LINTERFACE 
-  LGO LCHAN LSELECT 
-  LDEFER 
-  LPACKAGE LIMPORT  
-  LMAP 
-  LRANGE   
+  LFUNC LCONST LVAR LTYPE LSTRUCT LINTERFACE
+  LGO LCHAN LSELECT
+  LDEFER
+  LPACKAGE LIMPORT
+  LMAP
+  LRANGE
 
 (*-----------------------------------------*)
 (* Punctuation tokens *)
@@ -192,16 +192,16 @@ let rev_and_fix_items xs =
   LCOLAS ":="
   LDDD "..."
   LDots "<..." RDots "...>"
-  
+
 (* operators *)
-%token <Ast_go.tok> 
+%token <Ast_go.tok>
   LPLUS LMINUS LMULT "*" LDIV LPERCENT
-  LPIPE LAND LHAT 
+  LPIPE LAND LHAT
   LANDAND LOROR
-  LANDNOT 
-  LINC LDEC 
-  LEQEQ LNE  
-  LGE LGT LLE LLT 
+  LANDNOT
+  LINC LDEC
+  LEQEQ LNE
+  LGE LGT LLE LLT
   LLSH LRSH
   LBANG LTILDE
   LCOMM "<-"
@@ -211,7 +211,7 @@ let rev_and_fix_items xs =
 (*-----------------------------------------*)
 %token <Ast_go.tok>
   LBODY (* LBRACE parsing hack *)
-  LSEMICOLON ";" (* sometimes implicitely inserted, see Parsing_hacks_go.ml *) 
+  LSEMICOLON ";" (* sometimes implicitely inserted, see Parsing_hacks_go.ml *)
 
 (*************************************************************************)
 (* Priorities *)
@@ -279,7 +279,7 @@ listsc_t(X): list_sep_term(X, ";") { $1 }
 (* Toplevel *)
 (*************************************************************************)
 
-file: package ";" imports xdcl_list EOF 
+file: package ";" imports xdcl_list EOF
   { ($1)::($3 |> List.map (fun x -> Import x)) @ (List.rev $4) }
 
 package: LPACKAGE sym { Package ($1, $2) }
@@ -287,11 +287,11 @@ package: LPACKAGE sym { Package ($1, $2) }
 (* Go does some ASI so we do not need like in Java to use stmt_no_dots
  * to allow '...' without trailing semicolon and avoid ambiguities.
  *)
-sgrep_spatch_pattern: 
+sgrep_spatch_pattern:
    (* make version with and without ";" which is inserted
     * if the item as a newline before the EOF (which leads to ASI)
     *)
- | item ";"? EOF  { 
+ | item ";"? EOF  {
     match $1 with
     | [IStmt (SimpleStmt (ExprStmt x))] -> E x
     | [ITop top_decl] ->
@@ -304,12 +304,12 @@ sgrep_spatch_pattern:
            -> Partial (PartialDecl top_decl)
         | _ -> item1 $1
         )
-    | _ -> item1 $1 
+    | _ -> item1 $1
     }
- | item ";" item ";" item_list EOF 
+ | item ";" item ";" item_list EOF
     { Items ($1 @ $3 @ rev_and_fix_items $5) }
 
-item: 
+item:
  | stmt   { [IStmt $1] }
  | import { $1 |> List.map (fun x -> IImport x) }
  | package { [ITop $1] }
@@ -324,20 +324,20 @@ item_list:
 (*************************************************************************)
 
 import:
-|   LIMPORT import_stmt 
+|   LIMPORT import_stmt
       { [$2 $1] }
-|   LIMPORT "(" listsc_t(import_stmt) ")" 
+|   LIMPORT "(" listsc_t(import_stmt) ")"
       {List.map (fun f -> f $1) $3 }
 |   LIMPORT "(" ")" { [] }
 
 import_stmt:
-|        LSTR  
-    { fun i_tok -> { i_tok; i_path = $1; i_kind = ImportOrig } 
+|        LSTR
+    { fun i_tok -> { i_tok; i_path = $1; i_kind = ImportOrig }
       (*// import with original name*) }
-|   sym  LSTR  
+|   sym  LSTR
     { fun i_tok -> { i_tok; i_path = $2; i_kind = ImportNamed $1 }
       (*// import with given name*)  }
-|   "." LSTR  
+|   "." LSTR
     { fun i_tok -> { i_tok; i_path = $2; i_kind = ImportDot $1 }
       (*// import into my name space *) }
 
@@ -381,7 +381,7 @@ constdcl1:
 |   listc(dcl_name)       { mk_consts ~rev $1 None None }
 
 
-typedcl: 
+typedcl:
 | typedclname ntype     { DTypeDef ($1, $2) }
 (* alias decl, go 1.?? *)
 | typedclname "=" ntype { DTypeAlias ($1, $2, $3) }
@@ -401,7 +401,7 @@ stmt:
 | common_dcl      { DeclStmts $1 }
 | non_dcl_stmt    { $1 }
 
-compound_stmt: "{" listsc(stmt) "}" 
+compound_stmt: "{" listsc(stmt) "}"
   { Block ($1, rev_and_fix_stmts $2, $3) }
 
 non_dcl_stmt:
@@ -434,12 +434,12 @@ simple_stmt:
 
 
 
-(* IF cond body (ELSE IF cond body)* (ELSE block)? *) 
+(* IF cond body (ELSE IF cond body)* (ELSE block)? *)
 if_stmt: LIF  if_header loop_body elseif_list else_
     { match $2 with
-      | stopt, Some st -> 
+      | stopt, Some st ->
         If ($1, stopt, condition_of_stmt $1 st, $3, mk_else $4 $5)
-      | _, None -> 
+      | _, None ->
         error $1 "missing condition in if statement"
     }
 
@@ -450,9 +450,9 @@ if_header:
 
 elseif: LELSE LIF  if_header loop_body
     { match $3 with
-      | stopt, Some st -> 
+      | stopt, Some st ->
         ($2, stopt, condition_of_stmt $2 st), $4
-      | _, None -> 
+      | _, None ->
         error $2 "missing condition in if statement"
     }
 
@@ -461,10 +461,10 @@ else_:
 |   LELSE compound_stmt { Some $2 }
 
 
-for_stmt: 
+for_stmt:
  | LFOR simple_stmt? ";" simple_stmt? ";" simple_stmt? loop_body
     { For ($1, ($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
- | LFOR simple_stmt? loop_body 
+ | LFOR simple_stmt? loop_body
     { match $2 with
       | None ->    For ($1, (None, None, None), $3)
       | Some st -> For ($1, (None, Some (condition_of_stmt $1 st), None), $3)
@@ -481,12 +481,12 @@ loop_body: LBODY listsc(stmt) "}" { Block ($1, rev_and_fix_stmts $2, $3) }
 
 
 (* split in 2, switch expr and switch types *)
-switch_stmt: LSWITCH if_header LBODY caseblock_list "}" 
+switch_stmt: LSWITCH if_header LBODY caseblock_list "}"
     { let stopt1, stopt2 = $2 in
       Switch ($1, stopt1, stopt2 ,List.rev $4)
     }
 
-select_stmt:  LSELECT LBODY caseblock_list "}" 
+select_stmt:  LSELECT LBODY caseblock_list "}"
     { Select ($1, List.rev $3) }
 
 case:
@@ -507,10 +507,10 @@ caseblock: case listsc(stmt)
         // the case tokens if the stmt_list is empty.
         yylast = yychar;
         $1.Xoffset = int64(block);
-    
+
         // This is the only place in the language where a statement
         // list is not allowed to drop the final semicolon, because
-        // it's the only place where a statement list is not followed 
+        // it's the only place where a statement list is not followed
         // by a closing brace.  Handle the error for pedantry.
 
         // Find the final token of the statement list.
@@ -577,7 +577,7 @@ uexpr:
 
 pexpr:
 |   pexpr_no_paren { $1 }
-|   "(" expr_or_type ")" 
+|   "(" expr_or_type ")"
     { match $2 with
       | Left e -> e
       | Right t -> ParenType t
@@ -593,15 +593,15 @@ pexpr_no_paren:
     (* can be many things *)
 |   pexpr "." sym { Selector ($1, $2, $3) }
 
-|   pexpr "." "(" expr_or_type ")" 
+|   pexpr "." "(" expr_or_type ")"
     { TypeAssert ($1, expr_or_type_to_type $2 $4) }
     (* less: only inside a TypeSwitch, rewrite grammar? *)
-|   pexpr "." "(" LTYPE ")" 
+|   pexpr "." "(" LTYPE ")"
     { TypeSwitchExpr ($1, $3) }
 
 |   pexpr "[" expr "]" { Index ($1, ($2, $3, $4)) }
 |   pexpr "[" expr? ":" expr? "]" { Slice ($1, ($3, $5, None)) }
-|   pexpr "[" expr? ":" expr? ":" expr? "]" 
+|   pexpr "[" expr? ":" expr? ":" expr? "]"
     { Slice ($1, ($3, $5, $7))
         (*if $5 == nil {
             Yyerror("middle index required in 3-index slice");
@@ -616,9 +616,9 @@ pexpr_no_paren:
 
 |   convtype "(" expr ","? ")" { Cast ($1, $3) }
 
-|   comptype       lbrace braced_keyval_list "}" 
+|   comptype       lbrace braced_keyval_list "}"
     { CompositeLit ($1, ($2, $3, $4)) }
-|   pexpr_no_paren "{" braced_keyval_list "}" 
+|   pexpr_no_paren "{" braced_keyval_list "}"
     { CompositeLit (expr_to_type $2 $1, ($2, $3, $4)) }
 
 |   fnliteral { $1 }
@@ -637,12 +637,12 @@ basic_literal:
  * can be preceded by 'defer' and 'go'
  *)
 pseudocall:
-|   pexpr "(" ")"                               
+|   pexpr "(" ")"
       { ($1, ($2,[],$3)) }
-|   pexpr "(" arguments ","? ")"      
+|   pexpr "(" arguments ","? ")"
       { ($1, ($2, $3 |> List.rev |> List.map mk_arg, $5)) }
-|   pexpr "(" arguments "..." ","? ")" 
-      { let args = 
+|   pexpr "(" arguments "..." ","? ")"
+      { let args =
           match $3 |> List.map mk_arg with
           | [] -> raise Impossible
           | (Arg e)::xs -> List.rev ((ArgDots (e, $4))::xs)
@@ -653,7 +653,7 @@ pseudocall:
       }
 
 (* was expr_or_type_list before *)
-arguments: 
+arguments:
  | argument { [$1] }
  | arguments "," argument { $3 :: $1 }
 
@@ -701,7 +701,7 @@ lbrace:
 sym:
 |   LNAME
     {
-        (*// during imports, unqualified non-exported identifiers are from builtinpkg 
+        (*// during imports, unqualified non-exported identifiers are from builtinpkg
         if importpkg != nil && !exportname($1.Name) {
             $$ = Pkglookup($1.Name, builtinpkg);
         }
@@ -777,7 +777,7 @@ ptrtype: "*" ntype { TPtr ($1, $2) }
 
 recvchantype: "<-" LCHAN ntype { TChan ($2, TRecv, $3) }
 
-fntype: LFUNC "(" oarg_type_list_ocomma ")" fnres 
+fntype: LFUNC "(" oarg_type_list_ocomma ")" fnres
   { { fparams = $3; fresults = $5 } }
 
 fnres:
@@ -788,7 +788,7 @@ fnres:
 fnret_type:
 |   dotname      { TName $1 }
 
-|   ptrtype      { $1 } 
+|   ptrtype      { $1 }
 |   recvchantype { $1 }
 |   fntype       { TFunc $1 }
 
@@ -844,7 +844,7 @@ convtype:
 |   fntype    { TFunc $1 }
 |   othertype { $1 }
 
-comptype: 
+comptype:
 | othertype { $1 }
 
 
@@ -853,7 +853,7 @@ expr_or_type:
 |   non_expr_type (*   %prec PreferToRightParen *) { Right $1 }
 
 non_expr_type:
-|   fntype              { TFunc $1 } 
+|   fntype              { TFunc $1 }
 |   recvchantype        { $1 }
 |   othertype           { $1 }
 |   "*" non_expr_type { TPtr ($1, $2) }
@@ -863,13 +863,13 @@ non_expr_type:
 (*************************************************************************)
 
 structtype:
-|   LSTRUCT lbrace listsc_t(structdcl) "}" 
+|   LSTRUCT lbrace listsc_t(structdcl) "}"
     { TStruct ($1, ($2, List.flatten $3, $4)) }
-|   LSTRUCT lbrace "}"                      
+|   LSTRUCT lbrace "}"
     { TStruct ($1, ($2, [], $3)) }
 
 structdcl:
-|   listc(new_name) ntype LSTR? 
+|   listc(new_name) ntype LSTR?
     { $1 |> List.map (fun id -> Field (id, $2), $3) }
 |       packname      LSTR? { [EmbeddedField (None, $1), $2] }
 |   "*" packname      LSTR? { [EmbeddedField (Some $1, $2), $3] }
@@ -878,9 +878,9 @@ structdcl:
 
 
 interfacetype:
-|   LINTERFACE lbrace listsc_t(interfacedcl) "}" 
+|   LINTERFACE lbrace listsc_t(interfacedcl) "}"
     { TInterface ($1, ($2, $3, $4)) }
-|   LINTERFACE lbrace "}"                         
+|   LINTERFACE lbrace "}"
     { TInterface ($1, ($2, [], $3)) }
 
 interfacedcl:
@@ -902,14 +902,14 @@ xfndcl: LFUNC fndcl fnbody
     { $2 $1 $3 }
 
 fndcl:
-|   sym "(" oarg_type_list_ocomma ")" fnres 
+|   sym "(" oarg_type_list_ocomma ")" fnres
      { fun tok body -> DFunc (tok, $1, ({ fparams=$3; fresults = $5 }, body)) }
-|   "(" oarg_type_list_ocomma ")" sym 
+|   "(" oarg_type_list_ocomma ")" sym
     "(" oarg_type_list_ocomma ")" fnres
      {
       fun tok body ->
         match $2 with
-        | [ParamClassic x] -> 
+        | [ParamClassic x] ->
             DMethod (tok, $4, x, ({ fparams = $6; fresults = $8 }, body))
         | [] -> error $1 "method has no receiver"
         | [ParamEllipsis _] -> error $1 "method has ... for receiver"
@@ -921,7 +921,7 @@ fnbody:
 |  "{" listsc(stmt) "}" { Block ($1, rev_and_fix_stmts $2, $3) }
 
 
-fnliteral: fnlitdcl lbrace listsc(stmt) "}" 
+fnliteral: fnlitdcl lbrace listsc(stmt) "}"
     { FuncLit ($1, stmt1 (rev_and_fix_stmts $3)) }
 
 fnlitdcl: fntype { $1 }

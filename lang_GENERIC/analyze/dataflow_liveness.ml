@@ -65,13 +65,13 @@ end)
  * note that unit Dataflow.env is really simple a VarSet.t but
  * it's convenient to still use a VarMap (Dataflow.env) so we can
  * reuse Dataflow.varmap_union and Dataflow.varmap_diff.
-*) 
+*)
 let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
   let arr = DataflowX.new_node_array flow VarMap.empty in
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     (* rvalues here, to get the use of variables *)
     let rvals = Lrvalue.rvalues_of_expr e in
-    (* note that Appel's book p385 says gen(x) is 
+    (* note that Appel's book p385 says gen(x) is
      * something - kill(x) but this is wrong, as shown
      * p214 which contradicts p385.
      *)
@@ -88,7 +88,7 @@ let (gens: F.flow -> (unit Dataflow.env) array) = fun flow ->
  * this assignment.
  *)
 let (kills: F.flow -> (unit Dataflow.env) array) =
- fun flow -> 
+ fun flow ->
   let arr = DataflowX.new_node_array flow (Dataflow.empty_env()) in
   V.fold_on_node_and_expr (fun (ni, _nd) e () ->
     let lvals = Lrvalue.lvalues_of_expr e in
@@ -103,7 +103,7 @@ let (kills: F.flow -> (unit Dataflow.env) array) =
 (* Transfer *)
 (*****************************************************************************)
 
-let union = 
+let union =
   Dataflow.varmap_union (fun () () -> ())
 let diff =
   Dataflow.varmap_diff (fun () () -> ()) (fun () -> true)
@@ -125,7 +125,7 @@ let (transfer:
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
-  let out' = 
+  let out' =
     (flow#successors ni)#fold (fun acc (ni_succ, _) ->
        union acc mapping.(ni_succ).D.in_env
      ) VarMap.empty in

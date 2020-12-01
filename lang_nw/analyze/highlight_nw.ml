@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -30,10 +30,10 @@ open Highlight_code
 (* Helpers *)
 (*****************************************************************************)
 
-let span_newline xs = xs |> Common2.split_when (function 
+let span_newline xs = xs |> Common2.split_when (function
   | T.TCommentNewline _ -> true | _ -> false)
 
-let tag_all_tok_with ~tag categ xs = 
+let tag_all_tok_with ~tag categ xs =
   xs |> List.iter (fun tok ->
     let info = TH.info_of_tok tok in
     tag info categ
@@ -63,7 +63,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   (* toks phase 1 (sequence of tokens) *)
   (* -------------------------------------------------------------------- *)
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
@@ -98,7 +98,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
     (* specific to texinfo *)
     | T.TSymbol("@", _)::T.TWord(s, ii)::xs ->
-           let categ_opt = 
+           let categ_opt =
              (match s with
              | "title" -> Some CommentSection0
              | "chapter" -> Some CommentSection0
@@ -107,14 +107,14 @@ let visit_program ~tag_hook _prefs (trees, toks) =
              | "subsubsection" -> Some CommentSection3
              | "c" -> Some Comment
              (* don't want to polluate my view with indexing "aspect" *)
-             | "cindex" -> 
+             | "cindex" ->
                  tag ii Comment;
                  Some Comment
              | _ -> None
              )
            in
            (match categ_opt with
-           | None -> 
+           | None ->
                tag ii Keyword;
                aux_toks xs
            | Some categ ->
@@ -132,7 +132,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
       :: T.TNumber(_, iinum)
       :: T.TSymbol("]", ii2)
       :: T.TCommentSpace _
-      :: xs 
+      :: xs
       ->
        let (before, _, _) = span_newline xs in
        [ii1;iinum;ii2] |> List.iter (fun ii -> tag ii CommentSection0);
@@ -153,14 +153,14 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   aux_toks toks';
 
   (* -------------------------------------------------------------------- *)
-  (* AST phase 1 *) 
+  (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
   trees |> LF.mk_visitor { LF.default_visitor with
     LF.ktrees = (fun (k, _v) trees ->
       match trees with
       (* \xxx{...} *)
       | F.Tok (s, _)::F.Braces (_, brace_trees, _)::_ ->
-        let categ_opt = 
+        let categ_opt =
           match s with
 
           | ("\\chapter" | "\\chapter*") -> Some CommentSection0
@@ -175,14 +175,14 @@ let visit_program ~tag_hook _prefs (trees, toks) =
           | "\\book" -> Some (Label Def)
 
           | "\\begin" | "\\end" -> Some KeywordExn (* TODO *)
-          | "\\input" | "\\usepackage" | "\\bibliography" -> 
+          | "\\input" | "\\usepackage" | "\\bibliography" ->
             Some IncludeFilePath
           | "\\url" | "\\furl" -> Some EmbededUrl
 
           | _ when s =~ "^\\" -> Some (Parameter Use)
           | _ -> None
         in
-       categ_opt |> Common.do_option (fun categ -> 
+       categ_opt |> Common.do_option (fun categ ->
          tag_all_tok_trees_with ~tag categ brace_trees;
        );
        k trees
@@ -202,12 +202,12 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
       (* {\xxx ... } *)
       | F.Braces (_, (F.Tok (s, _)::brace_trees),_)::_ ->
-        let categ_opt = 
+        let categ_opt =
           match s with
           | "\\em" -> Some CommentWordImportantNotion
           | _ -> None
         in
-        categ_opt |> Common.do_option (fun categ -> 
+        categ_opt |> Common.do_option (fun categ ->
           tag_all_tok_trees_with ~tag categ brace_trees;
         );
         k trees
@@ -220,11 +220,11 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   (* toks phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then 
+        then
          let s = Parse_info.str_of_info ii |> String.lowercase_ascii in
          (match s with
          | _ when s =~ "^%todo:" -> tag ii BadSmell
@@ -233,8 +233,8 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     | T.TCommentSpace _ii -> ()
     | T.TCommentNewline _ii -> ()
 
-    | T.TCommand (s, ii) -> 
-        let categ = 
+    | T.TCommand (s, ii) ->
+        let categ =
           (match s with
           | s when s =~ "^if" -> KeywordConditional
           | s when s =~ ".*true$" -> Boolean
@@ -248,7 +248,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
           )
         in
         tag ii categ
-      
+
     | T.TWord (s, ii) ->
         (match s with
         | "TODO" -> tag ii BadSmell
@@ -285,19 +285,19 @@ let visit_program ~tag_hook _prefs (trees, toks) =
         | _ -> failwith (spf "syncweb \\x special macro not recognized:%c" c)
         )
 
-    | T.TNumber (_, ii) | T.TUnit (_, ii) -> 
+    | T.TNumber (_, ii) | T.TUnit (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Number
 
 
-    | T.TSymbol (s, ii) -> 
+    | T.TSymbol (s, ii) ->
       (match s with
       | "&" | "\\\\" ->
         tag ii Punctuation
       | _ -> ()
       )
 
-    | T.TOBrace ii | T.TCBrace ii 
+    | T.TOBrace ii | T.TCBrace ii
     | T.TOBracket ii | T.TCBracket ii
       ->  tag ii Punctuation
 
@@ -307,6 +307,6 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   );
 
   (* -------------------------------------------------------------------- *)
-  (* AST phase 2 *)  
+  (* AST phase 2 *)
 
   ()

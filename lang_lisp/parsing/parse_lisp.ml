@@ -1,18 +1,18 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
 
-open Common 
+open Common
 
 open Parser_lisp
 open Ast_lisp
@@ -25,8 +25,8 @@ module TH = Parser_lisp
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * alt: 
+(*
+ * alt:
  *  - Could reuse the parser in ocamlsexp ? but they just have Atom | Sexp
  *    and I need to differentiate numbers in the highlighter, and
  *    also handling quoted, anti-quoted and other lisp special things.
@@ -37,7 +37,7 @@ module TH = Parser_lisp
 (*****************************************************************************)
 
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = 
+type program_and_tokens =
   Ast_lisp.program option * Parser_lisp.token list
 
 (*****************************************************************************)
@@ -47,12 +47,12 @@ type program_and_tokens =
 (* could factorize and take the tokenf and visitor_of_infof in argument
  * but sometimes copy-paste is ok.
  *)
-let tokens2 file = 
+let tokens2 file =
   let token = Lexer_lisp.token in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos
     file token TH.visitor_info_of_tok TH.is_eof
 
-let tokens a = 
+let tokens a =
   Common.profile_code "Parse_lisp.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
@@ -81,7 +81,7 @@ and sexp toks =
     | TString x -> Atom (String x), xs
     | TIdent x -> Atom (Id x), xs
 
-    | TOParen t1 -> 
+    | TOParen t1 ->
       let (xs, rest) = sexps xs in
       (match rest with
       | TCParen t2::rest ->
@@ -89,7 +89,7 @@ and sexp toks =
       | _ -> raise (PI.Other_error ("unclosed parenthesis", t1))
       )
 
-    | TOBracket t1 -> 
+    | TOBracket t1 ->
       let (xs, rest) = sexps xs in
       (match rest with
       | TCBracket t2::rest ->
@@ -120,7 +120,7 @@ and sexp toks =
     | EOF t ->
       raise (PI.Other_error ("unexpected eof", t))
     )
-      
+
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -134,7 +134,7 @@ let parse2 filename =
   let toks = toks_orig |> Common.exclude TH.is_comment in
   let nblines = Common2.nblines filename in
 
-  let ast = 
+  let ast =
     try
       (match sexps toks with
       | xs, [] ->
@@ -145,18 +145,18 @@ let parse2 filename =
       )
     with
     | PI.Other_error (s, info) ->
-      pr2 (spf "Parse error: %s, {%s} at %s" 
-             s 
+      pr2 (spf "Parse error: %s, {%s} at %s"
+             s
              (PI.str_of_info info)
              (PI.string_of_info info));
       stat.PI.bad <- nblines;
       None
-    | exn -> 
+    | exn ->
       raise exn
   in
   (ast, toks_orig), stat
 
-let parse a = 
+let parse a =
   Common.profile_code "Parse_lisp.parse" (fun () -> parse2 a)
 
 let parse_program file =

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -29,10 +29,10 @@ module DM = Dependencies_matrix_code
  * a code graph.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
  * See also main_codegraph.ml
- * 
+ *
  * history:
  *  - naive version
- *  - projection cache, memoize the projection of a node: given a deep node, 
+ *  - projection cache, memoize the projection of a node: given a deep node,
  *    what is the node present in the matrix that "represents" this deep node
  *  - full matrix pre-computation optimisation
  *  - compute lazily deep rows using only a subset of the edges
@@ -83,7 +83,7 @@ let build_with_tree2 tree gopti =
    * but may make sense to create a line for it which corresponds to
    * the difference with the children so for all edges that link
    * directly to this one?
-   * 
+   *
    *)
   let nodes = final_nodes_of_tree tree in
   let n = List.length nodes in
@@ -113,8 +113,8 @@ let build_with_tree2 tree gopti =
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
     let idm = igopti_to_idm.(igopti) in
-    let project = 
-      if idm = -1 
+    let project =
+      if idm = -1
       then parent
       else idm
     in
@@ -127,20 +127,20 @@ let build_with_tree2 tree gopti =
     let parent_i = projected_parent_of_igopti.(i) in
     xs |> List.iter (fun j ->
       let parent_j = projected_parent_of_igopti.(j) in
-      (* It's possible we operate on a slice of the original dsm, 
+      (* It's possible we operate on a slice of the original dsm,
        * for instance when we focus on a node, in which case
        * the projection of an edge can not project on anything
        * in the current matrix.
        *)
       if parent_i <> -1 && parent_j <> -1
-      then 
-        dm.matrix.(parent_i).(parent_j) <- 
+      then
+        dm.matrix.(parent_i).(parent_j) <-
           dm.matrix.(parent_i).(parent_j) + 1
     )
   );
   dm
 
-let build_with_tree a b = 
+let build_with_tree a b =
   Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b)
 
 
@@ -174,7 +174,7 @@ let count_row i m =
   done;
   !cnt
 
-let is_empty_row n m dm = 
+let is_empty_row n m dm =
   count_row (hashtbl_find_node dm.name_to_i n) m = 0
 
 let empty_all_cells_relevant_to_node m dm n =
@@ -194,7 +194,7 @@ let reduced_matrix nodes dm =
   let m = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun _i _j -> 0) in
 
   let a = Array.of_list nodes in
-  
+
   for i = 0 to n - 1 do
     for j = 0 to n - 1 do
       let ni = a.(i) in
@@ -226,14 +226,14 @@ let switch k1 k2 (a,m) =
   for i = 0 to n - 1 do
     a'.(i) <- a.(f i)
   done;
-  
+
   for i = 0 to n - 1 do
     for j = 0 to n - 1 do
       m'.(i).(j) <- m.(f i).(f j)
     done
   done;
   a', m'
-  
+
 
 (* less: simulated anneahiling? *)
 let hill_climbing nodes dm =
@@ -245,9 +245,9 @@ let hill_climbing nodes dm =
   let rec aux (a, m) current_score i ~jump =
     let j = i + jump in
     if j >= n
-    then 
+    then
       if jump = (Array.length m - 1)
-      then (a, m) 
+      then (a, m)
       else aux (a, m) current_score 0 ~jump:(jump + 1)
     else
       let (a1,m1) = switch i j (a,m) in
@@ -293,23 +293,23 @@ let sort_by_count_rows_low_columns_high_first xs m dm =
   xs |> List.map (fun n ->
     let idx = hashtbl_find_node dm.name_to_i n in
     let h =
-      float_of_int (count_row idx m) 
-      /. 
+      float_of_int (count_row idx m)
+      /.
         (1. +. float_of_int (count_column idx m))
     in
     n, h
   ) |> Common.sort_by_val_lowfirst
     |> List.map fst
 
-(* 
+(*
  * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
- * 
+ *
  * note: sorting by the number of cells which you depend on is not
- * enough. For instance let's say X depends on 3 cells, A, B, Y and Y 
+ * enough. For instance let's say X depends on 3 cells, A, B, Y and Y
  * depends on 4: A, B, C, D. One could consider to put X
  * upper in the matrix, but because X depends on Y, it's better to put
  * Y upper.
- * 
+ *
  * todo: optimize? we redo some computations ... should memoize
  * more? or just invert rows/columns in the original matrix?
  *)
@@ -324,7 +324,7 @@ let partition_matrix nodes dm =
   let left = ref [] in
   let right = ref [] in
 
-  let rec step1 nodes = 
+  let rec step1 nodes =
     (* "1. Identify system elements (or tasks) that can be determined (or
      * executed) without input from the rest of the elements in the matrix.
      * Those elements can easily be identified by observing an empty column
@@ -333,9 +333,9 @@ let partition_matrix nodes dm =
      * corresponding marks) and step 1 is repeated on the remaining
      * elements."
      *)
-    let elts_with_empty_columns, rest = 
+    let elts_with_empty_columns, rest =
       nodes |> List.partition (fun node -> is_empty_column node m dm) in
-    let xs = 
+    let xs =
       sort_by_count_rows_low_first elts_with_empty_columns dm.matrix dm in
     xs |> List.iter (empty_all_cells_relevant_to_node m dm);
     right := xs @ !right;
@@ -352,7 +352,7 @@ let partition_matrix nodes dm =
      * rearranged, it is removed from the DSM (with all its corresponding
      * marks) and step 2 is repeated on the remaining elements."
      *)
-    let elts_with_empty_lines, rest = 
+    let elts_with_empty_lines, rest =
       nodes |> List.partition (fun node -> is_empty_row node m dm) in
     (* I use dm.matrix here and not the current matrix m because I want
      * to sort by looking globally at whether this item uses very few things.
@@ -367,11 +367,11 @@ let partition_matrix nodes dm =
     then step1 rest
     else step2 rest
   in
-  
+
   let rest = step2 nodes in
   if null rest
   then !left @ !right
-  else begin 
+  else begin
 (*
     pr2 "CYCLE";
     pr2_gen rest;
@@ -393,7 +393,7 @@ let info_orders dm =
       nrow
       ncol
       h)
-  ) |> Array.to_list 
+  ) |> Array.to_list
     |> Common.sort_by_key_lowfirst
     |> List.iter (fun (_, s) ->
        pr2 s
@@ -412,7 +412,7 @@ let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
         let xs = hashtbl_find h s in
         let horder = xs |> Common.index_list_1 |> Common.hash_of_list in
         let current = ref 0 in
-        let nodes_with_order = 
+        let nodes_with_order =
           nodes |> List.map (fun (s, node_kind) ->
             match Common2.hfind_option s horder with
             | None ->
@@ -425,7 +425,7 @@ let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
         in
         Common.sort_by_val_lowfirst nodes_with_order |> List.map fst
       end
-      else begin 
+      else begin
         pr2 (spf "didn't find entry in constraints for %s" s);
         nodes
       end
@@ -438,19 +438,19 @@ let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
  *  - in an adhoc manner in adjust_graph.txt
  *  - in the graph lazily while building the final config
  *  - in the graph lazily as a preprocessing phase on a full config
- *  - in an offline phase that packs everything? 
+ *  - in an offline phase that packs everything?
  *  - in the UI?
- * 
+ *
  * Packing lazily is good but it does not necessaraly work well with
  * the Focus because depending on our focus, we may have want different
  * packings. Also it makes it a bit hard to use cg from the command line
  * in a subdirectory. A solution could be to restart from a fresh gopti for
  * for each new focus.
- * 
- * Packing in the UI would be more flexible for the Focus, 
+ *
+ * Packing in the UI would be more flexible for the Focus,
  * but we need lots of extra logic whereas just abusing the Has and
  * reorganize the graph makes things (at first) easier.
- * 
+ *
  * There are some issues also on how packing and layering impact each other.
  * We may not want to pack things that affect a lot the number of
  * backward references once packed.
@@ -460,12 +460,12 @@ let threshold_pack = ref 30
 
 
 (* Optionaly put less "relevant" entries under an extra "..." fake dir.
- *  
+ *
  * We used to do this phase in build() at the same time we were building
  * the new config. But doing too many things at the same time was complicated
  * so better to separate a bit things in a preprocessing phase
  * where here we just adjust gopti.
- * 
+ *
  * Moreover we wanted the heuristics to order and to pack to use different
  * schemes. For packing we want to put under "..." entries considered
  * irrelevant when looked globally, that is not look only at the
@@ -474,7 +474,7 @@ let threshold_pack = ref 30
  * that much internally inside a/b/c, we still don't want
  * to put it under a extra "..." because this directory is globally
  * very important.
- * 
+ *
  * Moreover when in Focused mode, the children of a node
  * are actually not the full set of children, and so we could pack
  * things under a "..." that are incomplete? Hmmm at the same time
@@ -488,17 +488,17 @@ let adjust_gopti_if_needed_lazily tree gopti =
     | Node (n, xs) ->
       if null xs
       then Node (n, [])
-      else 
+      else
         (* less: use the full list of children of n? xs can be a subset
          * because in a focused generated config
          *)
         if List.length xs <= !threshold_pack
-        then 
-          Node (n, xs |> List.map (fun (Node (n1, xs1)) -> 
-            let more_brothers = 
+        then
+          Node (n, xs |> List.map (fun (Node (n1, xs1)) ->
+            let more_brothers =
               xs |> Common.map_filter (fun (Node (n2, _)) ->
                 if n1 <> n2 then Some n2 else None
-              ) 
+              )
             in
             aux (Node (n1, xs1)) (brothers @ more_brothers)
           ))
@@ -518,15 +518,15 @@ let adjust_gopti_if_needed_lazily tree gopti =
           ) |> Common.sort_by_val_highfirst
             |> List.map fst
           in
-          (* minus one because after the packing we will have 
+          (* minus one because after the packing we will have
            * threshold_pack - 1 + the new entry = threshold_pack
            * and so we will not loop again and again.
            *)
           let (ok, to_pack) = Common2.splitAt (!threshold_pack - 1) score in
-          (* pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
+          (* pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s"
                  (Common.dump to_pack) (Common.dump ok)); *)
-          let new_gopti, dotdotdot_entry = 
-            Graph_code_opti.adjust_graph_pack_some_children_under_dotdotdot 
+          let new_gopti, dotdotdot_entry =
+            Graph_code_opti.adjust_graph_pack_some_children_under_dotdotdot
               n to_pack !gopti in
           gopti := new_gopti;
           Node (n,
@@ -553,38 +553,38 @@ let build tree constraints_opt gopti =
 
   let gopti, tree = adjust_gopti_if_needed_lazily tree gopti in
 
-  (* let's compute a better reordered tree *)  
+  (* let's compute a better reordered tree *)
   let rec aux tree =
     match tree with
     | Node (n, xs) ->
-        if null xs 
+        if null xs
         then Node (n, [])
         else begin
-          let config_depth1 = 
+          let config_depth1 =
             Node (n,xs |> List.map (function (Node (n2,_)) -> (Node (n2, []))))
           in
-          let children_nodes = 
+          let children_nodes =
             xs |> List.map (function (Node (n2, _)) -> n2) in
-          let h_children_of_children_nodes = 
-            xs |> List.map (function (Node (n2, xs)) -> n2, xs) |> 
+          let h_children_of_children_nodes =
+            xs |> List.map (function (Node (n2, xs)) -> n2, xs) |>
               Common.hash_of_list
           in
 
           (* first draft *)
           let dm = build_with_tree config_depth1 gopti in
-          
+
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix (of the submatrix actually)
            *)
-          let nodes_reordered = 
+          let nodes_reordered =
             partition_matrix children_nodes dm in
-          let nodes_reordered = 
+          let nodes_reordered =
             optional_manual_reordering n nodes_reordered constraints_opt in
-          
+
           Node (n,
                nodes_reordered |> List.map (fun n2 ->
-                 let xs = 
-                   try Hashtbl.find h_children_of_children_nodes n2 
+                 let xs =
+                   try Hashtbl.find h_children_of_children_nodes n2
                    (* probably one of the newly created "..." child *)
                    with Not_found -> []
                  in
@@ -623,7 +623,7 @@ let fix_path path g =
     | [] -> acc
     | x::xs ->
         (match x with
-        | Focus _ -> 
+        | Focus _ ->
             aux (acc @ [x]) xs
         | Expand n ->
             aux (put_expand_just_before_last_focus_if_not_children n acc g) xs

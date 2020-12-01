@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -31,7 +31,7 @@ exception Parse_error of Parse_info.t
 (* Main entry point *)
 (*****************************************************************************)
 
-let parse2 filename = 
+let parse2 filename =
   let (ast, _toks) = Parse_html.parse filename in
 
   let js = ref [] in
@@ -63,7 +63,7 @@ let parse2 filename =
         ()
   in
   visit ast;
-  { 
+  {
     html = ast;
     (* TODO *)
     js = !js;
@@ -71,7 +71,7 @@ let parse2 filename =
     (* TODO *)
     stuff_in_js = [];
   }, !tokens
-    
 
-let parse a = 
+
+let parse a =
   Common.profile_code "Parse_web.parse" (fun () -> parse2 a)

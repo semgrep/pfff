@@ -2,12 +2,12 @@
 (*
  * Copyright (c) 2010 Dario Teixeira (dario.teixeira@yahoo.com)
  * Copyright (C) 2011 Facebook
- * 
+ *
  * This software is distributed under the terms of the GNU GPL version 2.
  * See LICENSE file for full license text.
  *
  *)
-open Common 
+open Common
 
 open Parser_css
 
@@ -15,15 +15,15 @@ open Parser_css
 (* Prelude *)
 (*****************************************************************************)
 
-(* 
+(*
  * spec: http://www.w3.org/TR/CSS2/grammar.html
- * 
+ *
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/.
  * I've mostly converted it from ulex to ocamllex and removed the line
  * number management which can be done in a better way outside
  * (like in the other pfff parsers).
- * 
+ *
  * Note that this lexer handles spacing in an unusual way. This is
  * because the CSS grammar is space sensitive ...
  *)
@@ -41,12 +41,12 @@ let error = Parse_info.lexical_error
 
 (*
  *let parse_quantity =
- * let rex = 
+ * let rex =
  * Pcre.regexp "(?<number>(\\+|-)?[0-9]+(\\.[0-9]+)?)(?<units>%|[A-Za-z]+)?"
  * in fun lexbuf ->
  * let subs = Pcre.exec ~rex (Ulexing.utf8_lexeme lexbuf) in
  * let number = Pcre.get_named_substring rex "number" subs
- * and units = try Some (Pcre.get_named_substring rex "units" subs) 
+ * and units = try Some (Pcre.get_named_substring rex "units" subs)
  *             with Not_found -> None
  * in (float_of_string number, units)
  *)
@@ -79,7 +79,7 @@ rule token = parse
    * give this lexer as-is to the parsing function. You must have an
    * intermediate layer that filter those tokens.
    *)
-  | space* "/*" { 
+  | space* "/*" {
       let info = tokinfo lexbuf in
       let com = comment lexbuf in
       TComment(info |> Parse_info.tok_add_s com)
@@ -121,8 +121,8 @@ rule token = parse
   | "$=" { ATTR_SUFFIX    (tokinfo lexbuf) }
   | "*=" { ATTR_SUBSTRING (tokinfo lexbuf) }
 
-  (* 247 is the decimal Unicode codepoint for the division sign 
-   * | 247      { QUOTIENT }    
+  (* 247 is the decimal Unicode codepoint for the division sign
+   * | 247      { QUOTIENT }
    *)
   | space* "::" space* { DOUBLE_COLON (tokinfo lexbuf) }
   | space* '*' space* { ASTERISK      (tokinfo lexbuf) }
@@ -151,7 +151,7 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
 
-  | '\''  { 
+  | '\''  {
       let info = tokinfo lexbuf in
       let s = single_string lexbuf in
       TString (s, info |> Parse_info.tok_add_s (s ^ "\'"))
@@ -173,14 +173,14 @@ rule token = parse
 
   | eof { EOF (tokinfo lexbuf) }
   | _   { TUnknown (tokinfo lexbuf) }
-            
+
 (*****************************************************************************)
 and single_string = parse
   | '\''  { "" }
   (* escaping ?? was not in original ... *)
   (* opti ? *)
-  | _   { let s = tok lexbuf in s ^ single_string lexbuf } 
-  | eof { 
+  | _   { let s = tok lexbuf in s ^ single_string lexbuf }
+  | eof {
       pr2 "LEXER: WEIRD end of file in single quoted string";
       ""
     }
@@ -190,8 +190,8 @@ and double_string = parse
   | '"'  { "" }
   (* escaping ?? was not in original ... *)
   (* opti ? *)
-  | _   { let s = tok lexbuf in s ^ double_string lexbuf } 
-  | eof { 
+  | _   { let s = tok lexbuf in s ^ double_string lexbuf }
+  | eof {
       pr2 "LEXER: WEIRD end of file in double quoted string";
       ""
     }
@@ -200,11 +200,11 @@ and double_string = parse
 and comment = parse
   | "*/" space* { tok lexbuf }
   (* was buggy in original I think *)
-  | [^'*''/']+ { let s = tok lexbuf in s ^ comment lexbuf } 
+  | [^'*''/']+ { let s = tok lexbuf in s ^ comment lexbuf }
   | "*"     { let s = tok lexbuf in s ^ comment lexbuf }
   | "/"     { let s = tok lexbuf in s ^ comment lexbuf }
   | eof { pr2 "LEXER: end of file in comment"; "*)"}
-  | _  { 
+  | _  {
       let s = tok lexbuf in
       pr2 ("LEXER: unrecognised symbol in comment:"^s);
       s ^ comment lexbuf

@@ -6,7 +6,7 @@ open Cst_php
 module V = Visitor_php
 
 (*s: show_function_calls v3 *)
-let show_function_calls file = 
+let show_function_calls file =
   let ast = Parse_php.parse_program file in
 
   (*s: initialize hfuncs *)
@@ -30,13 +30,13 @@ let show_function_calls file =
 
             (*s: update hfuncs for name with nbargs *)
             (* hfuncs[f][nbargs]++ *)
-            hfuncs#update f (fun hcount -> 
+            hfuncs#update f (fun hcount ->
               hcount#update nbargs (fun x -> x + 1);
               hcount
             )
             (*e: update hfuncs for name with nbargs *)
-            
-        | _ -> 
+
+        | _ ->
             k e
       );
     }
@@ -50,14 +50,14 @@ let show_function_calls file =
       pr2 (spf "statistics for %s" f);
       hcount#to_list |> Common.sort_by_key_highfirst
         |> List.iter (fun (nbargs, nbcalls_at_nbargs) ->
-          pr2 (spf " when # of args is %d: found %d call sites" 
+          pr2 (spf " when # of args is %d: found %d call sites"
                   nbargs nbcalls_at_nbargs)
         )
     )
   (*e: display hfuncs to user *)
 (*e: show_function_calls v3 *)
 
-let main = 
+let main =
   show_function_calls Sys.argv.(1)
 
 (*e: show_function_calls3.ml *)

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -50,12 +50,12 @@ let string_of_class_method (c, m) =
 (* Finding protected fields that could be private.
  * This was done for Oravec to possibliy optimize code as protected field
  * have an overhead in HPHP.
- * 
+ *
  * It can be difficult to trace the use of a field in languages like
  * PHP because one can do $o->fld and you don't know the type of $o
  * and so its class. But for the protected_to_private analysis,
  * it means the field is protected and so it can be used only
- * via a $this->xxx expression, which is easy to statically 
+ * via a $this->xxx expression, which is easy to statically
  * analyze.
  *)
 let protected_to_private_candidates g =
@@ -63,8 +63,8 @@ let protected_to_private_candidates g =
     match node with
     | (_s, E.Field) ->
 
-      let privacy = 
-        try G.privacy_of_node node g 
+      let privacy =
+        try G.privacy_of_node node g
         with Not_found ->
           pr2 (spf "No nodeinfo for %s" (G.string_of_node node));
           E.Private
@@ -79,16 +79,16 @@ let protected_to_private_candidates g =
           if List.length parents > 1
           then begin pr2_gen node; pr2_gen parents end;
           let class_ = G.parent node g in
-          if class_ =*= G.dupe 
+          if class_ =*= G.dupe
           then pr2 (spf "Redefined field: %s" (G.string_of_node node))
           else begin
             let classname = fst class_ in
-        
+
             let users = G.pred node G.Use g in
             if null users
             then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
-            else 
-              if users |> List.for_all (fun (s, _kind) -> 
+            else
+              if users |> List.for_all (fun (s, _kind) ->
                 s =~ (spf "^%s\\." classname)
               )
               then pr2 (spf "Protected to private candidate: %s"
@@ -107,7 +107,7 @@ let protected_to_private_candidates g =
 (* if B extends A then will have a node from A to B (children relation) *)
 let class_hierarchy g =
   let dag = Graphe.create () in
-  
+
   g |> G.iter_nodes (fun n1 ->
     (match snd n1 with
     | E.Class ->
@@ -121,7 +121,7 @@ let class_hierarchy g =
               dag |> Graphe.add_vertex_if_not_present n2;
               (* from parent to children *)
               dag |> Graphe.add_edge n2 n1
-          | _ -> 
+          | _ ->
               failwith (spf "class_hierarchy: impossible edge %s --> %s"
                           (G.string_of_node n1) (G.string_of_node n2))
           )
@@ -139,12 +139,12 @@ let toplevel_methods g dag =
   let env = Set.empty in
   let htoplevels = Hashtbl.create 101 in
 
-  let rec aux env n = 
+  let rec aux env n =
 
     let methods_here =
       G.children n g |> Common.map_filter (fun n2 ->
           match snd n2 with
-          | E.Method -> 
+          | E.Method ->
               let (_, method_str) = class_method_of_string (fst n2) in
               let privacy = G.privacy_of_node n2 g in
               Some (method_str, privacy, n2)
@@ -164,10 +164,10 @@ let toplevel_methods g dag =
         then Hashtbl.add htoplevels s n2
         else ()
     );
-    let children_classes = 
+    let children_classes =
       Graphe.succ n dag in
     (* todo? what if public overriding a private? *)
-    let env = 
+    let env =
       methods_here |> List.fold_left (fun acc (s, _p, _) ->Set.add s acc) env in
 
     children_classes |> List.iter (aux env)
@@ -180,7 +180,7 @@ let toplevel_methods g dag =
 let dispatched_methods2 g dag node =
   let (str, kind) = node in
   assert (kind =*= E.Method);
-  
+
   let (c, m) = class_method_of_string str in
 
   let res = ref [] in
@@ -194,7 +194,7 @@ let dispatched_methods2 g dag node =
     children |> List.iter aux
   in
   let node = (c, E.Class) in
-  (if G.has_node node g 
+  (if G.has_node node g
   then Graphe.succ node dag |> List.iter aux
   else failwith (spf "could not find class %s" c)
   );

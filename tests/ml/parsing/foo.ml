@@ -4,6 +4,6 @@ type tbar = int
 
 let x = 1
 
-let foo i = 
+let foo i =
   i
 

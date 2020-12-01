@@ -5,7 +5,7 @@ open OUnit
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest = 
+let unittest =
 "analyze_java" >::: [
 
     "regression files" >:: (fun () ->

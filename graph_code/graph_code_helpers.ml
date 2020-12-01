@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -31,13 +31,13 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
       (* todo: actually should look at env.typedefs because it's not
        * necessaraly T_Xxxx -> S_Xxxx
        *)
-      | s, E.Type when s =~ "T__\\(.*\\)$" -> 
+      | s, E.Type when s =~ "T__\\(.*\\)$" ->
         Some ("S__" ^(Common.matched1 s), E.Type)
       | _ -> None
     in
     n_def_opt |> Common.do_option (fun n_def ->
       let n_decl = n in
-      if G.has_node n_def g 
+      if G.has_node n_def g
       then begin
         (* let's create a link between the def and the decl *)
         g |> G.add_edge (n_def, n_decl) G.Use;

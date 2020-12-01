@@ -27,18 +27,18 @@ module G = AST_generic
  *
  * Here are the simplifications done compared to the generic AST:
  *  - intermediate 'instr' type (instr for instruction), for expressions with
- *    side effects and statements without any control flow, 
+ *    side effects and statements without any control flow,
  *    moving Assign/Seq/Call/Conditional out of 'expr' and
  *    moving Assert out of 'stmt'
  *  - new expression type 'exp' for side-effect free expressions
- *  - intermediate 'lvalue' type; expressions are splitted in 
+ *  - intermediate 'lvalue' type; expressions are splitted in
  *    lvalue vs regular expressions, moved Dot/Index out of expr
  *
  *  - Assign/Calls are now instructions, not expressions, and no more Seq
  *  - no AssignOp, or Decr/Incr, just Assign
  *  - Lambdas are now instructions (not nested again)
  *
- *  - no For/Foreach/DoWhile/While, converted all in Loop, 
+ *  - no For/Foreach/DoWhile/While, converted all in Loop,
  *  - no Foreach, converted in a Loop and 2 new special
  *  - TODO no Switch, converted in Ifs
  *  - TODO no Continue/Break, converted in goto
@@ -50,7 +50,7 @@ module G = AST_generic
  * TODO:
  *   - TODO? have all arguments of Calls be variables?
  *
- * 
+ *
  * Note that we still want to be close to the original code so that
  * error reported on the IL can be mapped back to error on the original code
  * (source "maps"), or more importantly semantic information computed
@@ -61,14 +61,14 @@ module G = AST_generic
  *  - ast_php.ml (was called ast_php_simple.ml)
  *  - pil.ml, still for PHP
  *  - IL.ml for AST generic
- * 
+ *
  * related work:
  *  - CIL, C Intermediate Language, Necula et al, CC'00
  *  - RIL, The Ruby Intermediate Language, Furr et al, DLS'09
  *  - SIL? in Infer? or more a generic AST than a generic IL?
  *  - Rust IL?
  *  - C-- in OCaml? too low-level?
- *  - LLVM IR (but too far away from original code? complicated 
+ *  - LLVM IR (but too far away from original code? complicated
  *    source maps)
  *  - gcc RTL (too low-level? similar to 3-address code?)
  *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
@@ -106,12 +106,12 @@ type ident = G.ident
 
 (*s: type [[IL.name]] *)
 (* 'sid' below is the result of name resolution and variable disambiguation
- * using a gensym (see Naming_AST.ml). The pair is guaranteed to be 
+ * using a gensym (see Naming_AST.ml). The pair is guaranteed to be
  * global and unique (no need to handle variable shadowing, block scoping,
  * etc; this has been done already).
  * TODO: use it to also do SSA! so some control-flow insensitive analysis
  * can become control-flow sensitive? (e.g., DOOP)
- * 
+ *
  *)
 type name = ident * G.sid
 (*e: type [[IL.name]] *)
@@ -130,7 +130,7 @@ type lval = {
 }
 (*e: type [[IL.lval]] *)
 (*s: type [[IL.base]] *)
-  and base = 
+  and base =
     | Var of name
     | VarSpecial of var_special wrap
     (* aka DeRef, e.g. *E in C *)
@@ -138,16 +138,16 @@ type lval = {
 (*e: type [[IL.base]] *)
 
 (*s: type [[IL.offset]] *)
-  and offset = 
+  and offset =
   | NoOffset
-  (* What about nested field access? foo.x.y? 
+  (* What about nested field access? foo.x.y?
    * - use intermediate variable for that. TODO? same semantic?
    * - do as in CIL and have recursive offset and stop with NoOffset.
-   * What about computed field names? 
+   * What about computed field names?
    * - handle them in Special?
    * - convert in Index with a string exp?
    * Note that Dot is used to access many different kinds of entities:
-   *  objects/records (fields), classes (static fields), but also 
+   *  objects/records (fields), classes (static fields), but also
    *  packages, modules, namespaces depending on the type of 'var' above.
    *)
   | Dot   of ident
@@ -165,8 +165,8 @@ type lval = {
 (* Expression *)
 (*****************************************************************************)
 
-(* We use 'exp' instead of 'expr' to accentuate the difference 
- * with AST_generic.expr. 
+(* We use 'exp' instead of 'expr' to accentuate the difference
+ * with AST_generic.expr.
  * Here 'exp' does not contain any side effect!
  *)
 (*s: type [[IL.exp]] *)
@@ -174,7 +174,7 @@ and exp = {
   e: exp_kind;
   (* todo: etype: typ; *)
   eorig: G.expr;
- } 
+ }
 (*e: type [[IL.exp]] *)
 (*s: type [[IL.exp_kind]] *)
   and exp_kind =
@@ -233,7 +233,7 @@ type instr = {
 (*e: type [[IL.instr_kind]] *)
 
 (*s: type [[IL.call_special]] *)
-  and call_special = 
+  and call_special =
     | Eval
     (* Note that in some languages (e.g., Python) some regular calls are
      * actually New under the hood.
@@ -299,7 +299,7 @@ type stmt = {
 (*e: type [[IL.stmt_kind]] *)
 
 (*s: type [[IL.other_stmt]] *)
-  and other_stmt = 
+  and other_stmt =
     (* everything except VarDef (which is transformed in a Set instr) *)
     | DefStmt of G.definition
     | DirectiveStmt of G.directive
@@ -323,14 +323,14 @@ and label = ident * G.sid
 (*s: type [[IL.node]] *)
 type node = {
   n: node_kind;
-  (* old: there are tok in the nodes anyway 
+  (* old: there are tok in the nodes anyway
    * t: Parse_info.t option;
    *)
-} 
+}
 (*e: type [[IL.node]] *)
 (*s: type [[IL.node_kind]] *)
-  and node_kind = 
-    | Enter | Exit 
+  and node_kind =
+    | Enter | Exit
     | TrueNode | FalseNode (* for Cond *)
     | Join (* after Cond *)
 
@@ -345,10 +345,10 @@ type node = {
    [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*s: type [[IL.edge]] *)
-(* For now there is just one kind of edge. Later we may have more, 
+(* For now there is just one kind of edge. Later we may have more,
  * see the ShadowNode idea of Julia Lawall.
  *)
-type edge = Direct 
+type edge = Direct
 (*e: type [[IL.edge]] *)
 
 (*s: type [[IL.cfg]] *)
@@ -364,7 +364,7 @@ type nodei = Ograph_extended.nodei
 (* Any *)
 (*****************************************************************************)
 (*s: type [[IL.any]] *)
-type any = 
+type any =
   | L of lval
   | E of exp
   | I of instr
@@ -406,9 +406,9 @@ let rec rvars_of_exp e =
   | Lvalue _ -> []
   | Literal _ -> []
   | Cast (_, e) -> rvars_of_exp e
-  | Composite (_, (_, xs, _)) | Operator (_, xs) -> rvars_of_exps xs 
-  | Record ys -> rvars_of_exps (ys |> List.map snd)  
-  
+  | Composite (_, (_, xs, _)) | Operator (_, xs) -> rvars_of_exps xs
+  | Record ys -> rvars_of_exps (ys |> List.map snd)
+
 and rvars_of_exps xs =
   xs |> List.map (rvars_of_exp) |> List.flatten
 (*e: function [[IL.rvars_of_exp]] *)

@@ -11,22 +11,22 @@ open Common
 (* mostly a copy paste of Test_parsing_php.parse_php *)
 let test_parse_simple xs  =
   let xs = List.map Common.fullpath xs in
-  let fullxs = 
+  let fullxs =
     Lib_parsing_php.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in
 
   let stat_list = ref [] in
-  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file ->
      k ();
-    let ((cst, _toks), stat) = 
+    let ((cst, _toks), stat) =
       Common.save_excursion Flag_parsing.error_recovery true (fun () ->
-        Parse_php.parse file 
+        Parse_php.parse file
       )
     in
     Common.push stat stat_list;
     if stat.Parse_info.bad = 0
-    then 
+    then
       Error_code.try_with_print_exn_and_reraise file (fun () ->
       let _ast = Ast_php_build.program cst in
       ()
@@ -42,7 +42,7 @@ let test_dump_simple file =
     let ast = Parse_php.parse_program file in
     let ast = Ast_php_build.program ast in
     let s = Ast_php.show_program ast in
-    pr s  
+    pr s
   )
 
 (*
@@ -57,7 +57,7 @@ let test_pp_simple file =
 (* Scope annotations *)
 (*****************************************************************************)
 
-(* Will annotate with Local or Param or Global the Var AST elements. 
+(* Will annotate with Local or Param or Global the Var AST elements.
  * See also codemap which does the same and use different colors for
  * different scopes.
  *)
@@ -81,8 +81,8 @@ let test_scope_php file =
 (* bin/iphp *)
 (*
 let test_type_php file =
-  let ast = 
-    Parse_php.parse_program file |> Ast_php_build.program 
+  let ast =
+    Parse_php.parse_program file |> Ast_php_build.program
   in
   let env = { (Env_typing_php.make_env ()) with Env_typing_php.
     verbose = true;
@@ -181,13 +181,13 @@ module Interp = Abstract_interpreter_php.Interp (Tainting_fake_php.Taint)
 
 (* bin/aphp *)
 let test_abstract_interpreter file depth =
-  let ast = 
+  let ast =
     Ast_php_build.program (Parse_php.parse_program file) in
-  let jujudb = 
+  let jujudb =
     Database_juju_php.juju_db_of_files ~show_progress:false [file] in
-  let db = 
+  let db =
     Database_juju_php.code_database_of_juju_db jujudb in
-  let env = 
+  let env =
     Env_interpreter_php.empty_env db file in
 
   Tracing_php.tracing := true;
@@ -197,7 +197,7 @@ let test_abstract_interpreter file depth =
   Abstract_interpreter_php.max_depth := depth;
   Abstract_interpreter_php.show_vardump := true;
 
-  let _heap = 
+  let _heap =
     Interp.program env Env_interpreter_php.empty_heap ast in
   ()
 *)
@@ -210,10 +210,10 @@ module Db = Database_juju_php
 module CG = Callgraph_php2
 
 let test_callgraph_php file =
-  let db = 
+  let db =
     Db.code_database_of_juju_db  (Db.juju_db_of_files [file]) in
   let g = Callgraph_php_build.create_graph
-    ~show_progress:false ~strict:true 
+    ~show_progress:false ~strict:true
     [file] db
   in
   (* todo: could also show a dot? *)
@@ -251,7 +251,7 @@ let test_include_require file =
 (*
 let test_prolog_php file query =
   let file = Common.fullpath file in
-  let xs = 
+  let xs =
     Database_prolog_php.prolog_query ~verbose:true ~source_file:file ~query in
   pr2_gen xs
 *)
@@ -267,16 +267,16 @@ let test_stat_php xs =
 
   files |> Console.progress (fun k -> List.iter (fun file ->
     k();
-    try 
+    try
       let ast = Parse_php.parse_program file in
       h#update "parsing correct" (fun x -> x + 1);
       Statistics_php.stat_of_program h file ast;
       ()
-      
+
     with Parsing.Parse_error ->
       h#update "parsing error" (fun x -> x + 1);
   ));
-  (* old:      
+  (* old:
    * let stat = Statistics_php.stat_of_program ast in
    * let str = Statistics_php.string_of_stat stat in
    * pr2 str
@@ -291,7 +291,7 @@ let test_stat_php xs =
 (*****************************************************************************)
 
 (*
-let test_unsugar_php file = 
+let test_unsugar_php file =
   let ast = Parse_php.parse_program file in
   let _ast = Unsugar_php.unsugar_self_parent_program ast in
   let s = raise Todo

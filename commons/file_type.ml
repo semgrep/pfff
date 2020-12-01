@@ -6,13 +6,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -23,7 +23,7 @@ open Common
 (*****************************************************************************)
 
 (* see also dircolors.el and LFS *)
-type file_type = 
+type file_type =
   | PL of pl_type
   | Obj  of string (* .o, .a, .aux, .bak, etc *)
   | Binary of string
@@ -34,7 +34,7 @@ type file_type =
   | Other of string
 
  (* programming languages *)
- and pl_type = 
+ and pl_type =
   | ML of string  (* mli, ml, mly, mll *)
   | Haskell of string
   | Lisp of lisp_type
@@ -45,14 +45,14 @@ type file_type =
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
 
-  | C of string | Cplusplus of string 
+  | C of string | Cplusplus of string
   | Java | Kotlin | Csharp
-  | ObjectiveC of string 
+  | ObjectiveC of string
   | Swift
 
   | Perl | Python | Ruby | Lua
 
-  | Erlang 
+  | Erlang
   | Go | Rust
   | Beta
   | Pascal
@@ -69,7 +69,7 @@ type file_type =
 
    and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
-   and webpl_type = 
+   and webpl_type =
      | Php of string (* php or phpt or script *)
      | Js | Coffee | TypeScript | TSX
      | Css
@@ -88,11 +88,11 @@ type file_type =
 (* this function is used by codemap and archi_parse and called for each
  * filenames, so it has to be fast!
  *)
-let file_type_of_file2 file = 
+let file_type_of_file2 file =
   let (_d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
 
-  | "ml" | "mli" 
+  | "ml" | "mli"
   | "mly" | "mll"
   | "dyp" (* dypgen =~ GLR ocamlyacc *)
       -> PL (ML e)
@@ -120,14 +120,14 @@ let file_type_of_file2 file =
   | "bet" -> PL Beta
 
   (* todo detect false C file, look for "Mode: Objective-C++" string in file ?
-   * can also be a c++, use Parser_cplusplus.is_problably_cplusplus_file 
+   * can also be a c++, use Parser_cplusplus.is_problably_cplusplus_file
    *)
   | "c" -> PL (C e)
   | "h" -> PL (C e)
   (* todo? have a PL of xxx_kind * pl_kind ?  *)
   | "y" | "l" -> PL (C e)
 
-  | "hpp" -> PL (Cplusplus e) | "hxx" -> PL (Cplusplus e) 
+  | "hpp" -> PL (Cplusplus e) | "hxx" -> PL (Cplusplus e)
   | "hh" -> PL (Cplusplus e)
   | "cpp" -> PL (Cplusplus e) | "C" -> PL (Cplusplus e)
   | "cc" -> PL (Cplusplus e)  | "cxx" -> PL (Cplusplus e)
@@ -152,7 +152,7 @@ let file_type_of_file2 file =
 
   (* Perl or Prolog ... I made my choice *)
   | "pl" -> PL (Prolog "pl")
-  | "perl" -> PL Perl 
+  | "perl" -> PL Perl
   | "py" | "pyi" -> PL Python
   | "rb" -> PL Ruby
 
@@ -231,21 +231,21 @@ let file_type_of_file2 file =
   | "nw" | "web" -> Text e
   | "ms" -> Text e
 
-  | "org" 
+  | "org"
   | "md" | "rest" | "textile" | "wiki" | "rst"
     -> Text e
 
   | "rtf" -> Text e
 
-  | "cmi" | "cmo" | "cmx" | "cma" | "cmxa" 
+  | "cmi" | "cmo" | "cmx" | "cma" | "cmxa"
   | "annot" | "cmt" | "cmti"
   | "o" | "a"
-  | "pyc" 
+  | "pyc"
   | "log"
-  | "toc" | "brf"  
+  | "toc" | "brf"
   | "out" | "output"
   | "hi"
-  | "msi" 
+  | "msi"
       -> Obj e
   (* pad: I use it to store marshalled data *)
   | "db" -> Obj e
@@ -254,9 +254,9 @@ let file_type_of_file2 file =
   | "apcarc"  | "serialized" | "wsdl" | "dat"  | "train" ->  Obj e
   | "facts" -> Obj e (* logicblox *)
   (* pad specific, cached git blame info *)
-  | "git_annot" -> Obj e 
+  | "git_annot" -> Obj e
   (* pad specific, codegraph cached data *)
-  | "marshall" | "matrix" -> Obj e 
+  | "marshall" | "matrix" -> Obj e
 
   | "byte" | "top" -> Binary e
 
@@ -297,7 +297,7 @@ let file_type_of_file2 file =
   | _ when Common2.filesize file > 300_000 -> Obj e
   | _ -> Other e
 
-let file_type_of_file a = 
+let file_type_of_file a =
   Common.profile_code "file_type_of_file" (fun () -> file_type_of_file2 a)
 
 
@@ -311,21 +311,21 @@ let is_textual_file file =
   (* if this contains weird code then pfff_visual crash *)
   | PL (Web Sql) -> false
 
-  | PL _ 
+  | PL _
   | Text _ -> true
   | _ -> false
 
-let webpl_type_of_file file = 
+let webpl_type_of_file file =
   match file_type_of_file file with
   | PL (Web x) -> Some x
   | _ -> None
 
 
 (*
-let detect_pl_of_file file = 
+let detect_pl_of_file file =
   raise Todo
 
-let string_of_pl x = 
+let string_of_pl x =
   raise Todo
   | C -> "c"
   | Cplusplus -> "c++"
@@ -334,10 +334,10 @@ let string_of_pl x =
   | Web _ -> raise Todo
 *)
 
-let is_syncweb_obj_file file = 
+let is_syncweb_obj_file file =
   file =~ ".*md5sum_"
 
-let is_json_filename filename = 
+let is_json_filename filename =
   filename =~ ".*\\.json$"
   (*
   match File_type.file_type_of_file filename with

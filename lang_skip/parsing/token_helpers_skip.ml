@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,7 +26,7 @@ let is_eof = function
 
 let is_comment = function
   | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
-  | _ -> false 
+  | _ -> false
 
 let token_kind_of_tok t =
   match t with
@@ -71,7 +71,7 @@ let visitor_info_of_tok f = function
   | Tloop ii -> Tloop (f ii)
 
   | TEqDot ii -> TEqDot (f ii)
-  | TTildeArrow ii -> TTildeArrow (f ii) 
+  | TTildeArrow ii -> TTildeArrow (f ii)
   | TEqualArrow ii -> TEqualArrow (f ii)
   | TDiv ii -> TDiv (f ii)
   | TMod ii -> TMod (f ii)
@@ -89,51 +89,51 @@ let visitor_info_of_tok f = function
   | TLowerIdent (s, ii) -> TLowerIdent (s, f ii)
   | TUpperIdent (s, ii) -> TUpperIdent (s, f ii)
 
-  | Toverridable ii -> Toverridable (f ii)   
-  | Treadonly ii -> Treadonly (f ii)   
-  | Tmacro ii -> Tmacro (f ii)   
+  | Toverridable ii -> Toverridable (f ii)
+  | Treadonly ii -> Treadonly (f ii)
+  | Tmacro ii -> Tmacro (f ii)
 
-  | Talias ii -> Talias (f ii)   
-  | Tas ii -> Tas (f ii)   
-  | Tasync ii -> Tasync (f ii)   
-  | Tawait ii -> Tawait (f ii)   
-  | Tcatch ii -> Tcatch (f ii)   
-  | Tchildren ii -> Tchildren (f ii)   
-  | Tclass ii -> Tclass (f ii)   
-  | Tconst ii -> Tconst (f ii)   
-  | Telse ii -> Telse (f ii)   
-  | Textends ii -> Textends (f ii) 
-  | Tfinal ii -> Tfinal (f ii)   
-  | Tfrom ii -> Tfrom (f ii)   
-  | Tfun ii -> Tfun (f ii)   
-  | Tif ii -> Tif (f ii)   
-  | Tmatch ii -> Tmatch (f ii)   
-  | Tmodule ii -> Tmodule (f ii)   
-  | Tmutable ii -> Tmutable (f ii)   
-  | Tnative ii -> Tnative (f ii)   
-  | Tprivate ii -> Tprivate (f ii) 
-  | Tprotected ii -> Tprotected (f ii)   
-  | Tuses ii -> Tuses (f ii) 
-  | Tstatic ii -> Tstatic (f ii) 
-  | Tthis ii -> Tthis (f ii) 
-  | Tthrow ii -> Tthrow (f ii) 
-  | Ttrait ii -> Ttrait (f ii) 
-  | Ttry ii -> Ttry (f ii) 
-  | Ttype ii -> Ttype (f ii) 
-  | Tvoid ii -> Tvoid (f ii) 
-  | Twatch ii -> Twatch (f ii) 
-  | Twhen ii -> Twhen (f ii) 
-  | Twith ii -> Twith (f ii) 
-  | Tbase ii -> Tbase (f ii) 
-  | Tcapture ii -> Tcapture (f ii) 
-  | Tdefault ii -> Tdefault (f ii) 
-  | Tdeferred ii -> Tdeferred (f ii) 
-  | Tinst ii -> Tinst (f ii) 
-  | TnonNullable ii -> TnonNullable (f ii) 
-  | Tuntracked ii -> Tuntracked (f ii) 
-  | Tvalue ii -> Tvalue (f ii) 
-  | Ttrue ii -> Ttrue (f ii) 
-  | Tfalse ii -> Tfalse (f ii) 
+  | Talias ii -> Talias (f ii)
+  | Tas ii -> Tas (f ii)
+  | Tasync ii -> Tasync (f ii)
+  | Tawait ii -> Tawait (f ii)
+  | Tcatch ii -> Tcatch (f ii)
+  | Tchildren ii -> Tchildren (f ii)
+  | Tclass ii -> Tclass (f ii)
+  | Tconst ii -> Tconst (f ii)
+  | Telse ii -> Telse (f ii)
+  | Textends ii -> Textends (f ii)
+  | Tfinal ii -> Tfinal (f ii)
+  | Tfrom ii -> Tfrom (f ii)
+  | Tfun ii -> Tfun (f ii)
+  | Tif ii -> Tif (f ii)
+  | Tmatch ii -> Tmatch (f ii)
+  | Tmodule ii -> Tmodule (f ii)
+  | Tmutable ii -> Tmutable (f ii)
+  | Tnative ii -> Tnative (f ii)
+  | Tprivate ii -> Tprivate (f ii)
+  | Tprotected ii -> Tprotected (f ii)
+  | Tuses ii -> Tuses (f ii)
+  | Tstatic ii -> Tstatic (f ii)
+  | Tthis ii -> Tthis (f ii)
+  | Tthrow ii -> Tthrow (f ii)
+  | Ttrait ii -> Ttrait (f ii)
+  | Ttry ii -> Ttry (f ii)
+  | Ttype ii -> Ttype (f ii)
+  | Tvoid ii -> Tvoid (f ii)
+  | Twatch ii -> Twatch (f ii)
+  | Twhen ii -> Twhen (f ii)
+  | Twith ii -> Twith (f ii)
+  | Tbase ii -> Tbase (f ii)
+  | Tcapture ii -> Tcapture (f ii)
+  | Tdefault ii -> Tdefault (f ii)
+  | Tdeferred ii -> Tdeferred (f ii)
+  | Tinst ii -> Tinst (f ii)
+  | TnonNullable ii -> TnonNullable (f ii)
+  | Tuntracked ii -> Tuntracked (f ii)
+  | Tvalue ii -> Tvalue (f ii)
+  | Ttrue ii -> Ttrue (f ii)
+  | Tfalse ii -> Tfalse (f ii)
 
 
   | TOParen ii -> TOParen (f ii)
@@ -168,7 +168,7 @@ let visitor_info_of_tok f = function
   | TPlus ii -> TPlus (f ii)
   | TMinus ii -> TMinus (f ii)
 
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   Common2.some !res

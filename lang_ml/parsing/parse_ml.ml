@@ -1,17 +1,17 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common 
+open Common
 
 module Flag = Flag_parsing
 module TH   = Token_helpers_ml
@@ -25,39 +25,39 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program_and_tokens = 
+type program_and_tokens =
   Ast_ml.program option * Parser_ml.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
-let error_msg_tok tok = 
+let error_msg_tok tok =
   Parse_info.error_message_info (TH.info_of_tok tok)
 
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
-let tokens2 file = 
+let tokens2 file =
   let token = Lexer_ml.token in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos
     file token TH.visitor_info_of_tok TH.is_eof
-          
-let tokens a = 
+
+let tokens a =
   Common.profile_code "Parse_ml.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-let parse2 filename = 
+let parse2 filename =
 
   let stat = Parse_info.default_stat filename in
   let toks = tokens filename in
 
-  let tr, lexer, lexbuf_fake = 
+  let tr, lexer, lexbuf_fake =
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
-  try 
+  try
     (* -------------------------------------------------- *)
     (* Call parser *)
     (* -------------------------------------------------- *)
@@ -70,7 +70,7 @@ let parse2 filename =
     in
     stat.PI.correct <- (Common.cat filename |> List.length);
     (Some xs, toks), stat
-      
+
   with Parsing.Parse_error   ->
 
     let cur = tr.PI.current in
@@ -89,19 +89,19 @@ let parse2 filename =
     stat.PI.bad     <- Common.cat filename |> List.length;
     (None, toks), stat
 
-let parse a = 
+let parse a =
   Common.profile_code "Parse_ml.parse" (fun () -> parse2 a)
 
-let parse_program file = 
+let parse_program file =
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
 
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)
-let type_of_string s = 
+let type_of_string s =
   let lexbuf = Lexing.from_string s in
-  let rec lexer lexbuf = 
+  let rec lexer lexbuf =
     let res = Lexer_ml.token lexbuf in
     if TH.is_comment res
     then lexer lexbuf
@@ -111,7 +111,7 @@ let type_of_string s =
   ty
 
 (* for sgrep/spatch *)
-let any_of_string  s = 
+let any_of_string  s =
   Common2.with_tmp_file ~str:s ~ext:"ml" (fun file ->
     let toks = tokens file in
     let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in

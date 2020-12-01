@@ -1,20 +1,20 @@
 
 (* e.g. "10.1" *)
-type section = string 
+type section = string
 
 type code_excerpt = string list
 
-type comment_style = 
+type comment_style =
   string (* comment_start *) * string (* comment_end *)
 
-type skeleton = 
-  (string (* section1 *) * 
-      ((string (* section2 title *) * section) list)) 
+type skeleton =
+  (string (* section1 *) *
+      ((string (* section2 title *) * section) list))
     list
 
 type sections = (section, code_excerpt) Common.assoc
 
-val parse_data_file: 
+val parse_data_file:
   Common.filename -> sections
 
 val parse_skeleton_file:
@@ -23,12 +23,12 @@ val parse_skeleton_file:
 val detect_comment_style:
   Common.filename -> comment_style
 
-type gen_mode = 
+type gen_mode =
   | OneFilePerSection
   | OneDirPerSection
 
-val gen_source_files: 
-  skeleton -> sections -> comment_style -> 
+val gen_source_files:
+  skeleton -> sections -> comment_style ->
   gen_mode:gen_mode ->
   output_dir:Common.dirname ->
   ext_file:string ->

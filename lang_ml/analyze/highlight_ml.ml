@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -18,7 +18,7 @@ open Common
 open Highlight_code
 module PI = Parse_info
 module T = Parser_ml
-open Entity_code 
+open Entity_code
 module E = Entity_code
 module G = AST_generic
 module V = Visitor_AST
@@ -27,8 +27,8 @@ module V = Visitor_AST
 (* Prelude *)
 (*****************************************************************************)
 (* Syntax highlighting for OCaml code for codemap (and now also for efuns).
- * 
- * This code can also be abused to generate the light database 
+ *
+ * This code can also be abused to generate the light database
  * and the TAGS file (because codemap needs to know about
  * def and use of entities), but you should now prefer to
  * base such analysis on graph_code_cmt.ml instead of this file.
@@ -74,10 +74,10 @@ let kind_of_body x =
   let def2 = Def2 fake_no_def2 in
   match x with
   | G.Lambda _ -> Entity (Function, def2)
-  | G.Call (G.IdQualified ((("ref", _), _nameinfo), _idinfo), _args) -> 
+  | G.Call (G.IdQualified ((("ref", _), _nameinfo), _idinfo), _args) ->
      Entity (Global, def2)
-  | G.Call (G.IdQualified ((("create", _), 
-          { G.name_qualifier = Some (G.QDots ["Hashtbl", _]); _ }), _idinfo), 
+  | G.Call (G.IdQualified ((("create", _),
+          { G.name_qualifier = Some (G.QDots ["Hashtbl", _]); _ }), _idinfo),
           _args) ->
       Entity (Global, def2)
   | _ -> Entity (Constant, def2)
@@ -91,12 +91,12 @@ let kind_of_ty ty =
   | G.TyFun _ -> (FunctionDecl NoUse)
   | G.TyNameApply ((("ref", _), _), _) -> Entity (Global, def2)
   (* todo: should handle module aliases there too *)
-  | G.TyNameApply ((("t", _), 
+  | G.TyNameApply ((("t", _),
          { G.name_qualifier = Some (G.QDots ["Hashtbl", _]); _ }), _)->
       Entity (Global, def2)
   | _ -> Entity (Constant, def2)
 
-let last_id xs = 
+let last_id xs =
   match List.rev xs with
   | x::_xs -> x
   | [] -> failwith "last_id: empty list of idents"
@@ -125,7 +125,7 @@ let visit_program
   in
 
   (* -------------------------------------------------------------------- *)
-  (* AST phase 1 *) 
+  (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
   let gen = Ml_to_generic.program ast in
   (* TODO: move this in h_program-lang/? to factorize code! *)
@@ -142,7 +142,7 @@ let visit_program
      match x with
      | ({ G.name = G.EId (_s, info); _}, def) ->
       (match def with
-      | G.Signature ty -> 
+      | G.Signature ty ->
           tag info (kind_of_ty ty);
           k x
 
@@ -167,7 +167,7 @@ let visit_program
             xs |> List.iter (function
               | G.OrConstructor (id, _) ->
                  let info = info_of_id id in
-                 tag info (Entity (Constructor, Def2 fake_no_def2)) 
+                 tag info (Entity (Constructor, Def2 fake_no_def2))
               | _ -> ()
             )
           | G.AndType (_, xs, _) ->
@@ -181,7 +181,7 @@ let visit_program
           k x
 
        | G.VarDef { G.vinit = Some body; vtype = _ }  ->
-          (if not !in_let 
+          (if not !in_let
            then tag info (kind_of_body body)
            else tag info (Local Def)
           );
@@ -189,8 +189,8 @@ let visit_program
             k x
           )
 
-       | G.FuncDef _ -> 
-          (if not !in_let 
+       | G.FuncDef _ ->
+          (if not !in_let
           then tag info (Entity (Function, (Def2 NoUse)))
           else tag info (Local Def)
           );
@@ -204,7 +204,7 @@ let visit_program
     );
 
     V.kdir = (fun (k, _) x ->
-     (match x with 
+     (match x with
      | G.ImportAll (_, G.DottedName xs, _) ->
         let info = snd (last_id xs) in
         tag info (Entity (Module, Use2 fake_no_use2))
@@ -217,7 +217,7 @@ let visit_program
       let (_id, infos) = x in
       (match infos.G.name_qualifier with
       | Some (G.QDots xs) ->
-          xs |> List.iter (fun (_, ii) -> 
+          xs |> List.iter (fun (_, ii) ->
            tag ii (Entity (Module, Use2 fake_no_use2))
           )
       | _ -> ()
@@ -238,7 +238,7 @@ let visit_program
 (*
     V.kargument = (fun (k, _) x ->
       (match x with
-      | ArgImplicitTildeExpr (_, name) -> 
+      | ArgImplicitTildeExpr (_, name) ->
         let info = Ast.info_of_name name in
         (* todo: could be a Parameter use, need scope analysis *)
         tag info (Local Use)
@@ -251,7 +251,7 @@ let visit_program
           (match pat with
           | PatTyped (_, PatVar name, _, _ty, _) ->
               let info = Ast.info_of_name name in
-              if not !in_let 
+              if not !in_let
               then tag info (kind_of_body body)
               else tag info (Local (Def))
           | _ -> ()
@@ -279,21 +279,21 @@ let visit_program
           let info = info_of_name name in
           (* could have been tagged as a function name in the rule below *)
           if not (Hashtbl.mem already_tagged info)
-          then begin 
-            (* TODO could be a param, could be a local. Need scope analysis 
+          then begin
+            (* TODO could be a param, could be a local. Need scope analysis
              * TODO could also be actually a func passed to a higher
              *  order function, as in List.map snd, or even x +> Common.sort
              *)
-            tag info (Local Use) 
+            tag info (Local Use)
           end;
           k x
- 
-      | G.Call (G.IdQualified ((("=~", _), _nameinfo), _idinfo), 
+
+      | G.Call (G.IdQualified ((("=~", _), _nameinfo), _idinfo),
                 (_, [_arg1; G.Arg (G.L (G.String (_, info)))], _)) ->
           tag info Regexp;
           k x
 
-      | G.Call (G.IdQualified ((id, {G.name_qualifier = qu; _}), _idinfo), 
+      | G.Call (G.IdQualified ((id, {G.name_qualifier = qu; _}), _idinfo),
                 _args) ->
           let (s, info) = id in
           (match qu with
@@ -344,7 +344,7 @@ let visit_program
       (match x with
       | G.PatConstructor ((id, _name_info), _popt) ->
           let info = snd id in
-          if !in_try_with 
+          if !in_try_with
           then tag info (KeywordExn)
           else tag info (ConstructorMatch fake_no_use2)
       | G.PatId (id, _idinfo) ->
@@ -389,7 +389,7 @@ let visit_program
   (* note: all TCommentSpace are filtered in xs so it should be easier to
    * write rules (but regular comments are kept as well as newlines).
    *)
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
@@ -428,10 +428,10 @@ let visit_program
 
     (* When we get a parse error, the AST does not contain the definitions, but
      * we can still try to tag certain things. Here is a
-     * poor's man semantic tagger. We try to infer if an ident is a func, 
+     * poor's man semantic tagger. We try to infer if an ident is a func,
      * or class, or module based on the few tokens around.
-     * 
-     * This may look ridiculous to do such semantic tagging using tokens 
+     *
+     * This may look ridiculous to do such semantic tagging using tokens
      * instead of the full AST but many OCaml files could not parse with
      * the default parser because of camlp4 extensions so having
      * a solid token-based tagger is still useful as a last resort.
@@ -523,7 +523,7 @@ let visit_program
         aux_toks xs;
 
     | T.TUpperIdent(s, ii)::T.TDot _ii2::T.TLowerIdent(_s2, ii3)::xs ->
-        
+
         (* see my .emacs *)
         if Hashtbl.mem h_builtin_modules s then begin
           tag ii BuiltinCommentColor;
@@ -545,7 +545,7 @@ let visit_program
 *)
 
     (* grammar rules in ocamlyacc *)
-    | T.TLowerIdent (_s, ii1)::T.TColon _::xs 
+    | T.TLowerIdent (_s, ii1)::T.TColon _::xs
       when PI.col_of_info ii1 = 0 ->
         tag ii1 GrammarRule;
         aux_toks xs
@@ -560,7 +560,7 @@ let visit_program
     | T.TBracketAtAt _::T.TLowerIdent (_, ii)::xs ->
         tag ii Attribute;
         aux_toks xs
-       
+
     | _x::xs ->
         aux_toks xs
   in
@@ -576,7 +576,7 @@ let visit_program
   (* -------------------------------------------------------------------- *)
 
   if not disable_token_phase2 then
-   toks |> List.iter (fun tok -> 
+   toks |> List.iter (fun tok ->
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -613,7 +613,7 @@ let visit_program
     | T.TFloat (_s,ii) | T.TInt (_s,ii) -> tag ii Number
     | T.Tfalse ii | T.Ttrue ii -> tag ii Boolean
 
-    | T.Tlet ii | T.Tin ii | T.Tand ii | T.Trec ii 
+    | T.Tlet ii | T.Tin ii | T.Tand ii | T.Trec ii
     | T.Tval ii | T.Texternal ii
         -> tag ii Keyword
 
@@ -649,7 +649,7 @@ let visit_program
     | T.TEq ii ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Punctuation
-        
+
     | T.TSemiColon ii | T.TPipe ii | T.TComma ii
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
@@ -727,7 +727,7 @@ let visit_program
         -> tag ii (Parameter Def)
 
     | T.TLowerIdent (s, ii)
-     -> 
+     ->
         match s with
         | _ when Hashtbl.mem h_pervasives_pad s ->
             tag ii BuiltinCommentColor

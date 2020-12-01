@@ -1,5 +1,5 @@
 
-type program_and_tokens = 
+type program_and_tokens =
   Ast_rust.program * Parser_rust.token list
 
 (* This is the main function *)

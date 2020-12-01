@@ -8,20 +8,20 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 module Flag = Flag_parsing
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A basic TeX/LaTeX/Noweb lexer. 
+(* A basic TeX/LaTeX/Noweb lexer.
  *
  * Alternatives:
  *  - Hevea, but the code is quite complicated. I don't need all the
@@ -35,7 +35,7 @@ module Flag = Flag_parsing
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-(* Was in parser_nw.mly but we don't really need an extra file. 
+(* Was in parser_nw.mly but we don't really need an extra file.
  * The only "parsing" we do is just to make a fuzzy AST by parentizing braces.
  *)
 
@@ -62,18 +62,18 @@ type token =
 
   (* verbatim (different lexing rules) *)
 
-  | TBeginVerbatim of Parse_info.t 
+  | TBeginVerbatim of Parse_info.t
   | TEndVerbatim of Parse_info.t
   | TVerbatimLine of (string * Parse_info.t)
 
   (* start of noweb stuff (different lexing rules too) *)
 
   (* <<...>>= and @ *)
-  | TBeginNowebChunk of Parse_info.t 
+  | TBeginNowebChunk of Parse_info.t
   | TEndNowebChunk of Parse_info.t
   | TNowebChunkStr of (string * Parse_info.t)
   (* << >> when on the same line and inside a noweb chunk *)
-  | TNowebChunkName of string * Parse_info.t 
+  | TNowebChunkName of string * Parse_info.t
 
   (* [[ ]] *)
   | TNowebCode of string * Parse_info.t
@@ -99,7 +99,7 @@ let error = Parse_info.lexical_error
 (* ---------------------------------------------------------------------- *)
 (* Lexer State *)
 (* ---------------------------------------------------------------------- *)
-type state_mode = 
+type state_mode =
   (* aka TeX mode *)
   | INITIAL
   (* started with begin{verbatim} finished by end{verbatim} *)
@@ -111,17 +111,17 @@ type state_mode =
 
 let default_state = INITIAL
 
-let _mode_stack = 
+let _mode_stack =
   ref [default_state]
 
-let reset () = 
+let reset () =
   _mode_stack := [default_state];
   ()
 
-let rec current_mode () = 
-  try 
+let rec current_mode () =
+  try
     Common2.top !_mode_stack
-  with Failure("hd") -> 
+  with Failure("hd") ->
     pr2("LEXER: mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
@@ -144,7 +144,7 @@ rule tex = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-  | "%" [^'\n' '\r']* { 
+  | "%" [^'\n' '\r']* {
       TComment(tokinfo lexbuf)
     }
   (* Actually in TeX the space and newlines have a meaning so I should perhaps
@@ -173,9 +173,9 @@ rule tex = parse
    *)
   | ['-' '+' '=' '\'' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
      '_' '`' '?' '^' '|' '!' '&' ]+ {
-      TSymbol (tok lexbuf, tokinfo lexbuf) 
+      TSymbol (tok lexbuf, tokinfo lexbuf)
     }
- 
+
   (* ----------------------------------------------------------------------- *)
   (* Commands and words (=~ Keywords and indent in other PL) *)
   (* ----------------------------------------------------------------------- *)
@@ -230,7 +230,7 @@ rule tex = parse
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
-  | _ { 
+  | _ {
         error ("unrecognised symbol, in token rule:"^tok lexbuf) lexbuf;
         TUnknown (tokinfo lexbuf)
     }
@@ -239,7 +239,7 @@ rule tex = parse
 (* Rule in Code noweb *)
 (*****************************************************************************)
 and noweb = parse
-  | "\n@" { 
+  | "\n@" {
       pop_mode ();
       TEndNowebChunk (tokinfo lexbuf)
     }
@@ -253,7 +253,7 @@ and noweb = parse
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
-  | _ { 
+  | _ {
       error ("unrecognised symbol, in noweb chunkname rule:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
@@ -263,7 +263,7 @@ and noweb = parse
 (* Rule in verbatim *)
 (*****************************************************************************)
 and verbatim = parse
-  | "\\end{verbatim}" { 
+  | "\\end{verbatim}" {
       pop_mode ();
       TEndVerbatim (tokinfo lexbuf)
     }
@@ -276,13 +276,13 @@ and verbatim = parse
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
-  | _ { 
+  | _ {
       error ("unrecognised symbol, in verbatim rule:"^tok lexbuf) lexbuf;
       TUnknown (tokinfo lexbuf)
     }
 
 and verb c = parse
-  | _ as c2 { 
+  | _ as c2 {
       if c = c2 then begin
         pop_mode ();
         TEndVerbatim (tokinfo lexbuf)

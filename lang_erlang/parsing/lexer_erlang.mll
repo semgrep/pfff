@@ -7,14 +7,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 
-open Common 
+open Common
 
 module Ast = Ast_erlang
 module Flag = Flag_parsing
@@ -93,7 +93,7 @@ let hexinteger = '0' ('x' | 'X') hexdigit+
 let integer = (decimalinteger | octinteger | hexinteger)
 
 (* TODO, was in csharp *)
-let escapeseq = 
+let escapeseq =
    ( '\\' '^' _ |
     '\\' ['\'' '"' '\\' 'b' 'd' 'e' 'f' 'n' 'r' 's' 't' 'v'] |
     '\\' octdigit |
@@ -143,7 +143,7 @@ rule token = parse
 
   | "="  { TEq (tokinfo lexbuf) } | "==" { TEqEq(tokinfo lexbuf) }
   | "/=" { TSlashEq(tokinfo lexbuf) }
-  | "=:="  { TEqColonEq (tokinfo lexbuf) } 
+  | "=:="  { TEqColonEq (tokinfo lexbuf) }
   | "=/=" { TEqSlashEq(tokinfo lexbuf) }
   | "<" { TLess(tokinfo lexbuf) }  | ">" { TMore(tokinfo lexbuf) }
   | "=<" { TLessEq(tokinfo lexbuf) }  | ">=" { TMoreEq(tokinfo lexbuf) }
@@ -179,7 +179,7 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
 
-  | '"' { 
+  | '"' {
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in
       TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
@@ -194,8 +194,8 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf) }
 
-  | _ { 
-      if !Flag.verbose_lexing 
+  | _ {
+      if !Flag.verbose_lexing
       then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
@@ -205,8 +205,8 @@ rule token = parse
 and string_double_quote = parse
   | '"' { "" }
 
-  | [^ '\\' '\"' '\n']* { 
-      let s = tok lexbuf in s ^ string_double_quote lexbuf 
+  | [^ '\\' '\"' '\n']* {
+      let s = tok lexbuf in s ^ string_double_quote lexbuf
     }
   | escapeseq { let s = tok lexbuf in s ^ string_double_quote lexbuf }
 

@@ -6,7 +6,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -53,12 +53,12 @@ let look_like_argument _tok_before xs =
     (* TODO: xx * yy  and space = 1 between the 2 :) *)
     | _ -> false
   in
-  
+
   let rec aux xs =
     match xs with
     | [] -> false
     (* a function call probably *)
-    | Tok{t=TIdent _}::Parens _::_xs -> 
+    | Tok{t=TIdent _}::Parens _::_xs ->
         (* todo? look_like_argument recursively in Parens || aux xs ? *)
         true
     (* if have = ... then must stop, could be default parameter of a method *)
@@ -103,7 +103,7 @@ let look_like_typedef s =
 
 (* todo: pass1, look for const, etc
  * todo: pass2, look xx_t, xx&, xx*, xx**, see heuristics in typedef
- * 
+ *
  * Many patterns should mimic some heuristics in parsing_hack_typedef.ml
  *)
 let look_like_parameter tok_before xs =
@@ -131,19 +131,19 @@ let look_like_parameter tok_before xs =
      *  may not be completely accurate here. May need lower level access
      *  to the list of TCommentSpace and their position.
      *  hmm but can look at col?
-     * 
+     *
      * C-s for parameter_decl in grammar to see that catch() is
      * a InParameter.
      *)
     | [Tok {t=TIdent _}; Tok {t=TMul _};Tok {t=TIdent _};] ->
-      (match tok_before with 
+      (match tok_before with
       | Tok{t=(
-            Tcatch _ 
+            Tcatch _
           (* ugly: TIdent_Constructor interaction between past heuristics *)
           | TIdent_Constructor _
           | Toperator _
           (* no! | TIdent _ *)
-        )} -> true 
+        )} -> true
       | _ -> false
       )
 
@@ -169,25 +169,25 @@ let look_like_parameter tok_before xs =
 (*****************************************************************************)
 (* Main heuristics *)
 (*****************************************************************************)
-(* 
+(*
  * Most of the important contexts are introduced via some '{' '}'. To
  * disambiguate is it often enough to just look at a few tokens before the
  * '{'.
- * 
- * Below we assume a view without: 
- * - comments 
- * - cpp directives 
- * 
- * todo 
+ *
+ * Below we assume a view without:
+ * - comments
+ * - cpp directives
+ *
+ * todo
  *  - handle more C++ (right now I did it mostly to be able to parse plan9)
  *  - harder now that have c++, can have function inside struct so need
- *    handle all together. 
+ *    handle all together.
  *  - change token but do not recurse in
  *    nested Braceised. maybe do via accumulator, don't use iter_token_brace?
  *  - need remove the qualifier as they make the sequence pattern matching
  *    more difficult?
  *)
-let set_context_tag_multi groups = 
+let set_context_tag_multi groups =
   let rec aux xs =
     match xs with
     | [] -> ()
@@ -209,8 +209,8 @@ let set_context_tag_multi groups =
       aux (braces::xs)
 
   (* = { } *)
-  | Tok ({t=TEq _; _})::(Braces(_t1, _body, _t2) as braces)::xs -> 
-      [braces] |> TV.iter_token_multi (fun tok -> 
+  | Tok ({t=TEq _; _})::(Braces(_t1, _body, _t2) as braces)::xs ->
+      [braces] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- InInitializer::tok.TV.where;
       );
       aux (braces::xs)
@@ -230,7 +230,7 @@ let set_context_tag_multi groups =
     ::Tok{t= TCol ii}::xs
     ->
       let (before, braces, after) =
-        try 
+        try
           xs |> Common2.split_when (function
           | Braces _ -> true
           | _ -> false
@@ -248,12 +248,12 @@ let set_context_tag_multi groups =
 
 
 
-  (* need to look what was before to help the look_like_xxx heuristics 
+  (* need to look what was before to help the look_like_xxx heuristics
    *
    * The order of the 3 rules below is important. We must first try
    * look_like_argument which has less FP than look_like_parameter
   *)
-  | x::(Parens(_t1, body, _t2) as parens)::xs 
+  | x::(Parens(_t1, body, _t2) as parens)::xs
     when look_like_argument x body ->
       (*msg_context t1.t (TV.InArgument); *)
       [parens] |> TV.iter_token_multi (fun tok ->
@@ -264,33 +264,33 @@ let set_context_tag_multi groups =
       aux (parens::xs)
 
   (* C++: special cases *)
-  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(_t1, body, _t2) as parens)::xs 
+  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(_t1, body, _t2) as parens)::xs
     when look_like_parameter tok1 body ->
       (* msg_context t1.t (TV.InParameter); *)
       [parens] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
       );
-      (* recurse on body? hmm if InParameter should not have nested 
-       * stuff except when pass function pointer 
+      (* recurse on body? hmm if InParameter should not have nested
+       * stuff except when pass function pointer
        *)
       aux [tok1;tok2];
       aux (parens::xs)
 
 
-  | x::(Parens(_t1, body, _t2) as parens)::xs 
+  | x::(Parens(_t1, body, _t2) as parens)::xs
     when look_like_parameter x body ->
       (* msg_context t1.t (TV.InParameter); *)
       [parens] |> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InParameter)::tok.TV.where;
       );
-      (* recurse on body? hmm if InParameter should not have nested 
-       * stuff except when pass function pointer 
+      (* recurse on body? hmm if InParameter should not have nested
+       * stuff except when pass function pointer
        *)
       aux [x];
       aux (parens::xs)
 
   (* void xx() *)
-  | Tok{t=typ}::Tok{t=TIdent _}::(Parens(_t1, _body, _t2) as parens)::xs 
+  | Tok{t=typ}::Tok{t=TIdent _}::(Parens(_t1, _body, _t2) as parens)::xs
     when TH.is_basic_type typ ->
       (* msg_context t1.t (TV.InParameter); *)
       [parens] |> TV.iter_token_multi (fun tok ->
@@ -319,10 +319,10 @@ let set_context_tag_multi groups =
 (*****************************************************************************)
 (* Main heuristics C++ *)
 (*****************************************************************************)
-(* 
- * assumes a view without: 
- * - template arguments, qualifiers, 
- * - comments and cpp directives 
+(*
+ * assumes a view without:
+ * - template arguments, qualifiers,
+ * - comments and cpp directives
  * - TODO public/protected/... ?
  *)
 let set_context_tag_cplus groups =

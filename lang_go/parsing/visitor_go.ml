@@ -75,18 +75,18 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit =
   fun of_a (v1, v2, v3) ->
   let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
 
-and v_info x = 
+and v_info x =
   let k _x = () in
   vin.kinfo (k, all_functions) x
 
 and v_tok v = v_info v
 
-and v_ident x = 
-  let k v = 
+and v_ident x =
+  let k v =
     v_wrap v_string v
   in
   vin.kident (k, all_functions) x
@@ -97,24 +97,24 @@ and v_type_ x =
   let k =
   function
   | TName v1 -> let v1 = v_qualified_ident v1 in ()
-  | TPtr (t, v1) -> 
+  | TPtr (t, v1) ->
         let t = v_tok t in
         let v1 = v_type_ v1 in ()
-  | TArray (v1, v2) -> let v1 = v_bracket (v_option v_expr) v1 
+  | TArray (v1, v2) -> let v1 = v_bracket (v_option v_expr) v1
         and v2 = v_type_ v2 in ()
-  | TArrayEllipsis (v1, v2) -> 
+  | TArrayEllipsis (v1, v2) ->
         let v1 = v_bracket v_tok v1 and v2 = v_type_ v2 in ()
   | TFunc v1 -> let v1 = v_func_type v1 in ()
-  | TMap (t, v1, v2) -> 
+  | TMap (t, v1, v2) ->
         let t = v_tok t in
         let v1 = v_bracket v_type_ v1 and v2 = v_type_ v2 in ()
-  | TChan (t, v1, v2) -> 
+  | TChan (t, v1, v2) ->
         let t = v_tok t in
         let v1 = v_chan_dir v1 and v2 = v_type_ v2 in ()
-  | TStruct (t, v1) -> 
+  | TStruct (t, v1) ->
         let t = v_tok t in
         let v1 = v_bracket (v_list v_struct_field) v1 in ()
-  | TInterface (t, v1) -> 
+  | TInterface (t, v1) ->
         let t = v_tok t in
         let v1 = v_bracket (v_list v_interface_field) v1 in ()
   in
@@ -153,7 +153,7 @@ and v_interface_field =
 and v_expr_or_type v = v_either v_expr v_type_ v
 
 and v_expr x =
-  let k = 
+  let k =
   function
   | DeepEllipsis v1 -> v_bracket v_expr v1
   | BasicLit v1 -> let v1 = v_literal v1 in ()
@@ -228,7 +228,7 @@ and v_init x =
 and v_constant_expr v = v_expr v
 
 and v_stmt x =
-  let k = 
+  let k =
   function
   | DeclStmts v1 -> let v1 = v_list v_decl v1 in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
@@ -310,7 +310,7 @@ and v_simple = function
 and v_case_clause (v1, v2) = let v1 = v_case_kind v1 and v2 = v_stmt v2 in ()
 and v_case_kind =
   function
-  | CaseExprs (t, v1) -> 
+  | CaseExprs (t, v1) ->
       let t = v_tok t in
       let v1 = v_list v_expr_or_type v1 in ()
   | CaseAssign (t, v1, v2, v3) ->
@@ -322,13 +322,13 @@ and v_case_kind =
   | CaseDefault v1 -> let v1 = v_tok v1 in ()
 
 and v_comm_clause v = v_case_clause v
-and v_call_expr (v1, v2) = 
-  let v1 = v_expr v1 
-  and v2 = v_bracket v_arguments v2 in 
+and v_call_expr (v1, v2) =
+  let v1 = v_expr v1
+  and v2 = v_bracket v_arguments v2 in
   ()
 
 and v_decl x =
-  let k = 
+  let k =
   function
   | DConst (v1, v2, v3) ->
       let v1 = v_ident v1
@@ -346,8 +346,8 @@ and v_decl x =
   in
   vin.kdecl (k, all_functions) x
 
-and v_function_ x = 
-  let k (v1, v2) = 
+and v_function_ x =
+  let k (v1, v2) =
     let v1 = v_func_type v1 and v2 = v_stmt v2 in ()
   in
   vin.kfunction (k, all_functions) x
@@ -374,7 +374,7 @@ and v_import { i_path = v_i_path; i_kind = v_i_kind; i_tok = t } =
   let arg = v_tok t in
   let arg = v_wrap v_string v_i_path in
   let arg = v_import_kind v_i_kind in ()
-  
+
 and v_import_kind =
   function
   | ImportOrig -> ()
@@ -385,7 +385,7 @@ and v_package (v1, v2) =
   let v1 = v_tok v1 in
   let v2 = v_ident v2 in
   ()
-and v_program x = 
+and v_program x =
   let k x = v_list v_top_decl x in
   vin.kprogram (k, all_functions) x
 
@@ -393,7 +393,7 @@ and v_item = function
  | ITop v1 -> v_top_decl v1
  | IImport v1 -> v_import v1
  | IStmt v1 -> v_stmt v1
-  
+
 and v_partial = function
  | PartialDecl v1 -> v_top_decl v1
 

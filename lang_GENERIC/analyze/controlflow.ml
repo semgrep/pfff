@@ -1,5 +1,5 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2009, 2010, 2011 Facebook
  * Copyright (C) 2019 r2c
  *
@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -39,7 +39,7 @@ module A = AST_generic
 type node = {
   (* later: For now we just have node_kind, but with some data-flow
    *  analysis or with temporal logic we may want to add extra information
-   *  in each CFG nodes. 
+   *  in each CFG nodes.
    * alt: We could also record such extra information in an external table
    *  that maps Ograph_extended.nodei, that is nodeid, to some information.
    *)
@@ -47,13 +47,13 @@ type node = {
 
   (* for error report *)
   i: Parse_info.t option;
-} 
+}
 
-  and node_kind = 
+  and node_kind =
 
       (* special fake cfg nodes *)
       | Enter
-      | Exit 
+      | Exit
 
       (* alt: An alternative is to store such information in the edges, but
        * experience shows it's easier to encode it via regular nodes
@@ -100,7 +100,7 @@ type node = {
     *)
 
      (* mostly a copy-paste of a subset of Ast.stmt *)
-     and simple_node = 
+     and simple_node =
          (* later: some expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...
           * We may want to uplift those constructors here and have
@@ -111,14 +111,14 @@ type node = {
          | DirectiveStmt of directive
          | Assert of tok * expr * expr option
          | OtherStmt of other_stmt_operator * any list
-         (* not part of Ast.stmt but useful to have in CFG for 
+         (* not part of Ast.stmt but useful to have in CFG for
           * dataflow analysis purpose *)
          | Parameter of parameter
 
-(* For now there is just one kind of edge. 
+(* For now there is just one kind of edge.
  * later: we may have more, see the ShadowNode idea of Julia Lawall?
  *)
-type edge = Direct 
+type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable
 
@@ -128,10 +128,10 @@ type nodei = Ograph_extended.nodei
 (* String of *)
 (*****************************************************************************)
 
-(* This is useful in graphviz and in dataflow analysis result tables 
+(* This is useful in graphviz and in dataflow analysis result tables
  * to just get a quick idea of what a node is (without too much details).
  *)
-let short_string_of_node_kind nkind = 
+let short_string_of_node_kind nkind =
   match nkind with
   | Enter -> "<enter>"
   | Exit -> "<exit>"
@@ -145,7 +145,7 @@ let short_string_of_node_kind nkind =
   | DoWhileTail _ -> "while(...);"
   | ForHeader -> "for(...)"
   | ForeachHeader _  -> "foreach(...)"
-  | OtherStmtWithStmtHeader _ -> "<otherstmtheader>" 
+  | OtherStmtWithStmtHeader _ -> "<otherstmtheader>"
 
   | Return _ -> "return ...;"
   | Continue -> "continue ...;"
@@ -163,7 +163,7 @@ let short_string_of_node_kind nkind =
 
   | Throw _ -> "throw ...;"
 
-  | SimpleNode x -> 
+  | SimpleNode x ->
       (match x with
       | ExprStmt _ -> "<expt_stmt>;"
       | DefStmt _ -> "<def>"
@@ -174,7 +174,7 @@ let short_string_of_node_kind nkind =
       )
 
 let short_string_of_node node =
-  short_string_of_node_kind node.n 
+  short_string_of_node_kind node.n
 
 (*****************************************************************************)
 (* Converters *)
@@ -219,7 +219,7 @@ let find_enter cfg = find_node (fun node -> node.n = Enter) cfg
 
 (* using internally graphviz dot and ghostview on X11 *)
 let (display_flow: flow -> unit) = fun flow ->
-  flow |> Ograph_extended.print_ograph_mutable_generic  
-    ~s_of_node:(fun (_nodei, node) -> 
+  flow |> Ograph_extended.print_ograph_mutable_generic
+    ~s_of_node:(fun (_nodei, node) ->
       short_string_of_node_kind node.n, None, None
     )

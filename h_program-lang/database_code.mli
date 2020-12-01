@@ -41,8 +41,8 @@ type database = {
 (* builders *)
 val empty_database: unit -> database
 val default_db_name: string
-(* save either in a (readable) json format or (fast) marshalled form 
- * depending on the extension of the filename 
+(* save either in a (readable) json format or (fast) marshalled form
+ * depending on the extension of the filename
 *)
 val load_database: Common.filename -> database
 val save_database: database -> Common.filename -> unit
@@ -50,7 +50,7 @@ val save_database: database -> Common.filename -> unit
 val merge_databases: database -> database -> database
 
 (* build database helpers *)
-val alldirs_and_parent_dirs_of_relative_dirs: 
+val alldirs_and_parent_dirs_of_relative_dirs:
   Common.dirname list -> Common.dirname list
 val files_and_dirs_database_from_files:
   root:Common.dirname -> Common.filename list -> database
@@ -66,11 +66,11 @@ val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
 
 (* codemap collaboration, highlighter (lexer/parser) <-> semantic database *)
-val entity_kind_of_highlight_category_def: 
+val entity_kind_of_highlight_category_def:
   Highlight_code.category -> entity_kind option
-val entity_kind_of_highlight_category_use: 
+val entity_kind_of_highlight_category_use:
   Highlight_code.category -> entity_kind option
-val is_entity_def_category: 
+val is_entity_def_category:
   Highlight_code.category -> bool
 val matching_def_short_kind_kind:
   entity_kind -> entity_kind -> bool

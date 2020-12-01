@@ -10,7 +10,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Config_pfff.tests_path "js/parsing" in
-      let files = 
+      let files =
         Common2.glob (spf "%s/*.js" dir) @
         Common2.glob (spf "%s/jsx/*.js" dir) @
         []
@@ -26,7 +26,7 @@ let unittest =
 
     "regression files typescript" >:: (fun () ->
       let dir = Config_pfff.tests_path "typescript/parsing" in
-      let files = 
+      let files =
         Common2.glob (spf "%s/*.js" dir) @
         Common2.glob (spf "%s/*.ts" dir) @
         []
@@ -42,7 +42,7 @@ let unittest =
 
 
     "rejecting bad code" >:: (fun () ->
-      try 
+      try
         Common.save_excursion Flag_parsing.show_parsing_error false (fun()->
          let _ = Parse_js.program_of_string "echo 1+" in
          assert_failure "it should have thrown a Parse_error exception"
@@ -66,11 +66,11 @@ let unittest =
         in
         let transformed_ast = map_visitor (Program prog) in
 
-        let integers = 
+        let integers =
           V.do_visit_with_ref (fun aref -> { V.default_visitor with
             V.kexpr = (fun (k, _) x ->
               match x with
-              | L (Num (s, tok)) -> 
+              | L (Num (s, tok)) ->
                   Common.push2 (s_to_i s) aref
               | _ -> k x
             );

@@ -25,24 +25,24 @@ let version = "0.1"
 (* Helpers *)
 (*****************************************************************************)
 
-let init_graph big_screen = 
+let init_graph big_screen =
 
-  let w_view_hint, h_view_hint = 
+  let w_view_hint, h_view_hint =
     if big_screen
     then
-      2300, 1500 
+      2300, 1500
     else
       640, 640
   in
   let h_status = 30 in
   let w_legend = 200 in
-  
-  Graphics.open_graph 
+
+  Graphics.open_graph
     (spf " %dx%d" (w_view_hint + w_legend) (h_view_hint+ h_status));
   Graphics.set_color (Graphics.rgb 1 1 1);
-  let w_view, h_view = 
-    Graphics.size_x () - w_legend, 
-    Graphics.size_y () - h_status 
+  let w_view, h_view =
+    Graphics.size_x () - w_legend,
+    Graphics.size_y () - h_status
   in
   let w, h = Graphics.size_x (), Graphics.size_y () in
 
@@ -61,7 +61,7 @@ let init_graph big_screen =
 (*****************************************************************************)
 
 (*s: function main_action *)
-let main_action jsonfile = 
+let main_action jsonfile =
   let json = Json_in.load_json jsonfile in
   let treemap = Treemap_json.treemap_of_json json in
 
@@ -72,7 +72,7 @@ let main_action jsonfile =
 
   let dim = init_graph !big_screen in
 
-  Treemap_graphics.display_treemap_interactive 
+  Treemap_graphics.display_treemap_interactive
     ~algo:!algorithm
     ~info_of_file_under_cursor:Treemap_graphics.info_of_file_under_cursor_default
     treemap dim
@@ -84,24 +84,24 @@ let main_action jsonfile =
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
  Treemap.actions () @
  Treemap_json.actions () @
  []
 
-let options () = 
+let options () =
   [
   (*s: treemap_viewer cmdline options *)
       "-algorithm", Arg.String (fun s ->
         algorithm := Treemap.algo_of_s s;
-      ), 
-      (spf " <algo> (choices are: %s, default = %s" 
+      ),
+      (spf " <algo> (choices are: %s, default = %s"
           (Treemap.algos |> List.map Treemap.s_of_algo |> Common.join ", ")
           (Treemap.s_of_algo !algorithm));
 
-      "-big_screen", Arg.Set big_screen, 
+      "-big_screen", Arg.Set big_screen,
       " ";
-      "-verbose", Arg.Set verbose, 
+      "-verbose", Arg.Set verbose,
       " ";
   (*e: treemap_viewer cmdline options *)
   ] @
@@ -110,17 +110,17 @@ let options () =
   Common.cmdline_flags_verbose () @
   Common.cmdline_flags_other () @
   [
-  "-version",   Arg.Unit (fun () -> 
+  "-version",   Arg.Unit (fun () ->
     pr2 (spf "ocamltreemap version: %s" version);
     exit 0;
-  ), 
+  ),
     "  guess what";
 
   (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
+  "-date",   Arg.Unit (fun () ->
     pr2 "version: $Date: 2008/10/26 00:44:57 $";
     raise (Common.UnixExit 0)
-    ), 
+    ),
   "   guess what";
   ] @
   []
@@ -129,50 +129,50 @@ let options () =
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
-  let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
+let main () =
+  let usage_msg =
+    "Usage: " ^ Common.basename Sys.argv.(0) ^
       " [options] <json file> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
 
     (match args with
-   
+
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | [x] -> 
+    | [x] ->
         main_action x
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
 
-    | x::y::xs -> 
-        Common.usage usage_msg (options()); 
+    | x::y::xs ->
+        Common.usage usage_msg (options());
         failwith "too many arguments"
     )
   )
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
       main ();
   )
 

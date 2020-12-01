@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,7 +22,7 @@ module E = Entity_code
 (* Prelude *)
 (*****************************************************************************)
 (* Generating prolog DB facts from a graph_code.
- * 
+ *
  * For more information look at h_program-lang/prolog_code.pl
  * and its many predicates.
  *)
@@ -65,11 +65,11 @@ let build g =
     | E.Exception
         -> add (Kind (entity_of_str str, kind))
     (* todo: interface | trait *)
-    | E.Class -> 
+    | E.Class ->
         add (Kind (entity_of_str str, kind))
 
     (* less: hmm if only have a proto, e.g. in lib.h should add it no? *)
-    | E.Prototype | E.GlobalExtern 
+    | E.Prototype | E.GlobalExtern
       -> ()
 
     | E.File | E.Dir
@@ -80,12 +80,12 @@ let build g =
         raise Todo
     );
 
-    (try 
-      (* todo: should avoid adding it twice when have both proto and func 
+    (try
+      (* todo: should avoid adding it twice when have both proto and func
        * defined
        *)
       let nodeinfo = G.nodeinfo n g in
-      add (At (entity_of_str str, 
+      add (At (entity_of_str str,
                nodeinfo.G.pos.Parse_info.file,
                nodeinfo.G.pos.Parse_info.line));
       let t =
@@ -115,7 +115,7 @@ let build g =
     | ((s1, (E.Function|E.Method)), (s2, (E.Function|E.Prototype|E.Method)))->
         add (Call (entity_of_str s1, entity_of_str s2))
 
-    | ((s1, (E.Function | E.Method | E.Global | E.Constant)), 
+    | ((s1, (E.Function | E.Method | E.Global | E.Constant)),
        (s2, (E.Field | E.ClassConstant | E.Global) )) ->
         let info = G.edgeinfo_opt (n1, n2) G.Use g in
         (match info with
@@ -179,7 +179,7 @@ let hook_use_edge_for_prolog ctx in_assign (src, dst) g _loc =
   (match kind with
   | E.Global | E.Field ->
     let oldinfoopt = G.edgeinfo_opt (src, dst) G.Use g in
-    let info = 
+    let info =
       match oldinfoopt with
       | Some info -> info
       | None -> { G.read = false; G.write = false }

@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2019 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,7 +22,7 @@ open AST_generic
  * less variations in sgrep, which in turn will allow one pattern
  * to match more equivalent code.
  *
- * TODO: 
+ * TODO:
  *  - rewrite also IncrDecr to AssignOp
  *  - use IL instead and go even further in the normalization process?
  *)
@@ -53,7 +53,7 @@ let normalize2 any lang =
         | None -> e
         | Some (not_op, other_op) ->
           Call (IdSpecial (Op not_op, tok),
-                (lp, 
+                (lp,
                  [Arg (Call (IdSpecial (Op other_op, tok), fb [a;b]))],
                  rp))
         )

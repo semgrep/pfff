@@ -33,9 +33,9 @@ open Ast_c
 let id = fun x -> x
 let option = Common.map_opt
 let list = List.map
-let either f g x = 
-  match x with 
-  | Left x -> Left (f x) 
+let either f g x =
+  match x with
+  | Left x -> Left (f x)
   | Right x -> Right (g x)
 
 let string = id
@@ -55,7 +55,7 @@ let opt_to_ident opt =
 let info x = x
 
 let wrap = fun _of_a (v1, v2) ->
-  let v1 = _of_a v1 and v2 = info v2 in 
+  let v1 = _of_a v1 and v2 = info v2 in
   (v1, v2)
 
 let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
@@ -67,17 +67,17 @@ let rec unaryOp (a, tok) =
   match a with
   | GetRef -> (fun e -> G.Ref (tok,e))
   | DeRef -> (fun e -> G.DeRef (tok, e))
-  | UnPlus -> (fun e -> 
+  | UnPlus -> (fun e ->
           G.Call (G.IdSpecial (G.Op G.Plus, tok), fb[G.Arg e]))
-  | UnMinus -> (fun e -> 
+  | UnMinus -> (fun e ->
           G.Call (G.IdSpecial (G.Op G.Minus, tok), fb[G.Arg e]))
-  | Tilde -> (fun e -> 
+  | Tilde -> (fun e ->
           G.Call (G.IdSpecial (G.Op G.BitNot, tok), fb[G.Arg e]))
-  | Not ->  (fun e -> 
+  | Not ->  (fun e ->
           G.Call (G.IdSpecial (G.Op G.Not, tok), fb[G.Arg e]))
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
-  function 
+  function
   | SimpleAssign tok -> Left tok
   | OpAssign (v1, tok) -> let v1 = arithOp v1 in Right (v1, tok)
 
@@ -117,15 +117,15 @@ let rec type_ =
   | TArray (v1, v2) ->
       let v1 = option const_expr v1 and v2 = type_ v2 in
       G.TyArray (fb v1, v2)
-  | TFunction v1 -> let (ret, params) = function_type v1 in 
+  | TFunction v1 -> let (ret, params) = function_type v1 in
       G.TyFun (params, ret)
   | TStructName (v1, v2) ->
       let v1 = struct_kind v1 and v2 = name v2 in
       G.OtherType (v1, [G.I v2])
   | TEnumName v1 -> let v1 = name v1 in
       G.OtherType (G.OT_EnumName, [G.I v1])
-  | TTypeName v1 -> 
-      let v1 = name v1 in 
+  | TTypeName v1 ->
+      let v1 = name v1 in
       G.TyName (v1, G.empty_name_info)
   | TMacroApply (v1, (_lp, v2, _rp)) ->
       let v1 = name v1 in
@@ -133,8 +133,8 @@ let rec type_ =
       G.TyNameApply((v1, G.empty_name_info), [G.TypeArg v2])
 
 and function_type (v1, v2) =
-  let v1 = type_ v1 and 
-  v2 = list (fun x -> G.ParamClassic (parameter x)) v2 in 
+  let v1 = type_ v1 and
+  v2 = list (fun x -> G.ParamClassic (parameter x)) v2 in
   v1, v2
 
 and parameter x =
@@ -143,12 +143,12 @@ and parameter x =
   | ParamDots _ -> raise Todo
 
 and parameter_classic { p_type = p_type; p_name = p_name } =
-  let arg1 = type_ p_type in 
-  let arg2 = option name p_name in 
+  let arg1 = type_ p_type in
+  let arg2 = option name p_name in
   { G.ptype = Some arg1; pname = arg2; pattrs = []; pdefault = None;
     pinfo = G.empty_id_info ();  }
 
-and struct_kind = function 
+and struct_kind = function
   | Struct -> G.OT_StructName
   | Union -> G.OT_UnionName
 
@@ -164,11 +164,11 @@ and expr =
   | ConcatString xs ->
       G.Call (G.IdSpecial (G.ConcatString (G.SequenceConcat), fake " "),
         fb (xs |> List.map (fun x -> G.Arg (G.L (G.String x)))))
-  | Defined (t, id) -> 
+  | Defined (t, id) ->
       let e = G.Id (id, G.empty_id_info()) in
       G.Call (G.IdSpecial (G.Defined, t), fb [G.Arg e])
 
-  | Id v1 -> let v1 = name v1 in 
+  | Id v1 -> let v1 = name v1 in
              G.Id (v1, G.empty_id_info())
   | Ellipses v1 -> let v1 = info v1 in G.Ellipsis v1
   | DeepEllipsis v1 -> let v1 = bracket (expr) v1 in G.DeepEllipsis v1
@@ -184,20 +184,20 @@ and expr =
       | Right (op, tok) -> G.AssignOp (v2, (op, tok), v3)
       )
   | ArrayAccess (v1, v2) -> let v1 = expr v1 and v2 = bracket expr v2 in
-      G.ArrayAccess (v1, v2) 
-  | RecordPtAccess (v1, t, v2) -> 
+      G.ArrayAccess (v1, v2)
+  | RecordPtAccess (v1, t, v2) ->
       let v1 = expr v1 and t = info t and v2 = name v2 in
       G.DotAccess (G.DeRef (t, v1), t, G.EId v2)
   | Cast (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->
-      let v1 = expr v1 and v2 = fixOp v2 in 
-      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), v3), fb[G.Arg v1]) 
+      let v1 = expr v1 and v2 = fixOp v2 in
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Postfix), v3), fb[G.Arg v1])
   | Infix ((v1, (v2, v3))) ->
       let v1 = expr v1 and v2 = fixOp v2 in
-      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Prefix), v3), fb[G.Arg v1]) 
+      G.Call (G.IdSpecial (G.IncrDecr (v2, G.Prefix), v3), fb[G.Arg v1])
   | Unary (v1, v2) ->
-      let v1 = expr v1 and v2 = unaryOp v2 in 
+      let v1 = expr v1 and v2 = unaryOp v2 in
       v2 v1
   | Binary ((v1, (v2, tok), v3)) ->
       let v1 = expr v1
@@ -210,7 +210,7 @@ and expr =
   | Sequence (v1, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.Seq [v1;v2]
   | SizeOf (t, v1) -> let v1 = either expr type_ v1 in
-      G.Call (G.IdSpecial (G.Sizeof, t), 
+      G.Call (G.IdSpecial (G.Sizeof, t),
        (match v1 with
        | Left e -> fb[G.Arg e]
        | Right t -> fb[G.ArgType t]
@@ -230,22 +230,22 @@ and expr =
       in G.Container (G.Array, v1)
   | RecordInit v1 ->
       let v1 =
-        bracket (list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in 
+        bracket (list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in
             G.basic_field v1 (Some v2) None
         ))
           v1
       in G.Record v1
   | GccConstructor (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
-      G.Call (G.IdSpecial (G.New, fake "new"), 
+      G.Call (G.IdSpecial (G.New, fake "new"),
         fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
 
-and argument v = 
+and argument v =
   match v with
-  | Arg v  -> 
+  | Arg v  ->
     let v = expr v in
     G.Arg v
 
-and const_expr v = 
+and const_expr v =
   expr v
 
 let rec stmt =
@@ -260,13 +260,13 @@ let rec stmt =
   | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
-  | Switch (v0, v1, v2) -> 
+  | Switch (v0, v1, v2) ->
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)
-  | DoWhile (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in 
+  | DoWhile (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in
       G.DoWhile (t, v1, v2)
   | For (t, v1, v2, v3, v4) ->
       let init = expr_or_vars v1
@@ -284,10 +284,10 @@ let rec stmt =
   | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)
   | Vars v1 -> let v1 = list var_decl v1 in
       G.stmt1 (v1 |> List.map (fun v -> G.DefStmt v))
-  | Asm v1 -> let v1 = list expr v1 in 
+  | Asm v1 -> let v1 = list expr v1 in
       G.OtherStmt (G.OS_Asm, v1 |> List.map (fun e -> G.E e))
 
-and expr_or_vars v1 = 
+and expr_or_vars v1 =
   match v1 with
   | Right e ->
       let e = expr e in
@@ -307,9 +307,9 @@ and case_stmt = function
 
 and case =
   function
-  | Case (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in 
+  | Case (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in
       [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
-  | Default (t, v1) -> let v1 = list stmt v1 in 
+  | Default (t, v1) -> let v1 = list stmt v1 in
       [G.Default t], G.stmt1 v1
 and
   var_decl {
@@ -321,14 +321,14 @@ and
   let v1 = name xname in
   let v2 = type_ xtype in
   let v3 = storage xstorage in
-  let v4 = option initialiser init in 
+  let v4 = option initialiser init in
   let entity = G.basic_entity v1 v3 in
   entity, G.VarDef {G.vinit = v4; vtype = Some v2}
 
 and initialiser v = expr v
 
-and storage = function 
-  | Extern -> [G.attr G.Extern (fake "extern")] 
+and storage = function
+  | Extern -> [G.attr G.Extern (fake "extern")]
   | Static -> [G.attr G.Static (fake "static")]
   | DefaultStorage -> []
 
@@ -340,7 +340,7 @@ and func_def {
                } =
   let v1 = name f_name in
   let (ret, params) = function_type f_type in
-  let v3 = bracket (list stmt) f_body in 
+  let v3 = bracket (list stmt) f_body in
   let v4 = if f_static then [G.attr G.Static (fake "static")] else [] in
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef { G.
@@ -352,25 +352,25 @@ and func_def {
 
 and struct_def { s_name = s_name; s_kind = s_kind; s_flds = s_flds } =
   let v1 = name s_name in
-  let v3 = bracket (list field_def) s_flds in 
+  let v3 = bracket (list field_def) s_flds in
   let entity = G.basic_entity v1 [] in
   (match s_kind with
-  | Struct -> 
-        let fields = bracket (List.map (fun (n, t) -> 
+  | Struct ->
+        let fields = bracket (List.map (fun (n, t) ->
               G.basic_field n None (Some t))) v3 in
         entity, G.TypeDef ({ G.tbody = G.AndType fields })
   | Union ->
-        let ctors = v3 |> G.unbracket |> (List.map (fun (n, t) -> 
+        let ctors = v3 |> G.unbracket |> (List.map (fun (n, t) ->
               G.OrUnion (n,t)))   in
         entity, G.TypeDef ({ G.tbody = G.OrType ctors })
   )
 
-  
+
 and field_def { fld_name = fld_name; fld_type = fld_type } =
-  let v1 = option name fld_name in 
+  let v1 = option name fld_name in
   let v2 = type_ fld_type in
   opt_to_ident v1, v2
-  
+
 
 and enum_def {e_name = v1; e_consts = v2 } =
   let v1 = name v1
@@ -397,9 +397,9 @@ and define_body =
 
 and directive =
   function
-  | Include (t, v1) -> let v1 = wrap string v1 in 
+  | Include (t, v1) -> let v1 = wrap string v1 in
       G.DirectiveStmt (G.ImportAs (t, G.FileName v1, None))
-  | Define (_t, v1, v2) -> 
+  | Define (_t, v1, v2) ->
     let v1 = name v1 and v2 = define_body v2 in
     let ent = G.basic_entity v1 [] in
     G.DefStmt (ent, G.MacroDef { G.macroparams = []; G.macrobody = v2})
@@ -410,9 +410,9 @@ and directive =
       in
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.MacroDef { G.macroparams = v2; G.macrobody = v3})
-  | OtherDirective (v1, v2) -> 
+  | OtherDirective (v1, v2) ->
       let v1 = name v1 in
-      let v2 = 
+      let v2 =
         match v2 with
         | None -> []
         | Some s -> [G.E (G.L (G.String s))]
@@ -431,12 +431,12 @@ and definition = function
       G.DefStmt v1
   | VarDef v1 -> let v1 = var_decl v1 in
       G.DefStmt v1
-  | Prototype v1 -> let v1 = func_def v1 in 
+  | Prototype v1 -> let v1 = func_def v1 in
       G.DefStmt v1
 
 let toplevel x = stmt x
 
-let program v = 
+let program v =
  list toplevel v
 
 let any =

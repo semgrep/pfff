@@ -5,7 +5,7 @@
 (*---------------------------------------------------------------------------*)
 type ('a, 'b) view = Empty | Cons of 'a * 'b
 
-class virtual ['a] ocollection = 
+class virtual ['a] ocollection =
 object(o: 'o)
   inherit Objet.objet
 
@@ -21,36 +21,36 @@ object(o: 'o)
   method virtual null: bool      (* can do default with: lenght(tolist)= 0 *)
 
 
-  method add2: 'a -> unit = fun a -> 
+  method add2: 'a -> unit = fun a ->
     o#add a |> ignore;
     ()
-  method del2: 'a -> unit = fun a -> 
+  method del2: 'a -> unit = fun a ->
     o#del a |> ignore;
     ()
-  method clear: unit = 
+  method clear: unit =
     o#iter (fun e -> o#del2 e);
-    
 
 
 
-  method fold: 'b. ('b -> 'a -> 'b) -> 'b -> 'b = fun f a -> 
-    let a = ref a in 
+
+  method fold: 'b. ('b -> 'a -> 'b) -> 'b -> 'b = fun f a ->
+    let a = ref a in
     o#iter (fun e -> a := f !a e);
     !a
 
-  method tolist: 'a list = 
+  method tolist: 'a list =
     List.rev (o#fold (fun acc e -> e::acc) [])
-  method fromlist: 'a list -> 'o = 
+  method fromlist: 'a list -> 'o =
     fun xs -> xs |> List.fold_left (fun o e -> o#add e) o#empty
 
-  method length: int = 
+  method length: int =
     (* oldsimple: o#tolist +> List.length *)
     (* opti: *)
     let count = ref 0 in
     o#iter (fun _e -> incr count);
     !count
 
-  method exists: ('a -> bool) -> bool = fun f -> 
+  method exists: ('a -> bool) -> bool = fun f ->
     o#tolist |> List.exists f
 
   method filter: ('a -> bool) -> 'o = fun f ->
@@ -59,9 +59,9 @@ object(o: 'o)
 
   (* forall, fold, map *)
 
-  method getone: 'a = 
+  method getone: 'a =
     match o#view with Cons (e,_tl) -> e  | Empty -> failwith "no head"
-  method others: 'o = 
+  method others: 'o =
     match o#view with Cons (_e,tl) -> tl | Empty -> failwith "no tail"
 
 end

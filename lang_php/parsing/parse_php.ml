@@ -1,18 +1,18 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2009-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 module Ast  = Cst_php
 module Flag = Flag_parsing
@@ -39,7 +39,7 @@ type program_with_comments = Cst_php.program * Parser_php.token list
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
-let error_msg_tok tok = 
+let error_msg_tok tok =
   PI.error_message_info (TH.info_of_tok tok)
 
 (*****************************************************************************)
@@ -49,30 +49,30 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
   Lexer_php.reset();
   Lexer_php._mode_stack := [init_state];
 
-  let token lexbuf = 
+  let token lexbuf =
     let tok =
       (* for yyless emulation *)
       match !Lexer_php._pending_tokens with
-      | x::xs -> 
-          Lexer_php._pending_tokens := xs; 
+      | x::xs ->
+          Lexer_php._pending_tokens := xs;
           x
       | [] ->
         (match Lexer_php.current_mode () with
-        | Lexer_php.INITIAL -> 
+        | Lexer_php.INITIAL ->
             Lexer_php.initial lexbuf
-        | Lexer_php.ST_IN_SCRIPTING -> 
+        | Lexer_php.ST_IN_SCRIPTING ->
             Lexer_php.st_in_scripting lexbuf
-        | Lexer_php.ST_IN_SCRIPTING2 -> 
+        | Lexer_php.ST_IN_SCRIPTING2 ->
             Lexer_php.st_in_scripting lexbuf
-        | Lexer_php.ST_DOUBLE_QUOTES -> 
+        | Lexer_php.ST_DOUBLE_QUOTES ->
             Lexer_php.st_double_quotes lexbuf
-        | Lexer_php.ST_BACKQUOTE -> 
+        | Lexer_php.ST_BACKQUOTE ->
             Lexer_php.st_backquote lexbuf
-        | Lexer_php.ST_LOOKING_FOR_PROPERTY -> 
+        | Lexer_php.ST_LOOKING_FOR_PROPERTY ->
             Lexer_php.st_looking_for_property lexbuf
-        | Lexer_php.ST_LOOKING_FOR_VARNAME -> 
+        | Lexer_php.ST_LOOKING_FOR_VARNAME ->
             Lexer_php.st_looking_for_varname lexbuf
-        | Lexer_php.ST_VAR_OFFSET -> 
+        | Lexer_php.ST_VAR_OFFSET ->
             Lexer_php.st_var_offset lexbuf
         | Lexer_php.ST_START_HEREDOC s ->
             Lexer_php.st_start_heredoc s lexbuf
@@ -85,10 +85,10 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
      then Lexer_php._last_non_whitespace_like_token := Some tok;
      tok
   in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos
    file token TH.visitor_info_of_tok TH.is_eof
 
-let tokens ?init_state a = 
+let tokens ?init_state a =
   Common.profile_code "Parse_php.tokens" (fun () -> tokens2 ?init_state a)
 
 
@@ -109,7 +109,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
   let orig_filename = filename in
   let filename =
-    (* note that now that pfff support XHP constructs directly, 
+    (* note that now that pfff support XHP constructs directly,
      * this code is not that needed.
      *)
     match pp with
@@ -121,22 +121,22 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
           (* The following requires the preprocessor command to
            * support the -q command line flag.
-           * 
+           *
            * Maybe a little bit specific to XHP and xhpize ... But
            * because I use as a convention that 0 means no_need_pp, if
            * the preprocessor does not support -q, it should return an
            * error code, in which case we will fall back to the regular
            * case. *)
-          let cmd_need_pp = 
+          let cmd_need_pp =
             spf "%s -q %s %s" cmd pp_flag filename in
           if !Flag_php.verbose_pp then pr2 (spf "executing %s" cmd_need_pp);
           let ret = Sys.command cmd_need_pp in
-          if ret = 0 
+          if ret = 0
           then orig_filename
           else begin
             Common.profile_code "Parse_php.pp" (fun () ->
             let tmpfile = Common.new_temp_file "pp" ".pphp" in
-            let fullcmd = 
+            let fullcmd =
               spf "%s %s %s > %s" cmd pp_flag filename tmpfile in
             if !Flag_php.verbose_pp then pr2 (spf "executing %s" fullcmd);
             let ret = Sys.command fullcmd in
@@ -152,10 +152,10 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
   let filelines = Common2.cat_array filename in
 
   let toks = tokens filename in
-  (* note that now that pfff support XHP constructs directly, 
+  (* note that now that pfff support XHP constructs directly,
    * this code is not that needed.
    *)
-  let toks = 
+  let toks =
     if filename = orig_filename
     then toks
     else (* Pp_php.adapt_tokens_pp ~tokenizer:tokens ~orig_filename toks *)
@@ -163,17 +163,17 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
   in
   let toks = Parsing_hacks_php.fix_tokens toks in
 
-  let tr, lexer, lexbuf_fake = 
+  let tr, lexer, lexbuf_fake =
     Parse_info.mk_lexer_for_yacc toks is_comment in
 
   let checkpoint = TH.line_of_tok tr.PI.current in
 
-  let elems = 
+  let elems =
     try (
       (* -------------------------------------------------- *)
       (* Call parser *)
       (* -------------------------------------------------- *)
-      Left 
+      Left
         (Common.profile_code "Parser_php.main" (fun () ->
           Parser_php.main lexer lexbuf_fake
         ))
@@ -187,7 +187,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
       (* no error recovery, the whole file is discarded *)
       tr.PI.passed <- List.rev toks;
 
-      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
+      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in
 
       Right (info_of_bads, line_error, current)
   in
@@ -198,7 +198,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
       (xs, toks), stat
   | Right (info_of_bads, line_error, cur) ->
 
-      if not !Flag.error_recovery 
+      if not !Flag.error_recovery
       then raise (PI.Parsing_error (TH.info_of_tok cur));
 
       if !Flag.show_parsing_error
@@ -209,14 +209,14 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
       then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
       stat.PI.bad     <- Common.cat filename |> List.length;
 
-      let info_item = (List.rev tr.PI.passed) in 
-      ([Ast.NotParsedCorrectly info_of_bads], info_item), 
+      let info_item = (List.rev tr.PI.passed) in
+      ([Ast.NotParsedCorrectly info_of_bads], info_item),
       stat
 
-let parse ?pp a = 
+let parse ?pp a =
   Common.profile_code "Parse_php.parse" (fun () -> parse2 ?pp a)
 
-let parse_program ?pp file = 
+let parse_program ?pp file =
   let ((ast, _toks), _stat) = parse ?pp file in
   ast
 
@@ -224,7 +224,7 @@ let parse_program ?pp file =
 (* Sub parsers *)
 (*****************************************************************************)
 
-let any_of_string s = 
+let any_of_string s =
   Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
     let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING file in
     let toks = Parsing_hacks_php.fix_tokens toks in
@@ -232,9 +232,9 @@ let any_of_string s =
     Parser_php.sgrep_spatch_pattern lexer lexbuf_fake
   )
 
-(* 
+(*
  * todo: obsolete now with parse_any ? just redirect to parse_any ?
- * 
+ *
  * This function is useful not only to test but also in our own code
  * as a shortcut to build complex expressions
  *)
@@ -244,7 +244,7 @@ let (expr_of_string: string -> Cst_php.expr) = fun s ->
 
   let ast = parse_program tmpfile in
 
-  let res = 
+  let res =
     (match ast with
     | [Ast.TopStmt (Ast.ExprStmt (e, _tok));Ast.FinalDef _] -> e
   | _ -> failwith "only expr pattern are supported for now"
@@ -256,9 +256,9 @@ let (expr_of_string: string -> Cst_php.expr) = fun s ->
 (* It is clearer for our testing code to programmatically build source files
  * so that all the information about a test is in the same
  * file. You don't have to open extra files to understand the test
- * data. This function is useful mostly for our unit tests 
+ * data. This function is useful mostly for our unit tests
 *)
-let (program_of_string: string -> Cst_php.program) = fun s -> 
+let (program_of_string: string -> Cst_php.program) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_expr_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let ast = parse_program tmpfile in
@@ -273,15 +273,15 @@ let tmp_php_file_from_string ?(header="<?php\n") s =
 
 
 (* this function is useful mostly for our unit tests *)
-let (tokens_of_string: string -> Parser_php.token list) = fun s -> 
+let (tokens_of_string: string -> Parser_php.token list) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_tokens_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let toks = tokens tmpfile in
   Common.erase_this_temp_file tmpfile;
   toks
-  
 
-(* A fast-path parser of xdebug expressions in xdebug dumpfiles. 
+
+(* A fast-path parser of xdebug expressions in xdebug dumpfiles.
  * See xdebug.ml *)
 let (xdebug_expr_of_string: string -> Cst_php.expr) = fun _s ->
 (*

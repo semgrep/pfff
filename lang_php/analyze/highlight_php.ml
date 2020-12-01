@@ -278,7 +278,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
   (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
-(* TODO: use generic AST highlighter 
+(* TODO: use generic AST highlighter
 
   (* less: some of the logic duplicates what is in check_variables_php.ml
    * where we differentiate the diffent variables uses (parameters, static,
@@ -646,7 +646,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation
 
-    | T.T_ELLIPSIS ii 
+    | T.T_ELLIPSIS ii
     | T.LDots ii | T.RDots ii
     -> tag ii Punctuation
     | T.TANTISLASH ii -> tag ii KeywordModule

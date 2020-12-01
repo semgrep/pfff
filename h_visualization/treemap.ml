@@ -1,14 +1,14 @@
 (*s: treemap.ml *)
 (*s: Facebook copyright *)
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -32,30 +32,30 @@ module Color = Simple_color
 type ('dir, 'file) tree = ('dir, 'file) Common2.tree
 
 (*s: type treemap *)
-type ('dir, 'file) treemap = 
+type ('dir, 'file) treemap =
  (treemap_data * 'dir, treemap_data * 'file) tree
-    and treemap_data = { 
-      size : int; 
-      color : Simple_color.color; 
+    and treemap_data = {
+      size : int;
+      color : Simple_color.color;
       label: string;
     }
 (*e: type treemap *)
   (* with tarzan *)
 
 (*s: type algorithm *)
-type algorithm = 
+type algorithm =
   | Classic
   | Squarified
   | SquarifiedNoSort
   | Ordered of pivot
 
-  and pivot = 
+  and pivot =
     | PivotBySize
     | PivotByMiddle
 (*e: type algorithm *)
 
 (*s: variable algos *)
-let algos = [Classic; Squarified; SquarifiedNoSort; 
+let algos = [Classic; Squarified; SquarifiedNoSort;
              Ordered PivotBySize; Ordered PivotByMiddle]
 (*e: variable algos *)
 
@@ -79,12 +79,12 @@ type screen_dim = {
  * the seminal algorithm on treemap was written. It allows to pass
  * as an int the current split and do x.(axis_split) and do a 1-axis_split
  * in recursive calls to go from a x-split to a y-split.
- * 
- * A rectangle is represented by 2 variables called P and Q in the seminal 
+ *
+ * A rectangle is represented by 2 variables called P and Q in the seminal
  * algorithm.
  *)
 (*
-type rectangle1 = 
+type rectangle1 =
   float array (* lower left  coord, P *) *
   float array (* upper right coord, Q *)
 *)
@@ -98,7 +98,7 @@ type rectangle1 =
  * 16/9 = 1.777777
  * 21/9 = 2.33
  * I use 2510x1580 for the full codemap window, so it could be 1.58, but
- * then there is a menu up and a status bar down so it should be 
+ * then there is a menu up and a status bar down so it should be
  * higher than 1.58.
  *)
 let xy_ratio = ref 1.71
@@ -106,7 +106,7 @@ let xy_ratio = ref 1.71
 (* The dimentions are in a  [0.0-1.0] range for y and [0.0-xyratio] for x,
  * where xyratio is used to cope with most 16/9 screens.
   *)
-let rect_ortho () = 
+let rect_ortho () =
   { p = {x = 0.0; y = 0.0; }; q = { x = !xy_ratio; y = 1.0} }
 
 (* the dimentions are in a  [0.0-1.0] range
@@ -123,7 +123,7 @@ type treemap_rendering = treemap_rectangle list
  (* with tarzan *)
 
 (*s: type layout_func *)
-type ('a, 'b) layout_func = 
+type ('a, 'b) layout_func =
   (float * ('a, 'b) treemap) list ->
   int ->
   rectangle ->
@@ -136,13 +136,13 @@ type ('a, 'b) layout_func =
 (*****************************************************************************)
 
 (*s: function treemap accessors *)
-let color_of_treemap_node x = 
-  match x with 
+let color_of_treemap_node x =
+  match x with
   | Node (({color = c; _}, _), _) -> c
   | Leaf ({color = c; _}, _) -> c
 
-let size_of_treemap_node x = 
-  match x with 
+let size_of_treemap_node x =
+  match x with
   | Node (({size = s; _}, _), _) -> s
   | Leaf ({size = s; _}, _) -> s
 (*e: function treemap accessors *)
@@ -176,17 +176,17 @@ let s_of_algo algo =
 
 (*s: function treemap_of_tree *)
 let treemap_of_tree2
-    ~size_of_leaf 
-    ~color_of_leaf 
+    ~size_of_leaf
+    ~color_of_leaf
     ?(label_of_file=(fun _ -> ""))
     ?(label_of_dir=(fun _ -> ""))
-    tree = 
-  let rec aux tree = 
+    tree =
+  let rec aux tree =
     match tree with
     | Node (nodeinfo, xs) ->
         let sizeme = ref 0 in
-       
-        let child = List.map (fun x -> 
+
+        let child = List.map (fun x ->
           let (res, size) = aux x in
           sizeme := !sizeme + size;
           res
@@ -200,7 +200,7 @@ let treemap_of_tree2
          *)
         let sizeme = !sizeme in
         Node((
-          { 
+          {
             size = sizeme;
             color = Color.black; (* TODO ? nodes have colors ? *)
             label = label_of_dir nodeinfo;
@@ -210,7 +210,7 @@ let treemap_of_tree2
         let sizeme = size_of_leaf leaf in
         let nodeinfo = leaf in
         Leaf((
-          { 
+          {
             size = sizeme;
             color = color_of_leaf leaf;
             label = label_of_file leaf;
@@ -221,10 +221,10 @@ let treemap_of_tree2
   tree
 (*e: function treemap_of_tree *)
 
-let treemap_of_tree ~size_of_leaf  ~color_of_leaf 
+let treemap_of_tree ~size_of_leaf  ~color_of_leaf
     ?label_of_file ?label_of_dir tree =
  Common.profile_code "Treemap.treemap_of_tree" (fun () ->
-   treemap_of_tree2 ~size_of_leaf  ~color_of_leaf 
+   treemap_of_tree2 ~size_of_leaf  ~color_of_leaf
      ?label_of_file ?label_of_dir tree)
 
 (*****************************************************************************)
@@ -244,22 +244,22 @@ let treemap_of_tree ~size_of_leaf  ~color_of_leaf
 (*---------------------------------------------------------------------------*)
 
 (*s: layout slice and dice *)
-let (slice_and_dicing_layout: ('a, 'b) layout_func) = 
+let (slice_and_dicing_layout: ('a, 'b) layout_func) =
  fun children depth rect ->
 
   let p = [| rect.p.x; rect.p.y |] in
   let q = [| rect.q.x; rect.q.y |] in
 
   let axis_split = (depth + 1) mod 2 in
-  
+
   let stotal = children |> List.map fst |> Common2.sum_float in
 
   let width = q.(axis_split) -. p.(axis_split) in
 
   children |> List.map (fun (size, child) ->
 
-    q.(axis_split) <- 
-      p.(axis_split) +. 
+    q.(axis_split) <-
+      p.(axis_split) +.
       ((size) /. stotal) *. width;
 
     let rect_here = {
@@ -283,34 +283,34 @@ let (slice_and_dicing_layout: ('a, 'b) layout_func) =
  * the paper to follow what I say.
  *)
 
- 
-(* 
- * A few examples. 
- * 
- * the total sum in squarified_list_area_ex is 24, just like the area 
+
+(*
+ * A few examples.
+ *
+ * the total sum in squarified_list_area_ex is 24, just like the area
  * of rect_orig below. This simplifies discussions.
- * 
+ *
  * I've added the string later as we want squarify to also return
  * information related to the node with its size (that is the full treemap
  * node, with its descendant)
 *)
-let squarified_list_area_ex = 
+let squarified_list_area_ex =
   [6; 6; 4; 3; 2; 2; 1] |> List.map (fun x -> float_of_int x, spf "info: %d" x)
 
 (* normally our algorithm should do things proportionnally to the size
  * of the aready. It should not matter that the total sum of area is
- * equal to the size of the rectangle. Indeed later we will always do 
+ * equal to the size of the rectangle. Indeed later we will always do
  * things in an ortho plan, that is with a rectangle 0x0 to 1x1.
  *)
-let squarified_list_area_ex2 = 
+let squarified_list_area_ex2 =
   squarified_list_area_ex |> List.map (fun (x, info) -> x *. 2.0, info)
-let dim_rect_orig = 
+let dim_rect_orig =
   { p = {x = 0.0; y = 0.0; }; q = { x = 6.0; y = 4.0} }
 (*e: squarified examples *)
 
 (*s: type split *)
-type split = 
-  (* Spread one next to the other, e.g. | | | | | |  
+type split =
+  (* Spread one next to the other, e.g. | | | | | |
    * The split lines will be vertical, but the rectangles
    * would be spreaded horizontally. In the paper they call that horizontal
    * Split but I prefer Spread, because the split lines are actually verticals.
@@ -326,19 +326,19 @@ type split =
 
 (*s: function ratio_rect_dim *)
 (* we want the ratio to be a close to 1 as possible (that is to be a square) *)
-let ratio_rect_dim (w,h) = 
+let ratio_rect_dim (w,h) =
   let res = max (w /. h) (h /. w) in
   (* assert (res >= 1.0); *)
   res
 
-let _ = assert (ratio_rect_dim (6.0, 4.0) = 1.5) 
-let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5) 
+let _ = assert (ratio_rect_dim (6.0, 4.0) = 1.5)
+let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5)
 (*e: function ratio_rect_dim *)
 
 (*s: function worst *)
-(* On the running example, at the first step we want to add the rect of 
+(* On the running example, at the first step we want to add the rect of
  * size 6 on the left, alone, and its aspect ratio will be 8/3.
- * Indeed its height is fixed (4) and so his width is 
+ * Indeed its height is fixed (4) and so his width is
  * whatever that must lead to an area of 6, that is 6/4 (1.5)
  * which leads then to an aspect ratio of 4 vs 1.5 = 4 / 1.5 = 8/3.
  * If we add 2 rect of size 6, then their aspect ratio is 1.5 which is
@@ -349,7 +349,7 @@ let worst elems_in_row  size_side_row =
   let s = Common2.sum_float elems_in_row in
   let rplus = Common2.maximum elems_in_row in
   let rminus = Common2.minimum elems_in_row in
-  
+
   (* cf formula in paper *)
   max ((Common2.square size_side_row *. rplus) /. Common2.square s)
       (Common2.square s /.  (Common2.square size_side_row *. rminus))
@@ -366,7 +366,7 @@ let _ = assert
 (* We are given a fixed row which contains a set of elems that we have
  * to spread unoformly, just like in the original algorithm.
  *)
-let layout row rect = 
+let layout row rect =
 
   let p = [| rect.p.x; rect.p.y |] in
   let q = [| rect.q.x; rect.q.y |] in
@@ -382,22 +382,22 @@ let layout row rect =
   in
 
   let res = ref [] in
-  let spread = 
+  let spread =
     if rect_width rect >= rect_height rect
     then SpreadHorizontally
     else SpreadVertically
   in
-  let axis_split = 
+  let axis_split =
     match spread with
     | SpreadHorizontally -> 0
     | SpreadVertically -> 1
   in
   let width = q.(axis_split) -. p.(axis_split) in
-    
+
   children |> List.iter (fun (percent_child, size_child, info) ->
 
-    q.(axis_split) <- 
-      p.(axis_split) +. 
+    q.(axis_split) <-
+      p.(axis_split) +.
       percent_child *. width;
     let rect_here = {
       p = {  x = p.(0); y = p.(1); };
@@ -409,14 +409,14 @@ let layout row rect =
   );
   !res
 (*e: function layout *)
-    
+
 (* the main algorithmic part of squarifying *)
 (*s: function squarify_orig *)
-let rec (squarify_orig: 
+let rec (squarify_orig:
    ?verbose:bool ->
-   (float * 'a) list -> (float * 'a) list -> rectangle -> 
+   (float * 'a) list -> (float * 'a) list -> rectangle ->
    (float * 'a * rectangle) list
-   ) = 
+   ) =
  fun ?(verbose=false) children current_row rect ->
   (* does not work well because of float approximation.
    * assert(Common.sum_float (children ++ current_row) = rect_area rect);
@@ -426,7 +426,7 @@ let rec (squarify_orig:
   let floats xs = List.map fst xs in
 
   (* First heuristic in the squarified paper *)
-  let spread = 
+  let spread =
     if rect_width rect >= rect_height rect (* e.g. 6 x 4 rectangle *)
     then SpreadHorizontally
     else SpreadVertically
@@ -438,8 +438,8 @@ let rec (squarify_orig:
    * In the paper they call this variable 'width' but it's misleading.
    * Note that because we are in Horizontal mode, inside this left row,
    * things will be spreaded this time vertically.
-   *)  
-  let size_side_row = 
+   *)
+  let size_side_row =
     match spread with
     | SpreadHorizontally -> rect_height rect
     | SpreadVertically -> rect_width rect
@@ -448,7 +448,7 @@ let rec (squarify_orig:
   | c::cs ->
       if null current_row ||
          (worst (floats (current_row @ [c])) size_side_row)
-          <= 
+          <=
           (worst (floats current_row)         size_side_row)
       then
         (* not yet optimal row, let's recurse *)
@@ -459,13 +459,13 @@ let rec (squarify_orig:
         let stotal = Common2.sum_float (floats (current_row @ children)) in
         let portion_for_row = srow /. stotal in
 
-        let row_rect, remaining_rect = 
+        let row_rect, remaining_rect =
           match spread with
           | SpreadHorizontally ->
-              let middle_x = 
-                (q.x -. p.x) *. portion_for_row 
+              let middle_x =
+                (q.x -. p.x) *. portion_for_row
                   +. p.x
-              in 
+              in
               {
                 p = p;
                 q = { x = middle_x; y = q.y };
@@ -476,8 +476,8 @@ let rec (squarify_orig:
               }
 
           | SpreadVertically ->
-              let middle_y = 
-                (q.y -. p.y) *. portion_for_row 
+              let middle_y =
+                (q.y -. p.y) *. portion_for_row
                   +. p.y in
               {
                 p = p;
@@ -487,7 +487,7 @@ let rec (squarify_orig:
                 p = { x = p.x; y = middle_y};
                 q = q;
               }
-              
+
 
         in
         if verbose then begin
@@ -496,7 +496,7 @@ let rec (squarify_orig:
           pr2 "row rect";
           pr2 (s_of_rectangle row_rect);
         end;
-        
+
         let rects_row = layout current_row row_rect in
         let rects_remain = squarify_orig children [] remaining_rect in
         rects_row @ rects_remain
@@ -508,16 +508,16 @@ let rec (squarify_orig:
         pr2 "row rect";
         pr2 (s_of_rectangle rect);
       end;
-      
+
       layout current_row rect
 (*e: function squarify_orig *)
 
 (*s: function squarify *)
-let squarify children rect = 
+let squarify children rect =
   (* squarify_orig assume the sum of children = area rect *)
   let area = rect_area rect in
   let total = Common2.sum_float (List.map fst children) in
-  let children' = children |> List.map (fun (x, info) -> 
+  let children' = children |> List.map (fun (x, info) ->
     (x /. total) *. area,
     info
   )
@@ -541,12 +541,12 @@ let test_squarify () =
 
 
 (*s: layout squarify *)
-let (squarify_layout: ('a, 'b) layout_func) = 
+let (squarify_layout: ('a, 'b) layout_func) =
  fun children _depth rect ->
   let children' = children |> Common.sort_by_key_highfirst in
   squarify children' rect
 
-let (squarify_layout_no_sort_size: ('a, 'b) layout_func) = 
+let (squarify_layout_no_sort_size: ('a, 'b) layout_func) =
  fun children _depth rect ->
   squarify children rect
 (*e: layout squarify *)
@@ -558,7 +558,7 @@ let (squarify_layout_no_sort_size: ('a, 'b) layout_func) =
 
 (*s: ordered examples *)
 (* ref:
-*) 
+*)
 
 let children_ex_ordered_2001 = [
     1; 5; 3; 4; 5; 1;
@@ -589,56 +589,56 @@ let compute_rects_pivotized childs_pivotized rect spread =
     above_pivot = Common2.sum_float (List.map fst x.above_pivot);
   }
   in
-  
+
   let total_size = size.left +. size.right +. size.pivot +. size.above_pivot in
-  
+
   let portion_for_left = size.left /. total_size in
   let portion_for_right = size.right /. total_size in
-  
-  let portion_for_pivot_vs_above = 
-    (size.pivot ) /. (size.pivot +. size.above_pivot) 
+
+  let portion_for_pivot_vs_above =
+    (size.pivot ) /. (size.pivot +. size.above_pivot)
   in
-  
-  (* computing the rectangle of the left and right is easy as the 
+
+  (* computing the rectangle of the left and right is easy as the
    * height is fixed (when we spread horizontally)
    *)
   match spread with
   | SpreadHorizontally ->
       (* TODO do something that adapt to rect ? lourd que rect
        * commence pas 0,0, ca fait faire des calculs en plus. *)
-      let middle_x1 = 
+      let middle_x1 =
         p.x +. ((rect_width rect) *. portion_for_left)
       in
-      let middle_x2 = 
+      let middle_x2 =
         q.x -.  ((rect_width rect) *. portion_for_right)
       in
-      let middle_y = 
+      let middle_y =
         p.y +. ((rect_height rect) *. portion_for_pivot_vs_above)
       in
-      { left = { 
+      { left = {
             p = p;
             q = { x = middle_x1; y = q.y } };
-        right = { 
+        right = {
             p = { x = middle_x2; y = p.y };
             q = q; };
-        pivot = { 
-            p = { x = middle_x1; y = p.y}; 
+        pivot = {
+            p = { x = middle_x1; y = p.y};
             q = { x = middle_x2; y = middle_y}; };
-        above_pivot = { 
+        above_pivot = {
             p = { x = middle_x1; y = middle_y };
             q = { x = middle_x2; y = q.y; } };
       }
 
-  | SpreadVertically -> 
+  | SpreadVertically ->
       (* just the reverse of previous code, x become y and vice versa *)
-      let middle_y1 = 
+      let middle_y1 =
         p.y +. ((rect_height rect) *. portion_for_left)
       in
-      let middle_y2 = 
+      let middle_y2 =
         q.y -. ((rect_height rect) *. portion_for_right)
       in
 
-      let middle_x = 
+      let middle_x =
         p.x +. ((rect_width rect) *. portion_for_pivot_vs_above)
       in
       { left = {
@@ -658,14 +658,14 @@ let compute_rects_pivotized childs_pivotized rect spread =
 
 (*s: function balayer_right_wrong *)
 (*
-let rec balayer_right_wrong xs = 
+let rec balayer_right_wrong xs =
   match xs with
   | [] -> []
   | x::xs ->
-      let first = 
+      let first =
         [], x::xs
       in
-      let last = 
+      let last =
         x::xs, []
       in
       let rest = balayer_right_wrong xs in
@@ -676,11 +676,11 @@ let rec balayer_right_wrong xs =
 let balayer_right xs =
   let n = List.length xs in
   let res = ref [] in
-  for i = 0 to n do 
+  for i = 0 to n do
     Common.push (take i xs, drop i xs) res;
   done;
   List.rev !res
-let _ = assert (balayer_right [1;2;3;2] = 
+let _ = assert (balayer_right [1;2;3;2] =
     [
       [], [1;2;3;2];
       [1], [2;3;2];
@@ -693,39 +693,39 @@ let _ = assert (balayer_right [1;2;3;2] =
 (*s: function orderify_children *)
 let orderify_children ?(pivotf=PivotBySize) xs rect =
 
-  let rec aux xs rect = 
+  let rec aux xs rect =
     match xs with
     | [] -> []
-    | [size, x] -> 
+    | [size, x] ->
         [size, x, rect]
-          
+
     | _x::_y::_ys ->
-        
-        let left, pivot, right = 
+
+        let left, pivot, right =
           match pivotf with
-          | PivotBySize -> 
+          | PivotBySize ->
               let pivot_max = Common2.maximum (xs |> List.map fst) in
-              Common2.split_when 
-                (fun x -> fst x = pivot_max) xs 
+              Common2.split_when
+                (fun x -> fst x = pivot_max) xs
           | PivotByMiddle ->
               let nmiddle = List.length xs / 2 in
               let start, thend = Common2.splitAt nmiddle xs in
-              
+
               start, List.hd thend, List.tl thend
         in
-        
-        let spread = 
+
+        let spread =
           if rect_width rect >= rect_height rect (* e.g. 6 x 4 rectangle *)
           then SpreadHorizontally
           else SpreadVertically
         in
-        
+
         let right_combinations = balayer_right right in
-        
-        let scores_and_rects = 
+
+        let scores_and_rects =
           right_combinations |> List.map (fun (above_pivot, right) ->
-            
-            let childs_pivotized = 
+
+            let childs_pivotized =
               { left = left;
                 pivot = [pivot];
                 right = right;
@@ -740,32 +740,32 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
         in
         let best = Common.sort_by_key_lowfirst scores_and_rects |> List.hd in
         let (_score, (rects, childs_pivotized)) = best in
-        
+
         (* pr2_gen rects; *)
-        aux childs_pivotized.left rects.left @ 
+        aux childs_pivotized.left rects.left @
         aux childs_pivotized.pivot rects.pivot @
         aux childs_pivotized.above_pivot rects.above_pivot @
-        aux childs_pivotized.right rects.right @ 
+        aux childs_pivotized.right rects.right @
         []
   in
   aux xs rect
 (*e: function orderify_children *)
 
 (*s: function test_orderify *)
-let test_orderify () = 
+let test_orderify () =
   let xs = children_ex_ordered_2001 |> List.map float_of_int in
   let rect = rect_ortho () in
 
   let fake_treemap = () in
   let children = xs |> List.map (fun size -> size, fake_treemap) in
-  
+
   let layout = orderify_children children rect in
   pr2_gen layout
 (*e: function test_orderify *)
 
 
 (*s: layout ordered *)
-let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) = 
+let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) =
  fun ?pivotf children _depthTODOMAYBE rect ->
   orderify_children ?pivotf children rect
 (*e: layout ordered *)
@@ -780,7 +780,7 @@ let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) =
 (* frontend *)
 (*---------------------------------------------------------------------------*)
 
-let layoutf_of_algo algo = 
+let layoutf_of_algo algo =
   match algo with
   | Classic -> slice_and_dicing_layout
   | Squarified -> squarify_layout
@@ -796,9 +796,9 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
   let rec aux_treemap root rect ~depth =
     let (p,q) = rect.p, rect.q in
 
-    if not (valid_rect rect) 
+    if not (valid_rect rect)
     then () (* TODO ? warning ? *)
-    else 
+    else
 
     (match root with
     | Leaf (tnode, _fileinfo) ->
@@ -825,7 +825,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         } treemap_rects;
 
         (* does not work, weird *)
-        let border = 
+        let border =
           if not big_borders then
           match depth with
           | 1 -> 0.0
@@ -834,7 +834,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
           | 4 -> 0.0005
           | 5 -> 0.0002
           | _ -> 0.0
-          else 
+          else
           match depth with
           | 1 -> 0.0
           | 2 -> 0.003
@@ -844,7 +844,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
           | 6 -> 0.0005
           | _ -> 0.0002
         in
-        let p = { 
+        let p = {
           x = p.x +. border;
           y = p.y +. border;
         }
@@ -857,14 +857,14 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         (* todo? can overflow ... check still inside previous rect *)
         let rect = { p = p; q = q } in
 
-        let children' = 
+        let children' =
           children |> List.map (fun child ->
             float_of_int (size_of_treemap_node child),
             child
           )
         in
 
-        let rects_with_info = 
+        let rects_with_info =
           (* generic call *)
           flayout children' depth rect
         in
@@ -878,11 +878,11 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     )
   in
   aux_treemap treemap (rect_ortho()) ~depth:1;
-  
+
   List.rev !treemap_rects
 
-let render_treemap ?algo ?big_borders x = 
-  Common.profile_code "Treemap.render_treemap" (fun () -> 
+let render_treemap ?algo ?big_borders x =
+  Common.profile_code "Treemap.render_treemap" (fun () ->
     render_treemap_algo2 ?algo ?big_borders x)
 
 (*****************************************************************************)
@@ -895,7 +895,7 @@ let render_treemap ?algo ?big_borders x =
 (* Source converters  *)
 (*****************************************************************************)
 
-type directory_sort = 
+type directory_sort =
   | NoSort
   | SortDirThenFiles
   | SortDirAndFiles
@@ -905,28 +905,28 @@ let follow_symlinks = ref false
 
 (*s: function tree_of_dir *)
 (*
-let tree_of_dir2 
-  ?(filter_file=(fun _ -> true))  
-  ?(filter_dir=(fun _ -> true))  
+let tree_of_dir2
+  ?(filter_file=(fun _ -> true))
+  ?(filter_dir=(fun _ -> true))
   ?(sort=SortDirAndFilesCaseInsensitive)
-  ~file_hook 
-  dir 
+  ~file_hook
+  dir
  =
-  let rec aux dir = 
+  let rec aux dir =
 
-    let subdirs = 
+    let subdirs =
       Common2.readdir_to_dir_list dir +> List.map (Filename.concat dir) in
-    let files = 
+    let files =
       Common2.readdir_to_file_list dir +> List.map (Filename.concat dir) in
-    
-    let subdirs = 
-      subdirs +> Common.map_filter (fun dir -> 
+
+    let subdirs =
+      subdirs +> Common.map_filter (fun dir ->
         if filter_dir dir
         then Some (dir, aux dir)
         else None
       )
     in
-    let files = 
+    let files =
       files +> Common.map_filter (fun file ->
         if filter_file file
         then Some (file, (Leaf (file, file_hook file)))
@@ -938,7 +938,7 @@ let tree_of_dir2
       match sort with
       | NoSort -> subdirs ++ files
       | SortDirThenFiles ->
-          Common.sort_by_key_lowfirst subdirs ++ 
+          Common.sort_by_key_lowfirst subdirs ++
           Common.sort_by_key_lowfirst files
       | SortDirAndFiles ->
           Common.sort_by_key_lowfirst (subdirs ++ files)
@@ -959,39 +959,39 @@ let tree_of_dir2
 
 (* specialized version *)
 let tree_of_dir3
-  ?(filter_file=(fun _ -> true))  
-  ?(filter_dir=(fun _ -> true))  
+  ?(filter_file=(fun _ -> true))
+  ?(filter_dir=(fun _ -> true))
   ?(sort=SortDirAndFilesCaseInsensitive)
-  ~file_hook 
-  dir 
+  ~file_hook
+  dir
  =
-  if sort <> SortDirAndFilesCaseInsensitive 
+  if sort <> SortDirAndFilesCaseInsensitive
   then failwith "Only SortDirAndFilesCaseInsensitive is handled";
 
-  let rec aux dir = 
-    
+  let rec aux dir =
+
     let children = Sys.readdir dir in
     let children = Array.map (fun x -> String.lowercase_ascii x, x) children in
 
     Array.fast_sort (fun (a1, _b1) (a2, _b2) -> compare a1 a2) children;
 
     let res = ref [] in
-    
+
     children |> Array.iter (fun (_, f) ->
       let full = Filename.concat dir f in
 
       let stat = Common2.unix_lstat_eff full in
-      
+
       match stat.Unix.st_kind with
       | Unix.S_REG ->
           if filter_file full
           then Common.push (Leaf (full, file_hook full)) res
-      | Unix.S_DIR -> 
+      | Unix.S_DIR ->
           if filter_dir full
           then Common.push (aux full) res
       | Unix.S_LNK ->
           if !follow_symlinks then
-          (try 
+          (try
           (match (Unix.stat full).Unix.st_kind with
           | Unix.S_REG ->
               if filter_file full
@@ -1034,17 +1034,17 @@ let add_intermediate_nodes root_path nodes =
   let root = Common.split "/" root in
 
   (* extract dirs and file from file, e.g. ["home";"pad"], "__flib.php", path *)
-  let xs = nodes |> List.map (fun x -> 
+  let xs = nodes |> List.map (fun x ->
     match x with
     | Leaf (file, _) -> Common2.dirs_and_base_of_file file, x
     | Node (dir, _) -> Common2.dirs_and_base_of_file dir, x
   )
   in
   (* remove the root part *)
-  let xs = xs |> List.map (fun ((dirs, base), node) -> 
+  let xs = xs |> List.map (fun ((dirs, base), node) ->
     let n = List.length root in
-    let (root', rest) = 
-      Common2.take n dirs,  
+    let (root', rest) =
+      Common2.take n dirs,
       Common2.drop n dirs
     in
     assert(root' =*= root);
@@ -1052,41 +1052,41 @@ let add_intermediate_nodes root_path nodes =
   )
   in
   (* now ready to build the tree recursively *)
-  let rec aux current_root xs = 
-    let files_here, rest = 
+  let rec aux current_root xs =
+    let files_here, rest =
       xs |> List.partition (fun ((dirs, _base), _) -> null dirs)
     in
-    let groups = 
-      rest |> group_by_mapped_key (fun ((dirs, _base),_) -> 
+    let groups =
+      rest |> group_by_mapped_key (fun ((dirs, _base),_) ->
         (* would be a file if null dirs *)
         assert(not (null dirs));
         List.hd dirs
       ) in
 
-    let nodes = 
-      groups |> List.map (fun (k, xs) -> 
-        let xs' = xs |> List.map (fun ((dirs, base), node) -> 
+    let nodes =
+      groups |> List.map (fun (k, xs) ->
+        let xs' = xs |> List.map (fun ((dirs, base), node) ->
           (List.tl dirs, base), node
-        ) 
+        )
         in
         let dirname = Filename.concat current_root k in
         Node (dirname, aux dirname xs')
       )
     in
-    let leaves = files_here |> List.map (fun ((_dir, _base), node) -> 
+    let leaves = files_here |> List.map (fun ((_dir, _base), node) ->
       node
     ) in
     nodes @ leaves
   in
   aux root_path xs
- 
-  
+
+
 let tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook paths =
   match paths with
   | [] -> failwith "tree_of_dirs_or_files: empty list"
   | [x] -> tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
-  | xs -> 
-      let nodes = 
+  | xs ->
+      let nodes =
         xs |> List.map (fun x ->
           tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
         )
@@ -1107,7 +1107,7 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
  * childrens. This function removes those intermediate singleton
  * sub directories.
  *)
-let rec remove_singleton_subdirs tree = 
+let rec remove_singleton_subdirs tree =
   match tree with
   | Leaf _x -> tree
   | Node (x, [Node (_y, ys)]) ->
@@ -1122,7 +1122,7 @@ let rec remove_singleton_subdirs tree =
 
 (*s: concrete rectangles example *)
 (* src: python treemap.py
- * lower, upper, rgb 
+ * lower, upper, rgb
  *)
 let treemap_rectangles_ex = [
  [0.0, 0.0], [1.0, 1.0],                                                                 (0.17778372236496054, 0.75183542244426871, 0.77892130219255096);
@@ -1154,7 +1154,7 @@ let treemap_rectangles_ex = [
 
 
 (*s: variable tree_ex_shneiderman_1991 *)
-let tree_ex_shneiderman_1991 = 
+let tree_ex_shneiderman_1991 =
   let ninfo = () in
   Node (ninfo,  [
     Leaf 12;
@@ -1180,7 +1180,7 @@ let tree_ex_shneiderman_1991 =
 (*e: variable tree_ex_shneiderman_1991 *)
 
 (*s: variable tree_ex_wijk_1999 *)
-let tree_ex_wijk_1999 = 
+let tree_ex_wijk_1999 =
   let ninfo = () in
   Node (ninfo,  [
     Leaf 6;
@@ -1194,13 +1194,13 @@ let tree_ex_wijk_1999 =
 (*e: variable tree_ex_wijk_1999 *)
 
 (*s: variable treemap_ex_ordered_2001 *)
-let (treemap_ex_ordered_2001: (unit, unit) treemap) = 
+let (treemap_ex_ordered_2001: (unit, unit) treemap) =
   let children = children_ex_ordered_2001 in
 
-  let children_treemap = 
-    children |> Common.index_list_1 |> List.map (fun (size, i) -> 
-      
-      Leaf ({ 
+  let children_treemap =
+    children |> Common.index_list_1 |> List.map (fun (size, i) ->
+
+      Leaf ({
         size = size;
         color = Color.color_of_string (spf "grey%d" (90 - (i * 3)));
         label = spf "size = %d" size;
@@ -1215,7 +1215,7 @@ let (treemap_ex_ordered_2001: (unit, unit) treemap) =
   }, ()), children_treemap
   )
 (*e: variable treemap_ex_ordered_2001 *)
-     
+
 
 
 

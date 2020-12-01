@@ -7,13 +7,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(* 
+(*
  *)
 
 %}
@@ -43,70 +43,70 @@
 
 /*(* keywords tokens *)*/
 %token <Parse_info.t>
- Tconst Tfun   
+ Tconst Tfun
  Talias
- Tasync Tawait   
- Ttry Tcatch   
- Tclass Ttrait Textends Tchildren Tfinal   
- Tprivate Tprotected   
- Tthis 
- Tif Telse   
- Tmatch   
- Tfrom   
- Tmodule 
- Tmutable   
- Tnative   
- Tuses 
- Tstatic 
- Tthrow 
- Tas   
+ Tasync Tawait
+ Ttry Tcatch
+ Tclass Ttrait Textends Tchildren Tfinal
+ Tprivate Tprotected
+ Tthis
+ Tif Telse
+ Tmatch
+ Tfrom
+ Tmodule
+ Tmutable
+ Tnative
+ Tuses
+ Tstatic
+ Tthrow
+ Tas
 
- Ttype 
- Tvoid 
- Twatch 
- Twhen Twith 
+ Ttype
+ Tvoid
+ Twatch
+ Twhen Twith
 
       /* conditional keywords */
- Tbase 
- Tcapture 
- Tdefault 
- Tdeferred 
- Tinst 
- TnonNullable 
- Tthis 
- Tuntracked 
- Tvalue 
+ Tbase
+ Tcapture
+ Tdefault
+ Tdeferred
+ Tinst
+ TnonNullable
+ Tthis
+ Tuntracked
+ Tvalue
 
       /* not in original spec */
- Ttrue 
- Tfalse 
+ Ttrue
+ Tfalse
  Toverridable Treadonly Tmacro
  Tfor Tin
  Textension
  Tyield Tbreak Tcontinue
- Tmemoized Tfrozen 
+ Tmemoized Tfrozen
  Tdo Twhile Tloop
 
 
 /*(* syntax *)*/
-%token <Parse_info.t> 
+%token <Parse_info.t>
  TEq TEqDot
  TOParen TCParen TOBrace TCBrace TOBracket TCBracket
  TDot  TArrow TTildeArrow TEqualArrow
  TComma
  TColon TColonColon
  TSemiColon TSemiColonSemiColon
- TPipe 
+ TPipe
  TQuestion TAt TSharp TDollar TBackquote
 
 /*(* operators *)*/
-%token <Parse_info.t> 
+%token <Parse_info.t>
   TPlus TMinus TStar TDiv TMod
   TEqEq TBangEq
   TLess TGreater TLessEq TGreaterEq
   TAnd THat TBang /* TPipe above */
   TAndAnd TPipePipe
-  
+
 
 /*(* attributes *)*/
 

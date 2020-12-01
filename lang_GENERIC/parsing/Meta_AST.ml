@@ -8,7 +8,7 @@
 open AST_generic
 
 let vof_tok v = Meta_parse_info.vof_info_adjustable_precision v
-  
+
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_tok v2 in OCaml.VTuple [ v1; v2 ]
 
@@ -19,12 +19,12 @@ let vof_bracket of_a (t1, x, t2) =
   match v1 with
   | OCaml.VUnit -> v
   | _ -> OCaml.VTuple [v1; v; v2]
-  
+
 let vof_ident v = vof_wrap OCaml.vof_string v
-  
+
 let vof_dotted_name v = OCaml.vof_list vof_ident v
-  
-  
+
+
 let vof_module_name =
   function
   | FileName v1 ->
@@ -39,7 +39,7 @@ let rec vof_resolved_name (v1, v2) =
   let v1 = vof_resolved_name_kind v1 in
   let v2 = OCaml.vof_int v2 in
   OCaml.VTuple [ v1; v2 ]
-and vof_resolved_name_kind = 
+and vof_resolved_name_kind =
   function
   | Local  ->  OCaml.VSum ("Local", [ ])
   | Param  -> OCaml.VSum ("Param", [ ])
@@ -57,7 +57,7 @@ and vof_resolved_name_kind =
 let rec vof_qualifier = function
   | QTop v1 -> let v1 = vof_tok v1 in OCaml.VSum ("QTop", [v1])
   | QDots v1 -> let v1 = vof_dotted_name v1 in OCaml.VSum ("QDots", [v1])
-  | QExpr (v1, v2) -> let v1 = vof_expr v1 in 
+  | QExpr (v1, v2) -> let v1 = vof_expr v1 in
       let v2 = vof_tok v2 in
       OCaml.VSum ("QExpr", [v1; v2])
 
@@ -76,7 +76,7 @@ and
   let arg = OCaml.vof_option vof_qualifier v_name_qualifier in
   let bnd = ("name_qualifier", arg) in
   let bnds = bnd :: bnds in OCaml.VDict bnds
-and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type; 
+and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
     id_const_literal = v3;
   } =
   let bnds = [] in
@@ -89,7 +89,7 @@ and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
   let arg =
     OCaml.vof_ref (OCaml.vof_option vof_resolved_name) v_id_resolved in
   let bnd = ("id_resolved", arg) in
-  let bnds = bnd :: bnds in 
+  let bnds = bnd :: bnds in
   OCaml.VDict bnds
 
 
@@ -109,7 +109,7 @@ and
   let bnd = ("xml_attrs", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_ident v_xml_tag in
-  let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in 
+  let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in
   OCaml.VDict bnds
 
 and vof_xml_attribute = function
@@ -148,7 +148,7 @@ and vof_expr =
   | Tuple v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_expr) v1 in OCaml.VSum ("Tuple", [ v1 ])
   | Record v1 ->
-      let v1 = vof_bracket (OCaml.vof_list vof_field) v1 in 
+      let v1 = vof_bracket (OCaml.vof_list vof_field) v1 in
       OCaml.VSum ("Record", [ v1 ])
   | Constructor (v1, v2) ->
       let v1 = vof_name v1
@@ -212,11 +212,11 @@ and vof_expr =
       let v1 = vof_expr v1
       and v2 = OCaml.vof_list vof_action v2
       in OCaml.VSum ("MatchPattern", [ v1; v2 ])
-  | Yield (t, v1, v2) -> 
+  | Yield (t, v1, v2) ->
       let t = vof_tok t in
-      let v1 = OCaml.vof_option vof_expr v1 and v2 = OCaml.vof_bool v2 in 
+      let v1 = OCaml.vof_option vof_expr v1 and v2 = OCaml.vof_bool v2 in
       OCaml.VSum ("Yield", [ t; v1; v2 ])
-  | Await (t, v1) -> 
+  | Await (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_expr v1 in OCaml.VSum ("Await", [ t; v1 ])
   | Cast (v1, v2) ->
@@ -225,15 +225,15 @@ and vof_expr =
       in OCaml.VSum ("Cast", [ v1; v2 ])
   | Seq v1 ->
       let v1 = OCaml.vof_list vof_expr v1 in OCaml.VSum ("Seq", [ v1 ])
-  | Ref (t, v1) -> 
+  | Ref (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_expr v1 in OCaml.VSum ("Ref", [ t; v1 ])
-  | DeRef (t, v1) -> 
+  | DeRef (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_expr v1 in OCaml.VSum ("DeRef", [ t; v1 ])
-  | Ellipsis v1 -> 
+  | Ellipsis v1 ->
       let v1 = vof_tok v1 in OCaml.VSum ("Ellipsis", [ v1 ])
-  | DeepEllipsis v1 -> 
+  | DeepEllipsis v1 ->
       let v1 = vof_bracket vof_expr v1 in OCaml.VSum ("DeepEllipsis", [ v1 ])
   | TypedMetavar (v1, v2, v3) ->
       let v1 = vof_ident v1
@@ -294,7 +294,7 @@ and vof_special =
   | Instanceof -> OCaml.VSum ("Instanceof", [])
   | Sizeof -> OCaml.VSum ("Sizeof", [])
   | New -> OCaml.VSum ("New", [])
-  | ConcatString v1 -> 
+  | ConcatString v1 ->
       let v1 = vof_interpolated_kind v1 in
       OCaml.VSum ("InterpolatedConcat", [v1])
   | Spread -> OCaml.VSum ("Spread", [])
@@ -425,10 +425,10 @@ and vof_other_expr_operator =
   | OE_Unpack -> OCaml.VSum ("OE_Unpack", [])
   | OE_RecordFieldName -> OCaml.VSum ("OE_RecordFieldName", [])
   | OE_RecordWith -> OCaml.VSum ("OE_RecordWith", [])
-  
+
 and vof_type_ =
   function
-  | TyEllipsis v1 -> 
+  | TyEllipsis v1 ->
       let v1 = vof_tok v1 in
       OCaml.VSum ("TyEllipsis", [ v1 ])
   | TyRecordAnon (v0, v1) ->
@@ -436,12 +436,12 @@ and vof_type_ =
       let v1 = vof_bracket (OCaml.vof_list vof_field) v1
       in OCaml.VSum ("TyAnd", [ v0; v1 ])
   | TyOr (v1, v2, v3) ->
-      let v1 = vof_type_ v1 in 
+      let v1 = vof_type_ v1 in
       let v2 = vof_tok v2 in
       let v3 = vof_type_ v3 in
       OCaml.VSum ("TyOr", [ v1; v2; v3 ])
   | TyAnd (v1, v2, v3) ->
-      let v1 = vof_type_ v1 in 
+      let v1 = vof_type_ v1 in
       let v2 = vof_tok v2 in
       let v3 = vof_type_ v3 in
       OCaml.VSum ("TyAnd", [ v1; v2; v3 ])
@@ -483,7 +483,7 @@ and vof_type_argument =
   | TypeArg v1 -> let v1 = vof_type_ v1 in OCaml.VSum ("TypeArg", [ v1 ])
   | TypeWildcard (v1, v2) ->
       let v1 = vof_tok v1 in
-      let v2 = OCaml.vof_option (fun (v1, v2) -> 
+      let v2 = OCaml.vof_option (fun (v1, v2) ->
             let v1 = vof_wrap OCaml.vof_bool v1 in
             let v2 = vof_type_ v2 in
             OCaml.VTuple [v1; v2]
@@ -550,8 +550,8 @@ and vof_stmt =
   function
   | DisjStmt (v1, v2) -> let v1 = vof_stmt v1 in let v2 = vof_stmt v2 in
       OCaml.VSum ("DisjStmt", [v1; v2])
-  | ExprStmt (v1, t) -> 
-      let v1 = vof_expr v1 in 
+  | ExprStmt (v1, t) ->
+      let v1 = vof_expr v1 in
       let t = vof_tok t in
       OCaml.VSum ("ExprStmt", [ v1; t ])
   | DefStmt v1 ->
@@ -559,7 +559,7 @@ and vof_stmt =
   | DirectiveStmt v1 ->
       let v1 = vof_directive v1 in OCaml.VSum ("DirectiveStmt", [ v1 ])
   | Block v1 ->
-      let v1 = vof_bracket (OCaml.vof_list vof_stmt) v1 in 
+      let v1 = vof_bracket (OCaml.vof_list vof_stmt) v1 in
       OCaml.VSum ("Block", [ v1 ])
   | If (t, v1, v2, v3) ->
       let t = vof_tok t in
@@ -587,9 +587,9 @@ and vof_stmt =
       let v1 = OCaml.vof_option vof_expr v1
       and v2 = OCaml.vof_list vof_case_and_body v2
       in OCaml.VSum ("Switch", [ v0; v1; v2 ])
-  | Return (t, v1, sc) -> 
+  | Return (t, v1, sc) ->
       let t = vof_tok t in
-      let v1 = OCaml.vof_option vof_expr v1 in 
+      let v1 = OCaml.vof_option vof_expr v1 in
       let sc = vof_tok sc in
       OCaml.VSum ("Return", [ t; v1; sc ])
   | Continue (t, v1, sc) ->
@@ -606,12 +606,12 @@ and vof_stmt =
       let v1 = vof_label v1
       and v2 = vof_stmt v2
       in OCaml.VSum ("Label", [ v1; v2 ])
-  | Goto (t, v1) -> 
+  | Goto (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_label v1 in OCaml.VSum ("Goto", [ t; v1 ])
-  | Throw (t, v1, sc) -> 
+  | Throw (t, v1, sc) ->
       let t = vof_tok t in
-      let v1 = vof_expr v1 in 
+      let v1 = vof_expr v1 in
       let sc = vof_tok sc in
       OCaml.VSum ("Throw", [ t; v1; sc ])
   | Try (t, v1, v2, v3) ->
@@ -655,22 +655,22 @@ and vof_case_and_body (v1, v2) =
   in OCaml.VTuple [ v1; v2 ]
 and vof_case =
   function
-  | Case (t, v1) -> 
+  | Case (t, v1) ->
       let t = vof_tok t in
-      let v1 = vof_pattern v1 in 
+      let v1 = vof_pattern v1 in
       OCaml.VSum ("Case", [ t; v1 ])
-  | CaseEqualExpr (v1, v2) -> 
+  | CaseEqualExpr (v1, v2) ->
       let v1 = vof_tok v1 in
-      let v2 = vof_expr v2 in 
+      let v2 = vof_expr v2 in
       OCaml.VSum ("CaseEqualExpr", [ v1; v2 ])
-  | Default t -> 
+  | Default t ->
       let t = vof_tok t in
       OCaml.VSum ("Default", [t])
 and vof_catch (t, v1, v2) =
-  let t = vof_tok t in 
+  let t = vof_tok t in
   let v1 = vof_pattern v1 and v2 = vof_stmt v2 in OCaml.VTuple [ t; v1; v2 ]
 and vof_finally v = vof_tok_and_stmt v
-and vof_tok_and_stmt (t, v) = 
+and vof_tok_and_stmt (t, v) =
   let t = vof_tok t in
   let v = vof_stmt v in
   OCaml.VTuple [t; v]
@@ -915,11 +915,11 @@ and
   let bnd = ("frettype", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_parameters v_fparams in
-  let bnd = ("fparams", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("fparams", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_wrap vof_function_kind fkind in
-  let bnd = ("fkind", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("fkind", arg) in
+  let bnds = bnd :: bnds in
   OCaml.VDict bnds
 and vof_parameters v = OCaml.vof_list vof_parameter v
 and vof_parameter =
@@ -1015,7 +1015,7 @@ and vof_type_definition_kind =
       and v2 = OCaml.vof_list vof_any v2
       in OCaml.VSum ("OtherTypeKind", [ v1; v2 ])
 and vof_other_type_kind_operator =
-  function 
+  function
     | OTKO_AbstractType -> OCaml.VSum ("OTKO_AbstractType", [])
 and vof_or_type_element =
   function
@@ -1116,7 +1116,7 @@ and vof_item x = vof_stmt x
 and vof_program v = OCaml.vof_list vof_item v
 and vof_partial =
   function
-  | PartialDef v1 -> 
+  | PartialDef v1 ->
       let v1 = vof_definition v1 in OCaml.VSum ("PartialDef", [ v1 ])
 
 and vof_any =
@@ -1145,4 +1145,4 @@ and vof_any =
   | Pr v1 -> let v1 = vof_program v1 in OCaml.VSum ("Pr", [ v1 ])
   | Lbli v1 -> let v1 = vof_label_ident v1 in OCaml.VSum ("Lbli", [v1])
   | IoD v1 -> let v1 = vof_ident_or_dynamic v1 in OCaml.VSum ("IoD", [v1])
-  
+

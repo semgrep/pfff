@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,7 +19,7 @@ open Common
 (*****************************************************************************)
 (*
  * See also prolog_code.ml!
- * 
+ *
  * datalog engines:
  *  - toy datalog using lua
  *  - bddbddb, a scalabe engine!
@@ -27,7 +27,7 @@ open Common
  *    SQL
  *  - ciao? xsb?
  *  - http://www.learndatalogtoday.org/ and datomic.com
- * 
+ *
  * TODO: https://yanniss.github.io/points-to-tutorial15.pdf
  *)
 
@@ -75,7 +75,7 @@ type fact =
 (*****************************************************************************)
 
 (* see datalog_code.dl domain *)
-type value = 
+type value =
   | V of var
   | F of fld
   | N of func
@@ -88,7 +88,7 @@ let string_of_value = function
 
 type _rule = string
 
-type _meta_fact = 
+type _meta_fact =
     string * value list
 
 let meta_fact = function
@@ -110,12 +110,12 @@ let meta_fact = function
   | CallDirect (a, b) -> "call_direct", [ I a; N b; ]
   | CallIndirect (a, b) -> "call_indirect", [ I a; V b; ]
 
-      
+
 (*****************************************************************************)
 (* Toy datalog *)
 (*****************************************************************************)
 
-let string_of_fact fact = 
+let string_of_fact fact =
   let str, xs = meta_fact fact in
   spf "%s(%s)" str
     (xs |> List.map (function
@@ -152,7 +152,7 @@ let bddbddb_of_facts facts dir =
   metas |> List.iter (fun (arule, xs) ->
     let listref =
       try Hashtbl.find hrules arule
-      with Not_found -> 
+      with Not_found ->
         let aref = ref [] in
         Hashtbl.add hrules arule aref;
         aref
@@ -160,11 +160,11 @@ let bddbddb_of_facts facts dir =
     listref := xs :: !listref;
 
     xs |> List.iter (fun v ->
-      let add_v v = 
+      let add_v v =
         let domain = domain_of_value v in
         let hdomain =
           try Hashtbl.find hvalues domain
-          with Not_found -> 
+          with Not_found ->
             let h = Hashtbl.create 10001 in
             Hashtbl.add hvalues domain h;
             h
@@ -177,12 +177,12 @@ let bddbddb_of_facts facts dir =
       | F s -> add_v (V s)
       | N s -> add_v (V s)
       | _ -> ()
-      )        
+      )
     )
   );
 
   (* now build integer indexes *)
-  let domains_idx = 
+  let domains_idx =
     hvalues |> Common.hash_to_list |> List.map (fun (domain, hdomain) ->
       let conv = hdomain |> Common.hashset_to_list |> Common.index_list_0 in
       domain, (
@@ -219,14 +219,14 @@ let bddbddb_of_facts facts dir =
       let file = Filename.concat dir (arule ^ ".tuples") in
       Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
-        
+
         (* todo: header?? *)
         (match !xxs with
         | [] -> ()
         | xs::_xxs ->
           let hcnt = Hashtbl.create 6 in
           pr (spf "# %s"
-                (xs |> List.map (fun v -> 
+                (xs |> List.map (fun v ->
                   let domain = domain_of_value v in
                   let cnt =
                     try Hashtbl.find hcnt domain
@@ -279,11 +279,11 @@ let bddbddb_of_facts facts dir =
             let v = V s in
             let idx2 = Hashtbl.find vconv v in
             pr (spf "%d %d" idx idx2)
-          | _ -> 
+          | _ ->
             pr2_gen (fld, idx);
             raise Impossible
         )
-      ); 
+      );
 
   let arule = "var_to_func" in
 
@@ -292,7 +292,7 @@ let bddbddb_of_facts facts dir =
         let pr s = pr_no_nl (s ^ "\n") in
 
         pr "# V0:18 N0:18";
-  
+
         nvals |> List.iter (fun (n, idx) ->
           match n with
           | N s ->
@@ -300,11 +300,11 @@ let bddbddb_of_facts facts dir =
             let idx2 = Hashtbl.find vconv v in
             (* subtle, different order than for field_to_var, idx2 before *)
             pr (spf "%d %d" idx2 idx)
-          | _ -> 
+          | _ ->
             pr2_gen (n, idx);
             raise Impossible
         )
-      ); 
+      );
 
 
   ()
@@ -321,11 +321,11 @@ let bddbddb_explain_tuples file =
   (match xs with
   | header::xs ->
     if header =~ "# \\(.*\\)"
-    then 
+    then
       let s = Common.matched1 header in
       let flds = Common.split "[ \t]" s in
       let fld_domains =
-        flds |> List.map (fun s -> 
+        flds |> List.map (fun s ->
           if s =~ "\\([A-Z]\\)[0-9]?:"
           then Common.matched1 s
           else failwith (spf "could not find header in %s" file)
@@ -340,8 +340,8 @@ let bddbddb_explain_tuples file =
 
       xs |> List.iter (fun s ->
         let vs = Common.split "[ \t]" s |> List.map s_to_i in
-        
-        let args = 
+
+        let args =
           Common2.zip vs fld_translates |> List.map (fun (i, arr) ->
             arr.(i)
           )

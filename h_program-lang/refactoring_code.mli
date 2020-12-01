@@ -3,7 +3,7 @@
  * last resort
  *)
 type refactoring_kind =
-  | AddInterface of string option (* specific class *) 
+  | AddInterface of string option (* specific class *)
                   * string (* the interface to add *)
   | RemoveInterface of string option * string
 
@@ -15,7 +15,7 @@ type refactoring_kind =
   | OptionizeTypeParameter
   | AddTypeMember of string
 
-type position = { 
+type position = {
   file: Common.filename;
   line: int;
   col: int;

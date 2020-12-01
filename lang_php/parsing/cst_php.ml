@@ -25,18 +25,18 @@ open Common
  * PHP 5.4 (e.g. traits) as well as support for many Facebook
  * extensions (XHP, generators, annotations, generics, collections,
  * type definitions, implicit fields via constructor parameters).
- * 
+ *
  * Update: I removed many facebook extensions to simplify (e.g., XHP).
  * Moreover, this CST is mostly used for semgrep now, so we may
  * gradually transform it into ast_php.ml to avoid an extra intermediate
- * when converting from PHP to the generic AST. 
+ * when converting from PHP to the generic AST.
  * For example, use Foo\Bar\{A, B} is not represented faithfully anymore
  * in this CST, and it's unsugared in use Foo\Bar\A and use Foo\Bar\B
  * (like in ast_php.ml).
  * The main requirement for this hybrid CST/AST
  * is to get the range of an expr/stmt/... correct so you must keep
  * the first and last token of an expr/stmt/... in the AST.
- * 
+ *
  *
  * A CST is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
@@ -111,7 +111,7 @@ type ident = Name of string wrap
  *)
 type dname = DName of string wrap
    (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer *)
-   
+
  [@@deriving show { with_path = false }]
 
 (* The antislash is a separator but it can also be in the leading position.
@@ -293,7 +293,7 @@ and expr =
 
     and scalar =
       | C of constant
-      | Guil    of tok (* double quote or b double quite' *) * encaps list * 
+      | Guil    of tok (* double quote or b double quite' *) * encaps list *
                    tok (* double quote *)
       | HereDoc of
           tok (* < < < EOF, or b < < < EOF *) *
@@ -325,8 +325,8 @@ and expr =
           | EncapsExpr of tok * expr * tok
 
    and fixOp    = AST_generic.incr_decr
-   and binaryOp = Arith of arithOp | Logical of logicalOp 
-        | BinaryConcat (* . *) 
+   and binaryOp = Arith of arithOp | Logical of logicalOp
+        | BinaryConcat (* . *)
         | CombinedComparison
          and arithOp   =
            | Plus | Minus | Mul | Div | Mod | Pow
@@ -727,14 +727,14 @@ and toplevel =
     | ConstantDef of constant_def
     (* facebook extension *)
     | TypeDef of type_def
-   
+
     (* less: move in directive type? *)
     (* see http://www.php.net/manual/en/language.namespaces.rules.php*)
     (* the qualified_ident below can not have a leading '\' *)
     | NamespaceDef of tok * qualified_ident * tok (* ; *)
     (* when there is no qualified_ident, this means global scope *)
     | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
-    | NamespaceUse of tok * tok option (* 'function|const' *) * 
+    | NamespaceUse of tok * tok option (* 'function|const' *) *
              namespace_use_rule comma_list * tok (* ; *)
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
 

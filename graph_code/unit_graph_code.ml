@@ -52,7 +52,7 @@ let build_g_and_dm () =
       ("a/y.ml", E.File);
       ("bar.ml", E.File);
     |];
-    config = 
+    config =
       Node ((".", E.Dir), [
         Node (("foo.ml", E.File), []);
         Node (("a", E.Dir), [
@@ -75,7 +75,7 @@ let unittest ~graph_of_string =
 (* The graph *)
 (*---------------------------------------------------------------------------*)
     "graph" >::: [
-      
+
       "scc" >:: (fun () ->
         let g = G.create () in
         let (-->) f1 f2 =
@@ -95,7 +95,7 @@ let unittest ~graph_of_string =
         "bar" --> "bar_mutual";
         "bar_mutual" --> "bar";
         "bar" --> "bar_bis";
-        
+
         let (scc, _hscc) = G.strongly_connected_components_use_graph g in
         assert_equal
           ~msg:"it should find the right strongly connected components"
@@ -120,7 +120,7 @@ let unittest ~graph_of_string =
         let numbering = G.bottom_up_numbering g in
         let xs = Common.hash_to_list numbering |> Common.sort_by_val_lowfirst in
         assert_equal
-          ~msg:"it should find the right ordering of nodes" 
+          ~msg:"it should find the right ordering of nodes"
           [
             ("bar_bis", E.Function), 0;
             ("bar", E.Function), 1;
@@ -147,7 +147,7 @@ let unittest ~graph_of_string =
         Common.save_excursion DMBuild.threshold_pack 2 (fun () ->
           let config = DM.basic_config_opti gopti in
           let dm, gopti = DMBuild.build config None gopti in
-          let config2 = 
+          let config2 =
             DM.expand_node_opti ("./...", E.Dir) dm.config gopti in
           let dm, gopti = DMBuild.build config2 None gopti in
           (* pr2_gen dm; *)
@@ -173,12 +173,12 @@ let unittest ~graph_of_string =
           let f1 = f1, E.Function in
           let f2 = f2, E.Function in
           if not (G.has_node f1 g)
-          then begin 
+          then begin
             G.add_node f1 g;
             G.add_nodeinfo f1 (nodeinfo f1) g;
           end;
           if not (G.has_node f2 g)
-          then begin 
+          then begin
             G.add_node f2 g;
             G.add_nodeinfo f2 (nodeinfo f2) g;
           end;
@@ -207,13 +207,13 @@ let unittest ~graph_of_string =
           users;
       );
 *)
-   
+
       "class analysis" >:: (fun () ->
         let file_content = "
-class A { 
+class A {
 public function foo() { }
 }
-class B extends A { 
+class B extends A {
 public function foo() { }
 }
 class C {
@@ -222,7 +222,7 @@ public function foo() { }
 " in
         let g = graph_of_string file_content in
         let dag = Graph_code_class_analysis.class_hierarchy g in
-        
+
         let node = ("A", E.Class) in
         let children = Graphe.succ node dag in
         assert_equal ~msg:"it should find the direct children of a class"
@@ -275,11 +275,11 @@ public function foo() { }
           ~msg:"It should not find distance between a/x.ml a/y.ml"
           (DM.distance_entity (1, 2) arr) 0;
 
-        assert_equal 
+        assert_equal
           false (DM.is_internal_helper 0 dm);
-        assert_equal 
+        assert_equal
           true (DM.is_internal_helper 1 dm);
-        assert_equal 
+        assert_equal
           false (DM.is_internal_helper 2 dm);
       );
 

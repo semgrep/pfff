@@ -13,11 +13,11 @@ let is_eof = function
 
 let is_comment = function
   | TComment _ | TCommentSpace _  | TCommentNewline _ -> true
-  | _ -> false 
+  | _ -> false
 
 let is_just_comment = function
   | TComment _ -> true
-  | _ -> false 
+  | _ -> false
 
 let token_kind_of_tok t =
   match t with
@@ -40,7 +40,7 @@ let token_kind_of_tok t =
 (* Visitors *)
 (*****************************************************************************)
 
-(* Because ocamlyacc force us to do it that way. The ocamlyacc token 
+(* Because ocamlyacc force us to do it that way. The ocamlyacc token
  * cant be a pair of a sum type, it must be directly a sum type.
  *)
 
@@ -165,13 +165,13 @@ let visitor_info_of_tok f = function
   | EOF ii -> EOF (f ii)
 
 
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with
   | Some x -> x
   | None -> Parse_info.fake_info "NOTOK"
-  
+
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)

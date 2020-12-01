@@ -3,9 +3,9 @@ open AST_generic
 type node = {
   n: node_kind;
   i: Parse_info.t option;
-} 
-  and node_kind = 
-    | Enter | Exit 
+}
+  and node_kind =
+    | Enter | Exit
     | TrueNode | FalseNode
     | Join
 
@@ -26,7 +26,7 @@ type node = {
 
     | SimpleNode of simple_node
 
-    and simple_node = 
+    and simple_node =
       | ExprStmt of expr
       | DefStmt of definition
       | DirectiveStmt of directive
@@ -38,10 +38,10 @@ type node = {
       | Parameter of parameter
 
 
-(* For now there is just one kind of edge. Later we may have more, 
+(* For now there is just one kind of edge. Later we may have more,
  * see the ShadowNode idea of Julia Lawall.
  *)
-type edge = Direct 
+type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable
 

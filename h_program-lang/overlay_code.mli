@@ -27,7 +27,7 @@ val check_overlay:
   dir_orig:Common.dirname -> dir_overlay:Common.dirname -> unit
 
 val gen_overlay:
-  dir_orig:Common.dirname -> dir_overlay:Common.dirname -> 
+  dir_orig:Common.dirname -> dir_overlay:Common.dirname ->
   output:Common.filename -> unit
 
 val adapt_layers:

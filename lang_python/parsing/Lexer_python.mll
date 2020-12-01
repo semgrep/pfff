@@ -10,13 +10,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 open Lexing
 
@@ -35,7 +35,7 @@ module Flag = Flag_parsing_python
  *    from ocaml-pythonlib)
  * reference:
  *    - http://docs.python.org/release/2.5.4/ref/ref.html
- * old src: 
+ * old src:
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  *    which was itself from the python reference manual
  *)
@@ -88,7 +88,7 @@ let unescaped s =
 (* ---------------------------------------------------------------------- *)
 
 (* this is to return space/comment tokens *)
-type state_mode = 
+type state_mode =
   | STATE_TOKEN
   | STATE_OFFSET
   | STATE_UNDERSCORE_TOKEN
@@ -122,7 +122,7 @@ and aware_nl t =
   t.nl_ignore <- pred t.nl_ignore
 
 (* stack mode management *)
-let top_mode state = 
+let top_mode state =
   match !(state.mode) with
   | [] -> failwith "Lexer_python.top_mode: empty stack"
   | x::_ -> x
@@ -143,7 +143,7 @@ let pr_mode mode = pr2 (match mode with
 let pr_state state = List.iter pr_mode !(state.mode)
 
 (* This used to be 8, but tests/python/parsing/eof_comment.py was not parsing.
- * This maybe should be a command-line parameter? Or we should fix 
+ * This maybe should be a command-line parameter? Or we should fix
  * eof_comment.py in another way?
  *)
 let space_per_tab = 8
@@ -210,32 +210,32 @@ let nonidchar = [^ 'a'-'z' 'A'-'Z' '0'-'9' '_']
 (*****************************************************************************)
 
 rule token python2 state = parse
-  | e { 
+  | e {
         let curr_offset = state.curr_offset in
         let last_offset = Stack.top state.offset_stack in
         match () with
         | _ when curr_offset < last_offset ->
-            ignore (Stack.pop state.offset_stack); 
+            ignore (Stack.pop state.offset_stack);
             DEDENT (tokinfo lexbuf)
         | _ when curr_offset > last_offset ->
-            Stack.push curr_offset state.offset_stack; 
+            Stack.push curr_offset state.offset_stack;
             INDENT (tokinfo lexbuf)
         (* curr_offset = last_offset *)
-        | _ -> _token python2 state lexbuf 
+        | _ -> _token python2 state lexbuf
       }
 
 (* this is just used to adjuste the state *)
 and offset state = parse
   | e { "" }
-  | ' '  
-     { 
-       state.curr_offset <- state.curr_offset + 1; 
-       " " ^ offset state lexbuf 
+  | ' '
+     {
+       state.curr_offset <- state.curr_offset + 1;
+       " " ^ offset state lexbuf
      }
-  | '\t' 
-     { 
+  | '\t'
+     {
        state.curr_offset <- state.curr_offset + space_per_tab;
-       "\t" ^ offset state lexbuf 
+       "\t" ^ offset state lexbuf
      }
 
 and _token python2 state = parse
@@ -244,7 +244,7 @@ and _token python2 state = parse
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
   | ((whitespace* comment? newline)* whitespace* comment?) newline
-      { 
+      {
         let info = tokinfo lexbuf in
         if state.nl_ignore <= 0 then begin
           state.curr_offset <- 0;
@@ -256,7 +256,7 @@ and _token python2 state = parse
         end
        }
   | '\\' newline whitespace*
-      { 
+      {
           let info = tokinfo lexbuf in
           let pos = lexbuf.lex_curr_p in
           lexbuf.lex_curr_p <-
@@ -268,7 +268,7 @@ and _token python2 state = parse
       }
 
   | whitespace+
-      { 
+      {
         let info = tokinfo lexbuf in
         set_mode state STATE_UNDERSCORE_TOKEN;
         TCommentSpace info
@@ -324,15 +324,15 @@ and _token python2 state = parse
   | ')'     { aware_nl state; RPAREN (tokinfo lexbuf) }
   | '['     { ignore_nl state; LBRACK (tokinfo lexbuf) }
   | ']'     { aware_nl state; RBRACK (tokinfo lexbuf) }
-  | '{'     { 
+  | '{'     {
       ignore_nl state;
       push_mode state STATE_UNDERSCORE_TOKEN;
-      LBRACE (tokinfo lexbuf) 
+      LBRACE (tokinfo lexbuf)
      }
-  | '}'     { 
+  | '}'     {
       aware_nl state;
       pop_mode state;
-      RBRACE (tokinfo lexbuf) 
+      RBRACE (tokinfo lexbuf)
      }
 
   | ':'     { COLON (tokinfo lexbuf) }
@@ -348,13 +348,13 @@ and _token python2 state = parse
   | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
   | "!" { if !(state.mode) |> List.exists (function
-            | STATE_IN_FSTRING_SINGLE 
+            | STATE_IN_FSTRING_SINGLE
             | STATE_IN_FSTRING_DOUBLE
             | STATE_IN_FSTRING_TRIPLE_SINGLE
             | STATE_IN_FSTRING_TRIPLE_DOUBLE -> true
             | _ -> false)
           then BANG (tokinfo lexbuf)
-          else begin 
+          else begin
              error (spf "unrecognized symbols: %s" (tok lexbuf)) lexbuf;
              TUnknown (tokinfo lexbuf)
           end
@@ -404,8 +404,8 @@ and _token python2 state = parse
         | "global"   -> GLOBAL (tokinfo lexbuf)
         | "with"     -> WITH (tokinfo lexbuf)
         | "yield"    -> YIELD (tokinfo lexbuf)
-      
-        (* python3-ext: 
+
+        (* python3-ext:
          * coupling: if python3 has more special keywords, you may need to
          * modify the heuristic in parse_python.ml that fallbacks to python2
          * in case of a parse error.
@@ -423,11 +423,11 @@ and _token python2 state = parse
         | "exec" when python2 -> EXEC (tokinfo lexbuf)
         (* python3-ext: no more: print, exec *)
 
-        | _          -> NAME (id, (tokinfo lexbuf)) 
+        | _          -> NAME (id, (tokinfo lexbuf))
     }
 
   (* sgrep-ext: *)
-  | '$' identifier 
+  | '$' identifier
     { let s = tok lexbuf in
       if not !Flag_parsing.sgrep_mode
       then error ("identifier with dollar: "  ^ s) lexbuf;
@@ -455,11 +455,11 @@ and _token python2 state = parse
   (* ----------------------------------------------------------------------- *)
   | fstringprefix "'"  {
        push_mode state STATE_IN_FSTRING_SINGLE;
-       FSTRING_START (tokinfo lexbuf) 
+       FSTRING_START (tokinfo lexbuf)
     }
   | fstringprefix '"'  {
        push_mode state STATE_IN_FSTRING_DOUBLE;
-       FSTRING_START (tokinfo lexbuf) 
+       FSTRING_START (tokinfo lexbuf)
     }
   | fstringprefix "'''" {
        push_mode state STATE_IN_FSTRING_TRIPLE_SINGLE;
@@ -467,7 +467,7 @@ and _token python2 state = parse
      }
   | fstringprefix "\"\"\"" {
        push_mode state STATE_IN_FSTRING_TRIPLE_DOUBLE;
-       FSTRING_START (tokinfo lexbuf)  
+       FSTRING_START (tokinfo lexbuf)
      }
 
   | stringprefix as pre '\''
@@ -493,8 +493,8 @@ and _token python2 state = parse
 (*****************************************************************************)
 
 and sq_shortstrlit state pos pre = parse
-  | (([^ '\\' '\r' '\n' '\''] | escapeseq)* as s) '\'' 
-     { 
+  | (([^ '\\' '\r' '\n' '\''] | escapeseq)* as s) '\''
+     {
        let full_str = Lexing.lexeme lexbuf in
        STR (unescaped s, pre, PI.tok_add_s full_str pos) }
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
@@ -503,14 +503,14 @@ and sq_shortstrlit state pos pre = parse
 (* because here we're using 'shortest', do not put a rule for '| _ { ... }' *)
 and sq_longstrlit state pos pre = shortest
 | (([^ '\\'] | escapeseq)* as s) "'''"
-    { 
+    {
       let full_str = Lexing.lexeme lexbuf in
-      STR (unescaped s, pre, PI.tok_add_s full_str pos) 
+      STR (unescaped s, pre, PI.tok_add_s full_str pos)
     }
 
 and dq_shortstrlit state pos pre = parse
-  | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"' 
-     { 
+  | (([^ '\\' '\r' '\n' '\"'] | escapeseq)* as s) '"'
+     {
        let full_str = Lexing.lexeme lexbuf in
        STR (unescaped s, pre, PI.tok_add_s full_str pos) }
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
@@ -518,7 +518,7 @@ and dq_shortstrlit state pos pre = parse
 
 and dq_longstrlit state pos pre = shortest
   | (([^ '\\'] | escapeseq)* as s) "\"\"\""
-      { 
+      {
         let full_str = Lexing.lexeme lexbuf in
         STR (unescaped s, pre, PI.tok_add_s full_str pos) }
 
@@ -529,12 +529,12 @@ and dq_longstrlit state pos pre = shortest
 and fstring_single state = parse
  | "'" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
- | '{' { 
+ | '{' {
     ignore_nl state;
     push_mode state STATE_UNDERSCORE_TOKEN;
-    FSTRING_LBRACE (tokinfo lexbuf) 
+    FSTRING_LBRACE (tokinfo lexbuf)
    }
- | ([^ '\\' '\r' '\n' '\'' '{'] | escapeseq)* 
+ | ([^ '\\' '\r' '\n' '\'' '{'] | escapeseq)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
@@ -542,12 +542,12 @@ and fstring_single state = parse
 and fstring_double state = parse
  | '"' { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
- | '{' { 
+ | '{' {
     ignore_nl state;
     push_mode state STATE_UNDERSCORE_TOKEN;
-    FSTRING_LBRACE (tokinfo lexbuf) 
+    FSTRING_LBRACE (tokinfo lexbuf)
    }
- | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)* 
+ | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
@@ -569,13 +569,13 @@ and fstring_triple_single state = parse
 and fstring_triple_double state = parse
  | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
- | '{' { 
+ | '{' {
     ignore_nl state;
     push_mode state STATE_UNDERSCORE_TOKEN;
-    FSTRING_LBRACE (tokinfo lexbuf) 
+    FSTRING_LBRACE (tokinfo lexbuf)
    }
  | '"' { FSTRING_STRING (tok lexbuf, tokinfo lexbuf) }
- | ([^ '\\' '{' '"'] | escapeseq)* 
+ | ([^ '\\' '{' '"'] | escapeseq)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}

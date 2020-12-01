@@ -71,7 +71,7 @@ and vof_attr =
       let v1 = OCaml.vof_string v1 in OCaml.VSum ("AttrSuffix", [ v1 ])
   | AttrSubstring v1 ->
       let v1 = OCaml.vof_string v1 in OCaml.VSum ("AttrSubstring", [ v1 ])
-  
+
 let rec vof_declaration (v1, v2, v3) =
   let v1 = vof_property v1
   and v2 = vof_expression v2
@@ -121,11 +121,11 @@ and vof_quantity (v1, v2) =
   and v2 = OCaml.vof_option OCaml.vof_string v2
   in OCaml.VTuple [ v1; v2 ]
 and vof_variable v = OCaml.vof_string v
-  
+
 let vof_rule (v1, v2) =
   let v1 = OCaml.vof_list vof_selector v1
   and v2 = OCaml.vof_list vof_declaration v2
   in OCaml.VTuple [ v1; v2 ]
-  
+
 let vof_stylesheet v = OCaml.vof_list vof_rule v
-  
+

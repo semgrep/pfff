@@ -267,7 +267,7 @@ rule initial = parse
   | "\x0b" (* vertical tab *) | "\x0c" (* form feed *)
   (* unicode space characters.
    * Note that OCaml supports now unicode characters as \u{00a0} in strings
-   * but this does not seem to work in ocamllex, hence the hardcoding of 
+   * but this does not seem to work in ocamllex, hence the hardcoding of
    * the actual UTF8 bytes below (use scripts/unicode.ml and hexl-mode in
    * Emacs to get those byte values).
    * The right solution would be to switch to a unicode-aware lexer generator,
@@ -276,7 +276,7 @@ rule initial = parse
    * update: with Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
    * the hack below is redundant.
    *)
-  | "\xc2\xa0" (* non-breaking-space \u{00A0} *) 
+  | "\xc2\xa0" (* non-breaking-space \u{00A0} *)
   | "\xef\xbb\xbf" (* byte-order-mark \u{FEFF} *)
     { TCommentSpace(tokinfo lexbuf) }
 
@@ -357,8 +357,8 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  (* sgrep-ext: no need for extension actually. A Javascript identifier 
-   * can have a leading '$', which means sgrep for JS will have some 
+  (* sgrep-ext: no need for extension actually. A Javascript identifier
+   * can have a leading '$', which means sgrep for JS will have some
    * limitations.
    *)
   | ['a'-'z''A'-'Z' '$' '_']['a'-'z''A'-'Z''$''_''0'-'9']* {
@@ -525,7 +525,7 @@ rule initial = parse
 
    (* support short fragment syntax of react.
     * see https://reactjs.org/docs/fragments.html#short-syntax
-    * mostly copy paste from above 
+    * mostly copy paste from above
     *)
    | "<>" {
     match !_last_non_whitespace_like_token with
@@ -714,7 +714,7 @@ and st_in_xhp_tag current_tag = parse
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
   | "="     { T_ASSIGN(tokinfo lexbuf) }
   (* sgrep-ext: *)
-  | "$" XHPATTR { 
+  | "$" XHPATTR {
       if !Flag.sgrep_mode
       then  T_XHP_ATTR(tok lexbuf, tokinfo lexbuf)
       else begin
@@ -722,7 +722,7 @@ and st_in_xhp_tag current_tag = parse
         TUnknown (tokinfo lexbuf)
       end
     }
-  | "..." { 
+  | "..." {
       if !Flag.sgrep_mode
       then T_DOTS(tokinfo lexbuf)
       else begin

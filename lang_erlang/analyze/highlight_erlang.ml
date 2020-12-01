@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -44,7 +44,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let visit_program
     ~tag_hook
-    _prefs 
+    _prefs
     (*db_opt *)
     (_program, toks)
   =
@@ -58,12 +58,12 @@ let visit_program
   in
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
     (* a little bit pad specific *)
@@ -120,7 +120,7 @@ let visit_program
     |   T.TIdent (s1, ii1)::T.TDot ii2
       ::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then begin 
+        then begin
           tag ii3 (Method (Use2 fake_no_use2));
           (*
           if not (Hashtbl.mem already_tagged ii1)
@@ -133,7 +133,7 @@ let visit_program
     |   T.TIdent (s1, ii1)::T.TDot ii2
       ::T.TIdent (s3, ii3)::T.TEq ii4::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then begin 
+        then begin
           tag ii3 (Field (Use2 fake_no_use2));
           if is_module_name s1 then tag ii1 (Module (Use))
         end;
@@ -143,11 +143,11 @@ let visit_program
     |  T.TIdent (s1, ii1)::T.TDot ii2
      ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
-        then begin 
+        then begin
           if is_module_name s1 then tag ii1 (Module Use)
         end;
         aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
-*)        
+*)
 
     | _x::xs ->
         aux_toks xs
@@ -162,7 +162,7 @@ let visit_program
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     (* comments *)
@@ -176,7 +176,7 @@ let visit_program
     | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
     | T.TUnknown ii -> tag ii Error
     | T.EOF _ii -> ()
- 
+
     (* values  *)
     | T.TString (_s,ii) ->
         tag ii String
@@ -199,7 +199,7 @@ let visit_program
 
     | T.Tfun ii
     | T.Tlet ii
-    | T.Tof ii 
+    | T.Tof ii
         -> tag ii Keyword
 
     | T.Tend ii |T.Tbegin ii  ->
@@ -244,7 +244,7 @@ let visit_program
         -> tag ii Punctuation
 
     | T.TDec ii | T.TInc ii
-    | T.TBang ii 
+    | T.TBang ii
         -> tag ii Operator
 
     (* todo? put in pink/bad-smell ? *)
@@ -256,11 +256,11 @@ let visit_program
     | T.TSemiColon ii
         -> tag ii Punctuation
 
-    | T.Tbnot ii | T.Tnot ii 
-    | T.Tband ii  | T.Tand ii 
-    | T.Tbsr ii  | T.Tbsl ii | T.Tbxor ii | T.Tbor ii 
-    | T.Txor ii | T.Tor ii 
-    | T.Trem ii | T.Tdiv ii 
+    | T.Tbnot ii | T.Tnot ii
+    | T.Tband ii  | T.Tand ii
+    | T.Tbsr ii  | T.Tbsl ii | T.Tbxor ii | T.Tbor ii
+    | T.Txor ii | T.Tor ii
+    | T.Trem ii | T.Tdiv ii
         -> tag ii Operator
 
     | T.TUnderscore ii
@@ -270,7 +270,7 @@ let visit_program
         -> tag ii Punctuation
 
 
-    | T.TIdent (_s, _ii) -> 
+    | T.TIdent (_s, _ii) ->
         ()
     | T.TVariable (_s, ii) ->
         if not (Hashtbl.mem already_tagged ii)
@@ -279,6 +279,6 @@ let visit_program
 
   );
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
 
   ()

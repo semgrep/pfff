@@ -14,6 +14,6 @@ let test_parse_org file =
 (*****************************************************************************)
 
 let actions () = [
-  "-parse_org", "   <file>", 
+  "-parse_org", "   <file>",
   Common.mk_action_1_arg test_parse_org;
 ]

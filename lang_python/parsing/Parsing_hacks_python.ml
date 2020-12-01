@@ -21,7 +21,7 @@ module T = Parser_python
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* The goal for this module is to add extra "closing" tokens 
+(* The goal for this module is to add extra "closing" tokens
  * for the grammar to remain simple. The closing tokens
  * are usually one NEWLINE and a few DEDENTs.
  *
@@ -31,7 +31,7 @@ module T = Parser_python
  *        bar()
  *
  * is tokenized as (skipping the TCommentSpace):
- *  [class; A; :; NEWLINE; INDENT; 
+ *  [class; A; :; NEWLINE; INDENT;
  *   def; f; (; ); :; NEWLINE; IDENT;
  *   bar; (; ); NEWLINE; #1
  *   DEDENT; DEDENT; #2
@@ -42,7 +42,7 @@ module T = Parser_python
  * cause parsing errors. This is why for those files we must
  * insert the NEWLINE at #1, and matching DEDENT at #2.
  *
- * alt: 
+ * alt:
  *  - could insert those closing tokens during error recovery
  *  - could look at state.offset_stack when encounters EOF in the lexer
  *    and also pop and create the DEDENT.
@@ -54,16 +54,16 @@ module T = Parser_python
 
 (*s: function [[Parsing_hacks_python.add_dedent_aux]] *)
 let rec add_dedent_aux num ii xs =
-  if num <= 0 
-  then xs 
+  if num <= 0
+  then xs
   else T.DEDENT ii::add_dedent_aux (num - 1) ii xs
 (*e: function [[Parsing_hacks_python.add_dedent_aux]] *)
 
 (*s: function [[Parsing_hacks_python.add_dedent]] *)
 let add_dedent num ii xs =
-  if num <= 0 
-  then xs 
-  (* this closes the small_stmt from the stmt_list in suite (see grammar) 
+  if num <= 0
+  then xs
+  (* this closes the small_stmt from the stmt_list in suite (see grammar)
    * which then can be reduced by the series of DEDENT created by
    * add_dedent_aux.
    *)
@@ -80,11 +80,11 @@ let fix_tokens toks =
     | [T.NEWLINE ii; T.EOF _] -> add_dedent indent ii xs
     | [T.EOF ii] -> add_dedent indent ii [T.NEWLINE ii; T.EOF ii]
     | [] -> raise Common.Impossible
-    | x::xs -> 
+    | x::xs ->
         let new_indent =
           match x with
           | T.INDENT _ -> indent + 1
-          | T.DEDENT _ -> indent - 1 
+          | T.DEDENT _ -> indent - 1
           | _ -> indent
         in
         x::aux new_indent xs

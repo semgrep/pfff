@@ -1,4 +1,4 @@
-(* todo: 
+(* todo:
  *  invariant succesors/predecessors
  *)
 
@@ -21,6 +21,6 @@ object(o: 'o)
   method virtual children: 'a Oset.oset -> 'a Oset.oset
   method virtual brothers: 'a -> 'a Oset.oset
 
-  method mydebug: ('a * 'a list) list = 
+  method mydebug: ('a * 'a list) list =
     (o#nodes)#tolist |> List.map (fun a -> (a, (o#successors a)#tolist))
 end

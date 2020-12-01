@@ -77,7 +77,7 @@ let add_arc_opt (starti_opt, nodei) g =
  * When there is a 'break', 'continue', or 'throw', we need to look up in the
  * stack of contexts whether there is an appropriate one. In the case
  * of 'break/continue', because some languages allow statements like
- * 'break 2;', we also need to know how many upper contexts we need to 
+ * 'break 2;', we also need to know how many upper contexts we need to
  * look for.
  *)
 let (lookup_some_ctx:
@@ -136,14 +136,14 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    | Block (_, stmts, _) ->
        cfg_stmt_list state previ stmts
 
-   | For _ 
+   | For _
    | While _ ->
      (* previ -> newi ---> newfakethen -> ... -> finalthen -
       *             |---|-----------------------------------|
-      *                 |-> newfakelse 
+      *                 |-> newfakelse
       *)
-       let node, stmt = 
-         (match stmt with 
+       let node, stmt =
+         (match stmt with
          | While (_, e, stmt) ->
              F.WhileHeader e, stmt
          | For (_, forheader, stmt) ->
@@ -322,7 +322,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        state.g |> add_arc (newi, newfakeelse);
 
        let finalthen = cfg_stmt state (Some newfakethen) st_then in
-       let finalelse = 
+       let finalelse =
           match st_else with
           | None -> None
           | Some st -> cfg_stmt state (Some newfakeelse) st
@@ -416,7 +416,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
             * todo? except if the cases cover the full spectrum ?
             *)
            if (not (cases_and_body |> List.exists (fun (cases, _body) ->
-                  cases |> List.exists (function 
+                  cases |> List.exists (function
                     | Ast.Default _ -> true | _ -> false))))
            then begin
              state.g |> add_arc (newi, endi);
@@ -594,13 +594,13 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
     * a definition and an assign.
     *)
    | DefStmt (ent, VarDef def) ->
-     cfg_simple_node state previ 
+     cfg_simple_node state previ
        (exprstmt (Ast.vardef_to_assign (ent, def)))
 
    (* just to factorize code, a nested func is really like a lambda *)
    | DefStmt (ent, FuncDef def) ->
      let resolved = Some (Local, Ast.sid_TODO) in
-     cfg_simple_node state previ 
+     cfg_simple_node state previ
        (exprstmt (Ast.funcdef_to_lambda (ent, def) resolved))
 
   (* TODO: we should process lambdas! and generate an arc to its
@@ -608,7 +608,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    * callbacks and they sure can be called just after they have been
    * defined. It would be better to exactly determine when, but as a first
    * approximation we can at least create an arc! This could find
-   * tainting-related bugs that occur inside a single function, even 
+   * tainting-related bugs that occur inside a single function, even
    * if the source is in the function and the sink in the callback!
    * (see daghan example in js-permissions slides on xhr.open).
    * Note that DefStmt are not the only form of lambdas ... you can have
@@ -617,7 +617,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    | DefStmt _
 
    | ExprStmt _
-   | Assert _ 
+   | Assert _
    | DirectiveStmt _
    | OtherStmt _
        -> cfg_simple_node state previ stmt
@@ -657,7 +657,7 @@ and (cfg_cases:
 
    cases |> List.fold_left (fun previ case_and_body ->
       let (cases, stmt) = case_and_body in
-      let node =     
+      let node =
        (* TODO: attach expressions there!!! *)
        match cases with
        | [Default _] -> F.Default
@@ -723,7 +723,7 @@ and (cfg_catches: state -> F.nodei -> F.nodei -> Ast.catch list -> F.nodei) =
 and cfg_simple_node state previ stmt =
   let i = info_opt (S stmt) in
 
-  let simple_node = 
+  let simple_node =
     match F.simple_node_of_stmt_opt stmt with
     | Some x -> x
     | None -> raise Impossible (* see caller of cfg_simple_node *)
@@ -750,7 +750,7 @@ let (control_flow_graph_of_stmts: parameter list -> stmt list -> F.flow) =
     let parami = g#add_node { F.n = node_kind; i=i } in
     g |> add_arc (previ, parami);
     parami
-    ) enteri 
+    ) enteri
   in
 
   let state = {

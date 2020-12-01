@@ -40,7 +40,7 @@ type lhs_or_rhs =
 (* Helpers *)
 (*****************************************************************************)
 
-let error_todo any = 
+let error_todo any =
   let s = AST_generic.show_any any in
   pr2 s;
   failwith ("Dataflow_visitor:error_todo ")
@@ -52,12 +52,12 @@ let unbracket (_, x, _) = x
 (*****************************************************************************)
 
 (* Recursively visit the expression.
- * alt: 
+ * alt:
  *  - use a visitor? and then do things differently only when inside an
  *    Assign?
  *)
 let rec visit_expr hook lhs expr =
-      
+
   (* recurse lvalue (used for known left hand value, e.g. in left assign *)
   let reclvl = visit_expr hook Lhs in
   (* recurse left (possible lvalue) *)
@@ -66,12 +66,12 @@ let rec visit_expr hook lhs expr =
   let recr = visit_expr hook Rhs in
 
   let anyhook hook lhs any =
-    let v = V.mk_visitor { V.default_visitor with 
-      V.kexpr = (fun (_k, _anyf) e -> 
+    let v = V.mk_visitor { V.default_visitor with
+      V.kexpr = (fun (_k, _anyf) e ->
         visit_expr hook lhs e
         (* do not call k here! *)
       )
-     (* todo? should no go through FuncDef? intercept kdef? 
+     (* todo? should no go through FuncDef? intercept kdef?
       * TODO: should also consider PatVar?
       *  with PatVar we will miss some lvalue, but it will just lead
       *  to some FNs for liveness, not FPs.
@@ -115,14 +115,14 @@ let rec visit_expr hook lhs expr =
     | Array | List -> xs |> unbracket |> List.iter recl
     (* never used on lhs *)
     | Set | Dict -> xs |> unbracket |> List.iter recr
-    )   
+    )
 
   (* composite lvalues that are actually not themselves lvalues *)
 
   | DotAccess(e, _, _id) ->
     (* bugfix: this is not recl here! in 'x.fld = 2', x itself is not
      * an lvalue; 'x.fld' is *)
-    recr e 
+    recr e
   | ArrayAccess(e, (_, e1, _)) ->
     recr e1;
     recr e;
@@ -131,7 +131,7 @@ let rec visit_expr hook lhs expr =
       recr e
 
   | DeRef (_, e) -> recr e
-  | Ref (_, e) -> recr e 
+  | Ref (_, e) -> recr e
 
   (* otherwise regular recurse (could use a visitor) *)
 
@@ -139,7 +139,7 @@ let rec visit_expr hook lhs expr =
 
   | IdSpecial _ -> ()
   (* todo: Special cases for function that are known to take implicit
-   * lvalue, e.g., sscanf? 
+   * lvalue, e.g., sscanf?
    *)
 
   (* todo? some languages allow function return value to be an lvalue? *)
@@ -164,12 +164,12 @@ let rec visit_expr hook lhs expr =
   (* TODO: we should also process the lambda and check for useless
    * assignements in it
    *)
-  | Lambda def -> 
+  | Lambda def ->
     (* Is it enough to just call anyhook and return everything as in:
      *
      *    anyhook hook Rhs (S def.fbody)
      *
-     * No, because the body may introduce some assigns to its parameter 
+     * No, because the body may introduce some assigns to its parameter
      * or its own locals, and then those locals will be returned as lvalues,
      * which will then lead to some useless_assign because the
      * enclosing functions will probably not use the same local var.
@@ -189,13 +189,13 @@ let rec visit_expr hook lhs expr =
   | Yield (_, e, _is_yield_from) -> Common.do_option recr e
   | Await (_, e) -> recr e
 
-  | Record xs -> 
+  | Record xs ->
      xs |> unbracket |> List.iter (fun field ->
        anyhook hook Rhs (Fld field)
      )
 
   | Constructor (_name, es) -> List.iter recr es
-  | Xml _ -> 
+  | Xml _ ->
       error_todo (E expr)
 
   | LetPattern (pat, e) ->
@@ -205,7 +205,7 @@ let rec visit_expr hook lhs expr =
      -> error_todo (E expr)
 
   | Seq xs -> List.iter recr xs
- 
+
   (* we should not be called on a sgrep pattern *)
   | TypedMetavar (_id, _, _t) -> raise Impossible
   | DisjExpr _ -> raise Impossible
@@ -218,7 +218,7 @@ let rec visit_expr hook lhs expr =
 (*****************************************************************************)
 (* Entry points *)
 (*****************************************************************************)
-let lvalues_of_expr expr = 
+let lvalues_of_expr expr =
   let context = Rhs in
   let acc = ref [] in
   visit_expr (fun lhs name idinfo ->

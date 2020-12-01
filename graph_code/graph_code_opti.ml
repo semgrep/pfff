@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -24,7 +24,7 @@ module G = Graph_code
  * Graph_code uses the 'node' type for keys into different hashtbl (see
  * commons/graph.ml). This is convenient when building such a graph
  * in the different graph_code_xxx.ml files. But it also leads to
- * many hashtbl operations when working on a Graph_code. 
+ * many hashtbl operations when working on a Graph_code.
  * This module introduces a new 'graph' type optimized to use arrays
  * instead of hashtbl. Then certain operations like getting the list
  * of children (Has) or list of dependent (Use) is very fast.
@@ -54,7 +54,7 @@ let hashtbl_find h n =
 (*****************************************************************************)
 (* API *)
 (*****************************************************************************)
-let nb_nodes g = 
+let nb_nodes g =
   Array.length g.i_to_name
 
 (*****************************************************************************)
@@ -95,7 +95,7 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
   );
   h
 
-let convert a = 
+let convert a =
   Common.profile_code "Graph_code_opti.convert" (fun () -> convert2 a)
 
 (*****************************************************************************)
@@ -103,7 +103,7 @@ let convert a =
 (*****************************************************************************)
 
 let children n g =
-  g.has_children.(hashtbl_find g.name_to_i n) 
+  g.has_children.(hashtbl_find g.name_to_i n)
   |> List.map (fun i ->
       g.i_to_name.(i)
   )
@@ -113,7 +113,7 @@ let all_children n g =
 
   let rec aux i =
     let xs = g.has_children.(i) in
-    if null xs 
+    if null xs
     then [i]
     else i::(xs |> List.map (fun i -> aux i) |> List.flatten)
   in
@@ -128,7 +128,7 @@ let has_node n g =
 (*****************************************************************************)
 
 
-(* put polluting entries under an intermediate "parent/..." entry 
+(* put polluting entries under an intermediate "parent/..." entry
  * less: use extensible array so faster?
  *)
 let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
@@ -139,7 +139,7 @@ let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
 
   let new_idx = Array.length g.i_to_name in
   let to_pack_idx = to_pack |> List.map (fun n -> hashtbl_find g.name_to_i n)in
-  let new_g = { 
+  let new_g = {
     name_to_i = Hashtbl.copy g.name_to_i;
     i_to_name = Array.append g.i_to_name [|new_node|];
     has_children = Array.append g.has_children [|to_pack_idx|];

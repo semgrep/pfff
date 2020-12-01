@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -37,7 +37,7 @@ type visitor_in = {
 and visitor_out = any -> unit
 
 
-let default_visitor = { 
+let default_visitor = {
   kinfo   = (fun (k,_) x -> k x);
 }
 
@@ -48,12 +48,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 let rec v_info x =
   let k x = match x with { Parse_info.
-     token = _v_pinfox; transfo = _v_transfo 
+     token = _v_pinfox; transfo = _v_transfo
     } ->
 (*
     let _arg = Parse_info.v_pinfo v_pinfox in
-    let _arg = OCaml.v_unit v_comments in 
-    let _arg = Parse_info.v_transformation v_transfo in 
+    let _arg = OCaml.v_unit v_comments in
+    let _arg = Parse_info.v_transformation v_transfo in
 *)
     ()
   in

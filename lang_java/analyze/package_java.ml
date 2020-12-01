@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,8 +21,8 @@ module E = Entity_code
 (* Prelude *)
 (*****************************************************************************)
 
-let (lookup_fully_qualified2: 
-  Graph_code.graph -> string list -> Graph_code.node option) = 
+let (lookup_fully_qualified2:
+  Graph_code.graph -> string list -> Graph_code.node option) =
  fun g xs ->
   let rec aux current xs =
     match xs with
@@ -43,10 +43,10 @@ let (lookup_fully_qualified2:
         in
         (* sanity check, quite expansive according to -profile *)
         Common.group_assoc_bykey_eff children |> List.iter (fun (k, xs) ->
-          if List.length xs > 1 
+          if List.length xs > 1
              (* issue warnings lazily, only when the ambiguity concerns
-              * something we are actually looking for 
-              *) 
+              * something we are actually looking for
+              *)
              && k =$= x
           then begin
             (* todo: this will be a problem when go from class-level
@@ -56,13 +56,13 @@ let (lookup_fully_qualified2:
             pr2_gen (k, xs);
           end
         );
-        
+
         let str =
           match current with
           | ".", E.Dir -> x
           | s, _ -> s ^ "." ^ x
         in
-        let new_current = 
+        let new_current =
           children |> Common.find_some_opt (fun (s2, kind) ->
             if str =$= s2
             then Some (s2, kind)

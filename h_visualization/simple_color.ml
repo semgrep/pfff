@@ -6,14 +6,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 
-open Common 
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -81,7 +81,7 @@ let rainbow_array = [|
 
   |]
 
-let rainbow_color i = 
+let rainbow_color i =
   rainbow_array.(i)
 
 
@@ -94,7 +94,7 @@ let rainbow_color i =
 let rgb r g b = (r lsl 16) + (g lsl 8) + b
 
 (* a Graphics.color is a [0xRRGGBB] *)
-let unrgb rgb = 
+let unrgb rgb =
   let b = (rgb land 0xFF) in
   let g = (rgb land 0xFF00) lsr 8 in
   let r = (rgb land 0xFF0000) lsr 16 in
@@ -109,18 +109,18 @@ let _ = Common.example (unrgb blue = (0, 0, 255))
 let rgb_of_color c =
   unrgb c
 
-let rgb_of_rgbf (r,g,b) = 
+let rgb_of_rgbf (r,g,b) =
   let conv x = int_of_float (floor (x *. 255.0)) in
   (conv r, conv g, conv b)
 
-let rgbf_of_rgb (r,g,b) = 
+let rgbf_of_rgb (r,g,b) =
   let conv x = (float_of_int x /. 255.0) in
   (conv r, conv g, conv b)
 
-let color_of_rgb (r,g,b) = 
+let color_of_rgb (r,g,b) =
   rgb r g b
 
-let color_of_rgbf rgbf = 
+let color_of_rgbf rgbf =
   let rgb = rgb_of_rgbf rgbf in
   color_of_rgb rgb
 
@@ -128,13 +128,13 @@ let color_of_rgbf rgbf =
 (*
  * generated from this emacs code:
  (with-output-to-temp-buffer "res"
-   (mapcar 
+   (mapcar
     '(lambda (c)
        (let* ((rgb (color-values c))
               (rgb2 (mapcar '(lambda (code) (/ code 65535.0)) rgb))
               )
-         (insert 
-          (format "\"%s\", (%f, %f, %f);\n" c 
+         (insert
+          (format "\"%s\", (%f, %f, %f);\n" c
                   (nth 0 rgb2)
                   (nth 1 rgb2)
                   (nth 2 rgb2)
@@ -144,8 +144,8 @@ let color_of_rgbf rgbf =
        )
     (defined-colors))
    )
- * 
- * 
+ *
+ *
  *)
 
 let emacs_basic_colors = [
@@ -909,7 +909,7 @@ let emacs_gray_colors = [
 "LightGreen", (0.564706, 0.933333, 0.564706);
 ]
 
-let emacs_colors = 
+let emacs_colors =
   (emacs_basic_colors @ emacs_degrade_colors @ emacs_gray_colors)
    |> List.map (fun (s, a) -> String.lowercase_ascii s, a)
 
@@ -918,37 +918,37 @@ let random_emacs_color xs =
   let n = Random.int len in
   List.nth xs n |> fst
 
-let rgbf_of_string s = 
+let rgbf_of_string s =
   try
     List.assoc (String.lowercase_ascii s) emacs_colors
   with
   Not_found -> failwith ("color name not found: " ^ s)
 
-let rgb_of_string s = 
+let rgb_of_string s =
   s |> rgbf_of_string |> rgb_of_rgbf
 
 
-let color_of_string s = 
+let color_of_string s =
   s |> rgbf_of_string |> rgb_of_rgbf |> color_of_rgb
 
 let c x = color_of_string x
 
 
 
-let string_of_color color = 
+let string_of_color color =
   let rgb = rgb_of_color color in
   let rgbf = rgbf_of_rgb rgb in
 
   (* find closest color *)
-  let dist (a1,b1,c1) (a2,b2,c2) = 
-    abs_float (a1 -. a2) +. 
-    abs_float (b1 -. b2) +. 
-    abs_float (c1 -. c2) +. 
+  let dist (a1,b1,c1) (a2,b2,c2) =
+    abs_float (a1 -. a2) +.
+    abs_float (b1 -. b2) +.
+    abs_float (c1 -. c2) +.
     0.0
   in
-  let dists = emacs_colors |> List.map (fun (s, rgbf2) -> 
+  let dists = emacs_colors |> List.map (fun (s, rgbf2) ->
     (s, dist rgbf rgbf2)
-  ) 
+  )
   in
   Common.sort_by_val_lowfirst dists |> List.hd |> fst
 
@@ -961,7 +961,7 @@ let string_of_color color =
 (* Misc *)
 (*****************************************************************************)
 
-type degrade = 
+type degrade =
   | Degrade1
   | Degrade2
   | Degrade3
@@ -974,7 +974,7 @@ let mk_degrade i =
   | 3 -> Degrade3
   | 4 -> Degrade4
   | _ -> failwith "mk_degrade: the level must be between 1 and 4"
-let i_of_degrade x = 
+let i_of_degrade x =
   match x with
   | Degrade1 -> 1
   | Degrade2 -> 2
@@ -985,7 +985,7 @@ let i_of_degrade x =
  * Because grey100 is actually white and grey0 black, we need
  * the 100 - xxx  below.
 *)
-let degrade_grey percent = 
+let degrade_grey percent =
   assert (percent <= 100.0);
   let i = 100 - (int_of_float percent) in
   c ("grey" ^ (i_to_s i))
@@ -995,17 +995,17 @@ let degrade str lvl =
   (* assert exist color ? *)
   let i = i_of_degrade lvl in
   color_of_string (str ^ (i_to_s i))
-  
+
 
 let degrade_random str =
   let i = Random.int 4 + 1 in
   degrade str (mk_degrade i)
-  
+
 
 
 
 (* does not work very well ... *)
-let _degrade_random_bis color = 
+let _degrade_random_bis color =
   let (r,g,b) = unrgb color in
   let around = 2 in
   let middle = around / 2 in
@@ -1017,7 +1017,7 @@ let _degrade_random_bis color =
 *)
   rgb r g b
 
-let rgbf_of_color c = 
+let rgbf_of_color c =
   c |> rgb_of_color |> rgbf_of_rgb
 
 

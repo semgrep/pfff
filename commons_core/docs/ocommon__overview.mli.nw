@@ -49,4 +49,4 @@ object('o)
   method misc_op_hook2: unit
 end
 
-@ 
+@

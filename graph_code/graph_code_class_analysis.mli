@@ -3,7 +3,7 @@
  * multiple inheritance.
  * The direction of the graph is efficient to get the children
  * of a class: Parent -> Children.
- * 
+ *
  *)
 type class_hierarchy = Graph_code.node Graphe.graph
 
@@ -12,8 +12,8 @@ val class_hierarchy: Graph_code.graph -> class_hierarchy
 (* Return the toplevel methods for each method name in the graph.
  * The returned hashtbl uses the Hashtbl.find_all property.
  *)
-val toplevel_methods: 
-  Graph_code.graph -> class_hierarchy -> 
+val toplevel_methods:
+  Graph_code.graph -> class_hierarchy ->
   (string, Graph_code.node(*list*)) Hashtbl.t
 
 (* Return the possible dispatched methods. *)

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -52,13 +52,13 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     Hashtbl.replace already_tagged ii true
   )
   in
-  let tag_ident (id: Ast_java.ident) categ = 
+  let tag_ident (id: Ast_java.ident) categ =
     let (_s, ii) = id in
     tag ii categ
   in
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
   (* tagging the idents of the AST *)
   let visitor = V.mk_visitor { V.default_visitor with
 
@@ -78,7 +78,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
           x.m_formals |> List.iter (function
             | Ast.ParamEllipsis _  -> ()
-            | Ast.ParamClassic v 
+            | Ast.ParamClassic v
             | Ast.ParamReceiver v | Ast.ParamSpread (_, v) ->
             let ident = v.name in
             tag_ident ident (Parameter Def)
@@ -110,7 +110,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           tag_ident ident (HC.Entity (Method, (Use2 fake_no_use2)));
           k e;
           List.iter k args
-        
+
       | Dot (e, _t, ident) ->
           tag_ident ident (Entity (Field, (Use2 fake_no_use2)));
           k e
@@ -122,10 +122,10 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
       (match e with
       (* done on PRIMITIVE_TYPE below *)
       | TBasic (_s, _ii) -> ()
-      | TClass xs -> 
+      | TClass xs ->
           (match List.rev xs with
           | [] -> raise Impossible
-          | (id, _targs)::xs -> 
+          | (id, _targs)::xs ->
             tag_ident id (Entity (Type, (Use2 fake_no_use2)));
             xs |> List.iter (fun (id, _targs) ->
               tag_ident id (Entity (Module, (Use2 fake_no_use2)))
@@ -141,7 +141,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
     (* a little bit pad specific *)
@@ -188,7 +188,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     (* comments *)
@@ -231,10 +231,10 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     (* keywords  *)
     | T.VOID ii -> tag ii TypeVoid
-       
+
     | T.CLASS ii  | T.ABSTRACT ii | T.INTERFACE ii
     | T.PRIVATE ii | T.PROTECTED ii | T.PUBLIC ii
-    | T.THIS ii | T.SUPER ii | T.NEW ii 
+    | T.THIS ii | T.SUPER ii | T.NEW ii
     | T.INSTANCEOF ii
     | T.EXTENDS ii  | T.FINAL ii | T.IMPLEMENTS ii
           -> tag ii KeywordObject
@@ -247,7 +247,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.CATCH ii  | T.FINALLY ii
           -> tag ii KeywordExn
 
-    | T.IF ii | T.ELSE ii 
+    | T.IF ii | T.ELSE ii
           -> tag ii KeywordConditional
 
     | T.FOR ii | T.DO ii | T.WHILE ii
@@ -300,10 +300,10 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.CM ii
     | T.DOT ii
 
-    | T.EQ ii  
+    | T.EQ ii
 
     | T.LT ii | T.LT_GENERIC ii
-    | T.GT ii 
+    | T.GT ii
 
     | T.NOT ii  | T.COMPL ii
 

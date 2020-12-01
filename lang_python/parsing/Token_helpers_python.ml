@@ -8,7 +8,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -28,7 +28,7 @@ let is_eof = function
 (*s: function [[Token_helpers_python.is_comment]] *)
 let is_comment = function
   | TComment _ | TCommentSpace _ -> true
-  | _ -> false 
+  | _ -> false
 (*e: function [[Token_helpers_python.is_comment]] *)
 
 (*****************************************************************************)
@@ -151,7 +151,7 @@ let visitor_info_of_tok f = function
 (*e: function [[Token_helpers_python.visitor_info_of_tok]] *)
 
 (*s: function [[Token_helpers_python.info_of_tok]] *)
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -35,7 +35,7 @@ type fact =
 
   | Type of entity * string (* could be more structured ... *)
 
-  | Extends of string * string 
+  | Extends of string * string
   | Implements of string * string
   | Mixins of string * string
 
@@ -45,20 +45,20 @@ type fact =
   | Call of entity * entity
   | UseData of entity * entity * bool option (* read/write *)
   (* indirect uses of entities, e.g. xxx.f = &foo; *)
-  | Special of entity (* enclosing *) * 
-               entity (* ctx entity, e.g. function/field/global *) * 
-               entity (* the value *) * 
+  | Special of entity (* enclosing *) *
+               entity (* ctx entity, e.g. function/field/global *) *
+               entity (* the value *) *
                string (* field/function *)
 
   | Misc of string
 
-  (* todo? could use a record with 
-   *  namespace: string list; 
+  (* todo? could use a record with
+   *  namespace: string list;
    *  enclosing: string option;
    *  name: string
    *)
-  and entity = 
-   string list (* package/module/namespace/class/struct/type qualifier*) * 
+  and entity =
+   string list (* package/module/namespace/class/struct/type qualifier*) *
    string (* name *)
 
 
@@ -79,9 +79,9 @@ let escape_quote_and_double_quote s = escape "'\"" s
 let string_of_entity (xs, x) =
   match xs with
   | [] -> spf "'%s'" (escape_quote_and_double_quote x)
-  | xs -> spf "('%s', '%s')" (Common.join "." xs) 
+  | xs -> spf "('%s', '%s')" (Common.join "." xs)
     (escape_quote_and_double_quote x)
-  
+
 (* Quite similar to database_code.string_of_id_kind, but with lowercase
  * because of prolog atom convention. See also prolog_code.pl comment
  * about kind/2.
@@ -113,15 +113,15 @@ let string_of_entity_kind = function
       raise Impossible
 
 let string_of_fact fact =
-  let s = 
+  let s =
     match fact with
     | Kind (entity, kind) ->
-        spf "kind(%s, %s)" (string_of_entity entity) 
+        spf "kind(%s, %s)" (string_of_entity entity)
           (string_of_entity_kind kind)
     | At (entity, file, line) ->
         spf "at(%s, '%s', %d)" (string_of_entity entity) file line
     | Type (entity, str) ->
-        spf "type(%s, '%s')" (string_of_entity entity) 
+        spf "type(%s, '%s')" (string_of_entity entity)
           (escape_quote_and_double_quote str)
 
     | Extends (s1, s2) ->
@@ -132,7 +132,7 @@ let string_of_fact fact =
         spf "implements('%s', '%s')" s1 s2
 
     | Privacy (entity, p) ->
-      let predicate = 
+      let predicate =
         match p with
         | E.Public -> "is_public"
         | E.Private -> "is_private"
@@ -142,10 +142,10 @@ let string_of_fact fact =
 
     (* less: depending on kind of e1 we could have 'method' or 'constructor'*)
     | Call (e1, e2) ->
-        spf "docall(%s, %s)" 
+        spf "docall(%s, %s)"
           (string_of_entity e1) (string_of_entity e2)
     | UseData (e1, e2, b) ->
-        spf "use(%s, %s, %s)" 
+        spf "use(%s, %s, %s)"
           (string_of_entity e1) (string_of_entity e2)
           (match b with
           | None -> "na"
@@ -154,7 +154,7 @@ let string_of_fact fact =
           )
     | Special (e1, e2, e3, str) ->
         spf "special(%s, %s, %s, '%s')"
-          (string_of_entity e1) 
+          (string_of_entity e1)
           (string_of_entity e2)
           (string_of_entity e3)
           str

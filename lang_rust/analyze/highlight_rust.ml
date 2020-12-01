@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -45,7 +45,7 @@ let lexer_based_tagger = true
 
 let visit_program
     ~tag_hook
-    _prefs 
+    _prefs
     (*db_opt *)
     (_ast, toks)
   =
@@ -57,12 +57,12 @@ let visit_program
   in
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
     (* a little bit pad specific *)
@@ -169,7 +169,7 @@ let visit_program
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     (* comments *)
@@ -252,7 +252,7 @@ let visit_program
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
 
-    | T.TOAngle ii | T.TCAngle ii 
+    | T.TOAngle ii | T.TCAngle ii
 
     | T.TArrow ii
     | T.TDot ii
@@ -273,9 +273,9 @@ let visit_program
     | T.TTilde ii
 
     | T.TAnd ii | T.TOr ii | T.TXor ii
-    | T.TAndAnd ii | T.TOrOr ii 
+    | T.TAndAnd ii | T.TOrOr ii
 
-    | T.TAssignOp (_, ii) 
+    | T.TAssignOp (_, ii)
 
     | T.TNotEq ii
     | T.TLessEq ii
@@ -285,12 +285,12 @@ let visit_program
 
     | T.TIdent (s, ii) ->
        if not (Hashtbl.mem already_tagged ii)
-       then 
+       then
         if s =~ "^[A-Z].*" && false (* some false positive with types *)
         then tag ii (Entity (Constructor,(Use2 fake_no_use2)))
         else ()
   );
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
 
   ()

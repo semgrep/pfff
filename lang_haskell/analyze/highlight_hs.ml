@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -37,18 +37,18 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
   )
   in
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
   (* -------------------------------------------------------------------- *)
-  (* 
+  (*
    * note: all TCommentSpace are filtered in xs so easier to write
    * rules (but regular comments are kept as well as newlines).
    *)
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
@@ -83,7 +83,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
     (* Poor's man semantic tagger. Infer if ident is a func, or variable,
      * based on the few tokens around and the column information.
      *)
-    | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs 
+    | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs
         when PI.col_of_info ii1 = 0 ->
 
         tag ii1 (Entity (Function, (Def2 NoUse)));
@@ -92,19 +92,19 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
     | (T.Ttype _ | T.Tdata _ | T.Tnewtype _)::T.TIdent (_s, ii1)::xs ->
         tag ii1 (Entity (Type, Def2 NoUse));
         aux_toks xs
-        
+
 
 
     (* a few false positives, for instance local typed variable
      * and method definitions in type class
      *)
-    | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs 
+    | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs
         when PI.col_of_info ii1 > 0 ->
 
         tag ii1 (Entity (Field, (Def2 NoUse)));
         aux_toks xs
 
-    | T.TIdent (_s, ii1)::xs 
+    | T.TIdent (_s, ii1)::xs
         when PI.col_of_info ii1 = 0 ->
 
         tag ii1 FunctionEquation;
@@ -114,7 +114,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
         tag ii1 UseOfRef;
         aux_toks xs
 
-(* too many false positives, for instance records building 
+(* too many false positives, for instance records building
     | T.TIdent (s, ii1)::T.TSymbol ("=", ii3)::xs  ->
         tag ii1 (Local Def);
         aux_toks xs
@@ -141,7 +141,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -152,10 +152,10 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
           then tag ii CommentSyncweb
           else tag ii Comment
 
-    | T.TCommentNewline _ii | T.TCommentSpace _ii 
+    | T.TCommentNewline _ii | T.TCommentSpace _ii
       -> ()
 
-    | T.TUnknown ii 
+    | T.TUnknown ii
       -> tag ii Error
     | T.EOF _ii
       -> ()
@@ -183,12 +183,12 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
 
     | T.TComma ii
     | T.TSemiColon ii
-    | T.TPipe ii 
+    | T.TPipe ii
         -> tag ii Punctuation
 
     | T.TSymbol (s, ii)
-        -> 
-        let kind = 
+        ->
+        let kind =
           match s with
           | "::" | "->" | "<-" | "=" ->
               Punctuation
@@ -221,21 +221,21 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
     | T.Tinfixl  ii -> tag ii Keyword
     | T.Tinfixr  ii -> tag ii Keyword
 
-    | T.Tqualified  ii 
-    | T.Tas  ii 
-    | T.Thiding  ii 
+    | T.Tqualified  ii
+    | T.Tas  ii
+    | T.Thiding  ii
       -> tag ii KeywordModule
 
 
     | T.TIdent (s, ii)
-        -> 
+        ->
         (match s with
         | "unsafePerformIO" -> tag ii BadSmell
         | _ -> ()
         )
 
     | T.TUpperIdent (_s, ii)
-        -> 
+        ->
         (* could be a type or a constructor *)
         tag ii TypeVoid
 
@@ -243,7 +243,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
   );
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
 
   ()
 

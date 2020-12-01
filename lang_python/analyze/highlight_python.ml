@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -62,24 +62,24 @@ let visit_program ~tag_hook _prefs (program, toks) =
     Hashtbl.replace already_tagged ii true
   )
   in
-  let tag_name (_s, ii) categ = 
+  let tag_name (_s, ii) categ =
     (* so treat the most specific in the enclosing code and then
      * do not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
      *)
     if not (Hashtbl.mem already_tagged ii)
-    then tag ii categ 
+    then tag ii categ
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)    
+   if not (Hashtbl.mem already_tagged ii)
    then tag ii categ
   in
 
   let lexer_based_tagger = (program = None) in
   program |> Common.do_option Resolve_python.resolve;
   (* -------------------------------------------------------------------- *)
-  (* AST phase 1 *) 
+  (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
@@ -89,7 +89,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
   let in_decorator = ref false in
 
   let visitor = V.mk_visitor { V.default_visitor with
-    (* use 'k x' as much as possible below. No need to 
+    (* use 'k x' as much as possible below. No need to
      * do v (Stmt st1); v (Expr e); ... Go deep to tag
      * special stuff (e.g., a local var in an exception handler) but then
      * just recurse from the top with 'k x'
@@ -98,19 +98,19 @@ let visit_program ~tag_hook _prefs (program, toks) =
      match x with
      | Name (name, ctx, resolved) ->
         (match !resolved with
-        | _ when !in_type -> 
+        | _ when !in_type ->
           (match fst name with
           | "int" -> tag_name name TypeInt
           | _ ->
             let kind = E.Type in
             tag_name name (Entity (kind, use2))
           )
-        | _ when !in_decorator -> 
+        | _ when !in_decorator ->
            tag_name name Highlight_code.Attribute
         | AST_python.Parameter ->
              tag_name name (Highlight_code.Parameter Use)
         | GlobalVar ->
-            let usedef = 
+            let usedef =
               match ctx with
               | Store -> def2
               | Load -> use2
@@ -118,7 +118,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
             in
             tag_name name (Entity (E.Global, usedef))
         | ClassField ->
-            let usedef = 
+            let usedef =
               match ctx with
               | Store -> def2
               | Load -> use2
@@ -126,7 +126,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
             in
             tag_name name (Entity (E.Field, usedef))
         | LocalVar ->
-            let usedef = 
+            let usedef =
               match ctx with
               | Store -> Def
               | Load -> Use
@@ -181,7 +181,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       | ListComp (_, xs) ->
           xs |> List.iter (fun (target, _iter, _ifs) ->
             match target with
-            | Name (name, _ctx, _res) -> 
+            | Name (name, _ctx, _res) ->
               tag_name name (Local Def);
             (* tuples? *)
             | _ -> ()
@@ -201,7 +201,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
      | ClassDef (_t, name, _bases, _body, _decorators) ->
        let kind = E.Class in
        tag_name name (Entity (kind, def2));
-       Common.save_excursion in_class true (fun () -> 
+       Common.save_excursion in_class true (fun () ->
           k x);
      | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
            let kind = E.Module in
@@ -249,11 +249,11 @@ let visit_program ~tag_hook _prefs (program, toks) =
      | _ -> k x
     );
     V.ktype_ = (fun (k, _) x ->
-       Common.save_excursion in_type true (fun () -> 
+       Common.save_excursion in_type true (fun () ->
           k x);
     );
     V.kdecorator = (fun (k, _) x ->
-       Common.save_excursion in_decorator true (fun () -> 
+       Common.save_excursion in_decorator true (fun () ->
           k x);
     );
     V.kparameter = (fun (k, _) x ->
@@ -277,7 +277,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
   (* -------------------------------------------------------------------- *)
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
     (* a little bit pad specific *)
@@ -328,7 +328,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     | T.NAME (_s, ii1)::T.DOT _::T.NAME (_s3, ii3)::T.LPAREN _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then begin 
+        then begin
           tag ii3 (Entity (E.Method, use2));
           if not (Hashtbl.mem already_tagged ii1)
           then tag ii1 (Local Use);
@@ -337,7 +337,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     | T.NAME (s, ii1)::T.LPAREN _::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
-        then 
+        then
           (if Hashtbl.mem builtin_functions s
           then tag ii1 Builtin
           else tag ii1 (Entity (E.Function, use2))
@@ -358,7 +358,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
         | _ ->
           if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-          then begin 
+          then begin
             tag ii3 (Entity (E.Field, use2));
             (* TODO *)
             if not (Hashtbl.mem already_tagged ii1)
@@ -375,8 +375,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
         end;
         *)
         aux_toks xs
-        
-        
+
+
 
     | _x::xs ->
         aux_toks xs
@@ -393,25 +393,25 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     (* specials *)
-    | T.TUnknown ii -> 
+    | T.TUnknown ii ->
        tag ii Error
-    | T.EOF _ii -> 
+    | T.EOF _ii ->
        ()
-    | T.INDENT _ii | T.DEDENT _ii ->  
+    | T.INDENT _ii | T.DEDENT _ii ->
        ()
 
     (* comments *)
-    | T.TComment ii -> 
+    | T.TComment ii ->
        tag_if_not_tagged ii Comment
-    (* in lexer_python.mll comments and space and newlines are sometimes 
+    (* in lexer_python.mll comments and space and newlines are sometimes
      * put together *)
-    | T.TCommentSpace ii -> 
+    | T.TCommentSpace ii ->
        tag_if_not_tagged ii Comment
-    | T.NEWLINE ii -> 
+    | T.NEWLINE ii ->
        tag_if_not_tagged ii Comment
 
 
@@ -431,16 +431,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Comment
 *)
     | T.FSTRING_START ii | T.FSTRING_END ii
-    | T.FSTRING_STRING (_, ii) 
+    | T.FSTRING_STRING (_, ii)
      -> tag ii String
     | T.FSTRING_LBRACE ii | T.BANG ii -> tag ii Punctuation
 
     (* ident  *)
-    | T.NAME (s, ii) -> 
+    | T.NAME (s, ii) ->
         (match s with
         | "self" -> tag ii KeywordObject
 
-        | "str" | "list" | "int" | "bool" 
+        | "str" | "list" | "int" | "bool"
         | "object"
         | "Exception"
            ->  tag_if_not_tagged ii (Entity (E.Type, use2))
@@ -479,7 +479,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.GLOBAL ii | T.NONLOCAL ii
         -> tag ii Keyword
 
-    | T.NOT ii  | T.AND ii | T.OR ii -> 
+    | T.NOT ii  | T.AND ii | T.OR ii ->
        tag ii BuiltinBoolean
 
 
@@ -488,10 +488,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Punctuation
 
     | T.COLONEQ ii
-    | T.ADDEQ ii | T.SUBEQ ii | T.MULTEQ ii | T.DIVEQ ii 
-    | T.MODEQ ii  | T.POWEQ ii | T.FDIVEQ ii 
-    | T.ANDEQ ii | T.OREQ ii | T.XOREQ ii 
-    | T.LSHEQ ii | T.RSHEQ ii 
+    | T.ADDEQ ii | T.SUBEQ ii | T.MULTEQ ii | T.DIVEQ ii
+    | T.MODEQ ii  | T.POWEQ ii | T.FDIVEQ ii
+    | T.ANDEQ ii | T.OREQ ii | T.XOREQ ii
+    | T.LSHEQ ii | T.RSHEQ ii
        -> tag ii Punctuation
 
     | T.LBRACE ii | T.RBRACE ii
@@ -511,7 +511,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     | T.BITXOR ii | T.BITOR ii | T.BITAND ii | T.BITNOT ii
 
-    | T.EQUAL ii | T.NOTEQ ii 
+    | T.EQUAL ii | T.NOTEQ ii
     | T.LT ii  | T.GT ii
     | T.LEQ ii | T.GEQ ii
 

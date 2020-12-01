@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -30,12 +30,12 @@ module V = Visitor_python
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-type context = 
+type context =
   | AtToplevel
   | InClass
   | InFunction
   (* TODO: InLambda *)
- 
+
 type env = {
   ctx: context ref;
   names: (string * resolved_name) list ref;
@@ -49,18 +49,18 @@ let default_env () = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-(* because we use a Visitor instead of a clean recursive 
+(* because we use a Visitor instead of a clean recursive
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
-let with_added_env xs env f = 
+let with_added_env xs env f =
   let newnames = xs @ !(env.names) in
   Common.save_excursion env.names newnames f
 
 let add_name_env name kind env =
   env.names := (Ast.str_of_name name, kind)::!(env.names)
 
-let with_new_context ctx env f = 
+let with_new_context ctx env f =
   Common.save_excursion env.ctx ctx f
 
 let params_of_parameters params =
@@ -76,7 +76,7 @@ let params_of_parameters params =
   let collect_param_names (ix, out) = function
     | ParamPattern (pat, _) ->
       (ix + 1, (param_pattern_name ix pat)::out)
-    | ParamDefault ((name, _), _) 
+    | ParamDefault ((name, _), _)
     | ParamStar (_, (name, _)) | ParamPow (_, (name, _)) ->
       (ix + 1, name::out)
     | ParamSingleStar _ | ParamSlash _ | ParamEllipsis _ ->
@@ -96,9 +96,9 @@ let resolve prog =
 
   (* helper to factorize code related to (polymorphic comprehension) *)
   let comprehension ke v (e, xs) =
-    let new_vars = 
+    let new_vars =
       xs |> Common.map_filter (function
-        | CompFor (target, _) -> 
+        | CompFor (target, _) ->
             (match target with
             | Name (name, _ctx, _res) -> Some name
             (* tuples? *)
@@ -106,7 +106,7 @@ let resolve prog =
             )
         | CompIf _ -> None
      )
-   in 
+   in
    let new_names = new_vars |> List.map (fun name ->
        Ast.str_of_name name, Ast.LocalVar
    ) in
@@ -114,12 +114,12 @@ let resolve prog =
 
    (* TODO: should fold and use new env *)
    xs |> List.iter (function
-     | CompFor (e1, e2) -> 
+     | CompFor (e1, e2) ->
           v (Expr e1); v (Expr e2)
      | CompIf e ->
           v (Expr e)
     )
-  in    
+  in
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
@@ -142,7 +142,7 @@ let resolve prog =
             | None -> () (* will be tagged as Error by highlighter later *)
             )
           | Store | AugStore ->
-            let kind = 
+            let kind =
               let s = Ast.str_of_name name in
               match List.assoc_opt s !(env.names) with
               (* can happen if had a 'Global' declaration before *)
@@ -156,10 +156,10 @@ let resolve prog =
             in
             env |> add_name_env name kind;
             resolved := kind; (* optional *)
-            
+
           | Del -> (* should remove from env *)
              ()
-          | Param -> 
+          | Param ->
             resolved := Parameter; (* optional *)
           );
           k x
@@ -169,7 +169,7 @@ let resolve prog =
          * the processing of 'e' too!
          *)
         -> comprehension (fun e -> v (Expr e)) v x
-      | DictOrSet (CompForIf x) -> 
+      | DictOrSet (CompForIf x) ->
         comprehension (fun elt -> v (DictElem elt)) v x
 
       (* general case *)
@@ -182,9 +182,9 @@ let resolve prog =
           let new_names = new_params |> List.map (fun name ->
                Ast.str_of_name name, Ast.Parameter
           ) in
-          with_added_env new_names env (fun () -> 
+          with_added_env new_names env (fun () ->
             with_new_context InFunction env (fun () ->
-               k x              
+               k x
           ));
          (* nested function *)
          if !(env.ctx) = InFunction
@@ -192,9 +192,9 @@ let resolve prog =
      | ClassDef (_t, name, _bases, _body, _decorators) ->
            env |> add_name_env name (GlobalVar);
            with_new_context InClass env (fun () ->
-               k x              
+               k x
             )
-    
+
      | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
            asname_opt |> Common.do_option (fun asname ->
              env |> add_name_env asname (ImportedModule dotted_name)
@@ -205,7 +205,7 @@ let resolve prog =
          aliases |> List.iter (fun (name, asname_opt) ->
            let entity = dotted_name @ [name] in
            (match asname_opt with
-           | None -> 
+           | None ->
              env |> add_name_env name (ImportedEntity entity);
            | Some asname ->
              env |> add_name_env asname (ImportedEntity entity)
@@ -228,7 +228,7 @@ let resolve prog =
           env |> add_name_env name LocalVar;
           v (Stmts stmts);
        (* todo: tuples? *)
-       | Some e -> 
+       | Some e ->
            v (Expr e);
            v (Stmts stmts)
        )
@@ -247,11 +247,11 @@ let resolve prog =
 
      | Global (_, names) ->
        names |> List.iter (fun name -> env |> add_name_env name GlobalVar;)
-    
-     (* TODO: NonLocal!! *) 
+
+     (* TODO: NonLocal!! *)
 
      (* general case *)
      | _ -> k x
-    );  
+    );
   } in
   visitor (Program prog)

@@ -1,8 +1,8 @@
 (* Dario Teixeira
- * 
+ *
  * Copyright (C) 2010 Dario Teixeira (dario.teixeira@yahoo.com)
  * Copyright (C) 2011 Facebook
- * 
+ *
  * This software is distributed under the terms of the GNU GPL version 2.
  * See LICENSE file for full license text.
  *)
@@ -11,17 +11,17 @@
 (* Prelude *)
 (*****************************************************************************)
 
-(* 
+(*
  * This file contains the type definitions for a Cascading Style Sheet
  * file, aka CSS file.
- * 
+ *
  * See also http://en.wikipedia.org/wiki/Cascading_Style_Sheets
- * 
+ *
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
- * I've mainly removed the use of open variants and added location 
+ * I've mainly removed the use of open variants and added location
  * information a la pfff.
- * 
+ *
  * alternatives:
  * - css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
  * - camlp4 and css https://github.com/samoht/cass
@@ -32,7 +32,7 @@
 (* The AST related types *)
 (*****************************************************************************)
 
-(* 
+(*
  * from http://en.wikipedia.org/wiki/Cascading_Style_Sheets#Syntax:
  * "A style sheet consists of a list of rules. Each rule or rule-set consists
  *  of one or more selectors and a declaration block. A declaration-block

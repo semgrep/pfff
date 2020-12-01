@@ -6,8 +6,8 @@ module Flag = Flag_parsing
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_tokens_erlang file = 
-  if not (file =~ ".*\\.py") 
+let test_tokens_erlang file =
+  if not (file =~ ".*\\.py")
   then pr2 "warning: seems not a python file";
 
   Flag.verbose_lexing := true;
@@ -22,7 +22,7 @@ let test_parse_erlang xs =
   let fullxs = Lib_parsing_erlang.find_erlang_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
-  fullxs |> List.iter (fun file -> 
+  fullxs |> List.iter (fun file ->
     pr2 ("PARSING: " ^ file);
 
     let (_xs, stat) = Parse_erlang.parse file in
@@ -40,8 +40,8 @@ let test_parse_erlang xs =
 (*****************************************************************************)
 
 let actions () = [
-  "-tokens_erlang", "   <file>", 
+  "-tokens_erlang", "   <file>",
   Common.mk_action_1_arg test_tokens_erlang;
-  "-parse_erlang", "   <files or dirs>", 
+  "-parse_erlang", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_erlang;
 ]

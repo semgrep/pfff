@@ -6,7 +6,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -32,7 +32,7 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 (* Helpers  *)
 (*****************************************************************************)
 
-(* 
+(*
  * In the following, there are some harcoded names of types or macros
  * but they are not used by our heuristics! They are just here to
  * enable to detect false positive by printing only the typedef/macros
@@ -41,7 +41,7 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
  * functions "filter" some messages. So our heuristics are still good,
  * there is no more (or not that much) hardcoded linux stuff.
  *)
-let msg_gen is_known printer s = 
+let msg_gen is_known printer s =
   if not (!Flag_cpp.filter_msg)
   then printer s
   else
@@ -54,15 +54,15 @@ let pos ii = Parse_info.string_of_info ii
 (* Some debugging functions  *)
 (*****************************************************************************)
 
-let pr2_pp s = 
+let pr2_pp s =
   if !Flag_cpp.debug_pp
   then Common.pr2 ("PP-" ^ s)
 
-let pr2_cplusplus s = 
+let pr2_cplusplus s =
   if !Flag_cpp.debug_cplusplus
   then Common.pr2 ("C++-" ^ s)
 
-let pr2_typedef s = 
+let pr2_typedef s =
   if !Flag_cpp.debug_typedef
   then Common.pr2 ("TYPEDEF-" ^ s)
 
@@ -86,15 +86,15 @@ let msg_change_tok tok =
       s |> msg_gen (fun s ->
         match s with
         | "u_char"   | "u_short"  | "u_int"  | "u_long"
-        | "u8" | "u16" | "u32" | "u64" 
-        | "s8"  | "s16" | "s32" | "s64" 
-        | "__u8" | "__u16" | "__u32"  | "__u64"  
+        | "u8" | "u16" | "u32" | "u64"
+        | "s8"  | "s16" | "s32" | "s64"
+        | "__u8" | "__u16" | "__u32"  | "__u64"
             -> true
         | "acpi_handle" | "acpi_status" -> true
         | "FILE" | "DIR"                -> true
         | s when s =~ ".*_t$"           -> true
-        | _                             -> false 
-      ) 
+        | _                             -> false
+      )
       (fun s -> pr2_typedef (spf "promoting %s at %s " s (pos ii)))
 
   (* mostly in parsing_hacks_pp.ml *)
@@ -113,7 +113,7 @@ let msg_change_tok tok =
           pr2_pp (spf "INCLUDE: commented at %s" (pos ii));
       | Token_cpp.CppDirective, _ when s =~ "#if.*" ->
           pr2_pp (spf "IFDEF: commented at %s" (pos ii));
-      | Token_cpp.CppDirective, _ when s =~ "#undef.*" -> 
+      | Token_cpp.CppDirective, _ when s =~ "#undef.*" ->
           pr2_pp (spf "UNDEF: commented at %s" (pos ii));
       | Token_cpp.CppDirective, _ ->
           pr2_pp (spf "OTHER: commented directive at %s" (pos ii));
@@ -127,11 +127,11 @@ let msg_change_tok tok =
 
   | TIdent_MacroString ii ->
       let s = PI.str_of_info ii in
-      s |> msg_gen (fun s -> 
-        match s with 
+      s |> msg_gen (fun s ->
+        match s with
         | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
             -> true
-            (* s when s =~ ".*STR.*" -> true  *) 
+            (* s when s =~ ".*STR.*" -> true  *)
         | _ -> false
       )
       (fun s -> pr2_pp (spf "MACRO: string-macro %s at %s " s (pos ii)))
@@ -140,10 +140,10 @@ let msg_change_tok tok =
       pr2_pp (spf "MACRO: stmt-macro at %s" (pos ii));
 
   | TIdent_MacroDecl (s, ii) ->
-      s |> msg_gen (fun s -> 
-        match s with 
+      s |> msg_gen (fun s ->
+        match s with
         | "DECLARE_MUTEX" | "DECLARE_COMPLETION"  | "DECLARE_RWSEM"
-        | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD" 
+        | "DECLARE_WAITQUEUE" | "DECLARE_WAIT_QUEUE_HEAD"
         | "DEFINE_SPINLOCK" | "DEFINE_TIMER"
         | "DEVICE_ATTR" | "CLASS_DEVICE_ATTR" | "DRIVER_ATTR"
         | "SENSOR_DEVICE_ATTR"
@@ -204,7 +204,7 @@ let msg_change_tok tok =
       pr2_cplusplus (spf "CLASSNAME: in qualifier context %s at %s " s (pos ii))
   | TIdent_Constructor (s, ii) ->
       pr2_cplusplus (spf "CONSTRUCTOR: found %s at %s " s (pos ii))
-      
+
   | TIdent_Templatename (s, ii) ->
       pr2_cplusplus (spf "TEMPLATENAME: found %s at %s" s (pos ii))
 
@@ -216,7 +216,7 @@ let msg_change_tok tok =
   | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
       pr2_typedef (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
 
-  | _ -> 
+  | _ ->
       raise Todo
 
 let msg_context t ctx =
@@ -227,13 +227,13 @@ let msg_context t ctx =
     | _ -> raise Impossible
   in
   pr2_cplusplus (spf "CONTEXT: %s at %s" ctx_str (pos (TH.info_of_tok t)))
-                    
+
 
 
 let change_tok extended_tok tok =
   msg_change_tok tok;
 
-  (* otherwise parse_c will be lost if don't find a EOF token 
+  (* otherwise parse_c will be lost if don't find a EOF token
    * why? because paren detection had a pb because of
    * some ifdef-exp?
    *)
@@ -248,7 +248,7 @@ let fresh_tok tok =
 (* normally the caller have first filtered the set of tokens to have
  * a clearer "view" to work on
  *)
-let set_as_comment cppkind x = 
+let set_as_comment cppkind x =
   assert(not (TH.is_real_comment x.t));
   change_tok x (TComment_Pp (cppkind, TH.info_of_tok x.t))
 
@@ -276,7 +276,7 @@ let regexp_declare =  Str.regexp
 (* firefoxext: *)
 let regexp_ns_decl_like = Str.regexp
   ("\\(" ^
-   "NS_DECL_\\|NS_DECLARE_\\|NS_IMPL_\\|" ^ 
+   "NS_DECL_\\|NS_DECLARE_\\|NS_IMPL_\\|" ^
    "NS_IMPLEMENT_\\|NS_INTERFACE_\\|NS_FORWARD_\\|NS_HTML_\\|" ^
    "NS_DISPLAY_\\|NS_IMPL_\\|" ^
    "TX_DECL_\\|DOM_CLASSINFO_\\|NS_CLASSINFO_\\|IMPL_INTERNAL_\\|" ^

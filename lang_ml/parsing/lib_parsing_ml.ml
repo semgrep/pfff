@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -20,24 +20,24 @@ open Common
 (* Filemames *)
 (*****************************************************************************)
 
-let find_source_files_of_dir_or_files xs = 
-  Common.files_of_dir_or_files_no_vcs_nofilter xs 
+let find_source_files_of_dir_or_files xs =
+  Common.files_of_dir_or_files_no_vcs_nofilter xs
   |> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | File_type.PL (File_type.ML ("ml" | "mli")) -> true
     | _ -> false
   ) |> Common.sort
 
-let find_ml_files_of_dir_or_files xs = 
-  Common.files_of_dir_or_files_no_vcs_nofilter xs 
+let find_ml_files_of_dir_or_files xs =
+  Common.files_of_dir_or_files_no_vcs_nofilter xs
   |> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | File_type.PL (File_type.ML ("ml")) -> true
     | _ -> false
   ) |> Common.sort
 
-let find_cmt_files_of_dir_or_files xs = 
-  Common.files_of_dir_or_files_no_vcs_nofilter xs 
+let find_cmt_files_of_dir_or_files xs =
+  Common.files_of_dir_or_files_no_vcs_nofilter xs
    |> List.filter (fun filename->
     match File_type.file_type_of_file filename with
     | File_type.Obj ("cmt" | "cmti") -> true
@@ -74,7 +74,7 @@ let find_cmt_files_of_dir_or_files xs =
 
 (* convert to generic AST if you need to get tokens!
 
-let extract_info_visitor recursor = 
+let extract_info_visitor recursor =
   let globals = ref [] in
   let hooks = { V.default_visitor with
     V.kinfo = (fun (_k, _) i -> Common.push i globals)
@@ -85,6 +85,6 @@ let extract_info_visitor recursor =
     List.rev !globals
   end
 
-let ii_of_any any = 
+let ii_of_any any =
   extract_info_visitor (fun visitor -> visitor any)
 *)

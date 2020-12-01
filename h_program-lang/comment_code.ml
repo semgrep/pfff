@@ -40,7 +40,7 @@ type 'tok hooks = {
 
 let comment_before hooks tok all_toks =
   let pos = Parse_info.pos_of_info tok in
-  let before = 
+  let before =
     all_toks |> Common2.take_while (fun tok2 ->
       let info = hooks.tokf tok2 in
       let pos2 = PI.pos_of_info info in
@@ -67,7 +67,7 @@ let comment_before hooks tok all_toks =
 let comment_after hooks tok all_toks =
   let pos = PI.pos_of_info tok in
   let line = PI.line_of_info tok in
-  let after = 
+  let after =
     all_toks |> Common2.drop_while (fun tok2 ->
       let info = hooks.tokf tok2 in
       let pos2 = PI.pos_of_info info in

@@ -4,8 +4,8 @@ open Common
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_tokens_html file = 
-  if not (file =~ ".*\\.html") 
+let test_tokens_html file =
+  if not (file =~ ".*\\.html")
   then pr2 "warning: seems not a html file";
 (*
   Flag.verbose_lexing := true;
@@ -20,17 +20,17 @@ let test_parse_html xs =
 
   let fullxs = Lib_parsing_html.find_html_files_of_dir_or_files xs in
 
-  fullxs |> List.iter (fun file -> 
+  fullxs |> List.iter (fun file ->
     pr2 ("PARSING: " ^ file);
 
     (* old:
-     *  let s = Common.read_file file in 
+     *  let s = Common.read_file file in
      * let _ast = Parse_html.parse_simple_tree (HtmlRaw s) in
-     * 
+     *
      * let (xs, stat) = Parse_erlang.parse file in
      * Common.push2 stat stat_list;
      *)
-    try 
+    try
       let _tree = Parse_html.parse file in
       ()
     with Parse_info.Parsing_error info ->
@@ -43,7 +43,7 @@ let test_dump_html_old _file =
   failwith "ocamlnet not supported anymore"
 *)
 (*
-  let s = Common.read_file file in 
+  let s = Common.read_file file in
   let ast = Parse_html.parse_simple_tree (HtmlRaw s) in
   let json = Export_html.json_of_html_tree2 ast in
   let s = Json_out.string_of_json json in
@@ -79,21 +79,21 @@ let test_pp_html file =
 (*****************************************************************************)
 
 let actions () = [
-  "-tokens_html", "   <file>", 
+  "-tokens_html", "   <file>",
   Common.mk_action_1_arg test_tokens_html;
-  "-parse_html", "   <files or dirs>", 
+  "-parse_html", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_html;
 (*
-  "-dump_html", "   <file>", 
+  "-dump_html", "   <file>",
   Common.mk_action_1_arg test_dump_html;
 *)
-  "-pp_html", "   <file>", 
+  "-pp_html", "   <file>",
   Common.mk_action_1_arg test_pp_html;
 
 (*
-  "-json_html", "   <file>", 
+  "-json_html", "   <file>",
   Common.mk_action_1_arg test_json_html;
-  "-json_html_old", "   <file>", 
+  "-json_html_old", "   <file>",
   Common.mk_action_1_arg test_dump_html_old;
 *)
 ]

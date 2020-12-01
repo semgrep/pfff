@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,7 +21,7 @@ module D = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * Generating a (light) database from a graph_code.
  *)
 
@@ -32,10 +32,10 @@ module D = Database_code
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-  
+
 let db_of_graph_code root g =
 
-  (* todo: if at some point we want to also leverage the 
+  (* todo: if at some point we want to also leverage the
    * cross entity functionality of Database_code, e.g.
    * its e_good_examples_of_use field, then we need to
    * do something a bit different here and map
@@ -46,24 +46,24 @@ let db_of_graph_code root g =
   let hdirs = Hashtbl.create 101 in
 
   (* opti: using G.parent and check if G.not_found is slow *)
-  let hnot_found = 
+  let hnot_found =
     G.node_and_all_children G.not_found g |> Common.hashset_of_list in
   (* opti: using G.pred is super slow *)
   let use_pred = G.mk_eff_use_pred g in
-  
+
   g |> G.iter_nodes (fun node ->
     let (s, kind) = node in
     match kind with
     | E.Function | E.Class | E.Constant | E.Global | E.Type | E.Exception
-    | E.Constructor | E.Field | E.Method | E.ClassConstant 
+    | E.Constructor | E.Field | E.Method | E.ClassConstant
     | E.Macro
     | E.Prototype | E.GlobalExtern
       ->
       if Hashtbl.mem hnot_found node
       then ()
       else begin
-        let nodeinfo = 
-          try G.nodeinfo node g 
+        let nodeinfo =
+          try G.nodeinfo node g
           with Not_found ->
             failwith (spf "No nodeinfo for %s" (G.string_of_node node))
         in
@@ -80,7 +80,7 @@ let db_of_graph_code root g =
             let file2 = G.file_of_node n g in
             file <> file2
           with Not_found -> false
-        ) 
+        )
         in
         let nb_users = List.length extern in
 
@@ -102,16 +102,16 @@ let db_of_graph_code root g =
         Common.push e res
       end
 
-    | E.TopStmts 
+    | E.TopStmts
     | E.Module | E.Package
     | E.Other _
     | E.File | E.Dir | E.MultiDirs
       -> ()
   );
-  
+
   let arr = Array.of_list !res in
   (* MultiDirs entities? they are done by codemap on the fly *)
-  
+
   { Database_code.
     root = root;
     files = Common2.hkeys hfiles |> List.map (fun file -> file, 0);

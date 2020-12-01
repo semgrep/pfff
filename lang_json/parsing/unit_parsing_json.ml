@@ -10,7 +10,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Config_pfff.tests_path "json/parsing" in
-      let files = 
+      let files =
         Common2.glob (spf "%s/*.json" dir)
       in
       files |> List.iter (fun file ->

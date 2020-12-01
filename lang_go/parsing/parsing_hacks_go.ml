@@ -5,7 +5,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -23,8 +23,8 @@ module F = Ast_fuzzy
 (* Prelude *)
 (*****************************************************************************)
 (* The goal for this module is to retag tokens (e.g, a LBRACE in LBODY),
- * or insert tokens (e.g., implicit semicolons) to help the grammar 
- * remains simple and unambiguous. 
+ * or insert tokens (e.g., implicit semicolons) to help the grammar
+ * remains simple and unambiguous.
  *
  * See lang_cpp/parsing/parsing_hacks.ml for more information about
  * this technique.
@@ -33,7 +33,7 @@ module F = Ast_fuzzy
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type env_lbody = 
+type env_lbody =
   | InIfHeader
   | Normal
 
@@ -47,17 +47,17 @@ type env_lbody =
 
 let fix_tokens_asi xs =
   let env = () in
-  let rec aux env xs = 
+  let rec aux env xs =
     match xs with
     | [] -> []
 
     (* ASI: automatic semicolon insertion, similar in Javascript *)
-    | ((LNAME _ 
+    | ((LNAME _
       | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
       | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
       | LINC _ | LDEC _
-      | RPAREN _ 
-      | RBRACE _ 
+      | RPAREN _
+      | RBRACE _
       | RBRACKET _
       (* sgrep-ext: *)
       | LDDD _
@@ -89,11 +89,11 @@ let fix_tokens_asi xs =
 (* LBODY *)
 (*****************************************************************************)
 let fix_tokens_lbody toks =
- try 
+ try
   let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
-  } toks 
+  } toks
   in
   let retag_lbrace = Hashtbl.create 101 in
 
@@ -105,7 +105,7 @@ let fix_tokens_lbody toks =
       | (F.Braces (_lb1, xs1, _rb1))::
         (F.Parens (_lb2, xs2, _rb2))::
         (F.Braces (lb3, xs3, _rb3))::
-        ys 
+        ys
         when env = InIfHeader ->
           Hashtbl.add retag_lbrace lb3 true;
           aux Normal xs1;
@@ -121,7 +121,7 @@ let fix_tokens_lbody toks =
         (F.Braces (_lb1, xs1, _rb1))::
         (F.Braces (_lb2, xs2, _rb2))::
         (F.Braces (lb3, xs3, _rb3))::
-        ys 
+        ys
         when env = InIfHeader ->
           Hashtbl.add retag_lbrace lb3 true;
           aux Normal xs1;
@@ -133,13 +133,13 @@ let fix_tokens_lbody toks =
       (* skipping: if ok := interface{} ... *)
       | F.Tok (("struct" | "interface"), _)::
         (F.Braces (_lb1, xs1, _rb1))::
-        ys 
+        ys
         when env = InIfHeader ->
           aux Normal xs1;
           aux env ys
 
       (* for a := range []int{...} { ... } *)
-      | (F.Braces (_lb1, xs1, _rb1))::(F.Braces (lb2, xs2, _rb2))::ys 
+      | (F.Braces (_lb1, xs1, _rb1))::(F.Braces (lb2, xs2, _rb2))::ys
         when env = InIfHeader ->
           Hashtbl.add retag_lbrace lb2 true;
           aux Normal xs1;
@@ -147,20 +147,20 @@ let fix_tokens_lbody toks =
           aux Normal ys;
 
       (* False Positive (FP): for ... {}[...] *)
-      | (F.Braces (_lb, xs, _rb))::F.Bracket (_, ys, _)::zs 
+      | (F.Braces (_lb, xs, _rb))::F.Bracket (_, ys, _)::zs
           when env = InIfHeader ->
           aux Normal xs;
           aux Normal ys;
           aux env zs
 
       (* False Positive (FP): if ... {}; ... { *)
-      | (F.Braces (_lb, xs, _rb))::F.Tok (";", _)::zs 
+      | (F.Braces (_lb, xs, _rb))::F.Tok (";", _)::zs
           when env = InIfHeader ->
           aux Normal xs;
           aux env zs
 
 
-          
+
       | (F.Braces (lb, xs, _rb))::ys ->
           (* for ... { ... } *)
           if env = InIfHeader
@@ -171,7 +171,7 @@ let fix_tokens_lbody toks =
       | F.Tok (("if" | "for" | "switch" | "select"), _)::xs ->
           aux InIfHeader xs
 
-      | x::xs -> 
+      | x::xs ->
           (match x with
           | F.Parens (_, xs, _) ->
                 xs |> List.iter (function

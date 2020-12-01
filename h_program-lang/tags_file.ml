@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,7 +26,7 @@ module E = Entity_code
  * Supposed syntax for emacs TAGS (.tags) files, as analysed from output
  * of etags, read in etags.c and discussed with Francesco Potorti.
  * src: otags readme:
- * 
+ *
  * <file> ::= <page>+
  * <page> ::= <header><body>
  * <header> ::= <NP><CR><file-name>,<body-length><CR>
@@ -34,12 +34,12 @@ module E = Entity_code
  * <tag-line> ::= <prefix><DEL><tag><SOH><line-number>,<begin-char-index><CR>
  * pad: when tag is already at the beginning of the line:
  * <tag-line> ::=<tag><DEL><line-number>,<begin-char-index><CR>
- * 
- * <NP> ::= ascii NP, (emacs ^L) 
+ *
+ * <NP> ::= ascii NP, (emacs ^L)
  * <DEL> ::= ascii DEL, (emacs ^?)
  * <SOH> ::= ascii SOH, (emacs ^A)
  * <CR> :: ascii CR
- * 
+ *
  * See also http://en.wikipedia.org/wiki/Ctags#Tags_file_formats
  *)
 
@@ -74,8 +74,8 @@ let mk_tag s1 s2 i1 i2 k = {
 (* Helpers *)
 (*****************************************************************************)
 
-let string_of_tag t = 
-  spf "%s\x7f%s\x01%d,%d\n" 
+let string_of_tag t =
+  spf "%s\x7f%s\x01%d,%d\n"
     t.tag_definition_text
     t.tagname
     t.line_number
@@ -133,12 +133,12 @@ let vim_escape_slash str =
  * 'method' name so people can quickly jump to some code with just the
  * method name. Of course if there is also a function somewhere using the
  * same name then this function could be hard to reach so we generate
- * an (imprecise) method tag only when there is no ambiguity. 
+ * an (imprecise) method tag only when there is no ambiguity.
  *)
 let add_method_tags_when_unambiguous files_and_defs =
 
   (* step1: global analysis on all defs, remember all names and methods *)
-  let h_toplevel_names = 
+  let h_toplevel_names =
     files_and_defs |> List.map (fun (_file, tags) ->
       tags |> Common.map_filter (fun t ->
         match t.kind with
@@ -190,10 +190,10 @@ let generate_TAGS_file tags_file files_and_defs =
     files_and_defs |> List.iter (fun (file, defs) ->
       let all_defs = defs |> Common.map_filter (fun tag ->
         if String.length tag.tag_definition_text > threshold_long_line
-        then begin 
+        then begin
           pr2_once (spf "WEIRD long string in %s, passing the tag" file);
           None
-        end 
+        end
         else Some (string_of_tag tag)
       ) |> Common.join "" in
       let size_defs = String.length all_defs in
@@ -212,17 +212,17 @@ let generate_vi_tags_file tags_file files_and_defs =
       files_and_defs |> List.map (fun (file, defs) ->
         defs |> Common.map_filter (fun tag ->
           if String.length tag.tag_definition_text > 300
-          then begin 
+          then begin
             pr2 (spf "WEIRD long string in %s, passing the tag" file);
             None
-          end 
+          end
           else Some (tag.tagname, (tag, file))
-        )) 
+        ))
       |> List.flatten
       |> Common.sort_by_key_lowfirst
     in
     all_tags |> List.iter (fun (_tagname, (tag, file)) ->
-      (* {tagname}<Tab>{tagfile}<Tab>{tagaddress} 
+      (* {tagname}<Tab>{tagfile}<Tab>{tagaddress}
        * "The two characters semicolon and double quote [...] are
        * interpreted by Vi as the start of a comment, which makes the
        * following be ignored."

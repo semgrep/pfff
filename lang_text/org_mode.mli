@@ -6,7 +6,7 @@ type org_line =
 
 type org = org_line list
 
-val parse: 
+val parse:
   Common.filename -> org
 
 val highlight:

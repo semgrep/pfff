@@ -20,8 +20,8 @@ let unittest =
       )
     );
 
-    (* Check that the visitor implementation correctly visit all AST 
-     * subelements, even when they are deep inside the AST tree (e.g. 
+    (* Check that the visitor implementation correctly visit all AST
+     * subelements, even when they are deep inside the AST tree (e.g.
      * sub-sub expressions inside parenthesis).
      *)
     "visitor" >:: (fun () ->
@@ -50,7 +50,7 @@ module A = Foo2
              k x
            );
            V.kqualifier = (fun (_k, _) xs ->
-             (match xs with 
+             (match xs with
              | [Name (s, _), _tok] ->
                  pr2 s;
                  incr cnt;

@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2019 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,9 +19,9 @@ module F = Controlflow
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A smaller wrapper around the AST generic visitor to also handles 
+(* A smaller wrapper around the AST generic visitor to also handles
  * control flow nodes.
- * 
+ *
  * Less useful now that we have Controlflow.exprs_of_node and
  * Controlflow.fold_on_node_and_expr.
  *)
@@ -37,7 +37,7 @@ type visitor_out = Controlflow.node -> unit
 (* Entry Points *)
 (*****************************************************************************)
 
-let mk_visitor vin = 
+let mk_visitor vin =
   let visitor = Visitor_AST.mk_visitor vin in
   fun node ->
     match node.F.n with
@@ -65,7 +65,7 @@ let mk_visitor vin =
         visitor (Ast.E expr)
     | F.ForeachHeader (pat, e) ->
         visitor (Ast.E (Ast.LetPattern (pat, e)))
-    | F.SimpleNode x -> 
+    | F.SimpleNode x ->
         let any = F.any_of_simple_node x in
         visitor any
 
@@ -95,7 +95,7 @@ let exprs_of_node node =
   | OtherStmtWithStmtHeader (_, Some expr)
       -> [expr]
   | ForeachHeader (pat, expr) -> [Ast.LetPattern (pat, expr)]
-      
+
   | SimpleNode x ->
       (match x with
       | ExprStmt e -> [e]

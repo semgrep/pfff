@@ -51,7 +51,7 @@ end
 (*s: type [[Dataflow.nodei]] *)
 type nodei = int
 (*e: type [[Dataflow.nodei]] *)
- 
+
 (*s: type [[Dataflow.var]] *)
 (* The comparison function uses only the name of a variable (a string), so
  * two variables at different positions in the code will be agglomerated
@@ -79,9 +79,9 @@ type 'a mapping = 'a inout array
 
   (* the In and Out sets, as in Appel Modern Compiler in ML book *)
 (*s: type [[Dataflow.inout]] *)
-  and 'a inout = { 
-    in_env : 'a env; 
-    out_env : 'a env; 
+  and 'a inout = {
+    in_env : 'a env;
+    out_env : 'a env;
    }
 (*e: type [[Dataflow.inout]] *)
 (*s: type [[Dataflow.env]] *)
@@ -119,22 +119,22 @@ let (varmap_union: ('a -> 'a -> 'a) -> 'a env -> 'a env -> 'a env) =
  fun union_op env1 env2 ->
   let acc = env1 in
   VarMap.fold (fun var x acc ->
-    let x' = 
-      try 
+    let x' =
+      try
         union_op x (VarMap.find var acc)
       with Not_found -> x
     in
     VarMap.add var x' acc
   ) env2 acc
 
-let (varmap_diff: ('a -> 'a -> 'a) -> ('a -> bool) -> 
+let (varmap_diff: ('a -> 'a -> 'a) -> ('a -> bool) ->
     'a env -> 'a env -> 'a env) =
  fun diff_op is_empty env1 env2 ->
   let acc = env1 in
   VarMap.fold (fun var x acc ->
    try
      let diff = diff_op (VarMap.find var acc) x in
-     if is_empty diff 
+     if is_empty diff
      then VarMap.remove var acc
      else VarMap.add var diff acc
    with Not_found -> acc
@@ -145,31 +145,31 @@ let (varmap_diff: ('a -> 'a -> 'a) -> ('a -> bool) ->
  * for reaching definitions.
  *)
 let (union_env : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env) =
- fun env1 env2 -> 
+ fun env1 env2 ->
   let acc = env1 in
   VarMap.fold (fun var set acc ->
-      let set2 = 
-        try 
-          NodeiSet.union set (VarMap.find var acc) 
+      let set2 =
+        try
+          NodeiSet.union set (VarMap.find var acc)
         with Not_found -> set
       in
       VarMap.add var set2 acc
   ) env2 acc
 
 let (diff_env : NodeiSet.t env ->  NodeiSet.t env -> NodeiSet.t env) =
-fun env1 env2 -> 
+fun env1 env2 ->
  let acc = env1 in
  VarMap.fold (fun var set acc ->
   try
     let diff = NodeiSet.diff (VarMap.find var acc) set in
-    if NodeiSet.is_empty diff 
+    if NodeiSet.is_empty diff
     then VarMap.remove var acc
     else VarMap.add var diff acc
   with Not_found -> acc
  ) env2 acc
 
 
-let (add_var_and_nodei_to_env: 
+let (add_var_and_nodei_to_env:
   var -> nodei -> NodeiSet.t env -> NodeiSet.t env) =
  fun var ni env ->
   let set =
@@ -179,11 +179,11 @@ let (add_var_and_nodei_to_env:
   VarMap.add var set env
 
 
-let (add_vars_and_nodei_to_env: 
+let (add_vars_and_nodei_to_env:
   VarSet.t -> nodei -> NodeiSet.t env -> NodeiSet.t env) =
  fun varset ni env ->
   let acc = env in
-  VarSet.fold (fun var acc -> add_var_and_nodei_to_env var ni acc) varset acc 
+  VarSet.fold (fun var acc -> add_var_and_nodei_to_env var ni acc) varset acc
 
 (*****************************************************************************)
 (* Debugging support *)
@@ -253,27 +253,27 @@ let (display_mapping: F.flow -> 'a mapping -> ('a -> string) -> unit) =
 
 let rec fixpoint_worker eq mapping trans flow succs workset =
   if NodeiSet.is_empty workset
-  then mapping 
+  then mapping
   else
     let ni = NodeiSet.choose workset in
     let work' = NodeiSet.remove ni workset in
     let old = mapping.(ni) in
     let new_ = trans mapping ni in
-    let work'' = 
+    let work'' =
          if eq_inout eq old new_
          then work'
          else begin
-            (mapping.(ni) <- new_; 
-            NodeiSet.union work' (succs flow ni)) 
+            (mapping.(ni) <- new_;
+            NodeiSet.union work' (succs flow ni))
          end
      in
      fixpoint_worker eq mapping trans flow succs work''
 
 
-let forward_succs (f : F.flow) n = 
+let forward_succs (f : F.flow) n =
  (f#successors n)#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty
 
-let backward_succs (f : F.flow) n = 
+let backward_succs (f : F.flow) n =
  (f#predecessors n)#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty
 
 let (fixpoint:
@@ -284,15 +284,15 @@ let (fixpoint:
     forward: bool ->
    'a mapping) =
  fun ~eq ~init ~trans ~flow ~forward ->
-  let succs = 
-    if forward 
-    then forward_succs 
-    else backward_succs 
+  let succs =
+    if forward
+    then forward_succs
+    else backward_succs
   in
-  let work = 
+  let work =
     flow#nodes#fold (fun s (ni, _) -> NodeiSet.add ni s) NodeiSet.empty in
   fixpoint_worker eq init trans flow succs work
-   
+
 
 (*****************************************************************************)
 (* Helpers *)
@@ -306,7 +306,7 @@ let new_node_array (f: F.flow) v =
     (* actually there are some del_node done in cfg_build, for
      * switch, so sometimes ni is >= len
      *
-     * old: 
+     * old:
      * if ni >= nb_nodes
      * then pr2 "the CFG nodei is bigger than the number of nodes"
      *)

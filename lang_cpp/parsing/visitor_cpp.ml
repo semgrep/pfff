@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -44,13 +44,13 @@ type visitor_in = {
 
   kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
-  
+
   kinfo: tok vin;
 }
 and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
-let default_visitor = 
+let default_visitor =
   { kexpr    = (fun (k,_) x -> k x);
     kfieldkind = (fun (k,_) x -> k x);
     kparameter = (fun (k,_) x -> k x);
@@ -83,11 +83,11 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
-and v_wrapx:'a. ('a -> unit) -> 'a wrapx -> unit = 
- fun _of_a (v1, v2) -> 
+and v_wrapx:'a. ('a -> unit) -> 'a wrapx -> unit =
+ fun _of_a (v1, v2) ->
    let v1 = _of_a v1 and v2 = v_list v_info v2 in ()
-and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit = 
- fun _of_a (v1, v2) -> 
+and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit =
+ fun _of_a (v1, v2) ->
    let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_paren:'a. ('a -> unit) -> 'a paren -> unit =
  fun _of_a (v1, v2, v3) ->
@@ -95,15 +95,15 @@ and v_paren:'a. ('a -> unit) -> 'a paren -> unit =
 and v_brace: 'a. ('a -> unit) -> 'a brace -> unit =
  fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit =
  fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_angle: 'a. ('a -> unit) -> 'a angle -> unit = 
+and v_angle: 'a. ('a -> unit) -> 'a angle -> unit =
  fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun
   _of_a -> v_list (v_wrapx _of_a)
-and v_comma_list2: 'a. ('a -> unit) -> 'a comma_list2 -> unit = 
+and v_comma_list2: 'a. ('a -> unit) -> 'a comma_list2 -> unit =
  fun _of_a ->
    v_list (OCaml.v_either _of_a v_tok)
 
@@ -114,7 +114,7 @@ and v_name (v1, v2, v3) =
       v2
   and v3 = v_ident v3
   in ()
-  
+
 and v_ident =
   function
   | IdIdent v1 -> let v1 = v_wrap v_string v1 in ()
@@ -144,7 +144,7 @@ and v_enum_name v = v_name v
 and v_ident_name v = v_name v
 and v_fullType (v1, v2) =
   let v1 = v_typeQualifier v1 and v2 = v_typeC v2 in ()
-and v_typeC v = 
+and v_typeC v =
   let k v = v_wrapx v_typeCbis v in
   vin.ktypeC (k, all_functions) v
 
@@ -205,7 +205,7 @@ and v_enum_elem { e_name = v_e_name; e_val = v_e_val } =
 and v_typeQualifier { const = v_const; volatile = v_volatile } =
   let arg = v_option v_tok v_const in
   let arg = v_option v_tok v_volatile in ()
-and v_expression v = 
+and v_expression v =
   let k x = v_wrapx v_expressionbis x in
   vin.kexpr (k, all_functions) v
 
@@ -379,7 +379,7 @@ and v_cast_operator =
   | Reinterpret_cast -> ()
 and v_constExpression v = v_expression v
 
-and v_statement v = 
+and v_statement v =
   let k v = v_wrapx v_statementbis v in
   vin.kstmt (k, all_functions) v
 
@@ -400,7 +400,7 @@ and v_statementbis =
   | NestedFunc v1 -> let v1 = v_func_definition v1 in ()
   | MacroStmt -> ()
   | StmtTodo -> ()
-and v_compound v = 
+and v_compound v =
   let k v = v_brace (v_list v_statement_sequencable) v in
   vin.kcompound (k, all_functions) v
 
@@ -700,8 +700,8 @@ and v_class_member x =
   function
   | Access (v1, v2) ->
       let v1 = v_wrap v_access_spec v1 and v2 = v_tok v2 in ()
-  | MemberField (v1, v2) -> 
-      let v1 = (v_comma_list v_fieldkind) v1 in 
+  | MemberField (v1, v2) ->
+      let v1 = (v_comma_list v_fieldkind) v1 in
       let v2 = v_tok v2 in
       ()
   | MemberFunc v1 -> let v1 = v_func_or_else v1 in ()
@@ -752,9 +752,9 @@ and v_cpp_directive x =
       and v3 = v_define_kind v3
       and v4 = v_define_val v4
       in ()
-  | Include (v1, v2, v3) -> 
-    let v1 = v_tok v1 
-    and v2 = v_inc_kind v2 
+  | Include (v1, v2, v3) ->
+    let v1 = v_tok v1
+    and v2 = v_inc_kind v2
     and v3 = v_string v3
     in ()
   | Undef v1 -> let v1 = v_wrap v_string v1 in ()
@@ -874,12 +874,12 @@ and v_any =
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ClassMember v1 -> let v1 = v_class_member v1 in ()
   | OneDecl v1 -> let v1 = v_onedecl v1 in ()
-  
+
 (* end of auto generation *)
 
  and all_functions x = v_any x
 in
  v_any
 
-  
+
 *)
