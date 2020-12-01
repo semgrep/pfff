@@ -1,4 +1,4 @@
 
 
 let x = 
-  Foo.((C1, e, C2))
+  Foo.(C1, e, C2)

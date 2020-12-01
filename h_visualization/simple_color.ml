@@ -114,7 +114,7 @@ let rgb_of_rgbf (r,g,b) =
   (conv r, conv g, conv b)
 
 let rgbf_of_rgb (r,g,b) = 
-  let conv x = ((float_of_int x /. 255.0)) in
+  let conv x = (float_of_int x /. 255.0) in
   (conv r, conv g, conv b)
 
 let color_of_rgb (r,g,b) = 

@@ -402,7 +402,7 @@ let tuple_of_size_n_expected  _loc n v =
 let rec json_of_v v = 
   match v with
   | VString s -> J.String s
-  | VSum ((s, vs)) ->J.Array ((J.String s)::(List.map json_of_v vs ))
+  | VSum (s, vs) ->J.Array ((J.String s)::(List.map json_of_v vs ))
   | VTuple xs -> J.Array (xs |> List.map json_of_v)
   | VDict xs -> J.Object (xs |> List.map (fun (s, v) ->
       s, json_of_v v

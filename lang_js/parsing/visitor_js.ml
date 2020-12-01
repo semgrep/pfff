@@ -151,21 +151,21 @@ and v_expr (x: expr) =
   | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
   | Id (v1) -> let v1 = v_name v1 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
-  | Assign ((v1, v2, v3)) -> 
+  | Assign (v1, v2, v3) -> 
         let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
-  | ArrAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
+  | ArrAccess (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
   | Obj v1 -> let v1 = v_obj_ v1 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
   | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
   | Class (v1, v2) -> let v1 = v_class_definition v1 in let v2 = v_option v_name v2 in ()
-  | ObjAccess ((v1, t, v2)) ->
+  | ObjAccess (v1, t, v2) ->
       let v1 = v_expr v1 and v2 = v_property_name v2 in
       let t = v_tok t in
       ()
-  | Fun ((v1, v2)) -> let v1 = v_function_definition v1 and v2 = v_option v_name v2 in ()
-  | Apply ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket (v_list v_expr) v2 in ()
-  | Arr ((v1)) -> let v1 = v_bracket (v_list v_expr) v1 in ()
-  | Conditional ((v1, v2, v3)) ->
+  | Fun (v1, v2) -> let v1 = v_function_definition v1 and v2 = v_option v_name v2 in ()
+  | Apply (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket (v_list v_expr) v2 in ()
+  | Arr (v1) -> let v1 = v_bracket (v_list v_expr) v1 in ()
+  | Conditional (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   in  
   vin.kexpr (k, all_functions) x
@@ -178,19 +178,19 @@ and v_stmt x =
   | DefStmt v1 -> let v1 = v_def v1 in ()
   | Block v1 -> let v1 = v_bracket (v_list v_stmt) v1 in ()
   | ExprStmt (v1, t) -> let v1 = v_expr v1 in let t= v_tok t in ()
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
       let t = v_tok t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()
-  | Do ((t, v1, v2)) -> 
+  | Do (t, v1, v2) -> 
       let t = v_tok t in
       let v1 = v_stmt v1 and v2 = v_expr v2 in ()
-  | While ((t, v1, v2)) -> 
+  | While (t, v1, v2) -> 
       let t = v_tok t in
       let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | For ((t, v1, v2)) -> 
+  | For (t, v1, v2) -> 
       let t = v_tok t in
       let v1 = v_for_header v1 and v2 = v_stmt v2 in ()
-  | Switch ((v0, v1, v2)) -> 
+  | Switch (v0, v1, v2) -> 
         let v0 = v_tok v0 in
         let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
   | Continue (t, v1, sc) -> 
@@ -205,12 +205,12 @@ and v_stmt x =
       let t = v_tok t in
       let v1 = v_option v_expr v1 in
       v_tok sc
-  | Label ((v1, v2)) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
+  | Label (v1, v2) -> let v1 = v_label v1 and v2 = v_stmt v2 in ()
   | Throw (t, v1, sc) -> 
       let t = v_tok t in
       let v1 = v_expr v1 in
       v_tok sc
-  | Try ((t, v1, v2, v3)) ->
+  | Try (t, v1, v2, v3) ->
       let t = v_tok t in
       let v1 = v_stmt v1
       and v2 = v_option v_catch_block v2
@@ -241,18 +241,18 @@ and v_tok_and_stmt (t, v) =
 and v_for_header =
   function
   | ForEllipsis v1 -> v_tok v1
-  | ForClassic ((v1, v2, v3)) ->
+  | ForClassic (v1, v2, v3) ->
       let v1 = v_either (v_list v_var) v_expr v1
       and v2 = v_option v_expr v2
       and v3 = v_option v_expr v3
       in ()
-  | ForIn ((v1, t, v2)) | ForOf ((v1, t, v2)) ->
+  | ForIn (v1, t, v2) | ForOf (v1, t, v2) ->
       let t = v_tok t in
       let v1 = v_either v_var v_expr v1 and v2 = v_expr v2 in ()
 
 and v_case =
   function
-  | Case ((t, v1, v2)) -> 
+  | Case (t, v1, v2) -> 
       let t = v_tok t in
       let v1 = v_expr v1 and v2 = v_stmt v2 in ()
   | Default (t, v1) -> 
@@ -384,16 +384,16 @@ and v_module_directive x =
   match x with
   | ReExportNamespace (v1, v2, v3, v4) ->
       v_tok v1; v_tok v2; v_tok v3; v_filename v4
-  | Import ((t, v1, v2, v3)) ->
+  | Import (t, v1, v2, v3) ->
       let t = v_tok t in
       let v1 = v_name v1 and v2 = v_option v_name v2 and v3 = v_filename v3 in ()
-  | ImportFile ((t, v1)) ->
+  | ImportFile (t, v1) ->
       let t = v_tok t in
       let v1 = v_name v1 in ()
-  | ModuleAlias ((t, v1, v2)) ->
+  | ModuleAlias (t, v1, v2) ->
       let t = v_tok t in
       let v1 = v_name v1 and v2 = v_filename v2 in ()
-  | Export ((t, v1)) -> 
+  | Export (t, v1) -> 
       let t = v_tok t in
       let v1 = v_name v1 in ()
 

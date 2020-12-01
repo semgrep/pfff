@@ -224,7 +224,7 @@ and method_name mn =
   | MethodAtom x ->
      (match x with
      | AtomSimple x -> Left x
-     | AtomFromString ((l, xs, r)) -> 
+     | AtomFromString (l, xs, r) -> 
       (match xs with
       | [StrChars (s,t2)] -> 
         let t = PI.combine_infos l [t2;r] in

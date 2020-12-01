@@ -862,7 +862,7 @@ primary_type2:
  | object_type          
     { let (t1, _xsTODO, t2) = $1 in
       G.TyRecordAnon (G.fake "", (t1, [], t2)) }
- | "[" listc(type_) "]" { G.TyTuple (($1, $2, $3)) }
+ | "[" listc(type_) "]" { G.TyTuple ($1, $2, $3) }
  (* not in Typescript grammar *)
  | T_STRING
      { G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1); 

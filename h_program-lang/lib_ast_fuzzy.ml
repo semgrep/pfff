@@ -173,17 +173,17 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   let rec v_tree x =
     let k x = match x with
-      | Braces ((v1, v2, v3)) ->
+      | Braces (v1, v2, v3) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
-      | Parens ((v1, v2, v3)) ->
+      | Parens (v1, v2, v3) ->
         let _v1 = v_tok v1
         and _v2 = OCaml.v_list (OCaml.v_either v_trees v_tok) v2
         and _v3 = v_tok v3
       in ()
 
-      | Angle ((v1, v2, v3)) ->
+      | Angle (v1, v2, v3) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
-      | Bracket ((v1, v2, v3)) ->
+      | Bracket (v1, v2, v3) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Metavar v1 -> let _v1 = v_wrap v1 in ()
       | Dots v1 -> let _v1 = v_tok v1 in ()
@@ -220,29 +220,29 @@ type map_visitor = {
 let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
   let rec map_tree =
     function
-    | Braces ((v1, v2, v3)) ->
+    | Braces (v1, v2, v3) ->
       let v1 = map_tok v1
       and v2 = map_trees v2
       and v3 = map_tok v3
-      in Braces ((v1, v2, v3))
-    | Parens ((v1, v2, v3)) ->
+      in Braces (v1, v2, v3)
+    | Parens (v1, v2, v3) ->
       let v1 = map_tok v1
       and v2 = List.map (OCaml.map_of_either map_trees map_tok) v2
       and v3 = map_tok v3
-      in Parens ((v1, v2, v3))
-    | Angle ((v1, v2, v3)) ->
+      in Parens (v1, v2, v3)
+    | Angle (v1, v2, v3) ->
       let v1 = map_tok v1
       and v2 = map_trees v2
       and v3 = map_tok v3
-      in Angle ((v1, v2, v3))
-    | Bracket ((v1, v2, v3)) ->
+      in Angle (v1, v2, v3)
+    | Bracket (v1, v2, v3) ->
       let v1 = map_tok v1
       and v2 = map_trees v2
       and v3 = map_tok v3
-      in Bracket ((v1, v2, v3))
-  | Metavar v1 -> let v1 = map_wrap v1 in Metavar ((v1))
-  | Dots v1 -> let v1 = map_tok v1 in Dots ((v1))
-  | Tok v1 -> let v1 = map_wrap v1 in Tok ((v1))
+      in Bracket (v1, v2, v3)
+  | Metavar v1 -> let v1 = map_wrap v1 in Metavar (v1)
+  | Dots v1 -> let v1 = map_tok v1 in Dots (v1)
+  | Tok v1 -> let v1 = map_wrap v1 in Tok (v1)
   and map_trees v = List.map map_tree v
   and map_tok v = 
     let k v = v in

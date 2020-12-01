@@ -829,7 +829,7 @@ and typ env = function
             | None ->
                 (match xs with
                 | [] -> raise Impossible
-                | ((s,_))::_ when List.mem_assoc s env.imported_qualified ->
+                | (s,_)::_ when List.mem_assoc s env.imported_qualified ->
                     let (_is_static, full_ident) =
                       List.assoc s env.imported_qualified in
                     let str = str_of_qualified_ident full_ident in

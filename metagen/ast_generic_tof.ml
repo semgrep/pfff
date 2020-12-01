@@ -6,7 +6,7 @@ let tof_wrap =
   OCaml.add_new_type "wrap" (OCaml.Tuple [ OCaml.Poly "a"; OCaml.Var "tok" ])
   
 let tof_name =
-  OCaml.add_new_type "name" (OCaml.Apply (("wrap", OCaml.String)))
+  OCaml.add_new_type "name" (OCaml.Apply ("wrap", OCaml.String))
   
 let tof_dotted_name =
   OCaml.add_new_type "dotted_name" (OCaml.List (OCaml.Var "name"))
@@ -17,7 +17,7 @@ let tof_qualified_name =
 let tof_module_name =
   OCaml.add_new_type "module_name"
     (OCaml.Sum
-       [ ("FileName", [ OCaml.Apply (("wrap", OCaml.String)) ]);
+       [ ("FileName", [ OCaml.Apply ("wrap", OCaml.String) ]);
          ("DottedName", [ OCaml.Var "dotted_name" ]) ])
   
 let tof_resolved_name =
@@ -318,7 +318,7 @@ and tof_type_arguments =
 and tof_type_ =
   OCaml.add_new_type "type_"
     (OCaml.Sum
-       [ ("TyBuiltin", [ OCaml.Apply (("wrap", OCaml.String)) ]);
+       [ ("TyBuiltin", [ OCaml.Apply ("wrap", OCaml.String) ]);
          ("TyFun", [ OCaml.List (OCaml.Var "type_"); OCaml.Var "type_" ]);
          ("TyApply", [ OCaml.Var "name"; OCaml.Var "type_arguments" ]);
          ("TyVar", [ OCaml.Var "name" ]);
@@ -392,12 +392,12 @@ and tof_literal =
   OCaml.add_new_type "literal"
     (OCaml.Sum
        [ ("Unit", [ OCaml.Var "tok" ]);
-         ("Bool", [ OCaml.Apply (("wrap", OCaml.Bool)) ]);
-         ("Int", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("Float", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("Char", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("String", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("Regexp", [ OCaml.Apply (("wrap", OCaml.String)) ]);
+         ("Bool", [ OCaml.Apply ("wrap", OCaml.Bool) ]);
+         ("Int", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("Float", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("Char", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("String", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("Regexp", [ OCaml.Apply ("wrap", OCaml.String) ]);
          ("Null", [ OCaml.Var "tok" ]); ("Undefined", [ OCaml.Var "tok" ]) ])
 and tof_expr =
   OCaml.add_new_type "expr"

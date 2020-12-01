@@ -54,37 +54,37 @@ let vof_token_location {
 let vof_token_origin =
   function
   | OriginTok v1 ->
-      let v1 = vof_token_location v1 in OCaml.VSum (("OriginTok", [ v1 ]))
+      let v1 = vof_token_location v1 in OCaml.VSum ("OriginTok", [ v1 ])
   | FakeTokStr (v1, opt) ->
       let v1 = OCaml.vof_string v1 in
       let opt = OCaml.vof_option (fun (p1, i) ->
         OCaml.VTuple [vof_token_location p1; OCaml.vof_int i]
       ) opt
       in
-      OCaml.VSum (("FakeTokStr", [ v1; opt ]))
-  | Ab -> OCaml.VSum (("Ab", []))
+      OCaml.VSum ("FakeTokStr", [ v1; opt ])
+  | Ab -> OCaml.VSum ("Ab", [])
   | ExpandedTok (v1, v2, v3) ->
       let v1 = vof_token_location v1 in
       let v2 = vof_token_location v2 in
       let v3 = OCaml.vof_int v3 in
-      OCaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
+      OCaml.VSum ("ExpandedTok", [ v1; v2; v3 ])
 
 
 let rec vof_transformation =
   function
-  | NoTransfo -> OCaml.VSum (("NoTransfo", []))
-  | Remove -> OCaml.VSum (("Remove", []))
-  | AddBefore v1 -> let v1 = vof_add v1 in OCaml.VSum (("AddBefore", [ v1 ]))
-  | AddAfter v1 -> let v1 = vof_add v1 in OCaml.VSum (("AddAfter", [ v1 ]))
-  | Replace v1 -> let v1 = vof_add v1 in OCaml.VSum (("Replace", [ v1 ]))
+  | NoTransfo -> OCaml.VSum ("NoTransfo", [])
+  | Remove -> OCaml.VSum ("Remove", [])
+  | AddBefore v1 -> let v1 = vof_add v1 in OCaml.VSum ("AddBefore", [ v1 ])
+  | AddAfter v1 -> let v1 = vof_add v1 in OCaml.VSum ("AddAfter", [ v1 ])
+  | Replace v1 -> let v1 = vof_add v1 in OCaml.VSum ("Replace", [ v1 ])
   | AddArgsBefore v1 -> let v1 = OCaml.vof_list OCaml.vof_string v1 in OCaml.VSum
-  (("AddArgsBefore", [ v1 ]))
+  ("AddArgsBefore", [ v1 ])
 
 and vof_add =
   function
   | AddStr v1 ->
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("AddStr", [ v1 ]))
-  | AddNewlineAndIdent -> OCaml.VSum (("AddNewlineAndIdent", []))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum ("AddStr", [ v1 ])
+  | AddNewlineAndIdent -> OCaml.VSum ("AddNewlineAndIdent", [])
 
 let vof_info
  { token = v_token; transfo = v_transfo } =

@@ -22,7 +22,7 @@ let unittest =
                     match exp with
                       | A.Id(_, {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyName((("String", _)), _)) -> ()
+                              | Some(A.TyName(("String", _), _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type String"))
                       | _ -> ()
                 );
@@ -46,18 +46,18 @@ let unittest =
                       ((match x with
                         | A.Arg(A.Id(_, {A.id_type=id_type; _})) -> (
                               match !id_type with 
-                                | Some(A.TyName((("String", _)), _)) -> ()
+                                | Some(A.TyName(("String", _), _)) -> ()
                                 | _ -> assert_failure("Variable 1 referenced did not have expected type String"))
                         | _ -> ());
                       (match y with
                         | A.Arg(A.Id(_, {A.id_type=id_type; _})) -> (
                               match !id_type with 
-                                | Some(A.TyBuiltin((("int", _)))) -> ()
+                                | Some(A.TyBuiltin("int", _)) -> ()
                                 | _ -> assert_failure("Variable 2 referenced did not have expected type int"))
                         | _ -> ()))
                     | A.Assign(A.Id(_, {A.id_type=id_type; _}), _, _) -> (
                         match !id_type with 
-                          | Some(A.TyName((("String", _)), _)) -> ()
+                          | Some(A.TyName(("String", _), _)) -> ()
                           | _ -> assert_failure("Variable 1 referenced did not have expected type String"))
                     | _ -> ()
                 );
@@ -81,13 +81,13 @@ let unittest =
                       ((match x with
                         | A.Arg(A.Id(_, {A.id_type=id_type; _})) -> (
                               match !id_type with 
-                                | Some(A.TyBuiltin((("int", _)))) -> ()
+                                | Some(A.TyBuiltin("int", _)) -> ()
                                 | _ -> assert_failure("Variable 1 referenced did not have expected type String"))
                         | _ -> ());
                       (match y with
                         | A.Arg(A.Id(_, {A.id_type=id_type; _})) -> (
                               match !id_type with 
-                                | Some(A.TyBuiltin((("boolean", _)))) -> ()
+                                | Some(A.TyBuiltin("boolean", _)) -> ()
                                 | _ -> assert_failure("Variable 2 referenced did not have expected type int"))
                         | _ -> ()))
                     | _ -> ()
@@ -110,11 +110,11 @@ let unittest =
                     match exp with
                       | A.Id(("age", _), {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyBuiltin((("int", _)))) -> ()
+                              | Some(A.TyBuiltin("int", _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type int"))
                       | A.Id(("default_age", _), {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyBuiltin((("int", _)))) -> ()
+                              | Some(A.TyBuiltin("int", _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type int"))
                       | _ -> ()
                 );
@@ -160,7 +160,7 @@ let unittest =
                     match exp with
                       | A.Id(_, {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyName((("int", _)), _)) -> ()
+                              | Some(A.TyName(("int", _), _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type int"))
                       | _ -> ()
                 );
@@ -184,13 +184,13 @@ let unittest =
                         ((match x with
                           | A.Arg(A.Id(("a", _), {A.id_type=id_type; _})) -> (
                                 match !id_type with 
-                                  | Some(A.TyName((("int", _)), _)) -> ()
+                                  | Some(A.TyName(("int", _), _)) -> ()
                                   | _ -> assert_failure("Variable referenced did not have expected type int"))
                           | _ -> assert_failure("Expected function call to be with int a as first argument"));
                         (match y with
                           | A.Arg(A.Id(("c", _), {A.id_type=id_type; _})) -> (
                                 match !id_type with 
-                                  | Some(A.TyName((("bool", _)), _)) -> ()
+                                  | Some(A.TyName(("bool", _), _)) -> ()
                                   | _ -> assert_failure("Variable referenced did not have expected type bool"))
                           | _ -> assert_failure("Epected function call to have bool c as second argument")))
                       | _ -> ()
@@ -213,15 +213,15 @@ let unittest =
                     match exp with
                       | A.Id(("a", _), {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyName((("char", _)), _)) -> ()
+                              | Some(A.TyName(("char", _), _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type char"))
                       | A.Id(("b", _), {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyName((("int", _)), _)) -> ()
+                              | Some(A.TyName(("int", _), _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type int"))
                       | A.Id(("c", _), {A.id_type=id_type; _}) -> (
                             match !id_type with 
-                              | Some(A.TyName((("char", _)), _)) -> ()
+                              | Some(A.TyName(("char", _), _)) -> ()
                               | _ -> assert_failure("Variable referenced did not have expected type char"))
                       | _ -> ()
                 );

@@ -246,15 +246,15 @@ let get_resolved_type (vinit, vtype) =
       (* Alternative is to define a TyInt, TyBool, etc in the generic AST *)
       (* so this is more portable across langauges *)
       match vinit with
-         | Some(L (Bool ((_, tok)))) -> make_type "bool" tok
-         | Some(L (Int ((_, tok)))) -> make_type "int" tok
-         | Some(L (Float ((_, tok)))) -> make_type "float" tok
-         | Some(L (Char ((_, tok)))) -> make_type "char" tok
-         | Some(L (String ((_, tok)))) -> make_type "str" tok
-         | Some(L (Regexp ((_, tok)))) -> make_type "regexp" tok
+         | Some(L (Bool (_, tok))) -> make_type "bool" tok
+         | Some(L (Int (_, tok))) -> make_type "int" tok
+         | Some(L (Float (_, tok))) -> make_type "float" tok
+         | Some(L (Char (_, tok))) -> make_type "char" tok
+         | Some(L (String (_, tok))) -> make_type "str" tok
+         | Some(L (Regexp (_, tok))) -> make_type "regexp" tok
          | Some(L (Unit tok)) -> make_type "unit" tok
          | Some(L (Null tok)) -> make_type "null" tok
-         | Some(L (Imag ((_, tok)))) -> make_type "imag" tok
+         | Some(L (Imag (_, tok))) -> make_type "imag" tok
          | Some(Id (_, {id_type; _})) -> !id_type
          | _ -> None
     )

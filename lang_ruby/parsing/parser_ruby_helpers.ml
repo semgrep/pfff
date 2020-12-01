@@ -208,7 +208,7 @@ let well_formed_return args = match args with
   | hd::_tl -> 
   if is_cond_modifier (Utils.last args) then raise Dyp.Giveup;
   match starts_with hd with
-      (* f(x) should be not be f((x))
+      (* f(x) should be not be f(x)
          needed e.g. f(x)[y]
       *)
     | S Block _ -> raise Dyp.Giveup
@@ -216,7 +216,7 @@ let well_formed_return args = match args with
 
 let well_formed_command _m args = match args with
   | [] -> ()
-  (* f(x) should be not be f((x))
+  (* f(x) should be not be f(x)
      needed e.g. f(x)[y] *)
   | [S Block _] -> raise Dyp.Giveup
   | _ -> if List.exists is_cond_modifier args then raise Dyp.Giveup

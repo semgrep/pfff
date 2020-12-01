@@ -114,19 +114,19 @@ let rec type_ =
   function
   | TBase v1 -> let v1 = name v1 in G.TyBuiltin v1
   | TPointer (t, v1) -> let v1 = type_ v1 in G.TyPointer (t, v1)
-  | TArray ((v1, v2)) ->
+  | TArray (v1, v2) ->
       let v1 = option const_expr v1 and v2 = type_ v2 in
       G.TyArray (fb v1, v2)
   | TFunction v1 -> let (ret, params) = function_type v1 in 
       G.TyFun (params, ret)
-  | TStructName ((v1, v2)) ->
+  | TStructName (v1, v2) ->
       let v1 = struct_kind v1 and v2 = name v2 in
       G.OtherType (v1, [G.I v2])
   | TEnumName v1 -> let v1 = name v1 in
       G.OtherType (G.OT_EnumName, [G.I v1])
   | TTypeName v1 -> 
       let v1 = name v1 in 
-      G.TyName ((v1, G.empty_name_info))
+      G.TyName (v1, G.empty_name_info)
   | TMacroApply (v1, (_lp, v2, _rp)) ->
       let v1 = name v1 in
       let v2 = type_ v2 in
@@ -172,9 +172,9 @@ and expr =
              G.Id (v1, G.empty_id_info())
   | Ellipses v1 -> let v1 = info v1 in G.Ellipsis (v1)
   | DeepEllipsis v1 -> let v1 = bracket (expr) v1 in G.DeepEllipsis v1
-  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in
+  | Call (v1, v2) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in
       G.Call (v1, v2)
-  | Assign ((v1, v2, v3)) ->
+  | Assign (v1, v2, v3) ->
       let v1 = assignOp v1
       and v2 = expr v2
       and v3 = expr v3
@@ -183,12 +183,12 @@ and expr =
       | Left tok -> G.Assign (v2, tok, v3)
       | Right (op, tok) -> G.AssignOp (v2, (op, tok), v3)
       )
-  | ArrayAccess ((v1, v2)) -> let v1 = expr v1 and v2 = bracket expr v2 in
+  | ArrayAccess (v1, v2) -> let v1 = expr v1 and v2 = bracket expr v2 in
       G.ArrayAccess (v1, v2) 
-  | RecordPtAccess ((v1, t, v2)) -> 
+  | RecordPtAccess (v1, t, v2) -> 
       let v1 = expr v1 and t = info t and v2 = name v2 in
       G.DotAccess (G.DeRef (t, v1), t, G.EId v2)
-  | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
+  | Cast (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
   | Postfix ((v1, (v2, v3))) ->
       let v1 = expr v1 and v2 = fixOp v2 in 
@@ -196,7 +196,7 @@ and expr =
   | Infix ((v1, (v2, v3))) ->
       let v1 = expr v1 and v2 = fixOp v2 in
       G.Call (G.IdSpecial (G.IncrDecr (v2, G.Prefix), v3), fb[G.Arg v1]) 
-  | Unary ((v1, v2)) ->
+  | Unary (v1, v2) ->
       let v1 = expr v1 and v2 = unaryOp v2 in 
       v2 v1
   | Binary ((v1, (v2, tok), v3)) ->
@@ -204,10 +204,10 @@ and expr =
       and v2 = binaryOp v2
       and v3 = expr v3
       in G.Call (G.IdSpecial (G.Op v2, tok), fb[G.Arg v1; G.Arg v3])
-  | CondExpr ((v1, v2, v3)) ->
+  | CondExpr (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | Sequence ((v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+  | Sequence (v1, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.Seq [v1;v2]
   | SizeOf (t, v1) -> let v1 = either expr type_ v1 in
       G.Call (G.IdSpecial (G.Sizeof, t), 
@@ -235,7 +235,7 @@ and expr =
         ))
           v1
       in G.Record v1
-  | GccConstructor ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
+  | GccConstructor (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 
         fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
 
@@ -257,18 +257,18 @@ let rec stmt =
 
   | ExprSt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
-  | Switch ((v0, v1, v2)) -> 
+  | Switch (v0, v1, v2) -> 
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
-  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+  | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)
-  | DoWhile ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
+  | DoWhile (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in 
       G.DoWhile (t, v1, v2)
-  | For ((t, v1, v2, v3, v4)) ->
+  | For (t, v1, v2, v3, v4) ->
       let init = expr_or_vars v1
       and v2 = option expr v2
       and v3 = option expr v3
@@ -279,7 +279,7 @@ let rec stmt =
   | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1, G.sc)
   | Continue t -> G.Continue (t, G.LNone, G.sc)
   | Break t -> G.Break (t, G.LNone, G.sc)
-  | Label ((v1, v2)) -> let v1 = name v1 and v2 = stmt v2 in
+  | Label (v1, v2) -> let v1 = name v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)
   | Vars v1 -> let v1 = list var_decl v1 in
@@ -307,7 +307,7 @@ and case_stmt = function
 
 and case =
   function
-  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in 
+  | Case (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in 
       [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
   | Default (t, v1) -> let v1 = list stmt v1 in 
       [G.Default t], G.stmt1 v1

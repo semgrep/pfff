@@ -118,10 +118,10 @@ let rec type_ =
       G.TyName (name_of_qualified_ident v1)
   | TPtr (t, v1) -> let v1 = type_ v1 in 
       G.TyPointer (t, v1)
-  | TArray ((v1, v2)) -> 
+  | TArray (v1, v2) -> 
       let v1 = bracket (option expr) v1 and v2 = type_ v2 in 
       G.TyArray (v1, v2)
-  | TArrayEllipsis ((v1, v2)) -> 
+  | TArrayEllipsis (v1, v2) -> 
       let (t1, _v1, t2) = bracket tok v1 and v2 = type_ v2 in
       G.TyArray ((t1, None, t2), v2)
   | TFunc v1 -> let (params, ret) = func_type v1 in 
@@ -133,7 +133,7 @@ let rec type_ =
       G.TyFun (params, ret)
   | TMap ((t, (_, v1, _), v2)) -> let v1 = type_ v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "map" t, [G.TypeArg v1; G.TypeArg v2])
-  | TChan ((t, v1, v2)) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
+  | TChan (t, v1, v2) -> let v1 = chan_dir v1 and v2 = type_ v2 in 
       G.TyNameApply (mk_name "chan" t, [G.TypeArg v1; G.TypeArg v2])
 
   | TStruct (t, v1) -> let v1 = bracket (list struct_field) v1 in 
@@ -182,9 +182,9 @@ and struct_field (v1, v2) =
 
 and struct_field_kind =
   function
-  | Field ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
+  | Field (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in 
       G.basic_field v1 None (Some v2)
-  | EmbeddedField ((v1, v2)) ->
+  | EmbeddedField (v1, v2) ->
       let _v1TODO = option tok v1 and v2 = qualified_ident v2 in
       let name = name_of_qualified_ident v2 in
       G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
@@ -195,7 +195,7 @@ and tag v = wrap string v
 
 and interface_field =
   function
-  | Method ((v1, v2)) -> 
+  | Method (v1, v2) -> 
       let v1 = ident v1 in
       let (params, ret) = func_type v2 in
       let ent = G.basic_entity v1 [] in
@@ -221,35 +221,35 @@ and expr =
            (* we share the resolved_name ref! so any naming done on the
            * generic AST will have a (wanted) side effect on the Go AST *)
            { (G.empty_id_info()) with G.id_resolved = vref; })
-  | Selector ((v1, v2, v3)) ->
+  | Selector (v1, v2, v3) ->
       let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in
       G.DotAccess (v1, v2, G.EId v3)
-  | Index ((v1, v2)) -> let v1 = expr v1 and v2 = bracket index v2 in
+  | Index (v1, v2) -> let v1 = expr v1 and v2 = bracket index v2 in
       G.ArrayAccess (v1, v2)
   | Call v1 -> let (e, args) = call_expr v1 in 
       G.Call (e, args)
-  | Cast ((v1, v2)) -> let v1 = type_ v1 and v2 = expr v2 in
+  | Cast (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Cast (v1, v2)
-  | Deref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
+  | Deref (v1, v2) -> let v1 = tok v1 and v2 = expr v2 in
       G.DeRef (v1, v2)
-  | Ref ((v1, v2)) -> let v1 = tok v1 and v2 = expr v2 in
+  | Ref (v1, v2) -> let v1 = tok v1 and v2 = expr v2 in
       G.Ref (v1, v2)
-  | Unary ((v1, v2)) ->
+  | Unary (v1, v2) ->
       let (v1, tok) = wrap arithmetic_operator v1
       and v2 = expr v2
       in
       G.Call (G.IdSpecial (G.Op v1, tok), fb[G.expr_to_arg v2])
-  | Binary ((v1, v2, v3)) ->
+  | Binary (v1, v2, v3) ->
       let v1 = expr v1
       and (v2, tok) = wrap arithmetic_operator v2
       and v3 = expr v3
       in
       G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
-  | CompositeLit ((v1, v2)) ->
+  | CompositeLit (v1, v2) ->
       let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init_for_composite_lit) v2 in
       G.Call (G.IdSpecial (G.New, fake "new"), 
         fb((G.ArgType v1)::(v2)))
-  | Slice ((v1, v2)) ->
+  | Slice (v1, v2) ->
       let e = expr v1 in
       let (v1, v2, v3) = v2 in
       let v1 = option expr v1
@@ -257,7 +257,7 @@ and expr =
       and v3 = option expr v3
       in 
       G.SliceAccess (e, v1, v2, v3)
-  | TypeAssert ((v1, v2)) -> let v1 = expr v1 and v2 = type_ v2 in
+  | TypeAssert (v1, v2) -> let v1 = expr v1 and v2 = type_ v2 in
       G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
         fb[G.Arg v1; G.ArgType v2])
   | Ellipsis v1 -> let v1 = tok v1 in 
@@ -268,17 +268,17 @@ and expr =
       let v1 = ident v1 in
       let v3 = type_ v3 in
       G.TypedMetavar (v1, v2, v3)
-  | FuncLit ((v1, v2)) -> 
+  | FuncLit (v1, v2) -> 
       let (params, ret) = func_type v1 
       and v2 = stmt v2 
       in
       G.Lambda (mk_func_def (G.LambdaKind, G.fake "") params ret v2)
-  | Receive ((v1, v2)) -> let _v1 = tok v1 and v2 = expr v2 in 
+  | Receive (v1, v2) -> let _v1 = tok v1 and v2 = expr v2 in 
       G.OtherExpr (G.OE_Recv, [G.E v2])
-  | Send ((v1, v2, v3)) ->
+  | Send (v1, v2, v3) ->
       let v1 = expr v1 and _v2 = tok v2 and v3 = expr v3 in
       G.OtherExpr (G.OE_Send, [G.E v1; G.E v3])
-  | TypeSwitchExpr ((v1, v2)) -> let _v1 = expr v1 and v2 = tok v2 in
+  | TypeSwitchExpr (v1, v2) -> let _v1 = expr v1 and v2 = tok v2 in
       error v2 "TypeSwitchExpr should be handled in Switch statement"
   | ParenType v1 -> let _v1 = type_ v1 in
       error (ii_of_any (T v1) |> List.hd) 
@@ -313,7 +313,7 @@ and argument =
 and init =
   function
   | InitExpr v1 -> let v1 = expr v1 in v1
-  | InitKeyValue ((v1, v2, v3)) ->
+  | InitKeyValue (v1, v2, v3) ->
       let v1 = init v1 and _v2 = tok v2 and v3 = init v3 in
       G.Tuple (G.fake_bracket [v1; v3])
   | InitBraces v1 -> let v1 = bracket (list init) v1 in
@@ -322,7 +322,7 @@ and init =
 and init_for_composite_lit =
    function
    | InitExpr v1 -> let v1 = expr v1 in G.Arg v1
-   | InitKeyValue ((v1, v2, v3)) ->
+   | InitKeyValue (v1, v2, v3) ->
        let _v2 = tok v2 and v3 = init v3 in
        (match v1 with 
         | InitExpr (Id (id, _id_info)) -> G.ArgKwd (id, v3)
@@ -337,13 +337,13 @@ and simple = function
   | ExprStmt v1 -> let v1 = expr v1 in 
       v1
   (* nice language! Assigns are at statement level! *)
-  | Assign ((v1, v2, v3)) ->
+  | Assign (v1, v2, v3) ->
       let v1 = list expr v1
       and v2 = tok v2
       and v3 = list expr v3
       in
       (G.Assign (list_to_tuple_or_expr v1, v2, list_to_tuple_or_expr v3))
-  | DShortVars ((v1, v2, v3)) ->
+  | DShortVars (v1, v2, v3) ->
       let v1 = list expr v1
       and v2 = tok v2
       and v3 = list expr v3
@@ -354,13 +354,13 @@ and simple = function
        *)
       (G.AssignOp (list_to_tuple_or_expr v1, (G.Eq, v2), 
                    list_to_tuple_or_expr v3))
-  | AssignOp ((v1, v2, v3)) ->
+  | AssignOp (v1, v2, v3) ->
       let v1 = expr v1
       and v2 = wrap arithmetic_operator v2
       and v3 = expr v3
       in
       (G.AssignOp (v1, v2, v3))
-  | IncDec ((v1, v2, v3)) ->
+  | IncDec (v1, v2, v3) ->
       let v1 = expr v1
       and (v2, tok) = wrap incr_decr v2
       and v3 = prefix_postfix v3
@@ -399,7 +399,7 @@ and stmt_aux =
   | SimpleStmt v1 ->
       let v1 = simple v1 in
       [G.exprstmt v1]
-  | If ((t, v1, v2, v3, v4)) ->
+  | If (t, v1, v2, v3, v4) ->
       let v1 = option simple v1
       and v2 = expr v2
       and v3 = stmt v3
@@ -407,7 +407,7 @@ and stmt_aux =
       in 
       wrap_init_in_block_maybe v1 
        (G.If (t, v2, v3, v4))
-  | Switch ((v0, v1, v2, v3)) ->
+  | Switch (v0, v1, v2, v3) ->
       let v0 = tok v0 in
       let v1 = option simple v1
       and v2 = 
@@ -430,7 +430,7 @@ and stmt_aux =
       in
       wrap_init_in_block_maybe v1 
         (G.Switch (v0, v2, v3))
-  | Select ((v1, v2)) ->
+  | Select (v1, v2) ->
       let v1 = tok v1 and v2 = list comm_clause v2 in 
       [G.Switch (v1, None, v2)]
   | For (t, (v1, v2, v3), v4) ->
@@ -443,7 +443,7 @@ and stmt_aux =
       let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
       [G.For (t, G.ForClassic (init, v2, v3), v4)]
         
-  | Range ((t, v1, v2, v3, v4)) ->
+  | Range (t, v1, v2, v3, v4) ->
       let opt =  option 
           (fun (v1, v2) -> let v1 = list expr v1 and v2 = tok v2 in 
             v1, v2) v1
@@ -459,28 +459,28 @@ and stmt_aux =
           let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern |> G.fake_bracket) in
           [G.For (t, G.ForEach (pattern, v2, v3), v4)]
       )
-  | Return ((v1, v2)) ->
+  | Return (v1, v2) ->
       let v1 = tok v1 and v2 = option (list expr) v2 in
       [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr), G.sc)]
-  | Break ((v1, v2)) -> 
+  | Break (v1, v2) -> 
       let v1 = tok v1 and v2 = option ident v2 in 
       [G.Break (v1, G.opt_to_label_ident v2, G.sc)]
-  | Continue ((v1, v2)) ->
+  | Continue (v1, v2) ->
       let v1 = tok v1 and v2 = option ident v2 in
       [G.Continue (v1, G.opt_to_label_ident v2, G.sc)]
-  | Goto ((v1, v2)) -> 
+  | Goto (v1, v2) -> 
       let v1 = tok v1 and v2 = ident v2 in 
       [G.Goto (v1, v2)]
   | Fallthrough v1 -> 
       let v1 = tok v1 in 
       [G.OtherStmt (G.OS_Fallthrough, [G.Tk v1])]
-  | Label ((v1, v2)) -> 
+  | Label (v1, v2) -> 
       let v1 = ident v1 and v2 = stmt v2 in 
       [G.Label (v1, v2)]
-  | Go ((v1, v2)) -> 
+  | Go (v1, v2) -> 
       let _v1 = tok v1 and (e, args) = call_expr v2 in 
       [G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))])]
-  | Defer ((v1, v2)) -> 
+  | Defer (v1, v2) -> 
       let _v1 = tok v1 and (e, args) = call_expr v2 in 
       [G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])]
 
@@ -501,7 +501,7 @@ and case_kind =
   function
   | CaseExprs (tok, v1) -> 
       v1 |> List.map (fun x -> (G.Case (tok, expr_or_type_to_pattern x)))
-  | CaseAssign ((tok, v1, v2, v3)) ->
+  | CaseAssign (tok, v1, v2, v3) ->
       let v1 = list expr_or_type v1
       and v3 = expr v3
       in
@@ -522,25 +522,25 @@ and call_expr (v1, v2) =
 
 and decl =
   function
-  | DConst ((v1, v2, v3)) ->
+  | DConst (v1, v2, v3) ->
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option constant_expr v3
       in 
       let ent = G.basic_entity v1 [G.attr G.Const (fake "const")] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
-  | DVar ((v1, v2, v3)) ->
+  | DVar (v1, v2, v3) ->
       let v1 = ident v1
       and v2 = option type_ v2
       and v3 = option expr v3
       in
       let ent = G.basic_entity v1 [G.attr G.Var (fake "var")] in
       G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
-  | DTypeAlias ((v1, v2, v3)) ->
+  | DTypeAlias (v1, v2, v3) ->
       let v1 = ident v1 and _v2 = tok v2 and v3 = type_ v3 in 
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.TypeDef { G.tbody = G.AliasType v3 })
-  | DTypeDef ((v1, v2)) -> let v1 = ident v1 and v2 = type_ v2 in 
+  | DTypeDef (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in 
       let ent = G.basic_entity v1 [] in
       G.DefStmt (ent, G.TypeDef { G.tbody = G.NewType v2 })
 

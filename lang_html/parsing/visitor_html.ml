@@ -69,7 +69,7 @@ and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 
 and v_html_tree x =
   let k = function
-  | Element ((v1, v2, v3)) ->
+  | Element (v1, v2, v3) ->
       let v1 = v_tag v1
       and v2 =
         v_list

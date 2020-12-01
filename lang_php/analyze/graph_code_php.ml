@@ -709,7 +709,7 @@ and stmt_bis env x =
   | NamespaceUse _ -> raise Impossible
 
   (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id[("define", _)], (_,[String((name)); v],_)), _) ->
+  | Expr(Call(Id[("define", _)], (_,[String(name); v],_)), _) ->
      let env = add_node_and_has_edge env (name, E.Constant) in
      expr env v
 

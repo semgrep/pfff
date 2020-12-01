@@ -643,22 +643,22 @@ let vof_token_extended t =
 
 let rec vof_multi_grouped =
   function
-  | Braces ((v1, v2, v3)) ->
+  | Braces (v1, v2, v3) ->
       let v1 = vof_token_extended v1
       and v2 = OCaml.vof_list vof_multi_grouped v2
       and v3 = OCaml.vof_option vof_token_extended v3
-      in OCaml.VSum (("Braces", [ v1; v2; v3 ]))
-  | Parens ((v1, v2, v3)) ->
+      in OCaml.VSum ("Braces", [ v1; v2; v3 ])
+  | Parens (v1, v2, v3) ->
       let v1 = vof_token_extended v1
       and v2 = OCaml.vof_list vof_multi_grouped v2
       and v3 = OCaml.vof_option vof_token_extended v3
-      in OCaml.VSum (("Parens", [ v1; v2; v3 ]))
-  | Angle ((v1, v2, v3)) ->
+      in OCaml.VSum ("Parens", [ v1; v2; v3 ])
+  | Angle (v1, v2, v3) ->
       let v1 = vof_token_extended v1
       and v2 = OCaml.vof_list vof_multi_grouped v2
       and v3 = OCaml.vof_option vof_token_extended v3
-      in OCaml.VSum (("Angle", [ v1; v2; v3 ]))
-  | Tok v1 -> let v1 = vof_token_extended v1 in OCaml.VSum (("Tok", [ v1 ]))
+      in OCaml.VSum ("Angle", [ v1; v2; v3 ])
+  | Tok v1 -> let v1 = vof_token_extended v1 in OCaml.VSum ("Tok", [ v1 ])
 
 
 let vof_multi_grouped_list xs =

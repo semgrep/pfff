@@ -85,7 +85,7 @@ and sexp toks =
       let (xs, rest) = sexps xs in
       (match rest with
       | TCParen t2::rest ->
-          Sexp ((t1, xs, t2)), rest
+          Sexp (t1, xs, t2), rest
       | _ -> raise (PI.Other_error ("unclosed parenthesis", t1))
       )
 
@@ -93,7 +93,7 @@ and sexp toks =
       let (xs, rest) = sexps xs in
       (match rest with
       | TCBracket t2::rest ->
-          Sexp ((t1, xs, t2)), rest
+          Sexp (t1, xs, t2), rest
       | _ -> raise (PI.Other_error ("unclosed bracket", t1))
       )
 

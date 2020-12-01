@@ -273,7 +273,7 @@ module Abbr = struct
                       exn_else=eelse;exn_ensure=ensure}) pos
 
   let defined i s pos = mkstmt (D (Defined((i:>identifier),s))) pos
-  let undef lst pos = mkstmt (D (Undef((lst:>msg_id list)))) pos
+  let undef lst pos = mkstmt (D (Undef(lst:>msg_id list))) pos
   let break ?v pos = mkstmt (Break (v:>tuple_expr option)) pos
   let next ?v pos = mkstmt (Next (v:>tuple_expr option)) pos
   let retry pos = mkstmt Retry pos
@@ -427,7 +427,7 @@ and visit_lhs vtor (lhs:lhs) =
     let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
       if lhs_l == lhs_l' then lhs
       else LTup (lhs_l')
-    | LStar ((id)) -> 
+    | LStar (id) -> 
     let id' = visit_id vtor id in
       if id==id' then lhs else (LStar ( id') : lhs)
   end
@@ -447,7 +447,7 @@ let rec visit_tuple vtor tup =
       else TTup (lst')
     | TStar ((TE (e))) -> 
       let e' = visit_expr vtor e in
-      if e==e' then tup else (TStar ((TE e')) : tuple_expr)
+      if e==e' then tup else (TStar (TE e') : tuple_expr)
     | TStar ((TTup (lst))) -> 
       let lst' = map_preserve List.map (visit_tuple vtor) lst in
       if lst == lst' then tup
@@ -691,7 +691,7 @@ let rec locals_of_lhs acc (lhs:lhs) = match lhs with
   | LId (Var(Local,s)) -> StrSet.add s acc
   | LId (_) -> acc
   | LTup (lst) -> List.fold_left locals_of_lhs acc lst
-  | LStar ((s))  -> locals_of_lhs acc (LId s : lhs)
+  | LStar (s)  -> locals_of_lhs acc (LId s : lhs)
 
 
 let rec locals_of_any_formal acc (p:any_formal) = match p with

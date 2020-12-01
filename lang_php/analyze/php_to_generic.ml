@@ -113,16 +113,16 @@ let rec stmt_aux =
       [G.ExprStmt (v1, t)]
   | Block v1 -> let v1 = bracket (list stmt) v1 in
       [G.Block v1]
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
       [G.If (t, v1, v2, Some (* TODO *) v3)]
-  | Switch ((t, v1, v2)) -> let v1 = expr v1 and v2 = list case v2 in
+  | Switch (t, v1, v2) -> let v1 = expr v1 and v2 = list case v2 in
       [G.Switch (t, Some v1, v2)]
-  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in
+  | While (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in
       [G.While (t, v1, G.stmt1 v2)]
-  | Do ((t, v1, v2)) -> let v1 = list stmt v1 and v2 = expr v2 in
+  | Do (t, v1, v2) -> let v1 = list stmt v1 and v2 = expr v2 in
       [G.DoWhile (t, G.stmt1 v1, v2)]
-  | For ((t, v1, v2, v3, v4)) ->
+  | For (t, v1, v2, v3, v4) ->
       let v1 = list expr v1
       and v2 = list expr v2
       and v3 = list expr v3
@@ -134,7 +134,7 @@ let rec stmt_aux =
           list_expr_to_opt v3),
         G.stmt1 v4)]
           
-  | Foreach ((t, v1, t2, v2, v3)) ->
+  | Foreach (t, v1, t2, v2, v3) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
@@ -148,7 +148,7 @@ let rec stmt_aux =
       [G.Continue (t, opt_expr_to_label_ident v1, G.sc)]
   | Throw (t, v1) -> let v1 = expr v1 in
       [G.Throw (t, v1, G.sc)]
-  | Try ((t, v1, v2, v3)) ->
+  | Try (t, v1, v2, v3) ->
       let v1 = list stmt v1
       and v2 = list catch v2
       and v3 = finally v3
@@ -167,7 +167,7 @@ let rec stmt_aux =
       let v1 = qualified_ident v1 and v2 = list stmt v2 in
       [G.DirectiveStmt (G.Package (t, v1))] @ v2 @ 
       [G.DirectiveStmt (G.PackageEnd t2)]
-  | NamespaceUse ((t, v1, v2)) ->
+  | NamespaceUse (t, v1, v2) ->
       let v1 = qualified_ident v1 and v2 = option ident v2 in
       [G.DirectiveStmt (G.ImportAs (t, G.DottedName v1, v2))]
 
@@ -208,7 +208,7 @@ and opt_expr_to_label_ident = function
 
 and case =
   function
-  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = list stmt v2 in
+  | Case (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in
       [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
   | Default (t, v1) -> let v1 = list stmt v1 in
       [G.Default t], G.stmt1 v1
@@ -252,17 +252,17 @@ and expr =
   | Array_get ((v1, (t1, None, _))) ->
       let v1 = expr v1 in
       G.OtherExpr (G.OE_ArrayAppend, [G.Tk t1; G.E v1])
-  | Obj_get ((v1, t, Id [v2])) -> 
+  | Obj_get (v1, t, Id [v2]) -> 
       let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.EId v2)
-  | Obj_get ((v1, t, v2)) -> 
+  | Obj_get (v1, t, v2) -> 
       let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.EDynamic v2)
-  | Class_get ((v1, t, Id [v2])) -> let v1 = expr v1 and v2 = ident v2 in
+  | Class_get (v1, t, Id [v2]) -> let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.EId v2)
-  | Class_get ((v1, t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+  | Class_get (v1, t, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.EDynamic v2)
-  | New ((t, v1, v2)) -> let v1 = expr v1 and v2 = list expr v2 in 
+  | New (t, v1, v2) -> let v1 = expr v1 and v2 = list expr v2 in 
       G.Call (G.IdSpecial(G.New, t), fb ((v1::v2) |> List.map G.expr_to_arg))
 
   | NewAnonClass (t, args, cdef) -> 
@@ -271,7 +271,7 @@ and expr =
       let anon_class = G.AnonClass cdef in
       G.Call (G.IdSpecial(G.New, t), 
         fb ((anon_class::args) |> List.map G.expr_to_arg))
-  | InstanceOf ((t, v1, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+  | InstanceOf (t, v1, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(G.Instanceof, t), 
          fb([v1;v2] |> List.map G.expr_to_arg))
   (* v[] = 1 --> v <append>= 1.
@@ -285,12 +285,12 @@ and expr =
    *   in 
    *   G.AssignOp (v1, (G.Append, t), v3)
    *)
-  | Assign ((v1, t, v3)) ->
+  | Assign (v1, t, v3) ->
       let v1 = expr v1
       and v3 = expr v3
       in 
       G.Assign (v1, t, v3)
-  | AssignOp ((v1, v2, v3)) ->
+  | AssignOp (v1, v2, v3) ->
       let v2 = binaryOp v2
       and v1 = expr v1
       and v3 = expr v3
@@ -304,13 +304,13 @@ and expr =
       )
   | List v1 -> let v1 = bracket (list expr) v1 in
       G.Container(G.List, v1)
-  | Arrow ((v1, _t, v2)) -> let v1 = expr v1 and v2 = expr v2 in
+  | Arrow (v1, _t, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.Tuple (G.fake_bracket [v1; v2])
   | Ref (t, v1) -> let v1 = expr v1 in
       G.Ref (t, v1)
   | Unpack v1 -> let v1 = expr v1 in
       G.OtherExpr(G.OE_Unpack, [G.E v1])
-  | Call ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in 
+  | Call (v1, v2) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in 
       G.Call (v1, v2)
   | Infix (((v1, t), v2)) -> 
       let v1 = fixOp v1 and v2 = expr v2 in 
@@ -318,7 +318,7 @@ and expr =
   | Postfix (((v1, t), v2)) ->
       let v1 = fixOp v1 and v2 = expr v2 in 
       G.Call (G.IdSpecial (G.IncrDecr (v1, G.Postfix), t), fb[G.Arg v2])
-  | Binop ((v1, v2, v3)) ->
+  | Binop (v1, v2, v3) ->
       let v2 = binaryOp v2
       and v1 = expr v1
       and v3 = expr v3
@@ -336,10 +336,10 @@ and expr =
         fb (v1 |> List.map G.expr_to_arg))
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)
-  | CondExpr ((v1, v2, v3)) ->
+  | CondExpr (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | Cast ((v1, v2)) -> let v1 = ptype v1 and v2 = expr v2 in
+  | Cast (v1, v2) -> let v1 = ptype v1 and v2 = expr v2 in
       G.Cast(v1, v2)
   | Lambda v1 -> 
       let tok = snd v1.f_name in
@@ -384,7 +384,7 @@ and hint_type =
       G.TyQuestion (v1, t)
   | HintTuple (t1, v1, t2) -> let v1 = list hint_type v1 in
       G.TyTuple (t1, v1, t2)
-  | HintCallback ((v1, v2)) ->
+  | HintCallback (v1, v2) ->
       let v1 = list hint_type v1 and v2 = option hint_type v2 in 
       let params = 
         v1 |> List.map (fun x -> G.ParamClassic (G.param_of_type x)) in

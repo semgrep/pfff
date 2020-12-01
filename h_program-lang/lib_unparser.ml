@@ -66,23 +66,23 @@ let debug = ref false
 let rec vof_elt =
   function
   | OrigElt v1 ->
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("OrigElt", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum ("OrigElt", [ v1 ])
   | Removed v1 -> 
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Removed", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum ("Removed", [ v1 ])
   | Added v1 ->
-      let v1 = OCaml.vof_string v1 in OCaml.VSum (("Added", [ v1 ]))
+      let v1 = OCaml.vof_string v1 in OCaml.VSum ("Added", [ v1 ])
   | Esthet2 (v1, v2) -> 
       let v1 = vof_esthet v1 in
       let v2 = OCaml.vof_string v2 in
-      OCaml.VSum (("Esthet", [ v1; v2 ]))
+      OCaml.VSum ("Esthet", [ v1; v2 ])
 and vof_esthet =
   function
   | Comment ->
-      OCaml.VSum (("Comment", []))
+      OCaml.VSum ("Comment", [])
   | Newline -> 
-      OCaml.VSum (("Newline", []))
+      OCaml.VSum ("Newline", [])
   | Space ->
-      OCaml.VSum (("Space", []))
+      OCaml.VSum ("Space", [])
 
 (*****************************************************************************)
 (* Helpers *)

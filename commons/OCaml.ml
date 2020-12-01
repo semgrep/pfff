@@ -273,14 +273,14 @@ let vof_ref ofa x =
   | {contents = x } -> VRef (ofa x)
 let vof_either _of_a _of_b =
   function
-  | Left v1 -> let v1 = _of_a v1 in VSum (("Left", [ v1 ]))
-  | Right v1 -> let v1 = _of_b v1 in VSum (("Right", [ v1 ]))
+  | Left v1 -> let v1 = _of_a v1 in VSum ("Left", [ v1 ])
+  | Right v1 -> let v1 = _of_b v1 in VSum ("Right", [ v1 ])
 
 let vof_either3 _of_a _of_b _of_c =
   function
-  | Left3 v1 -> let v1 = _of_a v1 in VSum (("Left3", [ v1 ]))
-  | Middle3 v1 -> let v1 = _of_b v1 in VSum (("Middle3", [ v1 ]))
-  | Right3 v1 -> let v1 = _of_c v1 in VSum (("Right3", [ v1 ]))
+  | Left3 v1 -> let v1 = _of_a v1 in VSum ("Left3", [ v1 ])
+  | Middle3 v1 -> let v1 = _of_b v1 in VSum ("Middle3", [ v1 ])
+  | Right3 v1 -> let v1 = _of_c v1 in VSum ("Right3", [ v1 ])
 
 
 
@@ -366,7 +366,7 @@ let string_of_v v =
           );
           ppf "@]}";
           
-      | VSum ((s, xs)) ->
+      | VSum (s, xs) ->
           (match xs with
           | [] -> ppf "%s" s
           | _y::_ys ->
@@ -418,14 +418,14 @@ let map_of_int64 x = x
 
 let map_of_either _of_a _of_b =
   function
-  | Left v1 -> let v1 = _of_a v1 in Left ((v1))
-  | Right v1 -> let v1 = _of_b v1 in Right ((v1))
+  | Left v1 -> let v1 = _of_a v1 in Left (v1)
+  | Right v1 -> let v1 = _of_b v1 in Right (v1)
 
 let map_of_either3 _of_a _of_b _of_c =
   function
-  | Left3 v1 -> let v1 = _of_a v1 in Left3 ((v1))
-  | Middle3 v1 -> let v1 = _of_b v1 in Middle3 ((v1))
-  | Right3 v1 -> let v1 = _of_c v1 in Right3 ((v1))
+  | Left3 v1 -> let v1 = _of_a v1 in Left3 (v1)
+  | Middle3 v1 -> let v1 = _of_b v1 in Middle3 (v1)
+  | Right3 v1 -> let v1 = _of_c v1 in Right3 (v1)
 
 
 (* this is subtle ... *)
@@ -437,35 +437,35 @@ let (map_v: f:( k:(v -> v) -> v -> v) -> v -> v) =
   let k x = 
     match x with
     | VUnit -> VUnit
-    | VBool v1 -> let v1 = map_of_bool v1 in VBool ((v1))
-    | VFloat v1 -> let v1 = map_of_float v1 in VFloat ((v1))
-    | VChar v1 -> let v1 = map_of_char v1 in VChar ((v1))
-    | VString v1 -> let v1 = map_of_string v1 in VString ((v1))
-    | VInt v1 -> let v1 = map_of_int v1 in VInt ((v1))
-    | VTuple v1 -> let v1 = map_of_list map_v v1 in VTuple ((v1))
+    | VBool v1 -> let v1 = map_of_bool v1 in VBool (v1)
+    | VFloat v1 -> let v1 = map_of_float v1 in VFloat (v1)
+    | VChar v1 -> let v1 = map_of_char v1 in VChar (v1)
+    | VString v1 -> let v1 = map_of_string v1 in VString (v1)
+    | VInt v1 -> let v1 = map_of_int v1 in VInt (v1)
+    | VTuple v1 -> let v1 = map_of_list map_v v1 in VTuple (v1)
     | VDict v1 ->
         let v1 =
           map_of_list
             (fun (v1, v2) ->
               let v1 = map_of_string v1 and v2 = map_v v2 in (v1, v2))
             v1
-        in VDict ((v1))
-    | VSum ((v1, v2)) ->
+        in VDict (v1)
+    | VSum (v1, v2) ->
         let v1 = map_of_string v1
         and v2 = map_of_list map_v v2
-        in VSum ((v1, v2))
+        in VSum (v1, v2)
     | VVar v1 ->
         let v1 =
           (match v1 with
           | (v1, v2) ->
               let v1 = map_of_string v1 and v2 = map_of_int64 v2 in (v1, v2))
-        in VVar ((v1))
-    | VArrow v1 -> let v1 = map_of_string v1 in VArrow ((v1))
+        in VVar (v1)
+    | VArrow v1 -> let v1 = map_of_string v1 in VArrow (v1)
     | VNone -> VNone
-    | VSome v1 -> let v1 = map_v v1 in VSome ((v1))
-    | VRef v1 -> let v1 = map_v v1 in VRef ((v1))
-    | VList v1 -> let v1 = map_of_list map_v v1 in VList ((v1))
-    | VTODO v1 -> let v1 = map_of_string v1 in VTODO ((v1))
+    | VSome v1 -> let v1 = map_v v1 in VSome (v1)
+    | VRef v1 -> let v1 = map_v v1 in VRef (v1)
+    | VList v1 -> let v1 = map_of_list map_v v1 in VList (v1)
+    | VTODO v1 -> let v1 = map_of_string v1 in VTODO (v1)
   in
   f ~k v
  in

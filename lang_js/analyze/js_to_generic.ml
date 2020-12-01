@@ -192,10 +192,10 @@ and expr (x: expr) =
       | SR_Literal l -> G.L l
       | SR_Other (x, tok) -> G.OtherExpr (x, [G.Tk tok])
       )
-  | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
+  | Assign (v1, tok, v2) -> let v1 = expr v1 and v2 = expr v2 in 
       let tok = info tok in
       G.Assign (v1, tok, v2)
-  | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = bracket expr v2 in 
+  | ArrAccess (v1, v2) -> let v1 = expr v1 and v2 = bracket expr v2 in 
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
   | Ellipsis v1 -> let v1 = info v1 in G.Ellipsis v1
@@ -203,7 +203,7 @@ and expr (x: expr) =
   | Class (v1, _v2TODO) -> 
       let def, _more_attrsTODOEMPTY  = class_ v1 in
       G.AnonClass def
-  | ObjAccess ((v1, t, v2)) ->
+  | ObjAccess (v1, t, v2) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in
       let t = info t in
@@ -211,12 +211,12 @@ and expr (x: expr) =
       | Left n -> G.DotAccess (v1, t, G.EId n)
       | Right e -> G.DotAccess (v1, t, G.EDynamic e)
       )
-  | Fun ((v1, _v2TODO)) -> 
+  | Fun (v1, _v2TODO) -> 
       let def, _more_attrs   = fun_ v1 in
       (* todo? assert more_attrs = []? *)
       G.Lambda (def)
 
-  | Apply ((IdSpecial v1, v2)) ->
+  | Apply (IdSpecial v1, v2) ->
       let x = special v1 in
       let v2 = bracket (list expr) v2 in 
       (match x with
@@ -230,10 +230,10 @@ and expr (x: expr) =
       | SR_NeedArgs f ->
         f (G.unbracket v2)
       )
-  | Apply ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list expr) v2 in 
+  | Apply (v1, v2) -> let v1 = expr v1 and v2 = bracket (list expr) v2 in 
       G.Call (v1, bracket (List.map (fun e -> G.Arg e)) v2)
-  | Arr ((v1)) -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
-  | Conditional ((v1, v2, v3)) ->
+  | Arr (v1) -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
+  | Conditional (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
   | Xml v1 -> let v1 = xml v1 in G.Xml v1
@@ -247,16 +247,16 @@ and stmt x =
   | DefStmt v1 -> let v1 = definition v1 in G.DefStmt (v1)
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in 
       G.If (t, v1, v2, v3)
-  | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
+  | Do (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in 
       G.DoWhile (t, v1, v2)
-  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+  | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)
-  | For ((t, v1, v2)) -> let v1 = for_header v1 and v2 = stmt v2 in
+  | For (t, v1, v2) -> let v1 = for_header v1 and v2 = stmt v2 in
       G.For (t, v1, v2)
-  | Switch ((v0, v1, v2)) -> 
+  | Switch (v0, v1, v2) -> 
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
@@ -267,10 +267,10 @@ and stmt x =
   | Return (t, v1, sc) -> 
       let v1 = option expr v1 in 
       G.Return (t, v1, sc)
-  | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
+  | Label (v1, v2) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Throw (t, v1, sc) -> let v1 = expr v1 in G.Throw (t, v1, sc)
-  | Try ((t, v1, v2, v3)) ->
+  | Try (t, v1, v2, v3) ->
       let v1 = stmt v1
       and v2 = option catch_block v2
       and v3 = option tok_and_stmt v3 in
@@ -297,7 +297,7 @@ and tok_and_stmt (t, v) =
 
 and for_header =
   function
-  | ForClassic ((v1, v2, v3)) ->
+  | ForClassic (v1, v2, v3) ->
       let v2 = option expr v2 in
       let v3 = option expr v3 in
       (match v1 with
@@ -313,7 +313,7 @@ and for_header =
          G.ForClassic ([G.ForInitExpr e], v2, v3)
       )
       
-  | ForIn ((v1, t, v2)) ->
+  | ForIn (v1, t, v2) ->
       let v2 = expr v2 in
       let pattern = 
         match v1 with
@@ -325,7 +325,7 @@ and for_header =
             G.expr_to_pattern e
       in
       G.ForEach (pattern, t, v2)
-  | ForOf ((v1, t, v2)) ->
+  | ForOf (v1, t, v2) ->
       let v2 = expr v2 in
       let pattern = 
         match v1 with
@@ -343,7 +343,7 @@ and for_header =
 
 and case =
   function
-  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+  | Case (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       [G.Case (t, G.expr_to_pattern v1)], v2
   | Default (t, v1) -> let v1 = stmt v1 in
       [G.Default t], v1
@@ -534,20 +534,20 @@ and module_directive x =
   | ReExportNamespace (v1, _v2, _v3, v4) ->
       let v4 = filename v4 in
       G.OtherDirective (G.OI_ReExportNamespace, [G.Tk v1; G.I v4])
-  | Import ((t, v1, v2, v3)) ->
+  | Import (t, v1, v2, v3) ->
       let v1 = name v1 and v2 = option name v2 and v3 = filename v3 in 
       G.ImportFrom (t, G.FileName v3, v1, v2)
-  | ModuleAlias ((t, v1, v2)) ->
+  | ModuleAlias (t, v1, v2) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
   (* sgrep: we used to convert this in an OI_ImportEffect, but
    * we now want import "foo" to be used to match any form of import
    *)
-  | ImportFile ((t, v1)) ->
+  | ImportFile (t, v1) ->
       let v1 = name v1 in
       (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
       G.ImportAs (t, G.FileName v1, None)
-  | Export ((t, v1)) -> let v1 = name v1 in
+  | Export (t, v1) -> let v1 = name v1 in
       G.OtherDirective (G.OI_Export, [G.Tk t; G.I v1])
 
 and program v = list toplevel v

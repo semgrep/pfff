@@ -319,7 +319,7 @@ and initialiser env x =
          (* less: todo? *)
          | InitIndexOld ((_, idx, _), ini) ->
              Some (expr env idx), initialiser env ini
-         | InitDesignators([DesignatorIndex((_, idx, _))], _, ini) -> 
+         | InitDesignators([DesignatorIndex(_, idx, _)], _, ini) -> 
              Some (expr env idx), initialiser env ini
          | x -> None, initialiser env x
        )) xs)

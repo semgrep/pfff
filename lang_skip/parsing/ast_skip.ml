@@ -99,5 +99,5 @@ type any =
 (* Wrappers *)
 (*****************************************************************************)
 
-let str_of_name ((s,_)) = s
-let info_of_name ((_,info)) = info
+let str_of_name (s,_) = s
+let info_of_name (_,info) = info

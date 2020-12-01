@@ -35,7 +35,7 @@ module A = Foo2
          let visitor = V.mk_visitor { V.default_visitor with
            V.kmodule_expr = (fun (k, _) x ->
              (match x with
-             | ModuleName ((_qu, _name)) ->
+             | ModuleName (_qu, _name) ->
                  incr cnt
              | _ -> ()
              );

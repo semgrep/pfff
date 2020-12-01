@@ -118,16 +118,16 @@ and v_name (v1, v2, v3) =
 and v_ident =
   function
   | IdIdent v1 -> let v1 = v_wrap v_string v1 in ()
-  | IdOperator ((v1, v2)) ->
+  | IdOperator (v1, v2) ->
       let v1 = v_tok v1
       and v2 =
         (match v2 with
          | (v1, v2) -> let v1 = v_operator v1 and v2 = v_list v_tok v2 in ())
       in ()
-  | IdConverter ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_fullType v2 in ()
-  | IdDestructor ((v1, v2)) ->
+  | IdConverter (v1, v2) -> let v1 = v_tok v1 and v2 = v_fullType v2 in ()
+  | IdDestructor (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
-  | IdTemplateId ((v1, v2)) ->
+  | IdTemplateId (v1, v2) ->
       let v1 = v_wrap v_string v1 and v2 = v_template_arguments v2 in ()
 and v_template_arguments v = v_angle (v_comma_list v_template_argument) v
 and v_template_argument v = OCaml.v_either v_fullType v_expression v
@@ -135,7 +135,7 @@ and v_either_ft_or_expr v = OCaml.v_either v_fullType v_expression v
 and v_qualifier =
   function
   | QClassname v1 -> let v1 = v_wrap v_string v1 in ()
-  | QTemplateId ((v1, v2)) ->
+  | QTemplateId (v1, v2) ->
       let v1 = v_wrap v_string v1 and v2 = v_template_arguments v2 in ()
 and v_class_name v = v_name v
 and v_namespace_name v = v_name v
@@ -153,25 +153,25 @@ and v_typeCbis =
   | BaseType v1 -> let v1 = v_baseType v1 in ()
   | Pointer v1 -> let v1 = v_fullType v1 in ()
   | Reference v1 -> let v1 = v_fullType v1 in ()
-  | Array ((v1, v2)) ->
+  | Array (v1, v2) ->
       let v1 = v_bracket (v_option v_constExpression) v1
       and v2 = v_fullType v2
       in ()
   | FunctionType v1 -> let v1 = v_functionType v1 in ()
-  | EnumDef ((v1, v2, v3)) ->
+  | EnumDef (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_option (v_wrap v_string) v2
       and v3 = v_brace (v_comma_list v_enum_elem) v3
       in ()
   | StructDef v1 -> let v1 = v_class_definition v1 in ()
-  | EnumName ((v1, v2)) ->
+  | EnumName (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
-  | StructUnionName ((v1, v2)) ->
+  | StructUnionName (v1, v2) ->
       let v1 = v_wrap v_structUnion v1 and v2 = v_wrap v_string v2 in ()
-  | TypeName ((v1)) ->
+  | TypeName (v1) ->
       let v1 = v_name v1 in ()
-  | TypenameKwd ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
-  | TypeOf ((v1, v2)) ->
+  | TypenameKwd (v1, v2) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
+  | TypeOf (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_paren v_either_ft_or_expr v2 in ()
   | ParenType v1 -> let v1 = v_paren v_fullType v1 in ()
 and v_baseType =
@@ -211,75 +211,75 @@ and v_expression v =
 
 and v_expressionbis =
   function
-  | Id ((v1, v2)) -> let v1 = v_name v1 and v2 = v_ident_info v2 in ()
+  | Id (v1, v2) -> let v1 = v_name v1 and v2 = v_ident_info v2 in ()
   | C v1 -> let v1 = v_constant v1 in ()
   | Ellipses v1 -> let v1 = v_tok v1 in ()
-  | Call ((v1, v2)) ->
+  | Call (v1, v2) ->
       let v1 = v_expression v1
       and v2 = v_paren (v_comma_list v_argument) v2
       in ()
-  | CondExpr ((v1, v2, v3)) ->
+  | CondExpr (v1, v2, v3) ->
       let v1 = v_expression v1
       and v2 = v_option v_expression v2
       and v3 = v_expression v3
       in ()
-  | Sequence ((v1, v2)) ->
+  | Sequence (v1, v2) ->
       let v1 = v_expression v1 and v2 = v_expression v2 in ()
-  | Assignment ((v1, v2, v3)) ->
+  | Assignment (v1, v2, v3) ->
       let v1 = v_expression v1
       and v2 = v_assignOp v2
       and v3 = v_expression v3
       in ()
-  | Postfix ((v1, v2)) -> let v1 = v_expression v1 and v2 = v_fixOp v2 in ()
-  | Infix ((v1, v2)) -> let v1 = v_expression v1 and v2 = v_fixOp v2 in ()
-  | Unary ((v1, v2)) -> let v1 = v_expression v1 and v2 = v_unaryOp v2 in ()
-  | Binary ((v1, v2, v3)) ->
+  | Postfix (v1, v2) -> let v1 = v_expression v1 and v2 = v_fixOp v2 in ()
+  | Infix (v1, v2) -> let v1 = v_expression v1 and v2 = v_fixOp v2 in ()
+  | Unary (v1, v2) -> let v1 = v_expression v1 and v2 = v_unaryOp v2 in ()
+  | Binary (v1, v2, v3) ->
       let v1 = v_expression v1
       and v2 = v_binaryOp v2
       and v3 = v_expression v3
       in ()
-  | ArrayAccess ((v1, v2)) ->
+  | ArrayAccess (v1, v2) ->
       let v1 = v_expression v1 and v2 = v_bracket v_expression v2 in ()
-  | RecordAccess ((v1, t, v2)) ->
+  | RecordAccess (v1, t, v2) ->
       let v1 = v_expression v1 and t = v_tok t and v2 = v_name v2 in ()
-  | RecordPtAccess ((v1, t, v2)) ->
+  | RecordPtAccess (v1, t, v2) ->
       let v1 = v_expression v1 and t = v_tok t and v2 = v_name v2 in ()
-  | RecordStarAccess ((v1, t, v2)) ->
+  | RecordStarAccess (v1, t, v2) ->
       let v1 = v_expression v1 and t = v_tok t and v2 = v_expression v2 in ()
-  | RecordPtStarAccess ((v1, t, v2)) ->
+  | RecordPtStarAccess (v1, t, v2) ->
       let v1 = v_expression v1 and t = v_tok t and v2 = v_expression v2 in ()
-  | SizeOfExpr ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expression v2 in ()
-  | SizeOfType ((v1, v2)) ->
+  | SizeOfExpr (v1, v2) -> let v1 = v_tok v1 and v2 = v_expression v2 in ()
+  | SizeOfType (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_paren v_fullType v2 in ()
-  | Cast ((v1, v2)) ->
+  | Cast (v1, v2) ->
       let v1 = v_paren v_fullType v1 and v2 = v_expression v2 in ()
   | StatementExpr v1 -> let v1 = v_paren v_compound v1 in ()
-  | GccConstructor ((v1, v2)) ->
+  | GccConstructor (v1, v2) ->
       let v1 = v_paren v_fullType v1
       and v2 = v_brace (v_comma_list v_initialiser) v2
       in ()
   | This v1 -> let v1 = v_tok v1 in ()
-  | ConstructedObject ((v1, v2)) ->
+  | ConstructedObject (v1, v2) ->
       let v1 = v_fullType v1
       and v2 = v_paren (v_comma_list v_argument) v2
       in ()
-  | TypeId ((v1, v2)) ->
+  | TypeId (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_paren v_either_ft_or_expr v2 in ()
-  | CplusplusCast ((v1, v2, v3)) ->
+  | CplusplusCast (v1, v2, v3) ->
       let v1 = v_wrap v_cast_operator v1
       and v2 = v_angle v_fullType v2
       and v3 = v_paren v_expression v3
       in ()
-  | New ((v1, v2, v3, v4, v5)) ->
+  | New (v1, v2, v3, v4, v5) ->
       let v1 = v_option v_tok v1
       and v2 = v_tok v2
       and v3 = v_option (v_paren (v_comma_list v_argument)) v3
       and v4 = v_fullType v4
       and v5 = v_option (v_paren (v_comma_list v_argument)) v5
       in ()
-  | Delete ((v1, v2)) ->
+  | Delete (v1, v2) ->
       let v1 = v_option v_tok v1 and v2 = v_expression v2 in ()
-  | DeleteArray ((v1, v2)) ->
+  | DeleteArray (v1, v2) ->
       let v1 = v_option v_tok v1 and v2 = v_expression v2 in ()
   | Throw v1 -> let v1 = v_option v_expression v1 in ()
   | ParenExpr v1 -> let v1 = v_paren v_expression v1 in ()
@@ -392,7 +392,7 @@ and v_statementbis =
   | Iteration v1 -> let v1 = v_iteration v1 in ()
   | Jump v1 -> let v1 = v_jump v1 in ()
   | DeclStmt v1 -> let v1 = v_block_declaration v1 in ()
-  | Try ((v1, v2, v3)) ->
+  | Try (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_compound v2
       and v3 = v_list v_handler v3
@@ -412,9 +412,9 @@ and v_statement_sequencable =
 and v_exprStatement v = v_option v_expression v
 and v_labeled =
   function
-  | Label ((v1, v2)) -> let v1 = v_string v1 and v2 = v_statement v2 in ()
-  | Case ((v1, v2)) -> let v1 = v_expression v1 and v2 = v_statement v2 in ()
-  | CaseRange ((v1, v2, v3)) ->
+  | Label (v1, v2) -> let v1 = v_string v1 and v2 = v_statement v2 in ()
+  | Case (v1, v2) -> let v1 = v_expression v1 and v2 = v_statement v2 in ()
+  | CaseRange (v1, v2, v3) ->
       let v1 = v_expression v1
       and v2 = v_expression v2
       and v3 = v_statement v3
@@ -422,33 +422,33 @@ and v_labeled =
   | Default v1 -> let v1 = v_statement v1 in ()
 and v_selection =
   function
-  | If ((v1, v2, v3, v4, v5)) ->
+  | If (v1, v2, v3, v4, v5) ->
       let v1 = v_tok v1
       and v2 = v_paren v_expression v2
       and v3 = v_statement v3
       and v4 = v_option v_tok v4
       and v5 = v_statement v5
       in ()
-  | Switch ((v1, v2, v3)) ->
+  | Switch (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_paren v_expression v2
       and v3 = v_statement v3
       in ()
 and v_iteration =
   function
-  | While ((v1, v2, v3)) ->
+  | While (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_paren v_expression v2
       and v3 = v_statement v3
       in ()
-  | DoWhile ((v1, v2, v3, v4, v5)) ->
+  | DoWhile (v1, v2, v3, v4, v5) ->
       let v1 = v_tok v1
       and v2 = v_statement v2
       and v3 = v_tok v3
       and v4 = v_paren v_expression v4
       and v5 = v_tok v5
       in ()
-  | For ((v1, v2, v3)) ->
+  | For (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 =
         v_paren
@@ -460,7 +460,7 @@ and v_iteration =
           v2
       and v3 = v_statement v3
       in ()
-  | MacroIteration ((v1, v2, v3)) ->
+  | MacroIteration (v1, v2, v3) ->
       let v1 = v_wrap v_string v1
       and v2 = v_paren (v_comma_list v_argument) v2
       and v3 = v_statement v3
@@ -484,9 +484,9 @@ and v_exception_declaration =
   | ExnDecl v1 -> let v1 = v_parameter v1 in ()
 and v_block_declaration x =
   let k = function
-  | DeclList ((v1, v2)) ->
+  | DeclList (v1, v2) ->
       let v1 = v_comma_list v_onedecl v1 and v2 = v_tok v2 in ()
-  | MacroDecl ((v1, v2, v3, v4)) ->
+  | MacroDecl (v1, v2, v3, v4) ->
       let v1 = v_list v_tok v1
       and v2 = v_wrap v_string v2
       and v3 = v_paren (v_comma_list v_argument) v3
@@ -498,20 +498,20 @@ and v_block_declaration x =
          | (v1, v2, v3) ->
              let v1 = v_tok v1 and v2 = v_name v2 and v3 = v_tok v3 in ())
       in ()
-  | UsingDirective ((v1, v2, v3, v4)) ->
+  | UsingDirective (v1, v2, v3, v4) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_namespace_name v3
       and v4 = v_tok v4
       in ()
-  | NameSpaceAlias ((v1, v2, v3, v4, v5)) ->
+  | NameSpaceAlias (v1, v2, v3, v4, v5) ->
       let v1 = v_tok v1
       and v2 = v_wrap v_string v2
       and v3 = v_tok v3
       and v4 = v_namespace_name v4
       and v5 = v_tok v5
       in ()
-  | Asm ((v1, v2, v3, v4)) ->
+  | Asm (v1, v2, v3, v4) ->
       let v1 = v_tok v1
       and v2 = v_option v_tok v2
       and v3 = v_paren v_asmbody v3
@@ -539,31 +539,31 @@ and v_storageClass =
 and v_func_specifier = function | Inline -> () | Virtual -> ()
 and v_init =
   function
-  | EqInit ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_initialiser v2 in ()
+  | EqInit (v1, v2) -> let v1 = v_tok v1 and v2 = v_initialiser v2 in ()
   | ObjInit v1 -> let v1 = v_paren (v_comma_list v_argument) v1 in ()
 and v_initialiser x =
   let k x =
   match x with
   | InitExpr v1 -> let v1 = v_expression v1 in ()
   | InitList v1 -> let v1 = v_brace (v_comma_list v_initialiser) v1 in ()
-  | InitDesignators ((v1, v2, v3)) ->
+  | InitDesignators (v1, v2, v3) ->
       let v1 = v_list v_designator v1
       and v2 = v_tok v2
       and v3 = v_initialiser v3
       in ()
-  | InitFieldOld ((v1, v2, v3)) ->
+  | InitFieldOld (v1, v2, v3) ->
       let v1 = v_wrap v_string v1
       and v2 = v_tok v2
       and v3 = v_initialiser v3
       in ()
-  | InitIndexOld ((v1, v2)) ->
+  | InitIndexOld (v1, v2) ->
       let v1 = v_bracket v_expression v1 and v2 = v_initialiser v2 in ()
   in
   vin.kinit (k, all_functions) x
 
 and v_designator =
   function
-  | DesignatorField ((v1, v2)) ->
+  | DesignatorField (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
   | DesignatorIndex v1 -> let v1 = v_bracket v_expression v1 in ()
   | DesignatorRange v1 ->
@@ -637,7 +637,7 @@ and
 and v_func_or_else =
   function
   | FunctionOrMethod v1 -> let v1 = v_func_definition v1 in ()
-  | Constructor ((v1)) ->
+  | Constructor (v1) ->
       let v1 = v_func_definition v1 in ()
   | Destructor v1 -> let v1 = v_func_definition v1 in ()
 and v_exn_spec (v1, v2) =
@@ -675,11 +675,11 @@ and
 and v_access_spec = function | Public -> () | Private -> () | Protected -> ()
 
 and v_method_decl = function
-  | ConstructorDecl ((v1, v2, v3)) ->
+  | ConstructorDecl (v1, v2, v3) ->
       let v1 = v_wrap v_string v1
       and v2 = v_paren (v_comma_list v_parameter) v2
       and v3 = v_tok v3 in ()
-  | DestructorDecl ((v1, v2, v3, v4, v5)) ->
+  | DestructorDecl (v1, v2, v3, v4, v5) ->
       let v1 = v_tok v1
       and v2 = v_wrap v_string v2
       and v3 = v_paren (v_option v_tok) v3
@@ -687,7 +687,7 @@ and v_method_decl = function
       and v5 = v_tok v5
       in ()
 
-  | MethodDecl ((v1, v2, v3)) ->
+  | MethodDecl (v1, v2, v3) ->
       let v1 = v_onedecl v1
       and v2 =
         v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_tok v2 in ())
@@ -698,7 +698,7 @@ and v_method_decl = function
 and v_class_member x =
   let k =
   function
-  | Access ((v1, v2)) ->
+  | Access (v1, v2) ->
       let v1 = v_wrap v_access_spec v1 and v2 = v_tok v2 in ()
   | MemberField (v1, v2) -> 
       let v1 = (v_comma_list v_fieldkind) v1 in 
@@ -706,7 +706,7 @@ and v_class_member x =
       ()
   | MemberFunc v1 -> let v1 = v_func_or_else v1 in ()
   | MemberDecl v1 -> let v1 = v_method_decl v1 in ()
-  | QualifiedIdInClass ((v1, v2)) ->
+  | QualifiedIdInClass (v1, v2) ->
       let v1 = v_name v1 and v2 = v_tok v2 in ()
   | TemplateDeclInClass v1 ->
       let v1 =
@@ -730,7 +730,7 @@ and v_class_member x =
 and v_fieldkind x =
   let k = function
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
-  | BitField ((v1, v2, v3, v4)) ->
+  | BitField (v1, v2, v3, v4) ->
       let v1 = v_option (v_wrap v_string) v1
       and v2 = v_tok v2
       and v3 = v_fullType v3
@@ -746,13 +746,13 @@ and v_class_member_sequencable =
   | IfdefStruct v1 -> let v1 = v_ifdef_directive v1 in ()
 and v_cpp_directive x =
   let k = function
-  | Define ((v1, v2, v3, v4)) ->
+  | Define (v1, v2, v3, v4) ->
       let v1 = v_tok v1
       and v2 = v_wrap v_string v2
       and v3 = v_define_kind v3
       and v4 = v_define_val v4
       in ()
-  | Include ((v1, v2, v3)) -> 
+  | Include (v1, v2, v3) -> 
     let v1 = v_tok v1 
     and v2 = v_inc_kind v2 
     and v3 = v_string v3
@@ -768,7 +768,7 @@ and v_define_kind =
       let v1 = v_paren (v_comma_list (v_wrapx v_string)) v1 in ()
 and v_define_val =
   function
-  | DefinePrintWrapper ((v1, v2, v3)) ->
+  | DefinePrintWrapper (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_paren v_expression v2
       and v3 = v_name v3
@@ -804,26 +804,26 @@ and v_declaration x =
     and v2 = v_template_parameters v2
     and v3 = v_declaration v3
     in ()
-  | TemplateSpecialization ((v1, v2, v3)) ->
+  | TemplateSpecialization (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_angle v_unit v2
       and v3 = v_declaration v3
       in ()
-  | ExternC ((v1, v2, v3)) ->
+  | ExternC (v1, v2, v3) ->
       let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_declaration v3 in ()
-  | ExternCList ((v1, v2, v3)) ->
+  | ExternCList (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_brace (v_list v_declaration_sequencable) v3
       in ()
-  | NameSpace ((v1, v2, v3)) ->
+  | NameSpace (v1, v2, v3) ->
       let v1 = v_tok v1
       and v2 = v_wrap v_string v2
       and v3 = v_brace (v_list v_declaration_sequencable) v3
       in ()
-  | NameSpaceExtend ((v1, v2)) ->
+  | NameSpaceExtend (v1, v2) ->
       let v1 = v_string v1 and v2 = v_list v_declaration_sequencable v2 in ()
-  | NameSpaceAnon ((v1, v2)) ->
+  | NameSpaceAnon (v1, v2) ->
       let v1 = v_tok v1
       and v2 = v_brace (v_list v_declaration_sequencable) v2
       in ()
@@ -840,12 +840,12 @@ and v_declaration_sequencable x =
   | DeclElem v1 -> let v1 = v_declaration v1 in ()
   | CppDirectiveDecl v1 -> let v1 = v_cpp_directive v1 in ()
   | IfdefDecl v1 -> let v1 = v_ifdef_directive v1 in ()
-  | MacroTop ((v1, v2, v3)) ->
+  | MacroTop (v1, v2, v3) ->
       let v1 = v_wrap v_string v1
       and v2 = v_paren (v_comma_list v_argument) v2
       and v3 = v_option v_tok v3
       in ()
-  | MacroVarTop ((v1, v2)) ->
+  | MacroVarTop (v1, v2) ->
       let v1 = v_wrap v_string v1 and v2 = v_tok v2 in ()
   in
   vin.ktoplevel (k, all_functions) x

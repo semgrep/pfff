@@ -258,16 +258,16 @@ and stmt env st acc =
       (match args, colon_st with
       (* declare(strict=1); (or 0) can be skipped,
        * See 'i wiki/index.php/Pfff/Declare_strict' *)
-      | (_,[Common.Left((Name(("strict",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
+      | (_,[Common.Left((Name("strict",_),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
       SingleStmt(EmptyStmt(_))
-      | (_,[Common.Left((Name(("strict_types",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
+      | (_,[Common.Left((Name("strict_types",_),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
       SingleStmt(EmptyStmt(_))
       (* declare(ticks=1); can be skipped too.
        * http://www.php.net/manual/en/control-structures.declare.php#control-structures.declare.ticks
        *)
       -> acc
 
-      | (_,[Common.Left((Name(("ticks",_)), (_,Sc(C(Int((("1"),_)))))))],_), _
+      | (_,[Common.Left((Name("ticks",_), (_,Sc(C(Int((("1"),_)))))))],_), _
       ->
        let cst = colon_stmt env colon_st in
        cst @ acc

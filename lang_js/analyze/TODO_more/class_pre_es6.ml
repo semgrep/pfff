@@ -109,7 +109,7 @@ let extract_complete_name_of_info ast =
 
       (* Foo.prototype = { ... } *)
       | Assign(
-          (Period((V((class_name, info_class))), _i_3, ("prototype", _i_4))),
+          (Period((V(class_name, info_class)), _i_3, ("prototype", _i_4))),
           (A_eq, _i_6),
           (Object(_body_object))) ->
 
@@ -122,7 +122,7 @@ let extract_complete_name_of_info ast =
 
       (* Foo = { } *)
       | Assign(
-          (V((class_name, info_class))),
+          (V(class_name, info_class)),
           (A_eq, _i_56),
           (Object(_body_object))) ->
        (* could restrict to only toplevel first column var declarations ? *)
@@ -140,9 +140,9 @@ let extract_complete_name_of_info ast =
 
       (* JX.install('Foo', { ... } ) *)
       | Apply(
-          (Period((V(("JX", _i_1))), _i_3, ("install", _i_4))),
+          (Period((V("JX", _i_1)), _i_3, ("install", _i_4))),
           (_i_6,
-          (Left((L(String((class_name, info_class)))))::Right(_i_9)::_rest_args),
+          (Left((L(String(class_name, info_class))))::Right(_i_9)::_rest_args),
           _i_13)) ->
 
           Hashtbl.add h info_class
@@ -156,9 +156,9 @@ let extract_complete_name_of_info ast =
           )
       (* JX.copy(Foo.prototype, { ... }) *)
       | Apply(
-          (Period((V(("JX", _i_1))), _i_3, ("copy", _i_4))),
+          (Period((V("JX", _i_1)), _i_3, ("copy", _i_4))),
           (_i_6,
-           [Left((Period((V((class_name, info_class))),_i_9,
+           [Left((Period((V(class_name, info_class)),_i_9,
                         ("prototype", _i_10))));
             Right(_i_12);
             Left((Object(_object_body)))], _i_16)) ->
@@ -172,9 +172,9 @@ let extract_complete_name_of_info ast =
 
       (* Foo.mixin('Arbitrer', { ... }) *)
       | Apply(
-         (Period((V((class_name, info_class))), _i_3, ("mixin", _i_4))),
+         (Period((V(class_name, info_class)), _i_3, ("mixin", _i_4))),
          (_i_6,
-          [Left((L(String((mixin_name, _info_mixin))))); Right(_i_9);
+          [Left((L(String(mixin_name, _info_mixin)))); Right(_i_9);
            Left((Object(_body_object)))], _i_13)) ->
 
           Hashtbl.add h info_class
@@ -186,10 +186,10 @@ let extract_complete_name_of_info ast =
 
       (* FB.subclass('FB.ApiClient', 'FB.Class', { }); *)
       | Apply(
-         (Period((V(("FB", _i_1))), _i_3, ("subclass", _i_4))),
+         (Period((V("FB", _i_1)), _i_3, ("subclass", _i_4))),
          (_i_6,
-          [Left((L(String((class_name, info_class))))); Right(_i_9);
-           Left((L(String((_parent_class, _i_10))))); Right(_i_12);
+          [Left((L(String(class_name, info_class)))); Right(_i_9);
+           Left((L(String(_parent_class, _i_10)))); Right(_i_12);
            Left((Object(_body_object)))], _i_16)) ->
 
           Hashtbl.add h info_class
@@ -201,9 +201,9 @@ let extract_complete_name_of_info ast =
 
       (* FB.provide('FBIntern.Cookie', { } ); *)
       | Apply(
-         (Period((V(("FB", _i_19))), _i_21, ("provide", _i_22))),
+         (Period((V("FB", _i_19)), _i_21, ("provide", _i_22))),
          (_i_24,
-          [Left((L(String((class_name, info_class))))); Right(_i_27);
+          [Left((L(String(class_name, info_class)))); Right(_i_27);
            Left((Object(_body_object)))], _i_31)) ->
 
           Hashtbl.add h info_class
@@ -220,9 +220,9 @@ let extract_complete_name_of_info ast =
 
       (* copy_properties(Foo, { ... } ) *)
       | Apply(
-          (V(("copy_properties", _i_16))),
+          (V("copy_properties", _i_16)),
           (_i_18,
-          [Left((V((class_name, info_class)))); Right(_i_21);
+          [Left((V(class_name, info_class))); Right(_i_21);
            Left((Object(_body_object)))], _i_25)) ->
 
           Hashtbl.add h info_class
@@ -234,9 +234,9 @@ let extract_complete_name_of_info ast =
 
       (* copy_properties(Foo.prototype, { ... } ) *)
       | Apply(
-          (V(("copy_properties", info_class))),
+          (V("copy_properties", info_class)),
           (_i_3,
-          [Left((Period((V((class_name, _i_4))), _i_6, ("prototype", _i_7))));
+          [Left((Period((V(class_name, _i_4)), _i_6, ("prototype", _i_7))));
            Right(_i_9);
            Left((Object(_body_object)))], _i_13)) ->
 
@@ -257,13 +257,13 @@ let extract_complete_name_of_info ast =
       match e with
 
       (* Javelin specifics ? *)
-      | P_field (PN_String(("statics", _i_20)), _i_21, _body) ->
+      | P_field (PN_String("statics", _i_20), _i_21, _body) ->
           Common.save_excursion in_statics true (fun () -> k e)
-      | P_field (PN_String(("members", _i_20)), _i_21, _body) ->
+      | P_field (PN_String("members", _i_20), _i_21, _body) ->
           Common.save_excursion in_members true (fun () -> k e)
 
       (* fld: function (...) { ... } *)
-      | P_field (PN_String((method_name, info_method_name)), _i_40, (Function(_))) ->
+      | P_field (PN_String(method_name, info_method_name), _i_40, (Function(_))) ->
 
           let fullname =
           (match !in_class, !in_statics, !in_members with

@@ -251,7 +251,7 @@ let instrs_of_expr env e =
           raise Impossible
       | lv -> AssignAddress (v, lv)
       )
-  | A.Unary (_, ((A2.GetRefLabel, _))) ->
+  | A.Unary (_, (A2.GetRefLabel, _)) ->
       (* ast_c_build should forbid that gccext *)
       debug (A.Expr e);
       raise Impossible

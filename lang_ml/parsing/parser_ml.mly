@@ -736,7 +736,7 @@ simple_pattern:
  | signed_constant                  { PatLiteral $1 }
 
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
- | "["  list_sep_term(pattern, ";")  "]"       { PatList (($1, $2, $3)) }
+ | "["  list_sep_term(pattern, ";")  "]"       { PatList ($1, $2, $3) }
  | "[|" list_sep_term(pattern, ";")? "|]"      
     { PatTodo (("Array",$1), optlist_to_list $2) }
 

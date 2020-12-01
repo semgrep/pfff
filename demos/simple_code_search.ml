@@ -36,13 +36,13 @@ module PI = Parse_info
  * Here is the result of 'pfff -dump_php pfff/tests/php/sgrep/return_this.php'
  * 
  * [ClassDef(
- *    {c_type=ClassRegular(i_1); c_name=Name(("Test", i_2)); c_tparams=None; 
+ *    {c_type=ClassRegular(i_1); c_name=Name("Test", i_2); c_tparams=None; 
  *     c_extends=None; c_implements=None; c_attrs=None; 
  *     c_body=(i_3,
  *             [Method(
  *                {f_tok=i_4; f_type=MethodRegular; f_attrs=None; 
  *                 f_modifiers=[(Public, i_5)]; f_ref=None; 
- *                 f_name=Name(("getFoo", i_6)); f_tparams=None; 
+ *                 f_name=Name("getFoo", i_6); f_tparams=None; 
  *                 f_params=(i_7, [], i_8); f_return_type=None; 
  *                 f_body=(i_9, [Return(i_10, Some(This(i_11)),i_12)],i_13);})],
  *             i_14);
@@ -70,13 +70,13 @@ let main files_or_dirs =
        *             [Method(
        *                {f_tok=i_4; f_type=MethodRegular; f_attrs=None; 
        *                 f_modifiers=[(Public, i_5)]; f_ref=None; 
-       *                 f_name=Name(("getFoo", i_6)); f_tparams=None; 
+       *                 f_name=Name("getFoo", i_6); f_tparams=None; 
        *                 f_params=(i_7, [], i_8); f_return_type=None; 
        *                 f_body
        *)
       V.kfunc_def = (fun (k, _) def ->
         (match def with
-        | {f_type = MethodRegular; f_name = Name((str, _)); _ } ->
+        | {f_type = MethodRegular; f_name = Name(str, _); _ } ->
           current_method := str;
         | _ -> ();
         );

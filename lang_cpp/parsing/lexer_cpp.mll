@@ -588,7 +588,7 @@ and char = parse
   (* this rule must be after the one with octal, lex try first longest
    * and when \7  we want an octal, not an exn.
    *)
-  | (("\\x" ((hex | hex hex))) as x        "'")      { x }
+  | (("\\x" (hex | hex hex)) as x        "'")      { x }
   | (("\\" (_ as v))           as x        "'")
 	{ 
           (match v with (* Machine specific ? *)

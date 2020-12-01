@@ -5,7 +5,7 @@ let tof_wrap =
 and tof_tok = OCaml.add_new_type "tok" (OCaml.TTODO "")
   
 let tof_name =
-  OCaml.add_new_type "name" (OCaml.Apply (("wrap", OCaml.String)))
+  OCaml.add_new_type "name" (OCaml.Apply ("wrap", OCaml.String))
   
 let tof_qualified_name = OCaml.add_new_type "qualified_name" OCaml.String
   
@@ -32,10 +32,10 @@ let tof_special =
          ("Incr", [ OCaml.Bool ]); ("Decr", [ OCaml.Bool ]) ])
   
 let tof_label =
-  OCaml.add_new_type "label" (OCaml.Apply (("wrap", OCaml.String)))
+  OCaml.add_new_type "label" (OCaml.Apply ("wrap", OCaml.String))
   
 let tof_filename =
-  OCaml.add_new_type "filename" (OCaml.Apply (("wrap", OCaml.String)))
+  OCaml.add_new_type "filename" (OCaml.Apply ("wrap", OCaml.String))
   
 let tof_property_prop =
   OCaml.add_new_type "property_prop"
@@ -119,10 +119,10 @@ and tof_stmt =
 and tof_expr =
   OCaml.add_new_type "expr"
     (OCaml.Sum
-       [ ("Bool", [ OCaml.Apply (("wrap", OCaml.Bool)) ]);
-         ("Num", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("String", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("Regexp", [ OCaml.Apply (("wrap", OCaml.String)) ]);
+       [ ("Bool", [ OCaml.Apply ("wrap", OCaml.Bool) ]);
+         ("Num", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("String", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("Regexp", [ OCaml.Apply ("wrap", OCaml.String) ]);
          ("Id",
           [ OCaml.Var "name";
             OCaml.Apply (("ref", (OCaml.Var "resolved_name"))) ]);

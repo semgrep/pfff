@@ -100,15 +100,15 @@ and v_type_ x =
   | TPtr (t, v1) -> 
         let t = v_tok t in
         let v1 = v_type_ v1 in ()
-  | TArray ((v1, v2)) -> let v1 = v_bracket (v_option v_expr) v1 
+  | TArray (v1, v2) -> let v1 = v_bracket (v_option v_expr) v1 
         and v2 = v_type_ v2 in ()
-  | TArrayEllipsis ((v1, v2)) -> 
+  | TArrayEllipsis (v1, v2) -> 
         let v1 = v_bracket v_tok v1 and v2 = v_type_ v2 in ()
   | TFunc v1 -> let v1 = v_func_type v1 in ()
-  | TMap ((t, v1, v2)) -> 
+  | TMap (t, v1, v2) -> 
         let t = v_tok t in
         let v1 = v_bracket v_type_ v1 and v2 = v_type_ v2 in ()
-  | TChan ((t, v1, v2)) -> 
+  | TChan (t, v1, v2) -> 
         let t = v_tok t in
         let v1 = v_chan_dir v1 and v2 = v_type_ v2 in ()
   | TStruct (t, v1) -> 
@@ -140,14 +140,14 @@ and v_struct_field (v1, v2) =
   let v1 = v_struct_field_kind v1 and v2 = v_option v_tag v2 in ()
 and v_struct_field_kind =
   function
-  | Field ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
-  | EmbeddedField ((v1, v2)) ->
+  | Field (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
+  | EmbeddedField (v1, v2) ->
       let v1 = v_option v_tok v1 and v2 = v_qualified_ident v2 in ()
   | FieldEllipsis t -> v_tok t
 and v_tag v = v_wrap v_string v
 and v_interface_field =
   function
-  | Method ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_func_type v2 in ()
+  | Method (v1, v2) -> let v1 = v_ident v1 and v2 = v_func_type v2 in ()
   | EmbeddedInterface v1 -> let v1 = v_qualified_ident v1 in ()
   | FieldEllipsis2 t -> v_tok t
 and v_expr_or_type v = v_either v_expr v_type_ v
@@ -157,13 +157,13 @@ and v_expr x =
   function
   | DeepEllipsis v1 -> v_bracket v_expr v1
   | BasicLit v1 -> let v1 = v_literal v1 in ()
-  | CompositeLit ((v1, v2)) ->
+  | CompositeLit (v1, v2) ->
       let v1 = v_type_ v1 and v2 = v_bracket (v_list v_init) v2 in ()
   | Id (v1, _IGNORED) -> let v1 = v_ident v1 in ()
-  | Selector ((v1, v2, v3)) ->
+  | Selector (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_ident v3 in ()
-  | Index ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_index v2 in ()
-  | Slice ((v1, v2)) ->
+  | Index (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket v_index v2 in ()
+  | Slice (v1, v2) ->
       let v1 = v_expr v1
       and v2 =
         (match v2 with
@@ -174,30 +174,30 @@ and v_expr x =
              in ())
       in ()
   | Call v1 -> let v1 = v_call_expr v1 in ()
-  | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
-  | Deref ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
-  | Ref ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
-  | Receive ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
-  | Unary ((v1, v2)) ->
+  | Cast (v1, v2) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
+  | Deref (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
+  | Ref (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
+  | Receive (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
+  | Unary (v1, v2) ->
       let v1 = v_wrap v_arithmetic_operator v1
       and v2 = v_expr v2
       in ()
-  | Binary ((v1, v2, v3)) ->
+  | Binary (v1, v2, v3) ->
       let v1 = v_expr v1
       and v2 = v_wrap v_arithmetic_operator v2
       and v3 = v_expr v3
       in ()
-  | TypeAssert ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
-  | TypeSwitchExpr ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_tok v2 in ()
+  | TypeAssert (v1, v2) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
+  | TypeSwitchExpr (v1, v2) -> let v1 = v_expr v1 and v2 = v_tok v2 in ()
   | Ellipsis v1 -> let v1 = v_tok v1 in ()
-  | TypedMetavar ((v1, v2, v3)) ->
+  | TypedMetavar (v1, v2, v3) ->
     let v1 = v_ident v1 in
     let v2 = v_tok v2 in
     let v3 = v_type_ v3 in
     ()
   | FuncLit (x) -> v_function_ x
   | ParenType v1 -> let v1 = v_type_ v1 in ()
-  | Send ((v1, v2, v3)) ->
+  | Send (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
    in
    vin.kexpr (k, all_functions) x
@@ -220,7 +220,7 @@ and v_init x =
   let k =
   function
   | InitExpr v1 -> let v1 = v_expr v1 in ()
-  | InitKeyValue ((v1, v2, v3)) ->
+  | InitKeyValue (v1, v2, v3) ->
       let v1 = v_init v1 and v2 = v_tok v2 and v3 = v_init v3 in ()
   | InitBraces v1 -> let v1 = v_bracket (v_list v_init) v1 in ()
   in
@@ -235,22 +235,22 @@ and v_stmt x =
   | Empty -> ()
   | SimpleStmt v1 -> v_simple v1
 
-  | If ((t, v1, v2, v3, v4)) ->
+  | If (t, v1, v2, v3, v4) ->
       let t = v_tok t in
       let v1 = v_option v_simple v1
       and v2 = v_expr v2
       and v3 = v_stmt v3
       and v4 = v_option v_stmt v4
       in ()
-  | Switch ((v0, v1, v2, v3)) ->
+  | Switch (v0, v1, v2, v3) ->
       let v0 = v_tok v0 in
       let v1 = v_option v_simple v1
       and v2 = v_option v_simple v2
       and v3 = v_list v_case_clause v3
       in ()
-  | Select ((v1, v2)) ->
+  | Select (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_list v_comm_clause v2 in ()
-  | For ((t, v1, v2)) ->
+  | For (t, v1, v2) ->
         let t = v_tok t in
       let v1 =
         (match v1 with
@@ -261,7 +261,7 @@ and v_stmt x =
              in ())
       and v2 = v_stmt v2
       in ()
-  | Range ((t, v1, v2, v3, v4)) ->
+  | Range (t, v1, v2, v3, v4) ->
         let t = v_tok t in
       let v1 =
         v_option
@@ -271,37 +271,37 @@ and v_stmt x =
       and v3 = v_expr v3
       and v4 = v_stmt v4
       in ()
-  | Return ((v1, v2)) ->
+  | Return (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_option (v_list v_expr) v2 in ()
-  | Break ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_option v_ident v2 in ()
-  | Continue ((v1, v2)) ->
+  | Break (v1, v2) -> let v1 = v_tok v1 and v2 = v_option v_ident v2 in ()
+  | Continue (v1, v2) ->
       let v1 = v_tok v1 and v2 = v_option v_ident v2 in ()
-  | Goto ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_ident v2 in ()
+  | Goto (v1, v2) -> let v1 = v_tok v1 and v2 = v_ident v2 in ()
   | Fallthrough v1 -> let v1 = v_tok v1 in ()
-  | Label ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
-  | Go ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_call_expr v2 in ()
-  | Defer ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_call_expr v2 in ()
+  | Label (v1, v2) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
+  | Go (v1, v2) -> let v1 = v_tok v1 and v2 = v_call_expr v2 in ()
+  | Defer (v1, v2) -> let v1 = v_tok v1 and v2 = v_call_expr v2 in ()
   in
   vin.kstmt (k, all_functions) x
 
 and v_simple = function
   | ExprStmt v1 -> let v1 = v_expr v1 in ()
-  | Assign ((v1, v2, v3)) ->
+  | Assign (v1, v2, v3) ->
       let v1 = v_list v_expr v1
       and v2 = v_tok v2
       and v3 = v_list v_expr v3
       in ()
-  | DShortVars ((v1, v2, v3)) ->
+  | DShortVars (v1, v2, v3) ->
       let v1 = v_list v_expr v1
       and v2 = v_tok v2
       and v3 = v_list v_expr v3
       in ()
-  | AssignOp ((v1, v2, v3)) ->
+  | AssignOp (v1, v2, v3) ->
       let v1 = v_expr v1
       and v2 = v_wrap v_arithmetic_operator v2
       and v3 = v_expr v3
       in ()
-  | IncDec ((v1, v2, v3)) ->
+  | IncDec (v1, v2, v3) ->
       let v1 = v_expr v1
       and v2 = v_wrap v_incr_decr v2
       and v3 = v_prefix_postfix v3
@@ -313,7 +313,7 @@ and v_case_kind =
   | CaseExprs (t, v1) -> 
       let t = v_tok t in
       let v1 = v_list v_expr_or_type v1 in ()
-  | CaseAssign ((t, v1, v2, v3)) ->
+  | CaseAssign (t, v1, v2, v3) ->
       let t = v_tok t in
       let v1 = v_list v_expr_or_type v1
       and v2 = v_tok v2
@@ -330,19 +330,19 @@ and v_call_expr (v1, v2) =
 and v_decl x =
   let k = 
   function
-  | DConst ((v1, v2, v3)) ->
+  | DConst (v1, v2, v3) ->
       let v1 = v_ident v1
       and v2 = v_option v_type_ v2
       and v3 = v_option v_constant_expr v3
       in ()
-  | DVar ((v1, v2, v3)) ->
+  | DVar (v1, v2, v3) ->
       let v1 = v_ident v1
       and v2 = v_option v_type_ v2
       and v3 = v_option v_expr v3
       in ()
-  | DTypeAlias ((v1, v2, v3)) ->
+  | DTypeAlias (v1, v2, v3) ->
       let v1 = v_ident v1 and v2 = v_tok v2 and v3 = v_type_ v3 in ()
-  | DTypeDef ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
+  | DTypeDef (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
   in
   vin.kdecl (k, all_functions) x
 
@@ -354,10 +354,10 @@ and v_function_ x =
 
 and v_top_decl x =
   let k = function
-  | DFunc ((t, v1, v2)) ->
+  | DFunc (t, v1, v2) ->
       v_tok t;
       let v1 = v_ident v1 and v2 = v_function_ v2 in ()
-  | DMethod ((t, v1, v2, v3)) ->
+  | DMethod (t, v1, v2, v3) ->
       v_tok t;
       let v1 = v_ident v1
       and v2 = v_parameter v2

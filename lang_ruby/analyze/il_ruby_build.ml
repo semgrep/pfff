@@ -44,7 +44,7 @@ let rec seen_lhs acc (lhs:lhs) = match lhs with
   | LId (Var(_,str)) | LStar ((Var(_,str))) ->
       {acc with seen = StrSet.add str acc.seen}
 
-  | LId (_) | LStar ((_)) -> acc
+  | LId (_) | LStar (_) -> acc
   | LTup (ls) -> List.fold_left seen_lhs acc ls
 
 let uniq_counter = ref 0
@@ -316,10 +316,10 @@ let msg_id_from_string = function
 
 let rec tuple_of_lhs (lhs:lhs) pos : tuple_expr = match lhs with
   | LId (id) -> TE (EId id)
-  | LTup ((l)) -> 
+  | LTup (l) -> 
       let l' = List.map (fun x -> tuple_of_lhs x pos) l in
-        TTup ((l'))
-  | LStar ((id)) -> TStar ((TE (EId id)))
+        TTup (l')
+  | LStar (id) -> TStar ((TE (EId id)))
 
 let make_tuple_option : tuple_expr list -> tuple_expr option = function
   | [] -> None
@@ -599,7 +599,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
           make_call_expr acc (Some e') msg [] None pos
 
     (* A::m is really a method call *)
-    | Ast.ScopedId(Ast.Scope(_e1BUG, _pos, Ast.SV ((_, Ast.ID_Lowercase)))) -> 
+    | Ast.ScopedId(Ast.Scope(_e1BUG, _pos, Ast.SV (_, Ast.ID_Lowercase))) -> 
         let acc,v = fresh acc in
         let v' = match v with LId (id) -> id | _ -> failwith "Impossible" in
         let acc = seen_lhs acc v in
@@ -961,7 +961,7 @@ and refactor_tuple_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.tuple
   match e with
     | Ast.Tuple(l) -> 
         let acc,l' = refactor_list refactor_tuple_expr (acc,DQueue.empty) l in
-        acc, TTup (((DQueue.to_list l')))
+        acc, TTup (DQueue.to_list l')
 
     | Ast.Splat(_pos, Some e) -> 
         let acc, e' = refactor_tuple_expr acc e in
@@ -988,7 +988,7 @@ and refactor_lhs acc e : (stmt acc * lhs * stmt acc) =
                 work (acc,es,after) tl
         in
         let acc,l',after = work (acc,DQueue.empty,acc_emptyq acc) l in
-          acc, LTup (((DQueue.to_list l'))), after
+          acc, LTup (DQueue.to_list l'), after
             
     | Ast.Splat(_pos, None) ->
         let acc, v = fresh acc in
@@ -1760,7 +1760,7 @@ and refactor_method_formal (acc:stmt acc) t _pos : stmt acc * method_formal_para
   | Ast.ParamEllipsis _
     -> failwith "TODO"
 
-  | Ast.Formal_id ((str,_pos)) -> 
+  | Ast.Formal_id (str,_pos) -> 
       let acc = {acc with seen = StrSet.add str acc.seen} in
         acc, Formal_meth_id(str)
 
@@ -1818,7 +1818,7 @@ and refactor_block_formal acc t pos : stmt acc * block_formal_param = match t wi
   | Ast.ParamEllipsis _
     -> failwith "TODO"
 
-  | Ast.Formal_id ((str,pos)) -> 
+  | Ast.Formal_id (str,pos) -> 
       (add_seen str acc), Formal_block_id(refactor_id_kind pos Ast.ID_Lowercase,str)
 
   | Ast.Formal_star(_,(s, _)) -> (add_seen s acc), Formal_star2(s)

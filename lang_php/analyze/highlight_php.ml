@@ -391,7 +391,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     V.kstmt = (fun (k,_bigf) stmt ->
       k stmt;
       match stmt with
-      | Globals ((_v1, v2, _v3)) ->
+      | Globals (_v1, v2, _v3) ->
         v2 |> Ast.uncomma |> List.iter (fun x ->
           match x  with
           | GlobalVar dname ->
@@ -402,7 +402,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
           | GlobalDollar _ -> ()
           | GlobalDollarExpr _ ->  ()
         );
-      | StaticVars ((_v1, v2, _v3)) ->
+      | StaticVars (_v1, v2, _v3) ->
         v2 |> Ast.uncomma |> List.iter (fun svar ->
           let (dname, _affect_opt) = svar in
           let info = Ast.info_of_dname dname in
