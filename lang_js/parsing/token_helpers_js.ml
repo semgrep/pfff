@@ -163,8 +163,8 @@ let visitor_info_of_tok f = function
   | T_XHP_SHORT_FRAGMENT ii -> T_XHP_SHORT_FRAGMENT (f ii)
 
   | T_DOTS ii -> T_DOTS (f ii)
-  | LDots (ii) -> LDots (f ii)
-  | RDots (ii) -> RDots (f ii)
+  | LDots ii -> LDots (f ii)
+  | RDots ii -> RDots (f ii)
 
   | T_DOLLARCURLY ii -> T_DOLLARCURLY(f ii)
   | T_BACKQUOTE ii -> T_BACKQUOTE (f ii)

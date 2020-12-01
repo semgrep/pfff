@@ -149,7 +149,7 @@ and v_expr (x: expr) =
   | Num v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
-  | Id (v1) -> let v1 = v_name v1 in ()
+  | Id v1 -> let v1 = v_name v1 in ()
   | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
   | Assign (v1, v2, v3) -> 
         let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
@@ -164,7 +164,7 @@ and v_expr (x: expr) =
       ()
   | Fun (v1, v2) -> let v1 = v_function_definition v1 and v2 = v_option v_name v2 in ()
   | Apply (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket (v_list v_expr) v2 in ()
-  | Arr (v1) -> let v1 = v_bracket (v_list v_expr) v1 in ()
+  | Arr v1 -> let v1 = v_bracket (v_list v_expr) v1 in ()
   | Conditional (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
   in  

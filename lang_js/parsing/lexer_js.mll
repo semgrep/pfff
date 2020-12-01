@@ -470,7 +470,7 @@ rule initial = parse
           | T_NUMBER_TYPE _ | T_BOOLEAN_TYPE _ | T_ANY_TYPE _ | T_STRING_TYPE _
         ) ->
           (match s with
-          | "/" -> T_DIV (info)
+          | "/" -> T_DIV info
           | "/=" -> T_DIV_ASSIGN (tokinfo lexbuf)
           | _ -> raise Impossible
           )

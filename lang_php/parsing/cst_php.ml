@@ -815,8 +815,8 @@ let unarg arg =
 let unargs xs =
   uncomma xs |> Common.partition_either (function
   | Arg e -> Left e
-  | ArgRef (_tok, e) -> Right (e)
-  | ArgUnpack (_tok, e) -> Right (e)
+  | ArgRef (_tok, e) -> Right e
+  | ArgUnpack (_tok, e) -> Right e
   )
 let unmodifiers class_vars =
   match class_vars with

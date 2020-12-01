@@ -68,9 +68,9 @@ let visit_program
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -235,8 +235,8 @@ let visit_program
     | T.TEqEq ii | T.TEqSlashEq ii| T.TEqColonEq ii | T.TSlashEq ii
         -> tag ii Operator
 
-    | T.TDot (ii)
-    | T.TColon (ii)
+    | T.TDot ii
+    | T.TColon ii
         ->
         tag ii Punctuation
 

@@ -221,7 +221,7 @@ EXTEND
 	  in
 	  (* TODOSTYLE? function fmatch id patt expr who put the None, ... *)
 	  let rec body_ctyp id = function
-	    | (TyLid (_) | TyAcc (_)) as c -> ExApp (l,name_module_func c, ExLid (l,id))
+	    | (TyLid (_) | TyAcc _) as c -> ExApp (l,name_module_func c, ExLid (l,id))
               (* | TyUid of loc and string *)
 
 	    | TyQuo (l, s) -> ExApp (l, ExLid(l, "str__of_" ^ s), ExLid (l,id))
@@ -264,7 +264,7 @@ EXTEND
 		  ExFun (l, [PaLid(l, id), None, f]))
 		in 
 		  (match type_parameted with
-		  |  (TyLid (_) | TyAcc (_)) as c -> 
+		  |  (TyLid (_) | TyAcc _) as c -> 
 		      ExApp (l, ExApp (l, name_module_func c, ex_tuple funcs), ExLid (l,id))
 		  | _ -> ExStr (l,"<illegal syntax in type, should be a typeconst>")
 		  )
@@ -573,7 +573,7 @@ EXTEND
 	  in
 	  (* TODOSTYLE? function fmatch id patt expr who put the None, ... *)
 	  let rec body_ctyp id = function
-	    | (TyLid (_) | TyAcc (_)) as c -> ExApp (l,name_module_func c, ExLid (l,id))
+	    | (TyLid (_) | TyAcc _) as c -> ExApp (l,name_module_func c, ExLid (l,id))
               (* | TyUid of loc and string *)
 
 	    | TyQuo (l, s) -> ExApp (l, ExLid(l, "str__of_" ^ s), ExLid (l,id))
@@ -615,7 +615,7 @@ EXTEND
 		  ExFun (l, [PaLid(l, id), None, f]))
 		in 
 		  (match type_parameted with
-		  |  (TyLid (_) | TyAcc (_)) as c -> 
+		  |  (TyLid (_) | TyAcc _) as c -> 
 		      ExApp (l, ExApp (l, name_module_func c, ex_tuple funcs), ExLid (l,id))
 		  | _ -> ExStr (l,"<illegal syntax in type, should be a typeconst>")
 		  )

@@ -97,7 +97,7 @@ let test_dump_cpp_full file =
   pr s;
   toks |> List.iter (fun tok ->
     match tok with
-    | Parser_cpp.TComment (ii) ->
+    | Parser_cpp.TComment ii ->
         let v = Meta_parse_info.vof_info_adjustable_precision ii in
         let s = OCaml.string_of_v v in
         pr s

@@ -138,7 +138,7 @@ and multi_grouped = function
       Ast_fuzzy.Parens (tokext tok1, multi_grouped_list_comma xs, tokext tok2)
   | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
       Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
-  | Token_views_cpp.Tok (tok) ->
+  | Token_views_cpp.Tok tok ->
     (match PI.str_of_info (tokext tok) with
     | "..." -> Ast_fuzzy.Dots (tokext tok)
     | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (s, tokext tok)

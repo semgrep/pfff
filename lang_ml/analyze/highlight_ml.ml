@@ -311,7 +311,7 @@ let visit_program
           (*tag tok_with (KeywordConditional); *)
           k x
 
-      | G.DotAccess (_e, tok, (G.EId (id) | G.EName (id, _))) ->
+      | G.DotAccess (_e, tok, (G.EId id | G.EName (id, _))) ->
           let info = snd id in
           (match PI.str_of_info tok with
           | "#" -> tag info (Entity (Method, (Use2 fake_no_use2)))
@@ -363,7 +363,7 @@ let visit_program
 
     V.ktype_ = (fun (k, _) t ->
       (match t with
-      | G.TyName (name) ->
+      | G.TyName name ->
           let info = info_of_name name in
           tag info (Entity (Type, (Use2 fake_no_use2)))
       | G.TyNameApply (name, _ty_args) ->
@@ -395,9 +395,9 @@ let visit_program
 
     (* pad-specific: *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline ii4
       ::T.TComment(ii5)
       ::xs ->
 
@@ -486,15 +486,15 @@ let visit_program
 
     | T.Tmodule(_)
       ::T.TUpperIdent(_,ii_mod)
-      ::T.TEq (_)
-      ::T.Tstruct (_)::xs ->
+      ::T.TEq _
+      ::T.Tstruct _::xs ->
         tag ii_mod (Entity (Module, Def2 fake_no_def2));
         aux_toks xs
 
     | T.Tmodule(_)
       ::T.TUpperIdent(_,ii_mod)
-      ::T.TColon (_)
-      ::T.Tsig (_)::xs ->
+      ::T.TColon _
+      ::T.Tsig _::xs ->
         tag ii_mod (Entity (Module, Def2 fake_no_def2));
         aux_toks xs
 
@@ -659,8 +659,8 @@ let visit_program
     | T.TPlus ii | T.TMinus ii
     | T.TLess ii | T.TGreater ii
 
-    | T.TDot (ii)
-    | T.TColon (ii)
+    | T.TDot ii
+    | T.TColon ii
 
     | T.TBracketAt ii | T.TBracketAtAt ii | T.TBracketAtAtAt ii
     | T.TBracketPercent ii | T.TBracketPercentPercent ii

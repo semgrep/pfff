@@ -74,7 +74,7 @@ let msg_change_tok tok =
 
   | TIdent_Define (_s, _ii) ->
       ()
-  | TOPar_Define (_ii) ->
+  | TOPar_Define _ii ->
       ()
   | TCommentNewline_DefineEndOfMacro _ ->
       ()

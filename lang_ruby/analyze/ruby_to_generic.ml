@@ -75,7 +75,7 @@ let rec expr = function
   | ScopedId x -> let name = scope_resolution x in
       G.IdQualified (name, G.empty_id_info())
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
-  | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
+  | Array xs -> G.Container (G.Array, bracket (list expr) xs)      
   | Tuple xs -> G.Tuple (G.fake_bracket (list expr xs))
   | Unary (op, e) -> 
     let e = expr e in
@@ -139,7 +139,7 @@ and formal_param = function
       G.OtherParam (G.OPO_Ref, [G.Tk t; G.Pa param])
   | Formal_star (t, id) ->
       G.ParamRest (t, G.param_of_id id)
-  | Formal_rest (t) ->
+  | Formal_rest t ->
       let p = { G.pattrs = []; pinfo = G.empty_id_info ();
                 ptype = None; pname = None; pdefault = None } in
       G.ParamRest (t, p)
@@ -341,7 +341,7 @@ and literal x =
       G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
-  | String (skind) ->
+  | String skind ->
       (match skind with
       | Single x -> G.L (G.String x)
       | Double (l, [], r) -> 

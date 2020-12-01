@@ -139,7 +139,7 @@ let mk_trees h xs =
            let before = acc |> List.rev in
            if null before
            then aux [] xs
-           else (Left before)::(Right (info))::aux [] xs
+           else (Left before)::(Right info)::aux [] xs
          | _ ->
            aux (x::acc) xs
          )
@@ -240,9 +240,9 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
       and v2 = map_trees v2
       and v3 = map_tok v3
       in Bracket (v1, v2, v3)
-  | Metavar v1 -> let v1 = map_wrap v1 in Metavar (v1)
-  | Dots v1 -> let v1 = map_tok v1 in Dots (v1)
-  | Tok v1 -> let v1 = map_wrap v1 in Tok (v1)
+  | Metavar v1 -> let v1 = map_wrap v1 in Metavar v1
+  | Dots v1 -> let v1 = map_tok v1 in Dots v1
+  | Tok v1 -> let v1 = map_wrap v1 in Tok v1
   and map_trees v = List.map map_tree v
   and map_tok v = 
     let k v = v in

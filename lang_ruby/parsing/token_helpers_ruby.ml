@@ -37,8 +37,8 @@ let visitor_info_of_tok f = function
   | T_COMMENT ii -> T_COMMENT (f ii)
   | T_UNKNOWN ii -> T_UNKNOWN (f ii)
 
-  | LDots (ii) -> LDots (f ii)
-  | RDots (ii) -> RDots (f ii)
+  | LDots ii -> LDots (f ii)
+  | RDots ii -> RDots (f ii)
 
 
   | T_UAMPER ii -> T_UAMPER (f ii)

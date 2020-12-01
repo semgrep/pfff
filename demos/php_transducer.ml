@@ -36,7 +36,7 @@ let visit asts =
   let visitor = V.mk_visitor { V.default_visitor with
     V.ktop = (fun (k, bigf) top -> 
       match top with
-      | FuncDef (def) -> 
+      | FuncDef def -> 
           let name = Ast.str_of_ident def.f_name in
           Common.push ("function:" ^name) props;
       | _ -> 

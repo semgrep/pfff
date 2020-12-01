@@ -929,7 +929,7 @@ and expr env = function
       (* ugly: because of bad typedef inference what we think is an Id 
        * could actually be a TTypename. So add a hack here.
        *)
-      | Left (Id (origname)) ->
+      | Left (Id origname) ->
           let s = Ast.str_of_name origname in
           if is_local env s
           then ()

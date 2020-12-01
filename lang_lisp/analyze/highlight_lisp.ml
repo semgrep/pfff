@@ -52,9 +52,9 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline ii4
       ::T.TComment(ii5)
       ::xs ->
 

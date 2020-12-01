@@ -18,7 +18,7 @@ let show_function_calls file =
             | ExprStmt (e, _ptvirg) ->
       
                 (match e with
-                | Call(Id (funcname), args) ->
+                | Call(Id funcname, args) ->
                   (*s: print funcname *)
                   let s = Cst_php.str_of_name funcname in
                   let info = Cst_php.info_of_name funcname in

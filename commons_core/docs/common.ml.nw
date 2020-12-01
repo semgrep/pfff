@@ -1525,7 +1525,7 @@ let arg_parse2 l msg short_usage_fun =
       (* take only head, it's where the error msg is *)
       pr2 (List.hd xs);
       short_usage_fun();
-      raise (UnixExit (2))
+      raise (UnixExit 2)
   | Arg.Help msg -> (* printf "%s" msg; exit 0; *)
       raise Impossible  (* -help is specified in speclist *)
   )
@@ -3201,7 +3201,7 @@ let command2_y_or_no_exit_if_no cmd =
   let res = command2_y_or_no cmd in
   if res
   then ()
-  else raise (UnixExit (1))
+  else raise (UnixExit 1)
 
 let command_safe ?(verbose=false) program args =
   let pid = Unix.fork () in
@@ -3863,7 +3863,7 @@ let rec split_gen_when_aux f acc xs =
       (match f (x::xs) with
       | None -> 
           split_gen_when_aux f (x::acc) xs 
-      | Some (rest) -> 
+      | Some rest -> 
           let before = List.rev acc in
           if null before
           then split_gen_when_aux f [] rest

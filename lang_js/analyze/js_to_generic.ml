@@ -179,11 +179,11 @@ and expr (x: expr) =
   | Num v1 -> let v1 = wrap string v1 in G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
   | Regexp v1 -> let v1 = wrap string v1 in G.L (G.Regexp v1)
-  | Id (v1) -> 
+  | Id v1 -> 
       let v1 = name v1 in
       G.Id (v1, G.empty_id_info())
 
-  | IdSpecial (v1) -> 
+  | IdSpecial v1 -> 
       let x = special v1 in
       (match x with
       | SR_Special v -> G.IdSpecial v
@@ -214,14 +214,14 @@ and expr (x: expr) =
   | Fun (v1, _v2TODO) -> 
       let def, _more_attrs   = fun_ v1 in
       (* todo? assert more_attrs = []? *)
-      G.Lambda (def)
+      G.Lambda def
 
   | Apply (IdSpecial v1, v2) ->
       let x = special v1 in
       let v2 = bracket (list expr) v2 in 
       (match x with
       | SR_Special v -> 
-        G.Call (G.IdSpecial (v), bracket (List.map (fun e -> G.Arg e)) v2)
+        G.Call (G.IdSpecial v, bracket (List.map (fun e -> G.Arg e)) v2)
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
       | SR_Other (x, tok) -> (* ex: NewTarget *)
@@ -232,7 +232,7 @@ and expr (x: expr) =
       )
   | Apply (v1, v2) -> let v1 = expr v1 and v2 = bracket (list expr) v2 in 
       G.Call (v1, bracket (List.map (fun e -> G.Arg e)) v2)
-  | Arr (v1) -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
+  | Arr v1 -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
   | Conditional (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -244,7 +244,7 @@ and stmt x =
       let v2 = list any v2 in
       G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
   | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt (v1)
+  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt v1
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
   | If (t, v1, v2, v3) ->
@@ -289,7 +289,7 @@ and catch_block = function
       let v1 = stmt v1
       (* bugfix: reusing 't' to avoid NoTokenLocation error when
        * a semgrep patter like catch($ERR) matches an UnboundCatch. *)
-      in t, G.PatUnderscore (t), v1
+      in t, G.PatUnderscore t, v1
 
 and tok_and_stmt (t, v) = 
   let v = stmt v in

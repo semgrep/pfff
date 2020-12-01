@@ -73,9 +73,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = PI.str_of_info ii in
@@ -136,7 +136,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
      * aux_toks xs;
      *)
 
-    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii)
+    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum ii
         (* thrift stuff *)
         | T.TIdent ("service", ii)
       )
@@ -302,7 +302,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
       | New (_colon, _tok, _placement, ft, _args) ->
           (match ft with
-          | _nq, ((TypeName (name))) ->
+          | _nq, ((TypeName name)) ->
               Ast.ii_of_id_name name |> List.iter (fun ii -> 
                 tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
@@ -333,7 +333,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     V.ktypeC = (fun (k, _) x ->
       match x with
-      | TypeName (name) ->
+      | TypeName name ->
           Ast.ii_of_id_name name |> List.iter (fun ii -> 
             (* new Xxx and other places have priority *)
             if not (Hashtbl.mem already_tagged ii)

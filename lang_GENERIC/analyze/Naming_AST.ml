@@ -485,7 +485,7 @@ let resolve2 lang prog =
     (* sgrep: the import aliases *)
     V.kdir = (fun (k, _v) x ->
        (match x with
-       | ImportFrom (_, DottedName xs, id, Some (alias)) ->
+       | ImportFrom (_, DottedName xs, id, Some alias) ->
           (* for python *)
           let sid = Ast.gensym () in
           let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
@@ -564,7 +564,7 @@ let resolve2 lang prog =
 
        | Id (id, id_info) ->
           (match lookup_scope_opt id env with
-          | Some (resolved) -> 
+          | Some resolved -> 
              (* name resolution *)
              set_resolved env id_info resolved;
 

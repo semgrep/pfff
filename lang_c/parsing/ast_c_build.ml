@@ -155,7 +155,7 @@ and toplevel env x =
 
 and declaration env x =
   match x with
-  | Func (func_or_else) ->
+  | Func func_or_else ->
       (match func_or_else with
       | FunctionOrMethod def ->
           [A.FuncDef (func_def env def)]
@@ -249,7 +249,7 @@ and parameter env x =
         (match n with
         (* probably a prototype where didn't specify the name *)
         | None -> None
-        | Some (name) -> Some name
+        | Some name -> Some name
         );
       p_type = full_type env t;
     }
@@ -657,7 +657,7 @@ and full_type env x =
   | FunctionType ft -> A.TFunction (function_type env ft)
   | Array ((_, eopt, _), ft) -> 
     A.TArray (Common.map_opt (expr env) eopt, full_type env ft)
-  | TypeName (n) -> A.TTypeName (name env n)
+  | TypeName n -> A.TTypeName (name env n)
 
   | StructUnionName ((kind, _), name) ->
       A.TStructName (struct_kind env kind, name)
@@ -686,7 +686,7 @@ and full_type env x =
         A.TStructName (struct_kind env kind, name)
       )
 
-  | EnumName (_tok, name) -> A.TEnumName (name)
+  | EnumName (_tok, name) -> A.TEnumName name
   | EnumDef (tok, name_opt, xs) ->
       let name =
         match name_opt with
@@ -707,7 +707,7 @@ and full_type env x =
       in
       let def = { A.e_name = name; e_consts = xs' } in
       env.enum_defs_toadd <- def :: env.enum_defs_toadd;
-      A.TEnumName (name)
+      A.TEnumName name
 
   | TypeOf (_, _) -> 
     debug (Type x); raise Todo
@@ -778,7 +778,7 @@ and fieldkind env x =
 
 and name _env x =
   match x with
-  | (None, [], IdIdent (name)) -> name
+  | (None, [], IdIdent name) -> name
   | _ -> debug (Name x); raise CplusplusConstruct
 
 and struct_kind _env = function

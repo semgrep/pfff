@@ -135,13 +135,13 @@ let parse_atts call_scan =
                 raise End_of_scan
             | T.Relement ii ->
                 if !Flag.exn_when_lexical_error
-                then raise (Parse_info.Parsing_error (ii))
+                then raise (Parse_info.Parsing_error ii)
                 else 
                  (* Illegal *)
                  ( [], false )
             | T.Relement_empty ii ->
                 if !Flag.exn_when_lexical_error
-                then raise (Parse_info.Parsing_error (ii))
+                then raise (Parse_info.Parsing_error ii)
                 else 
                   (* Illegal *)
                   ( [], true )

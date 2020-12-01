@@ -508,7 +508,7 @@ let remove_first_char s =
 
 let str_of_class_name x =
   match x with
-  | Hint (name) -> str_of_name name
+  | Hint name -> str_of_name name
   | _ -> raise Common.Impossible
 
 let name_of_class_name x =

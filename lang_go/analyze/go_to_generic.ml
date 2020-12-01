@@ -556,7 +556,7 @@ and top_decl =
       and (params, ret) = func_type v3 and v4 = stmt v4 in
       let ent = G.basic_entity v1 [] in
       let def = mk_func_def (G.Method, t) params ret v4 in
-      let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa (v2)])
+      let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa v2])
       in
       G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams})
   | DTop v1 -> let v1 = decl v1 in v1

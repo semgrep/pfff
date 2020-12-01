@@ -51,7 +51,7 @@ let visitor_info_of_tok f = function
   | TCommentNewline ii -> TCommentNewline (f ii)
   | TComment ii -> TComment (f ii)
   | TUnknown ii -> TUnknown (f ii)
-  | EOF (ii) -> EOF (f ii)
+  | EOF ii -> EOF (f ii)
 
   | TQuestion ii -> TQuestion (f ii)
   | TAt ii -> TAt (f ii)
@@ -136,37 +136,37 @@ let visitor_info_of_tok f = function
   | Tfalse ii -> Tfalse (f ii) 
 
 
-  | TOParen (ii) -> TOParen (f ii)
-  | TCParen (ii) -> TCParen (f ii)
-  | TOBrace (ii) -> TOBrace (f ii)
-  | TCBrace (ii) -> TCBrace (f ii)
-  | TOBracket (ii) -> TOBracket (f ii)
-  | TCBracket (ii) -> TCBracket (f ii)
+  | TOParen ii -> TOParen (f ii)
+  | TCParen ii -> TCParen (f ii)
+  | TOBrace ii -> TOBrace (f ii)
+  | TCBrace ii -> TCBrace (f ii)
+  | TOBracket ii -> TOBracket (f ii)
+  | TCBracket ii -> TCBracket (f ii)
 
-  | TLess (ii) -> TLess (f ii)
-  | TGreater (ii) -> TGreater (f ii)
-  | TDot (ii) -> TDot (f ii)
+  | TLess ii -> TLess (f ii)
+  | TGreater ii -> TGreater (f ii)
+  | TDot ii -> TDot (f ii)
 
-  | TComma (ii) -> TComma (f ii)
-  | TEq (ii) -> TEq (f ii)
+  | TComma ii -> TComma (f ii)
+  | TEq ii -> TEq (f ii)
 
-  | TColon (ii) -> TColon (f ii)
-  | TColonColon (ii) -> TColonColon (f ii)
-  | TBang (ii) -> TBang (f ii)
-  | TBangEq (ii) -> TBangEq (f ii)
+  | TColon ii -> TColon (f ii)
+  | TColonColon ii -> TColonColon (f ii)
+  | TBang ii -> TBang (f ii)
+  | TBangEq ii -> TBangEq (f ii)
 
-  | TPipe (ii) -> TPipe (f ii)
-  | TSemiColon (ii) -> TSemiColon (f ii)
-  | TSemiColonSemiColon (ii) -> TSemiColonSemiColon (f ii)
+  | TPipe ii -> TPipe (f ii)
+  | TSemiColon ii -> TSemiColon (f ii)
+  | TSemiColonSemiColon ii -> TSemiColonSemiColon (f ii)
 
-  | TStar (ii) -> TStar (f ii)
-  | TArrow (ii) -> TArrow (f ii)
+  | TStar ii -> TStar (f ii)
+  | TArrow ii -> TArrow (f ii)
 
-  | TAnd (ii) -> TAnd (f ii)
-  | TAndAnd (ii) -> TAndAnd (f ii)
+  | TAnd ii -> TAnd (f ii)
+  | TAndAnd ii -> TAndAnd (f ii)
 
-  | TPlus (ii) -> TPlus (f ii)
-  | TMinus (ii) -> TMinus (f ii)
+  | TPlus ii -> TPlus (f ii)
+  | TMinus ii -> TMinus (f ii)
 
 let info_of_tok tok = 
   let res = ref None in

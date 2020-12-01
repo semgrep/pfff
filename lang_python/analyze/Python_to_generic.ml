@@ -150,9 +150,9 @@ let rec expr (x: expr) =
   | Num v1 -> 
       let v1 = number v1 in 
       G.L v1
-  | Str (v1) -> 
+  | Str v1 -> 
       let v1 = wrap string v1 in
-      G.L (G.String (v1))
+      G.L (G.String v1)
   | EncodedStr (v1, pre) ->
       let v1 = wrap string v1 in
       (* bugfix: do not reuse the same tok! otherwise in semgrep
@@ -161,16 +161,16 @@ let rec expr (x: expr) =
        * three times.
        * todo: the right fix is to have EncodedStr of string wrap * string wrap
        *)
-      G.Call (G.IdSpecial (G.EncodedString (pre), fake ""),
-        fb [G.Arg (G.L (G.String (v1)))])
+      G.Call (G.IdSpecial (G.EncodedString pre, fake ""),
+        fb [G.Arg (G.L (G.String v1))])
 
   | InterpolatedString xs ->
     G.Call (G.IdSpecial (G.ConcatString G.FString, fake "concat"), 
-      fb (xs |> List.map (fun x -> let x = expr x in G.Arg (x)))
+      fb (xs |> List.map (fun x -> let x = expr x in G.Arg x))
     )
   | ConcatenatedString xs ->
     G.Call (G.IdSpecial (G.ConcatString G.SequenceConcat, fake "concat"), 
-      fb (xs |> List.map (fun x -> let x = expr x in G.Arg (x)))
+      fb (xs |> List.map (fun x -> let x = expr x in G.Arg x))
     )
   | TypedExpr (v1, v2) ->
      let v1 = expr v1 in
@@ -321,7 +321,7 @@ and for_if = function
   | CompFor (e1, e2) -> 
       let e1 = expr e1 in let e2 = expr e2 in
       G.E (G.OtherExpr (G.OE_CompFor, [G.E e1; G.E e2]))
-  | CompIf (e1) -> 
+  | CompIf e1 -> 
       let e1 = expr e1 in
       G.E (G.OtherExpr (G.OE_CompIf, [G.E e1]))
 (*e: function [[Python_to_generic.for_if]] *)
@@ -330,10 +330,10 @@ and for_if = function
 and dictorset_elt = function
   | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in 
       G.Tuple (G.fake_bracket [v1; v2])
-  | Key (v1) -> 
+  | Key v1 -> 
       let v1 = expr v1 in
       v1
-  | PowInline (v1) -> 
+  | PowInline v1 -> 
       let v1 = expr v1 in
       G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.expr_to_arg v1])
 (*e: function [[Python_to_generic.dictorset_elt]] *)

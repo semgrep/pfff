@@ -269,7 +269,7 @@ let propagate2 lang prog =
        (match x with
        | Id (id, id_info)->
              (match find_id env id id_info with
-             | Some (literal) ->
+             | Some literal ->
                  id_info.id_const_literal := Some literal
              | _ -> ()
              );

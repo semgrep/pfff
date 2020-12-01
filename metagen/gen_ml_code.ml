@@ -41,10 +41,10 @@ let rec call_to_matcher t =
 
   | O.Apply (s, t) -> 
       spf "(m_%s " s ^ call_to_matcher t ^ ")"
-  | O.List (t) -> 
+  | O.List t -> 
       let s = "list" in
       spf "(m_%s " s ^ call_to_matcher t ^ ")"
-  | O.Option (t) -> 
+  | O.Option t -> 
       let s = "option" in
       spf "(m_%s " s ^ call_to_matcher t ^ ")"
 

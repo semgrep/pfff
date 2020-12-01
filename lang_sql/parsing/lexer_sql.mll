@@ -150,7 +150,7 @@ rule lexer = parse
             Hashtbl.find keyword_table (String.lowercase_ascii s))
           with
           | Some f -> f info
-          | None -> T_NAME (info)
+          | None -> T_NAME info
         }
 
   | NAME_BACKQUOTE {

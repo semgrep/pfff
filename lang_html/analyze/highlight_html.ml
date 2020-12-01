@@ -145,7 +145,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
 
-    | T.Other (ii) -> tag ii NotParsed
+    | T.Other ii -> tag ii NotParsed
 
     | T.Cdata (ii, _s) | T.CdataSpecial (ii, _s) ->
         (* can be js code, css code *)

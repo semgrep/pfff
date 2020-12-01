@@ -47,5 +47,5 @@ let any_of_string str =
      * so let's call directly Parser_js.json
      *)
     let e = Parser_js.json lexer lexbuf_fake in
-    Ast_json.E (e)
+    Ast_json.E e
   )

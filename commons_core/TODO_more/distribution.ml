@@ -78,7 +78,7 @@ let worker ~fmap:map_ex =
          then pr2 ("DEBUG: worker exiting");
          flush stderr; flush stdout;
          (*e: debug worker exit *)
-         raise (UnixExit (0))
+         raise (UnixExit 0)
      | DataRes _ -> raise ProtocolError
    done
    (*e: enter worker loop *)

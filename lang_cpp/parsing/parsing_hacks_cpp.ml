@@ -387,14 +387,14 @@ let find_constructed_object_and_more xs =
         
     (* xx yy(1 ... *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
-        ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->
+        ({t=TOPar ii;where=InArgument::_;_} as tok1)::xs ->
 
         change_tok tok1 (TOPar_CplusplusInit ii);
         aux xs
 
     (* int yy(1 ... *)
     | {t=tok;_}::{t=TIdent _;_}::
-      ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs 
+      ({t=TOPar ii;where=InArgument::_;_} as tok1)::xs 
       when TH.is_basic_type tok 
       ->
         change_tok tok1 (TOPar_CplusplusInit ii);
@@ -402,7 +402,7 @@ let find_constructed_object_and_more xs =
 
     (* xx& yy(1 ... *)
     | {t=TIdent_Typedef _;_}::{t=TAnd _}::{t=TIdent _;_}::
-        ({t=TOPar (ii);where=InArgument::_;_} as tok1)::xs ->
+        ({t=TOPar ii;where=InArgument::_;_} as tok1)::xs ->
 
         change_tok tok1 (TOPar_CplusplusInit ii);
           aux xs
@@ -415,14 +415,14 @@ let find_constructed_object_and_more xs =
      * If inside a function, then very probably a constructed object.
      *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}::
-        ({t=TOPar (ii);} as tok1)::{t=TIdent _;_}::{t=TCPar _}::xs ->
+        ({t=TOPar ii;} as tok1)::{t=TIdent _;_}::{t=TCPar _}::xs ->
 
         change_tok tok1 (TOPar_CplusplusInit ii);
         aux xs
 
     (* xx yy(zz, ww) *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}
-      ::({t=TOPar (ii);} as tok1)
+      ::({t=TOPar ii;} as tok1)
       ::{t=TIdent _;_}::{t=TComma _}::{t=TIdent _;_}
       ::{t=TCPar _}::xs ->
 
@@ -431,7 +431,7 @@ let find_constructed_object_and_more xs =
 
     (* xx yy(&zz) *)
     | {t=TIdent_Typedef _;_}::{t=TIdent _;_}
-      ::({t=TOPar (ii);} as tok1)
+      ::({t=TOPar ii;} as tok1)
       ::{t=TAnd _}
       ::{t=TIdent _;_}
       ::{t=TCPar _}::xs ->

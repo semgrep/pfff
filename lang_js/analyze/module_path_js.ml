@@ -46,7 +46,7 @@ module J = JSON
 (*****************************************************************************)
 let main_entry_of_package_json file json =
   match json with
-  | J.Object (xs) -> 
+  | J.Object xs -> 
           (try 
              (match List.assoc "main" xs with
              | J.String s -> s

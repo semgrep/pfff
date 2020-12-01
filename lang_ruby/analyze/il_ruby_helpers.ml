@@ -416,39 +416,39 @@ let rec visit_literal vtor l =
 
 and visit_expr vtor (e:expr) = 
   visit vtor#visit_expr e begin function
-    | ELit (l) -> (ELit (visit_literal vtor l) : expr)
-    | EId (id) -> (EId (visit_id vtor id) : expr)
+    | ELit l -> (ELit (visit_literal vtor l) : expr)
+    | EId id -> (EId (visit_id vtor id) : expr)
   end
 
 and visit_lhs vtor (lhs:lhs) = 
   visit vtor#visit_lhs lhs begin function
-    | LId (id) -> LId (visit_id vtor id :> identifier)
-    | LTup (lhs_l) -> 
+    | LId id -> LId (visit_id vtor id :> identifier)
+    | LTup lhs_l -> 
     let lhs_l' = map_preserve List.map (visit_lhs vtor) lhs_l in
       if lhs_l == lhs_l' then lhs
       else LTup (lhs_l')
-    | LStar (id) -> 
+    | LStar id -> 
     let id' = visit_id vtor id in
       if id==id' then lhs else (LStar ( id') : lhs)
   end
 
 and visit_star_expr vtor star = match star with
-  | SE (e) -> SE (visit_expr vtor e)
-  | SStar (e) -> 
+  | SE e -> SE (visit_expr vtor e)
+  | SStar e -> 
       let e' = visit_expr vtor e in
         if e==e' then star else SStar (e')
 
 let rec visit_tuple vtor tup = 
   visit vtor#visit_tuple tup begin function
-    | TE (e) -> TE (visit_expr vtor e : expr)
-    | TTup (lst) ->
+    | TE e -> TE (visit_expr vtor e : expr)
+    | TTup lst ->
       let lst' = map_preserve List.map (visit_tuple vtor) lst in
       if lst == lst' then tup
       else TTup (lst')
-    | TStar ((TE (e))) -> 
+    | TStar ((TE e)) -> 
       let e' = visit_expr vtor e in
       if e==e' then tup else (TStar (TE e') : tuple_expr)
-    | TStar ((TTup (lst))) -> 
+    | TStar ((TTup lst)) -> 
       let lst' = map_preserve List.map (visit_tuple vtor) lst in
       if lst == lst' then tup
       else TStar ((TTup (lst')))
@@ -689,9 +689,9 @@ let alpha_convert_local ~var ~sub s =
 
 let rec locals_of_lhs acc (lhs:lhs) = match lhs with
   | LId (Var(Local,s)) -> StrSet.add s acc
-  | LId (_) -> acc
-  | LTup (lst) -> List.fold_left locals_of_lhs acc lst
-  | LStar (s)  -> locals_of_lhs acc (LId s : lhs)
+  | LId _ -> acc
+  | LTup lst -> List.fold_left locals_of_lhs acc lst
+  | LStar s  -> locals_of_lhs acc (LId s : lhs)
 
 
 let rec locals_of_any_formal acc (p:any_formal) = match p with

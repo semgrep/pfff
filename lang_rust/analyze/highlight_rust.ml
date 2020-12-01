@@ -67,9 +67,9 @@ let visit_program
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -254,11 +254,11 @@ let visit_program
 
     | T.TOAngle ii | T.TCAngle ii 
 
-    | T.TArrow (ii)
-    | T.TDot (ii)
-    | T.TColonColon (ii)
-    | T.TPound (ii)
-    | T.TColon (ii)
+    | T.TArrow ii
+    | T.TDot ii
+    | T.TColonColon ii
+    | T.TPound ii
+    | T.TColon ii
     | T.TComma ii
     | T.TSemiColon ii
 

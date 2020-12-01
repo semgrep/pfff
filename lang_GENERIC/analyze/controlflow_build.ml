@@ -145,7 +145,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        let node, stmt = 
          (match stmt with 
          | While (_, e, stmt) ->
-             F.WhileHeader (e), stmt
+             F.WhileHeader e, stmt
          | For (_, forheader, stmt) ->
              (match forheader with
              | ForClassic _ -> raise Todo
@@ -244,7 +244,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
 
        let names =
          match v_arrow_opt with
-         | ForeachVar (var) -> [var]
+         | ForeachVar var -> [var]
          | ForeachArrow (var1, _, var2) ->
            [var1;var2]
          | ForeachList (_, xs) ->
@@ -282,7 +282,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        state.g |> add_arc_opt (previ, doi);
 
        let taili = state.g#add_node
-         { F.n = F.DoWhileTail (e);i=None } in
+         { F.n = F.DoWhileTail e;i=None } in
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
        state.g |> add_arc (taili, newfakethen);
@@ -313,7 +313,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       * is what I do for now.
       * The lasti can be a Join when there is no return in either branch.
       *)
-       let newi = state.g#add_node { F.n = F.IfHeader (e);i=i() } in
+       let newi = state.g#add_node { F.n = F.IfHeader e;i=i() } in
        state.g |> add_arc_opt (previ, newi);
 
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
@@ -381,10 +381,10 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
            ~ctx_filter:(function
            | LoopCtx (headi, endi) ->
                if is_continue
-               then Some (headi)
-               else Some (endi)
+               then Some headi
+               else Some endi
 
-           | SwitchCtx (endi) ->
+           | SwitchCtx endi ->
                (* it's ugly but PHP allows to 'continue' inside 'switch' (even
                 * when the switch is not inside a loop) in which case
                 * it has the same semantic than 'break'.
@@ -404,7 +404,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    | Switch (_, e, cases_and_body) ->
 
            let newi = state.g#add_node
-             { F.n = F.SwitchHeader (e);i=i() } in
+             { F.n = F.SwitchHeader e;i=i() } in
            state.g |> add_arc_opt (previ, newi);
 
            (* note that if all cases have return, then we will remove
@@ -508,7 +508,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        state.g |> add_arc (newi, catchi);
 
        let state' = { state with
-         ctx = TryCtx (catchi)::state.ctx;
+         ctx = TryCtx catchi::state.ctx;
        }
        in
 
@@ -528,7 +528,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
         *)
        let nodei_to_jump_to =
          state.ctx |> lookup_some_ctx ~ctx_filter:(function
-         | TryCtx (nextcatchi) -> Some nextcatchi
+         | TryCtx nextcatchi -> Some nextcatchi
          | LoopCtx _ | SwitchCtx _ | NoCtx -> None
          )
        in
@@ -568,7 +568,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        let nodei_to_jump_to =
          state.ctx |> lookup_some_ctx
            ~ctx_filter:(function
-           | TryCtx (catchi) ->
+           | TryCtx catchi ->
                Some catchi
            | LoopCtx _ | SwitchCtx _ | NoCtx ->
                None
@@ -651,7 +651,7 @@ and (cfg_cases:
  fun (switchi, endswitchi) state previ cases ->
 
    let state = { state with
-     ctx = SwitchCtx (endswitchi)::state.ctx;
+     ctx = SwitchCtx endswitchi::state.ctx;
    }
    in
 

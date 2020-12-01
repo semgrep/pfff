@@ -2993,7 +2993,7 @@ let command2_y_or_no_exit_if_no cmd =
   let res = command2_y_or_no cmd in
   if res
   then ()
-  else raise (UnixExit (1))
+  else raise (UnixExit 1)
 
 let command_safe ?verbose:(_verbose=false) program args =
   let pid = Unix.fork () in
@@ -3667,7 +3667,7 @@ let rec split_gen_when_aux f acc xs =
       (match f (x::xs) with
       | None ->
           split_gen_when_aux f (x::acc) xs
-      | Some (rest) ->
+      | Some rest ->
           let before = List.rev acc in
           if null before
           then split_gen_when_aux f [] rest

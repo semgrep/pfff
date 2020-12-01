@@ -238,7 +238,7 @@ and expr =
       G.IdQualified (v1, G.empty_id_info ())
   | IdSpecial v1 ->
       let v1 = wrap special v1 in
-      G.IdSpecial (v1)
+      G.IdSpecial v1
   (* unify Id and Var, finally *)      
   | Var v1 -> let v1 = var v1 in 
       G.Id (v1, G.empty_id_info())
@@ -327,7 +327,7 @@ and expr =
       | Left (op, t) -> 
          G.Call (G.IdSpecial (G.Op op, t), fb[G.Arg v1; G.Arg v3])
       | Right x -> 
-         G.Call (G.IdSpecial (x), fb[G.Arg v1; G.Arg v3])
+         G.Call (G.IdSpecial x, fb[G.Arg v1; G.Arg v3])
       )
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in 
       G.Call (G.IdSpecial (G.Op v1, t), fb[G.Arg v2])

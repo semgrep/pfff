@@ -439,7 +439,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
         (match Ast.unbracket exprbracket with
         | None ->
           k expr
-        | Some (exprbis) ->
+        | Some exprbis ->
           (match exprbis with
           | Sc (C (Ast.String (_s, info))) ->
             tag info (Entity (Field, (Use2 fake_no_use2)));
@@ -627,7 +627,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     match tok with
     | T.TNewline _ii | T.TSpaces _ii | T.EOF _ii -> ()
     (* less: could highlight certain words in the comment? *)
-    | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  -> tag ii Comment
+    | T.T_COMMENT (ii)  | T.T_DOC_COMMENT ii  -> tag ii Comment
     | T.TCommentPP _ii -> ()
     | T.TUnknown ii -> tag ii Error
 

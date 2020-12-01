@@ -359,8 +359,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LLT ii  | T.LGT ii
     | T.LLE ii | T.LGE ii
 
-    | T.LDOT (ii)
-    | T.LCOLON (ii)
+    | T.LDOT ii
+    | T.LCOLON ii
     | T.LCOMMA ii
     | T.LSEMICOLON ii
     ->

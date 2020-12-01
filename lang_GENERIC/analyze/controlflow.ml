@@ -197,7 +197,7 @@ let simple_node_of_stmt_opt stmt =
     ) -> None
 
 let any_of_simple_node = function
-  | ExprStmt (e)      -> A.S (A.ExprStmt (e, A.sc))
+  | ExprStmt e      -> A.S (A.ExprStmt (e, A.sc))
   | Assert (t, e1, e2) -> A.S (A.Assert (t, e1, e2, A.sc))
   | DefStmt x       -> A.S (A.DefStmt x)
   | DirectiveStmt x -> A.S (A.DirectiveStmt x)

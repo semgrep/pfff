@@ -282,7 +282,7 @@ and expr e =
       G.Call (G.IdSpecial (G.Op v1, tok), fb[G.Arg v2]) 
   | Infix ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.Op (v2), tok), fb[G.Arg v1; G.Arg v3])
+      G.Call (G.IdSpecial (G.Op v2, tok), fb[G.Arg v1; G.Arg v3])
   | Cast (((_, v1, _), v2)) -> 
     let v1 = list typ v1 and v2 = expr v2 in
     let t = Common2.foldl1 (fun acc e -> G.TyAnd (acc, fake "&", e)) v1 in

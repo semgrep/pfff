@@ -165,7 +165,7 @@ let elt_and_info_of_tok tok =
   let elt = 
     match kind with
       | PI.Esthet x -> Esthet2 (x, str)
-      | _ -> OrigElt (str)
+      | _ -> OrigElt str
   in
   elt, info
 

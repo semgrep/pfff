@@ -591,7 +591,7 @@ let rec stmt env st =
         match eopt1 with
         | None -> 
             let vtrue = G.Bool (true, tok) in
-            [], mk_e (Literal (vtrue)) (G.L vtrue)
+            [], mk_e (Literal vtrue) (G.L vtrue)
         | Some e -> expr_with_pre_stmts env e
       in
       let next =

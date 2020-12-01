@@ -146,9 +146,9 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -214,7 +214,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
         tag ii Number
 
-    | T.TRUE (ii) | T.FALSE ii -> tag ii Boolean
+    | T.TRUE ii | T.FALSE ii -> tag ii Boolean
     | T.NULL ii -> tag ii Null
 
     | T.PRIMITIVE_TYPE (s, ii) ->

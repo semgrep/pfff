@@ -152,11 +152,11 @@ let fix_tokens toks =
   (* use the tagged information and transform tokens *)
   toks |> List.map (function
     | T.T_LPAREN info when Hashtbl.mem retag_lparen_arrow info ->
-      T.T_LPAREN_ARROW (info)
+      T.T_LPAREN_ARROW info
     | T.T_LPAREN info when Hashtbl.mem retag_lparen_method info ->
-      T.T_LPAREN_METHOD_SEMGREP (info)
+      T.T_LPAREN_METHOD_SEMGREP info
     | T.T_LCURLY info when Hashtbl.mem retag_lbrace info ->
-      T.T_LCURLY_SEMGREP (info)
+      T.T_LCURLY_SEMGREP info
     | T.T_IMPORT info when Hashtbl.mem retag_keywords info ->
       T.T_ID (PI.str_of_info info, info)
     | x -> x

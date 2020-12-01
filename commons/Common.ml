@@ -524,7 +524,7 @@ let arg_parse2 l msg short_usage_fun =
       (* take only head, it's where the error msg is *)
       pr2 (List.hd xs);
       short_usage_fun();
-      raise (UnixExit (2))
+      raise (UnixExit 2)
   | Arg.Help _msg -> (* printf "%s" msg; exit 0; *)
       raise Impossible  (* -help is specified in speclist *)
   )

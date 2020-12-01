@@ -625,7 +625,7 @@ let fix_path path g =
         (match x with
         | Focus _ -> 
             aux (acc @ [x]) xs
-        | Expand (n) ->
+        | Expand n ->
             aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
         )
   in

@@ -246,9 +246,9 @@ and vof_expr =
       in OCaml.VSum ("OtherExpr", [ v1; v2 ])
 
 and vof_ident_or_dynamic = function
- | EId (v1) -> let v1 = vof_ident v1 in OCaml.VSum ("EId", [v1])
- | EName (v1) -> let v1 = vof_name v1 in OCaml.VSum ("EName", [v1])
- | EDynamic (v1) -> let v1 = vof_expr v1 in OCaml.VSum ("EDynamic", [v1])
+ | EId v1 -> let v1 = vof_ident v1 in OCaml.VSum ("EId", [v1])
+ | EName v1 -> let v1 = vof_name v1 in OCaml.VSum ("EName", [v1])
+ | EDynamic v1 -> let v1 = vof_expr v1 in OCaml.VSum ("EDynamic", [v1])
 
 and vof_literal =
   function
@@ -304,7 +304,7 @@ and vof_special =
       OCaml.VSum ("EncodedString", [v1])
   | Op v1 ->
       let v1 = vof_arithmetic_operator v1 in OCaml.VSum ("Op", [ v1 ])
-  | IncrDecr (v) ->
+  | IncrDecr v ->
       let v = vof_inc_dec v in
       OCaml.VSum ("IncrDecr", [ v])
 
@@ -456,7 +456,7 @@ and vof_type_ =
       let v1 = vof_name v1
       and v2 = vof_type_arguments v2
       in OCaml.VSum ("TyNameApply", [ v1; v2 ])
-  | TyName (v1) ->
+  | TyName v1 ->
       let v1 = vof_name v1
       in OCaml.VSum ("TyName", [ v1 ])
   | TyVar v1 -> let v1 = vof_ident v1 in OCaml.VSum ("TyVar", [ v1 ])
@@ -688,7 +688,7 @@ and vof_for_header =
       let v1 = vof_pattern v1
       and v2 = vof_expr v2
       in OCaml.VSum ("ForEach", [ v1; t; v2 ])
-  | ForEllipsis (t) ->
+  | ForEllipsis t ->
       let t = vof_tok t in
       OCaml.VSum ("ForEllipsis", [t])
 
@@ -1090,7 +1090,7 @@ and vof_directive =
       let t = vof_tok t in
       let v1 = vof_dotted_ident v1
       in OCaml.VSum ("Package", [ t; v1 ])
-  | PackageEnd (t) ->
+  | PackageEnd t ->
       let t = vof_tok t in
       OCaml.VSum ("PackageEnd", [ t ])
   | Pragma (v1, v2) ->

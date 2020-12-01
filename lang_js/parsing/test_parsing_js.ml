@@ -150,7 +150,7 @@ let parse_js_r2c xs =
        * sort by the number of parse errors in the triage tool
        *)
       None
-    with (Parse_info.Parsing_error (info) | Parse_info.Lexical_error (_,info)) 
+    with (Parse_info.Parsing_error info | Parse_info.Lexical_error (_,info)) 
       as exn ->
      let (startp, endp) = info_to_json_range info in
      let message = 

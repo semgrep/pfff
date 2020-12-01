@@ -283,9 +283,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
     (* a little bit pad specific *)
 (*
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -422,9 +422,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Number
     | T.IMAG (_, ii) ->
         tag ii Number
-    | T.TRUE (ii) | T.FALSE (ii) ->
+    | T.TRUE (ii) | T.FALSE ii ->
         tag ii Boolean
-    | T.NONE (ii) -> tag ii Null
+    | T.NONE ii -> tag ii Null
 (*
     | T.TLongString (_s,ii) ->
         (* most of the time they are used as documentation strings *)
@@ -515,8 +515,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LT ii  | T.GT ii
     | T.LEQ ii | T.GEQ ii
 
-    | T.DOT (ii)
-    | T.COLON (ii)
+    | T.DOT ii
+    | T.COLON ii
     | T.COMMA ii
     | T.SEMICOL ii
     | T.BACKQUOTE ii

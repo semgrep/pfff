@@ -77,9 +77,9 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
 
     (* pad-specific: *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline ii4
       ::T.TComment(ii5)
       ::xs ->
 
@@ -304,8 +304,8 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
 
-    | T.TDot (ii)
-    | T.TColon (ii)
+    | T.TDot ii
+    | T.TColon ii
 
     | T.TSemiColonSemiColon ii
 

@@ -165,7 +165,7 @@ let rec string_of_shape_ n stack shape =
 		(string_of_shape_ (n+2) stack static) ^
 		(mk_indent n "}")
 
-	| RequireShape (m) ->
+	| RequireShape m ->
 		mk_indent n ("require " ^ m)
 
 	| PropertyShape (shape,x) ->

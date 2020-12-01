@@ -661,7 +661,7 @@ let info_of_category = function
   | Entity (kind, defkind) ->
    info_of_entity_kind_and_usedef2 kind defkind
 
-  | FunctionDecl (_) -> [`FOREGROUND "gold2"; 
+  | FunctionDecl _ -> [`FOREGROUND "gold2"; 
                          `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
                         ]
 
@@ -764,6 +764,6 @@ let arity_ids ids  =
 let rewrap_arity_def2_category arity categ = 
   match categ with
   | Entity (kind, (Def2 _)) -> Entity (kind, (Def2 arity))
-  | FunctionDecl _ ->  FunctionDecl (arity)
+  | FunctionDecl _ ->  FunctionDecl arity
   | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
   | _ -> failwith "not a Def2-kind categoriy"

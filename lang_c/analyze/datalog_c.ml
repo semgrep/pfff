@@ -306,7 +306,7 @@ let instrs_of_expr env e =
   (* todo: xalloc, smalloc, and other wrappers? *)
   | A.Call (A.Id ("malloc", tok), (_, es, _)) ->
       (match es with
-      | [Arg (SizeOf(_, Right(t)))] -> Alloc (t)
+      | [Arg (SizeOf(_, Right(t)))] -> Alloc t
       | [Arg (Binary(e, (Cst_cpp.Arith(Cst_cpp.Mul), _), SizeOf(_, Right(t))))] ->
           let v = var_of_expr e in
           AllocArray(v,t)

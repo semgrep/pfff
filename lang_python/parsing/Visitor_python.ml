@@ -99,7 +99,7 @@ and v_expr (x: expr) =
   | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_number v1 in ()
-  | Str (v1) -> let v1 = v_wrap v_string v1 in ()
+  | Str v1 -> let v1 = v_wrap v_string v1 in ()
   | EncodedStr (v1, v2) -> let v1 = v_wrap v_string v1 in let v2 = v_string v2 in ()
   | InterpolatedString v1 -> let v1 = v_list v_expr v1 in ()
   | ConcatenatedString v1 -> let v1 = v_list v_expr v1 in ()
@@ -117,7 +117,7 @@ and v_expr (x: expr) =
      let v2 = v_tok v2 in
      let v3 = v_type_ v3 in
      ()
-  | ExprStar (v1) ->
+  | ExprStar v1 ->
       let v1 = v_expr v1 in ()
   | Tuple (v1, v2) ->
       let v1 = v_list_or_comprehension v_expr v1 
@@ -125,7 +125,7 @@ and v_expr (x: expr) =
   | List (v1, v2) ->
       let v1 = v_list_or_comprehension v_expr v1 
       and v2 = v_expr_context v2 in ()
-  | DictOrSet (v) -> v_list_or_comprehension v_dictorset_elt v
+  | DictOrSet v -> v_list_or_comprehension v_dictorset_elt v
   | BoolOp (v1, v2) -> let v1 = v_wrap v_boolop v1 and v2 = v_list v_expr v2 in ()
   | BinOp (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
@@ -152,7 +152,7 @@ and v_expr (x: expr) =
   | Await (t, v1) -> 
         let t = v_info t in
         let v1 = v_expr v1 in ()
-  | Repr (v1) -> 
+  | Repr v1 -> 
         let v1 = v_bracket v_expr v1 in ()
   | Attribute (v1, t, v2, v3) ->
       let v1 = v_expr v1 and t = v_tok t and v2 = v_name v2 
@@ -171,8 +171,8 @@ and v_argument = function
 
 and v_dictorset_elt = function
   | KeyVal (v1, v2) -> v_expr v1; v_expr v2
-  | Key (v1) -> v_expr v1
-  | PowInline (v1) -> v_expr v1
+  | Key v1 -> v_expr v1
+  | PowInline v1 -> v_expr v1
   
 and v_number =
   function
@@ -398,7 +398,7 @@ and v_stmt x =
   | NonLocal (t, v1) -> 
         let t = v_info t in
         let v1 = v_list v_name v1 in ()
-  | ExprStmt (v1) -> 
+  | ExprStmt v1 -> 
         let v1 = v_expr v1 in ()
   | Pass t -> 
         let t = v_info t in

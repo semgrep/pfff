@@ -210,8 +210,8 @@ and v_expr x =
   | Record v1 -> let v1 = v_bracket (v_list v_field) v1 in ()
   | Constructor (v1, v2) ->
       let v1 = v_name v1 and v2 = v_list v_expr v2 in ()
-  | Lambda (v1) -> let v1 = v_function_definition v1 in ()
-  | AnonClass (v1) -> let v1 = v_class_definition v1 in ()
+  | Lambda v1 -> let v1 = v_function_definition v1 in ()
+  | AnonClass v1 -> let v1 = v_class_definition v1 in ()
   | Xml v1 -> let v1 = v_xml v1 in ()
   | Id (v1, v2) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ()
   | IdQualified (v1, v2) -> let v1 = v_name v1 and v2 = v_id_info v2 in ()
@@ -338,7 +338,7 @@ and v_type_ x =
     v2 = v_type_ v2 in ()
   | TyNameApply (v1, v2) ->
       let v1 = v_name v1 and v2 = v_type_arguments v2 in ()
-  | TyName (v1) ->
+  | TyName v1 ->
       let v1 = v_name v1 in ()
   | TyVar v1 -> let v1 = v_ident v1 in ()
   | TyArray (v1, v2) ->
@@ -804,7 +804,7 @@ and v_directive x =
   | Package (t, v1) ->
       let t = v_tok t in
       let v1 = v_dotted_ident v1 in ()
-  | PackageEnd (t) ->
+  | PackageEnd t ->
       let t = v_tok t in
       ()
   | Pragma (v1, v2) ->

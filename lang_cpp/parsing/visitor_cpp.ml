@@ -168,7 +168,7 @@ and v_typeCbis =
       let v1 = v_tok v1 and v2 = v_wrap v_string v2 in ()
   | StructUnionName (v1, v2) ->
       let v1 = v_wrap v_structUnion v1 and v2 = v_wrap v_string v2 in ()
-  | TypeName (v1) ->
+  | TypeName v1 ->
       let v1 = v_name v1 in ()
   | TypenameKwd (v1, v2) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
   | TypeOf (v1, v2) ->
@@ -637,7 +637,7 @@ and
 and v_func_or_else =
   function
   | FunctionOrMethod v1 -> let v1 = v_func_definition v1 in ()
-  | Constructor (v1) ->
+  | Constructor v1 ->
       let v1 = v_func_definition v1 in ()
   | Destructor v1 -> let v1 = v_func_definition v1 in ()
 and v_exn_spec (v1, v2) =

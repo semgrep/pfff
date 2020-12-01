@@ -164,7 +164,7 @@ and expr =
                  let e = 
                    G.OtherExpr (G.OE_RecordFieldName, [G.N v1; G.E v2]) in
                  let st = G.exprstmt e in
-                 G.FieldStmt (st)
+                 G.FieldStmt st
           )
         ))
           v2

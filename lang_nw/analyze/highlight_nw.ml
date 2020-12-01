@@ -69,9 +69,9 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
     (* pad-specific: *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in

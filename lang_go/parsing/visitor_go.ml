@@ -195,7 +195,7 @@ and v_expr x =
     let v2 = v_tok v2 in
     let v3 = v_type_ v3 in
     ()
-  | FuncLit (x) -> v_function_ x
+  | FuncLit x -> v_function_ x
   | ParenType v1 -> let v1 = v_type_ v1 in ()
   | Send (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
