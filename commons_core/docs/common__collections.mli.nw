@@ -125,7 +125,7 @@ val exclude : ('a -> bool) -> 'a list -> 'a list
  * line. Here we delete any repeated line (here list element).
  *)
 val uniq : 'a list -> 'a list
-val uniq_eff: 'a list -> 'a list 
+val uniq_eff: 'a list -> 'a list
 val big_union_eff: 'a list list -> 'a list
 
 val has_no_duplicate: 'a list -> bool
@@ -161,7 +161,7 @@ val and_list : bool list -> bool
 
 val sum_float : float list -> float
 val sum_int : int list -> int
-val avg_list: int list -> float 
+val avg_list: int list -> float
 
 val return_when : ('a -> 'b option) -> 'a list -> 'b
 
@@ -170,7 +170,7 @@ val grep_with_previous : ('a -> 'a -> bool) -> 'a list -> 'a list
 val iter_with_previous : ('a -> 'a -> 'b) -> 'a list -> unit
 val iter_with_previous_opt : ('a option -> 'a -> 'b) -> 'a list -> unit
 
-val iter_with_before_after : 
+val iter_with_before_after :
  ('a list -> 'a -> 'a list -> unit) -> 'a list -> unit
 
 val get_pair : 'a list -> ('a * 'a) list
@@ -198,7 +198,7 @@ val combinaison : 'a list -> ('a * 'a) list
 val insere : 'a -> 'a list list -> 'a list list
 val insereListeContenant : 'a list -> 'a -> 'a list list -> 'a list list
 val fusionneListeContenant : 'a * 'a -> 'a list list -> 'a list list
-@ 
+@
 
 \section{Array}
 
@@ -213,12 +213,12 @@ val array_find_index_via_elem : ('a -> bool) -> 'a array -> int
 (* for better type checking, as sometimes when have an 'int array', can
  * easily mess up the index from the value.
  *)
-type idx = Idx of int 
+type idx = Idx of int
 val next_idx: idx -> idx
 val int_of_idx: idx -> int
 
 val array_find_index_typed : (idx -> bool) -> 'a array -> idx
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
@@ -226,7 +226,7 @@ val array_find_index_typed : (idx -> bool) -> 'a array -> idx
 (*****************************************************************************)
 
 (* ?? *)
-@ 
+@
 
 \section{Matrix}
 
@@ -239,20 +239,20 @@ type 'a matrix = 'a array array
 
 val map_matrix : ('a -> 'b) -> 'a matrix -> 'b matrix
 
-val make_matrix_init: 
+val make_matrix_init:
   nrow:int -> ncolumn:int -> (int -> int -> 'a) -> 'a matrix
 
-val iter_matrix: 
+val iter_matrix:
   (int -> int -> 'a -> unit) -> 'a matrix -> unit
 
-val nb_rows_matrix: 'a matrix -> int 
+val nb_rows_matrix: 'a matrix -> int
 val nb_columns_matrix: 'a matrix -> int
 
 val rows_of_matrix: 'a matrix -> 'a list list
 val columns_of_matrix: 'a matrix -> 'a list list
 
 val all_elems_matrix_by_row: 'a matrix -> 'a list
-@ 
+@
 
 
 \section{Set}
@@ -315,28 +315,28 @@ val ( $@$ ) : 'a list -> 'a list -> 'a list
 
 val nub : 'a list -> 'a list
 
-(* use internally a hash and return 
- * - the common part, 
- * - part only in a, 
+(* use internally a hash and return
+ * - the common part,
+ * - part only in a,
  * - part only in b
  *)
-val diff_set_eff : 'a list -> 'a list -> 
+val diff_set_eff : 'a list -> 'a list ->
   'a list * 'a list * 'a list
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
 (* Set as normal list *)
 (*****************************************************************************)
 
-(* cf above *) 
-@ 
+(* cf above *)
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
 (* Set as sorted list *)
 (*****************************************************************************)
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
@@ -382,7 +382,7 @@ module StringSet :
     val split : string -> t -> t * bool * t
   end
 
-@  
+@
 
 \section{Assoc}
 
@@ -421,7 +421,7 @@ val lookup_list2 : 'a -> ('a, 'b) assoc list -> 'b * int
 val assoc_option : 'a -> ('a, 'b) assoc -> 'b option
 val assoc_with_err_msg : 'a -> ('a, 'b) assoc -> 'b
 
-type order = HighFirst | LowFirst 
+type order = HighFirst | LowFirst
 val compare_order: order -> 'a -> 'a -> int
 
 val sort_by_val_lowfirst: ('a,'b) assoc -> ('a * 'b) list
@@ -432,7 +432,7 @@ val sort_by_key_highfirst: ('a,'b) assoc -> ('a * 'b) list
 
 val sortgen_by_key_lowfirst: ('a,'b) assoc -> ('a * 'b) list
 val sortgen_by_key_highfirst: ('a,'b) assoc -> ('a * 'b) list
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
@@ -478,7 +478,7 @@ module IntIntMap :
   end
 val intintmap_to_list : 'a IntIntMap.t -> (IntIntMap.key * 'a) list
 val intintmap_string_of_t : 'a -> 'b -> string
-@ 
+@
 
 \section{Hash}
 
@@ -490,8 +490,8 @@ val intintmap_string_of_t : 'a -> 'b -> string
 (* Note that Hashtbl keep old binding to a key so if want a hash
  * of a list, then can use the Hashtbl as is. Use Hashtbl.find_all then
  * to get the list of bindings
- * 
- * Note that Hashtbl module use different convention :( the object is 
+ *
+ * Note that Hashtbl module use different convention :( the object is
  * the first argument, not last as for List or Map.
  *)
 
@@ -508,7 +508,7 @@ val hremove : 'a -> ('a, 'b) Hashtbl.t -> unit
 
 val hfind_default : 'a -> (unit -> 'b) -> ('a, 'b) Hashtbl.t -> 'b
 val hfind_option : 'a -> ('a, 'b) Hashtbl.t -> 'b option
-val hupdate_default : 
+val hupdate_default :
   'a -> update:('b -> 'b) -> default:(unit -> 'b) -> ('a, 'b) Hashtbl.t -> unit
 
 val add1: int -> int
@@ -519,39 +519,39 @@ val hash_to_list_unsorted : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 val hash_of_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
 
 
-val hkeys : ('a, 'b) Hashtbl.t -> 'a list 
-@ 
+val hkeys : ('a, 'b) Hashtbl.t -> 'a list
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
 (* Hash sets *)
 (*****************************************************************************)
 
-type 'a hashset = ('a, bool) Hashtbl.t 
+type 'a hashset = ('a, bool) Hashtbl.t
 
 
 (* common use of hashset, in a hash of hash *)
 val hash_hashset_add : 'a -> 'b -> ('a, 'b hashset) Hashtbl.t -> unit
 
-val hashset_to_set : 
+val hashset_to_set :
  < fromlist : ('a ) list -> 'c; .. > -> ('a, 'b) Hashtbl.t -> 'c
 
 val hashset_to_list : 'a hashset -> 'a list
 val hashset_of_list : 'a list -> 'a hashset
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
 (* Hash  with default value *)
 (*****************************************************************************)
 val hash_with_default: (unit -> 'b) ->
-  < add : 'a -> 'b -> unit; 
+  < add : 'a -> 'b -> unit;
     to_list : ('a * 'b) list;
     to_h: ('a, 'b) Hashtbl.t;
     update : 'a -> ('b -> 'b) -> unit;
     assoc: 'a -> 'b;
   >
-@ 
+@
 
 \section{Stack}
 
@@ -570,7 +570,7 @@ val top_option: 'a stack -> 'a option
 
 val push2 : 'a -> 'a stack ref -> unit
 val pop2: 'a stack ref -> 'a
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
@@ -586,7 +586,7 @@ val redo_undo: 'a undo_stack -> 'a undo_stack
 val undo_pop: 'a undo_stack -> 'a undo_stack
 
 val top_undo_option: 'a undo_stack -> 'a option
-@ 
+@
 
 \section{Trees}
 
@@ -596,7 +596,7 @@ val top_undo_option: 'a undo_stack -> 'a option
 (* Binary tree *)
 (*****************************************************************************)
 type 'a bintree = Leaf of 'a | Branch of ('a bintree * 'a bintree)
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
@@ -609,12 +609,12 @@ type 'a tree2 = Tree of 'a * ('a tree2) list
 val tree2_iter : ('a -> unit) -> 'a tree2 -> unit
 
 
-type ('a, 'b) tree = 
+type ('a, 'b) tree =
   | Node of 'a * ('a, 'b) tree list
   | Leaf of 'b
 
-val map_tree: 
-  fnode:('a -> 'abis) -> 
+val map_tree:
+  fnode:('a -> 'abis) ->
   fleaf:('b -> 'bbis) ->
   ('a, 'b) tree -> ('abis, 'bbis) tree
 
@@ -622,7 +622,7 @@ val dirs_and_base_of_file: path -> (string list * string)
 
 val tree_of_files: filename list -> (dirname, (string * filename)) tree
 
-@ 
+@
 
 <<common.mli for collection types>>=
 (*****************************************************************************)
@@ -630,21 +630,21 @@ val tree_of_files: filename list -> (dirname, (string * filename)) tree
 (*****************************************************************************)
 
 (* no empty tree, must have one root at least *)
-type 'a treeref = 
-  | NodeRef of 'a *   'a treeref list ref 
+type 'a treeref =
+  | NodeRef of 'a *   'a treeref list ref
 
-val treeref_node_iter: 
+val treeref_node_iter:
   (('a * 'a treeref list ref) -> unit) -> 'a treeref -> unit
-val treeref_node_iter_with_parents: 
-  (('a * 'a treeref list ref) -> ('a list) -> unit) -> 
+val treeref_node_iter_with_parents:
+  (('a * 'a treeref list ref) -> ('a list) -> unit) ->
   'a treeref -> unit
 
-val find_treeref: 
-  (('a * 'a treeref list ref) -> bool) -> 
+val find_treeref:
+  (('a * 'a treeref list ref) -> bool) ->
   'a treeref -> 'a treeref
 
-val treeref_children_ref: 
-  'a treeref -> 'a treeref list ref 
+val treeref_children_ref:
+  'a treeref -> 'a treeref list ref
 
 val find_treeref_with_parents_some:
  ('a * 'a treeref list ref -> 'a list -> 'c option) ->
@@ -655,29 +655,29 @@ val find_multi_treeref_with_parents_some:
  'a treeref -> 'c list
 
 
-(* Leaf can seem redundant, but sometimes want to directly see if 
+(* Leaf can seem redundant, but sometimes want to directly see if
  * a children is a leaf without looking if the list is empty.
  *)
-type ('a, 'b) treeref2 = 
-  | NodeRef2 of 'a * ('a, 'b) treeref2 list ref 
+type ('a, 'b) treeref2 =
+  | NodeRef2 of 'a * ('a, 'b) treeref2 list ref
   | LeafRef2 of 'b
 
 
-val find_treeref2: 
-  (('a * ('a, 'b) treeref2 list ref) -> bool) -> 
+val find_treeref2:
+  (('a * ('a, 'b) treeref2 list ref) -> bool) ->
   ('a, 'b) treeref2 -> ('a, 'b) treeref2
 
-val treeref_node_iter_with_parents2: 
-  (('a * ('a, 'b) treeref2 list ref) -> ('a list) -> unit) -> 
+val treeref_node_iter_with_parents2:
+  (('a * ('a, 'b) treeref2 list ref) -> ('a list) -> unit) ->
   ('a, 'b) treeref2 -> unit
 
-val treeref_node_iter2: 
+val treeref_node_iter2:
   (('a * ('a, 'b) treeref2 list ref) -> unit) -> ('a, 'b) treeref2 -> unit
 
 (*
 
 
-val treeref_children_ref: ('a, 'b) treeref -> ('a, 'b) treeref list ref 
+val treeref_children_ref: ('a, 'b) treeref -> ('a, 'b) treeref list ref
 
 val find_treeref_with_parents_some:
  ('a * ('a, 'b) treeref list ref -> 'a list -> 'c option) ->
@@ -687,7 +687,7 @@ val find_multi_treeref_with_parents_some:
  ('a * ('a, 'b) treeref list ref -> 'a list -> 'c option) ->
  ('a, 'b) treeref -> 'c list
 *)
-@ 
+@
 
 \section{Graph}
 
@@ -712,7 +712,7 @@ val nodes : 'a graph -> 'a set
 val fold_upward : ('a -> 'b -> 'a) -> 'b set -> 'a -> 'b graph -> 'a
 
 val empty_graph : 'a list * 'b list
-@ 
+@
 
 \section{Generic op}
 
@@ -754,6 +754,6 @@ val tail : 'a list -> 'a list
 
 val is_singleton : 'a list -> bool
 
-@ 
+@
 
 

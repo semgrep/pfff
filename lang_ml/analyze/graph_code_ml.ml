@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -23,34 +23,34 @@ module G = Graph_code
 (*****************************************************************************)
 (*
  * Obsolete file: see graph_code_cmt.ml for a more complete graph.
- * 
+ *
  * Partial graph of dependencies for OCaml using essentially just the
- * open directives. 
- * 
+ * open directives.
+ *
  * todo? if give edges a weight, then we need to modulate it depending on
  * the type of the reference. Two references to a function in another
  * module is more important than 10 references to some constructors?
  * If we do some pattern matching on 20 constructors, is it more
  * important than two functions calls?
  * So Type|Exception > Function|Class|Global >> Constructors|constants ?
- * 
+ *
  * notes:
  *  - ml vs mli? just get rid of mli? but one can also want to
- *    care only about mli dependencies, like I did with my 'make doti'. 
+ *    care only about mli dependencies, like I did with my 'make doti'.
  *    We can introduce a Module entity that is the parent of the
  *    ml and mli file (this has-graph unify many things :) ).
- * 
+ *
  *    TODO but there is still the issue about where to put the edge
  *    when one module call a function in another module. Do we
  *    link the call to the def in the mli or in the ml?
- * 
+ *
  * schema:
  *  Root -> Dir -> Module -> File (.ml) -> # TODO
- * 
+ *
  *                        -> File (.mli)
  *       -> Dir -> File  # no intermediate Module node when there is a dupe
  *                       # on a module name (e.g. for main.ml)
- * 
+ *
  *       -> Dir -> SubDir -> Module -> ...
  *)
 
@@ -65,8 +65,8 @@ module G = Graph_code
 let parse file =
   Common.save_excursion Flag.show_parsing_error false (fun ()->
   Common.save_excursion Flag.exn_when_lexical_error true (fun ()->
-    try 
-      Parse_ml.parse_program file 
+    try
+      Parse_ml.parse_program file
     with Parse_info.Parsing_error _ ->
       pr2 ("PARSING problem in: " ^ file);
       []
@@ -82,7 +82,7 @@ let lookup_module_name h_module_aliases s =
 (* Defs *)
 (*****************************************************************************)
 
-(* 
+(*
  * We just create the Dir, File, and Module entities.
  * See graph_code_cmt.ml if you want Function, Type, etc.
  *)
@@ -97,7 +97,7 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   match () with
   | _ when List.mem m (Common2.keys duplicate_modules) ->
       (* we could attach to two parents when we are almost sure that
-       * nobody will reference this module (e.g. because it's an 
+       * nobody will reference this module (e.g. because it's an
        * entry point), but then all the uses in those files would
        * propagate to two parents, so when we have a dupe, we
        * don't create the intermediate Module node. If it's referenced
@@ -117,9 +117,9 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   | _ when G.has_node (m, E.Module) g ->
       (match G.parents (m, E.Module) g with
       (* probably because processed .mli or .ml before which created the node *)
-      | [p] when p =*= (dir, E.Dir) -> 
+      | [p] when p =*= (dir, E.Dir) ->
           g |> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
-      | x -> 
+      | x ->
           pr2 "multiple parents or no parents or wrong dir";
           pr2_gen (x, dir, m);
           raise Impossible
@@ -147,19 +147,19 @@ let extract_uses ~g ~ast ~readable ~dupes =
     then g |> G.add_edge (src, target) G.Use
     else begin
       g |> G.add_node target;
-      let parent_target = 
+      let parent_target =
         if List.mem s dupes
         then G.dupe
         else G.not_found
       in
       g |> G.add_edge (parent_target, target) G.Has;
       g |> G.add_edge (src, target) G.Use;
-      pr2 (spf "PB: lookup fail on module %s in %s" 
+      pr2 (spf "PB: lookup fail on module %s in %s"
                    (fst target) readable)
     end
   in
 
-(* TODO: use Visitor_AST.ml from ml_to_generic?   
+(* TODO: use Visitor_AST.ml from ml_to_generic?
   let visitor = V.mk_visitor { V.default_visitor with
     (* todo? does it cover all use cases of modules ? maybe need
      * to introduce a kmodule_name_ref helper in the visitor
@@ -205,7 +205,7 @@ let build ?(verbose=true) root files =
   G.create_initial_hierarchy g;
 
   let duplicate_modules =
-    files 
+    files
     |> Common.group_by_mapped_key (fun f -> Common2.basename f)
     |> List.filter (fun (_k, xs) -> List.length xs >= 2)
     |> List.map (fun (k, xs) -> Module_ml.module_name_of_filename k, xs)
@@ -213,7 +213,7 @@ let build ?(verbose=true) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
     k();
     let readable = Common.readable ~root file in
@@ -223,7 +223,7 @@ let build ?(verbose=true) root files =
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
      k();
      let readable = Common.readable ~root file in

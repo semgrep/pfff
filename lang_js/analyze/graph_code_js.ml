@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -25,7 +25,7 @@ open Ast_js
 (*****************************************************************************)
 (* Graph of dependencies for Javascript. See graph_code.ml
  * and main_codegraph.ml for more information.
- * 
+ *
  * schema:
  *  Root -> Dir -> File -> Function
  *                      -> Class (and Obj)
@@ -34,7 +34,7 @@ open Ast_js
  *                      -> Global TODO need type to know if not a func|class?
  *       -> Dir -> SubDir -> ...
  *
- * todo: 
+ * todo:
  *  - look at the deadcode detected by codegraph on the graph built
  *    by this file; they usually contains FP indicating bugs in this file
  *  - too many stuff
@@ -45,9 +45,9 @@ open Ast_js
 (*****************************************************************************)
 
 (* old: used to be in ast_js.ml *)
-(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'. 
+(* For bar() in a/b/foo.js the qualified_name is 'a/b/foo.bar'.
  * I remove the filename extension for codegraph (which assumes
- * the dot is a package separator), which is convenient to show 
+ * the dot is a package separator), which is convenient to show
  * shorter names when exploring a codebase (and maybe also when hovering
  * a function in codemap).
  * This is computed after ast_js_build in graph_code_js.ml
@@ -105,13 +105,13 @@ let _hmemo = Hashtbl.create 101
 
 let parse file =
   Common.memoized _hmemo file (fun () ->
-    try 
+    try
       Parse_js.parse_program file
     with
     | Timeout -> raise Timeout
     | exn ->
       pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-      if !error_recovery 
+      if !error_recovery
       then []
       else raise exn
   )
@@ -121,10 +121,10 @@ let parse file =
 (*****************************************************************************)
 
 let error s tok =
-  let err = spf "%s: %s" (Parse_info.string_of_info tok) s in 
+  let err = spf "%s: %s" (Parse_info.string_of_info tok) s in
   failwith err
 
-let s_of_n (s, _) = 
+let s_of_n (s, _) =
   s
 
 let pos_of_tok tok file =
@@ -148,9 +148,9 @@ let option = Common.opt
 
 let mk_qualified_name readable s =
   assert (not (readable =~ "^\\./"));
-  let str = 
-    try Filename.chop_extension readable 
-    with Invalid_argument _ -> 
+  let str =
+    try Filename.chop_extension readable
+    with Invalid_argument _ ->
      failwith (spf "readable filename without any extension: %s" readable)
   in
   str ^ "." ^ s
@@ -169,7 +169,7 @@ let is_local env n =
   let s = s_of_n n in
   List.mem s env.locals || Hashtbl.mem env.vars s
 
-let add_locals env vs = 
+let add_locals env vs =
   let locals = vs |> Common.map_filter (fun (ent, def) ->
     let s = s_of_n ent.name in
     match def with
@@ -178,18 +178,18 @@ let add_locals env vs =
         None
     | _ -> Some s
      ) in
-  { env with locals = locals @ env.locals } 
+  { env with locals = locals @ env.locals }
 
 let kind_of_expr_opt v_kind eopt =
   match eopt with
   | Some (Fun _) -> E.Function
   | Some (Class _) -> E.Class
   | Some (Obj _) -> E.Class
-  | _ -> 
+  | _ ->
         (* without types, this might be wrong; a constant might
          * actually refer to a function, and a global to an object
          *)
-        if fst v_kind = Const 
+        if fst v_kind = Const
         then E.Constant
         else E.Global
 
@@ -253,7 +253,7 @@ let add_use_edge env (name, kind) =
                          (G.string_of_node src) (G.string_of_node dst));
 
   | _ when not (G.has_node src env.g) ->
-      error (spf "SRC FAIL: %s (-> %s)" 
+      error (spf "SRC FAIL: %s (-> %s)"
                (G.string_of_node src) (G.string_of_node dst)) loc
   (* the normal case *)
   | _ when G.has_node dst env.g ->
@@ -262,14 +262,14 @@ let add_use_edge env (name, kind) =
   | _ -> env.lookup_fail env dst loc
 
 let add_use_edge_candidates env (name, kind) (*scope*) =
-  let kind = 
+  let kind =
     let s = qualified_name env name in
     let dst = (s, kind) in
     if G.has_node dst env.g
     then kind
     else
       let candidates = [E.Function; E.Class; E.Constant; E.Global] in
-      let valids = candidates |> List.filter (fun k -> 
+      let valids = candidates |> List.filter (fun k ->
            G.has_node (s, k) env.g) in
       (match valids with
       | [x] -> x
@@ -303,21 +303,21 @@ let rec extract_defs_uses env ast =
 (* The order of toplevel declarations does not matter in Javascript.
  * It is a dynamic language without static checking; if in the body of
  * a function you use an entity declared further, nothing will complain
- * about it. 
- * So we need to first extract all those toplevel entities and 
- * create an import for them to not get lookup failures otherwise 
+ * about it.
+ * So we need to first extract all those toplevel entities and
+ * create an import for them to not get lookup failures otherwise
  * on those forward uses.
  *)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
     | DefStmt (ent, _def) ->
       let str = s_of_n ent.name in
-      Hashtbl.replace env.imports str 
+      Hashtbl.replace env.imports str
         (mk_qualified_name env.file_readable str);
  (*    | M _ | S _ -> () *)
     | _ -> ()
   )
-        
+
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
@@ -330,14 +330,14 @@ and toplevel env x =
 (*
   | S (tok, st) ->
       let kind = E.TopStmts in
-      let s = spf "__top__%d:%d" 
+      let s = spf "__top__%d:%d"
           (Parse_info.line_of_info tok) (Parse_info.col_of_info tok) in
       let name = s, tok in
       let env = add_node_and_edge_if_defs_mode env (name, kind) in
       if env.phase = Uses
       then stmt env st
 *)
-  | _ -> 
+  | _ ->
      stmt env x
 
 and module_directive env x =
@@ -350,9 +350,9 @@ and module_directive env x =
         ~root:env.root
         ~pwd:(Filename.dirname env.file_readable)
         file in
-      let readable = 
+      let readable =
         match path_opt with
-        | None -> 
+        | None ->
           env.pr2_and_log (spf "could not resolve path %s at %s" file
                                (Parse_info.string_of_info tok));
           spf "NOTFOUND-|%s|.js" file
@@ -362,10 +362,10 @@ and module_directive env x =
         Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
       )
     end
-  | Export (_t, name) -> 
+  | Export (_t, name) ->
      if env.phase = Defs then begin
        let exports =
-         try 
+         try
            Hashtbl.find env.exports env.file_readable
          with Not_found -> []
        in
@@ -386,8 +386,8 @@ and toplevels env xs = List.iter (toplevel env) xs
 and name_expr env name v_kind eopt (*v_resolved*) =
   let kind = kind_of_expr_opt v_kind eopt in
   let env = add_node_and_edge_if_defs_mode env (name, kind) in
-  if env.phase = Uses 
-  then begin 
+  if env.phase = Uses
+  then begin
     option (expr env) eopt;
     let (qualified, _kind) = env.current in
     (* v_resolved := Global qualified; *)
@@ -491,7 +491,7 @@ and case env = function
    stmt env st
  | Default (_, st) ->
    stmt env st
-   
+
 and stmts env xs =
   let rec aux env = function
     | [] -> ()
@@ -515,9 +515,9 @@ and expr env e =
   | Ellipsis _ | DeepEllipsis _ -> ()
 
   | Bool _ | Num _ | String _ | Regexp _ -> ()
-  | Id (n(*, scope*)) -> 
+  | Id (n(*, scope*)) ->
     if not (is_local env n)
-    then 
+    then
      (* the big one! *)
      add_use_edge_candidates env (n, E.Global) (*scope*);
 
@@ -535,8 +535,8 @@ and expr env e =
      let env =
       match nopt with
       | None -> env
-      | Some n -> 
-        let v = basic_entity n, VarDef { v_kind = Let, fake "let"; 
+      | Some n ->
+        let v = basic_entity n, VarDef { v_kind = Let, fake "let";
                                          v_init = None; v_type = None;
                                       (* v_resolved = ref Local *)}
         in
@@ -545,17 +545,17 @@ and expr env e =
      class_ env c
   | ObjAccess (e, _, prop) ->
     (match e with
-    | Id (n (*, scope*)) when not (is_local env n) -> 
+    | Id (n (*, scope*)) when not (is_local env n) ->
        add_use_edge_candidates env (n, E.Class) (*scope*)
-    | _ -> 
+    | _ ->
       expr env e
     );
     property_name env prop
   | ArrAccess (e1, (_, e2, _)) ->
     (match e1 with
-    | Id (n(*, scope*)) when not (is_local env n) -> 
+    | Id (n(*, scope*)) when not (is_local env n) ->
        add_use_edge_candidates env (n, E.Class) (*scope*)
-    | _ -> 
+    | _ ->
       expr env e1
     );
     expr env e2
@@ -564,9 +564,9 @@ and expr env e =
     let env =
       match nopt with
       | None -> env
-      | Some n -> 
-        let v = basic_entity n, VarDef {v_kind = Let, fake "let"; 
-                                      v_init = None; v_type = None; 
+      | Some n ->
+        let v = basic_entity n, VarDef {v_kind = Let, fake "let";
+                                      v_init = None; v_type = None;
                                       (*v_resolved = ref Local*)}
         in
         add_locals env [v]
@@ -620,7 +620,7 @@ and parent env = function
   | Left e -> expr env e
   | Right t -> type_ env t
 
-and class_ env c = 
+and class_ env c =
   List.iter (parent env) c.c_extends;
   List.iter (type_ env) c.c_implements;
   List.iter (property env) (unbracket c.c_body)
@@ -644,10 +644,10 @@ and pattern env x = expr env x
 
 and property_name env = function
   | PN _n2 -> ()
-  | PN_Computed e -> 
+  | PN_Computed e ->
      expr env e
 
-and fun_ env f = 
+and fun_ env f =
   (* less: need fold_with_env here? can not use previous param in p_default? *)
   parameters env f.f_params;
   let params = f.f_params |> Common.map_filter (function
@@ -655,8 +655,8 @@ and fun_ env f =
         | ParamEllipsis _ -> None
         | ParamPattern _ -> None (* TODO *)
   ) in
-  let env = { env with 
-        locals = params @ env.locals; 
+  let env = { env with
+        locals = params @ env.locals;
         (* new scope, but still inherits enclosing vars *)
         vars = Hashtbl.copy env.vars;
   } in
@@ -665,8 +665,8 @@ and fun_ env f =
 and parameters env xs = List.iter (parameter env) xs
 and parameter env = function
   | ParamEllipsis _ -> ()
-  | ParamClassic p -> 
-      Common.opt (expr env) p.p_default  
+  | ParamClassic p ->
+      Common.opt (expr env) p.p_default
   | ParamPattern _ -> () (* TODO *)
 
 (*****************************************************************************)
@@ -682,7 +682,7 @@ let build_gen ?(verbose=false) root files =
 
   let chan = open_out (Filename.concat root "pfff.log") in
 
-  let env = { 
+  let env = {
     g;
     phase = Defs;
     current = G.pb;
@@ -711,7 +711,7 @@ let build_gen ?(verbose=false) root files =
         else env.pr2_and_log
       in
       fprinter (spf "PB: lookup_fail on %s (in %s, at %s)"
-             (G.string_of_node dst) (G.string_of_node src) 
+             (G.string_of_node dst) (G.string_of_node src)
              (Parse_info.string_of_info loc));
       (* note: could also use Hashtbl.replace to count entities only once *)
       Hashtbl.add hstat_lookup_failures dst true;
@@ -721,39 +721,39 @@ let build_gen ?(verbose=false) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  (Stdlib_js.path_stdlib::files) |> Console.progress ~show:verbose (fun k -> 
+  (Stdlib_js.path_stdlib::files) |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
       let file_readable =
          if file = Stdlib_js.path_stdlib
          then "Stdlib.js"
-         else Common.readable ~root file 
+         else Common.readable ~root file
       in
-      extract_defs_uses { env with 
+      extract_defs_uses { env with
         phase = Defs; file_readable; imports = Hashtbl.create 13;
       } ast
     ));
 
   (* step2: creating the 'Use' edges *)
 
-  let default_import = 
+  let default_import =
     let ast = parse Stdlib_js.path_stdlib in
-    let env = { env with phase = Uses; file_readable = "Stdlib.js"; 
+    let env = { env with phase = Uses; file_readable = "Stdlib.js";
                 locals = []; imports = Hashtbl.create 13; } in
     toplevels_entities_adjust_imports env ast;
     env.imports
   in
 
   env.pr2_and_log "\nstep2: extract uses";
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
       let file_readable = Common.readable ~root file in
-      extract_defs_uses { env with 
-        phase = Uses; file_readable; 
-        locals = []; imports = Hashtbl.copy default_import; 
+      extract_defs_uses { env with
+        phase = Uses; file_readable;
+        locals = []; imports = Hashtbl.copy default_import;
       } ast;
       Common.push (file_readable, ast) env.asts;
 
@@ -764,9 +764,9 @@ let build_gen ?(verbose=false) root files =
 
   (* less: lookup failures summary *)
   let xs = Common2.hkeys hstat_lookup_failures in
-  let counts = 
-     xs |> List.map (fun (x)-> 
-         G.string_of_node x, 
+  let counts =
+     xs |> List.map (fun (x)->
+         G.string_of_node x,
          List.length (Hashtbl.find_all hstat_lookup_failures x))
         |> Common.sort_by_val_highfirst
         |> Common.take_safe 20

@@ -1,7 +1,7 @@
 let string_of_hint_type (h : hint_type option) = match h with
-  | Some x -> 
+  | Some x ->
       (match x with
-      | Hint c -> 
+      | Hint c ->
           (match c with
           | ClassName c -> Ast.name c
           | Self _ -> "self"
@@ -11,4 +11,4 @@ let string_of_hint_type (h : hint_type option) = match h with
       | HintArray _ -> "array"
       )
   | None -> ""
-      
+

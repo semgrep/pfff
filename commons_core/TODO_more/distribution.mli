@@ -1,12 +1,12 @@
 (*s: distribution.mli *)
 val map_reduce:
   ?timeout:int ->
-  fmap:('a -> 'b) -> freduce:('c -> 'b -> 'c) -> 
+  fmap:('a -> 'b) -> freduce:('c -> 'b -> 'c) ->
   'c -> 'a list -> 'c * 'a list
 (*x: distribution.mli *)
 val map_reduce_lazy:
   ?timeout:int ->
-  fmap:('a -> 'b) -> freduce:('c -> 'b -> 'c) -> 
+  fmap:('a -> 'b) -> freduce:('c -> 'b -> 'c) ->
   'c -> (unit -> 'a list) -> 'c * 'a list
 (*x: distribution.mli *)
 val debug_mpi: bool ref
@@ -17,11 +17,11 @@ val debug_mpi: bool ref
 (*s: distribution.mli private *)
 val under_mpirun : unit -> bool
 (*x: distribution.mli private *)
-val master : 
-  ?timeout:int -> 
+val master :
+  ?timeout:int ->
   freduce:('c -> 'b -> 'c) -> 'c -> 'a list -> 'c * 'a list
 (*x: distribution.mli private *)
-val worker : 
+val worker :
   fmap:('a -> 'b) -> unit
 (*x: distribution.mli private *)
 exception TaskFinished

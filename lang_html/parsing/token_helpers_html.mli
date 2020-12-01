@@ -1,7 +1,7 @@
 
-val info_of_tok : 
+val info_of_tok :
   Parser_html.token -> Ast_html.info
-val visitor_info_of_tok : 
+val visitor_info_of_tok :
   (Ast_html.info -> Ast_html.info) -> Parser_html.token -> Parser_html.token
 
 val line_of_tok  : Parser_html.token -> int

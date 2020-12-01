@@ -8,7 +8,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -135,12 +135,12 @@ let ident      = (lowerletter | '_') (letter | digit | '_' | "'")*
 let upperident = upperletter (letter | digit | '_' | "'")*
 let label_name = (lowerletter | '_') (letter | digit | '_' | "'")*
 
-let operator_char = 
- '!'| '$' | '%' | '&' | '*' | '+' | '-' | '.' | '/' 
-  | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~' 
-let prefix_symbol = 
+let operator_char =
+ '!'| '$' | '%' | '&' | '*' | '+' | '-' | '.' | '/'
+  | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~'
+let prefix_symbol =
   ('!' | '?' | '~') operator_char*
-let infix_symbol = 
+let infix_symbol =
   ('=' | '<' | '>' | '@' | '^' | '|'| '&' | '+' | '-' | '*'| '/' | '$'|'%' )
    operator_char*
 
@@ -166,8 +166,8 @@ rule token = parse
 
   | newline { TCommentNewline (tokinfo lexbuf) }
   | space+ { TCommentSpace (tokinfo lexbuf) }
-  | "(*" { 
-      let info = tokinfo lexbuf in 
+  | "(*" {
+      let info = tokinfo lexbuf in
       let com = comment lexbuf in
       TComment(info |> Parse_info.tok_add_s com)
     }
@@ -175,19 +175,19 @@ rule token = parse
   (* ext: fsharp *)
   | "///" [^ '\n']* { TComment (tokinfo lexbuf) }
 
-  | "#" space* digit+ space* ("\"" [^ '"']* "\"")? 
+  | "#" space* digit+ space* ("\"" [^ '"']* "\"")?
       { TCommentMisc (tokinfo lexbuf) }
 
   (* just doing "#"[^'\n']+  can also match method calls. Would be good
    * to enforce in first column but ocamllex can't do that natively
    *)
-  | "#!"[^'\n']+ 
+  | "#!"[^'\n']+
       { TSharpDirective (tokinfo lexbuf) }
 
   (* todo: hmmm but could be ambiguous with method call too ? *)
-  | "#load" space+ [^'\n']+ 
+  | "#load" space+ [^'\n']+
       { TSharpDirective (tokinfo lexbuf) }
-  | "#directory" space+ [^'\n']+ 
+  | "#directory" space+ [^'\n']+
       { TSharpDirective (tokinfo lexbuf) }
 
   (* many people use sometimes -pp cpp so let's support simple cpp idioms *)
@@ -198,7 +198,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
-  (* 
+  (*
    * !=    #     &     &&    '     (     )     *     +     ,     -
    * -.    ->    .     ..    :     ::    :=    :>    ;     ;;    <
    * <-    =     >     >]    >}    ?     ??    [     [<    [>    [|
@@ -237,7 +237,7 @@ rule token = parse
   | ".." { TDotDot(tokinfo lexbuf) }
   | ":" { TColon(tokinfo lexbuf) }
   | "::" { TColonColon(tokinfo lexbuf) }
-  | ";" { TSemiColon(tokinfo lexbuf) }  
+  | ";" { TSemiColon(tokinfo lexbuf) }
   | ";;" { TSemiColonSemiColon(tokinfo lexbuf) }
   | "?" { TQuestion(tokinfo lexbuf) }
   | "??" { TQuestionQuestion(tokinfo lexbuf) }
@@ -276,7 +276,7 @@ rule token = parse
   | "and" kwdopchar dotsymbolchar * as op
             { ANDOP (op, tokinfo lexbuf) }
 
-  (* camlp4 reserved: 
+  (* camlp4 reserved:
    * parser    <<    <:    >>    $     $$    $:
    *)
 
@@ -298,7 +298,7 @@ rule token = parse
       | None -> TLowerIdent (s, info)
     }
   (* sgrep-ext: *)
-  | '$' (upperletter | '_') (upperletter | '_' | digit)* { 
+  | '$' (upperletter | '_') (upperletter | '_' | digit)* {
       let s = tok lexbuf in
       if not !Flag_parsing.sgrep_mode
       then error ("identifier with dollar: "  ^ s) lexbuf;
@@ -323,14 +323,14 @@ rule token = parse
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
 
-  | '-'? digit 
+  | '-'? digit
         (digit | '_')*
   | '-'? ("0x" | "0X") (digit | ['A' 'F' 'a' 'f'])
                        (digit | ['A' 'F' 'a' 'f'] | '_')*
   | '-'? ("0o" | "0O")   ['0'-'7']
                        ( ['0'-'7'] | '_')*
   | '-'? ("0b" | "0B")   ['0'-'1']
-                       ( ['0'-'1'] | '_')* 
+                       ( ['0'-'1'] | '_')*
    {
      let s = tok lexbuf in
      TInt (s, tokinfo lexbuf)
@@ -339,7 +339,7 @@ rule token = parse
   | '-'?
     digit (digit | '_')*
     ('.' (digit | '_')*)?
-    ( ('e' |'E') ['+' '-']? digit (digit | '_')* )? 
+    ( ('e' |'E') ['+' '-']? digit (digit | '_')* )?
      {
      let s = tok lexbuf in
      TFloat (s, tokinfo lexbuf)
@@ -358,7 +358,7 @@ rule token = parse
       TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
     }
 
-  (* new feature I discovered thx to McPeak. 
+  (* new feature I discovered thx to McPeak.
    * I just support {| |} not the one with also arbitrary delimiters
    *)
   | "{|" {
@@ -376,13 +376,13 @@ rule token = parse
       TChar (String.make 1 c, tokinfo lexbuf)
     }
 
-  | "'" 
+  | "'"
     (
         '\\' ( '\\' | '"' | "'" | 'n' | 't' | 'b' | 'r')
       | '\\' digit digit digit
       | '\\' 'x' hexa hexa
     )
-    "'" 
+    "'"
    {
       let s = tok lexbuf in
       TChar (s, tokinfo lexbuf)
@@ -418,12 +418,12 @@ rule token = parse
 and string buf = parse
   | '"'           { () }
   (* opti: *)
-  | [^ '"' '\\']+ { 
+  | [^ '"' '\\']+ {
       Buffer.add_string buf (tok lexbuf);
-      string buf lexbuf 
+      string buf lexbuf
     }
 
-  | ("\\" (_ as v)) as x { 
+  | ("\\" (_ as v)) as x {
       (* todo: check char ? *)
       (match v with
       | _ -> ()
@@ -436,12 +436,12 @@ and string buf = parse
 and quoted_string buf = parse
   | "|}" { () }
   (* opti: *)
-  | [^ '|' '}']+ { 
+  | [^ '|' '}']+ {
       Buffer.add_string buf (tok lexbuf);
-      quoted_string buf lexbuf 
+      quoted_string buf lexbuf
     }
 
-  | ['|' '}'] as x { 
+  | ['|' '}'] as x {
       Buffer.add_char buf x;
       quoted_string buf lexbuf
     }
@@ -454,7 +454,7 @@ and quoted_string buf = parse
 and comment = parse
   | "*)" { tok lexbuf }
 
-  | "(*" { 
+  | "(*" {
       (* in ocaml comments are nestable *)
       let s = comment lexbuf in
       "(*" ^ s ^ comment lexbuf
@@ -462,14 +462,14 @@ and comment = parse
 
   (* noteopti: bugfix, need add '(' too *)
 
-  | [^'*''(']+ { let s = tok lexbuf in s ^ comment lexbuf } 
+  | [^'*''(']+ { let s = tok lexbuf in s ^ comment lexbuf }
   | "*"     { let s = tok lexbuf in s ^ comment lexbuf }
   | "("     { let s = tok lexbuf in s ^ comment lexbuf }
-  | eof { 
+  | eof {
       error "end of file in comment" lexbuf;
       "*)"
     }
-  | _  { 
+  | _  {
       let s = tok lexbuf in
       error ("unrecognised symbol in comment:"^s) lexbuf;
       s ^ comment lexbuf

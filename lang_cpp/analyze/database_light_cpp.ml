@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -40,19 +40,19 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
 
   let l = PI.line_of_info info in
   let c = PI.col_of_info info in
-  
+
   let name = s in
-  let fullname = 
+  let fullname =
     try Hashtbl.find hcomplete_name_of_info info |> snd
     with Not_found -> ""
   in
-              
+
   { Database_code.
     e_name = name;
     e_fullname = if fullname <> name then fullname else "";
     e_file = PI.file_of_info info |> Common.readable ~root;
     e_pos = { Common2.l = l; c };
-    e_kind = 
+    e_kind =
       Common2.some (Database_code.entity_kind_of_highlight_category_def categ);
 
     (* filled in step 2 *)
@@ -68,7 +68,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
 (* Main entry point *)
 (*****************************************************************************)
 
-let compute_database ?(verbose=false) files_or_dirs = 
+let compute_database ?(verbose=false) files_or_dirs =
 
   (* when we want to merge this database with the db of another language
    * like PHP, the other database may use realpath for the path of the files
@@ -88,12 +88,12 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   let (hdefs_pos: (Parse_info.t, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
     k ();
     let (ast2, _stat) = Parse_cpp.parse file in
 
-    let hcomplete_name_of_info = 
+    let hcomplete_name_of_info =
       (*Class_js.extract_complete_name_of_info ast *)
       Hashtbl.create 101
     in
@@ -101,17 +101,17 @@ let compute_database ?(verbose=false) files_or_dirs =
     ast2 |> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
+      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
 
         (* todo? could look at the info of the origintok of the expanded? *)
         if not (PI.is_origintok info) then ()
-        else 
+        else
           (* todo: use is_entity_def_category ? *)
           match categ with
           | HC.Entity (_, (HC.Def2 _)) ->
               Hashtbl.add hdefs_pos info true;
-              let e = mk_entity ~root ~hcomplete_name_of_info 
-                info categ 
+              let e = mk_entity ~root ~hcomplete_name_of_info
+                info categ
               in
               Hashtbl.add hdefs e.Db.e_name e;
           | _ -> ()
@@ -125,7 +125,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* step2: collecting uses *)
   if verbose then pr2 "\nphase 2: collecting uses";
 
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
     k();
     let (ast2, _stat) = Parse_cpp.parse file in
@@ -138,9 +138,9 @@ let compute_database ?(verbose=false) files_or_dirs =
     ast2 |> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
+      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
         if not (PI.is_origintok info) then ()
-        else 
+        else
           match categ with
           | HC.Entity (_, (HC.Use2 _))
           | HC.StructName (HC.Use)
@@ -151,7 +151,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                 let file_entity = entity.Db.e_file in
 
                 (* todo: check corresponding entity_kind ? *)
-                if file_entity <> file && 
+                if file_entity <> file &&
                    Db.entity_and_highlight_category_correpondance entity categ
                 then begin
                   entity.Db.e_number_external_users <-

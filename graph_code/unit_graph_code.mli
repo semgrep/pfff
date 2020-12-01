@@ -1,6 +1,6 @@
 
-(* Returns the testsuite for this directory. To be concatenated by 
- * the caller (e.g. in pfff/main_test.ml ) with other testsuites and 
+(* Returns the testsuite for this directory. To be concatenated by
+ * the caller (e.g. in pfff/main_test.ml ) with other testsuites and
  * run via OUnit.run_test_tt().
  *)
 
@@ -8,6 +8,6 @@
  * a limited form of circular dependency, see unit_matcher.mli comment.
  *)
 
-val unittest: 
+val unittest:
   graph_of_string:(string -> Graph_code.graph) ->
   OUnit.test

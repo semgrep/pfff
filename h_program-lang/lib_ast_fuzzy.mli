@@ -8,7 +8,7 @@ type 'tok hooks = {
 exception Unclosed of string (* msg *) * Parse_info.t (* starting point *)
 
 val mk_trees: 'tok hooks -> 'tok list -> trees
-val mk_tokens: 'tok hooks -> 'tok list -> 
+val mk_tokens: 'tok hooks -> 'tok list ->
   (Parse_info.token_kind * Parse_info.t) list
 (* visitors, mappers, extractors, abstractors *)
 

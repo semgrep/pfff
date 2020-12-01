@@ -3,18 +3,18 @@
 let tof_wrap =
   OCaml.add_new_type "wrap" (OCaml.Tuple [ OCaml.Poly "a"; OCaml.Var "tok" ])
 and tof_tok = OCaml.add_new_type "tok" (OCaml.TTODO "")
-  
+
 let tof_name =
-  OCaml.add_new_type "name" (OCaml.Apply (("wrap", OCaml.String)))
-  
+  OCaml.add_new_type "name" (OCaml.Apply ("wrap", OCaml.String))
+
 let tof_qualified_name = OCaml.add_new_type "qualified_name" OCaml.String
-  
+
 let tof_resolved_name =
   OCaml.add_new_type "resolved_name"
     (OCaml.Sum
        [ ("Local", []); ("Param", []);
          ("Global", [ OCaml.Var "qualified_name" ]); ("NotResolved", []) ])
-  
+
 let tof_special =
   OCaml.add_new_type "special"
     (OCaml.Sum
@@ -30,13 +30,13 @@ let tof_special =
          ("Lower", []); ("Greater", []); ("Plus", []); ("Minus", []);
          ("Mul", []); ("Div", []); ("Mod", []); ("Expo", []);
          ("Incr", [ OCaml.Bool ]); ("Decr", [ OCaml.Bool ]) ])
-  
+
 let tof_label =
-  OCaml.add_new_type "label" (OCaml.Apply (("wrap", OCaml.String)))
-  
+  OCaml.add_new_type "label" (OCaml.Apply ("wrap", OCaml.String))
+
 let tof_filename =
-  OCaml.add_new_type "filename" (OCaml.Apply (("wrap", OCaml.String)))
-  
+  OCaml.add_new_type "filename" (OCaml.Apply ("wrap", OCaml.String))
+
 let tof_property_prop =
   OCaml.add_new_type "property_prop"
     (OCaml.Sum
@@ -119,10 +119,10 @@ and tof_stmt =
 and tof_expr =
   OCaml.add_new_type "expr"
     (OCaml.Sum
-       [ ("Bool", [ OCaml.Apply (("wrap", OCaml.Bool)) ]);
-         ("Num", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("String", [ OCaml.Apply (("wrap", OCaml.String)) ]);
-         ("Regexp", [ OCaml.Apply (("wrap", OCaml.String)) ]);
+       [ ("Bool", [ OCaml.Apply ("wrap", OCaml.Bool) ]);
+         ("Num", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("String", [ OCaml.Apply ("wrap", OCaml.String) ]);
+         ("Regexp", [ OCaml.Apply ("wrap", OCaml.String) ]);
          ("Id",
           [ OCaml.Var "name";
             OCaml.Apply (("ref", (OCaml.Var "resolved_name"))) ]);
@@ -140,7 +140,7 @@ and tof_property_name =
   OCaml.add_new_type "property_name"
     (OCaml.Sum
        [ ("PN", [ OCaml.Var "name" ]); ("PN_Computed", [ OCaml.Var "expr" ]) ])
-  
+
 let tof_toplevel =
   OCaml.add_new_type "toplevel"
     (OCaml.Sum
@@ -149,14 +149,14 @@ let tof_toplevel =
          ("Import",
           [ OCaml.Var "name"; OCaml.Var "name"; OCaml.Var "filename" ]);
          ("Export", [ OCaml.Var "name" ]) ])
-  
+
 let tof_program =
   OCaml.add_new_type "program" (OCaml.List (OCaml.Var "toplevel"))
-  
+
 let tof_any =
   OCaml.add_new_type "any"
     (OCaml.Sum
        [ ("Expr", [ OCaml.Var "expr" ]); ("Stmt", [ OCaml.Var "stmt" ]);
          ("Top", [ OCaml.Var "toplevel" ]);
          ("Program", [ OCaml.Var "program" ]) ])
-  
+

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -24,7 +24,7 @@ open Common
 
 
 type refactoring_kind =
-  | AddInterface of string option (* specific class *) 
+  | AddInterface of string option (* specific class *)
                   * string (* the interface to add *)
   | RemoveInterface of string option * string
 
@@ -37,7 +37,7 @@ type refactoring_kind =
   | OptionizeTypeParameter
   | AddTypeMember of string
 
-type position = { 
+type position = {
   file: Common.filename;
   line: int;
   col: int;
@@ -55,7 +55,7 @@ let load file =
     let xs = Common.split ";" s in
     match xs with
     | [file;action;line;col;value] when
-          line =~ "[0-9]+" && col =~ "[0-9]+" && 
+          line =~ "[0-9]+" && col =~ "[0-9]+" &&
           (List.mem action [
             "RETURN";"PARAM";"MEMBER"; "MAKE_OPTION_TYPE"; "SPLIT_MEMBERS";
           ]) ->
@@ -66,7 +66,7 @@ let load file =
       | "MAKE_OPTION_TYPE" -> OptionizeTypeParameter
       | "SPLIT_MEMBERS" -> SplitMembers
       | _ -> raise Impossible
-      ), Some 
+      ), Some
         { file;
           line = int_of_string line;
           col = int_of_string col;

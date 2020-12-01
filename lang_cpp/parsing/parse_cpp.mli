@@ -2,14 +2,14 @@
 (* the token list contains also the comment-tokens *)
 type toplevels_and_tokens = (Cst_cpp.toplevel * Parser_cpp.token list) list
 
-(* This is the main function. It uses _defs below which often comes 
+(* This is the main function. It uses _defs below which often comes
  * from a standard.h macro file. It will raise Parse_error unless
  * Flag_parsing_cpp.error_recovery is set.
  *)
 val parse:
   Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
 
-val parse_program:  
+val parse_program:
   Common.filename -> Cst_cpp.program
 val parse_with_lang:
   ?lang:Flag_parsing_cpp.language ->
@@ -17,11 +17,11 @@ val parse_with_lang:
 
 
 (* other parsers *)
-val any_of_string: 
+val any_of_string:
  Flag_parsing_cpp.language -> string -> Cst_cpp.any
 
 val parse_fuzzy:
-  Common.filename -> 
+  Common.filename ->
   Ast_fuzzy.trees * (Parse_info.token_kind * Parse_info.t) list
 
 val parse_with_dypgen:
@@ -33,9 +33,9 @@ val _defs : (string, Pp_token.define_body) Hashtbl.t
 val init_defs : Common.filename -> unit
 val add_defs : Common.filename -> unit
 (* used to extract macros from standard.h, but also now used on C files
- * in -extract_macros to assist in building a macros.h 
+ * in -extract_macros to assist in building a macros.h
  *)
-val extract_macros: 
+val extract_macros:
   Common.filename -> (string, Pp_token.define_body) Common.assoc
 
 (* usually correspond to what is inside your standard.h *)

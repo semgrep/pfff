@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,7 +22,7 @@ open Common
  * often contains special code that can not be parsed, that contains
  * dependencies that should not exist, old code that we don't want
  * to analyze, etc.
- * 
+ *
  * todo: simplify interface in skip_list.txt file? can infer
  * dir or file, and maybe sometimes instead of skip we would like
  * to specify the opposite, what we want to keep, so maybe a simple
@@ -44,17 +44,17 @@ type skip =
 (* IO *)
 (*****************************************************************************)
 let load file =
-  Common.cat file 
-  |> Common.exclude (fun s -> 
+  Common.cat file
+  |> Common.exclude (fun s ->
     s =~ "#.*" || s =~ "^[ \t]*$"
   )
   |> List.map (fun s ->
     match s with
-    | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" -> 
+    | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" ->
       Dir (Common.matched1 s)
-    | _ when s =~ "^skip_errors_dir:[ ]*\\([^ ]+\\)" -> 
+    | _ when s =~ "^skip_errors_dir:[ ]*\\([^ ]+\\)" ->
       SkipErrorsDir (Common.matched1 s)
-    | _ when s =~ "^file:[ ]*\\([^ ]+\\)" -> 
+    | _ when s =~ "^file:[ ]*\\([^ ]+\\)" ->
       File (Common.matched1 s)
     | _ when s =~ "^dir_element:[ ]*\\([^ ]+\\)" ->
       DirElement (Common.matched1 s)
@@ -77,20 +77,20 @@ let filter_files skip_list root xs =
     skip_list |> Common.map_filter (function
     | Dir s -> Some s
     | _ -> None
-    ) 
+    )
   in
   let skip_dir_elements =
     skip_list |> Common.map_filter (function
     | DirElement s -> Some s
     | _ -> None
-    ) 
+    )
   in
   xs |> Common.exclude (fun file ->
     let readable = Common.readable ~root file in
     (Hashtbl.mem skip_files readable) ||
-    (skip_dirs |> List.exists 
+    (skip_dirs |> List.exists
        (fun dir -> readable =~ (dir ^ ".*"))) ||
-    (skip_dir_elements |> List.exists 
+    (skip_dir_elements |> List.exists
        (fun dir -> readable =~ (".*/" ^ dir ^ "/.*")))
   )
 
@@ -125,19 +125,19 @@ let find_skip_file_from_root root =
   )
 
 let filter_files_if_skip_list ~root xs =
-  let root = 
+  let root =
     match root with
     | [x] -> x
     | _ ->
       (match xs with
       | [] -> "/"
       | x::_ ->
-        try 
+        try
           find_vcs_root_from_absolute_path x
         with Not_found -> "/"
       )
    in
-  try 
+  try
    let skip_file = find_skip_file_from_root root in
    let skip_list = load skip_file in
    pr2 (spf "using skip list in %s" skip_file);
@@ -148,7 +148,7 @@ let filter_files_if_skip_list ~root xs =
 (* Helpers *)
 (*****************************************************************************)
 let build_filter_errors_file skip_list =
-  let skip_dirs = 
+  let skip_dirs =
     skip_list |> Common.map_filter (function
     | SkipErrorsDir dir -> Some dir
     | _ -> None
@@ -160,7 +160,7 @@ let build_filter_errors_file skip_list =
 
 let reorder_files_skip_errors_last skip_list root xs =
   let is_file_want_to_skip_error = build_filter_errors_file skip_list in
-  let (skip_errors, ok) = 
+  let (skip_errors, ok) =
     xs |> List.partition (fun file ->
       let readable = Common.readable ~root file in
       is_file_want_to_skip_error readable

@@ -8,8 +8,8 @@ module Flag = Flag_parsing
 (*****************************************************************************)
 
 (*s: function [[Test_parsing_python.test_tokens_python]] *)
-let test_tokens_python file = 
-  if not (file =~ ".*\\.py") 
+let test_tokens_python file =
+  if not (file =~ ".*\\.py")
   then pr2 "warning: seems not a python file";
 
   Flag.verbose_lexing := true;
@@ -17,7 +17,7 @@ let test_tokens_python file =
   Flag.exn_when_lexical_error := true;
   let parsing_mode = Parse_python.Python in
 
-  let toks = Parse_python.tokens parsing_mode file 
+  let toks = Parse_python.tokens parsing_mode file
       |> Parsing_hacks_python.fix_tokens in
   toks |> List.iter (fun x -> pr2_gen x);
   ()
@@ -27,8 +27,8 @@ let test_tokens_python file =
 let test_parse_python_common parsing_mode xs =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs = 
-    Lib_parsing_python.find_source_files_of_dir_or_files xs 
+  let fullxs =
+    Lib_parsing_python.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in
 
@@ -51,19 +51,19 @@ let test_parse_python_common parsing_mode xs =
     else Hashtbl.add newscore file (Common2.Pb s)
   ));
   Parse_info.print_parsing_stat_list !stat_list;
-  let dirname_opt = 
+  let dirname_opt =
     match xs with
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)
     | _ -> None
   in
     let score_path = Config_pfff.regression_data_dir in
-    dirname_opt |> Common.do_option (fun dirname -> 
+    dirname_opt |> Common.do_option (fun dirname ->
       let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common2.regression_testing newscore 
+      Common2.regression_testing newscore
         (Filename.concat score_path
          (spf "score_parsing__%s%s.marshalled" str ext))
     );
@@ -87,15 +87,15 @@ let test_dump_python file =
 
 (*s: function [[Test_parsing_python.actions]] *)
 let actions () = [
-  "-tokens_python", "   <file>", 
+  "-tokens_python", "   <file>",
   Common.mk_action_1_arg test_tokens_python;
-  "-parse_python", "   <files or dirs>", 
+  "-parse_python", "   <files or dirs>",
   Common.mk_action_n_arg (test_parse_python_common Parse_python.Python);
-  "-parse_python2", "   <files or dirs>", 
+  "-parse_python2", "   <files or dirs>",
   Common.mk_action_n_arg (test_parse_python_common Parse_python.Python2);
-  "-parse_python3", "   <files or dirs>", 
+  "-parse_python3", "   <files or dirs>",
   Common.mk_action_n_arg (test_parse_python_common Parse_python.Python3);
-  "-dump_python", "   <file>", 
+  "-dump_python", "   <file>",
   Common.mk_action_1_arg test_dump_python;
 ]
 (*e: function [[Test_parsing_python.actions]] *)

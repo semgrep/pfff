@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,7 +19,7 @@ open Archi_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * The "inference" of the architecture category from a filename
  * used to be slow. The "parser" used to be a 'match' with a long series
  * of '_ when f =~ ...' but it was getting really slow when
@@ -27,8 +27,8 @@ open Archi_code
  * for files that do not match any category, but it was still slow
  * when most of the files had a category (for instance because
  * most of the files in a project are under something like lib/ or intern/).
- * Then we used ocamllex and that was fine! 
- * 
+ * Then we used ocamllex and that was fine!
+ *
  * Current stat of -profile on codemap.opt ~/www:
  *  Archi.source_of_filename                 :      1.690 sec     112755 count
  *)
@@ -46,7 +46,7 @@ let is_auto_generated file =
   let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
   | "ml"->
-      Sys.file_exists (Common2.filename_of_dbe (d,b, "mll")) || 
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mll")) ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "mly")) ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "mlb"))
 
@@ -70,12 +70,12 @@ let is_auto_generated file =
       (* bigloo (hmm but then conflict with s9 that have s9.c and s9.scm *)
       (* Sys.file_exists (Common2.filename_of_dbe (d,b, "scm")) || *)
       (if  b ==~ re_c_yaccfile
-      then 
+      then
         let b' = Common.matched1 b in
         Sys.file_exists (Common2.filename_of_dbe (d,b', "y"))
       else false
       )
- 
+
   | _ when b = "Makefile" && e = "NOEXT" ->
       Sys.file_exists (Common2.filename_of_dbe (d,b, "am")) ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "in")) ||
@@ -91,7 +91,7 @@ let re_auto_generated = Str.regexp
 (* Filename->archi *)
 (*****************************************************************************)
 
-let _hmemo_categ_dir = Hashtbl.create 101 
+let _hmemo_categ_dir = Hashtbl.create 101
 
 (* Why taking the root ? Because if the data are in /tmp/data/soft/... then
  * you would get the rule for tmp and data :( should not consider
@@ -101,7 +101,7 @@ let _hmemo_categ_dir = Hashtbl.create 101
  * like Sys.file_exists in is_auto_generated() which is used by this
  * function.
  *)
-let source_archi_of_filename3 ~root file = 
+let source_archi_of_filename3 ~root file =
 
   let base = Filename.basename file in
   let f = Common.readable ~root file in
@@ -116,27 +116,27 @@ let source_archi_of_filename3 ~root file =
      *)
     let lexbuf = Lexing.from_string b in
     let categ1 = Archi_code_lexer.category lexbuf in
-    
+
     let d = Filename.dirname f in
     (* try the directory, caching the result.
      *
      * note: should perhaps put (root, d) as the key for the memoized call
-     * because when we start from a nested dir and go up, 
+     * because when we start from a nested dir and go up,
      * the root has changed and so what was considered Regular
      * could not be considered Intern. But then
      * when we click to go down, we can't reuse the cached
      * archi and the color may actually change which can be confusing.
-     * 
+     *
      *)
     let categ2 =
       Common.memoized _hmemo_categ_dir d (fun () ->
-        
+
         let d = String.lowercase_ascii d in
-        
+
         let xs = Common.split "/" d in
         let xs = List.rev xs in
         let str = "/" ^ Common.join "/" xs ^ "/" in
-        
+
         let lexbuf = Lexing.from_string str in
         Archi_code_lexer.category lexbuf
       )
@@ -148,6 +148,6 @@ let source_archi_of_filename3 ~root file =
     )
 
 
-let source_archi_of_filename ~root f = 
+let source_archi_of_filename ~root f =
   Common.profile_code "Archi.source_of_filename" (fun () ->
     source_archi_of_filename3 ~root f)

@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -29,7 +29,7 @@ module G = AST_generic
  * bugs in the parsing/AST/understanding of the language:
  *  - parameters semantic in Go is special (foo(a,b,c,d int)) or foo(int,int)
  *  - need List.rev for stmts in many more places, not just compound_stmt
- *  - 
+ *  -
  *)
 
 (*****************************************************************************)
@@ -47,12 +47,12 @@ let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
 (* declared in the "universe block"
  *  - true, false
  *  - iota
- *  - new, make, 
+ *  - new, make,
  *    panic (CFG effect, like goto), recover,
  *    print, println
  *    complex, imag, real
- *    append, cap, 
- *    close, delete, copy, 
+ *    append, cap,
+ *    close, delete, copy,
  *    len,
  *  - nil
  *  - _ (blank identifier)
@@ -88,12 +88,12 @@ let visit_program ~tag_hook _prefs (program, toks) =
   )
   in
   let tag_if_not_tagged ii categ =
-    (* thx to the if below, you can treat the most specific in enclosing code 
+    (* thx to the if below, you can treat the most specific in enclosing code
      * and then not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
      *)
-   if not (Hashtbl.mem already_tagged ii)    
+   if not (Hashtbl.mem already_tagged ii)
    then tag ii categ
   in
   let tag_ident (_s, ii) categ = tag_if_not_tagged ii categ in
@@ -101,7 +101,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     match xs with
     | [] | _::_::_::_ -> raise Common.Impossible
     | [x] -> tag_ident x categ
-    | [x;y] -> 
+    | [x;y] ->
         tag_ident x (Entity (E.Module, use2));
         tag_ident y categ
    in
@@ -109,7 +109,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
   Resolve_go.resolve program;
 
   (* -------------------------------------------------------------------- *)
-  (* AST phase 1 *) 
+  (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
@@ -117,7 +117,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
   let in_toplevel = ref true in
 
   let visitor = V.mk_visitor { V.default_visitor with
-    (* use 'k x' as much as possible below. No need to 
+    (* use 'k x' as much as possible below. No need to
      * do v (Stmt st1); v (Expr e); ... Go deep to tag
      * special stuff (e.g., a local var in an exception handler) but then
      * just recurse from the top with 'k x', tag_if_not_tagged will
@@ -144,7 +144,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       | DTop _ | STop _ -> ()
       | Package _ | Import _ -> ()
       );
-     Common.save_excursion in_toplevel false (fun () -> 
+     Common.save_excursion in_toplevel false (fun () ->
        k x
      );
     );
@@ -153,7 +153,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       | DTypeDef (id, _) | DTypeAlias (id, _, _) ->
          tag_ident id (Entity (E.Type, def2))
       | DConst (id, _, _) -> tag_ident id (Entity (E.Constant, def2))
-      | DVar (id, _, _) -> 
+      | DVar (id, _, _) ->
           if !in_toplevel
           then tag_ident id (Entity (E.Global, def2))
           else tag_ident id (Local Def)
@@ -170,8 +170,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
       (match x with
       | SimpleStmt (DShortVars (xs, _, _)) ->
          xs |> List.iter (function
-           | Id (id, _) -> 
-              if !in_toplevel 
+           | Id (id, _) ->
+              if !in_toplevel
               then tag_ident id (Entity (E.Global, def2))
               else tag_ident id (Local Def)
            | _ -> ()
@@ -208,7 +208,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           | FieldEllipsis2 _ -> ()
         );
       (* general case *)
-      | _ -> () 
+      | _ -> ()
       );
       k x
     );
@@ -228,7 +228,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
           (match fst x with
           | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
           | G.Param -> tag_ident id (Parameter (Use))
-          | G.Local -> tag_ident id (Local (Use)) 
+          | G.Local -> tag_ident id (Local (Use))
           | G.EnclosedVar -> tag_ident id (Local Use) (* TODO *)
           (* unless matched before in a Call *)
           | G.Global -> tag_ident id (Entity (E.Global, use2))
@@ -252,7 +252,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
       k x
 
     );
-    
+
   } in
   visitor (P program);
 
@@ -263,17 +263,17 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     (* specials *)
-    | T.TUnknown ii -> 
+    | T.TUnknown ii ->
        tag ii Error
-    | T.EOF _ii -> 
+    | T.EOF _ii ->
        ()
 
     (* comments *)
-    | T.TComment ii -> 
+    | T.TComment ii ->
        tag_if_not_tagged ii Comment
     | T.TCommentSpace _ | T.TCommentNewline _ -> ()
 
@@ -286,19 +286,19 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Number
 
     (* ident  *)
-    | T.LNAME (s, ii) -> 
+    | T.LNAME (s, ii) ->
         (match s with
         | "true" | "false" -> tag_if_not_tagged ii Boolean
         | "nil" -> tag_if_not_tagged ii Null
 
         | "panic" | "recover" -> tag ii KeywordExn
-        | "int" | "uint32" | "string" -> 
+        | "int" | "uint32" | "string" ->
             tag_if_not_tagged ii (Entity (E.Type, use2))
-        | s when Hashtbl.mem builtin_functions s -> 
+        | s when Hashtbl.mem builtin_functions s ->
             tag_if_not_tagged ii Builtin
 
         (* should have been tagged by the AST visitor *)
-        | _ -> 
+        | _ ->
           tag_if_not_tagged ii IdentUnknown
         )
 
@@ -308,7 +308,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LSTRUCT ii -> tag ii Keyword
     | T.LINTERFACE ii
         -> tag ii KeywordObject
-    | T.LIF ii | T.LELSE ii 
+    | T.LIF ii | T.LELSE ii
     | T.LSWITCH ii | T.LCASE ii | T.LDEFAULT ii
         ->
         tag ii KeywordConditional
@@ -322,9 +322,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LFALL ii
     | T.LRETURN ii
         -> tag ii Keyword
-    | T.LGOTO ii 
+    | T.LGOTO ii
         -> tag ii Keyword (* dangerous? *)
-    | T.LMAP ii -> 
+    | T.LMAP ii ->
           tag ii (Entity (E.Type, use2))
     | T.LDEFER ii ->
           tag ii KeywordExn
@@ -355,21 +355,21 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     | T.LBANG ii
 
-    | T.LEQEQ ii | T.LNE ii 
+    | T.LEQEQ ii | T.LNE ii
     | T.LLT ii  | T.LGT ii
     | T.LLE ii | T.LGE ii
 
-    | T.LDOT (ii)
-    | T.LCOLON (ii)
+    | T.LDOT ii
+    | T.LCOLON ii
     | T.LCOMMA ii
     | T.LSEMICOLON ii
     ->
         tag ii Punctuation
 
-    | T.LCOMM ii -> 
+    | T.LCOMM ii ->
           tag ii KeywordConcurrency
 
-    | T.LDDD ii | T.LDots ii | T.RDots ii -> 
+    | T.LDDD ii | T.LDots ii | T.RDots ii ->
           tag ii Punctuation
   );
   ()

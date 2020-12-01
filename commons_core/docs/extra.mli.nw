@@ -28,7 +28,7 @@ opengl.ml
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -42,37 +42,37 @@ open Common.BasicType
 (*****************************************************************************)
 (*
  * This module has nothing to do with graphical user interface (GUI). See
- * gui.ml for that. 
- * 
+ * gui.ml for that.
+ *
  * I use this module not so much for functors, I hate functors, but
- * more to force me to have consistent naming of stuff. 
- * 
+ * more to force me to have consistent naming of stuff.
+ *
  * It's related to objet.ml in some way, but use a different scheme.
- * 
- * src: (strongly) inspired by Jane Street core lib, which in turn 
+ *
+ * src: (strongly) inspired by Jane Street core lib, which in turn
  * may have been strongly inspired by Java Interfaces or Haskell
  * type classes.
- * 
- * 
- * 
+ *
+ *
+ *
  * Example of use in .mli:
- * 
+ *
  *   open Interfaces
  *   include Stringable with type stringable = t
  *   include Comparable with type comparable = t
- * 
+ *
  * Example of use in .ml:
- * 
+ *
  *   type xxx
  *   type stringable = xxx
  *   let of_string = bool_of_string
  *   let to_string = string_of_bool
- * 
- * 
+ *
+ *
  * No this file is not about (graphical) user interface. See gui.ml for that.
- * 
- * 
- * todo? but as in type class, or object, can not have default method 
+ *
+ *
+ * todo? but as in type class, or object, can not have default method
  * with this scheme ?
  *)
 
@@ -85,11 +85,11 @@ open Common.BasicType
 (* note: less need for cloneable, copyable as in Java. Only needed
  * when use ref, but refs should be avoided anyway so better not to
  * encourage it.
- * 
+ *
  * Often found this in haskell:
- * 
+ *
  *    data x = ... deriving (Read, Show, Eq, Ord, Enum, Bounded)
- * 
+ *
  * Apparently this is what is considered basic by haskell.
  *)
 
@@ -112,7 +112,7 @@ end
 
 
 
-(* Same, should not use compare normally, dangerous when evolve code. 
+(* Same, should not use compare normally, dangerous when evolve code.
  * Called Ord in haskell. Inherit Eq normally.
  *)
 module type Compare_able = sig
@@ -122,7 +122,7 @@ end
 (* Jane street have also some binable, sexpable *)
 
 
-(* Haskell have lots of related type class after Num such as 
+(* Haskell have lots of related type class after Num such as
  * Real, Fractional, Integral, RealFrac, Floating, RealFloat
  *)
 module type Num_able = sig
@@ -207,17 +207,17 @@ end
 
 (*****************************************************************************)
 (* Idea taken from Jane Street Core library, slightly changed.
- *   
- * It's another way to organize data structures, module instead of objects. 
- * It's also the Java way. 
- * 
+ *
+ * It's another way to organize data structures, module instead of objects.
+ * It's also the Java way.
+ *
  * It makes some code looks a little bit like Haskell* typeclass.
- * 
+ *
  *)
 
 (* In Jane Street they put each interface in its own file but then have to
  * do that:
- * 
+ *
  * module type Stringable = Stringable.S
  * module type Comparable = Comparable.S
  * module type Floatable = Floatable.S
@@ -228,12 +228,12 @@ end
  * module type Setable = Setable.S
  * module type Sexpable = Sexpable.S
  * module type Binable = Binable.S
- * 
+ *
  * And I dont like having too much files, especially as all those xxable
  * end with able, not start, so don't see them together in the directory.
  *)
 
-@ 
+@
 
 \chapter{Tests}
 
@@ -254,13 +254,13 @@ end
 open Common
 
 
-let _biglock = Mutex.create () 
-let atomic f = 
+let _biglock = Mutex.create ()
+let atomic f =
   Mutex.lock _biglock;
   Common.finalize f (fun () -> Mutex.unlock _biglock)
-  
 
-@ 
+
+@
 
 
 \chapter{Distribution}
@@ -270,7 +270,7 @@ let atomic f =
 
 \begin{verbatim}
 (* alternatives:
- * - Graphics module of ocaml, very good for prototyping (used in 
+ * - Graphics module of ocaml, very good for prototyping (used in
  *   icfp contest)
  * - opengl
  * - gtk drawing area
@@ -285,17 +285,17 @@ let atomic f =
 \chapter{GUI}
 
 \begin{verbatim}
-GUI via lablgtk. 
+GUI via lablgtk.
  *
  * Alternatives:
  *  - tk, but tk ... a little bit old style
  *  - qt, but poor wrapper
  *  - wxwindow, but poor wrapper or inexistant
  * => lablgtk seems the most mature.
- * 
+ *
  * cf also ocaml.org library notes on lablgtk.
- * 
- * 
+ *
+ *
 \end{verbatim}
 
 \chapter{ParserCombinators}
@@ -303,7 +303,7 @@ GUI via lablgtk.
 parser\_combinators.ml
 
 \begin{verbatim}
-(* src: Jon Harrop. 
+(* src: Jon Harrop.
  *
  * "Certain applications are extremely well suited to functional
  * programming and parsing is one of them. Specifically, the ability to
@@ -313,23 +313,23 @@ parser\_combinators.ml
  * conventional parser generators such as ocamllex and ocamlyacc. This
  * article explains how parser combinators may be designed and
  * implemented in OCaml, using the standard example of a calculator."
- * 
+ *
  * Based on haskell articles I guess like meijer functional pearl or
  * graham hutton articles. Also maybe based on haskell parsec.
- * 
+ *
  * pad: a few bugfix. I also put more restrictive and descriptive types.
- * pad: I remember having coded such a library, maybe not in ocaml. 
+ * pad: I remember having coded such a library, maybe not in ocaml.
  * Or maybe it was during a "TP compilation" at INSA ? I remember having
  * a generic lexer. Or maybe it was genlex ?
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  * alternatives: genlex + parser extension of ocaml (streams).
  * cf genlex doc:
- * 
+ *
  * Example: a lexer suitable for a desk calculator is obtained by
- * let lexer = make_lexer ["+";"-";"*";"/";"let";"="; "("; ")"]  
+ * let lexer = make_lexer ["+";"-";"*";"/";"let";"="; "("; ")"]
  * let parse_expr = parser
  *     [< 'Int n >] -> n
  *   | [< 'Kwd "("; n = parse_expr; 'Kwd ")" >] -> n
@@ -344,8 +344,8 @@ parser\_combinators.ml
  * | 	Float of float
  * | 	String of string
  * | 	Char of char
- * 
- * 
+ *
+ *
  * Cf also ocaml manual
  *  let rec parse_expr = parser
  *      [< e1 = parse_mult; e = parse_more_adds e1 >] -> e
@@ -366,13 +366,13 @@ parser\_combinators.ml
  *    | [< 'Kwd "("; e = parse_expr; 'Kwd ")" >] -> e;;
  * But see how they are forced to use a LL(1) grammar which denatures the
  * grammar "parse_more_xxx"
- * 
+ *
 \end{verbatim}
 
 
 <<parser_combinators.mli>>=
 (*****************************************************************************)
-(* src: Jon Harrop. 
+(* src: Jon Harrop.
  *
  * "Certain applications are extremely well suited to functional
  * programming and parsing is one of them. Specifically, the ability to
@@ -382,9 +382,9 @@ parser\_combinators.ml
  * conventional parser generators such as ocamllex and ocamlyacc. This
  * article explains how parser combinators may be designed and
  * implemented in OCaml, using the standard example of a calculator."
- * 
+ *
  * pad: a few bugfixes. I also put more restrictive and descriptive types.
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -475,7 +475,7 @@ val rawstring : lexer
 val lex_gen : lexer -> string -> token list
 
 (*****************************************************************************)
-val token : lexer 
+val token : lexer
 (* char list -> token * char list *)
 val tokens : (char, token list) genp
 (* char list -> token list * char list *)
@@ -526,7 +526,7 @@ module Infix : sig
     (* ('a -> 'b * 'c) -> ('b -> 'd) -> 'a -> 'd * 'c *)
 end
 
-@ 
+@
 
 
 \chapter{Backtrace}
@@ -539,7 +539,7 @@ backtrace\_c.c
 This function is especially useful with lablgtk which intercepts
  * the exception and forbid them to reach the toplevel, or with LFS
  * where I can not allow any exception to stop mount.lfs.
- * 
+ *
 \end{verbatim}
 
 \chapter{Glimpse}
@@ -552,8 +552,8 @@ glimpse.ml
 open Common
 
 (* ---------------------------------------------------------------------- *)
-type glimpse_search = 
-  | GlimpseCaseInsensitive 
+type glimpse_search =
+  | GlimpseCaseInsensitive
   | GlimpseWholeWord
 val default_glimpse_search : glimpse_search list
 
@@ -566,7 +566,7 @@ val glimpseindex_files : filename list -> glimpsedir -> unit
 
 
 (* ---------------------------------------------------------------------- *)
-val glimpse : 
+val glimpse :
   string -> ?options:glimpse_search list -> glimpsedir -> filename list
 val grep : 'a -> 'b
 
@@ -578,7 +578,7 @@ val s_of_glimpse_search : glimpse_search -> string
 val s_of_glimpse_options : glimpse_search list -> string
 
 
-@ 
+@
 
 \chapter{Regexp}
 
@@ -608,15 +608,15 @@ python\_ocaml.py
 
 \begin{verbatim}
  * Cf also ocaml.org library notes on pycaml.
- * 
- * As there are lots of libraries or library wrappers written in python, 
+ *
+ * As there are lots of libraries or library wrappers written in python,
  * can conveniently get access to them, for instance nltk, with
  * this module. Easier to talk to a lib through a python binding than
  * to talk to the lib through the C foreign mechanism of Ocaml.
  * But must still install the python dependencies on the client.
  * Can not just distribute the ocaml binaries and ldd librairies
- * dependencies. There is unfortunately hidden dependencies 
+ * dependencies. There is unfortunately hidden dependencies
  * with the use of python.ml. So tradeoff.
- * 
+ *
 \end{verbatim}
 

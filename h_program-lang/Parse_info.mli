@@ -8,7 +8,7 @@ type token_location = {
     charpos: int; (* byte position *)
     line: int; column: int;
     file: Common.filename;
-} 
+}
 (*e: type [[Parse_info.token_location]] *)
 (* see also type filepos = { l: int; c: int; } in Common.mli *)
 
@@ -17,25 +17,25 @@ type token_location = {
 type token_origin =
   | OriginTok  of token_location
   | FakeTokStr of string  * (token_location * int) option (* next to *)
-  | ExpandedTok of token_location * token_location * int 
+  | ExpandedTok of token_location * token_location * int
   | Ab (* abstract token, see Parse_info.ml comment *)
 (*e: type [[Parse_info.token_origin]] *)
 
-(* to allow source to source transformation via token "annotations", 
+(* to allow source to source transformation via token "annotations",
  * see the documentation for spatch.
  *)
 (*s: type [[Parse_info.token_mutable]] *)
 type token_mutable = {
-  token: token_origin; 
+  token: token_origin;
   (* for spatch *)
   mutable transfo: transformation;
 }
 (*e: type [[Parse_info.token_mutable]] *)
 
 (*s: type [[Parse_info.transformation]] *)
- and transformation = 
+ and transformation =
   | NoTransfo
-  | Remove 
+  | Remove
   | AddBefore of add
   | AddAfter of add
   | Replace of add
@@ -43,7 +43,7 @@ type token_mutable = {
 (*e: type [[Parse_info.transformation]] *)
 
 (*s: type [[Parse_info.add]] *)
-  and add = 
+  and add =
     | AddStr of string
     | AddNewlineAndIdent
 (*e: type [[Parse_info.add]] *)
@@ -223,12 +223,12 @@ val combine_infos: t -> t list -> t
 
 (*s: signature [[Parse_info.tokenize_all_and_adjust_pos]] *)
 (* to be used by the lexer *)
-val tokenize_all_and_adjust_pos: 
+val tokenize_all_and_adjust_pos:
   ?unicode_hack:bool ->
-  Common.filename -> 
-  (Lexing.lexbuf -> 'tok) (* tokenizer *) -> 
-  ((t -> t) -> 'tok -> 'tok) (* token visitor *) -> 
-  ('tok -> bool) (* is_eof *) -> 
+  Common.filename ->
+  (Lexing.lexbuf -> 'tok) (* tokenizer *) ->
+  ((t -> t) -> 'tok -> 'tok) (* token visitor *) ->
+  ('tok -> bool) (* is_eof *) ->
   'tok list
 (*e: signature [[Parse_info.tokenize_all_and_adjust_pos]] *)
 (*s: signature [[Parse_info.mk_lexer_for_yacc]] *)
@@ -241,7 +241,7 @@ val mk_lexer_for_yacc: 'tok list -> ('tok -> bool) (* is_comment *) ->
 (* can deprecate? just use tokenize_all_and_adjust_pos *)
 (*s: signature [[Parse_info.full_charpos_to_pos_large]] *)
 (* f(i) will contain the (line x col) of the i char position *)
-val full_charpos_to_pos_large: 
+val full_charpos_to_pos_large:
   Common.filename -> (int -> (int * int))
 (* fill in the line and column field of token_location that were not set
  * during lexing because of limitations of ocamllex. *)
@@ -249,7 +249,7 @@ val full_charpos_to_pos_large:
 (*s: signature [[Parse_info.complete_token_location_large]] *)
 (* fill in the line and column field of token_location that were not set
  * during lexing because of limitations of ocamllex. *)
-val complete_token_location_large : 
+val complete_token_location_large :
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 (*e: signature [[Parse_info.complete_token_location_large]] *)
 

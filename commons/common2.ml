@@ -127,9 +127,9 @@ let (with_open_stringbuf: (((string -> unit) * Buffer.t) -> unit) -> string) =
   Buffer.contents buf
 
 
-let foldl1 p xs = 
+let foldl1 p xs =
   match xs with
-  | x::xs -> List.fold_left p x xs 
+  | x::xs -> List.fold_left p x xs
   | [] -> failwith "foldl1: empty list"
 
 let repeat e n =
@@ -2114,10 +2114,10 @@ let dbe_of_filename_nodot file =
  * let dbe_of_filename_noext_ok file =
  *   ...
  *   if Str.string_match re_be base 0
- *   then 
+ *   then
  *     let (b, e) = matched2 base in
  *     (dir, b, e)
- * 
+ *
  *  That way files like foo.md5sum.c would not be considered .c
  *  but .md5sum.c, but then it has too many disadvantages because
  *  then regular files like qemu.root.c would not be considered
@@ -2142,10 +2142,10 @@ let replace_ext file oldext newext =
  * state.
  *
  * This is intended to work on both absolute and relative paths, but I
- * have not tested the latter. 
+ * have not tested the latter.
  *
  * Compared to a previous version of normalize_path,
- * this function normalizes "a/." to "a" and does not drop the leading "/" 
+ * this function normalizes "a/." to "a" and does not drop the leading "/"
  * on absolute paths. It also does not crash on "/..".
  *
  * author: Scott McPeak.
@@ -2993,7 +2993,7 @@ let command2_y_or_no_exit_if_no cmd =
   let res = command2_y_or_no cmd in
   if res
   then ()
-  else raise (UnixExit (1))
+  else raise (UnixExit 1)
 
 let command_safe ?verbose:(_verbose=false) program args =
   let pid = Unix.fork () in
@@ -3667,7 +3667,7 @@ let rec split_gen_when_aux f acc xs =
       (match f (x::xs) with
       | None ->
           split_gen_when_aux f (x::acc) xs
-      | Some (rest) ->
+      | Some rest ->
           let before = List.rev acc in
           if null before
           then split_gen_when_aux f [] rest
@@ -5918,7 +5918,7 @@ module Infix = struct
   let (=~) = (=~)
 end
 
-(* based on code found in cameleon from maxence guesdon 
+(* based on code found in cameleon from maxence guesdon
  * alt: use Digest.string! far faster!
  *)
 let md5sum_of_string s =

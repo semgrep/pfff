@@ -21,7 +21,7 @@ type visitor_in = {
 
   kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
-  
+
   kinfo: tok vin;
 }
 and visitor_out = any -> unit

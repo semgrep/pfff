@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -39,9 +39,9 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
     let hclass = Hashtbl.create 101 in
 *)
 
-    let nodes_xml = 
+    let nodes_xml =
       match tree with
-      | None -> 
+      | None ->
           nodes |> List.map (fun n ->
             let modularity_class = "nothing"
 (*
@@ -95,7 +95,7 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
     let edges_xml = nodes |> List.map (fun n ->
       let succ = G.succ n g in
       succ |> Common.map_filter (fun n2 ->
-        let weight = 
+        let weight =
           match weight_edges with
           | None -> 1.
           | Some h ->

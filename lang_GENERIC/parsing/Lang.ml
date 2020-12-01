@@ -30,11 +30,11 @@ module FT = File_type
  * langs_of_filename below.
  *)
 (*s: type [[Lang.t]] *)
-type t = 
-  | Python 
+type t =
+  | Python
   (*s: [[Lang.t]] extra Python cases *)
   (* Python will start with Python3 mode and fall back to Python2 in case
-   * of error. Python2 and Python3 are for specific version of Python 
+   * of error. Python2 and Python3 are for specific version of Python
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
@@ -153,17 +153,17 @@ let ext_of_lang = function
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)
-let find_source lang xs = 
-  Common.files_of_dir_or_files_no_vcs_nofilter xs 
+let find_source lang xs =
+  Common.files_of_dir_or_files_no_vcs_nofilter xs
    |> List.filter (fun filename ->
      List.mem lang (langs_of_filename filename)
   ) |> Common.sort
 (*e: function [[Lang.find_source]] *)
 
 (*s: function [[Lang.files_of_dirs_or_files]] *)
-(* this is used by sgrep, so it is probably better to keep the logic 
+(* this is used by sgrep, so it is probably better to keep the logic
  * simple and not perform any Skip_code filtering (bento already does that)
- *) 
+ *)
 let files_of_dirs_or_files lang xs =
   (* old: let xs = List.map Common.fullpath xs in
    * better to not transform in fullpath; does not interact

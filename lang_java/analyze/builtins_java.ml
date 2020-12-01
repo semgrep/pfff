@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -28,7 +28,7 @@ module G = Graph_code
 (* Helpers *)
 (*****************************************************************************)
 
-  
+
 let gen_package_file_with_class_defs pr xs g =
 
   let rec aux depth ((_str, kind) as current) =
@@ -43,10 +43,10 @@ let gen_package_file_with_class_defs pr xs g =
     | E.Constant
     | E.Field ->
         pr (spf "%sint %s;" (Common2.n_space depth) str);
-    | E.Method 
+    | E.Method
     | E.ClassConstant
         -> ()
-        
+
     | _ -> ()
   in
   List.iter (aux 0) xs
@@ -60,20 +60,20 @@ let extract_from_sources ~src ~dst files =
 
   Common.command2("mkdir -p " ^ dst);
 
-  let rec aux current = 
+  let rec aux current =
     let xs = G.children current g in
-    
+
     let classes_or_files =
-      xs |> List.filter (function 
+      xs |> List.filter (function
       | _, E.Class -> true
       | _, E.File -> true
-      | _ -> false 
+      | _ -> false
       )
     in
-    let subpackages = 
-      xs |> List.filter (function 
+    let subpackages =
+      xs |> List.filter (function
       | _, E.Package -> true
-      | _ -> false 
+      | _ -> false
       )
     in
     (match current, classes_or_files with

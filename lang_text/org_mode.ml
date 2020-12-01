@@ -1,18 +1,18 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
 
-open Common 
+open Common
 
 module HC = Highlight_code
 
@@ -46,7 +46,7 @@ let parse file =
         Header (String.length header, s)
     | _ when s =~ "^#.*" ->
         Comment s
-    | _ -> 
+    | _ ->
         Other s
   )
 
@@ -59,10 +59,10 @@ let highlight org =
   org |> Common.index_list_1 |> List.map (fun (org, line) ->
     let filepos = { Common2.l = line; c = 0; } in
     match org with
-    | Comment s -> 
+    | Comment s ->
         s, Some (HC.Comment), filepos
     | Other s ->
-        let categ = 
+        let categ =
           (match s with
           | _ when s =~ "http://"  ->
               HC.EmbededUrl
@@ -73,7 +73,7 @@ let highlight org =
         in
         s, Some categ, filepos
     | Header (int, s) ->
-        let categ = 
+        let categ =
           (match int with
           | 0 -> raise Impossible
           | 1 -> Some HC.CommentSection0

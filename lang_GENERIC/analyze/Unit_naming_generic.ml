@@ -21,7 +21,7 @@ let unittest =
 
       (files1 @ files2 @ files3 @ files4) |> List.iter (fun file ->
         try
-        (* at least we can assert we don't thrown an exn or go 
+        (* at least we can assert we don't thrown an exn or go
          * into infinite loops *)
          let ast = Parse_generic.parse_program file in
          let lang = List.hd (Lang.langs_of_filename file) in
@@ -34,5 +34,5 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
- 
+
  ]

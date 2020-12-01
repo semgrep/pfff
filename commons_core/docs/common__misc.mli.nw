@@ -4,7 +4,7 @@
 
 <<common.mli misc other>>
 
-@ 
+@
 
 \section{Geometry}
 
@@ -34,7 +34,7 @@ val mult_coeff : vector -> float -> vector
 val add_vector : vector -> vector -> vector
 val mult_vector : vector -> vector -> vector
 val sum_vector : vector list -> vector
-@ 
+@
 
 \section{Pics}
 
@@ -45,7 +45,7 @@ val sum_vector : vector list -> vector
 type pixel = int * int * int
 val write_ppm : int -> int -> pixel list -> filename -> unit
 val test_ppm1 : unit -> unit
-@ 
+@
 
 \section{Diff}
 
@@ -64,7 +64,7 @@ val diff2 : (int -> int -> diff -> unit) -> string * string -> unit
 
 val contain_any_token_with_egrep: string list -> filename -> bool
 
-@ 
+@
 
 \section{Parsers}
 
@@ -76,14 +76,14 @@ val contain_any_token_with_egrep: string list -> filename -> bool
 val parserCommon : Lexing.lexbuf -> ('a -> Lexing.lexbuf -> 'b) -> 'a -> 'b
 val getDoubleParser :
   ('a -> Lexing.lexbuf -> 'b) -> 'a -> (string -> 'b) * (string -> 'b)
-@ 
+@
 
 <<common.mli misc>>=
 (*****************************************************************************)
 (* Parsers (cocci) *)
 (*****************************************************************************)
 (* now in h_program-lang/parse_info.ml *)
-@ 
+@
 
 \section{Scope}
 
@@ -102,7 +102,7 @@ val new_scope : ('a, 'b) scoped_env ref -> unit
 val del_scope : ('a, 'b) scoped_env ref -> unit
 
 val do_in_new_scope : ('a, 'b) scoped_env ref -> (unit -> unit) -> unit
-  
+
 val add_in_scope : ('a, 'b) scoped_env ref -> 'a * 'b -> unit
 
 
@@ -125,7 +125,7 @@ val del_scope_h : ('a, 'b) scoped_h_env ref -> unit
 val do_in_new_scope_h : ('a, 'b) scoped_h_env ref -> (unit -> unit) -> unit
 
 val add_in_scope_h : ('a, 'b) scoped_h_env ref -> 'a * 'b -> unit
-@ 
+@
 
 \section{Terminal}
 
@@ -138,11 +138,11 @@ val add_in_scope_h : ('a, 'b) scoped_h_env ref -> 'a * 'b -> unit
 
 val _execute_and_show_progress_func :
   (show_progress:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit)
-  ref 
-val execute_and_show_progress : 
+  ref
+val execute_and_show_progress :
  ?show_progress:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
 
-@ 
+@
 
 
 \section{Other, Db, GUI, Graphics}
@@ -167,6 +167,6 @@ val execute_and_show_progress :
 
 (* cf ocamlcairo, ocamlgl and my opengl.ml  (otimetracker) *)
 
-@ 
+@
 
 

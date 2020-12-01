@@ -7,8 +7,8 @@ module Flag = Flag_parsing
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_tokens_go file = 
-  if not (file =~ ".*\\.go") 
+let test_tokens_go file =
+  if not (file =~ ".*\\.go")
   then pr2 "warning: seems not a Go file";
 
   Flag.verbose_lexing := true;
@@ -23,8 +23,8 @@ let test_tokens_go file =
 let test_parse_go xs =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs = 
-    Lib_parsing_go.find_source_files_of_dir_or_files xs 
+  let fullxs =
+    Lib_parsing_go.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in
 
@@ -52,18 +52,18 @@ let test_parse_go xs =
   Parse_info.print_parsing_stat_list !stat_list;
 
   (* todo: could factorize with other *)
-  let dirname_opt = 
+  let dirname_opt =
     match xs with
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)
     | _ -> None
   in
   let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname -> 
+  dirname_opt |> Common.do_option (fun dirname ->
     pr2 "--------------------------------";
     pr2 "regression testing  information";
     pr2 "--------------------------------";
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore 
+    Common2.regression_testing newscore
       (Filename.concat score_path
        ("score_parsing__" ^str ^ ext ^ ".marshalled"))
   );
@@ -81,11 +81,11 @@ let test_dump_go file =
 (*****************************************************************************)
 
 let actions () = [
-  "-tokens_go", "   <file>", 
+  "-tokens_go", "   <file>",
   Common.mk_action_1_arg test_tokens_go;
-  "-parse_go", "   <files or dirs>", 
+  "-parse_go", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_go;
-  "-dump_go", "   <file>", 
+  "-dump_go", "   <file>",
   Common.mk_action_1_arg test_dump_go;
 ]
 

@@ -1,9 +1,9 @@
-(* see https://en.wikipedia.org/wiki/Whitespace_character#Unicode 
+(* see https://en.wikipedia.org/wiki/Whitespace_character#Unicode
  * ocamlc unicode.ml; ./a.out > out; emacsclient out and switch to
  * M-x hexl-mode to see the hexadecimal byte values.
 *)
 
-let _ = 
+let _ =
   let s="1:\u{0009}\u{000A}\u{000B}\u{000C}\u{000D}\u{0020}\u{0085}\u{00A0}"in
   print_string s;
   let s="2:\u{FEFF}" in

@@ -5,11 +5,11 @@ type node = string * Entity_code.entity_kind
     (* the filename embedded inside token_location can be a readable path *)
     pos: Parse_info.token_location;
     props: Entity_code.property list;
-    typ: string option; 
+    typ: string option;
   }
 type edge = Has | Use
   type edgeinfo = {
-    write: bool; 
+    write: bool;
     read: bool;
   }
 (* !! the main type!! really an hypergraph actually *)
@@ -24,7 +24,7 @@ val string_of_error: error -> string
 type statistics = {
   parse_errors: Common.filename list ref;
  (* could be Parse_info.token_location*)
-  lookup_fail: (Parse_info.t * node) list ref; 
+  lookup_fail: (Parse_info.t * node) list ref;
   method_calls: (Parse_info.t * resolved) list ref;
   field_access: (Parse_info.t * resolved) list ref;
   unresolved_class_access: Parse_info.t list ref;
@@ -68,11 +68,11 @@ val remove_edge: (node * node) -> edge -> graph -> unit
 
 (* graph construction helpers *)
 val create_initial_hierarchy: graph -> unit
-val create_intermediate_directories_if_not_present: 
+val create_intermediate_directories_if_not_present:
   graph -> Common.dirname -> unit
 val remove_empty_nodes: graph -> node list -> unit
 (* useful for bytecode <-> source file heuristic matching *)
-val basename_to_readable_disambiguator: 
+val basename_to_readable_disambiguator:
   (Common.filename list) -> root:Common.dirname ->
   (string (* basename *) -> Common.filename list)
 

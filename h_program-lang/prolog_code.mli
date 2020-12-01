@@ -4,7 +4,7 @@ type fact =
   | Kind of entity * Entity_code.entity_kind
   | Type of entity * string
 
-  | Extends of string * string 
+  | Extends of string * string
   | Implements of string * string
   | Mixins of string * string
 
@@ -16,7 +16,7 @@ type fact =
 
   | Misc of string
 
-  and entity = 
+  and entity =
    string list (* package/module/namespace/class qualifier*) * string (* name *)
 
 val string_of_fact: fact -> string

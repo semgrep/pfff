@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -45,7 +45,7 @@ let error = AST_generic.error
 let info x = x
 
 let wrap = fun _of_a (v1, v2) ->
-  let v1 = _of_a v1 and v2 = info v2 in 
+  let v1 = _of_a v1 and v2 = info v2 in
   (v1, v2)
 
 let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
@@ -57,16 +57,16 @@ let filename v = wrap string v
 
 let label v = wrap string v
 
-type special_result = 
+type special_result =
   | SR_Special of G.special wrap
   | SR_Other of G.other_expr_operator wrap
   | SR_Literal of G.literal
   | SR_NeedArgs of (G.expr list -> G.expr)
 
-let special (x, tok) = 
+let special (x, tok) =
   match x with
   | UseStrict -> SR_Other (G.OE_UseStrict, tok)
-  | Null -> SR_Literal (G.Null tok) 
+  | Null -> SR_Literal (G.Null tok)
   | Undefined -> SR_Literal (G.Undefined tok)
   | This -> SR_Special (G.This, tok)
   | Super -> SR_Special (G.Super, tok)
@@ -83,18 +83,18 @@ let special (x, tok) =
   | Instanceof -> SR_Special (G.Instanceof, tok)
   | In -> SR_Other (G.OE_In, tok)
   | Delete -> SR_Other (G.OE_Delete, tok)
-  (* a kind of cast operator: 
+  (* a kind of cast operator:
    * See https://stackoverflow.com/questions/7452341/what-does-void-0-mean
    *)
-  | Void -> SR_NeedArgs (fun args -> 
+  | Void -> SR_NeedArgs (fun args ->
           match args with
-          | [e] -> 
+          | [e] ->
               let tvoid = G.TyBuiltin ("void", tok) in
               G.Cast(tvoid, e)
           | _ -> error tok "Impossible: Too many arguments to Void"
-          ) 
+          )
   | Spread -> SR_Special (G.Spread, tok)
-  | Yield -> SR_NeedArgs (fun args -> 
+  | Yield -> SR_NeedArgs (fun args ->
           match args with
           | [] -> G.Yield (tok, None, false)
           | [e] -> G.Yield (tok, Some e, false)
@@ -106,10 +106,10 @@ let special (x, tok) =
           | [e] -> G.Await (tok, e)
           | _ -> error tok "Impossible: Too many arguments to Await"
           )
-  | Encaps has_tag_function -> 
-      if not has_tag_function 
-      then SR_NeedArgs (fun args -> 
-            G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
+  | Encaps has_tag_function ->
+      if not has_tag_function
+      then SR_NeedArgs (fun args ->
+            G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok),
                     args |> List.map (fun e -> G.Arg e) |> G.fake_bracket))
       else SR_NeedArgs (fun args ->
          match args with
@@ -117,7 +117,7 @@ let special (x, tok) =
          | tag::rest ->
             G.Call (tag, G.fake_bracket
              [G.Arg (G.Call (
-                      G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok), 
+                      G.IdSpecial (G.ConcatString G.InterpolatedConcat, tok),
                         rest |> List.map (fun e -> G.Arg e) |> G.fake_bracket))]))
   | ArithOp op -> SR_Special (G.Op op, tok)
   | IncrDecr v -> SR_Special (G.IncrDecr v, tok)
@@ -146,7 +146,7 @@ and xhp =
   | XmlXml v1 -> let v1 = xml v1 in G.XmlXml v1
 
 and xml_attribute = function
-  | XmlAttr (v1, v2) -> 
+  | XmlAttr (v1, v2) ->
       let v1 = ident v1 and v2 = xhp_attr v2 in G.XmlAttr (v1, v2)
   | XmlAttrExpr v ->
       let v = bracket expr v in
@@ -156,7 +156,7 @@ and xml_attribute = function
 and xml { xml_tag = xml_tag; xml_attrs = xml_attrs; xml_body = xml_body } =
   let tag = ident xml_tag in
   let attrs =list xml_attribute xml_attrs in
-  let body = list xhp xml_body in 
+  let body = list xhp xml_body in
   { G.xml_tag = tag; xml_attrs = attrs; xml_body = body }
 
 and xhp_attr v          = expr v
@@ -170,40 +170,40 @@ and expr (x: expr) =
   | TypeAssert (v1, v2, v3) ->
       let v1 = expr v1 in
       let v3 = type_ v3 in
-      G.OtherExpr (G.OE_Todo, 
+      G.OtherExpr (G.OE_Todo,
         [G.TodoK ("TypeAssert", v2); G.E v1; G.T v3])
-  | ExprTodo (v1, v2) -> 
+  | ExprTodo (v1, v2) ->
       let v2 = list expr v2 in
       G.OtherExpr (G.OE_Todo, (G.TodoK v1)::(v2 |> List.map (fun e -> G.E e)))
   | Bool v1 -> let v1 = wrap bool v1 in G.L (G.Bool v1)
   | Num v1 -> let v1 = wrap string v1 in G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in G.L (G.String v1)
   | Regexp v1 -> let v1 = wrap string v1 in G.L (G.Regexp v1)
-  | Id (v1) -> 
+  | Id v1 ->
       let v1 = name v1 in
       G.Id (v1, G.empty_id_info())
 
-  | IdSpecial (v1) -> 
+  | IdSpecial v1 ->
       let x = special v1 in
       (match x with
       | SR_Special v -> G.IdSpecial v
-      | SR_NeedArgs _ -> 
+      | SR_NeedArgs _ ->
           error (snd v1) "Impossible: should have been matched in Call first"
       | SR_Literal l -> G.L l
       | SR_Other (x, tok) -> G.OtherExpr (x, [G.Tk tok])
       )
-  | Assign ((v1, tok, v2)) -> let v1 = expr v1 and v2 = expr v2 in 
+  | Assign (v1, tok, v2) -> let v1 = expr v1 and v2 = expr v2 in
       let tok = info tok in
       G.Assign (v1, tok, v2)
-  | ArrAccess ((v1, v2)) -> let v1 = expr v1 and v2 = bracket expr v2 in 
+  | ArrAccess (v1, v2) -> let v1 = expr v1 and v2 = bracket expr v2 in
       G.ArrayAccess (v1, v2)
   | Obj v1 -> let flds = obj_ v1 in G.Record flds
   | Ellipsis v1 -> let v1 = info v1 in G.Ellipsis v1
   | DeepEllipsis v1 -> let v1 = bracket expr v1 in G.DeepEllipsis v1
-  | Class (v1, _v2TODO) -> 
+  | Class (v1, _v2TODO) ->
       let def, _more_attrsTODOEMPTY  = class_ v1 in
       G.AnonClass def
-  | ObjAccess ((v1, t, v2)) ->
+  | ObjAccess (v1, t, v2) ->
       let v1 = expr v1 in
       let v2 = property_name v2 in
       let t = info t in
@@ -211,29 +211,29 @@ and expr (x: expr) =
       | Left n -> G.DotAccess (v1, t, G.EId n)
       | Right e -> G.DotAccess (v1, t, G.EDynamic e)
       )
-  | Fun ((v1, _v2TODO)) -> 
+  | Fun (v1, _v2TODO) ->
       let def, _more_attrs   = fun_ v1 in
       (* todo? assert more_attrs = []? *)
-      G.Lambda (def)
+      G.Lambda def
 
-  | Apply ((IdSpecial v1, v2)) ->
+  | Apply (IdSpecial v1, v2) ->
       let x = special v1 in
-      let v2 = bracket (list expr) v2 in 
+      let v2 = bracket (list expr) v2 in
       (match x with
-      | SR_Special v -> 
-        G.Call (G.IdSpecial (v), bracket (List.map (fun e -> G.Arg e)) v2)
+      | SR_Special v ->
+        G.Call (G.IdSpecial v, bracket (List.map (fun e -> G.Arg e)) v2)
       | SR_Literal _ ->
         error (snd v1) "Weird: literal in call position"
       | SR_Other (x, tok) -> (* ex: NewTarget *)
-        G.Call (G.OtherExpr (x, [G.Tk tok]), 
+        G.Call (G.OtherExpr (x, [G.Tk tok]),
               bracket (List.map (fun e -> G.Arg e)) v2)
       | SR_NeedArgs f ->
         f (G.unbracket v2)
       )
-  | Apply ((v1, v2)) -> let v1 = expr v1 and v2 = bracket (list expr) v2 in 
+  | Apply (v1, v2) -> let v1 = expr v1 and v2 = bracket (list expr) v2 in
       G.Call (v1, bracket (List.map (fun e -> G.Arg e)) v2)
-  | Arr ((v1)) -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
-  | Conditional ((v1, v2, v3)) ->
+  | Arr v1 -> let v1 = bracket (list expr) v1 in G.Container (G.Array, v1)
+  | Conditional (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
   | Xml v1 -> let v1 = xml v1 in G.Xml v1
@@ -244,33 +244,33 @@ and stmt x =
       let v2 = list any v2 in
       G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
   | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt (v1)
+  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt v1
   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
   | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
-  | If ((t, v1, v2, v3)) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in 
+  | If (t, v1, v2, v3) ->
+      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
       G.If (t, v1, v2, v3)
-  | Do ((t, v1, v2)) -> let v1 = stmt v1 and v2 = expr v2 in 
+  | Do (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in
       G.DoWhile (t, v1, v2)
-  | While ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+  | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)
-  | For ((t, v1, v2)) -> let v1 = for_header v1 and v2 = stmt v2 in
+  | For (t, v1, v2) -> let v1 = for_header v1 and v2 = stmt v2 in
       G.For (t, v1, v2)
-  | Switch ((v0, v1, v2)) -> 
+  | Switch (v0, v1, v2) ->
       let v0 = info v0 in
       let v1 = expr v1 and v2 = list case v2 in
       G.Switch (v0, Some v1, v2)
-  | Continue (t, v1, sc) -> let v1 = option label v1 in 
+  | Continue (t, v1, sc) -> let v1 = option label v1 in
      G.Continue (t, G.opt_to_label_ident v1, sc)
   | Break (t, v1, sc) -> let v1 = option label v1 in
      G.Break (t, G.opt_to_label_ident v1, sc)
-  | Return (t, v1, sc) -> 
-      let v1 = option expr v1 in 
+  | Return (t, v1, sc) ->
+      let v1 = option expr v1 in
       G.Return (t, v1, sc)
-  | Label ((v1, v2)) -> let v1 = label v1 and v2 = stmt v2 in
+  | Label (v1, v2) -> let v1 = label v1 and v2 = stmt v2 in
       G.Label (v1, v2)
   | Throw (t, v1, sc) -> let v1 = expr v1 in G.Throw (t, v1, sc)
-  | Try ((t, v1, v2, v3)) ->
+  | Try (t, v1, v2, v3) ->
       let v1 = stmt v1
       and v2 = option catch_block v2
       and v3 = option tok_and_stmt v3 in
@@ -289,20 +289,20 @@ and catch_block = function
       let v1 = stmt v1
       (* bugfix: reusing 't' to avoid NoTokenLocation error when
        * a semgrep patter like catch($ERR) matches an UnboundCatch. *)
-      in t, G.PatUnderscore (t), v1
+      in t, G.PatUnderscore t, v1
 
-and tok_and_stmt (t, v) = 
+and tok_and_stmt (t, v) =
   let v = stmt v in
   (t, v)
 
 and for_header =
   function
-  | ForClassic ((v1, v2, v3)) ->
+  | ForClassic (v1, v2, v3) ->
       let v2 = option expr v2 in
       let v3 = option expr v3 in
       (match v1 with
       | Left vars ->
-            let vars = vars |> List.map (fun x -> 
+            let vars = vars |> List.map (fun x ->
                   let (a,b) = var_of_var x in
                   G.ForInitVar (a, b)
             )
@@ -312,25 +312,25 @@ and for_header =
          let e = expr e in
          G.ForClassic ([G.ForInitExpr e], v2, v3)
       )
-      
-  | ForIn ((v1, t, v2)) ->
+
+  | ForIn (v1, t, v2) ->
       let v2 = expr v2 in
-      let pattern = 
+      let pattern =
         match v1 with
         (* TODO: v_init is not always _NONE! when we use multivardef!!! *)
-        | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) -> 
+        | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) ->
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
             G.expr_to_pattern e
       in
       G.ForEach (pattern, t, v2)
-  | ForOf ((v1, t, v2)) ->
+  | ForOf (v1, t, v2) ->
       let v2 = expr v2 in
-      let pattern = 
+      let pattern =
         match v1 with
         (* TODO: v_init is not always _NONE! when we use multivardef!!! *)
-        | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) -> 
+        | Left ({name = id; attrs = _TODO}, {v_init = _NONE; _ }) ->
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
@@ -343,27 +343,27 @@ and for_header =
 
 and case =
   function
-  | Case ((t, v1, v2)) -> let v1 = expr v1 and v2 = stmt v2 in
+  | Case (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       [G.Case (t, G.expr_to_pattern v1)], v2
   | Default (t, v1) -> let v1 = stmt v1 in
       [G.Default t], v1
 
 (* already an AST_generic.type_, no conversion needed *)
-and type_ x = x 
+and type_ x = x
 
-and entity { name = n; attrs } = 
+and entity { name = n; attrs } =
   let n = name n in
   let attrs = list attribute attrs in
   G.basic_entity n attrs
 
-and definition (ent, def) = 
+and definition (ent, def) =
   let ent = entity ent in
   match def with
   | VarDef { v_kind = x_kind; v_init = x_init; v_type = ty}->
-    let v2 = var_kind x_kind in 
+    let v2 = var_kind x_kind in
     let ty = option type_ ty in
-    let v3 = option expr x_init in 
-    { ent with G.attrs = v2::ent.G.attrs }, 
+    let v3 = option expr x_init in
+    { ent with G.attrs = v2::ent.G.attrs },
     G.VarDef { G.vinit = v3; G.vtype = ty }
   | FuncDef def ->
     let (def, more_attrs) = fun_ def in
@@ -375,14 +375,14 @@ and definition (ent, def) =
       let v2 = list any v2 in
       ent, G.OtherDef (G.OD_Todo, (G.TodoK v1)::(v2))
 
-    
+
 
 and var_of_var ({ name = x_name; attrs}, { v_kind = x_kind; v_init = x_init; v_type })=
   let v1 = name x_name in
   let attrs = list attribute attrs in
-  let v2 = var_kind x_kind in 
+  let v2 = var_kind x_kind in
   let ent = G.basic_entity v1 (v2::attrs) in
-  let v3 = option expr x_init in 
+  let v3 = option expr x_init in
   let v_type = option type_ v_type in
   ent, { G.vinit = v3; vtype = v_type }
 
@@ -393,10 +393,10 @@ and var_kind (x, tok) =
   | Let -> G.attr G.Let tok
   | Const -> G.attr G.Const tok
 
-and fun_ { f_attrs = f_props; f_params = f_params; 
+and fun_ { f_attrs = f_props; f_params = f_params;
            f_body = f_body; f_rettype } =
   let v1 = list attribute f_props in
-  let v2 = list parameter_binding f_params in 
+  let v2 = list parameter_binding f_params in
   let v3 = stmt f_body |> as_block in
   let frettype = option type_ f_rettype in
   { G.fparams = v2; frettype; fbody = v3; fkind = G.Function, G.fake "";
@@ -407,7 +407,7 @@ and parameter_binding = function
  | ParamPattern x -> G.ParamPattern (pattern x)
  | ParamEllipsis x -> G.ParamEllipsis x
 
-and pattern x = 
+and pattern x =
   let x = expr x in
   G.expr_to_pattern x
 
@@ -415,16 +415,16 @@ and parameter x =
  match x with
  { p_name; p_default; p_dots; p_type; p_attrs } ->
   let v1 = name p_name in
-  let pdefault = option expr p_default in 
+  let pdefault = option expr p_default in
   let v3 = bool p_dots in
   let ptype = option type_ p_type in
   let pattrs = list attribute p_attrs in
   let pclassic = { G.pname = Some v1; pdefault; ptype; pattrs;
                     pinfo = G.empty_id_info (); } in
-  match v3 with 
+  match v3 with
   | None -> G.ParamClassic pclassic
   | Some tok -> G.ParamRest (tok, pclassic)
-  
+
 and argument x = expr x
 
 and attribute = function
@@ -438,7 +438,7 @@ and attribute = function
       let args = list argument args |> List.map G.expr_to_arg in
       G.NamedAttr (t, ids, G.empty_id_info (), (t1, args, t2))
 
-and keyword_attribute (x, tok) = 
+and keyword_attribute (x, tok) =
   (match x with
   (* methods *)
   | Get -> G.Getter
@@ -460,7 +460,7 @@ and keyword_attribute (x, tok) =
 and obj_ v = bracket (list property) v
 
 and parent = function
- | Left e -> 
+ | Left e ->
       let e = expr e in
       G.expr_to_type e
  | Right t -> t
@@ -470,7 +470,7 @@ and class_ { c_extends; c_implements; c_body; c_kind; c_attrs;  } =
   let v2 = bracket (list property) c_body in
   let attrs = list attribute c_attrs in
   let cimplements = list type_ c_implements in
-  { G.ckind = c_kind; cextends; cimplements; 
+  { G.ckind = c_kind; cextends; cimplements;
     cmixins = []; cbody = v2;}, attrs
 
 
@@ -478,11 +478,11 @@ and field_classic {fld_name=v1; fld_attrs = v2; fld_type = vt; fld_body = v3} =
   let v1 = property_name v1 in
   let v2 = list attribute v2 in
   let vt = vt in
-  let ent = 
+  let ent =
     match v1 with
     | Left n -> G.basic_entity n v2
     | Right e ->
-       {G. name = G.EDynamic e; attrs = v2; tparams = []; 
+       {G. name = G.EDynamic e; attrs = v2; tparams = [];
         info = G.empty_id_info()}
   in
   match v3 with
@@ -494,7 +494,7 @@ and field_classic {fld_name=v1; fld_attrs = v2; fld_type = vt; fld_body = v3} =
   | _ ->
      let v3 = option expr v3 in
      ent, G.VarDef { G.vinit = v3; vtype = vt }
-  
+
 
 and property x =
    match x with
@@ -503,7 +503,7 @@ and property x =
      G.FieldStmt (G.DefStmt (ent, def))
   | FieldColon v1 ->
      let ent, def = field_classic v1 in
-     let def = 
+     let def =
        match def with
        (* ugly: this is to prevent assignment to match object field
         * definitions in semgrep *)
@@ -512,10 +512,10 @@ and property x =
      in
      G.FieldStmt (G.DefStmt (ent, def))
 
-  | FieldSpread (t, v1) -> 
-      let v1 = expr v1 in 
+  | FieldSpread (t, v1) ->
+      let v1 = expr v1 in
       G.FieldSpread (t, v1)
-  | FieldEllipsis v1 -> 
+  | FieldEllipsis v1 ->
       G.FieldStmt (G.exprstmt (G.Ellipsis v1))
   | FieldPatDefault (v1, _v2, v3) ->
       let v1 = pattern v1 in
@@ -525,42 +525,42 @@ and property x =
       let v2 = stmt v2 in
       (* hmm, should use OtherStmtWithStmt ? *)
       G.FieldStmt (G.OtherStmt (G.OS_Todo, [G.TodoK v1; G.S v2]))
-  
+
 
 and toplevel x = stmt x
 
-and module_directive x = 
+and module_directive x =
   match x with
   | ReExportNamespace (v1, _v2, _v3, v4) ->
       let v4 = filename v4 in
       G.OtherDirective (G.OI_ReExportNamespace, [G.Tk v1; G.I v4])
-  | Import ((t, v1, v2, v3)) ->
-      let v1 = name v1 and v2 = option name v2 and v3 = filename v3 in 
+  | Import (t, v1, v2, v3) ->
+      let v1 = name v1 and v2 = option name v2 and v3 = filename v3 in
       G.ImportFrom (t, G.FileName v3, v1, v2)
-  | ModuleAlias ((t, v1, v2)) ->
+  | ModuleAlias (t, v1, v2) ->
       let v1 = name v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
   (* sgrep: we used to convert this in an OI_ImportEffect, but
    * we now want import "foo" to be used to match any form of import
    *)
-  | ImportFile ((t, v1)) ->
+  | ImportFile (t, v1) ->
       let v1 = name v1 in
       (* old: G.OtherDirective (G.OI_ImportEffect, [G.I v1]) *)
       G.ImportAs (t, G.FileName v1, None)
-  | Export ((t, v1)) -> let v1 = name v1 in
+  | Export (t, v1) -> let v1 = name v1 in
       G.OtherDirective (G.OI_Export, [G.Tk t; G.I v1])
 
 and program v = list toplevel v
 
 and partial = function
-  | PartialDef v1 -> 
+  | PartialDef v1 ->
       let v1 = definition v1 in
       G.PartialDef v1
 
 and any =
   function
-  | Property v1 -> 
-      let v1 = property v1 in 
+  | Property v1 ->
+      let v1 = property v1 in
       G.Fld v1
   | Expr v1 -> let v1 = expr v1 in G.E v1
   | Stmt v1 -> let v1 = stmt v1 in G.S v1
@@ -568,7 +568,7 @@ and any =
   | Program v1 -> let v1 = program v1 in G.Pr v1
   | Pattern v1 -> let v1 = pattern v1 in G.P v1
   | Type v1 -> let v1 = type_ v1 in G.T v1
-  | Partial v1 -> 
-      let v1 = partial v1 in 
+  | Partial v1 ->
+      let v1 = partial v1 in
       G.Partial v1
   | Tk v1 -> G.Tk v1

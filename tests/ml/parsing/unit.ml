@@ -1,3 +1,3 @@
-let f = 
+let f =
   if true
   then ();

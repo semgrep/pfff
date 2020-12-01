@@ -1,10 +1,10 @@
 (*s: pfff/lang_GENERIC/parsing/Lang.mli *)
 (*s: type [[Lang.t]] *)
-type t = 
-  | Python 
+type t =
+  | Python
   (*s: [[Lang.t]] extra Python cases *)
   (* Python will start with Python3 mode and fall back to Python2 in case
-   * of error. Python2 and Python3 are for specific version of Python 
+   * of error. Python2 and Python3 are for specific version of Python
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
@@ -31,7 +31,7 @@ val langs_of_filename: Common.filename -> t list
 (*e: signature [[Lang.langs_of_filename]] *)
 
 (*s: signature [[Lang.files_of_dirs_or_files]] *)
-val files_of_dirs_or_files: t -> Common.path list -> 
+val files_of_dirs_or_files: t -> Common.path list ->
   Common.filename list
 (*e: signature [[Lang.files_of_dirs_or_files]] *)
 

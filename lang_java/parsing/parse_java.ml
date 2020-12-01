@@ -62,7 +62,7 @@ let parse2 filename =
   let toks = tokens filename in
   let toks = Parsing_hacks_java.fix_tokens toks in
 
-  let tr, lexer, lexbuf_fake = 
+  let tr, lexer, lexbuf_fake =
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in
 
   let checkpoint = TH.line_of_tok tr.PI.current in
@@ -125,7 +125,7 @@ let parse_string (w : string)
 (*****************************************************************************)
 
 (* for sgrep/spatch *)
-let any_of_string s = 
+let any_of_string s =
   Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
     let toks = tokens file in
     let toks = Parsing_hacks_java.fix_tokens toks in

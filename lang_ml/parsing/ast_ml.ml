@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -56,7 +56,7 @@ type todo_category = string wrap
 (* Types *)
 (*****************************************************************************)
 
-type type_ = 
+type type_ =
   | TyName of name (* include builtins *)
   | TyVar of ident (* 'a *)
 
@@ -87,7 +87,7 @@ type expr =
   | Tuple of expr list
   | List  of expr list bracket
 
-  (* can be empty *) 
+  (* can be empty *)
   | Sequence of expr list
 
   | Prefix of string wrap * expr
@@ -107,7 +107,7 @@ type expr =
 
   | New of tok * name
   | ObjAccess of expr * tok (* # *) * ident
-  
+
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)
   | LetIn of tok * rec_opt * let_binding list * expr
@@ -117,13 +117,13 @@ type expr =
   | If of tok * expr * expr * expr option
   | Match of tok * expr * match_case list
 
-  | Try of tok * expr * match_case list 
+  | Try of tok * expr * match_case list
 
   | While of tok * expr * expr
   | For of tok * ident * expr * for_direction * expr *   expr
 
   (* regular construct but also semgrep-ext: for Typed metavariables *)
-  | TypedExpr of expr * tok (* : *) * type_ 
+  | TypedExpr of expr * tok (* : *) * type_
 
   (* sgrep-ext: *)
   | Ellipsis of tok
@@ -131,7 +131,7 @@ type expr =
 
   | ExprTodo of todo_category * expr list
 
- (* note that '()' is represented as a Constructor ("()"), and 
+ (* note that '()' is represented as a Constructor ("()"), and
   * 'true' (and 'false') as Constructor ("true").
   *)
  and literal =
@@ -140,7 +140,7 @@ type expr =
    | Char   of string wrap
    | String of string wrap
 
- and argument = 
+ and argument =
    | Arg of expr
    | ArgKwd of ident * expr
    | ArgQuestion of ident  * expr
@@ -159,12 +159,12 @@ type expr =
 (*****************************************************************************)
 (* Patterns *)
 (*****************************************************************************)
-and pattern = 
+and pattern =
   | PatVar of ident
   | PatLiteral of literal (* can be signed *)
   | PatConstructor of name * pattern option
   | PatPolyVariant of (tok (* '`' *) * ident) * pattern option
- 
+
   (* special cases of PatConstructor *)
   | PatConsInfix of pattern * tok (* :: *) * pattern
   | PatTuple of pattern list
@@ -203,11 +203,11 @@ and let_binding =
    lbody: expr;
  }
 
- and parameter = 
+ and parameter =
    | Param of pattern
    (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
    | ParamTodo of tok
- 
+
  [@@deriving show { with_path = false} ]  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -264,7 +264,7 @@ and attribute = (dotted_ident * item list) bracket
 (*****************************************************************************)
 
 (* Signature/Structure items *)
-and item = { 
+and item = {
   i: item_kind;
   iattrs: attributes;
  }
@@ -272,17 +272,17 @@ and item = {
 (* could split in sig_item and struct_item but many constructions are
  * valid in both contexts.
  *)
-and item_kind = 
+and item_kind =
   | Type of tok * type_declaration list (* mutually recursive *)
 
   | Exception of tok * ident * type_ list
   | External  of tok * ident * type_ * string wrap list (* primitive decls *)
-      
+
   | Open of tok * name
-      
+
   (* only in sig_item *)
   | Val of tok * ident * type_
-      
+
   (* only in struct_item *)
   | Let of tok * rec_opt * let_binding list
   | TopExpr of expr
@@ -292,7 +292,7 @@ and item_kind =
   | ItemTodo of todo_category * item list
 
  [@@deriving show { with_path = false} ] (* with tarzan *)
-      
+
 type program = item list
  [@@deriving show ] (* with tarzan *)
 
@@ -318,10 +318,10 @@ let str_of_ident (s,_) = s
 let info_of_ident (_,info) = info
 
 let ident_of_name (_, ident) = ident
-let qualifier_of_name (qu, _) = 
+let qualifier_of_name (qu, _) =
   qu |> List.map str_of_ident |> Common.join "."
 
 let name_of_id id = Name ([], id)
 
-let mki x = 
+let mki x =
   { i = x; iattrs = [] }

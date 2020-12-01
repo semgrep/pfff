@@ -6,14 +6,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  */
 %{
-(* 
+(*
  * src: http://docs.openlinksw.com/virtuoso/GRAMMAR.html
  *
  *)
@@ -64,7 +64,7 @@
 
 %token <Ast_sql.info> T_DNUMBER
 
-%token <Ast_sql.info> APPROXNUM 
+%token <Ast_sql.info> APPROXNUM
 
 /*(* operators *)*/
 %token <Ast_sql.info> TPLUS TMINUS
@@ -93,7 +93,7 @@
 %left      TOPOR
 %left      TOPAND
 %left      T_OR
-%left      T_AND 
+%left      T_AND
 %left      TPLUS TMINUS
 %left      TMUL TDIV
 
@@ -140,7 +140,7 @@ table:
  | q_table_name { }
  | q_table_name T_AS T_NAME { }
  | q_table_name T_NAME { }
-   
+
 q_table_name:
  | T_NAME { }
  | T_NAME TDOT T_NAME { }
@@ -149,7 +149,7 @@ q_table_name:
 
 
 column:
- | T_NAME { }   
+ | T_NAME { }
 
 
 column_ref:
@@ -165,43 +165,43 @@ column_ref:
 
  | T_NAME TDOT TMUL { }
  | T_NAME TDOT T_NAME TDOT TMUL { }
-     
+
  | T_NAME TDOT T_NAME TDOT T_NAME TDOT TMUL { }
-     
+
  | T_NAME TDOT TDOT T_NAME TDOT TMUL { }
 
-   
+
 
 /*(*************************************************************************)*/
 /*(* SELECT *)*/
 /*(*************************************************************************)*/
 
 select_statement:
- | T_SELECT all_distinct_opt selection table_exp 
+ | T_SELECT all_distinct_opt selection table_exp
      { }
 /*
- | T_SELECT all_distinct_opt selection T_INTO 
-     target_list table_exp with_opt_cursor_options_list 
+ | T_SELECT all_distinct_opt selection T_INTO
+     target_list table_exp with_opt_cursor_options_list
      { }
 */
 
 all_distinct:
- | T_ALL { } 
+ | T_ALL { }
  | T_DISTINCT  { }
 
 selection: scalar_exp_list { }
 
 
 table_exp:
- | from_clause 
-   where_clause_opt 
+ | from_clause
+   where_clause_opt
 /*
-     group_by_clause_opt 
+     group_by_clause_opt
      having_clause_opt
      lock_mode_opt
 */
-   order_by_clause_opt 
-   limit_clause_opt 
+   order_by_clause_opt
+   limit_clause_opt
    { }
 
 
@@ -211,12 +211,12 @@ where_clause: T_WHERE search_condition { }
 
 order_by_clause: T_ORDER T_BY ordering_spec_list { }
 
-ordering_spec: 
+ordering_spec:
  | T_INTNUM asc_desc_opt { }
  | column_ref asc_desc_opt { }
 /*
  | function_ref asc_desc_opt
- */ 
+ */
 
 asc_desc:
  | T_ASC { }
@@ -231,12 +231,12 @@ table_ref:
 
 search_condition:
  | { }
-    
+
  | search_condition T_OR search_condition { }
  | search_condition T_AND search_condition { }
  | T_NOT search_condition { }
  | TOPAR search_condition TCPAR { }
-     
+
  | predicate { }
 
 predicate:
@@ -252,7 +252,7 @@ predicate:
  | test_for_null { }
  | all_or_any_predicate { }
  | existence_test { }
- */ 
+ */
 
 scalar_exp_predicate:
  | scalar_exp { }
@@ -264,7 +264,7 @@ comparison_predicate:
 like_predicate:
  | scalar_exp T_NOT T_LIKE scalar_exp opt_escape { }
  | scalar_exp T_LIKE scalar_exp opt_escape { }
-	    
+	
 
 opt_escape:
  |  /* empty */ { }
@@ -272,7 +272,7 @@ opt_escape:
  | T_ESCAPE atom { }
  | BEGINX ESCAPE atom ENDX
 */
-   
+
 
 in_predicate:
  | scalar_exp T_NOT T_IN TOPAR scalar_exp_list TCPAR { }
@@ -308,7 +308,7 @@ table_ref_nj:
 
 
 /*(*pad: mysql extension *)*/
-limit_clause: 
+limit_clause:
  | T_LIMIT int_list { }
 
 
@@ -335,7 +335,7 @@ insert_mode:
  | T_INTO { }
  | T_REPLACING { }
  | T_SOFT { }
-	    
+	
 
 priv_opt_column_commalist:
  | /* empty */ { }
@@ -348,7 +348,7 @@ values_or_query_spec:
 insert_atom: scalar_exp { }
 
 query_exp:
- | query_term { } 
+ | query_term { }
  | query_exp T_UNION query_term { }
  | query_exp T_UNION T_ALL query_term { }
 
@@ -391,20 +391,20 @@ assignment_update_list:
 /*(*************************************************************************)*/
 
 update_statement_searched:
- | T_UPDATE table T_SET assignment_list where_clause_opt 
+ | T_UPDATE table T_SET assignment_list where_clause_opt
     memcache_opt
 { }
 
 assignment:
  | column T_COMPARISON scalar_exp { }
-	    
+	
 
 /*(*************************************************************************)*/
 /*(* DELETE *)*/
 /*(*************************************************************************)*/
 
 delete_statement_searched:
- | T_DELETE T_FROM table where_clause_opt 
+ | T_DELETE T_FROM table where_clause_opt
     memcache_opt
  { }
 
@@ -440,7 +440,7 @@ scalar_exp:
  | function_ref
  | assignment_statement
  | cvt_exp
-*/ 
+*/
 
 atom:
  | literal { }
@@ -449,7 +449,7 @@ atom:
  | USER
  | obe_literal
 */
-  
+
 
 function_call:
  | q_table_name TOPAR scalar_exp_list_opt TCPAR { }
@@ -459,8 +459,8 @@ function_call:
  | BEGIN_FN_X USER '(' opt_scalar_exp_commalist ')' ENDX
  | BEGIN_FN_X CHARACTER '(' opt_scalar_exp_commalist ')' ENDX
  | CALL '(' scalar_exp ')' '(' opt_scalar_exp_commalist ')'
-*/   
-   
+*/
+
 
 
 literal:
@@ -478,7 +478,7 @@ as_expression:
 /*
  | scalar_exp T_AS T_NAME data_type { }
 */
- 
+
 
 /*(*************************************************************************)*/
 /*(* xxx_opt, xxx_list *)*/
@@ -509,11 +509,11 @@ column_list:
  | column { }
  | column_list TCOMMA column { }
 
-string_list: 
+string_list:
  | T_STRING { }
  | string_list TCOMMA T_STRING { }
 
-int_list: 
+int_list:
  | T_INTNUM { }
  | int_list TCOMMA T_INTNUM { }
 
@@ -537,15 +537,15 @@ order_by_clause_opt:
  | /* empty */ { }
  | order_by_clause { }
 
-memcache_opt: 
+memcache_opt:
  | { }
  | memcache { }
 
-asc_desc_opt: 
+asc_desc_opt:
  | { }
  | asc_desc { }
 
-limit_clause_opt: 
+limit_clause_opt:
  | { }
  | limit_clause  { }
 

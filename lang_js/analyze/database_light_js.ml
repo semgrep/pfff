@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -29,16 +29,16 @@ module Db = Database_code
 (* We build the full database in multiple steps as some
  * operations need the information computed globally by the
  * previous step:
- * 
+ *
  * - collect all definitions and their file
  * - collect all uses, updating the count number of the
  *   corresponding entity (if it's used in a different file)
- * 
+ *
  * Currently the analysis is just lexical-based (yes I know, I am
  * ridiculous) so there is some ambiguity when we find a use.
  * We don't know to which precise entity it corresponds to
  * (to be precise would require to resolve module name).
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -48,7 +48,7 @@ let hcommon_methods = Common.hashset_of_list [
   "construct";
   "getInstance";
 ]
-let is_common_method s = 
+let is_common_method s =
   Hashtbl.mem hcommon_methods s
 
 let remove_quotes_if_present s =
@@ -75,19 +75,19 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
 
   let l = PI.line_of_info info in
   let c = PI.col_of_info info in
-  
+
   let name = s in
-  let fullname = 
+  let fullname =
     try Hashtbl.find hcomplete_name_of_info info |> snd
     with Not_found -> ""
   in
-              
+
   { Database_code.
     e_name = name;
     e_fullname = if fullname <> name then fullname else "";
     e_file = PI.file_of_info info |> Common.readable ~root;
     e_pos = { Common2.l = l; c };
-    e_kind = 
+    e_kind =
       Common2.some
         (Database_code.entity_kind_of_highlight_category_def categ);
 
@@ -105,7 +105,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
 (* Main entry point *)
 (*****************************************************************************)
 
-let compute_database ?(verbose=false) files_or_dirs = 
+let compute_database ?(verbose=false) files_or_dirs =
 
   (* when we want to merge this database with the db of another language
    * like PHP, the other database may use realpath for the path of the files
@@ -133,7 +133,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     let ((astopt, toks), _stat) = Parse_js.parse file in
     let ast = astopt ||| [] in
 
-    let hcomplete_name_of_info = 
+    let hcomplete_name_of_info =
        failwith "Class_pre_es6 in TODO_more"
       (* Class_pre_es6.extract_complete_name_of_info ast  *)
     in
@@ -141,14 +141,14 @@ let compute_database ?(verbose=false) files_or_dirs =
     let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_js.visit_program
-        ~tag_hook:(fun info categ -> 
+        ~tag_hook:(fun info categ ->
 
           (* todo: use is_entity_def_category ? *)
           match categ with
           | HC.Entity (_kind, (HC.Def2 _) ) ->
               Hashtbl.add hdefs_pos info true;
-              let e = mk_entity ~root ~hcomplete_name_of_info 
-                info categ 
+              let e = mk_entity ~root ~hcomplete_name_of_info
+                info categ
               in
               Hashtbl.add hdefs e.Db.e_name e;
           | _ -> ()
@@ -160,10 +160,10 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   (* step2: collecting uses *)
   files |> List.iter (fun file ->
-    if verbose 
+    if verbose
     then pr2 (spf "PHASE 2: %s" file);
 
-    if file =~ ".*external/" 
+    if file =~ ".*external/"
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
@@ -175,14 +175,14 @@ let compute_database ?(verbose=false) files_or_dirs =
       )
       in
 
-      (* Only consider function or method calls. Otherwise names such 
+      (* Only consider function or method calls. Otherwise names such
        * as 'x', or 'yylex' which are variables or internal functions
        * are considered as having a huge count.
-       * 
+       *
        *)
-      let rec aux_toks toks = 
+      let rec aux_toks toks =
         match toks with
-        (* The order of the rules are important here. We are 
+        (* The order of the rules are important here. We are
          * being less and less precise in the pattern so the
          * precise pattern has to be first
          *)
@@ -255,7 +255,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   );
 
   (* step3: adding cross reference information *)
-  let entities_arr = 
+  let entities_arr =
     Common.hash_to_list hdefs |> List.map snd |> Array.of_list
   in
   Db.adjust_method_or_field_external_users ~verbose entities_arr;

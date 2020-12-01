@@ -40,12 +40,12 @@ let lang_to_python_parsing_mode = function
 (*****************************************************************************)
 
 (*s: function [[Parse_generic.parse_with_lang]] *)
-let parse_with_lang lang file = 
+let parse_with_lang lang file =
   match lang with
   | Lang.Python | Lang.Python2 | Lang.Python3 ->
     let parsing_mode = lang_to_python_parsing_mode lang in
     let ast = Parse_python.parse_program ~parsing_mode file in
-    (* old: Resolve_python.resolve ast; 
+    (* old: Resolve_python.resolve ast;
      * switched to call Naming_AST.ml in sgrep to correct def and use tagger
      *)
     Python_to_generic.program ast
@@ -92,7 +92,7 @@ let parse_with_lang lang file =
 let parse_program file =
   match Lang.langs_of_filename file with
   | [x] -> parse_with_lang x file
-  | x::_xs -> 
+  | x::_xs ->
       (* print a warning? that we default to one? *)
       parse_with_lang x file
   | [] -> failwith (spf "unsupported file for AST generic: %s" file)
@@ -124,7 +124,7 @@ let parse_pattern lang str =
   | Lang.Go ->
       let any = Parse_go.any_of_string str in
       Go_to_generic.any any
-  | Lang.OCaml -> 
+  | Lang.OCaml ->
       let any = Parse_ml.any_of_string str in
       Ml_to_generic.any any
   | Lang.Ruby ->

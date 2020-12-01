@@ -68,7 +68,7 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit =
   fun of_a (v1, v2, v3) ->
   let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
 
@@ -76,7 +76,7 @@ and v_name v = v_wrap v_string v
 
 and v_dotted_name v = v_list v_name v
 
-and v_module_name (v1, v2) = 
+and v_module_name (v1, v2) =
   let v1 = v_dotted_name v1 in
   let v2 = v_option (v_list v_tok) v2 in
   ()
@@ -99,65 +99,65 @@ and v_expr (x: expr) =
   | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
   | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
   | Num v1 -> let v1 = v_number v1 in ()
-  | Str (v1) -> let v1 = v_wrap v_string v1 in ()
+  | Str v1 -> let v1 = v_wrap v_string v1 in ()
   | EncodedStr (v1, v2) -> let v1 = v_wrap v_string v1 in let v2 = v_string v2 in ()
   | InterpolatedString v1 -> let v1 = v_list v_expr v1 in ()
   | ConcatenatedString v1 -> let v1 = v_list v_expr v1 in ()
-  | Name ((v1, v2, v3)) ->
+  | Name (v1, v2, v3) ->
       let v1 = v_name v1
       and v2 = v_expr_context v2
       and v3 = v_ref_do_not_visit v_resolved_name v3
       in ()
-  | TypedExpr ((v1, v2)) ->
+  | TypedExpr (v1, v2) ->
      let v1 = v_expr v1 in
      let v2 = v_type_ v2 in
      ()
-  | TypedMetavar ((v1, v2, v3)) ->
+  | TypedMetavar (v1, v2, v3) ->
      let v1 = v_name v1 in
      let v2 = v_tok v2 in
      let v3 = v_type_ v3 in
      ()
-  | ExprStar ((v1)) ->
+  | ExprStar v1 ->
       let v1 = v_expr v1 in ()
-  | Tuple ((v1, v2)) ->
-      let v1 = v_list_or_comprehension v_expr v1 
+  | Tuple (v1, v2) ->
+      let v1 = v_list_or_comprehension v_expr v1
       and v2 = v_expr_context v2 in ()
-  | List ((v1, v2)) ->
-      let v1 = v_list_or_comprehension v_expr v1 
+  | List (v1, v2) ->
+      let v1 = v_list_or_comprehension v_expr v1
       and v2 = v_expr_context v2 in ()
-  | DictOrSet (v) -> v_list_or_comprehension v_dictorset_elt v
-  | BoolOp ((v1, v2)) -> let v1 = v_wrap v_boolop v1 and v2 = v_list v_expr v2 in ()
-  | BinOp ((v1, v2, v3)) ->
+  | DictOrSet v -> v_list_or_comprehension v_dictorset_elt v
+  | BoolOp (v1, v2) -> let v1 = v_wrap v_boolop v1 and v2 = v_list v_expr v2 in ()
+  | BinOp (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
-  | UnaryOp ((v1, v2)) -> let v1 = v_wrap v_unaryop v1 and v2 = v_expr v2 in ()
-  | Compare ((v1, v2, v3)) ->
+  | UnaryOp (v1, v2) -> let v1 = v_wrap v_unaryop v1 and v2 = v_expr v2 in ()
+  | Compare (v1, v2, v3) ->
       let v1 = v_expr v1
       and v2 = v_list (v_wrap v_cmpop) v2
       and v3 = v_list v_expr v3
       in ()
   | Call (v1, v2) -> v_expr v1; v_bracket (v_list v_argument) v2
-  | Subscript ((v1, v2, v3)) ->
+  | Subscript (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_bracket (v_list v_slice) v2 and v3 = v_expr_context v3 in ()
-  | Lambda (t0, v1, t1, v2) -> 
+  | Lambda (t0, v1, t1, v2) ->
     let t0 = v_tok t0 in
-    let v1 = v_parameters v1 in 
+    let v1 = v_parameters v1 in
     let t1 = v_tok t1 in
-    let v2 = v_expr v2 in 
+    let v2 = v_expr v2 in
     ()
-  | IfExp ((v1, v2, v3)) ->
+  | IfExp (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
-  | Yield ((t, v1, v2)) -> 
+  | Yield (t, v1, v2) ->
         let t = v_info t in
         let v1 = v_option v_expr v1 and v2 = v_bool v2 in ()
-  | Await (t, v1) -> 
+  | Await (t, v1) ->
         let t = v_info t in
         let v1 = v_expr v1 in ()
-  | Repr (v1) -> 
+  | Repr v1 ->
         let v1 = v_bracket v_expr v1 in ()
-  | Attribute ((v1, t, v2, v3)) ->
-      let v1 = v_expr v1 and t = v_tok t and v2 = v_name v2 
+  | Attribute (v1, t, v2, v3) ->
+      let v1 = v_expr v1 and t = v_tok t and v2 = v_name v2
         and v3 = v_expr_context v3 in ()
-  | NamedExpr ((v, t, e)) ->
+  | NamedExpr (v, t, e) ->
       let v = v_expr v and t = v_tok t and e = v_expr e in ()
   in
   vin.kexpr (k, all_functions) x
@@ -167,13 +167,13 @@ and v_argument = function
   | ArgPow (t, e) -> v_tok t; v_expr e
   | ArgStar (t, e) -> v_tok t; v_expr e
   | ArgKwd (n, e) -> v_name n; v_expr e
-  | ArgComp ((e, xs)) -> v_comprehension v_expr (e, xs)
+  | ArgComp (e, xs) -> v_comprehension v_expr (e, xs)
 
 and v_dictorset_elt = function
   | KeyVal (v1, v2) -> v_expr v1; v_expr v2
-  | Key (v1) -> v_expr v1
-  | PowInline (v1) -> v_expr v1
-  
+  | Key v1 -> v_expr v1
+  | PowInline v1 -> v_expr v1
+
 and v_number =
   function
   | Int v1 -> let v1 = v_wrap v_string
@@ -211,7 +211,7 @@ and v_cmpop =
   | In -> ()
   | NotIn -> ()
 
-and v_list_or_comprehension: 'a. ('a -> unit) -> 'a list_or_comprehension -> unit = 
+and v_list_or_comprehension: 'a. ('a -> unit) -> 'a list_or_comprehension -> unit =
  fun of_a ->
   function
   | CompList v1 -> let v1 = v_bracket (v_list of_a) v1 in ()
@@ -219,12 +219,12 @@ and v_list_or_comprehension: 'a. ('a -> unit) -> 'a list_or_comprehension -> uni
         v_comprehension of_a v1
 
 and v_comprehension: 'a. ('a -> unit) -> 'a comprehension -> unit = fun of_a ->
-   fun ((v1, v2)) ->
+   fun (v1, v2) ->
      let v1 = of_a v1 and v2 = v_list v_for_if v2 in ()
 
 and v_for_if =
   function
-  | CompFor ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
+  | CompFor (v1, v2) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
   | CompIf v1 -> let v1 = v_expr v1 in ()
 
 and v_expr_context =
@@ -238,7 +238,7 @@ and v_expr_context =
 and v_keyword (v1, v2) = let v1 = v_name v1 and v2 = v_expr v2 in ()
 and v_slice =
   function
-  | Slice ((v1, v2, v3)) ->
+  | Slice (v1, v2, v3) ->
       let v1 = v_option v_expr v1
       and v2 = v_option v_expr v2
       and v3 = v_option v_expr v3
@@ -246,13 +246,13 @@ and v_slice =
   | Index v1 -> let v1 = v_expr v1 in ()
 and v_parameters v = v_list v_parameter v
 and v_parameter x =
-  let k x = 
+  let k x =
   match x with
   | ParamSingleStar v1 | ParamSlash v1 -> v_tok v1; ()
   | ParamEllipsis v1 -> v_tok v1; ()
-  | ParamDefault ((v1, v2)) ->
+  | ParamDefault (v1, v2) ->
       let v1 = v_name_and_type v1 and v2 = v_expr v2 in ()
-  | ParamPattern ((v1, v2)) ->
+  | ParamPattern (v1, v2) ->
       let v1 = v_param_pattern v1
       and v2 = v_option v_type_ v2
       in ()
@@ -274,12 +274,12 @@ and v_param_pattern = function
   | PatternName v1 -> v_name v1; ()
   | PatternTuple v1 -> v_list v_param_pattern v1; ()
 
-and v_expr_and_opt_expr (v1, opt) = 
+and v_expr_and_opt_expr (v1, opt) =
   let v1 = v_expr v1 in
   let opt = v_option v_expr opt in
   ()
 
-and v_type_ v = 
+and v_type_ v =
   let k x =
     v_expr x
   in
@@ -288,19 +288,19 @@ and v_type_parent v = v_argument v
 
 and v_stmt x =
   let k x = match x with
-  | Exec ((v0, v1, v2, v3)) ->
+  | Exec (v0, v1, v2, v3) ->
       let v0 = v_tok v0 in
       let v1 = v_expr v1
       and v2 = v_option v_expr v2
       and v3 = v_option v_expr v3
       in ()
- | Print ((v0, v1, v2, v3)) ->
+ | Print (v0, v1, v2, v3) ->
       let v0 = v_tok v0 in
       let v1 = v_option v_expr v1
       and v2 = v_list v_expr v2
       and v3 = v_bool v3
       in ()
-  | FunctionDef ((t0, v1, v2, v3, v4, v5)) ->
+  | FunctionDef (t0, v1, v2, v3, v4, v5) ->
       let t0 = v_tok t0 in
       let v1 = v_name v1
       and v2 = v_parameters v2
@@ -308,27 +308,27 @@ and v_stmt x =
       and v4 = v_list v_stmt v4
       and v5 = v_list v_decorator v5
       in ()
-  | ClassDef ((v0, v1, v2, v3, v4)) ->
+  | ClassDef (v0, v1, v2, v3, v4) ->
       let v0 = v_tok v0 in
       let v1 = v_name v1
       and v2 = v_list v_type_parent v2
       and v3 = v_list v_stmt v3
       and v4 = v_list v_decorator v4
       in ()
-  | Assign ((v1, v2, v3)) -> 
+  | Assign (v1, v2, v3) ->
         let v1 = v_list v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
-  | AugAssign ((v1, v2, v3)) ->
+  | AugAssign (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
-  | Return (t, v1) -> 
+  | Return (t, v1) ->
         let t = v_info t in
         let v1 = v_option v_expr v1 in ()
-  | Delete (t, v1) -> 
+  | Delete (t, v1) ->
         let t = v_info t in
         let v1 = v_list v_expr v1 in ()
-  | Async (t, v1) -> 
+  | Async (t, v1) ->
         let t = v_info t in
         let v1 = v_stmt v1 in ()
-  | For ((t, v1, t2, v2, v3, v4)) ->
+  | For (t, v1, t2, v2, v3, v4) ->
         let t = v_info t in
         let t2 = v_info t2 in
       let v1 = v_expr v1
@@ -336,19 +336,19 @@ and v_stmt x =
       and v3 = v_list v_stmt v3
       and v4 = v_list v_stmt v4
       in ()
-  | While ((t, v1, v2, v3)) ->
+  | While (t, v1, v2, v3) ->
         let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_list v_stmt v2
       and v3 = v_list v_stmt v3
       in ()
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
         let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_list v_stmt v2
       and v3 = v_option (v_list v_stmt) v3
       in ()
-  | With ((t, v1, v2, v3)) ->
+  | With (t, v1, v2, v3) ->
         let t = v_info t in
       let v1 = v_expr v1
       and v2 = v_option v_expr v2
@@ -368,42 +368,42 @@ and v_stmt x =
       and v2 = v_option v_expr v2
       and v3 = v_option v_expr v3
       in ()
-  | TryExcept ((t, v1, v2, v3)) ->
+  | TryExcept (t, v1, v2, v3) ->
         let t = v_info t in
       let v1 = v_list v_stmt v1
       and v2 = v_list v_excepthandler v2
       and v3 = v_list v_stmt v3
       in ()
-  | TryFinally ((t, v1, t2, v2)) ->
+  | TryFinally (t, v1, t2, v2) ->
         let t = v_info t in
         let t2 = v_info t2 in
       let v1 = v_list v_stmt v1 and v2 = v_list v_stmt v2 in ()
-  | Assert ((t, v1, v2)) -> 
+  | Assert (t, v1, v2) ->
         let t = v_info t in
         let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
-  | ImportAs (t, v1, v2) -> 
+  | ImportAs (t, v1, v2) ->
         let t = v_info t in
         let v1 = v_alias2 (v1, v2) in ()
-  | ImportAll (t, v1, v2) -> 
+  | ImportAll (t, v1, v2) ->
         let t = v_info t in
         let v1 = v_module_name v1 and v2 = v_tok v2 in ()
-  | ImportFrom ((t, v1, v2)) ->
+  | ImportFrom (t, v1, v2) ->
         let t = v_info t in
       let v1 = v_module_name v1
       and v2 = v_list v_alias v2
       in ()
-  | Global (t, v1) -> 
+  | Global (t, v1) ->
         let t = v_info t in
         let v1 = v_list v_name v1 in ()
-  | NonLocal (t, v1) -> 
+  | NonLocal (t, v1) ->
         let t = v_info t in
         let v1 = v_list v_name v1 in ()
-  | ExprStmt (v1) -> 
+  | ExprStmt v1 ->
         let v1 = v_expr v1 in ()
-  | Pass t -> 
+  | Pass t ->
         let t = v_info t in
         ()
-  | Break t -> 
+  | Break t ->
         let t = v_info t in
         ()
   | Continue t ->
@@ -415,13 +415,13 @@ and v_stmt x =
 
 and v_excepthandler =
   function
-  | ExceptHandler ((t, v1, v2, v3)) ->
+  | ExceptHandler (t, v1, v2, v3) ->
       let t = v_tok t in
       let v1 = v_option v_type_ v1
       and v2 = v_option v_name v2
       and v3 = v_list v_stmt v3
       in ()
-and v_decorator v = 
+and v_decorator v =
   let k (t, x1, x2) =
     v_tok t;
     v_dotted_name x1;
@@ -431,7 +431,7 @@ and v_decorator v =
 
 and v_alias (v1, v2) = let v1 = v_name v1 and v2 = v_option v_name v2 in ()
 and v_alias2 (v1, v2) = let v1 = v_module_name v1 and v2 = v_option v_name v2 in ()
-  
+
 and v_program v = v_list v_stmt v
 
 and v_any =
@@ -442,7 +442,7 @@ and v_any =
   | Program v1 -> let v1 = v_program v1 in ()
 
   | DictElem x -> v_dictorset_elt x
-  
+
 and all_functions x = v_any x
 in
 all_functions

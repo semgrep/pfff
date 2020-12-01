@@ -3,7 +3,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,8 +24,8 @@ module Ast = Ast_java
 let test_parse xs  =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs = 
-    Lib_parsing_java.find_source_files_of_dir_or_files xs 
+  let fullxs =
+    Lib_parsing_java.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in
 
@@ -35,13 +35,13 @@ let test_parse xs  =
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
-    let (_xs, stat) = 
-     try 
+    let (_xs, stat) =
+     try
       Common.save_excursion Flag.error_recovery true (fun () ->
       Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-        Parse_java.parse file 
+        Parse_java.parse file
       ))
-     with exn -> 
+     with exn ->
       pr2 (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn));
       raise exn
     in
@@ -57,18 +57,18 @@ let test_parse xs  =
   PI.print_parsing_stat_list !stat_list;
 
   (* todo: could factorize with other *)
-  let dirname_opt = 
+  let dirname_opt =
     match xs with
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)
     | _ -> None
   in
   let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname -> 
+  dirname_opt |> Common.do_option (fun dirname ->
     pr2 "--------------------------------";
     pr2 "regression testing  information";
     pr2 "--------------------------------";
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore 
+    Common2.regression_testing newscore
       (Filename.concat score_path
        ("score_parsing__" ^str ^ ext ^ ".marshalled"))
   );
@@ -88,14 +88,14 @@ let test_dump file =
   let s = Ast_java.show_program ast in
   pr s
 
-let test_visitor file = 
+let test_visitor file =
   let visitor = V.mk_visitor { V.default_visitor with
-    V.kexpr = (fun (k, _) e -> 
+    V.kexpr = (fun (k, _) e ->
       match e with
-      | Ast_java.Literal (Ast_java.Int (s,_)) -> 
+      | Ast_java.Literal (Ast_java.Int (s,_)) ->
           pr2 ("int:" ^ s);
           k e
-      | Ast_java.Dot (e, _, (_s,_)) -> 
+      | Ast_java.Dot (e, _, (_s,_)) ->
           pr2 "dot: s";
           k e
       | _ -> k e
@@ -106,7 +106,7 @@ let test_visitor file =
   visitor (AProgram ast);
   ()
 
-let test_visitor_print file = 
+let test_visitor_print file =
   let ast = Parse_java.parse_program file in
 
   (* prints out tokens as they are visited *)
@@ -116,12 +116,12 @@ let test_visitor_print file =
       pr2 s;
     );
 
-    Visitor_java.kexpr = (fun (k, _) e -> 
+    Visitor_java.kexpr = (fun (k, _) e ->
       match e with
-      | Ast_java.Literal (Ast_java.Int (s,_)) -> 
+      | Ast_java.Literal (Ast_java.Int (s,_)) ->
           pr2 ("int:" ^ s);
           k e
-      | Ast_java.Dot (e, _, (_s,_)) -> 
+      | Ast_java.Dot (e, _, (_s,_)) ->
           pr2 "dot: s";
           k e
       | _ -> k e
@@ -136,14 +136,14 @@ let test_visitor_print file =
 (*****************************************************************************)
 
 let actions () = [
-  "-tokens_java", "   <file>", 
+  "-tokens_java", "   <file>",
   Common.mk_action_1_arg test_lexer;
-  "-parse_java", "   <file or dir>", 
+  "-parse_java", "   <file or dir>",
   Common.mk_action_n_arg test_parse;
-  "-dump_java", "   <file>", 
+  "-dump_java", "   <file>",
   Common.mk_action_1_arg test_dump;
-  "-visitor_java", "   <file>", 
+  "-visitor_java", "   <file>",
   Common.mk_action_1_arg test_visitor;
-  "-visitor_java_print", "   <file>", 
+  "-visitor_java_print", "   <file>",
   Common.mk_action_1_arg test_visitor_print;
 ]

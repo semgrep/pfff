@@ -51,7 +51,7 @@ open Easy_logging_yojson
 type level = Easy_logging__.Logging_types.level
 module Handlers = Easy_logging_yojson.Handlers
 
-class type logger = 
+class type logger =
  object
 
       (** {3 Classic logging Methods}

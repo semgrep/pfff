@@ -1,5 +1,5 @@
 
-type entity_kind = 
+type entity_kind =
   (* very high level entities *)
   | Package | Dir
   | Module | File
@@ -7,8 +7,8 @@ type entity_kind =
   (* toplevel entities *)
   | Function
   | Class (* used also for struct, interfaces, traits, see class_kind below *)
-  | Type 
-  | Constant 
+  | Type
+  | Constant
   | Global
   | Macro
   | Exception
@@ -29,7 +29,7 @@ type entity_kind =
 val string_of_entity_kind: entity_kind -> string
 val entity_kind_of_string: string -> entity_kind
 
-type property = 
+type property =
    (* mostly for Function|Method kind, for codemap to highlight! *)
    | ContainDynamicCall | ContainReflectionCall
 
@@ -45,15 +45,15 @@ type property =
 
    | Privacy of privacy
    | Abstract | Final
-   | Static 
+   | Static
 
    (* facebook specific: used for the xhp @required fields for now *)
    | Required | Async
 
   and privacy = Public | Protected | Private
-  and class_kind = 
-  | Struct | Class_ | Interface 
-  | Trait 
+  and class_kind =
+  | Struct | Class_ | Interface
+  | Trait
   (* in Scala, Java, and now PHP enums are actually closer to class
    * than C enums.
    *)

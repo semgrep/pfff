@@ -278,7 +278,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
   (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
-(* TODO: use generic AST highlighter 
+(* TODO: use generic AST highlighter
 
   (* less: some of the logic duplicates what is in check_variables_php.ml
    * where we differentiate the diffent variables uses (parameters, static,
@@ -391,7 +391,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     V.kstmt = (fun (k,_bigf) stmt ->
       k stmt;
       match stmt with
-      | Globals ((_v1, v2, _v3)) ->
+      | Globals (_v1, v2, _v3) ->
         v2 |> Ast.uncomma |> List.iter (fun x ->
           match x  with
           | GlobalVar dname ->
@@ -402,7 +402,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
           | GlobalDollar _ -> ()
           | GlobalDollarExpr _ ->  ()
         );
-      | StaticVars ((_v1, v2, _v3)) ->
+      | StaticVars (_v1, v2, _v3) ->
         v2 |> Ast.uncomma |> List.iter (fun svar ->
           let (dname, _affect_opt) = svar in
           let info = Ast.info_of_dname dname in
@@ -439,7 +439,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
         (match Ast.unbracket exprbracket with
         | None ->
           k expr
-        | Some (exprbis) ->
+        | Some exprbis ->
           (match exprbis with
           | Sc (C (Ast.String (_s, info))) ->
             tag info (Entity (Field, (Use2 fake_no_use2)));
@@ -627,7 +627,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     match tok with
     | T.TNewline _ii | T.TSpaces _ii | T.EOF _ii -> ()
     (* less: could highlight certain words in the comment? *)
-    | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  -> tag ii Comment
+    | T.T_COMMENT (ii)  | T.T_DOC_COMMENT ii  -> tag ii Comment
     | T.TCommentPP _ii -> ()
     | T.TUnknown ii -> tag ii Error
 
@@ -646,7 +646,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation
 
-    | T.T_ELLIPSIS ii 
+    | T.T_ELLIPSIS ii
     | T.LDots ii | T.RDots ii
     -> tag ii Punctuation
     | T.TANTISLASH ii -> tag ii KeywordModule

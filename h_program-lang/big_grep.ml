@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,12 +26,12 @@ module Db = Database_code
  * end of entity, or the entity number so can display
  * the information associated with it. So need markers
  * in the string.
- * 
+ *
  * One-liner in perl by Erling:
  * perl -e '$|++; open F,"/usr/share/dict/words"; { local $/; $all=<F>;
  * } while(<STDIN>) { chomp; $w=$_; $n = 0; while($all =~ /$w.*/g) {
  * print "$&\n"; last if ++$n>10; } print "[$w]\n"; }'
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -73,14 +73,14 @@ let naive_top_n_search2 ~top_n ~query xs =
   let rec aux ~n xs =
     if n = top_n
     then []
-    else 
+    else
       (match xs with
       | [] -> []
       | e::xs ->
           if e.Db.e_name ==~ re
           then
             e::aux ~n:(n+1) xs
-          else 
+          else
             aux ~n xs
       )
   in
@@ -88,7 +88,7 @@ let naive_top_n_search2 ~top_n ~query xs =
 
 
 let naive_top_n_search ~top_n ~query idx =
-  Common.profile_code "Big_grep.naive_top_n" (fun () -> 
+  Common.profile_code "Big_grep.naive_top_n" (fun () ->
     naive_top_n_search2 ~top_n ~query idx
   )
 
@@ -97,7 +97,7 @@ let naive_top_n_search ~top_n ~query idx =
 (*****************************************************************************)
 
 let build_index2 ?(case_sensitive=false) entities =
-  
+
   let buf = Buffer.create 20_000_000 in
   let h = Hashtbl.create 1001 in
 
@@ -109,7 +109,7 @@ let build_index2 ?(case_sensitive=false) entities =
      * should have done the job of putting the fullename in e_name.
      *)
     let s = Common2.string_of_char separation_marker_char ^ e.Db.e_name in
-    let s = 
+    let s =
       if case_sensitive
       then s
       else String.lowercase_ascii s
@@ -131,13 +131,13 @@ let build_index2 ?(case_sensitive=false) entities =
   }
 
 let build_index ?case_sensitive a =
-  Common.profile_code "Big_grep.build_idx" (fun () -> 
+  Common.profile_code "Big_grep.build_idx" (fun () ->
     build_index2 ?case_sensitive a)
 
 
 let find_position_marker_before start_pos str =
   let pos = ref (start_pos - 1) in
-  
+
   while String.get str !pos <> separation_marker_char do
     pos := !pos - 1
   done;
@@ -145,7 +145,7 @@ let find_position_marker_before start_pos str =
 
 let find_position_marker_after start_pos str =
   let pos = ref (start_pos + 1) in
-  
+
   while String.get str !pos <> separation_marker_char do
     pos := !pos + 1
   done;
@@ -154,7 +154,7 @@ let find_position_marker_after start_pos str =
 (* the query can now contain multipe words *)
 let top_n_search2 ~top_n ~query idx =
 
-  let query = 
+  let query =
     if idx.case_sensitive then query else String.lowercase_ascii query
   in
 
@@ -162,24 +162,24 @@ let top_n_search2 ~top_n ~query idx =
   let re =
     match words with
     | [_] -> Str.regexp (".*" ^ query)
-    | [a;b] -> 
-        Str.regexp (spf 
+    | [a;b] ->
+        Str.regexp (spf
                        ".*\\(%s.*%s\\)\\|\\(%s.*%s\\)"
                        a b b a)
-    | _ -> 
+    | _ ->
         failwith "more-than-2-words query is not supported; give money to pad"
   in
-  
+
   let rec aux ~n ~pos =
     if n = top_n
     then []
-    else 
-      try 
+    else
+      try
         let new_pos = Str.search_forward re idx.big_string pos in
         (* let's found the marker *)
-        let pos_mark = 
+        let pos_mark =
           find_position_marker_before new_pos idx.big_string in
-        let pos_next_mark = 
+        let pos_next_mark =
           find_position_marker_after new_pos idx.big_string in
         let e = Hashtbl.find idx.pos_to_entity pos_mark in
         e::aux ~n:(n+1) ~pos:pos_next_mark
@@ -189,6 +189,6 @@ let top_n_search2 ~top_n ~query idx =
 
 
 let top_n_search ~top_n ~query idx =
-  Common.profile_code "Big_grep.top_n" (fun () -> 
+  Common.profile_code "Big_grep.top_n" (fun () ->
     top_n_search2 ~top_n ~query idx
   )

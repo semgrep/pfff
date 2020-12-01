@@ -37,8 +37,8 @@ val prune_uop :
   Ast_ruby.unary_op -> Ast_ruby.expr -> Ast_ruby.tok -> Ast_ruby.expr
 
 val prune_tern :
-  Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr -> 
-  Ast_ruby.tok -> Ast_ruby.tok -> 
+  Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr ->
+  Ast_ruby.tok -> Ast_ruby.tok ->
   Ast_ruby.expr
 
 val prune_left_assoc :
@@ -88,7 +88,7 @@ val merge_string_lits : Ast_ruby.expr -> Ast_ruby.expr -> Ast_ruby.expr
 
 val merge_rest : string -> ('a * 'b * 'c) list -> 'a list * 'b * 'c
 
-val merge_tok_stmts_opt: 
+val merge_tok_stmts_opt:
   string ->
   ((Ast_ruby.tok * Ast_ruby.stmts) option * 'a * 'b) list ->
   (Ast_ruby.tok * Ast_ruby.stmts) option list * 'a * 'b

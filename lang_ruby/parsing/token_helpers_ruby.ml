@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -37,8 +37,8 @@ let visitor_info_of_tok f = function
   | T_COMMENT ii -> T_COMMENT (f ii)
   | T_UNKNOWN ii -> T_UNKNOWN (f ii)
 
-  | LDots (ii) -> LDots (f ii)
-  | RDots (ii) -> RDots (f ii)
+  | LDots ii -> LDots (f ii)
+  | RDots ii -> RDots (f ii)
 
 
   | T_UAMPER ii -> T_UAMPER (f ii)
@@ -148,7 +148,7 @@ let visitor_info_of_tok f = function
   | T_ATOM (s, ii) -> T_ATOM (s, f ii)
 
 
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with

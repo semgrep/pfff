@@ -10,8 +10,8 @@ val test_parse_js  : Common.path list -> unit
 (* Print the set of tokens in a JS file *)
 val test_tokens_js : Common.filename -> unit
 
-(* This makes accessible the different test_xxx functions above from 
- * the command line, e.g. '$ pfff -parse_js foo.js will call the 
+(* This makes accessible the different test_xxx functions above from
+ * the command line, e.g. '$ pfff -parse_js foo.js will call the
  * test_parse_js function.
  *)
 val actions : unit -> Common.cmdline_actions

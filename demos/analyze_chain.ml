@@ -35,7 +35,7 @@ let rec methods_in_chain e =
 (* Algorithm *)
 (*****************************************************************************)
 
-let main files_or_dirs = 
+let main files_or_dirs =
   let files = Lib_parsing_php.find_source_files_of_dir_or_files files_or_dirs in
 
   files |> List.iter (fun file ->
@@ -50,7 +50,7 @@ let main files_or_dirs =
           let chain = methods_in_chain e in
           let strs = chain |> List.map Ast.str_of_name |> List.rev in
           pr2_gen strs;
-          
+
           (* visit just the arguments *)
           vx (Arguments args);
         | _ -> k e
@@ -64,5 +64,5 @@ let main files_or_dirs =
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-let _ = 
+let _ =
   main (Array.to_list Sys.argv)

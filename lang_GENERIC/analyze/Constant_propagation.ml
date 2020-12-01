@@ -97,7 +97,7 @@ let var_stats prog : var_stats =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name=EId id; 
+      | { name=EId id;
           info={ id_resolved = {contents = Some(_kind, sid)}; _}; _},
         VarDef ({ vinit = Some _; _ }) ->
           let var = (Ast.str_of_ident id, sid) in
@@ -269,7 +269,7 @@ let propagate2 lang prog =
        (match x with
        | Id (id, id_info)->
              (match find_id env id id_info with
-             | Some (literal) ->
+             | Some literal ->
                  id_info.id_const_literal := Some literal
              | _ -> ()
              );

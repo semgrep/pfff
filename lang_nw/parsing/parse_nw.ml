@@ -1,11 +1,11 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,11 +29,11 @@ type program_and_tokens = Ast_nw.program * Lexer_nw.token list
 (* Lexing only *)
 (*****************************************************************************)
 
-let tokens2 file = 
+let tokens2 file =
   Lexer_nw.reset();
-  let token lexbuf = 
+  let token lexbuf =
     (match Lexer_nw.current_mode () with
-    | Lexer_nw.INITIAL -> 
+    | Lexer_nw.INITIAL ->
         Lexer_nw.tex lexbuf
     | Lexer_nw.IN_VERBATIM ->
         Lexer_nw.verbatim lexbuf
@@ -43,10 +43,10 @@ let tokens2 file =
         Lexer_nw.noweb lexbuf
     )
   in
-  Parse_info.tokenize_all_and_adjust_pos 
+  Parse_info.tokenize_all_and_adjust_pos
     file token TH.visitor_info_of_tok TH.is_eof
 
-let tokens a = 
+let tokens a =
   Common.profile_code "Parse_nw.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
@@ -71,6 +71,6 @@ let parse2 filename =
   let (ast, toks) = parse_fuzzy filename in
   (ast, toks), stat
 
-let parse a = 
+let parse a =
   Common.profile_code "Parse_nw.parse" (fun () -> parse2 a)
 

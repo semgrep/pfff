@@ -18,7 +18,7 @@ open Ast_ml
 (*************************************************************************)
 (* This file contains a grammar for OCaml
  * (mostly OCaml 3.07 with some extensions until OCaml 4.08)
- * 
+ *
  * src: adapted from the official source of OCaml in its
  * parsing/ subdirectory. All semantic actions are new. Only the
  * grammar structure was copied.
@@ -27,7 +27,7 @@ open Ast_ml
  * reference:
  * - http://caml.inria.fr/pub/docs/manual-ocaml/language.html
  *   (note that it unfortunately contains conflicts when translated into yacc).
- * 
+ *
  * other sources:
  * - http://www.cs.ru.nl/~tews/htmlman-3.10/full-grammar.html
  *   itself derived from the official ocaml reference manual
@@ -43,7 +43,7 @@ open Ast_ml
 (*************************************************************************)
 (* Helpers *)
 (*************************************************************************)
-let (qufix: name -> tok -> ident -> name) = 
+let (qufix: name -> tok -> ident -> name) =
  fun longname _dottok ident ->
   match longname with
   | xs, ident2 -> xs @ [ident2], ident
@@ -97,23 +97,23 @@ let topseqexpr v1 = mki (TopExpr (seq1 v1))
  Tclass Tnew Tinherit Tconstraint Tinitializer Tmethod Tobject Tprivate
  Tvirtual
  Tlazy Tmutable Tassert
- Tand 
+ Tand
  Tor Tmod Tlor Tlsl Tlsr Tlxor Tasr Tland
 
 (* syntax *)
-%token <Parse_info.t> 
+%token <Parse_info.t>
  TOParen "(" TCParen ")" TOBrace "{" TCBrace "}" TOBracket "[" TCBracket "]"
  TOBracketPipe "[|" TPipeCBracket "|]"  TOBracketLess "[<" TGreaterCBracket ">]"
  TOBraceLess "{<" TGreaterCBrace ">}"
  TOBracketGreater "[>" TColonGreater ":>"
  TDot "." TDotDot ".."
- TComma "," TEq "=" TAssign ":=" TAssignMutable "<-" 
+ TComma "," TEq "=" TAssign ":=" TAssignMutable "<-"
  TColon ":" TColonColon "::"
  TBang "!" TBangEq "!=" TTilde "~" TPipe "|"
  TSemiColon ";" TSemiColonSemiColon ";;"
  TQuestion "?" TQuestionQuestion "??"
- TUnderscore "_" TStar "*" TArrow "->" TQuote "'" TBackQuote "`" 
- TAnd TAndAnd 
+ TUnderscore "_" TStar "*" TArrow "->" TQuote "'" TBackQuote "`"
+ TAnd TAndAnd
  TSharp "#"
  TMinusDot TPlusDot
 
@@ -143,20 +143,20 @@ let topseqexpr v1 = mki (TopExpr (seq1 v1))
  * in favor of the first rule (in source file order).  A shift/reduce conflict
  * is resolved by comparing the precedence and associativity of the token to
  * be shifted with those of the rule to be reduced.
- * 
+ *
  * By default, a rule has the precedence of its rightmost terminal (if any).
- * 
+ *
  * When there is a shift/reduce conflict between a rule and a token that
  * have the same precedence, it is resolved using the associativity:
  * if the token is left-associative, the parser will reduce; if
  * right-associative, the parser will shift; if non-associative,
  * the parser will declare a syntax error.
- * 
+ *
  * We will only use associativities with operators of the kind  x * x -> x
  * for example, in the rules of the form    expr: expr BINOP expr
  * in all other cases, we define two precedences if needed to resolve
  * conflicts.
- * 
+ *
  * The precedences must be listed from low to high.
  *)
 
@@ -237,7 +237,7 @@ list_sep_term(X,Sep):
 
 list_and(X): list_sep(X, Tand) { $1 }
 
-qualified(X, Y): 
+qualified(X, Y):
  | Y       { [], $1 }
  | X "." Y { qufix $1 $2 $3 }
 
@@ -248,7 +248,7 @@ qualified(X, Y):
  * - signature
  * - structure
  * - names
- * 
+ *
  * - expression
  * - type
  * - pattern
@@ -257,10 +257,10 @@ qualified(X, Y):
  *    - constructors
  *    - lists
  *    - records
- *    - tuples 
+ *    - tuples
  *    - arrays
  *    - name tags (`Foo)
- * 
+ *
  * - let/fun
  * - classes (not in AST)
  * - modules
@@ -300,7 +300,7 @@ signature:
  | signature signature_item      { $1 @ [$2] }
  | signature signature_item ";;" { $1 @ [$2] }
 
-signature_item: signature_item_noattr post_item_attribute* 
+signature_item: signature_item_noattr post_item_attribute*
   { { i = $1; iattrs = $2 } }
 
 signature_item_noattr:
@@ -313,15 +313,15 @@ signature_item_noattr:
  (* modules *)
  | Topen mod_longident                          { Open ($1, $2) }
 
- | Tmodule Ttype ident "=" module_type          
+ | Tmodule Ttype ident "=" module_type
     { ItemTodo (("ModuleType", $1), [$5]) }
- | Tmodule TUpperIdent module_declaration       
+ | Tmodule TUpperIdent module_declaration
     { ItemTodo (("ModuleDecl", $1), [$3]) }
 
  (* objects *)
- | Tclass list_and(class_description)           
+ | Tclass list_and(class_description)
    { ItemTodo (("Class",$1), $2)  }
- | Tclass Ttype list_and(class_type_declaration) 
+ | Tclass Ttype list_and(class_type_declaration)
     { ItemTodo (("ClassType", $1), $3) }
 
 (*----------------------------*)
@@ -349,7 +349,7 @@ structure_tail:
  | structure_item  structure_tail          { $1::$2 }
  | TSharpDirective structure_tail          { $2 }
 
-structure_item: structure_item_noattr post_item_attribute* 
+structure_item: structure_item_noattr post_item_attribute*
   { { i = $1; iattrs = $2 } }
 
 structure_item_noattr:
@@ -370,18 +370,18 @@ structure_item_noattr:
         | None -> ItemTodo (("AbstractModule?", $1), [])
         | Some (_x, y) -> Module ($1, { mname = $2; mbody = y })
       }
- | Tmodule Ttype ident "=" module_type           
+ | Tmodule Ttype ident "=" module_type
    { ItemTodo (("ModuleType", $1), [$5]) }
- | Tinclude module_expr                          
+ | Tinclude module_expr
    { ItemTodo (("Include",$1), [] (* TODO $2 *)) }
 
  (* objects *)
- | Tclass list_and(class_declaration)            
+ | Tclass list_and(class_declaration)
     { ItemTodo (("Class",$1), $2)  }
- | Tclass Ttype list_and(class_type_declaration) 
+ | Tclass Ttype list_and(class_type_declaration)
     { ItemTodo (("ClassType", $1), $3) }
 
- | Texception TUpperIdent "=" mod_longident 
+ | Texception TUpperIdent "=" mod_longident
     { ItemTodo (("ExnAlias",$1), []) }
 
  | floating_attribute { $1 }
@@ -395,7 +395,7 @@ val_ident:
  | "(" operator ")"                   { ("TODOOPERATOR", $1) }
 
 operator:
- | TPrefixOperator      { } 
+ | TPrefixOperator      { }
  | TInfixOperator       { }
  | "*"     { } | "="       { } | ":="   { } | "!"     { }
   (* but not Tand, because of conflict ? *)
@@ -435,7 +435,7 @@ label_var: TLowerIdent    { }
 
 (* for label arguments like ~x or ?x *)
 label_ident: TLowerIdent   { $1 }
- 
+
 (*----------------------------*)
 (* Qualified names *)
 (*----------------------------*)
@@ -509,7 +509,7 @@ expr:
  | expr Tland expr           { Infix ($1, ("land", $2), $3) }
  | expr Tlor expr            { Infix ($1, ("lor", $2), $3) }
  | expr Tlxor expr           { Infix ($1, ("lxor", $2), $3) }
- 
+
  | expr Tlsl expr            { Infix ($1, ("lsl", $2), $3) }
  | expr Tlsr expr            { Infix ($1, ("lsr", $2), $3) }
  | expr Tasr expr            { Infix ($1, ("asr", $2), $3) }
@@ -550,12 +550,12 @@ expr:
  (* extensions *)
 
  (* array extension *)
- | simple_expr "." "(" seq_expr ")" "<-" expr 
+ | simple_expr "." "(" seq_expr ")" "<-" expr
      { ExprTodo (("ArrayUpdate",$2), [$1] @ $4 @ [$7]) }
- | simple_expr "." "[" seq_expr "]" "<-" expr 
+ | simple_expr "." "[" seq_expr "]" "<-" expr
      { ExprTodo (("ArrayUpdate",$2), [$1] @ $4 @ [$7]) }
  (* bigarray extension, a.{i} <- v *)
- | simple_expr "." "{" expr "}" "<-" expr     
+ | simple_expr "." "{" expr "}" "<-" expr
      { ExprTodo (("BigArrayUpdate",$2), [$1;$4;$7]) }
  (* local open *)
  | Tlet Topen mod_longident Tin seq_expr
@@ -577,7 +577,7 @@ simple_expr:
  | constant          { L $1 }
  | val_longident     { Name $1 }
  (* this includes 'false' *)
- | constr_longident      %prec prec_constant_constructor  
+ | constr_longident      %prec prec_constant_constructor
       { Constructor ($1, None)}
 
  | simple_expr "." label_longident  { FieldAccess ($1, $2, $3) }
@@ -585,9 +585,9 @@ simple_expr:
  (* if only one expr then prefer to generate a ParenExpr *)
  | "(" seq_expr ")"
      { match $2 with
-     | [] -> Sequence ([]) 
+     | [] -> Sequence ([])
      | [x] -> x
-     | _ -> Sequence ($2) 
+     | _ -> Sequence ($2)
      }
 
  | Tbegin seq_expr Tend     { Sequence ($2)  }
@@ -604,26 +604,26 @@ simple_expr:
  (* extensions *)
 
  (* array extension *)
- | "[|" list_sep_term(expr, ";")? "|]" 
+ | "[|" list_sep_term(expr, ";")? "|]"
     { ExprTodo (("ArrayLiteral",$1), optlist_to_list $2)  }
- | simple_expr "." "(" seq_expr ")"  
+ | simple_expr "." "(" seq_expr ")"
     { ExprTodo (("ArrayAccess", $2), [$1] @ $4) }
- | simple_expr "." "[" seq_expr "]"  
+ | simple_expr "." "[" seq_expr "]"
     { ExprTodo (("ArrayAccess", $2), [$1] @ $4) }
  (* bigarray extension *)
- | simple_expr "." "{" expr "}"      
+ | simple_expr "." "{" expr "}"
     { ExprTodo (("BigArrayAccess", $2), [$1;$4]) }
 
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, $3) }
  | Tnew class_longident              { New ($1, $2) }
- | "{<" list_sep_term(field_expr, ";")? ">}" 
+ | "{<" list_sep_term(field_expr, ";")? ">}"
       { ExprTodo (("LiteralObj", $1), $2 |> optlist_to_list |> List.map snd) }
  (* name tag extension *)
- | name_tag        %prec prec_constant_constructor  
+ | name_tag        %prec prec_constant_constructor
      { PolyVariant ($1, None) }
  (* misc *)
- | "(" seq_expr type_constraint ")"  
+ | "(" seq_expr type_constraint ")"
      { TypedExpr (seq1 $2, fst $3, snd $3)  }
  (* scoped open, 3.12 *)
  | mod_longident "." "(" seq_expr ")"
@@ -647,7 +647,7 @@ record_expr:
  |                   list_sep_term(lbl_expr, ";")  { (None, $1) }
  | simple_expr Twith list_sep_term(lbl_expr, ";")  { (Some $1, $3) }
 
-lbl_expr: 
+lbl_expr:
  | label_longident "=" expr { ($1, $3) }
  (* new 3.12 feature! *)
  | label_longident          { ($1, name_of_id (snd $1)) }
@@ -679,13 +679,13 @@ constant:
 (*----------------------------*)
 
 label_expr:
- | TLabelDecl simple_expr 
+ | TLabelDecl simple_expr
     { ArgKwd ($1 (* TODO del ~/:? *), $2) }
- | "~" label_ident        
+ | "~" label_ident
     { ArgKwd ($2, name_of_id $2) }
- | "?" label_ident        
+ | "?" label_ident
     { Arg (ExprTodo (("ArgTodo1", $1), [name_of_id $2])) }
- | TOptLabelDecl simple_expr 
+ | TOptLabelDecl simple_expr
     { Arg (ExprTodo (("ArgTodo2", snd $1), [$2])) }
 
 (*----------------------------*)
@@ -724,7 +724,7 @@ pattern:
  | pattern "|" pattern                            { PatDisj ($1, $3) }
 
  (* name tag extension *)
- | name_tag pattern %prec prec_constr_appl        
+ | name_tag pattern %prec prec_constr_appl
     { PatPolyVariant ($1, Some $2) }
 
 
@@ -736,8 +736,8 @@ simple_pattern:
  | signed_constant                  { PatLiteral $1 }
 
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
- | "["  list_sep_term(pattern, ";")  "]"       { PatList (($1, $2, $3)) }
- | "[|" list_sep_term(pattern, ";")? "|]"      
+ | "["  list_sep_term(pattern, ";")  "]"       { PatList ($1, $2, $3) }
+ | "[|" list_sep_term(pattern, ";")? "|]"
     { PatTodo (("Array",$1), optlist_to_list $2) }
 
  (* note that let (x:...) a =  will trigger this rule *)
@@ -756,7 +756,7 @@ simple_pattern:
 
  | "(" pattern ")"             { $2 }
 
-lbl_pattern: 
+lbl_pattern:
  | label_longident "=" pattern               { ($1, $3) }
  | label_longident                           { ($1, PatVar (snd $1)) }
 
@@ -799,9 +799,9 @@ type_constraint:
 
 type_declaration: type_parameters TLowerIdent type_kind (*TODO constraints*)
    { match $3 with
-     | None -> 
+     | None ->
          { tname = $2; tparams = $1; tbody = AbstractType }
-     | Some (_tok_eq, type_kind) -> 
+     | Some (_tok_eq, type_kind) ->
          { tname = $2; tparams = $1; tbody = type_kind }
    }
 
@@ -868,7 +868,7 @@ simple_core_type2:
  | type_variable                                 { $1 }
  | type_longident                                { TyName ($1) }
  | simple_core_type2 type_longident              { TyApp ([$1], $2) }
- | "(" list_sep(core_type, ",") ")" type_longident 
+ | "(" list_sep(core_type, ",") ")" type_longident
       { TyApp (($2), $4) }
 
  (* name tag extension *)
@@ -888,11 +888,11 @@ type_variable: "'" ident          { TyVar ($2) }
 polymorphic_variant_type:
  | "[" tag_field "]"
      { TyTodo(("Tag",$1), [$2])}
- | "[" row_field? "|"  list_sep(row_field,"|") "]" 
+ | "[" row_field? "|"  list_sep(row_field,"|") "]"
      { TyTodo(("Rows|",$1),(opt_to_list $2)@ $4)}
- | "[>" "|"?  list_sep(row_field,"|") "]" 
+ | "[>" "|"?  list_sep(row_field,"|") "]"
      { TyTodo(("Rows>",$1), $3)}
- | "[<" "|"?  list_sep(row_field,"|") "]" 
+ | "[<" "|"?  list_sep(row_field,"|") "]"
      { TyTodo(("Rows<",$1), $3)}
 
 
@@ -900,8 +900,8 @@ polymorphic_variant_type:
 (* Advanced types *)
 (*----------------------------*)
 
-poly_type: 
- | type_parameter+ "." core_type { TyTodo(("Poly",$2), [$3]) } 
+poly_type:
+ | type_parameter+ "." core_type { TyTodo(("Poly",$2), [$3]) }
  | core_type { $1 }
 
 row_field:
@@ -973,7 +973,7 @@ label_pattern:
   | "~" "(" label_let_pattern ")"                 { ParamTodo $1 }
   | "?" "(" label_let_pattern opt_default ")"     { ParamTodo $1 }
   | "?" label_var                                 { ParamTodo $1 }
- 
+
 label_let_pattern:
  | label_var                { }
  | label_var ":" core_type  { }
@@ -988,7 +988,7 @@ label_let_pattern:
 class_description: Tvirtual? class_type_parameters TLowerIdent ":" class_type
   { mki (ItemTodo (("ClassDescr", $4), [])) (* TODO $5 *)}
 
-class_type_declaration: 
+class_type_declaration:
   Tvirtual? class_type_parameters TLowerIdent "=" class_signature
   { mki (ItemTodo (("ClassTypeDecl", $4), [])) (* TODO $5 *) }
 
@@ -1033,7 +1033,7 @@ value_type:
 (* Class definitions *)
 (*----------------------------*)
 
-class_declaration: 
+class_declaration:
  Tvirtual? class_type_parameters TLowerIdent class_fun_binding
    { mki (ItemTodo (("ClassDecl", (snd $3)), [$4])) }
 
@@ -1042,9 +1042,9 @@ class_type_parameters:
   | "[" list_sep(type_parameter, ",") "]"  { }
 
 class_fun_binding:
-  | class_typed? "=" class_expr  
+  | class_typed? "=" class_expr
     { mki (ItemTodo (("ClassExpr", $2), [] (* TODO *))) }
-  | labeled_simple_pattern  class_fun_binding  
+  | labeled_simple_pattern  class_fun_binding
     { (* TODO $1 *) $2 }
 
 class_typed: ":" class_type { }
@@ -1056,7 +1056,7 @@ class_expr:
   | Tlet Trec? list_and(let_binding) Tin class_expr    { }
 
 %inline
-actual_class_parameters: 
+actual_class_parameters:
  | "[" list_sep(core_type, ",") "]"  { }
  | (* empty *) { }
 
@@ -1121,9 +1121,9 @@ module_binding:
  | ":" module_type "=" module_expr                     { (*$1 *) Some($3, $4) }
 
 module_declaration:
- | ":" module_type  
+ | ":" module_type
     { $2 }
- | "(" TUpperIdent ":" module_type ")" module_declaration 
+ | "(" TUpperIdent ":" module_type ")" module_declaration
      { { i = ItemTodo (("ModuleTypedDecl", $1), [$4; $6]); iattrs = [] } }
 
 (*----------------------------*)
@@ -1133,21 +1133,21 @@ module_declaration:
 module_type: module_type_noattr { { i = $1; iattrs = [] } }
 
 module_type_noattr:
- | mty_longident         
+ | mty_longident
     { let (_, (_, t)) = $1 in ItemTodo (("ModuleTypeAlias", t), []) }
- | Tsig signature Tend   
+ | Tsig signature Tend
     { ItemTodo (("Sig", $1), $2) }
  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_type
     %prec below_WITH
       { ItemTodo (("FunctorType", $1), [$5; $8]) }
- | module_type Twith list_and(with_constraint)  
+ | module_type Twith list_and(with_constraint)
       { ItemTodo (("ModuleTypeWith", $2), [$1]) }
- | "(" module_type_noattr ")"     
+ | "(" module_type_noattr ")"
       { $2 }
 
 
 with_constraint:
- | Ttype type_parameters label_longident with_type_binder core_type 
+ | Ttype type_parameters label_longident with_type_binder core_type
     (*constraints*)
    { }
 
@@ -1166,10 +1166,10 @@ module_expr:
   | Tstruct structure Tend { ModuleStruct ($2) }
 
   (* functor definition *)
-  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr 
+  | Tfunctor "(" TUpperIdent ":" module_type ")" "->" module_expr
      { ModuleTodo (("Functor", $1), [$8]) }
   (* module/functor application *)
-  | module_expr "(" module_expr ")" 
+  | module_expr "(" module_expr ")"
     { ModuleTodo (("FunctorApply", $2), [$1; $3]) }
 
 (*************************************************************************)
@@ -1177,12 +1177,12 @@ module_expr:
 (*************************************************************************)
 
 (*pad: this is a limited implementation for now; just enough for efuns/pfff *)
-floating_attribute:  "[@@@" attr_id payload "]" 
+floating_attribute:  "[@@@" attr_id payload "]"
   { ItemTodo (("Attribute", $1), $3) }
 
-post_item_attribute: "[@@"  attr_id payload "]" 
+post_item_attribute: "[@@"  attr_id payload "]"
   { ($1, ($2, $3), $4) }
-attribute:           "[@"   attr_id payload "]" 
+attribute:           "[@"   attr_id payload "]"
   { ($1, ($2, $3), $4) }
 
 

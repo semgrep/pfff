@@ -7,7 +7,7 @@ val is_php_filename: Common.filename -> bool
 val is_php_file: Common.filename -> bool
 val is_php_script: Common.filename -> bool
 
-val find_source_files_of_dir_or_files: 
+val find_source_files_of_dir_or_files:
   ?verbose:bool ->
   ?include_hack:bool ->
   Common.path list -> Common.filename list
@@ -31,11 +31,11 @@ val get_static_vars_any       : any -> dname list
 val get_returns_any           : any -> expr list
 val get_vars_assignements_any : any -> (string * expr list) list
 
-val top_statements_of_program: 
+val top_statements_of_program:
   program -> stmt list
 
 val functions_methods_or_topstms_of_program:
-  program -> 
-  (func_def list * method_def list * stmt list list) 
+  program ->
+  (func_def list * method_def list * stmt list list)
 *)
 (*e: lib_parsing_php.mli *)

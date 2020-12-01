@@ -57,7 +57,7 @@ module DataflowX = Dataflow.Make (struct
   type node = F.node
   type edge = F.edge
   type flow = (node, edge) Ograph_extended.ograph_mutable
-  let short_string_of_node n = 
+  let short_string_of_node n =
         Display_IL.short_string_of_node_kind n.F.n
 end)
 (*e: module [[Dataflow.Make(Il)]] *)
@@ -84,7 +84,7 @@ let option_to_varmap = function
  *)
 
 (*s: constant [[Dataflow_tainting.union]] *)
-let union = 
+let union =
   Dataflow.varmap_union (fun () () -> ())
 (*e: constant [[Dataflow_tainting.union]] *)
 (*s: constant [[Dataflow_tainting.diff]] *)
@@ -98,10 +98,10 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
-  let in' = 
+  let in' =
     (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
        union acc mapping.(ni_pred).D.out_env
-     ) VarMap.empty 
+     ) VarMap.empty
   in
   let node = flow#nodes#assoc ni in
 
@@ -122,11 +122,11 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
   );
 
 
-  let gen_ni_opt = 
+  let gen_ni_opt =
     match node.F.n with
     | NInstr x ->
        (match x.i with
-       | Call (Some ({base=Var lvar; _}), 
+       | Call (Some ({base=Var lvar; _}),
                     {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
           Some lvar
       (* this can use semgrep patterns under the hood to find source
@@ -141,7 +141,7 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
            | None -> None
            | Some lvar ->
                (* one taint argument propagate the taint to the lvar *)
-               if rvars |> List.exists (fun rvar -> 
+               if rvars |> List.exists (fun rvar ->
                                 VarMap.mem (str_of_name rvar) in')
                then Some lvar
                else None
@@ -151,7 +151,7 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
     | Enter | Exit | TrueNode | FalseNode | Join
     | NCond _| NReturn _ | NThrow _ | NOther _ -> None
   in
-  let kill_ni_opt = 
+  let kill_ni_opt =
     (* if there was a source(), no need to look for a sanitize() given
      * an instr can be at most one call?
      * old:
@@ -163,12 +163,12 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
     match node.F.n with
     | NInstr x ->
        (match x.i with
-       | Call (Some ({base=Var _lvar; _}), 
+       | Call (Some ({base=Var _lvar; _}),
                     {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
           None
        | _ when config.is_source x -> None
 
-       | Call (Some ({base=Var lvar; _}), 
+       | Call (Some ({base=Var lvar; _}),
                {e=Lvalue({base=Var(("sanitize",_),_);_}); _}, [])->
           Some lvar
        | _ when config.is_sanitizer x ->
@@ -180,7 +180,7 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
            | None -> None
            | Some lvar ->
                (* all clean arguments should reset the taint *)
-               if rvars |> List.for_all (fun rvar -> 
+               if rvars |> List.for_all (fun rvar ->
                                 not (VarMap.mem (str_of_name rvar) in'))
                then Some lvar
                else None

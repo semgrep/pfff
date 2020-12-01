@@ -66,11 +66,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 let rec v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit =
   fun of_a (v1, v2, v3) ->
   let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
 
-and v_info x = 
+and v_info x =
   let k _x = () in
   vin.kinfo (k, all_functions) x
 
@@ -90,7 +90,7 @@ and v_modifier = function
   | Annotation v1 -> v_annotation v1
 
 (* TODO: we should remove visitor_js anyway *)
-and v_annotation (_v1, _v2, _v3) = 
+and v_annotation (_v1, _v2, _v3) =
   Common.pr2_once "TODO: Visitor_java.v_annotation"
 
 and v_directive_stmts s = (v_list v_import) s
@@ -121,7 +121,7 @@ and v_any x = match x with
 
 and v_type_parameter =
   function
-  | TParam ((v1, v2)) ->
+  | TParam (v1, v2) ->
       let v1 = v_ident v1 and v2 = v_list v_ref_type v2 in ()
 
 and v_qualified_ident v =
@@ -155,9 +155,9 @@ and v_name_or_class_type v = v_list v_identifier_ v
 and v_identifier_ =
   function
   | Id v1 -> let v1 = v_ident v1 in ()
-  | Id_then_TypeArgs ((v1, v2)) ->
+  | Id_then_TypeArgs (v1, v2) ->
       let v1 = v_ident v1 and v2 = v_list v_type_argument v2 in ()
-  | TypeArgs_then_Id ((v1, v2)) ->
+  | TypeArgs_then_Id (v1, v2) ->
       let v1 = v_list v_type_argument v1 and v2 = v_identifier_ v2 in ()
 and v_type_argument =
   function
@@ -190,20 +190,20 @@ and v_expr (x : expr) =
     | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
     | Literal v1 -> let v1 = v_literal v1 in ()
     | ClassLiteral v1 -> let v1 = v_typ v1 in ()
-    | NewClass ((v0, v1, v2, v3)) ->
+    | NewClass (v0, v1, v2, v3) ->
       let v0 = v_tok v0 in
       let v1 = v_typ v1
       and v2 = v_arguments v2
       and v3 = v_option (v_bracket v_decls) v3
       in ()
-    | NewArray ((v0, v1, v2, v3, v4)) ->
+    | NewArray (v0, v1, v2, v3, v4) ->
       let v0 = v_tok v0 in
       let v1 = v_typ v1
       and v2 = v_list v_expr v2
       and v3 = v_int v3
       and v4 = v_option v_init v4
       in ()
-    | NewQualifiedClass ((v0, t, v1, v2, v3, v4)) ->
+    | NewQualifiedClass (v0, t, v1, v2, v3, v4) ->
       let v0 = v_expr v0 in
       let _ = v_tok t in
       let v1 = v_tok v1
@@ -211,29 +211,29 @@ and v_expr (x : expr) =
       and v3 = v_arguments v3
       and v4 = v_option (v_bracket v_decls) v4
       in ()
-    | Call ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
-    | Dot ((v1, t, v2)) -> 
+    | Call (v1, v2) -> let v1 = v_expr v1 and v2 = v_arguments v2 in ()
+    | Dot (v1, t, v2) ->
         let v1 = v_expr v1 and t = v_tok t and v2 = v_ident v2 in ()
-    | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
-    | Postfix ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_incr_decr v2 in ()
-    | Prefix ((v1, v2)) -> let v1 = v_incr_decr v1 and v2 = v_expr v2 in ()
-    | Unary ((v1, v2)) -> let v1 = v_wrap v_arith_op v1 and v2 = v_expr v2 in ()
-    | Infix ((v1, v2, v3)) ->
+    | ArrayAccess (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
+    | Postfix (v1, v2) -> let v1 = v_expr v1 and v2 = v_incr_decr v2 in ()
+    | Prefix (v1, v2) -> let v1 = v_incr_decr v1 and v2 = v_expr v2 in ()
+    | Unary (v1, v2) -> let v1 = v_wrap v_arith_op v1 and v2 = v_expr v2 in ()
+    | Infix (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
-    | Cast ((v1, v2)) -> let v1 = v_bracket (v_list v_typ) v1 and v2 = v_expr v2 in ()
-    | InstanceOf ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
-    | Conditional ((v1, v2, v3)) ->
+    | Cast (v1, v2) -> let v1 = v_bracket (v_list v_typ) v1 and v2 = v_expr v2 in ()
+    | InstanceOf (v1, v2) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
+    | Conditional (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
-    | AssignOp ((v1, v2, v3)) ->
+    | AssignOp (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
-    | Assign ((v1, v2, v3)) ->
+    | Assign (v1, v2, v3) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
-    | TypedMetavar((v1, v2)) ->
+    | TypedMetavar(v1, v2) ->
       let v1 = v_ident v1 in
       let v2 = v_typ v2 in
       ()
-    | Lambda ((v1, t, v2)) ->
-      let v1 = v_parameters v1 in 
+    | Lambda (v1, t, v2) ->
+      let v1 = v_parameters v1 in
       v_tok t;
       let v2 = v_stmt v2 in
       ()
@@ -261,50 +261,50 @@ and v_stmt (x : stmt) =
   | EmptyStmt t -> v_tok t
   | Block v1 -> let v1 = v_bracket v_stmts v1 in ()
   | Expr (v1, t) -> let v1 = v_expr v1 in let t = v_info t in ()
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
       let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()
-  | Switch ((v0, v1, v2)) ->
+  | Switch (v0, v1, v2) ->
       let v0 = v_info v0 in
       let v1 = v_expr v1
       and v2 =
         v_list
           (fun (v1, v2) -> let v1 = v_cases v1 and v2 = v_stmts v2 in ()) v2
       in ()
-  | While ((t, v1, v2)) -> 
+  | While (t, v1, v2) ->
       let t = v_info t in
         let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | Do ((t, v1, v2)) -> 
+  | Do (t, v1, v2) ->
       let t = v_info t in
         let v1 = v_stmt v1 and v2 = v_expr v2 in ()
-  | For ((t, v1, v2)) -> 
+  | For (t, v1, v2) ->
       let t = v_info t in
         let v1 = v_for_control v1 and v2 = v_stmt v2 in ()
-  | Break (t, v1) -> 
+  | Break (t, v1) ->
       let t = v_info t in
         let v1 = v_option v_ident v1 in ()
-  | Continue (t, v1) -> 
+  | Continue (t, v1) ->
       let t = v_info t in
         let v1 = v_option v_ident v1 in ()
-  | Return (t, v1) -> 
+  | Return (t, v1) ->
       let t = v_info t in
         let v1 = v_option v_expr v1 in ()
-  | Label ((v1, v2)) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
-  | Sync ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | Try ((t, v0, v1, v2, v3)) ->
+  | Label (v1, v2) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
+  | Sync (v1, v2) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+  | Try (t, v0, v1, v2, v3) ->
       let t = v_info t in
       let v0 = v_option v_resources v0 in
       let v1 = v_stmt v1
       and v2 = v_catches v2
       and v3 = v_option v_tok_and_stmt v3
       in ()
-  | Throw (t, v1) -> 
+  | Throw (t, v1) ->
       let t = v_info t in
         let v1 = v_expr v1 in ()
   | LocalVar v1 -> let v1 = v_var_with_init v1 in ()
   | DeclStmt v1 -> let v1 = v_decl v1 in ()
   | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
-  | Assert ((t, v1, v2)) -> 
+  | Assert (t, v1, v2) ->
       let t = v_info t in
         let v1 = v_expr v1 and v2 = v_option v_expr v2 in ()
   in
@@ -316,7 +316,7 @@ and v_resource = function
   | Common.Left x -> v_var_with_init x
   | Common.Right y -> v_expr y
 
-and v_directive v = 
+and v_directive v =
   match v with
   | Package (v1, v2, v3) ->
       let v1 = v_tok v1 in
@@ -333,42 +333,42 @@ and v_import = function
       v_tok v1; v_qualified_ident v2; v_ident v3
 
 
-and v_tok_and_stmt (t, v) = 
+and v_tok_and_stmt (t, v) =
   let t = v_tok t in
   let v = v_stmt v in
   ()
 
 and v_stmts v = v_list v_stmt v
-and v_case = function 
-  | Case (t, v1) -> 
+and v_case = function
+  | Case (t, v1) ->
       let t = v_tok t in
-      let v1 = v_expr v1 in () 
-  | Default t -> 
+      let v1 = v_expr v1 in ()
+  | Default t ->
       let t = v_tok t in
       ()
 and v_cases v = v_list v_case v
 and v_for_control =
   function
-  | ForClassic ((v1, v2, v3)) ->
+  | ForClassic (v1, v2, v3) ->
       let v1 = v_for_init v1
       and v2 = v_list v_expr v2
       and v3 = v_list v_expr v3
       in ()
-  | Foreach ((v1, v2)) -> let v1 = v_var v1 and v2 = v_expr v2 in ()
+  | Foreach (v1, v2) -> let v1 = v_var v1 and v2 = v_expr v2 in ()
 and v_for_init =
   function
   | ForInitVars v1 -> let v1 = v_list v_var_with_init v1 in ()
   | ForInitExprs v1 -> let v1 = v_list v_expr v1 in ()
-and v_catch (t, v1, v2) = 
-  let t = v_tok t in 
+and v_catch (t, v1, v2) =
+  let t = v_tok t in
   let v1 = v_catch_var v1 and v2 = v_stmt v2 in ()
 and v_catches v = v_list v_catch v
 and v_var x =
   let k x = match x with
     | { name = v_v_name; mods = v_v_mods; type_ = v_v_type } ->
       let arg = v_ident v_v_name in
-      let arg = v_modifiers v_v_mods in 
-      let arg = v_option v_typ v_v_type 
+      let arg = v_modifiers v_v_mods in
+      let arg = v_option v_typ v_v_type
       in ()
   in
   vin.kvar (k, all_functions) x
@@ -440,12 +440,12 @@ and v_class_decl (x : class_decl) =
            let arg = v_list v_type_parameter v_cl_tparams in
            let arg = v_modifiers v_cl_mods in
            let arg = v_option v_typ v_cl_extends in
-           let arg = v_list v_ref_type v_cl_impls in 
+           let arg = v_list v_ref_type v_cl_impls in
         let arg = v_class_body v_cl_body in ()
   in
   vin.kclass (k, all_functions) x
 
-and v_class_kind (x, t) = 
+and v_class_kind (x, t) =
   let v1 = v_tok t in
   match x with
  | ClassRegular | Interface | AtInterface -> ()
@@ -456,7 +456,7 @@ and v_decl x =
   | Method v1 -> let v1 = v_method_decl v1 in ()
   | Field v1 -> let v1 = v_field v1 in ()
   | Enum v1 -> let v1 = v_enum_decl v1 in ()
-  | Init ((v1, v2)) -> let v1 = v_option v_tok v1 and v2 = v_stmt v2 in ()
+  | Init (v1, v2) -> let v1 = v_option v_tok v1 and v2 = v_stmt v2 in ()
   | DeclEllipsis v1 -> let v1 = v_tok v1 in ()
   | EmptyDecl t -> v_tok t
   | AnnotationTypeElementTodo t -> v_tok t

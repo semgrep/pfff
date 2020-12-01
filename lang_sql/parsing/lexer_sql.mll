@@ -7,14 +7,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 
-open Common 
+open Common
 
 module Ast = Ast_sql
 module Flag = Flag_parsing
@@ -99,9 +99,9 @@ let DNUM =	(['0'-'9']*['.']['0'-'9']+) | (['0'-'9']+['.']['0'-'9']* )
 let EXPONENT_DNUM =	((LNUM|DNUM)['e''E']['+''-']?LNUM)
 let HNUM =	"0x"['0'-'9''a'-'f''A'-'F']+
 
-let STRING = '\'' [^ '\'']* '\'' 
+let STRING = '\'' [^ '\'']* '\''
 
-let NAME_BACKQUOTE = '`' [^ '`']* '`' 
+let NAME_BACKQUOTE = '`' [^ '`']* '`'
 
 (*****************************************************************************)
 
@@ -146,11 +146,11 @@ rule lexer = parse
         let info = tokinfo lexbuf in
         let s = tok lexbuf in
 
-          match Common2.optionise (fun () -> 
+          match Common2.optionise (fun () ->
             Hashtbl.find keyword_table (String.lowercase_ascii s))
           with
           | Some f -> f info
-          | None -> T_NAME (info)
+          | None -> T_NAME info
         }
 
   | NAME_BACKQUOTE {
@@ -174,8 +174,8 @@ rule lexer = parse
 
   | eof { EOF (tokinfo lexbuf) }
 
-  | _ { 
-      if !Flag.verbose_lexing 
+  | _ {
+      if !Flag.verbose_lexing
       then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }

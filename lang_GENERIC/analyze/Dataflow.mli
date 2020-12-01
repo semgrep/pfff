@@ -24,9 +24,9 @@ module VarSet : Set.S with type elt = String.t
 type 'a mapping = 'a inout array
 (*e: type [[Dataflow.mapping]] *)
 (*s: type [[Dataflow.inout]] *)
-  and 'a inout = { 
-    in_env : 'a env; 
-    out_env : 'a env; 
+  and 'a inout = {
+    in_env : 'a env;
+    out_env : 'a env;
    }
 (*e: type [[Dataflow.inout]] *)
 (*s: type [[Dataflow.env]] *)
@@ -57,13 +57,13 @@ type 'a transfn = 'a mapping -> nodei -> 'a inout
 (*e: type [[Dataflow.transfn]] *)
 
 (*s: signature [[Dataflow.varmap_union]] *)
-val varmap_union: 
-  ('a -> 'a -> 'a) -> 
+val varmap_union:
+  ('a -> 'a -> 'a) ->
   'a env -> 'a env -> 'a env
 (*e: signature [[Dataflow.varmap_union]] *)
 (*s: signature [[Dataflow.varmap_diff]] *)
-val varmap_diff: 
-  ('a -> 'a -> 'a) -> ('a -> bool) -> 
+val varmap_diff:
+  ('a -> 'a -> 'a) -> ('a -> bool) ->
   'a env -> 'a env -> 'a env
 (*e: signature [[Dataflow.varmap_diff]] *)
 
@@ -83,11 +83,11 @@ val diff_env  : NodeiSet.t env -> NodeiSet.t env -> NodeiSet.t env
 (*e: signature [[Dataflow.diff_env]] *)
 
 (*s: signature [[Dataflow.add_var_and_nodei_to_env]] *)
-val add_var_and_nodei_to_env: 
+val add_var_and_nodei_to_env:
   var -> nodei -> NodeiSet.t env -> NodeiSet.t env
 (*e: signature [[Dataflow.add_var_and_nodei_to_env]] *)
 (*s: signature [[Dataflow.add_vars_and_nodei_to_env]] *)
-val add_vars_and_nodei_to_env: 
+val add_vars_and_nodei_to_env:
   VarSet.t -> nodei -> NodeiSet.t env -> NodeiSet.t env
 (*e: signature [[Dataflow.add_vars_and_nodei_to_env]] *)
 
@@ -113,9 +113,9 @@ module Make (F: Flow) : sig
 val fixpoint :
   eq:('a -> 'a -> bool) ->
   init:'a mapping ->
-  trans:'a transfn -> 
-  flow:F.flow -> 
-  forward:bool -> 
+  trans:'a transfn ->
+  flow:F.flow ->
+  forward:bool ->
   'a mapping
 
 val new_node_array: F.flow -> 'a -> 'a array

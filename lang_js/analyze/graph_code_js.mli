@@ -3,7 +3,7 @@ val build:
   Graph_code.graph
 
 (* helpers *)
-val kind_of_expr_opt: 
+val kind_of_expr_opt:
   Ast_js.var_kind Ast_js.wrap -> Ast_js.expr option -> Entity_code.entity_kind
 
 (* used to be in ast_js.ml *)

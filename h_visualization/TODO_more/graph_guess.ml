@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -20,10 +20,10 @@ module G = Graph
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Wrappers to use GUESS (http://guess.wikispot.org/Front_Page), to 
+ * Wrappers to use GUESS (http://guess.wikispot.org/Front_Page), to
  * generate data in its GDF format.
  *
- * 
+ *
  * todo?
  * colorize(dir)
  * g.nodes.labelvisible=true
@@ -43,9 +43,9 @@ let to_gdf g ~str_of_node ~output =
     let node_name_of_n n =
       let s = str_of_node n in
       let (d,b,e) = Common.dbe_of_filename_noext_ok s in
-      
+
       match e with
-      | "ml" -> 
+      | "ml" ->
           let str = String.capitalize b in
           if str = "Math" then "Math_xxx"
           else str

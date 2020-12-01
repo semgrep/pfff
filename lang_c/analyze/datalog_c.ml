@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -27,11 +27,11 @@ module E = Entity_code
 (*****************************************************************************)
 (*
  * Generating dataflow-related datalog facts for C.
- * 
+ *
  * See pfff/mini/datalog_minic.ml for more comments, history, and notes.
  * Lots of code in this file is copy pasted from datalog_minic.ml
  * (but now actually improved, e.g. with the notion of lvalue/rvalue).
- * 
+ *
  * todo:
  *  - could also add the AST of macros in the environment to
  *    expand sometimes
@@ -85,7 +85,7 @@ let debug any =
   pr2 s
 
 (* location are unique normally so nice to generate unique readable names *)
-let loc_of env tok = 
+let loc_of env tok =
   let line = Parse_info.line_of_info tok in
   let col = Parse_info.col_of_info tok in
   if env.long_format
@@ -96,8 +96,8 @@ let loc_of env tok =
 (* for int* x[10][10] we want to generate a list of Alloc and
  * we want to create fresh array each time
  * (we could use gensym for that though).
- * TODO: good enough with the way types are represented? Need 
- * Ast_c.Pointer of tok * type_ ? 
+ * TODO: good enough with the way types are represented? Need
+ * Ast_c.Pointer of tok * type_ ?
  *)
 let tok_of_type _t =
   raise Todo
@@ -141,7 +141,7 @@ let counter = ref 0
 (* note that we still use var_of_name to generate the extra scope info
  * so no need to add it there
  *)
-let fresh_var env (_, tok) = 
+let fresh_var env (_, tok) =
   incr counter;
   let s = spf "_v_%d" (* env.scope? no! *) !counter in
   (* todo type! *)
@@ -163,10 +163,10 @@ let instrs_of_expr env e =
   | A.Int _ | A.Float _ | A.String _ | A.Char _  | A.Bool _ | A.Null _
   | A.ConcatString _
   | A.Id _
-  | A.Unary (_, (A2.DeRef, _)) 
+  | A.Unary (_, (A2.DeRef, _))
   | A.Call _ | A.ArrayAccess _ | A.RecordPtAccess _
   | A.Defined _
-  | A.Binary _ 
+  | A.Binary _
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
   | A.SizeOf _
   | A.GccConstructor _
@@ -182,7 +182,7 @@ let instrs_of_expr env e =
   | A.Assign (op, e1, A.ArrayInit xs) ->
     let ys = xs |> unbracket |> List.map (fun (idxopt, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
-      let tok = 
+      let tok =
          match op with A2.SimpleAssign tok -> tok | A2.OpAssign (_, tok) -> tok
       in
       let access =
@@ -199,11 +199,11 @@ let instrs_of_expr env e =
   (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.RecordInit xs) ->
     let ys = xs |> unbracket |> List.map (fun (name, value) ->
-      let tok = 
+      let tok =
          match op with A2.SimpleAssign tok -> tok | A2.OpAssign (_, tok) -> tok
       in
       (* less? recompute e1 each time? should store in intermediate val? *)
-      let access = 
+      let access =
         A.RecordPtAccess
           (A.Unary (e1, (A2.GetRef, tok)),
            Parse_info.fake_info "->",
@@ -214,7 +214,7 @@ let instrs_of_expr env e =
     in
     let seq = Common2.foldl1 (fun e rest -> Sequence(e, rest)) ys in
     instr_of_expr seq
-      
+
 
   (* ok, an actual instr! For our analysis we don't care about op (we are
    * not even control flow sensitive anyway)
@@ -231,10 +231,10 @@ let instrs_of_expr env e =
               raise Impossible
           | lv -> AssignAddress (v, lv)
           )
-      | _ ->      
+      | _ ->
           (match lv with
-          | Id name -> 
-              Assign (name, 
+          | Id name ->
+              Assign (name,
                       try rvalue_of_simple_expr e2
                       with NotSimpleExpr -> Lv (Id (var_of_expr e2))
               )
@@ -246,12 +246,12 @@ let instrs_of_expr env e =
       let v = fresh_var env ((), tok) in
       let lv = lvalue_of_expr e in
       (match lv with
-      | DeRef _ -> 
+      | DeRef _ ->
           debug (A.Expr e);
           raise Impossible
       | lv -> AssignAddress (v, lv)
       )
-  | A.Unary (_, ((A2.GetRefLabel, _))) ->
+  | A.Unary (_, (A2.GetRefLabel, _)) ->
       (* ast_c_build should forbid that gccext *)
       debug (A.Expr e);
       raise Impossible
@@ -269,7 +269,7 @@ let instrs_of_expr env e =
   | A.Postfix (e, _op) | A.Infix (e, _op) ->
       instr_of_expr e
 
-  (* Could try to expand to a '_builtin_cond(e1, e2, e3)' but 
+  (* Could try to expand to a '_builtin_cond(e1, e2, e3)' but
    * what would be the type of this function? bool -> T -> T -> T ...
    * need polymorphic type. So for now just expand to
    * 'v1 = e1; v2 = e2; v2 = e3;'
@@ -280,7 +280,7 @@ let instrs_of_expr env e =
     let tokwrap = tokwrap_of_expr e2 in
     let v = fresh_var env tokwrap in
     let tok = snd tokwrap in
-    let i2 = 
+    let i2 =
       instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e2)) in
     Common.push i2 instrs;
     instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e3));
@@ -306,7 +306,7 @@ let instrs_of_expr env e =
   (* todo: xalloc, smalloc, and other wrappers? *)
   | A.Call (A.Id ("malloc", tok), (_, es, _)) ->
       (match es with
-      | [Arg (SizeOf(_, Right(t)))] -> Alloc (t)
+      | [Arg (SizeOf(_, Right(t)))] -> Alloc t
       | [Arg (Binary(e, (Cst_cpp.Arith(Cst_cpp.Mul), _), SizeOf(_, Right(t))))] ->
           let v = var_of_expr e in
           AllocArray(v,t)
@@ -315,7 +315,7 @@ let instrs_of_expr env e =
           (* debug (Expr e); *)
           Alloc (A.TBase ("_unknown_", tok))
 
-      | _ -> 
+      | _ ->
           debug (Expr e);
           Alloc (A.TBase ("_unknown_", tok))
       )
@@ -342,12 +342,12 @@ let instrs_of_expr env e =
           DynamicCall (var_of_expr e, vs)
 
       (* x->f(...) is actually sugar for ( *  x->f)(...) *)
-      | A.RecordPtAccess (_, _, _) 
+      | A.RecordPtAccess (_, _, _)
       (* x[y](...) is also sugar for ( * x[y](...) *)
-      | A.ArrayAccess (_, _) 
+      | A.ArrayAccess (_, _)
         ->
           DynamicCall (var_of_expr e, vs)
-      | _ -> 
+      | _ ->
           debug (Expr e);
           raise Todo
       )
@@ -376,29 +376,29 @@ let instrs_of_expr env e =
   (* can be in macro context, e.g. #define SEG (struct x) { ... } *)
   | A.GccConstructor (t, _eTODO) -> Alloc t
 
-  | _ -> 
+  | _ ->
     (* hmmm maybe better to have this function return a rvalue option *)
     raise NotSimpleExpr
 
-  and var_of_arg x = 
+  and var_of_arg x =
     match x with
     | Arg e -> var_of_expr e
 
   and var_of_expr e =
   match e with
   | A.Id name -> name
-  | _ -> 
+  | _ ->
       let instr = instr_of_expr e in
       Common.push instr instrs;
       var_of_instr instr
 
   and lvalue_of_expr e =
-    try 
+    try
       (match rvalue_of_simple_expr e with
       | Lv x -> x
       | _ -> Id (var_of_expr e)
       )
-    with NotSimpleExpr -> 
+    with NotSimpleExpr ->
       Id (var_of_expr e)
 
   in
@@ -418,7 +418,7 @@ let var_of_global env name =
   then error (spf "unknown global: %s" s) name;
 *)
   if env.long_format
-  then 
+  then
     (* bug: no!! spf "%s#%s" env.c_file_readable
      * we must actually get the file at definition time, not use time
     *)
@@ -450,14 +450,14 @@ let var_of_global env name =
     | [] ->
       (match () with
       | _ when s =~ "_builtin_.*" -> ()
-      | _ -> 
+      | _ ->
         if G.has_node (s, E.Prototype) env.globals ||
            G.has_node (s, E.GlobalExtern) env.globals
         (* todo: could print a warning to force people to give
          * a "model" for the external or asm function
          *)
         then ()
-        else pr2_once 
+        else pr2_once
           (spf "Could not find any definition nor prototype for %s" s);
       );
       s
@@ -537,8 +537,8 @@ let facts_of_instr env = function
       (* like in miniC *)
       | StaticCall (("printf", _), _args) -> []
 
-      | StaticCall (name, args) 
-      | DynamicCall (name, args) 
+      | StaticCall (name, args)
+      | DynamicCall (name, args)
       | BuiltinCall(name, args)  ->
           let invoke = invoke_loc_of_name env name in
           (args |> Common.index_list_1 |> List.map (fun (v, i) ->
@@ -554,18 +554,18 @@ let facts_of_instr env = function
           )
 
       (* TODO: could be enum or constant! lookup g *)
-      | Lv (Id name) -> 
+      | Lv (Id name) ->
           [D.Assign (dest, var_of_name env name)]
       | Lv (DeRef var2) ->
           [D.AssignContent(dest, var_of_name env var2)]
       | Lv (ObjField (var2, fld)) ->
-          [D.AssignLoadField (dest, var_of_name env var2, 
+          [D.AssignLoadField (dest, var_of_name env var2,
                             fully_qualified_field env var2 fld)]
-      | Lv (ArrayAccess (var2, _vidx)) -> 
+      | Lv (ArrayAccess (var2, _vidx)) ->
          (* less: could also add info that vidx must be an int *)
          [D.AssignArrayElt(dest, var_of_name env var2)]
 
-      | Alloc t -> 
+      | Alloc t ->
           let pt = heap_of_malloc env t in
           [D.PointTo(dest, pt)]
       | AllocArray (_v, t) ->
@@ -577,7 +577,7 @@ let facts_of_instr env = function
   | AssignLvalue (ArrayAccess (varr, _vidx), vval) ->
       (* less: could also add info that vidx must be an int *)
       [D.AssignArrayDeref( var_of_name env varr, var_of_name env vval)]
-  | AssignLvalue (ObjField (var, fld), var2) -> 
+  | AssignLvalue (ObjField (var, fld), var2) ->
       [D.AssignStoreField (var_of_name env var,
                            fully_qualified_field env var2 fld,
                            var_of_name env var2)]
@@ -629,15 +629,15 @@ and facts_of_directive env def =
 
 and facts_of_definition env def =
   match def with
-  | StructDef def -> 
+  | StructDef def ->
       def.s_flds |> AST_generic.unbracket |> Common.map_filter (fun fld ->
         match fld.fld_name with
         (* todo: kencc ext field! *)
         | None -> None
         | Some name ->
           (match fld.fld_type with
-          | TBase _ -> 
-             Some (D.PointTo ((fully_qualified_field_of_struct 
+          | TBase _ ->
+             Some (D.PointTo ((fully_qualified_field_of_struct
                                (fst def.s_name) (fst name)),
                             (heap_of_cst env name)))
           (* TODO: like for Global, if fields is an array, we should
@@ -661,7 +661,7 @@ and facts_of_definition env def =
         | None -> None
         | Some name ->
             Some (D.Parameter (var_of_global env def.f_name,
-                               i, 
+                               i,
                                var_of_local env name))
       )) @
      (* less: could skip when return void *)
@@ -675,7 +675,7 @@ and facts_of_definition env def =
         D.PointTo (var_of_global env def.f_name, var_of_global env def.f_name);
        ]
        )
-  | VarDef var ->      
+  | VarDef var ->
       let name = var.v_name in
 
       let rec aux current_v current_type =

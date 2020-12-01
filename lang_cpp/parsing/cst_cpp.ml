@@ -1,5 +1,5 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2002-2005 Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
@@ -9,7 +9,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,7 +22,7 @@
 (* A Concrete Syntax Tree for C/C++/Cpp.
  *
  * This is a big file. C++ is a big and complicated language, and dealing
- * directly with preprocessor constructs from cpp makes the language 
+ * directly with preprocessor constructs from cpp makes the language
  * even bigger.
  *
  * This file started as a simple AST for C. It was then extended
@@ -31,7 +31,7 @@
  * and C++ constructs (see c++ext:), and a few kencc (the plan9 compiler)
  * extensions (see kenccext:). Finally it was extended to deal with
  * a few C++0x and C++11 extensions (see c++0x:).
- * 
+ *
  * gcc introduced StatementExpr which made 'expr' and 'stmt' mutually
  * recursive. It also added NestedFunc for even more mutual recursivity.
  * With C++ templates, because template arguments can be types or expressions
@@ -39,14 +39,14 @@
  * are now mutually recursive ...
  *
  * Some stuff are tagged 'semantic:' which means that they can be computed
- * only after parsing. 
- * 
+ * only after parsing.
+ *
  * See also lang_c/parsing/ast_c.ml and lang_clang/parsing/ast_clang.ml
  * (as well as mini/ast_minic.ml).
- * 
- * todo: 
+ *
+ * todo:
  *  - support C++0x11, e.g. lambdas
- * 
+ *
  * related work:
  *  - https://github.com/facebook/facebook-clang-plugins
  *    or https://github.com/Antique-team/clangml
@@ -80,8 +80,8 @@ and 'a wrapx  = 'a * tok list
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
-and 'a bracket = tok * 'a * tok 
-and 'a angle   = tok * 'a * tok 
+and 'a bracket = tok * 'a * tok
+and 'a angle   = tok * 'a * tok
 
 and 'a comma_list = 'a wrapx list
 and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
@@ -101,7 +101,7 @@ and sc = tok
  * between intermediate idents (the classname or template_id) and final idents.
  * Note that sometimes final idents are also classnames and can have final
  * template_id.
- * 
+ *
  * Sometimes some elements are not allowed at certain places, for instance
  * converters can not have an associated Qtop. But I prefered to simplify
  * and have a unique type for all those different kinds of names.
@@ -111,7 +111,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
  and ident_or_op =
    (* function name, macro name, variable, classname, enumname, namespace *)
    | IdIdent of ident
-   (* c++ext: *)  
+   (* c++ext: *)
    | IdTemplateId of ident * template_arguments
    (* c++ext: for operator overloading *)
    | IdDestructor of tok(*~*) * ident
@@ -119,12 +119,12 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
    | IdConverter of tok * type_
 
    and ident = string wrap
- 
+
    and template_arguments = template_argument comma_list angle
     (* C++ allows integers for template arguments! (=~ dependent types) *)
     and template_argument = (type_, expr) Common.either
 
- and qualifier = 
+ and qualifier =
    | QClassname of ident (* classname or namespacename *)
    | QTemplateId of ident * template_arguments
 
@@ -137,7 +137,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
  and ident_name = name (* only IdIdent *)
 
 (* TODO: do like in parsing_c/
- * and ident_string = 
+ * and ident_string =
  *  | RegularName of string wrap
  *
  *  (* cppext: *)
@@ -145,7 +145,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
  *  (* normally only used inside list of things, as in parameters or arguments
  *   * in which case, cf cpp-manual, it has a special meaning *)
  *  | CppVariadicName of string wrap (* ## s *)
- *  | CppIdentBuilder of string wrap (* s ( ) *) * 
+ *  | CppIdentBuilder of string wrap (* s ( ) *) *
  *                      ((string wrap) wrap list) (* arguments *)
  *)
 
@@ -158,7 +158,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
  * separate concerns, so I put '=>' to mean what we would really like. In fact
  * what we really like is defining another type_, expression, etc
  * from scratch, because many stuff are just sugar.
- * 
+ *
  * invariant: Array and FunctionType have also typeQualifier but they
  * dont have sense. I put this to factorise some code. If you look in
  * grammar, you see that we can never specify const for the array
@@ -171,7 +171,7 @@ and type_ = typeQualifier * typeC
 
   | Pointer         of tok (*'*'*) * type_
   (* c++ext: *)
-  | Reference       of tok (*'&'*) * type_ 
+  | Reference       of tok (*'&'*) * type_
 
   | Array           of constExpression option bracket * type_
   | FunctionType    of functionType
@@ -197,40 +197,40 @@ and type_ = typeQualifier * typeC
   (* should be really just at toplevel *)
   | EnumDef of enum_definition (* => string * int list *)
   (* c++ext: bigger type now *)
-  | StructDef of class_definition 
+  | StructDef of class_definition
 
   (* forunparser: *)
   | ParenType of type_ paren
 
-  and  baseType = 
+  and  baseType =
     | Void of tok
     | IntType   of intType   * tok (* TOFIX there should be * tok list *)
     | FloatType of floatType * tok (* TOFIX there should be * tok list *)
 
      (* stdC: type section. 'char' and 'signed char' are different *)
-      and intType   = 
+      and intType   =
         | CChar (* obsolete? | CWchar  *)
         | Si of signed
          (* c++ext: maybe could be put in baseType instead ? *)
-        | CBool | WChar_t 
+        | CBool | WChar_t
 
         and signed = sign * base
-         and base = 
-           | CChar2 | CShort | CInt | CLong 
+         and base =
+           | CChar2 | CShort | CInt | CLong
            (* gccext: *)
-           | CLongLong 
+           | CLongLong
          and sign = Signed | UnSigned
 
       and floatType = CFloat | CDouble | CLongDouble
 
-and typeQualifier = 
+and typeQualifier =
   { const: tok option; volatile: tok option; }
 
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
  * and attribute = attributebis wrap
  *  and attributebis =
- *   | Attribute of string 
+ *   | Attribute of string
  *)
 
 (*****************************************************************************)
@@ -241,15 +241,15 @@ and typeQualifier =
  * have an StatementExpr and a new (local) struct defined. Same for
  * Constructor.
  *)
-and expr = 
+and expr =
   (* Id can be an enumeration constant, variable, function name.
    * cppext: Id can also be the name of a macro. sparse says
-   *  "an identifier with a meaning is a symbol". 
+   *  "an identifier with a meaning is a symbol".
    * c++ext: Id is now a 'name' instead of a 'string' and can be
    *  also an operator name.
    * todo: split in Id vs IdQualified like in ast_generic.ml?
    *)
-  | Id of name * ident_info (* semantic: see check_variables_cpp.ml *) 
+  | Id of name * ident_info (* semantic: see check_variables_cpp.ml *)
   | C of constant
 
   (* I used to have FunCallSimple but not that useful, and we want scope info
@@ -261,14 +261,14 @@ and expr =
   | CondExpr       of expr * tok * expr option * tok * expr
 
   (* should be considered as statements, bad C langage *)
-  | Sequence       of expr * tok (* , *) * expr                   
-  | Assign         of expr * assignOp * expr        
+  | Sequence       of expr * tok (* , *) * expr
+  | Assign         of expr * assignOp * expr
 
   | Postfix        of expr * fixOp wrap
   | Infix          of expr * fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
   | Unary          of expr * unaryOp wrap
-  | Binary         of expr * binaryOp wrap * expr        
+  | Binary         of expr * binaryOp wrap * expr
 
   | ArrayAccess    of expr * expr bracket
 
@@ -285,7 +285,7 @@ and expr =
 
   | Cast          of type_ paren * expr
 
-  (* gccext: *)        
+  (* gccext: *)
   | StatementExpr of compound paren (* ( {  } ) new scope*)
   (* gccext: kenccext: *)
   | GccConstructor  of type_ paren * initialiser comma_list brace
@@ -295,14 +295,14 @@ and expr =
   | ConstructedObject of type_ * argument comma_list paren
   | TypeId     of tok * (type_, expr) Common.either paren
   | CplusplusCast of cast_operator wrap * type_ angle * expr paren
-  | New of tok (*::*) option * tok * 
+  | New of tok (*::*) option * tok *
       argument comma_list paren option (* placement *) *
       type_ *
       argument comma_list paren option (* initializer *)
 
   | Delete      of tok (*::*) option * tok * expr
   | DeleteArray of tok (*::*) option * tok * unit bracket * expr
-  | Throw of tok * expr option 
+  | Throw of tok * expr option
 
   (* forunparser: *)
   | ParenExpr of expr paren
@@ -315,33 +315,33 @@ and expr =
 
   (* see check_variables_cpp.ml *)
   and ident_info = {
-    mutable i_scope: Scope_code.t 
+    mutable i_scope: Scope_code.t
         [@printer fun _fmt _ -> "??"];
   }
 
  (* cppext: normally should just have type argument = expr *)
-  and argument = 
+  and argument =
        | Arg of expr
        (* cppext: *)
        | ArgType of type_
        (* cppext: for really unparsable stuff ... we just bailout *)
        | ArgAction of action_macro
-       and action_macro = 
+       and action_macro =
          | ActMisc of tok list
 
   (* I put 'string' for Int and Float because 'int' would not be enough.
-   * Indeed OCaml ints are 31 bits. So it's simpler to use 'string'. 
+   * Indeed OCaml ints are 31 bits. So it's simpler to use 'string'.
    * Same reason to have 'string' instead of 'int list' for the String case.
-   * 
+   *
    * note: '-2' is not a constant; it is the unary operator '-'
    * applied to the constant '2'. So the string must represent a positive
-   * integer only. 
+   * integer only.
    *)
-  and constant = 
-    | Int    of (string wrap  (* * intType*)) 
+  and constant =
+    | Int    of (string wrap  (* * intType*))
     | Float  of (string wrap * floatType)
     | Char   of (string wrap * isWchar) (* normally it is equivalent to Int *)
-    | String of (string wrap * isWchar) 
+    | String of (string wrap * isWchar)
 
     | MultiString of string wrap list  (* can contain MacroString *)
     (* c++ext: *)
@@ -350,30 +350,30 @@ and expr =
 
     and isWchar = IsWchar | IsChar
 
-  and unaryOp  = 
-    | UnPlus |  UnMinus | Tilde | Not 
+  and unaryOp  =
+    | UnPlus |  UnMinus | Tilde | Not
     (* less: could be lift up, those are really important operators *)
-    | GetRef | DeRef 
+    | GetRef | DeRef
     (* gccext: via &&label notation *)
     | GetRefLabel
   and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
   and fixOp    = Dec | Inc
 
   and binaryOp = Arith of arithOp | Logical of logicalOp
-       and arithOp   = 
+       and arithOp   =
          | Plus | Minus | Mul | Div | Mod
-         | DecLeft | DecRight 
+         | DecLeft | DecRight
          | And | Or | Xor
-       and logicalOp = 
-         | Inf | Sup | InfEq | SupEq 
-         | Eq | NotEq 
+       and logicalOp =
+         | Inf | Sup | InfEq | SupEq
+         | Eq | NotEq
          | AndLog | OrLog
 
   (* c++ext: used elsewhere but prefer to define it close to other operators *)
   and ptrOp = PtrStarOp | PtrOp
   and allocOp = NewOp | DeleteOp | NewArrayOp | DeleteArrayOp
   and accessop = ParenOp | ArrayOp
-  and operator = 
+  and operator =
     | BinaryOp of binaryOp
     | AssignOp of assignOp
     | FixOp of fixOp
@@ -383,7 +383,7 @@ and expr =
     | UnaryTildeOp | UnaryNotOp | CommaOp
 
  (* c++ext: *)
-  and cast_operator = 
+  and cast_operator =
     | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
 
  and constExpression = expr (* => int *)
@@ -410,7 +410,7 @@ and stmt =
   (* iteration *)
   | While   of tok * expr paren * stmt
   | DoWhile of tok * stmt * tok * expr paren * sc
-  | For of 
+  | For of
       tok *
       (expr option * sc * expr option * sc * expr option) paren *
       stmt
@@ -421,16 +421,16 @@ and stmt =
 
   (* labeled *)
   | Label   of string wrap * tok (* : *) * stmt
-  | Case      of tok * expr * tok (* : *) * stmt 
+  | Case      of tok * expr * tok (* : *) * stmt
   (* gccext: *)
-  | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt 
+  | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt
   | Default of tok * tok (* : *) * stmt
 
   (* c++ext: in C this constructor could be outside the statement type, in a
    * decl type, because declarations are only at the beginning of a compound
    * normally. But in C++ we can freely mix declarations and statements.
    *)
-  | DeclStmt  of block_declaration 
+  | DeclStmt  of block_declaration
   (* c++ext: *)
   | Try of tok * compound * handler list
   (* gccext: *)
@@ -442,11 +442,11 @@ and stmt =
 
   (* cppext: c++ext:
    * old: compound = (declaration list * stmt list)
-   * old: (declaration, stmt) either list 
+   * old: (declaration, stmt) either list
    *)
   and compound = stmt_sequencable list brace
 
-  and jump  = 
+  and jump  =
     | Goto of tok * string wrap
     | Continue of tok | Break of tok
     | Return of tok * expr option
@@ -455,14 +455,14 @@ and stmt =
 
   (* c++ext: *)
   and handler = tok * exception_declaration paren * compound
-   and exception_declaration = 
+   and exception_declaration =
      | ExnDeclEllipsis of tok
      | ExnDecl of parameter
 
   (* easier to put at stmt_list level than stmt level *)
-  and stmt_sequencable = 
+  and stmt_sequencable =
     | StmtElem of stmt
-    (* cppext: *) 
+    (* cppext: *)
     | CppDirectiveStmt of cpp_directive
     | IfdefStmt of ifdef_directive (* * stmt list *)
 
@@ -474,12 +474,12 @@ and stmt =
 (* Block Declaration *)
 (* ------------------------------------------------------------------------- *)
 (* a.k.a declaration_stmt *)
-and block_declaration = 
+and block_declaration =
  (* Before I had a Typedef constructor, but why make this special case and not
   * have also StructDef, EnumDef, so that 'struct t {...} v' which would
-  * then generate two declarations. 
+  * then generate two declarations.
   * If you want a cleaner C AST use ast_c.ml.
-  * note: before the need for unparser, I didn't have a DeclList but just 
+  * note: before the need for unparser, I didn't have a DeclList but just
   * a Decl.
   *)
   | DeclList of onedecl comma_list * sc
@@ -497,7 +497,7 @@ and block_declaration =
   (* gccext: *)
   and asmbody = string wrap list * colon list
       and colon = Colon of tok (* : *) * colon_option comma_list
-      and colon_option = 
+      and colon_option =
             | ColonExpr of tok list * expr paren
             | ColonMisc of tok list
 
@@ -505,7 +505,7 @@ and block_declaration =
 (* Variable definition (and also field definition) *)
 (* ------------------------------------------------------------------------- *)
 
-  (* note: onedecl includes prototype declarations and class_declarations! 
+  (* note: onedecl includes prototype declarations and class_declarations!
    * c++ext: onedecl now covers also field definitions as fields can have
    * storage in C++.
    *)
@@ -527,13 +527,13 @@ and block_declaration =
     * accepts it. *)
    and _func_specifier = Inline | Virtual
 
-   and init = 
+   and init =
      | EqInit of tok (*=*) * initialiser
      (* c++ext: constructed object *)
      | ObjInit of argument comma_list paren
 
     and initialiser =
-      | InitExpr of expr 
+      | InitExpr of expr
       | InitList of initialiser comma_list brace
       (* gccext: *)
       | InitDesignators of designator list * tok (*=*) * initialiser
@@ -545,16 +545,16 @@ and block_declaration =
         | DesignatorField of tok(*:*) * ident
         | DesignatorIndex of expr bracket
         | DesignatorRange of (expr * tok (*...*) * expr) bracket
-              
-        
+
+
 (* ------------------------------------------------------------------------- *)
 (* Function definition *)
 (* ------------------------------------------------------------------------- *)
-(* Normally we should define another type functionType2 because there 
- * are more restrictions on what can define a function than a pointer 
+(* Normally we should define another type functionType2 because there
+ * are more restrictions on what can define a function than a pointer
  * function. For instance a function declaration can omit the name of the
  * parameter whereas a function definition can not. But, in some cases such
- * as 'f(void) {', there is no name too, so I simplified and reused the 
+ * as 'f(void) {', there is no name too, so I simplified and reused the
  * same functionType type for both declarations and function definitions.
  *)
 and func_definition = {
@@ -565,11 +565,11 @@ and func_definition = {
    f_body: compound;
    (*f_attr: attribute list;*) (* gccext: *)
   }
-   and functionType = { 
+   and functionType = {
      ft_ret: type_; (* fake return type for ctor/dtor *)
      ft_params: parameter comma_list paren;
      ft_dots: (tok(*,*) * tok(*...*)) option;
-     (* c++ext: *) 
+     (* c++ext: *)
      ft_const: tok option; (* only for methods, TODO put in attribute? *)
      ft_throw: exn_spec option;
    }
@@ -583,7 +583,7 @@ and func_definition = {
     and exn_spec = (tok * name comma_list2 paren)
 
  (* less: simplify? need differentiate at this level? could have
-  * is_ctor, is_dtor helper instead. 
+  * is_ctor, is_dtor helper instead.
   * TODO do via attributes?
   *)
  and func_or_else =
@@ -594,9 +594,9 @@ and func_definition = {
 
  and method_decl =
    | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * sc
-   | ConstructorDecl of 
+   | ConstructorDecl of
        ident * parameter comma_list paren * sc
-   | DestructorDecl of 
+   | DestructorDecl of
        tok(*~*) * ident * tok option paren * exn_spec option * sc
 
 (* ------------------------------------------------------------------------- *)
@@ -604,7 +604,7 @@ and func_definition = {
 (* ------------------------------------------------------------------------- *)
 (* less: use a record *)
 and enum_definition =
-    tok (*enum*) * ident option * enum_elem comma_list brace  
+    tok (*enum*) * ident option * enum_elem comma_list brace
 
     and enum_elem = {
       e_name: ident;
@@ -615,7 +615,7 @@ and enum_definition =
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
 and class_definition = {
-  c_kind: structUnion wrap; 
+  c_kind: structUnion wrap;
   (* the ident can be a template_id when do template specialization. *)
   c_name: ident_name(*class_name??*) option;
   (* c++ext: *)
@@ -637,17 +637,17 @@ and class_definition = {
   and access_spec = Public | Private | Protected
 
   (* was called 'field wrap' before *)
-  and class_member = 
+  and class_member =
     (* could put outside and take class_member list *)
     | Access of access_spec wrap * tok (*:*)
 
     (* before unparser, I didn't have a FieldDeclList but just a Field. *)
     | MemberField of fieldkind comma_list * sc
-    | MemberFunc of func_or_else    
+    | MemberFunc of func_or_else
     | MemberDecl of method_decl
-         
+
     | QualifiedIdInClass of name (* ?? *) * sc
-         
+
     | TemplateDeclInClass of (tok * template_parameters * declaration)
     | UsingDeclInClass of (tok (*using*) * name * sc)
 
@@ -656,17 +656,17 @@ and class_definition = {
 
      (* At first I thought that a bitfield could be only Signed/Unsigned.
       * But it seems that gcc allows char i:4. C rule must say that you
-      * can cast into int so enum too, ... 
+      * can cast into int so enum too, ...
       * c++ext: FieldDecl was before Simple of string option * type_
       * but in c++ fields can also have storage (e.g. static) so now reuse
       * ondecl.
       *)
-      and fieldkind = 
+      and fieldkind =
         | FieldDecl of onedecl
         | BitField of ident option * tok(*:*) * type_ * constExpression
-            (* type_ => BitFieldInt | BitFieldUnsigned *) 
-   
-  and class_member_sequencable = 
+            (* type_ => BitFieldInt | BitFieldUnsigned *)
+
+  and class_member_sequencable =
     | ClassElem of class_member
     (* cppext: *)
     | CppDirectiveStruct of cpp_directive
@@ -688,7 +688,7 @@ and cpp_directive =
   and define_kind =
    | DefineVar
    | DefineFunc   of string wrap comma_list paren
-   and define_val = 
+   and define_val =
      | DefineExpr of expr
      | DefineStmt of stmt
      | DefineType of type_
@@ -703,26 +703,26 @@ and cpp_directive =
 
      | DefineTodo
 
-  and inc_kind = 
+  and inc_kind =
     | Local (* "" *)
     | Standard (* <> *)
     | Weird (* ex: #include SYSTEM_H *)
 
   (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
   and ifdef_directive = ifdefkind wrap
-     and ifdefkind = 
+     and ifdefkind =
        | Ifdef (* todo? of string? *)
        (* less: IfIf of formula_cpp ? *)
        | IfdefElse
        | IfdefElseif
-       | IfdefEndif 
+       | IfdefEndif
   (* less:
-   * set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
+   * set in Parsing_hacks.set_ifdef_parenthize_info. It internally use
    * a global so it means if you parse the same file twice you may get
-   * different id. I try now to avoid this pb by resetting it each 
+   * different id. I try now to avoid this pb by resetting it each
    * time I parse a file.
    *
-   *   and matching_tag = 
+   *   and matching_tag =
    *     IfdefTag of (int (* tag *) * int (* total with this tag *))
    *)
 
@@ -734,10 +734,10 @@ and cpp_directive =
  * inside namespaces or some extern. It's not really 'declaration'
  * either because it can defines stuff. But I keep the C++ standard
  * terminology.
- * 
+ *
  * note that we use 'block_declaration' below, not 'statement'.
  *)
-and declaration = 
+and declaration =
   | BlockDecl of block_declaration (* include struct/globals/... definitions *)
   | Func of func_or_else
 
@@ -750,7 +750,7 @@ and declaration =
   (* the list can be empty *)
   | NameSpace of tok * ident * declaration_sequencable list brace
   (* after have some semantic info *)
-  | NameSpaceExtend of string * declaration_sequencable list 
+  | NameSpaceExtend of string * declaration_sequencable list
   | NameSpaceAnon   of tok * declaration_sequencable list brace
 
   (* gccext: allow redundant ';' *)
@@ -763,10 +763,10 @@ and declaration =
   and template_parameters = template_parameter comma_list angle
 
   (* easier to put at stmt_list level than stmt level *)
-  and declaration_sequencable = 
+  and declaration_sequencable =
     | DeclElem of declaration
 
-    (* cppext: *) 
+    (* cppext: *)
     | CppDirectiveDecl of cpp_directive
     | IfdefDecl of ifdef_directive (* * toplevel list *)
     (* cppext: *)
@@ -788,7 +788,7 @@ type program = toplevel list
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
-type any = 
+type any =
   (* for semgrep *)
   | Expr of expr
   | Stmt of stmt
@@ -838,7 +838,7 @@ let unbrace (_, x, _) = x
 
 let unwrap_typeC (_qu, typeC) = typeC
 
-(* When want add some info in AST that does not correspond to 
+(* When want add some info in AST that does not correspond to
  * an existing C element.
  * old: when don't want 'synchronize' on it in unparse_c.ml
  * (now have other mark for tha matter).
@@ -847,11 +847,11 @@ let unwrap_typeC (_qu, typeC) = typeC
 let make_expanded ii =
   let noVirtPos = ({Parse_info.str="";charpos=0;line=0;column=0;file=""},-1) in
   let (a, b) = noVirtPos in
-  { ii with Parse_info.token = Parse_info.ExpandedTok 
+  { ii with Parse_info.token = Parse_info.ExpandedTok
       (Parse_info.get_original_token_location ii.Parse_info.token, a, b) }
 
 (* used by parsing hacks *)
-let rewrap_pinfo pi ii =  
+let rewrap_pinfo pi ii =
   {ii with Parse_info.token = pi}
 
 

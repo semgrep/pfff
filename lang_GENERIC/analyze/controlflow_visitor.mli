@@ -1,8 +1,8 @@
 
 val exprs_of_node: Controlflow.node -> AST.expr list
 (* can also be (ab)used as an iter_on_node_and_expr *)
-val fold_on_node_and_expr: 
-  ((Controlflow.nodei * Controlflow.node) -> AST.expr -> 'a -> 'a) -> 
+val fold_on_node_and_expr:
+  ((Controlflow.nodei * Controlflow.node) -> AST.expr -> 'a -> 'a) ->
   Controlflow.flow -> 'a -> 'a
 
 type visitor_in = Visitor_AST.visitor_in

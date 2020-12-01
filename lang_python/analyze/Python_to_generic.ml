@@ -70,7 +70,7 @@ let info x = x
 
 (*s: constant [[Python_to_generic.wrap]] *)
 let wrap = fun _of_a (v1, v2) ->
-  let v1 = _of_a v1 and v2 = info v2 in 
+  let v1 = _of_a v1 and v2 = info v2 in
   (v1, v2)
 (*e: constant [[Python_to_generic.wrap]] *)
 
@@ -87,18 +87,18 @@ let dotted_name v = list name v
 (*e: function [[Python_to_generic.dotted_name]] *)
 
 (*s: function [[Python_to_generic.module_name]] *)
-let module_name (v1, dots) = 
+let module_name (v1, dots) =
   let v1 = dotted_name v1 in
   match dots with
   | None -> G.DottedName v1
   (* transforming '. foo.bar' in G.Filename "./foo/bar" *)
   | Some toks ->
-      let count = 
-        toks |> List.map Parse_info.str_of_info 
+      let count =
+        toks |> List.map Parse_info.str_of_info
           |> String.concat "" |> String.length in
       let tok = List.hd toks in
       let elems = v1 |> List.map fst in
-      let prefixes = 
+      let prefixes =
         match count with
         | 1 -> ["."]
         | 2 -> [".."]
@@ -135,7 +135,7 @@ let expr_context =
 (*s: function [[Python_to_generic.expr]] *)
 let rec expr (x: expr) =
   match x with
-  | Bool v1 -> 
+  | Bool v1 ->
     let v1 = wrap bool v1 in
      G.L (G.Bool v1)
   | None_ x ->
@@ -147,12 +147,12 @@ let rec expr (x: expr) =
   | DeepEllipsis x ->
      let x = bracket expr x in
      G.DeepEllipsis x
-  | Num v1 -> 
-      let v1 = number v1 in 
+  | Num v1 ->
+      let v1 = number v1 in
       G.L v1
-  | Str (v1) -> 
+  | Str v1 ->
       let v1 = wrap string v1 in
-      G.L (G.String (v1))
+      G.L (G.String v1)
   | EncodedStr (v1, pre) ->
       let v1 = wrap string v1 in
       (* bugfix: do not reuse the same tok! otherwise in semgrep
@@ -161,16 +161,16 @@ let rec expr (x: expr) =
        * three times.
        * todo: the right fix is to have EncodedStr of string wrap * string wrap
        *)
-      G.Call (G.IdSpecial (G.EncodedString (pre), fake ""),
-        fb [G.Arg (G.L (G.String (v1)))])
+      G.Call (G.IdSpecial (G.EncodedString pre, fake ""),
+        fb [G.Arg (G.L (G.String v1))])
 
   | InterpolatedString xs ->
-    G.Call (G.IdSpecial (G.ConcatString G.FString, fake "concat"), 
-      fb (xs |> List.map (fun x -> let x = expr x in G.Arg (x)))
+    G.Call (G.IdSpecial (G.ConcatString G.FString, fake "concat"),
+      fb (xs |> List.map (fun x -> let x = expr x in G.Arg x))
     )
   | ConcatenatedString xs ->
-    G.Call (G.IdSpecial (G.ConcatString G.SequenceConcat, fake "concat"), 
-      fb (xs |> List.map (fun x -> let x = expr x in G.Arg (x)))
+    G.Call (G.IdSpecial (G.ConcatString G.SequenceConcat, fake "concat"),
+      fb (xs |> List.map (fun x -> let x = expr x in G.Arg x))
     )
   | TypedExpr (v1, v2) ->
      let v1 = expr v1 in
@@ -184,85 +184,85 @@ let rec expr (x: expr) =
     let v1 = expr v1 in
     G.Call (G.IdSpecial (G.Spread, fake "spread"), fb [G.expr_to_arg v1])
 
-  | Name ((v1, v2, v3)) ->
+  | Name (v1, v2, v3) ->
       let v1 = name v1
       and _v2TODO = expr_context v2
       and v3 = vref resolved_name v3
-      in 
+      in
       G.Id (v1 ,{ (G.empty_id_info ()) with G.id_resolved = v3 })
-          
-  | Tuple ((CompList v1, v2)) ->
+
+  | Tuple (CompList v1, v2) ->
       let v1 = bracket (list expr) v1
-      and _v2TODO = expr_context v2 in 
+      and _v2TODO = expr_context v2 in
       G.Tuple v1
 
   | Tuple ((CompForIf (v1, v2), v3)) ->
       let e1 = comprehension expr v1 v2 in
-      let _v4TODO = expr_context v3 in 
+      let _v4TODO = expr_context v3 in
       G.Tuple (G.fake_bracket e1)
 
-  | List ((CompList v1, v2)) ->
-      let v1 = bracket (list expr) v1 
-      and _v2TODO = expr_context v2 in 
+  | List (CompList v1, v2) ->
+      let v1 = bracket (list expr) v1
+      and _v2TODO = expr_context v2 in
       G.Container (G.List, v1)
 
   | List ((CompForIf (v1, v2), v3)) ->
       let e1 = comprehension expr v1 v2 in
-      let _v3TODO = expr_context v3 in 
+      let _v3TODO = expr_context v3 in
       G.Container (G.List, fb e1)
 
-  | Subscript ((v1, v2, v3)) ->
-      let e = expr v1 
-      and _v3TODO = expr_context v3 in 
+  | Subscript (v1, v2, v3) ->
+      let e = expr v1
+      and _v3TODO = expr_context v3 in
       (match v2 with
       | (l1, [x], l2) -> slice1 e (l1, x, l2)
-      | (_, xs, _) -> 
+      | (_, xs, _) ->
         let xs = list (slice e) xs in
         G.OtherExpr (G.OE_Slices, xs |> List.map (fun x -> G.E x))
       )
-  | Attribute ((v1, t, v2, v3)) ->
-      let v1 = expr v1 
-      and t = info t 
-      and v2 = name v2 
-      and _v3TODO = expr_context v3 in 
+  | Attribute (v1, t, v2, v3) ->
+      let v1 = expr v1
+      and t = info t
+      and v2 = name v2
+      and _v3TODO = expr_context v3 in
       G.DotAccess (v1, t, G.EId v2)
 
-  | DictOrSet (CompList (t1, v, t2)) -> 
-      let v' = list dictorset_elt v in 
-      let kind = 
-        if v |> List.for_all 
-            (function 
-             | KeyVal _ 
+  | DictOrSet (CompList (t1, v, t2)) ->
+      let v' = list dictorset_elt v in
+      let kind =
+        if v |> List.for_all
+            (function
+             | KeyVal _
              (* semgrep-ext: ... should not count *)
-             | Key (Ellipsis _) -> 
-                true 
+             | Key (Ellipsis _) ->
+                true
              | _ -> false) ||
            v = []
-        then G.Dict 
+        then G.Dict
         else G.Set
       in
       G.Container (kind, (t1, v', t2))
 
-  | DictOrSet (CompForIf (v1, v2)) -> 
+  | DictOrSet (CompForIf (v1, v2)) ->
       let e1 = comprehension2 dictorset_elt v1 v2 in
       G.Container (G.Dict, fb e1)
 
-  | BoolOp (((v1,tok), v2)) -> 
-      let v1 = boolop v1 
-      and v2 = list expr v2 in 
-      G.Call (G.IdSpecial (G.Op v1, tok), 
+  | BoolOp (((v1,tok), v2)) ->
+      let v1 = boolop v1
+      and v2 = list expr v2 in
+      G.Call (G.IdSpecial (G.Op v1, tok),
         fb (v2 |> List.map G.expr_to_arg))
   | BinOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       G.Call (G.IdSpecial (G.Op v2, tok), fb ([v1;v3] |> List.map G.expr_to_arg))
-  | UnaryOp (((v1, tok), v2)) -> let v1 = unaryop v1 and v2 = expr v2 in 
+  | UnaryOp (((v1, tok), v2)) -> let v1 = unaryop v1 and v2 = expr v2 in
       (match v1 with
       | Left op ->
             G.Call (G.IdSpecial (G.Op op, tok), fb ([v2] |> List.map G.expr_to_arg))
       | Right oe ->
             G.OtherExpr (oe, [G.E v2])
       )
-  | Compare ((v1, v2, v3)) ->
+  | Compare (v1, v2, v3) ->
       let v1 = expr v1
       and v2 = list cmpop v2
       and v3 = list expr v3 in
@@ -271,8 +271,8 @@ let rec expr (x: expr) =
         G.Call (G.IdSpecial (G.Op op, tok), fb ([v1;e] |> List.map G.expr_to_arg))
       | [Right oe, _tok], [e] ->
         G.OtherExpr (oe, [G.E v1; G.E e])
-      | _ ->  
-        let anyops = 
+      | _ ->
+        let anyops =
            v2 |> List.map (function
             | Left arith, tok -> G.E (G.IdSpecial (G.Op arith, tok))
             | Right other, _tok -> G.E (G.OtherExpr (other, []))
@@ -280,16 +280,16 @@ let rec expr (x: expr) =
         let any = anyops @ (v3 |> List.map (fun e -> G.E e)) in
         G.OtherExpr (G.OE_CmpOps, any)
       )
-  | Call (v1, v2) -> let v1 = expr v1 in let v2 = bracket (list argument) v2 in 
+  | Call (v1, v2) -> let v1 = expr v1 in let v2 = bracket (list argument) v2 in
       G.Call (v1, v2)
 
-  | Lambda ((t0, v1, _t2, v2)) -> let v1 = parameters v1 and v2 = expr v2 in 
+  | Lambda (t0, v1, _t2, v2) -> let v1 = parameters v1 and v2 = expr v2 in
       G.Lambda ({G.fparams = v1; fbody = G.exprstmt v2; frettype = None;
                  fkind = G.LambdaKind, t0 })
-  | IfExp ((v1, v2, v3)) ->
+  | IfExp (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
-  | Yield ((t, v1, v2)) ->
+  | Yield (t, v1, v2) ->
       let v1 = option expr v1
       and v2 = v2 in
       G.Yield (t, v1, v2)
@@ -297,13 +297,13 @@ let rec expr (x: expr) =
       G.Await (t, v1)
   | Repr v1 -> let (_, v1, _) = bracket expr v1 in
       G.OtherExpr (G.OE_Repr, [G.E v1])
-  | NamedExpr ((v, t, e)) ->
+  | NamedExpr (v, t, e) ->
       G.Assign(expr v, t, expr e)
 (*e: function [[Python_to_generic.expr]] *)
 
 (*s: function [[Python_to_generic.argument]] *)
 and argument = function
-  | Arg e -> let e = expr e in 
+  | Arg e -> let e = expr e in
       G.Arg e
   | ArgStar (t, e) -> let e = expr e in
       G.Arg (G.Call (G.IdSpecial (G.Spread, t), fb[G.expr_to_arg e]))
@@ -318,22 +318,22 @@ and argument = function
 
 (*s: function [[Python_to_generic.for_if]] *)
 and for_if = function
-  | CompFor (e1, e2) -> 
+  | CompFor (e1, e2) ->
       let e1 = expr e1 in let e2 = expr e2 in
       G.E (G.OtherExpr (G.OE_CompFor, [G.E e1; G.E e2]))
-  | CompIf (e1) -> 
+  | CompIf e1 ->
       let e1 = expr e1 in
       G.E (G.OtherExpr (G.OE_CompIf, [G.E e1]))
 (*e: function [[Python_to_generic.for_if]] *)
 
 (*s: function [[Python_to_generic.dictorset_elt]] *)
 and dictorset_elt = function
-  | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in 
+  | KeyVal (v1, v2) -> let v1 = expr v1 in let v2 =  expr v2 in
       G.Tuple (G.fake_bracket [v1; v2])
-  | Key (v1) -> 
+  | Key v1 ->
       let v1 = expr v1 in
       v1
-  | PowInline (v1) -> 
+  | PowInline v1 ->
       let v1 = expr v1 in
       G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.expr_to_arg v1])
 (*e: function [[Python_to_generic.dictorset_elt]] *)
@@ -348,7 +348,7 @@ and number =
 (*e: function [[Python_to_generic.number]] *)
 
 (*s: function [[Python_to_generic.boolop]] *)
-and boolop = function 
+and boolop = function
   | And -> G.And
   | Or  -> G.Or
 (*e: function [[Python_to_generic.boolop]] *)
@@ -372,7 +372,7 @@ and operator =
 (*e: function [[Python_to_generic.operator]] *)
 
 (*s: function [[Python_to_generic.unarop]] *)
-and unaryop = function 
+and unaryop = function
   | Invert -> Right G.OE_Invert
   | Not    -> Left G.Not
   | UAdd   -> Left G.Plus
@@ -412,7 +412,7 @@ and comprehension2 f v1 v2 =
 and slice1 e1 (t1, e2, t2) =
   match e2 with
   | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e1, (t1, v1, t2))
-  | Slice ((v1, v2, v3)) ->
+  | Slice (v1, v2, v3) ->
       let v1 = option expr v1
       and v2 = option expr v2
       and v3 = option expr v3
@@ -422,7 +422,7 @@ and slice1 e1 (t1, e2, t2) =
 and slice e =
   function
   | Index v1 -> let v1 = expr v1 in G.ArrayAccess (e, fb v1)
-  | Slice ((v1, v2, v3)) ->
+  | Slice (v1, v2, v3) ->
       let v1 = option expr v1
       and v2 = option expr v2
       and v3 = option expr v3
@@ -444,11 +444,11 @@ and parameters xs =
      let topt = option type_ topt in
      let e = expr e in
      G.ParamClassic { (G.param_of_id n) with G.ptype = topt; pdefault = Some e; }
-  | ParamPattern ((PatternName n, topt)) ->
+  | ParamPattern (PatternName n, topt) ->
      let n = name n
      and topt = option type_ topt in
      G.ParamClassic { (G.param_of_id n) with G.ptype = topt }
-  | ParamPattern ((PatternTuple pat, _)) ->
+  | ParamPattern (PatternTuple pat, _) ->
      let pat = list param_pattern pat in
      G.ParamPattern (G.PatTuple (G.fake_bracket pat))
   | ParamStar (t, (n, topt)) ->
@@ -468,13 +468,13 @@ and parameters xs =
 (*e: function [[Python_to_generic.parameters]] *)
 
 (*s: function [[Python_to_generic.type_]] *)
-and type_ v = 
+and type_ v =
   let v = expr v in
   G.expr_to_type v
 (*e: function [[Python_to_generic.type_]] *)
 
 (*s: function [[Python_to_generic.type_parent]] *)
-and type_parent v = 
+and type_parent v =
   let v = argument v in
   G.OtherType (G.OT_Arg, [G.Ar v])
 (*e: function [[Python_to_generic.type_parent]] *)
@@ -484,7 +484,7 @@ and list_stmt1 xs =
   match (list stmt xs) with
   (* bugfix: We do not want actually to optimize and remove the
    * intermediate Block because otherwise sgrep will not work
-   * correctly with a list of stmt. 
+   * correctly with a list of stmt.
    *
    * old: | [e] -> e
    *
@@ -497,7 +497,7 @@ and list_stmt1 xs =
    *
    * if True:
    *   foo()
-   * 
+   *
    * because above we have a Block ([Ellipsis; foo()] and down we would
    * have just (foo()). We do want Block ([foo()]].
    *
@@ -519,7 +519,7 @@ and list_stmt1 xs =
 (*s: function [[Python_to_generic.stmt_aux]] *)
 and stmt_aux x =
   match x with
-  | FunctionDef ((t, v1, v2, v3, v4, v5)) ->
+  | FunctionDef (t, v1, v2, v3, v4, v5) ->
       let v1 = name v1
       and v2 = parameters v2
       and v3 = option type_ v3
@@ -527,17 +527,17 @@ and stmt_aux x =
       and v5 = list decorator v5
       in
       let ent = G.basic_entity v1 v5 in
-      let def = { G.fparams = v2; frettype = v3; fbody = v4; 
+      let def = { G.fparams = v2; frettype = v3; fbody = v4;
                   fkind = G.Function, t } in
       [G.DefStmt (ent, G.FuncDef def)]
-  | ClassDef ((v0, v1, v2, v3, v4)) ->
+  | ClassDef (v0, v1, v2, v3, v4) ->
       let v1 = name v1
       and v2 = list type_parent v2
       and v3 = list stmt v3
       and v4 = list decorator v4
-      in 
+      in
       let ent = G.basic_entity v1 v4 in
-      let def = { G.ckind = (G.Class, v0); cextends = v2; 
+      let def = { G.ckind = (G.Class, v0); cextends = v2;
                   cimplements = []; cmixins = [];
                   cbody = fb (v3 |> List.map(fun x ->G.FieldStmt x);)
                 } in
@@ -545,7 +545,7 @@ and stmt_aux x =
 
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
-  | Assign ((v1, v2, v3)) -> 
+  | Assign (v1, v2, v3) ->
       let v1 = list expr v1 and v2 = info v2 and v3 = expr v3 in
       (match v1 with
       | [] -> raise Impossible
@@ -555,19 +555,19 @@ and stmt_aux x =
   | AugAssign ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       [G.exprstmt (G.AssignOp (v1, (v2, tok), v3))]
-  | Return (t, v1) -> let v1 = option expr v1 in 
+  | Return (t, v1) -> let v1 = option expr v1 in
       [G.Return (t, v1, G.sc)]
 
   | Delete (_t, v1) -> let v1 = list expr v1 in
       [G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))]
-  | If ((t, v1, v2, v3)) ->
+  | If (t, v1, v2, v3) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
       and v3 = option list_stmt1 v3
       in
       [G.If (t, v1, v2, v3)]
 
-  | While ((t, v1, v2, v3)) ->
+  | While (t, v1, v2, v3) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
       and v3 = list stmt v3
@@ -575,12 +575,12 @@ and stmt_aux x =
       (match v3 with
       | [] -> [G.While (t, v1, v2)]
       | _ -> [G.Block (fb[
-              G.While (t, v1,v2); 
+              G.While (t, v1,v2);
               G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))])
             ]
       )
-            
-  | For ((t, v1, t2, v2, v3, v4)) ->
+
+  | For (t, v1, t2, v2, v3, v4) ->
       let foreach = pattern v1
       and ins = expr v2
       and body = list_stmt1 v3
@@ -595,7 +595,7 @@ and stmt_aux x =
             ]
       )
   (* TODO: unsugar in sequence? *)
-  | With ((_t, v1, v2, v3)) ->
+  | With (_t, v1, v2, v3) ->
       let v1 = expr v1
       and v2 = option expr v2
       and v3 = list_stmt1 v3
@@ -635,8 +635,8 @@ and stmt_aux x =
     | (None, _) ->
       [st]
     )
-                  
-  | TryExcept ((t, v1, v2, v3)) ->
+
+  | TryExcept (t, v1, v2, v3) ->
       let v1 = list_stmt1 v1
       and v2 = list excepthandler v2
       and orelse = list stmt v3
@@ -650,18 +650,18 @@ and stmt_aux x =
             ]
       )
 
-  | TryFinally ((t, v1, t2, v2)) ->
+  | TryFinally (t, v1, t2, v2) ->
       let v1 = list_stmt1 v1 and v2 = list_stmt1 v2 in
       (* could lift down the Try in v1 *)
       [G.Try (t, v1, [], Some (t2, v2))]
 
-  | Assert ((t, v1, v2)) -> let v1 = expr v1 and v2 = option expr v2 in
+  | Assert (t, v1, v2) -> let v1 = expr v1 and v2 = option expr v2 in
       [G.Assert (t, v1, v2, G.sc)]
 
-  | ImportAs (t, v1, v2) -> 
+  | ImportAs (t, v1, v2) ->
       let mname = module_name v1 and nopt = option name v2 in
       [G.DirectiveStmt (G.ImportAs (t, mname, nopt))]
-  | ImportAll (t, v1, v2) -> 
+  | ImportAll (t, v1, v2) ->
       let mname = module_name v1 and v2 = info v2 in
       [G.DirectiveStmt (G.ImportAll (t, mname, v2))]
 
@@ -669,17 +669,17 @@ and stmt_aux x =
       let v1 = module_name v1
       and v2 = list alias v2
       in
-      List.map (fun (a, b) -> 
+      List.map (fun (a, b) ->
         G.DirectiveStmt (G.ImportFrom (t, v1, a, b))
       ) v2
 
   | Global (t, v1) | NonLocal (t, v1)
     -> let v1 = list name v1 in
-      v1 |> List.map (fun x -> 
+      v1 |> List.map (fun x ->
           let ent = G.basic_entity x [] in
           G.DefStmt (ent, G.UseOuterDecl t))
 
-  | ExprStmt v1 -> let v1 = expr v1 in 
+  | ExprStmt v1 -> let v1 = expr v1 in
       [G.exprstmt v1]
 
   | Async (t, x) ->
@@ -696,23 +696,23 @@ and stmt_aux x =
   | Continue t -> [G.Continue (t, G.LNone, G.sc)]
 
   (* python2: *)
-  | Print (tok, _dest, vals, _nl) -> 
+  | Print (tok, _dest, vals, _nl) ->
       let id = Name (("print", tok), Load, ref NotResolved) in
       stmt_aux (ExprStmt (Call (id, fb(vals |> List.map (fun e -> Arg e)))))
 
-  | Exec (tok, e, _eopt, _eopt2) -> 
+  | Exec (tok, e, _eopt, _eopt2) ->
       let id = Name (("exec", tok), Load, ref NotResolved) in
       stmt_aux (ExprStmt (Call (id, fb [Arg e])))
 
 (*e: function [[Python_to_generic.stmt_aux]] *)
 
 (*s: function [[Python_to_generic.stmt]] *)
-and stmt x = 
+and stmt x =
   G.stmt1 (stmt_aux x)
 (*e: function [[Python_to_generic.stmt]] *)
 
 (*s: function [[Python_to_generic.pattern]] *)
-and pattern e = 
+and pattern e =
   let e = expr e in
   G.expr_to_pattern e
 (*e: function [[Python_to_generic.pattern]] *)
@@ -720,16 +720,16 @@ and pattern e =
 (*s: function [[Python_to_generic.excepthandler]] *)
 and excepthandler =
   function
-  | ExceptHandler ((t, v1, v2, v3)) ->
+  | ExceptHandler (t, v1, v2, v3) ->
       let v1 = option expr v1 (* a type actually, even tuple of types *)
       and v2 = option name v2
       and v3 = list_stmt1 v3
-      in 
+      in
       t,
       (match v1, v2 with
       | Some e, None ->
          G.PatVar (G.expr_to_type e, None)
-      | None, None -> 
+      | None, None ->
          G.PatUnderscore (fake "_")
       | None, Some _ -> raise Impossible (* see the grammar *)
       | Some e, Some n ->
@@ -741,10 +741,10 @@ and excepthandler =
 (*e: function [[Python_to_generic.expr_to_attribute]] *)
 
 (*s: function [[Python_to_generic.decorator]] *)
-and decorator (t, v1, v2) = 
+and decorator (t, v1, v2) =
   let v1 = dotted_name v1 in
   let v2 = option (bracket (list argument)) v2 in
-  let args = 
+  let args =
     match v2 with
     | Some (t1, x, t2) -> (t1, x, t2)
     | None -> G.fake_bracket []
@@ -753,13 +753,13 @@ and decorator (t, v1, v2) =
 (*e: function [[Python_to_generic.decorator]] *)
 
 (*s: function [[Python_to_generic.alias]] *)
-and alias (v1, v2) = 
-  let v1 = name v1 and v2 = option name v2 in 
+and alias (v1, v2) =
+  let v1 = name v1 and v2 = option name v2 in
   v1, v2
 (*e: function [[Python_to_generic.alias]] *)
 
 (*s: function [[Python_to_generic.program]] *)
-let program v = 
+let program v =
   let v = list stmt v in
   v
 (*e: function [[Python_to_generic.program]] *)
@@ -768,8 +768,8 @@ let program v =
 let any =
   function
   | Expr v1 -> let v1 = expr v1 in G.E v1
-  | Stmt v1 -> 
-      let v1 = stmt v1 in 
+  | Stmt v1 ->
+      let v1 = stmt v1 in
       (* in Python Assign is a stmt but in the generic AST it's an expression*)
       (match v1 with
       | G.ExprStmt (x,_t) -> G.E x

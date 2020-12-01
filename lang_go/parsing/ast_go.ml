@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -71,7 +71,7 @@ type type_ =
  (* old: a TArray (None) was called a TSlice before *)
  | TArray of expr option bracket * type_
   (* only in CompositeLit (could be rewritten as TArray with static length) *)
- | TArrayEllipsis of tok (* ... *) bracket * type_ 
+ | TArrayEllipsis of tok (* ... *) bracket * type_
 
  | TFunc of func_type
  | TMap of tok * type_ bracket * type_
@@ -81,11 +81,11 @@ type type_ =
  | TInterface of tok * interface_field list bracket
 
   and chan_dir = TSend | TRecv | TBidirectional
-  and func_type =  { 
-    fparams: parameter_binding list; 
+  and func_type =  {
+    fparams: parameter_binding list;
     fresults: parameter_binding list;
   }
-    and parameter_binding = 
+    and parameter_binding =
      | ParamClassic of parameter
      (* sgrep-ext: *)
      | ParamEllipsis of tok
@@ -97,14 +97,14 @@ type type_ =
     }
 
   and struct_field = struct_field_kind * tag option
-    and struct_field_kind = 
+    and struct_field_kind =
     | Field of ident * type_ (* could factorize with entity *)
     | EmbeddedField of tok option (* * *) * qualified_ident
     (* sgrep-ext: *)
     | FieldEllipsis of tok
    and tag = string wrap
-    
-  and interface_field = 
+
+  and interface_field =
     | Method of ident * func_type
     | EmbeddedInterface of qualified_ident
     (* sgrep-ext: *)
@@ -115,23 +115,23 @@ and expr_or_type = (expr, type_) Common.either
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
-and expr = 
+and expr =
  | BasicLit of literal
  (* less: the type of TarrayEllipsis ( [...]{...}) in a CompositeLit
   *  could be transformed in TArray (length {...}) *)
  | CompositeLit of type_ * init list bracket
 
-  (* This Id can actually denotes sometimes a type (e.g., in Arg), or 
-   * a package (e.g., in Selector). 
+  (* This Id can actually denotes sometimes a type (e.g., in Arg), or
+   * a package (e.g., in Selector).
    * To disambiguate requires semantic information.
    * Selector (Name,'.', ident) can be many things.
    *)
  | Id of ident * AST_generic.resolved_name option ref
 
- (* A Selector can be a 
+ (* A Selector can be a
   *  - a field access of a struct
   *  - a top decl access of a package
-  *  - a method access when expr denotes actually a type 
+  *  - a method access when expr denotes actually a type
   *  - a method value
   * We need more semantic information on expr to know what it is.
   *)
@@ -140,7 +140,7 @@ and expr =
  (* valid for TArray, TMap, Tptr, TName ("string") *)
  | Index of expr * index bracket
   (* low, high, max *)
- | Slice of expr * (expr option * expr option * expr option) 
+ | Slice of expr * (expr option * expr option * expr option)
 
  | Call of call_expr
  (* note that some Call are really Cast, e.g., uint(1), but we need
@@ -180,7 +180,7 @@ and expr =
  | Send of expr (* denote a channel *) * tok (* <- *) * expr
 
   (* old: was just a string in ast.go *)
-  and literal = 
+  and literal =
   (* less: Bool of bool wrap | Nil of tok? *)
   | Int of string wrap
   | Float of string wrap
@@ -190,7 +190,7 @@ and expr =
 
   and index = expr
   and arguments = argument list
-  and argument = 
+  and argument =
     (* less: could also use Arg of expr_or_type *)
     | Arg of expr
     (* only for special "new" and "make" calls *)
@@ -198,7 +198,7 @@ and expr =
     | ArgDots of expr * tok (* should be the last argument *)
 
  (* could be merged with expr *)
- and init = 
+ and init =
   | InitExpr of expr (* can be Id, which have special meaning for Key *)
   | InitKeyValue of init * tok (* : *) * init
   | InitBraces of init list bracket
@@ -208,7 +208,7 @@ and constant_expr = expr
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-and stmt = 
+and stmt =
  | DeclStmts of decl list (* inside a Block *)
 
  | Block of stmt list bracket
@@ -229,15 +229,15 @@ and stmt =
  (* note: no While or DoWhile, just For and Foreach (Range) *)
  | For of tok * (simple option * expr option * simple option) * stmt
  (* todo: should impose (expr * tok * expr option) for key/value *)
- | Range of tok * 
-      (expr list * tok (* = or := *)) option (* key/value pattern *) * 
-      tok (* 'range' *) * expr * stmt 
+ | Range of tok *
+      (expr list * tok (* = or := *)) option (* key/value pattern *) *
+      tok (* 'range' *) * expr * stmt
 
  | Return of tok * expr list option
  (* was put together in a Branch in ast.go, but better to split *)
  | Break    of tok * ident option
  | Continue of tok * ident option
- | Goto     of tok * ident 
+ | Goto     of tok * ident
  | Fallthrough of tok
 
  | Label of ident * stmt
@@ -253,12 +253,12 @@ and stmt =
     | CaseDefault of tok
  (* TODO: stmt (* Send or Receive *) * stmt (* can be empty *) *)
  and comm_clause = case_clause
-    
+
  and call_expr = expr * arguments bracket
 
  and simple =
  | ExprStmt of expr
- (* good boy! not an expression but a statement! better! *) 
+ (* good boy! not an expression but a statement! better! *)
  (* note: lhs and rhs do not always have the same length as in
   *  a,b = foo()
   *)
@@ -272,13 +272,13 @@ and stmt =
 (* Declarations *)
 (*****************************************************************************)
 
-and decl = 
+and decl =
  (* consts can have neither a type nor an expr but the expr is usually
   * a copy of the expr of the previous const in a list of consts (e.g., iota),
   * and the grammar imposes that the first const at least has an expr.
   * less: could do this transformation during parsing.
   *)
- | DConst of ident * type_ option * constant_expr option 
+ | DConst of ident * type_ option * constant_expr option
  (* vars have at least a type or an expr ((None,None) is impossible) *)
  | DVar   of ident * type_ option * (* = *) expr option (* value *)
 
@@ -333,8 +333,8 @@ type top_decl =
  [@@deriving show { with_path = false }] (* with tarzan *)
 
 (* old: used to be a record with package, imports, and then decls but
- * tree-sitter-go is more flexible and so I put package and imports in 
- * top_decl above. Note that this also makes things easier for semgrep 
+ * tree-sitter-go is more flexible and so I put package and imports in
+ * top_decl above. Note that this also makes things easier for semgrep
  * by allowing to have a pattern with just a package declaration for example.
  *)
 type program = top_decl list
@@ -345,20 +345,20 @@ type program = top_decl list
 (*****************************************************************************)
 
 (* this is just for sgrep *)
-type item = 
+type item =
   | ITop of top_decl
   | IImport of import
   | IStmt of stmt
 
  [@@deriving show { with_path = false }]
 
-type partial = 
+type partial =
  (* the stmt will be empty in function_ for DFunc and DMethod *)
  | PartialDecl of top_decl
 
  [@@deriving show { with_path = false }]
- 
-type any = 
+
+type any =
  | E of expr
  | S of stmt
  | T of type_
@@ -393,8 +393,8 @@ let item1 xs =
 
 let str_of_id (s,_) = s
 
-let package_and_imports_of_program xs = 
-  let package = 
+let package_and_imports_of_program xs =
+  let package =
      match xs with
      | (Package (v1, v2))::_ -> (v1, v2)
      | _ -> failwith "first top decl is not a package"
@@ -402,13 +402,13 @@ let package_and_imports_of_program xs =
   let imports = xs |> Common.map_filter (function
     | Import x -> Some x
     | _ -> None
-  ) in   
+  ) in
   package, imports
 
 (* used in parser_go.mly and Parse_go_tree_sitter.ml *)
-let mk_vars_or_consts ?(rev=false) xs type_opt exprs_opt mk_var_or_const = 
+let mk_vars_or_consts ?(rev=false) xs type_opt exprs_opt mk_var_or_const =
   let xs = if rev then List.rev xs else xs in
-  let ys = 
+  let ys =
     match exprs_opt with
     | None -> []
     | Some ys -> if rev then List.rev ys else ys
@@ -417,17 +417,17 @@ let mk_vars_or_consts ?(rev=false) xs type_opt exprs_opt mk_var_or_const =
   let rec aux xs ys =
     match xs, ys with
     | [], [] -> []
-    | x::xs, [] -> mk_var_or_const x type_opt None :: aux xs ys 
+    | x::xs, [] -> mk_var_or_const x type_opt None :: aux xs ys
     | x::xs, y::ys -> mk_var_or_const x type_opt (Some y) :: aux xs ys
-    | [], _y::_ys -> 
+    | [], _y::_ys ->
         failwith "more values than entities"
   in
   aux xs ys
 
 let mk_vars ?rev xs type_opt exprs_opt =
-  mk_vars_or_consts ?rev xs type_opt exprs_opt 
+  mk_vars_or_consts ?rev xs type_opt exprs_opt
     (fun a b c -> DVar (a,b,c))
 
 let mk_consts ?rev xs type_opt exprs_opt =
-  mk_vars_or_consts ?rev xs type_opt exprs_opt 
+  mk_vars_or_consts ?rev xs type_opt exprs_opt
     (fun a b c -> DConst (a,b,c))

@@ -7,8 +7,8 @@ module Flag = Flag_parsing
 (* Lexing/Parsing *)
 (*****************************************************************************)
 (*s: test_tokens_php *)
-let test_tokens_php file = 
-  if not (file =~ ".*\\.php") 
+let test_tokens_php file =
+  if not (file =~ ".*\\.php")
   then pr2 "warning: seems not a .php file";
 
   Flag.verbose_lexing := true;
@@ -23,9 +23,9 @@ let test_tokens_php file =
 let test_parse_php xs  =
   let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
 
-  let dirname_opt, fullxs = 
+  let dirname_opt, fullxs =
     match xs with
-    | [x] when Common2.is_directory x -> 
+    | [x] when Common2.is_directory x ->
       let skip_list =
         if Sys.file_exists (x ^ "/skip_list.txt")
         then Skip_code.load (x ^ "/skip_list.txt")
@@ -42,12 +42,12 @@ let test_parse_php xs  =
 
   Common2.check_stack_nbfiles (List.length fullxs);
 
-  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file ->
      k ();
 
-    let (_xs, stat) = 
+    let (_xs, stat) =
       Common.save_excursion Flag.error_recovery true (fun () ->
-        Parse_php.parse file 
+        Parse_php.parse file
       )
     in
     Common.push stat stat_list;
@@ -63,13 +63,13 @@ let test_parse_php xs  =
   Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
     let score_path = Config_pfff.regression_data_dir in
-    dirname_opt |> Common.do_option (fun dirname -> 
+    dirname_opt |> Common.do_option (fun dirname ->
       let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common2.regression_testing newscore 
+      Common2.regression_testing newscore
         (Filename.concat score_path
          ("score_parsing__" ^str ^ "php.marshalled"))
     );
@@ -85,13 +85,13 @@ let test_parse_php xs  =
 (*e: test_sexp_php *)
 (*s: test_json_php *)
 (*
-let test_json_php file = 
+let test_json_php file =
   let ast = Parse_php.parse_program file in
   let s = Export_ast_php.json_string_of_program ast in
   pr s;
   ()
 
-let test_json_fast_php file = 
+let test_json_fast_php file =
   let ast = Parse_php.parse_program file in
   let s = Export_ast_php.json_string_of_program_fast ast in
   pr s;
@@ -109,7 +109,7 @@ let test_dump_php file =
 (*****************************************************************************)
 (*s: test_visit_php *)
 (*
-let test_visit_php file = 
+let test_visit_php file =
   let ast = Parse_php.parse_program file in
 
   let hooks = { Visitor_php.default_visitor with
@@ -118,7 +118,7 @@ let test_visit_php file =
       pr2 s;
     );
 
-    Visitor_php.kexpr = (fun (k, _) e -> 
+    Visitor_php.kexpr = (fun (k, _) e ->
       match e with
       | Cst_php.Sc _ ->
           pr2 "scalar";
@@ -131,7 +131,7 @@ let test_visit_php file =
 *)
 (*e: test_visit_php *)
 (*
-let test_unparse_php file = 
+let test_unparse_php file =
   let (ast2, _stat) = Parse_php.parse file in
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
   let s = Unparse_php.string_of_program_with_comments_using_transfo ast2 in
@@ -140,18 +140,18 @@ let test_unparse_php file =
   xs |> List.iter pr2;
   ()
 
-let test_pretty_print_php file = 
+let test_pretty_print_php file =
   let _ast = Parse_php.parse_program file in
   raise Todo
   (* Pretty_print_php.pretty_print_program ast *)
 
 (* note that pfff can now parse XHP files without calling xhpize *)
-let test_parse_xhp_with_xhpize file = 
+let test_parse_xhp_with_xhpize file =
   let pp_cmd = "xhpize" in
   let _ast = Parse_php.parse_program ~pp:(Some pp_cmd) file in
   raise Todo
 
-let test_parse_xdebug_expr s = 
+let test_parse_xdebug_expr s =
   let _e = Parse_php.xdebug_expr_of_string s in
   raise Todo
 *)
@@ -161,41 +161,41 @@ let test_parse_xdebug_expr s =
 (*****************************************************************************)
 let actions () = [
   (*s: test_parsing_php actions *)
-    "-parse_php", "   <file or dir>", 
+    "-parse_php", "   <file or dir>",
     Common.mk_action_n_arg test_parse_php;
   (*x: test_parsing_php actions *)
 (*
-    "-visit_php", "   <file>", 
+    "-visit_php", "   <file>",
       Common.mk_action_1_arg test_visit_php;
 *)
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
 (*
-    "-json", "   <file> export the AST of file into JSON", 
+    "-json", "   <file> export the AST of file into JSON",
       Common.mk_action_1_arg test_json_php;
-    "-json_fast", "   <file> export the AST of file into a compact JSON", 
+    "-json_fast", "   <file> export the AST of file into a compact JSON",
       Common.mk_action_1_arg test_json_fast_php;
 *)
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
-    "-dump_php", "   <file>", 
+    "-dump_php", "   <file>",
     Common.mk_action_1_arg test_dump_php;
-    "-dump_php_ml", "   <file>", 
+    "-dump_php_ml", "   <file>",
     Common.mk_action_1_arg test_dump_php;
   (*x: test_parsing_php actions *)
   (*x: test_parsing_php actions *)
   (*x: test_parsing_php actions *)
-    "-tokens_php", "   <file>", 
+    "-tokens_php", "   <file>",
     Common.mk_action_1_arg test_tokens_php;
   (*e: test_parsing_php actions *)
 (*
-    "-unparse_php", "   <file>", 
+    "-unparse_php", "   <file>",
     Common.mk_action_1_arg test_unparse_php;
-    "-pretty_print_php", "   <file>", 
+    "-pretty_print_php", "   <file>",
     Common.mk_action_1_arg test_pretty_print_php;
-    "-parse_xdebug_expr", "   <string>", 
+    "-parse_xdebug_expr", "   <string>",
     Common.mk_action_1_arg test_parse_xdebug_expr;
-    "-parse_xhp_with_xhpize", "   <file>", 
+    "-parse_xhp_with_xhpize", "   <file>",
     Common.mk_action_1_arg test_parse_xhp_with_xhpize;
 *)
 ]

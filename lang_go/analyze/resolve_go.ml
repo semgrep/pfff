@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -30,7 +30,7 @@ module G = AST_generic
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-type context = 
+type context =
   | AtToplevel
   | InFunction (* or Method *)
 
@@ -45,18 +45,18 @@ type env = {
 (* Helpers *)
 (*****************************************************************************)
 
-(* because we use a Visitor instead of a clean recursive 
+(* because we use a Visitor instead of a clean recursive
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
-let with_added_env xs env f = 
+let with_added_env xs env f =
   let newnames = xs @ !(env.names) in
   Common.save_excursion env.names newnames f
 
 let add_name_env name kind env =
   env.names := (Ast.str_of_id name, kind)::!(env.names)
 
-let with_new_context ctx env f = 
+let with_new_context ctx env f =
   Common.save_excursion env.ctx ctx f
 
 let default_env () = {
@@ -64,7 +64,7 @@ let default_env () = {
   names = ref [];
 }
 
-let params_of_parameters xs = 
+let params_of_parameters xs =
   xs |> Common.map_filter (function
      | ParamClassic { pname = Some id; _ } ->
         (* less: we should also set id_info here at the def site,
@@ -73,7 +73,7 @@ let params_of_parameters xs =
      | _ -> None
     )
 let local_or_global env =
-  if !(env.ctx) = AtToplevel 
+  if !(env.ctx) = AtToplevel
   then G.Global, G.sid_TODO
   else G.Local, G.sid_TODO
 
@@ -108,12 +108,12 @@ let resolve prog =
 
       imports |> List.iter (fun { i_path = (path, ii); i_kind = kind; _ } ->
           match kind with
-          | ImportOrig -> 
-            add_name_env (Filename.basename path, ii) 
+          | ImportOrig ->
+            add_name_env (Filename.basename path, ii)
               (G.ImportedModule (G.FileName (path,ii)), G.sid_TODO) env
-          | ImportNamed id -> 
+          | ImportNamed id ->
             (* TODO: hacky, but right now we transform
-             * import sub "x.y.z" in sub = [z] so later 
+             * import sub "x.y.z" in sub = [z] so later
              * sub.bar will be allowed to match z.bar
              *)
             (* add_name_env id
@@ -127,7 +127,7 @@ let resolve prog =
       k x
     );
     V.ktop_decl = (fun (k, _) x ->
-      (match x with 
+      (match x with
       | DFunc (_t, id, _) ->
          env |> add_name_env id (G.Global, G.sid_TODO);
          (* note that kfunction later will do the with_added_env for params
@@ -145,10 +145,10 @@ let resolve prog =
           ))
       | DTop _ | STop _ -> k x
       | Package _ | Import _ -> k x
-        
+
       )
     );
-    V.kdecl = (fun (k, _) x -> 
+    V.kdecl = (fun (k, _) x ->
       (match x with
       | DConst (id, _, _) | DVar (id, _, _) ->
          env |> add_name_env id (local_or_global env)

@@ -24,7 +24,7 @@ module M = Map_AST
 (*****************************************************************************)
 
 (*s: function [[Lib_AST.extract_info_visitor]] *)
-let extract_info_visitor recursor = 
+let extract_info_visitor recursor =
   let globals = ref [] in
   let hooks = { V.default_visitor with
     V.kinfo = (fun (_k, _) i -> Common.push i globals);
@@ -37,7 +37,7 @@ let extract_info_visitor recursor =
 (*e: function [[Lib_AST.extract_info_visitor]] *)
 
 (*s: function [[Lib_AST.ii_of_any]] *)
-let ii_of_any any = 
+let ii_of_any any =
   extract_info_visitor (fun visitor -> visitor any)
 (*e: function [[Lib_AST.ii_of_any]] *)
 
@@ -45,9 +45,9 @@ let ii_of_any any =
 (* Abstract position *)
 (*****************************************************************************)
 (*s: function [[Lib_AST.abstract_position_visitor]] *)
-let abstract_position_visitor recursor = 
+let abstract_position_visitor recursor =
   let hooks = { M.default_visitor with
-    M.kinfo = (fun (_k, _) i -> 
+    M.kinfo = (fun (_k, _) i ->
       { i with Parse_info.token = Parse_info.Ab }
     )
   } in
@@ -57,7 +57,7 @@ let abstract_position_visitor recursor =
   end
 (*e: function [[Lib_AST.abstract_position_visitor]] *)
 (*s: function [[Lib_AST.abstract_position_info_any]] *)
-let abstract_position_info_any x = 
+let abstract_position_info_any x =
   abstract_position_visitor (fun visitor -> visitor.M.vany x)
 (*e: function [[Lib_AST.abstract_position_info_any]] *)
 (*e: pfff/lang_GENERIC/parsing/Lib_AST.ml *)

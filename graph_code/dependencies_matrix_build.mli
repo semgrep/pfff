@@ -10,14 +10,14 @@ val threshold_pack: int ref
  * nodes that minimizes backward dependencies.
  *)
 val build:
-  config -> partition_constraints option -> Graph_code_opti.graph -> 
+  config -> partition_constraints option -> Graph_code_opti.graph ->
   dm * Graph_code_opti.graph
 
 val info_orders:
  dm -> unit
 
 (* we return a gopti because of threshold_pack that may alter the graph *)
-val config_of_path: 
+val config_of_path:
   config_path -> Graph_code_opti.graph -> config * Graph_code_opti.graph
 
 (* internals *)

@@ -1,5 +1,5 @@
 
-type element_class = 
+type element_class =
   | Inline
   | Block
   | Essential_block

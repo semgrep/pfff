@@ -305,7 +305,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
 
     current =
      (match ast with
-     | (DirectiveStmt (Package (_, long_ident, _)))::_ -> 
+     | (DirectiveStmt (Package (_, long_ident, _)))::_ ->
             (str_of_qualified_ident long_ident, E.Package)
      | _ ->            (readable, E.File)
      );
@@ -319,7 +319,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     imported_namespace =
       (match ast with
       (* we automatically import the current.package.* *)
-      | (DirectiveStmt (Package (_, long_ident,_ )))::_ -> 
+      | (DirectiveStmt (Package (_, long_ident,_ )))::_ ->
             [List.map Ast.unwrap long_ident @ ["*"]]
       | _ -> []
       ) @
@@ -495,10 +495,10 @@ and method_decl env def =
      * share the same name so yes need full_ident as a qualifier.
     *)
     current_qualifier = full_ident;
-    params_or_locals = 
-      (def.m_formals |> Common.map_filter (function 
-             | ParamClassic p | ParamReceiver p | ParamSpread (_, p) -> Some p 
-             | ParamEllipsis _ -> None) 
+    params_or_locals =
+      (def.m_formals |> Common.map_filter (function
+             | ParamClassic p | ParamReceiver p | ParamSpread (_, p) -> Some p
+             | ParamEllipsis _ -> None)
                      |> List.map p_or_l)
       @
      (* with methods of anon classes we need to lookup enclosing
@@ -793,7 +793,7 @@ and expr env = function
       typ env (tref);
   | Ellipsis _ | DeepEllipsis _ -> ()
   | Lambda (_params, _t, _st) -> raise Todo (* imitate method_decl code *)
-  | MethodRef _ -> raise Todo    
+  | MethodRef _ -> raise Todo
 
 
 and exprs env xs = List.iter (expr env) xs
@@ -829,7 +829,7 @@ and typ env = function
             | None ->
                 (match xs with
                 | [] -> raise Impossible
-                | ((s,_))::_ when List.mem_assoc s env.imported_qualified ->
+                | (s,_)::_ when List.mem_assoc s env.imported_qualified ->
                     let (_is_static, full_ident) =
                       List.assoc s env.imported_qualified in
                     let str = str_of_qualified_ident full_ident in

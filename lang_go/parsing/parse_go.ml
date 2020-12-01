@@ -1,18 +1,18 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  * Copyright (C) 2019 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common 
+open Common
 
 module Flag = Flag_parsing
 module TH   = Token_helpers_go
@@ -32,42 +32,42 @@ module Lexer = Lexer_go
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type program_and_tokens = 
+type program_and_tokens =
   Ast_go.program option * Parser_go.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
-let error_msg_tok tok = 
+let error_msg_tok tok =
   Parse_info.error_message_info (TH.info_of_tok tok)
 
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
-let tokens2 file = 
-  let token lexbuf = 
+let tokens2 file =
+  let token lexbuf =
       Lexer.token lexbuf
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 
-let tokens a = 
+let tokens a =
   Common.profile_code "Parse_go.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-let parse2 filename = 
+let parse2 filename =
   (* this can throw Parse_info.Lexical_error *)
   let toks_orig = tokens filename in
   let toks = Common.exclude TH.is_comment_or_space toks_orig in
   (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
   let toks = Parsing_hacks_go.fix_tokens toks in
-  let tr, lexer, lexbuf_fake = 
+  let tr, lexer, lexbuf_fake =
     Parse_info.mk_lexer_for_yacc toks TH.is_irrelevant in
 
-  try 
+  try
     (* -------------------------------------------------- *)
     (* Call parser *)
     (* -------------------------------------------------- *)
@@ -96,10 +96,10 @@ let parse2 filename =
 
     (None, toks_orig), PI.bad_stat filename
 
-let parse a = 
+let parse a =
   Common.profile_code "Parse_go.parse" (fun () -> parse2 a)
 
-let parse_program file = 
+let parse_program file =
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
 
@@ -107,13 +107,13 @@ let parse_program file =
 (* Sub parsers *)
 (*****************************************************************************)
 
-let (program_of_string: string -> Ast_go.program) = fun s -> 
+let (program_of_string: string -> Ast_go.program) = fun s ->
   Common2.with_tmp_file ~str:s ~ext:"go" (fun file ->
     parse_program file
   )
 
 (* for sgrep/spatch *)
-let any_of_string s = 
+let any_of_string s =
   Common2.with_tmp_file ~str:s ~ext:"go" (fun file ->
     let toks_orig = tokens file in
     let toks = Common.exclude TH.is_comment_or_space toks_orig in
@@ -123,7 +123,7 @@ let any_of_string s =
     (* -------------------------------------------------- *)
     (* Call parser *)
     (* -------------------------------------------------- *)
-    try 
+    try
       Parser_go.sgrep_spatch_pattern lexer lexbuf_fake
     with Parsing.Parse_error ->
       let cur = tr.PI.current in

@@ -1,14 +1,14 @@
 (*s: treemap_json.ml *)
 (*s: Facebook copyright *)
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -34,7 +34,7 @@ module Color = Simple_color
 
 (*s: function treemap_of_json *)
 (* cf json_of_treemap_basic below. Just do reverse operation *)
-let rec treemap_of_json j = 
+let rec treemap_of_json j =
   match j with
   | J.Object [
       "kind", J.String "Node";
@@ -49,7 +49,7 @@ let rec treemap_of_json j =
       let rect = {
         label = s;
         color = Color.black;
-        size = size; 
+        size = size;
       }
       in
       Common2.Node ((rect, s), children)
@@ -68,7 +68,7 @@ let rec treemap_of_json j =
       in
       Common2.Leaf (rect, (lbl, size))
 
-  | _ -> 
+  | _ ->
       failwith "wrong format"
 (*e: function treemap_of_json *)
 
@@ -81,17 +81,17 @@ let json_of_color c = J.String (Color.string_of_color c)
 (*e: function json_of_color *)
 
 (*s: function json_of_treemap *)
-(* I was first using ocamltarzan to auto generate the json_of, but it 
+(* I was first using ocamltarzan to auto generate the json_of, but it
  * leds to verbosity, so I ended up manually coding it.
  *)
-let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type) 
+let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
  = function
   | Common2.Node (((rect, _a), xs)) ->
       let { size = _v_sizeTODO; color = _v_colorTODO; label = v_label } = rect in
-      
+
       let bnds = [] in
 
-      let children = 
+      let children =
         J.Array (List.map json_of_treemap xs)
       in
       let bnd = ("children", children) in
@@ -118,15 +118,15 @@ let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
       let bnd = ("color", arg) in
       let bnds = bnd :: bnds in
       let arg = J.Int v_size in
-      let bnd = ("size", arg) in 
-      let bnds = bnd :: bnds in 
+      let bnd = ("size", arg) in
+      let bnds = bnd :: bnds in
 
       let arg = J.String "Leaf" in
       let bnd = ("kind", arg) in
       let bnds = bnd :: bnds in
       J.Object bnds
 (*e: function json_of_treemap *)
-      
+
 
 (*****************************************************************************)
 (* Treemap rendering *)
@@ -146,7 +146,7 @@ and vof_point { x = v_x; y = v_y } =
   let bnds = bnd :: bnds in
   let arg = OCaml.vof_float v_x in
   let bnd = ("x", arg) in let bnds = bnd :: bnds in OCaml.VDict bnds
-  
+
 let rec vof_treemap_rendering v = OCaml.vof_list vof_treemap_rectangle v
 and
   vof_treemap_rectangle {
@@ -170,12 +170,12 @@ and
   let bnd = ("tr_color", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_rectangle v_tr_rect in
-  let bnd = ("tr_rect", arg) in 
+  let bnd = ("tr_rect", arg) in
   let bnds = bnd :: bnds in
   OCaml.VDict bnds
 
 
-let json_of_treemap_rendering rendering = 
+let json_of_treemap_rendering rendering =
   let v = vof_treemap_rendering rendering in
   OCaml.json_of_v v
 
@@ -183,20 +183,20 @@ let json_of_treemap_rendering rendering =
 (* Testing *)
 (*****************************************************************************)
 (*s: function test_json_of *)
-let test_json_of dir = 
+let test_json_of dir =
   let maxc = 256 in
-  let tree = tree_of_dirs_or_files 
+  let tree = tree_of_dirs_or_files
     ~file_hook:(fun file -> Common2.filesize file) [dir] in
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (_f, intleaf) -> intleaf) 
-    ~color_of_leaf:(fun (_f, _intleaf) -> 
+    ~size_of_leaf:(fun (_f, intleaf) -> intleaf)
+    ~color_of_leaf:(fun (_f, _intleaf) ->
       Color.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
     )
     ~label_of_dir:(fun dir -> Filename.basename dir)
     ~label_of_file:(fun (f, _intleaf) -> f)
-    tree 
+    tree
   in
-  let json = 
+  let json =
     json_of_treemap
       (*
       (fun _ -> J.Null)
@@ -216,7 +216,7 @@ let test_of_json file =
     let s = Json_out.string_of_json json2 in
     pr s
 (*e: function test_of_json *)
-    
+
 
 (*****************************************************************************)
 (* Actions *)

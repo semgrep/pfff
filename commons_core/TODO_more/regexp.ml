@@ -4,18 +4,18 @@ open Common
  * ex: \\bcia_pci_tbi_try2\\b
  *)
 
-let find_offset_all_matches ~regexp str = 
+let find_offset_all_matches ~regexp str =
 
   let substrings = Pcre.exec ~rex:regexp str in
   let res = ref [] in
 
-  let rec loop substrings = 
+  let rec loop substrings =
     let n = Pcre.num_of_subs substrings in
     for i = 1 to n -1 do
       let (pos1, pos2) = Pcre.get_substring_ofs substrings i in
       Common.push (pos1,pos2) res;
     done;
-    (try 
+    (try
         let subs2 = Pcre.next_match ~rex:regexp substrings in
         loop subs2
       with  Not_found -> ()
@@ -27,8 +27,8 @@ let find_offset_all_matches ~regexp str =
 
 
 
-let test_regexp () = 
-  let str_ast = 
+let test_regexp () =
+  let str_ast =
     "void
 cia_pci_tbi_try2(struct pci_controller *hose,);
 cia_pci_tbi_try2(struct pci_controller *hose,);
@@ -36,34 +36,34 @@ cia_pci_tbi_try2(struct pci_controller *hose,);
   let s = "cia_pci_tbi_try2" in
 
   let re1 = Str.regexp ("\\b" ^ s ^ "\\b") in
-  (try 
+  (try
       let _i = Str.search_forward  re1 str_ast 0 in
       pr2 "found Str";
-    with Not_found -> 
+    with Not_found ->
       pr2 "no match Str here";
   );
 
   let re2 = Pcre.regexp ("\\b" ^ s ^ "\\b") in
-  if Pcre.pmatch ~rex:re2 str_ast 
+  if Pcre.pmatch ~rex:re2 str_ast
   then pr2 "found Pcre"
   else pr2 "no match Pcre here"
   ;
   let substrings = Pcre.exec ~rex:re2 str_ast in
-  let rec loop substrings = 
+  let rec loop substrings =
     let n = Pcre.num_of_subs substrings in
     pr2_gen (n);
     for i = 1 to n -1 do
       let (pos1, pos2) = Pcre.get_substring_ofs substrings i in
       pr2_gen (pos1,pos2);
     done;
-    (try 
+    (try
       let subs2 = Pcre.next_match ~rex:re2 substrings in
       loop subs2
       with  Not_found -> ()
     );
   in
   loop substrings;
-  
+
 
   pr2_gen (find_offset_all_matches re2 str_ast);
 

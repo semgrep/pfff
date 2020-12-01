@@ -131,7 +131,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
    | Loop (tok, e, st) ->
      (* previ -> newi ---> newfakethen -> ... -> finalthen -
       *             |---|-----------------------------------|
-      *                 |-> newfakelse 
+      *                 |-> newfakelse
       *)
        let newi = state.g#add_node { F.n = NCond (tok, e); } in
        state.g |> add_arc_opt (previ, newi);
@@ -145,7 +145,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        state.g |> add_arc_opt (finalthen, newi);
        Some newfakeelse
 
-   | Label _ 
+   | Label _
    | Goto _
      -> raise Todo
 

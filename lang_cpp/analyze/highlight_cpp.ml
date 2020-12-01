@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -67,15 +67,15 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
   (* Toks phase 1 *)
   (* -------------------------------------------------------------------- *)
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (_ii4)
+      ::T.TCommentNewline _ii4
       ::T.TComment(ii5)
       ::xs ->
         let s = PI.str_of_info ii in
@@ -100,11 +100,11 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         let s = PI.str_of_info ii in
         let s2 = PI.str_of_info ii3 in
         (match () with
-        | _ when s =~ "//////////.*" 
-            && s2 =~ "// .*" 
+        | _ when s =~ "//////////.*"
+            && s2 =~ "// .*"
             ->
             tag ii3 CommentSection1
-        | _ -> 
+        | _ ->
             ()
         );
         aux_toks xs
@@ -113,11 +113,11 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii CommentSection2;
         aux_toks xs
 
-    (* heuristic for class/struct definitions. 
-     * 
+    (* heuristic for class/struct definitions.
+     *
      * Must be before the heuristic for function definitions
      * otherwise this pattern will never be exercised
-     * 
+     *
      * the code below has been commented because it generates
      * too much false positives. For instance in 'struct foo * bar(...) '
      * foo would be classified as the start of a struct definition
@@ -126,17 +126,17 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
      * | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum(ii))
      * ::T.TCommentSpace ii2::T.TIdent(s, ii3)::T.TPtVirg _::xs ->
      * aux_toks xs
-     * | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii) 
+     * | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii)
      * | T.TIdent ("service", ii)
      * )
      * ::T.TCommentSpace ii2::T.TIdent(s, ii3)::xs
      * when Ast.col_of_info ii = 0 ->
-     * 
+     *
      * tag ii3 (Class (Def2 fake_no_def2));
      * aux_toks xs;
      *)
 
-    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum (ii)
+    | (T.Tclass(ii) | T.Tstruct(ii) | T.Tenum ii
         (* thrift stuff *)
         | T.TIdent ("service", ii)
       )
@@ -152,7 +152,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
 
     (* heuristic for function definitions *)
-    | t1::xs when (t1 |> TH.info_of_tok |> PI.col_of_info = 0) && 
+    | t1::xs when (t1 |> TH.info_of_tok |> PI.col_of_info = 0) &&
                    TH.is_not_comment t1 ->
         let line_t1 = TH.line_of_tok t1 in
         let rec find_ident_paren xs =
@@ -166,7 +166,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           | [] -> ()
         in
         let same_line = (t1::xs) |> Common2.take_while (fun t ->
-          TH.line_of_tok t = line_t1) 
+          TH.line_of_tok t = line_t1)
         in
         find_ident_paren same_line;
         aux_toks xs
@@ -179,7 +179,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
   let is_at_toplevel = ref true in
 
   (* -------------------------------------------------------------------- *)
-  (* Ast phase 1 *) 
+  (* Ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   let visitor = V.mk_visitor { (*V.default_visitor with *)
@@ -198,10 +198,10 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
             onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
               let storage = onedecl.v_storage in
-              let categ = 
+              let categ =
                 match storage with
                 | StoTypedef _ -> Entity (Type, Def2 fake_no_def2)
-                | _ when Type.is_function_type onedecl.v_type -> 
+                | _ when Type.is_function_type onedecl.v_type ->
                     FunctionDecl NoUse
                  (* could be a global too when the decl is at the top *)
                 | Sto (Extern, _) -> Entity (Global, (Def2 fake_no_def2))
@@ -215,7 +215,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | MacroDecl _ ->
            k x
 
-      | ( Asm (_, _, _, _) 
+      | ( Asm (_, _, _, _)
         | NameSpaceAlias (_, _, _, _, _) | UsingDirective (_, _, _, _)
         | UsingDecl _
         ) -> ()
@@ -238,11 +238,11 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           (match name with
           | (_, _, IdIdent (s, ii)) ->
             (* the Call case might have already tagged it with something *)
-            if not (Hashtbl.mem already_tagged ii) 
+            if not (Hashtbl.mem already_tagged ii)
             then
               if s ==~ Parsing_hacks_lib.regexp_macro
               then tag ii (Entity (Constant, (Use2 fake_no_use2)))
-              else 
+              else
                 (match idinfo.Ast.i_scope with
                 | S.NoScope -> ()
                 | S.Local -> tag ii (Local Use)
@@ -258,15 +258,15 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
                 )
           | _ -> ()
           )
-          
+
       | Call (e, _args) ->
           (match e with
-          | Id (name, scope) -> 
+          | Id (name, scope) ->
             (match name with
             | _, _, IdIdent (s, ii) ->
                 if Hashtbl.mem h_debug_functions s
                 then tag ii BuiltinCommentColor
-                else 
+                else
                   (match scope.i_scope with
                   | S.Local | S.Param ->
                     tag ii PointerCall
@@ -279,12 +279,12 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           | RecordAccess (_e, _, name) | RecordPtAccess (_e, _, name) ->
               Ast.ii_of_id_name name |> List.iter (fun ii ->
                 let file = PI.file_of_info ii in
-                if File_type.file_type_of_file file =*= 
+                if File_type.file_type_of_file file =*=
                    File_type.PL (File_type.C "c")
                 then tag ii PointerCall
                 else tag ii (Entity (Method, (Use2 fake_no_use2)))
               )
-          | _ -> 
+          | _ ->
               (* dynamic stuff, should highlight! *)
               let ii = Lib.ii_of_any (Expr e) in
               ii |> List.iter (fun ii -> tag ii PointerCall);
@@ -302,8 +302,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
       | New (_colon, _tok, _placement, ft, _args) ->
           (match ft with
-          | _nq, ((TypeName (name))) ->
-              Ast.ii_of_id_name name |> List.iter (fun ii -> 
+          | _nq, ((TypeName name)) ->
+              Ast.ii_of_id_name name |> List.iter (fun ii ->
                 tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
           | _ -> ()
@@ -333,8 +333,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     V.ktypeC = (fun (k, _) x ->
       match x with
-      | TypeName (name) ->
-          Ast.ii_of_id_name name |> List.iter (fun ii -> 
+      | TypeName name ->
+          Ast.ii_of_id_name name |> List.iter (fun ii ->
             (* new Xxx and other places have priority *)
             if not (Hashtbl.mem already_tagged ii)
             then tag ii (Entity (Type, Use2 fake_no_use2))
@@ -349,7 +349,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           k x
 
       | TypenameKwd (_tok, name) ->
-          Ast.ii_of_id_name name |> List.iter (fun ii -> 
+          Ast.ii_of_id_name name |> List.iter (fun ii ->
             tag ii (Entity (Type, Use2 fake_no_use2)));
           k x
 
@@ -363,11 +363,11 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | _ -> k x
     );
 
-    V.kfieldkind = (fun (k, _) x -> 
+    V.kfieldkind = (fun (k, _) x ->
       match x with
       | FieldDecl onedecl ->
           onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
-            let kind = 
+            let kind =
               (* poor's man object using function pointer; classic C idiom *)
               if Type.is_method_type onedecl.v_type
               then Entity (Method, (Def2 fake_no_def2))
@@ -388,7 +388,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kclass_def = (fun (k,_) def ->
       let name = def.c_name in
       name |> Common.do_option (fun name ->
-        Ast.ii_of_id_name name |> List.iter (fun ii -> 
+        Ast.ii_of_id_name name |> List.iter (fun ii ->
           tag ii (Entity (Class, (Def2 fake_no_def2)));
         )
       );
@@ -396,7 +396,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     );
     V.kfunc_def = (fun (k,_) def ->
       let name = def.f_name in
-      Ast.ii_of_id_name name |> List.iter (fun ii -> 
+      Ast.ii_of_id_name name |> List.iter (fun ii ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii (Entity (Class, (Def2 fake_no_def2)));
       );
@@ -410,7 +410,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
             | FunctionOrMethod def | Ast.Constructor def | Destructor def -> def
           in
           let name = def.f_name in
-          Ast.ii_of_id_name name |> List.iter (fun ii -> 
+          Ast.ii_of_id_name name |> List.iter (fun ii ->
             tag ii (Entity (Method, (Def2 fake_no_def2)))
           );
       | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _
@@ -449,12 +449,12 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
 
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then 
+        then
           (* a little bit syncweb specific *)
           let s = PI.str_of_info ii in
           (match s with
@@ -469,41 +469,41 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii String
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean
-    | T.Tnullptr ii | T.Tnull ii -> 
+    | T.Tnullptr ii | T.Tnull ii ->
         tag ii Null
 
     | T.TPtVirg ii
-    
+
     | T.TOPar ii | T.TOPar_CplusplusInit ii | T.TOPar_Define ii | T.TCPar ii
-    | T.TOBrace ii | T.TOBrace_DefineInit ii | T.TCBrace ii 
+    | T.TOBrace ii | T.TOBrace_DefineInit ii | T.TCBrace ii
     | T.TOCro ii | T.TOCro_Lambda ii | T.TCCro ii
 
-    | T.TDot ii | T.TComma ii | T.TPtrOp ii  
+    | T.TDot ii | T.TComma ii | T.TPtrOp ii
     | T.TAssign (SimpleAssign ii)
     | T.TAssign (OpAssign (_, ii))
-    | T.TEq ii 
-    | T.TWhy ii | T.TTilde ii | T.TBang ii 
+    | T.TEq ii
+    | T.TWhy ii | T.TTilde ii | T.TBang ii
     | T.TEllipsis ii | T.LDots ii | T.RDots ii
     | T.TCol ii ->
         tag ii Punctuation
 
-    | T.TInc ii | T.TDec ii 
-    | T.TOrLog ii | T.TAndLog ii | T.TOr ii 
+    | T.TInc ii | T.TDec ii
+    | T.TOrLog ii | T.TAndLog ii | T.TOr ii
     | T.TXor ii | T.TAnd ii | T.TEqEq ii | T.TNotEq ii
     | T.TInf ii | T.TSup ii | T.TInfEq ii | T.TSupEq ii
-    | T.TShl ii | T.TShr ii  
+    | T.TShl ii | T.TShr ii
     | T.TPlus ii | T.TMinus ii | T.TMul ii | T.TDiv ii | T.TMod ii  ->
         tag ii Operator
 
     | T.Tshort ii | T.Tint ii ->
         tag ii TypeInt
-    | T.Tdouble ii | T.Tfloat ii 
-    | T.Tlong ii |  T.Tunsigned ii | T.Tsigned ii 
-    | T.Tchar ii 
+    | T.Tdouble ii | T.Tfloat ii
+    | T.Tlong ii |  T.Tunsigned ii | T.Tsigned ii
+    | T.Tchar ii
         -> tag ii TypeInt (* TODO *)
-    | T.Tvoid ii 
+    | T.Tvoid ii
         -> tag ii TypeVoid
-    | T.Tbool ii 
+    | T.Tbool ii
     | T.Twchar_t ii
         -> tag ii TypeInt
     (* thrift stuff *)
@@ -511,21 +511,21 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     (* needed only when have FP in the typedef inference *)
     | T.TIdent (
         ("string" | "i32" | "i64" | "i8" | "i16" | "byte"
-          (* | "list" | "map" | "set"  
+          (* | "list" | "map" | "set"
           | "binary"
           *)
         ), ii) ->
         tag ii TypeInt
 
-    | T.Tauto ii | T.Tregister ii | T.Textern ii | T.Tstatic ii  
-    | T.Tconst ii | T.Tconst_MacroDeclConst ii | T.Tvolatile ii 
+    | T.Tauto ii | T.Tregister ii | T.Textern ii | T.Tstatic ii
+    | T.Tconst ii | T.Tconst_MacroDeclConst ii | T.Tvolatile ii
     | T.Tbreak ii | T.Tcontinue ii
     | T.Treturn ii
-    | T.Tdefault ii 
-    | T.Tsizeof ii 
-    | T.Trestrict ii 
+    | T.Tdefault ii
+    | T.Tsizeof ii
+    | T.Trestrict ii
     | T.Tconstexpr ii | T.Tthread_local ii
-      -> 
+      ->
         tag ii Keyword
 
     | T.Tgoto ii ->
@@ -534,13 +534,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
          *)
         tag ii Keyword
 
-    | T.Tasm ii | T.Tattribute ii 
-    | T.Tinline ii | T.Ttypeof ii 
-     -> 
+    | T.Tasm ii | T.Tattribute ii
+    | T.Tinline ii | T.Ttypeof ii
+     ->
         tag ii Keyword
 
     (* pp *)
-    | T.TDefine ii -> 
+    | T.TDefine ii ->
         tag ii Define
     | T.TUndef (_, ii) ->
         tag ii Define
@@ -549,13 +549,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TIdent_Define (_, ii) ->
         tag ii (Entity (Constant, (Def2 NoUse)))
 
-    (* TODO: have 2 tokens? 
+    (* TODO: have 2 tokens?
     | T.TInclude_Filename (_, ii) ->
         tag ii String
     | T.TInclude_Start (ii, _aref) ->
         tag ii Include
      *)
-    | T.TInclude (_, _, ii) -> 
+    | T.TInclude (_, _, ii) ->
         tag ii Include
 
     | T.TIfdef ii | T.TIfdefelse ii | T.TIfdefelif ii | T.TEndif ii ->
@@ -574,12 +574,12 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii KeywordObject
 
     | T.Ttemplate ii | T.Ttypeid ii | T.Ttypename ii  | T.Tdecltype ii
-    | T.Toperator ii  
-    | T.Tpublic ii | T.Tprivate ii | T.Tprotected ii | T.Tfriend ii  
-    | T.Tusing ii  
+    | T.Toperator ii
+    | T.Tpublic ii | T.Tprivate ii | T.Tprotected ii | T.Tfriend ii
+    | T.Tusing ii
     | T.Tconst_cast ii | T.Tdynamic_cast ii
     | T.Tstatic_cast ii | T.Treinterpret_cast ii
-    | T.Texplicit ii | T.Tmutable ii  
+    | T.Texplicit ii | T.Tmutable ii
       ->
         tag ii Keyword
 
@@ -616,10 +616,10 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii Keyword
 
     (* should be covered by the xxx_namei case above *)
-    | T.TIdent (_, _ii) -> 
+    | T.TIdent (_, _ii) ->
         ()
     (* should be covered by TypeName above *)
-    | T.TIdent_Typedef _ 
+    | T.TIdent_Typedef _
 
     | T.TIdent_TemplatenameInQualifier_BeforeTypedef _
     | T.TIdent_TemplatenameInQualifier _
@@ -644,7 +644,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TInt_ZeroVirtual _
     | T.TCCro_new _ | T.TOCro_new _ -> ()
 
-    | T.TSup_Template ii | T.TInf_Template ii -> 
+    | T.TSup_Template ii | T.TInf_Template ii ->
         tag ii Keyword
 
     | T.TAny_Action _
@@ -652,13 +652,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         -> ()
 
     (* TODO *)
-    | T.TComment_Pp (kind, ii) -> 
+    | T.TComment_Pp (kind, ii) ->
         (match kind with
-        | Token_cpp.CppMacroExpanded | Token_cpp.CppPassingNormal -> 
+        | Token_cpp.CppMacroExpanded | Token_cpp.CppPassingNormal ->
             tag ii Expanded
         | _ -> tag ii Passed
         )
-    | T.TComment_Cpp (_kind, ii) -> 
+    | T.TComment_Cpp (_kind, ii) ->
         tag ii Passed
 
     | T.TDefParamVariadic _
@@ -667,7 +667,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TCppEscapedNewline _
     | T.TCommentSpace _
 
-    | T.EOF _ 
+    | T.EOF _
         -> ()
     | T.TUnknown ii -> tag ii Error
   );

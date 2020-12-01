@@ -1,4 +1,4 @@
 class foo = object
-  method foo () = 
+  method foo () =
     x <- true
 end

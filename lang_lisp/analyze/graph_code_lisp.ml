@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,16 +22,16 @@ module G = Graph_code
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Graph of dependencies for Lisp. See graph_code.ml and 
+ * Graph of dependencies for Lisp. See graph_code.ml and
  * main_codegraph.ml for more information.
- * 
+ *
  * schema:
- *  Root -> Dir -> File -> Function 
+ *  Root -> Dir -> File -> Function
  *                      -> Macro
  *                      -> TODO Global
- * 
+ *
  *       -> Dir -> Subdir -> ...
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -64,7 +64,7 @@ let _hmemo = Hashtbl.create 101
 
 let parse file =
   Common.memoized _hmemo file (fun () ->
-    try 
+    try
       Parse_lisp.parse_program file
     with
     | Timeout -> raise Timeout
@@ -106,7 +106,7 @@ let add_node_and_edge_if_defs_mode env (s, kind) tok =
       let pos = Parse_info.token_location_of_info tok in
       let pos = { pos with Parse_info.file = env.readable_file } in
       let nodeinfo = { Graph_code.
-          pos; 
+          pos;
           typ = None;
           props = [];
         } in
@@ -161,17 +161,17 @@ and sexps env xs =
 
 and sexp_toplevel env x =
   sexp_bis env x
-and sexp env x = 
+and sexp env x =
   sexp_bis { env with at_toplevel = false } x
 
 and sexp_bis env x =
   match x with
-  | Sexp (_, [Atom (Id ("provide", _)); Special ((Quote, _), 
+  | Sexp (_, [Atom (Id ("provide", _)); Special ((Quote, _),
                                                   (Atom (Id (s, t))))], _) ->
     let _env = add_node_and_edge_if_defs_mode env (s, E.Module) t in
     ()
 
-  | Sexp (_, Atom (Id ("defmacro", _))::Atom (Id (s, t))::rest, _) 
+  | Sexp (_, Atom (Id ("defmacro", _))::Atom (Id (s, t))::rest, _)
       when env.at_toplevel ->
     let env = add_node_and_edge_if_defs_mode env (s, E.Macro) t in
     sexps env rest
@@ -187,7 +187,7 @@ and sexp_bis env x =
 *)
 
 
-  | Sexp (_, [Atom (Id ("require", _)); Special ((Quote, _), 
+  | Sexp (_, [Atom (Id ("require", _)); Special ((Quote, _),
                                                   (Atom (Id (s, t))))], _) ->
     if env.phase = Uses then begin
       let node = (s, E.Module) in
@@ -198,8 +198,8 @@ and sexp_bis env x =
     if env.phase = Uses &&
       (G.has_node (s, E.Macro) env.g || G.has_node (s, E.Function) env.g)
     then
-      let kind = find_existing_node env s 
-        [E.Macro; 
+      let kind = find_existing_node env s
+        [E.Macro;
          E.Function;
         ]
         E.Function
@@ -207,7 +207,7 @@ and sexp_bis env x =
       add_use_edge env (s, kind) t;
       sexps env xs
     else
-      (* todo: too many errors for now, do not generate lookup failure for now 
+      (* todo: too many errors for now, do not generate lookup failure for now
        * e.g. all builtins are not taken into account
       *)
       sexps env xs
@@ -263,8 +263,8 @@ let build ?(verbose=true) root files =
       k();
       let ast = parse file in
       let readable_file = Common.readable ~root file in
-      extract_defs_uses { env with 
-        phase = Defs; readable_file; 
+      extract_defs_uses { env with
+        phase = Defs; readable_file;
       } ast
    ));
 
@@ -275,7 +275,7 @@ let build ?(verbose=true) root files =
       k();
       let ast = parse file in
       let readable_file = Common.readable ~root file in
-      extract_defs_uses { env with 
+      extract_defs_uses { env with
         phase = Uses; readable_file;
       } ast
     ));

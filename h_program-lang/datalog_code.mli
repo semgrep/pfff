@@ -31,7 +31,7 @@ type fact =
   | CallIndirect of callsite * var
 
 (* for toy datalog *)
-val string_of_fact: 
+val string_of_fact:
   fact -> string
 
 val bddbddb_of_facts:

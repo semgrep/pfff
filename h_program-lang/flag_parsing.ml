@@ -5,7 +5,7 @@ let verbose_parsing = ref true
 (* see Parse_info.lexical_error helper and Lexical_error exn *)
 let exn_when_lexical_error = ref true
 (* Do not raise an exn when a parse error but use NotParsedCorrectly.
- * If the parser is quite complete, it's better to set 
+ * If the parser is quite complete, it's better to set
  * error_recovery to false by default and raise a true ParseError exn.
  * This can be used also in testing code, to parse a big set of files and
  * get statistics (e.g., -parse_java) and not stop at the first parse error.
@@ -29,7 +29,7 @@ let cmdline_flags_debugging () = [
   "-debug_lexer",        Arg.Set  debug_lexer , " ";
 ]
 
-let sgrep_guard v = 
+let sgrep_guard v =
   if !sgrep_mode
   then v
   else raise Parsing.Parse_error

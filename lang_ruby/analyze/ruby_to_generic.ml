@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -56,7 +56,7 @@ let info x = x
 let tok v = info v
 
 let wrap = fun _of_a (v1, v2) ->
-  let v1 = _of_a v1 and v2 = info v2 in 
+  let v1 = _of_a v1 and v2 = info v2 in
   (v1, v2)
 
 let bracket of_a (t1, x, t2) = (info t1, of_a x, info t2)
@@ -66,7 +66,7 @@ let ident x = wrap string x
 let rec expr = function
   | Literal x -> literal x
   | Atom x -> atom x
-  | Id (id, kind) -> 
+  | Id (id, kind) ->
       (match kind with
       | ID_Self -> G.IdSpecial (G.Self, (snd id))
       | ID_Super -> G.IdSpecial (G.Super, (snd id))
@@ -75,12 +75,12 @@ let rec expr = function
   | ScopedId x -> let name = scope_resolution x in
       G.IdQualified (name, G.empty_id_info())
   | Hash (_bool, xs) -> G.Container (G.Dict, bracket (list expr) xs)
-  | Array (xs) -> G.Container (G.Array, bracket (list expr) xs)      
+  | Array xs -> G.Container (G.Array, bracket (list expr) xs)
   | Tuple xs -> G.Tuple (G.fake_bracket (list expr xs))
-  | Unary (op, e) -> 
+  | Unary (op, e) ->
     let e = expr e in
     unary op e
-  | Binop (e1, op, e2) -> 
+  | Binop (e1, op, e2) ->
       let e1 = expr e1 in
       let e2 = expr e2 in
       binary op e1 e2
@@ -96,14 +96,14 @@ let rec expr = function
       G.Call (e, fb ((xs @ last) |> List.map G.expr_to_arg))
   | DotAccess (e, t, m) ->
       let e = expr e in
-      let fld = 
+      let fld =
         match method_name m with
         | Left id -> G.EId id
         | Right e -> G.EDynamic e
       in
       G.DotAccess (e, t, fld)
   | Splat (t, eopt) ->
-      let xs = 
+      let xs =
         option expr eopt |> Common.opt_to_list |> List.map G.expr_to_arg in
       let special = G.IdSpecial (G.Spread, t) in
       G.Call (special, fb xs)
@@ -114,10 +114,10 @@ let rec expr = function
       let def = { G.fparams = params; frettype = None; fbody = st;
                   fkind = G.LambdaKind, t1} in
       G.Lambda def
-  | S x -> 
+  | S x ->
       let st = stmt x in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
-  | D x -> 
+  | D x ->
       let st = definition x in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Ellipsis x ->
@@ -132,19 +132,19 @@ let rec expr = function
      G.TypedMetavar (v1, v2, v3)
 
 and formal_param = function
-  | Formal_id id -> 
+  | Formal_id id ->
       G.ParamClassic (G.param_of_id id)
   | Formal_amp (t, id) ->
       let param = G.ParamClassic (G.param_of_id id) in
       G.OtherParam (G.OPO_Ref, [G.Tk t; G.Pa param])
   | Formal_star (t, id) ->
       G.ParamRest (t, G.param_of_id id)
-  | Formal_rest (t) ->
+  | Formal_rest t ->
       let p = { G.pattrs = []; pinfo = G.empty_id_info ();
                 ptype = None; pname = None; pdefault = None } in
       G.ParamRest (t, p)
   | Formal_hash_splat (t, idopt) ->
-      let p = 
+      let p =
         match idopt with
         | Some id -> G.param_of_id id
         | None ->
@@ -159,7 +159,7 @@ and formal_param = function
   (* TODO? diff with Formal_default? *)
   | Formal_kwd (id, _t, eopt) ->
       let eopt = option expr eopt in
-      let p = 
+      let p =
         match eopt with
         | None -> (G.param_of_id id)
         | Some e -> { (G.param_of_id id) with G.pdefault = Some e }
@@ -177,20 +177,20 @@ and formal_param_pattern = function
       let xs = list formal_param_pattern xs in
       G.PatTuple (G.fake_bracket xs)
 
-  | Formal_amp _ | Formal_star _ | Formal_rest _ 
-  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _ 
+  | Formal_amp _ | Formal_star _ | Formal_rest _
+  | Formal_default _ | Formal_hash_splat _ | Formal_kwd _
   | ParamEllipsis _
       as x ->
       let x = formal_param x in
       G.OtherPat (G.OP_Todo, [G.Pa x])
-      
+
 
 and scope_resolution = function
-  | TopScope (t, v) -> 
+  | TopScope (t, v) ->
       let id = variable v in
       let qualif = G.QTop t in
       id, { G.name_qualifier = Some qualif; name_typeargs = None }
-  | Scope (e, t, v_or_m) -> 
+  | Scope (e, t, v_or_m) ->
       let id = variable_or_method_name v_or_m in
       (* TODO: use an 'expr_for_scope' instead of 'expr' below, because
        * the expression itself could be another Scope ...
@@ -201,48 +201,48 @@ and scope_resolution = function
       id, { G.name_qualifier = Some qualif; name_typeargs = None }
 
 
-and variable (id, _kind) = 
+and variable (id, _kind) =
   ident id
 
 and variable_or_method_name = function
   | SV v -> variable v
-  | SM m -> 
+  | SM m ->
       (match method_name m with
       | Left id -> id
       | Right _ -> failwith "TODO: variable_or_method_name"
       )
 
-and method_name mn = 
+and method_name mn =
   match mn with
   | MethodId v -> Left (variable v)
   | MethodIdAssign (id, teq, id_kind) ->
       let (s, t) = variable (id, id_kind) in
       Left (s^"=", PI.combine_infos t [teq])
-  | MethodUOperator (_, t) | MethodOperator (_, t) -> 
+  | MethodUOperator (_, t) | MethodOperator (_, t) ->
       Left (PI.str_of_info t, t)
   | MethodDynamic e -> Right (expr e)
   | MethodAtom x ->
      (match x with
      | AtomSimple x -> Left x
-     | AtomFromString ((l, xs, r)) -> 
+     | AtomFromString (l, xs, r) ->
       (match xs with
-      | [StrChars (s,t2)] -> 
+      | [StrChars (s,t2)] ->
         let t = PI.combine_infos l [t2;r] in
         Left (s, t)
       | _ -> Right (string_contents_list (l, xs, r))
-      ) 
+      )
     )
 
 and string_contents_list (t1, xs, t2) =
   let xs = list string_contents xs in
-  G.OtherExpr (G.OE_Todo, 
+  G.OtherExpr (G.OE_Todo,
      [G.Tk t1] @ (xs |> List.map (fun e -> G.E e)) @ [G.Tk t2])
 
 and string_contents = function
   | StrChars s -> G.L (G.String s)
   | StrExpr e -> expr e
 
-and method_name_to_any mn = 
+and method_name_to_any mn =
   match method_name mn with
   | Left id -> G.I id
   | Right e -> G.E e
@@ -276,16 +276,16 @@ and binary_msg = function
 and binary (op, t) e1 e2 =
   match op with
   | B msg ->
-      let op = binary_msg msg in 
+      let op = binary_msg msg in
      G.Call (G.IdSpecial (G.Op op, t), fb [G.Arg e1; G.Arg e2])
-  | Op_kAND | Op_AND -> 
+  | Op_kAND | Op_AND ->
      G.Call (G.IdSpecial (G.Op G.And, t), fb [G.Arg e1; G.Arg e2])
-  | Op_kOR | Op_OR -> 
+  | Op_kOR | Op_OR ->
      G.Call (G.IdSpecial (G.Op G.Or, t), fb [G.Arg e1; G.Arg e2])
   | Op_ASSIGN ->
      G.Assign (e1, t, e2)
   | Op_OP_ASGN op ->
-      let op = 
+      let op =
         match op with
         | B msg -> binary_msg msg
         | Op_AND -> G.And
@@ -294,18 +294,18 @@ and binary (op, t) e1 e2 =
         | _ -> raise Impossible
       in
      G.AssignOp (e1, (op, t), e2)
-   | Op_ASSOC -> 
+   | Op_ASSOC ->
       G.Tuple (G.fake_bracket [e1;e2])
    | Op_DOT3 ->
      (* coupling: make sure to check for the string in generic_vs_generic *)
      G.Call (G.IdSpecial (G.Op G.Range, t), fb [G.Arg e1; G.Arg e2])
-      
 
 
-and unary (op,t) e = 
+
+and unary (op,t) e =
   match op with
-  | U msg -> 
-      let op = 
+  | U msg ->
+      let op =
         match msg with
         | Op_UMinus -> G.Minus
         | Op_UPlus -> G.Plus
@@ -319,35 +319,35 @@ and unary (op,t) e =
    (* should be only in arguments, to pass procs. I abuse Ref for now *)
    | Op_UAmper -> G.Ref (t, e)
 
-and atom x = 
+and atom x =
   match x with
   | AtomSimple x -> G.L (G.Atom x)
   | AtomFromString (l, xs, r) ->
       (match xs with
-      | [StrChars (s, t2)] -> 
+      | [StrChars (s, t2)] ->
             let t = PI.combine_infos l [t2; r] in
             G.L (G.Atom (s, t))
       | _ -> string_contents_list (l, xs, r)
       )
 
-and literal x = 
+and literal x =
   match x with
   | Bool x -> G.L (G.Bool (wrap bool x))
   | Num x -> G.L (G.Int (wrap string x))
   | Float x -> G.L (G.Float (wrap string x))
   | Complex x -> G.L (G.Imag (wrap string x))
-  | Rational ((s, t1), t2) -> 
+  | Rational ((s, t1), t2) ->
       let t = PI.combine_infos t1 [t2] in
       G.L (G.Ratio (s, t))
   | Char x -> G.L (G.Char (wrap string x))
   | Nil t -> G.L (G.Null (tok t))
-  | String (skind) ->
+  | String skind ->
       (match skind with
       | Single x -> G.L (G.String x)
-      | Double (l, [], r) -> 
+      | Double (l, [], r) ->
             let t = PI.combine_infos l [r] in
             G.L (G.String ("", t))
-      | Double (l, [StrChars (s, t2)], r) -> 
+      | Double (l, [StrChars (s, t2)], r) ->
             let t = PI.combine_infos l [t2;r] in
             G.L (G.String (s, t))
       (* TODO: generate interpolation Special *)
@@ -357,7 +357,7 @@ and literal x =
   | Regexp ((xs, s2), t) ->
       (match xs with
       | [StrChars (s, _t2)] -> G.L (G.Regexp (s ^ s2, t))
-      | _ -> 
+      | _ ->
             let l, r = t, t in (* TODO *)
             string_contents_list (l, xs, r)
       )
@@ -365,13 +365,13 @@ and literal x =
 and expr_as_stmt = function
   | S x -> stmt x
   | D x -> definition x
-  | e -> 
+  | e ->
       let e = expr e in
       G.ExprStmt (e, fake ";")
 
-and stmt st = 
+and stmt st =
   match st with
-  | Block (t1, xs, t2) -> 
+  | Block (t1, xs, t2) ->
       let xs = list_stmts xs in
       G.Block (t1, xs, t2)
   | If (t, e, st, elseopt) ->
@@ -395,9 +395,9 @@ and stmt st =
       let elseopt = option_tok_stmts elseopt in
       let special = G.IdSpecial (G.Op (G.Not), t) in
       let e = G.Call (special, fb [G.Arg e]) in
-      let st1 = 
+      let st1 =
         match elseopt with
-        | None -> G.Block (fb []) 
+        | None -> G.Block (fb [])
         | Some st -> st
       in
       G.If (t, e, st1, Some st)
@@ -428,10 +428,10 @@ and stmt st =
       let lbl = exprs_to_label_ident es in
       G.OtherStmt (G.OS_Retry, [G.Tk t; G.Lbli lbl])
 
-  | Case (t, { case_guard = eopt; case_whens = whens; case_else = stopt}) -> 
+  | Case (t, { case_guard = eopt; case_whens = whens; case_else = stopt}) ->
       let eopt = option expr eopt in
       let whens = list when_clause whens in
-      let default = 
+      let default =
         match stopt with
         | None -> []
         | Some (t, sts) ->
@@ -439,10 +439,10 @@ and stmt st =
             [[G.Default t], st]
       in
       G.Switch (t, eopt, whens @ default)
-            
+
   | ExnBlock b -> body_exn b
 
-and when_clause (t, pats, sts) = 
+and when_clause (t, pats, sts) =
   let pats = list pattern pats in
   let st = list_stmt1 sts in
   pats |> List.map (fun pat ->
@@ -453,7 +453,7 @@ and exprs_to_label_ident = function
   | [] -> G.LNone
   (* TODO: check if x is an Int or label? *)
   | [x] -> let x = expr x in G.LDynamic x
-  | xs -> 
+  | xs ->
       let xs = list expr xs in
       G.LDynamic (G.Tuple (G.fake_bracket xs))
 
@@ -463,37 +463,37 @@ and exprs_to_eopt = function
   | xs -> let xs = list expr xs in
       Some (G.Tuple (G.fake_bracket xs))
 
-and pattern pat = 
+and pattern pat =
   let e = expr pat in
   G.expr_to_pattern e
 
-and type_ e = 
+and type_ e =
   let e = expr e in
   G.expr_to_type e
 
 and option_tok_stmts x =
-  match x with 
+  match x with
   | None -> None
   | Some (_t, xs) -> Some (list_stmt1 xs)
 
-and definition def = 
+and definition def =
   match def with
-  | MethodDef (t, kind, params, body) -> 
+  | MethodDef (t, kind, params, body) ->
       let params = list formal_param params in
       let body = body_exn body in
       let funcdef = { G.fparams = params; frettype = None; fbody = body;
                       fkind = G.Method, t } in
       (match kind with
-      | M mn -> 
+      | M mn ->
         (match method_name mn with
-        | Left id -> 
+        | Left id ->
            let ent = G.basic_entity id [] in
            G.DefStmt (ent, G.FuncDef funcdef)
-        | Right e -> 
+        | Right e ->
            let ent = G.basic_entity ("",fake"") [] in
            G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
         )
-      | SingletonM e -> 
+      | SingletonM e ->
             let e = expr e in
             let ent = G.basic_entity ("",fake"") [] in
             G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
@@ -502,37 +502,37 @@ and definition def =
       let body = body_exn body in
       (match kind with
       | C (name, inheritance_opt) ->
-         let extends = 
+         let extends =
             match inheritance_opt with
             | None -> []
             | Some (_t2, e) ->
                let e = expr e in
                [G.expr_to_type e]
          in
-         let ent = 
-            match name with 
+         let ent =
+            match name with
             | NameConstant id -> G.basic_entity id []
-            | NameScope x -> 
+            | NameScope x ->
                 let name = scope_resolution x in
                 nonbasic_entity (G.EName name)
           in
           let def = { G.ckind = (G.Class, t); cextends = extends;
                    (* TODO: this is done by special include/require builtins *)
-                      cimplements = []; cmixins = []; 
+                      cimplements = []; cmixins = [];
                       cbody = fb ([G.FieldStmt body]);
                      } in
           G.DefStmt (ent, G.ClassDef def)
-      | SingletonC (t, e) -> 
+      | SingletonC (t, e) ->
           let e = expr e in
           G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body])
       )
   | ModuleDef (_t, name, body) ->
       let body = body_exn body in
-      let ent = 
+      let ent =
         match name with
         | NameConstant id -> G.basic_entity id []
-        | NameScope x -> 
-            let name = scope_resolution x in    
+        | NameScope x ->
+            let name = scope_resolution x in
             nonbasic_entity (G.EName name)
       in
       let mkind = G.ModuleStruct (None, [body]) in
@@ -556,42 +556,42 @@ and definition def =
       let mns = list method_name_to_any mns in
       G.DirectiveStmt (G.OtherDirective (G.OI_Undef, (G.Tk t)::mns))
 
-and body_exn x = 
+and body_exn x =
   match x with
   | { body_exprs = xs; rescue_exprs = []; ensure_expr = None; else_expr = None}
     -> list_stmt1 xs
-  | { body_exprs = xs; 
-      rescue_exprs = catches; ensure_expr = finally_opt; 
-      else_expr = elseopt} -> 
+  | { body_exprs = xs;
+      rescue_exprs = catches; ensure_expr = finally_opt;
+      else_expr = elseopt} ->
       let body = list_stmt1 xs in
       let catches = list rescue_clause catches in
       let finally_opt =
         match finally_opt with
         | None -> None
-        | Some (t, sts) -> 
+        | Some (t, sts) ->
             let st = list_stmt1 sts in
             Some (t, st)
       in
       (match elseopt with
       | None -> G.Try (fake "try", body, catches, finally_opt)
-      | Some (_t, sts) -> 
+      | Some (_t, sts) ->
          let st = list_stmt1 sts in
          let try_ = G.Try (fake "try", body, catches, finally_opt) in
          let st = G.Block (fb [try_; st]) in
          G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st)
-            
+
       )
 
-and rescue_clause (t, exns, exnvaropt, sts) = 
+and rescue_clause (t, exns, exnvaropt, sts) =
   let st = list_stmt1 sts in
   let exns = list exception_ exns in
   match exns, exnvaropt with
-  | [], None -> 
+  | [], None ->
       t, G.PatUnderscore t, st
   | [], Some (t, lhs) ->
      let e = expr lhs in
      t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e]), st
-  | x::xs, None -> 
+  | x::xs, None ->
     let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
     t, disjs, st
 
@@ -600,7 +600,7 @@ and rescue_clause (t, exns, exnvaropt, sts) =
     let e = expr lhs in
     t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e; G.P disjs]), st
 
-and exception_ e = 
+and exception_ e =
   let t = type_ e in
   (* TODO: should pass the possible id in exnvaropt above here? *)
   G.PatVar (t, None)
@@ -610,7 +610,7 @@ and list_stmt1 xs =
   match (list expr_as_stmt xs) with
   (* bugfix: We do not want actually to optimize and remove the
    * intermediate Block because otherwise sgrep will not work
-   * correctly with a list of stmt. 
+   * correctly with a list of stmt.
    *
    * old: | [e] -> e
    *
@@ -623,7 +623,7 @@ and list_stmt1 xs =
    *
    * if True:
    *   foo()
-   * 
+   *
    * because above we have a Block ([Ellipsis; foo()] and down we would
    * have just (foo()). We do want Block ([foo()]].
    *
@@ -641,15 +641,15 @@ and list_stmt1 xs =
   | xs -> G.Block (fb xs)
 
 (* was called stmts, but you should either use list_stmt1 or list_stmts *)
-and list_stmts xs = 
+and list_stmts xs =
   list expr_as_stmt xs
 
-let  program xs = 
+let  program xs =
   list_stmts xs
 
-let any x = 
+let any x =
   match x with
-  | E x -> 
+  | E x ->
       (match x with
       | S x -> G.S (stmt x)
       | D x -> G.S (definition x)

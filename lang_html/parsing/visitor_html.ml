@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -24,7 +24,7 @@ open Ast_html
 (* Prelude *)
 (*****************************************************************************)
 
-(* 
+(*
  * A classic AST visitor, just like for the other PLs in pfff.
  * todo? maybe could reuse some of the ideas in CSS to have more
  * compact visitors?
@@ -41,7 +41,7 @@ type visitor_in = {
 
 and visitor_out = any -> unit
 
-let default_visitor = { 
+let default_visitor = {
   kinfo   = (fun (k,_) x -> k x);
   khtml_tree   = (fun (k,_) x -> k x);
 }
@@ -69,7 +69,7 @@ and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 
 and v_html_tree x =
   let k = function
-  | Element ((v1, v2, v3)) ->
+  | Element (v1, v2, v3) ->
       let v1 = v_tag v1
       and v2 =
         v_list
