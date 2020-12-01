@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 module J = JSON
 module PI = Parse_info
 module E = Error_code
@@ -40,31 +40,31 @@ let loc_to_json_range loc =
 let hcache = Hashtbl.create 101
 let lines_of_file (file: Common.filename) : string array =
   Common.memoized hcache file (fun () ->
-   try
-    Common.cat file |> Array.of_list
-   with _ -> [|"EMPTY FILE"|]
+    try
+      Common.cat file |> Array.of_list
+    with _ -> [|"EMPTY FILE"|]
   )
 
 let error_to_json err =
-   let file = err.E.loc.PI.file in
-   let lines = lines_of_file file in
-   let (startp, endp, line) = loc_to_json_range err.E.loc in
-   let check_id = E.check_id_of_error_kind err.E.typ in
-   let message = E.string_of_error_kind err.E.typ in
-   let extra_extra =
-     match err.E.typ with
-     | _ -> []
-   in
-   J.Object [
-      "check_id", J.String check_id;
-      "path", J.String file;
-      "start", startp;
-      "end", endp;
-      "extra", J.Object ([
-         "message", J.String message;
-         "line", J.String (try lines.(line - 1) with _ -> "NO LINE");
-          ] @ extra_extra);
-   ]
+  let file = err.E.loc.PI.file in
+  let lines = lines_of_file file in
+  let (startp, endp, line) = loc_to_json_range err.E.loc in
+  let check_id = E.check_id_of_error_kind err.E.typ in
+  let message = E.string_of_error_kind err.E.typ in
+  let extra_extra =
+    match err.E.typ with
+    | _ -> []
+  in
+  J.Object [
+    "check_id", J.String check_id;
+    "path", J.String file;
+    "start", startp;
+    "end", endp;
+    "extra", J.Object ([
+      "message", J.String message;
+      "line", J.String (try lines.(line - 1) with _ -> "NO LINE");
+    ] @ extra_extra);
+  ]
 
 let string_of_errors errs =
   let arr = J.Array (errs |> List.map (error_to_json)) in

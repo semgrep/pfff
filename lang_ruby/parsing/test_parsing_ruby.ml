@@ -27,14 +27,14 @@ let test_tokens file =
 
   let lexerf = Lexer_ruby.token state in
   let lexerf = fun lexbuf ->
-      let rec aux lexbuf =
-        let res = lexerf lexbuf in
-        pr2_gen res;
-        if TH.is_comment res
-        then aux lexbuf
-        else res
-      in
-      aux lexbuf
+    let rec aux lexbuf =
+      let res = lexerf lexbuf in
+      pr2_gen res;
+      if TH.is_comment res
+      then aux lexbuf
+      else res
+    in
+    aux lexbuf
   in
   let _lst = Parser_ruby.main lexerf lexbuf in
   ()
@@ -56,11 +56,11 @@ let test_parse xs =
     k();
 
     let (_xs, stat) =
-     Common.save_excursion Flag.error_recovery true (fun () ->
-     Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-     Common.save_excursion Flag.show_parsing_error true (fun () ->
-        Parse_ruby.parse file
-    ))) in
+      Common.save_excursion Flag.error_recovery true (fun () ->
+        Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+          Common.save_excursion Flag.show_parsing_error true (fun () ->
+            Parse_ruby.parse file
+          ))) in
 
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
@@ -86,7 +86,7 @@ let test_parse xs =
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
     Common2.regression_testing newscore
       (Filename.concat score_path
-       ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+         ("score_parsing__" ^str ^ ext ^ ".marshalled"))
   );
 
   ()

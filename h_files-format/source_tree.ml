@@ -36,11 +36,11 @@ let reverse_index reorg =
 
 
 let (load_tree_reorganization : Common.filename -> tree_reorganization) =
- fun file ->
-   let xs = Simple_format.title_colon_elems_space_separated file in
-   xs |> List.map (fun (title, elems) ->
-     SubSystem title, elems |> List.map (fun s -> Dir s)
-   )
+  fun file ->
+  let xs = Simple_format.title_colon_elems_space_separated file in
+  xs |> List.map (fun (title, elems) ->
+    SubSystem title, elems |> List.map (fun s -> Dir s)
+  )
 
 let debug_source_tree = false
 
@@ -80,28 +80,28 @@ let change_organization_subsystems_to_dirs reorg basedir =
 
 
 let (change_organization:
-      tree_reorganization -> Common.filename (* dir *) -> unit) =
- fun reorg dir ->
-   pr2_gen reorg;
-   pr2_gen dir;
+       tree_reorganization -> Common.filename (* dir *) -> unit) =
+  fun reorg dir ->
+  pr2_gen reorg;
+  pr2_gen dir;
 
 
-   let subsystem_bools =
-     all_subsystem reorg
-     |> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
-   in
-   let dirs_bools =
-     all_dirs reorg
-     |> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
-   in
-   match () with
-   | _ when Common2.and_list subsystem_bools ->
-       assert (not (Common2.or_list dirs_bools));
-       change_organization_subsystems_to_dirs reorg dir;
-   | _ when Common2.and_list dirs_bools ->
-       assert (not (Common2.or_list subsystem_bools));
-       change_organization_dirs_to_subsystems reorg dir;
-   | _ -> failwith "have a mix of subsystem and dirs, wierd"
+  let subsystem_bools =
+    all_subsystem reorg
+    |> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
+  in
+  let dirs_bools =
+    all_dirs reorg
+    |> List.map (fun s -> (Sys.file_exists (Filename.concat dir s)))
+  in
+  match () with
+  | _ when Common2.and_list subsystem_bools ->
+      assert (not (Common2.or_list dirs_bools));
+      change_organization_subsystems_to_dirs reorg dir;
+  | _ when Common2.and_list dirs_bools ->
+      assert (not (Common2.or_list subsystem_bools));
+      change_organization_dirs_to_subsystems reorg dir;
+  | _ -> failwith "have a mix of subsystem and dirs, wierd"
 
 
 

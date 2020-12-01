@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 module Ast = AST_generic
 open Controlflow
 module F = Controlflow
@@ -24,7 +24,7 @@ module F = Controlflow
  *
  * Less useful now that we have Controlflow.exprs_of_node and
  * Controlflow.fold_on_node_and_expr.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -61,7 +61,7 @@ let mk_visitor vin =
     | F.Throw expr
     | F.Return (Some expr)
     | F.OtherStmtWithStmtHeader (_, Some expr)
-    ->
+      ->
         visitor (Ast.E expr)
     | F.ForeachHeader (pat, e) ->
         visitor (Ast.E (Ast.LetPattern (pat, e)))
@@ -83,7 +83,7 @@ let exprs_of_node node =
   | Join
   | Continue | Break | Return None | SwitchHeader None
   | OtherStmtWithStmtHeader (_, None)
-   -> []
+    -> []
 
   (* expr *)
   | IfHeader expr
@@ -93,20 +93,20 @@ let exprs_of_node node =
   | Throw expr
   | Return (Some expr)
   | OtherStmtWithStmtHeader (_, Some expr)
-      -> [expr]
+    -> [expr]
   | ForeachHeader (pat, expr) -> [Ast.LetPattern (pat, expr)]
 
   | SimpleNode x ->
       (match x with
-      | ExprStmt e -> [e]
-      | Assert (_, e, eopt) -> e::Common.opt_to_list eopt
-      (* TODO: should transform VarDef in it in Assign *)
-      | DefStmt _ -> []
-      | DirectiveStmt _ -> []
-      (* TODO: should use visitor! *)
-      | OtherStmt _ -> []
-      (* TODO: should transform in Assign *)
-      | Parameter _p -> []
+       | ExprStmt e -> [e]
+       | Assert (_, e, eopt) -> e::Common.opt_to_list eopt
+       (* TODO: should transform VarDef in it in Assign *)
+       | DefStmt _ -> []
+       | DirectiveStmt _ -> []
+       (* TODO: should use visitor! *)
+       | OtherStmt _ -> []
+       (* TODO: should transform in Assign *)
+       | Parameter _p -> []
       )
 
 (* this can also be used as an iter; just pass () to acc *)

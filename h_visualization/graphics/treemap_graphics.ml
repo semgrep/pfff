@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: Facebook copyright *)
 
 open Common
@@ -130,7 +130,7 @@ let draw_label rect (w, h) depth label ~is_dir =
 
     draw_text_center_rect_float_ortho
       ((p.x, p.y),
-      (q.x, q.y))
+       (q.x, q.y))
       (if is_dir then Graphics.black else Color.c "grey37")
       (w, h)
       label
@@ -178,20 +178,20 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
 
     (* todo? join the 2 match in a single one ? *)
     (match root with
-    | Leaf (tnode, fileinfo) ->
-        let color = color_of_treemap_node root in
+     | Leaf (tnode, fileinfo) ->
+         let color = color_of_treemap_node root in
 
-        let rect_opt =
-          draw_rect_treemap_float_ortho
-            ((p.(0), p.(1)),
-             (q.(0), q.(1)))
-            color
-            (w, h)
-        in
-        rect_opt |> Common.do_option (update_mat_with_fileinfo fileinfo mat)
+         let rect_opt =
+           draw_rect_treemap_float_ortho
+             ((p.(0), p.(1)),
+              (q.(0), q.(1)))
+             color
+             (w, h)
+         in
+         rect_opt |> Common.do_option (update_mat_with_fileinfo fileinfo mat)
 
-    | Node (tnode, dirinfo) ->
-        ()
+     | Node (tnode, dirinfo) ->
+         ()
     );
     let size_root = size_of_treemap_node root in
     let width = q.(axis_split) -. p.(axis_split) in
@@ -200,7 +200,7 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
         children |> List.iter (fun child ->
           (* if want margin, then maybe can increment slightly p and decrement
            * q ? like 1% of its width ?
-           *)
+          *)
           q.(axis_split) <-
             p.(axis_split) +.
             (float_of_int (size_of_treemap_node child) /.
@@ -227,7 +227,7 @@ let display_treemap_generic
     (treemap: ('dir,'file) treemap)
     (w, h)
     flayout
- =
+  =
 
   let mat = Array.make_matrix w h None in
 
@@ -238,93 +238,93 @@ let display_treemap_generic
     then () (* TODO ? warning ? *)
     else
 
-    (match root with
-    | Leaf (tnode, fileinfo) ->
-        let color = color_of_treemap_node root in
+      (match root with
+       | Leaf (tnode, fileinfo) ->
+           let color = color_of_treemap_node root in
 
-        let rect_opt =
-          draw_rect_treemap_float_ortho
-            ((p.x, p.y),
-             (q.x, q.y))
-            color
-            (w, h)
-        in
-        let info = fileinfo in
+           let rect_opt =
+             draw_rect_treemap_float_ortho
+               ((p.x, p.y),
+                (q.x, q.y))
+               color
+               (w, h)
+           in
+           let info = fileinfo in
 
-        (match rect_opt with
-        | None -> ()
-        | Some ((x1,y1), (x2,y2)) ->
+           (match rect_opt with
+            | None -> ()
+            | Some ((x1,y1), (x2,y2)) ->
 
-            for i = x1 to x2 - 1 do
-              for j = y1 to y2 - 1 do
-                mat.(i).(j) <- Some info;
-              done
-            done;
+                for i = x1 to x2 - 1 do
+                  for j = y1 to y2 - 1 do
+                    mat.(i).(j) <- Some info;
+                  done
+                done;
 
-            drawing_file_hook {
-              F.lower_left =   { F.x = x1; F.y = y1 };
-              F.upper_right =  { F.x = x2; F.y = y2 };
-            }
-              fileinfo
-              mat
+                drawing_file_hook {
+                  F.lower_left =   { F.x = x1; F.y = y1 };
+                  F.upper_right =  { F.x = x2; F.y = y2 };
+                }
+                  fileinfo
+                  mat
 
-        );
-        draw_label rect  (w, h) depth (tnode).label ~is_dir:false
+           );
+           draw_label rect  (w, h) depth (tnode).label ~is_dir:false
 
 
-    | Node (mode, children) ->
+       | Node (mode, children) ->
 
-        (* let's draw some borders. Far better to see the structure. *)
-        let _rect_opt =
-          draw_rect_treemap_float_ortho
-            ((p.x, p.y),
-            (q.x, q.y))
-            Graphics.black
-            (w, h)
+           (* let's draw some borders. Far better to see the structure. *)
+           let _rect_opt =
+             draw_rect_treemap_float_ortho
+               ((p.x, p.y),
+                (q.x, q.y))
+               Graphics.black
+               (w, h)
 
-        in
-        (* does not work, weird *)
-        let border =
-          match depth with
-          | 1 -> 0.0
-          | 2 -> 0.002
-          | 3 -> 0.001
-          | 4 -> 0.0005
-          | 5 -> 0.0002
-          | _ -> 0.0
-        in
-        let p = {
-          x = p.x +. border;
-          y = p.y +. border;
-        }
-        in
-        let q = {
-          x = q.x -. border;
-          y = q.y -. border;
-        }
-        in
-        (* todo? can overflow ... check still inside previous rect *)
-        let rect = { p = p; q = q } in
+           in
+           (* does not work, weird *)
+           let border =
+             match depth with
+             | 1 -> 0.0
+             | 2 -> 0.002
+             | 3 -> 0.001
+             | 4 -> 0.0005
+             | 5 -> 0.0002
+             | _ -> 0.0
+           in
+           let p = {
+             x = p.x +. border;
+             y = p.y +. border;
+           }
+           in
+           let q = {
+             x = q.x -. border;
+             y = q.y -. border;
+           }
+           in
+           (* todo? can overflow ... check still inside previous rect *)
+           let rect = { p = p; q = q } in
 
-        let children' =
-          children |> List.map (fun child ->
-            float_of_int (size_of_treemap_node child),
-            child
-          )
-        in
+           let children' =
+             children |> List.map (fun child ->
+               float_of_int (size_of_treemap_node child),
+               child
+             )
+           in
 
-        let rects_with_info =
-          (* generic call *)
-          flayout children' depth rect
-        in
-        (* less: assert rects_with_info are inside rect ? *)
+           let rects_with_info =
+             (* generic call *)
+             flayout children' depth rect
+           in
+           (* less: assert rects_with_info are inside rect ? *)
 
-        rects_with_info |> List.iter (fun (x, child, rect) ->
-          aux_treemap child rect ~depth:(depth + 1)
-        );
+           rects_with_info |> List.iter (fun (x, child, rect) ->
+             aux_treemap child rect ~depth:(depth + 1)
+           );
 
-        draw_label rect (w, h) depth (fst mode).label ~is_dir:true
-    )
+           draw_label rect (w, h) depth (fst mode).label ~is_dir:true
+      )
   in
   aux_treemap treemap rect_ortho ~depth:1;
   mat
@@ -333,7 +333,7 @@ let display_treemap_generic
 
 (*s: function display_treemap_algo *)
 let display_treemap_algo ?(algo=Classic) ?drawing_file_hook
- treemap (w, h) =
+    treemap (w, h) =
 
   (* old: display_treemap            treemap (w, h) *)
   let layoutf = layoutf_of_algo algo in
@@ -344,11 +344,11 @@ let display_treemap_algo ?(algo=Classic) ?drawing_file_hook
 
 (*s: function display_treemap_interactive *)
 let display_treemap_interactive
- ?algo
- ?drawing_file_hook
- ?(info_of_file_under_cursor=(fun _ _ -> ""))
- treemap
- dim
+    ?algo
+    ?drawing_file_hook
+    ?(info_of_file_under_cursor=(fun _ _ -> ""))
+    treemap
+    dim
   =
   let dim = ref dim in
   let matrix_info = ref (
@@ -361,11 +361,11 @@ let display_treemap_interactive
   in
   while true do
     let status = Graphics.wait_next_event [
-        Graphics.Mouse_motion;
-        Graphics.Key_pressed;
-        Graphics.Button_down;
-        Graphics.Button_up;
-      ]
+      Graphics.Mouse_motion;
+      Graphics.Key_pressed;
+      Graphics.Button_down;
+      Graphics.Button_up;
+    ]
     in
     let (x,y) = status.Graphics.mouse_x, status.Graphics.mouse_y in
 
@@ -468,8 +468,8 @@ let test_treemap algorithm treemap =
   display_treemap_algo ~algo:algorithm treemap (w, h) |> ignore;
   while true do
     let status = Graphics.wait_next_event [
-        Graphics.Key_pressed;
-      ]
+      Graphics.Key_pressed;
+    ]
     in
     if status.Graphics.keypressed (* Graphics.key_pressed () *)
     then raise (UnixExit 0);
@@ -514,12 +514,12 @@ let test_treemap_dir dir algo =
   in
 
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (f, intleaf) -> intleaf)
-    ~color_of_leaf:(fun (f, intleaf) ->
-      Graphics.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
-    )
-    ~label_of_dir:(fun dir -> basename dir)
-    tree
+      ~size_of_leaf:(fun (f, intleaf) -> intleaf)
+      ~color_of_leaf:(fun (f, intleaf) ->
+        Graphics.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
+      )
+      ~label_of_dir:(fun dir -> basename dir)
+      tree
   in
 
   display_treemap_interactive
@@ -556,12 +556,12 @@ let test_treemap_tree algorithm ex =
   in
 
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun intleaf -> intleaf)
-    ~color_of_leaf:(fun intleaf ->
-      Graphics.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
-    )
-    ~label_of_file:(fun intleaf -> i_to_s intleaf)
-    tree
+      ~size_of_leaf:(fun intleaf -> intleaf)
+      ~color_of_leaf:(fun intleaf ->
+        Graphics.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
+      )
+      ~label_of_file:(fun intleaf -> i_to_s intleaf)
+      tree
   in
   test_treemap algorithm treemap
 (*e: function test_treemap_tree *)
@@ -571,7 +571,7 @@ let test_treemap_tree algorithm ex =
 (*****************************************************************************)
 
 let actions () = [
-(*s: treemap_graphics actions *)
+  (*s: treemap_graphics actions *)
   "-test_treemap_manual", "<>",
   Common.mk_action_0_arg (test_treemap_manual);
 
@@ -591,7 +591,7 @@ let actions () = [
     test_treemap_dir dir (algo_of_s str)
   );
 
-(*e: treemap_graphics actions *)
+  (*e: treemap_graphics actions *)
 ]
 
 (*e: treemap_graphics.ml *)

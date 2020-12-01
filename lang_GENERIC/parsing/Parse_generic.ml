@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: pad/r2c copyright *)
 open Common
 
@@ -22,7 +22,7 @@ open Common
 (*****************************************************************************)
 (* Wrappers around many languages to transform them in a generic AST
  * (see AST_generic.ml)
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -43,44 +43,44 @@ let lang_to_python_parsing_mode = function
 let parse_with_lang lang file =
   match lang with
   | Lang.Python | Lang.Python2 | Lang.Python3 ->
-    let parsing_mode = lang_to_python_parsing_mode lang in
-    let ast = Parse_python.parse_program ~parsing_mode file in
-    (* old: Resolve_python.resolve ast;
-     * switched to call Naming_AST.ml in sgrep to correct def and use tagger
-     *)
-    Python_to_generic.program ast
+      let parsing_mode = lang_to_python_parsing_mode lang in
+      let ast = Parse_python.parse_program ~parsing_mode file in
+      (* old: Resolve_python.resolve ast;
+       * switched to call Naming_AST.ml in sgrep to correct def and use tagger
+      *)
+      Python_to_generic.program ast
   | Lang.Typescript (* abusing Js parser for now here *)
   | Lang.Javascript ->
-    let ast = Parse_js.parse_program file in
-    Js_to_generic.program ast
+      let ast = Parse_js.parse_program file in
+      Js_to_generic.program ast
   | Lang.JSON ->
-    let ast = Parse_json.parse_program file in
-    Json_to_generic.program ast
+      let ast = Parse_json.parse_program file in
+      Json_to_generic.program ast
   | Lang.C ->
-    (* this internally uses the CST for c++ *)
-    let ast = Parse_c.parse_program file in
-    C_to_generic.program ast
+      (* this internally uses the CST for c++ *)
+      let ast = Parse_c.parse_program file in
+      C_to_generic.program ast
   | Lang.Java ->
-    let ast = Parse_java.parse_program file in
-    Java_to_generic.program ast
+      let ast = Parse_java.parse_program file in
+      Java_to_generic.program ast
   | Lang.Go ->
-    let ast = Parse_go.parse_program file in
-    (* old: Resolve_go.resolve ast;
-     * switched to call Naming_AST.ml in sgrep to correct def and use tagger
-     *)
-    Go_to_generic.program ast
+      let ast = Parse_go.parse_program file in
+      (* old: Resolve_go.resolve ast;
+       * switched to call Naming_AST.ml in sgrep to correct def and use tagger
+      *)
+      Go_to_generic.program ast
   | Lang.OCaml ->
-     let ast = Parse_ml.parse_program file in
-     Ml_to_generic.program ast
+      let ast = Parse_ml.parse_program file in
+      Ml_to_generic.program ast
   | Lang.Ruby ->
       let ast = Parse_ruby.parse_program file in
       Ruby_to_generic.program ast
   | Lang.Csharp ->
       failwith "No C# parser in pfff; use the one in tree-sitter"
   | Lang.PHP ->
-    let cst = Parse_php.parse_program file in
-    let ast = Ast_php_build.program cst in
-    Php_to_generic.program ast
+      let cst = Parse_php.parse_program file in
+      let ast = Ast_php_build.program cst in
+      Php_to_generic.program ast
   | Lang.Kotlin ->
       failwith "No Kotlin parser in pfff; use the one in tree-sitter"
   | Lang.Cplusplus ->
@@ -102,44 +102,44 @@ let parse_program file =
 (*s: function [[Parse_generic.parse_pattern]] *)
 let parse_pattern lang str =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
-  match lang with
-  | Lang.Python | Lang.Python2 | Lang.Python3 ->
-      let parsing_mode = lang_to_python_parsing_mode lang in
-      let any = Parse_python.any_of_string ~parsing_mode str in
-      Python_to_generic.any any
-  (* abusing JS parser so no need extend tree-sitter grammar*)
-  | Lang.Typescript
-  | Lang.Javascript ->
-      let any = Parse_js.any_of_string str in
-      Js_to_generic.any any
-  | Lang.JSON ->
-      let any = Parse_json.any_of_string str in
-      Json_to_generic.any any
-  | Lang.C ->
-      let any = Parse_c.any_of_string str in
-      C_to_generic.any any
-  | Lang.Java ->
-      let any = Parse_java.any_of_string str in
-      Java_to_generic.any any
-  | Lang.Go ->
-      let any = Parse_go.any_of_string str in
-      Go_to_generic.any any
-  | Lang.OCaml ->
-      let any = Parse_ml.any_of_string str in
-      Ml_to_generic.any any
-  | Lang.Ruby ->
-      let any = Parse_ruby.any_of_string str in
-      Ruby_to_generic.any any
-  | Lang.PHP ->
-      let any_cst = Parse_php.any_of_string str in
-      let any = Ast_php_build.any any_cst in
-      Php_to_generic.any any
-  | Lang.Csharp ->
-      failwith "No C# parser in pfff; use the one in tree-sitter"
-  | Lang.Kotlin ->
-      failwith "No Kotlin parser in pfff; use the one in tree-sitter"
-  | Lang.Cplusplus ->
-      failwith "No C++ generic parser in pfff; use the one in tree-sitter"
+    match lang with
+    | Lang.Python | Lang.Python2 | Lang.Python3 ->
+        let parsing_mode = lang_to_python_parsing_mode lang in
+        let any = Parse_python.any_of_string ~parsing_mode str in
+        Python_to_generic.any any
+    (* abusing JS parser so no need extend tree-sitter grammar*)
+    | Lang.Typescript
+    | Lang.Javascript ->
+        let any = Parse_js.any_of_string str in
+        Js_to_generic.any any
+    | Lang.JSON ->
+        let any = Parse_json.any_of_string str in
+        Json_to_generic.any any
+    | Lang.C ->
+        let any = Parse_c.any_of_string str in
+        C_to_generic.any any
+    | Lang.Java ->
+        let any = Parse_java.any_of_string str in
+        Java_to_generic.any any
+    | Lang.Go ->
+        let any = Parse_go.any_of_string str in
+        Go_to_generic.any any
+    | Lang.OCaml ->
+        let any = Parse_ml.any_of_string str in
+        Ml_to_generic.any any
+    | Lang.Ruby ->
+        let any = Parse_ruby.any_of_string str in
+        Ruby_to_generic.any any
+    | Lang.PHP ->
+        let any_cst = Parse_php.any_of_string str in
+        let any = Ast_php_build.any any_cst in
+        Php_to_generic.any any
+    | Lang.Csharp ->
+        failwith "No C# parser in pfff; use the one in tree-sitter"
+    | Lang.Kotlin ->
+        failwith "No Kotlin parser in pfff; use the one in tree-sitter"
+    | Lang.Cplusplus ->
+        failwith "No C++ generic parser in pfff; use the one in tree-sitter"
   )
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

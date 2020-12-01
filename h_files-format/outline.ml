@@ -39,7 +39,7 @@ let extract_outline_line ?(outline_regexp=outline_default_regexp) s =
  * in parsing_hacks, but a little different cos don't have the
  * end delimiter in most cases. The end delimiter is in fact
  * the start of a new header or the end of the file.
- *)
+*)
 let parse_outline ?(outline_regexp=outline_default_regexp) file =
   let xs = Common.cat file in
 
@@ -62,10 +62,10 @@ let parse_outline ?(outline_regexp=outline_default_regexp) file =
       | [] -> [(outline, List.rev acc_right)]
       | x::xs ->
           (match x with
-          | Right regular ->
-              aux (regular::acc_right, outline) xs
-          | Left outline2 ->
-              (outline, List.rev acc_right)::aux ([], outline2) xs
+           | Right regular ->
+               aux (regular::acc_right, outline) xs
+           | Left outline2 ->
+               (outline, List.rev acc_right)::aux ([], outline2) xs
           )
     in
     aux ([], root) headers_or_not

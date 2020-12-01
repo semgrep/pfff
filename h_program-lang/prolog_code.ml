@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -52,14 +52,14 @@ type fact =
 
   | Misc of string
 
-  (* todo? could use a record with
-   *  namespace: string list;
-   *  enclosing: string option;
-   *  name: string
-   *)
-  and entity =
-   string list (* package/module/namespace/class/struct/type qualifier*) *
-   string (* name *)
+(* todo? could use a record with
+ *  namespace: string list;
+ *  enclosing: string option;
+ *  name: string
+*)
+and entity =
+  string list (* package/module/namespace/class/struct/type qualifier*) *
+  string (* name *)
 
 
 (*****************************************************************************)
@@ -67,7 +67,7 @@ type fact =
 (*****************************************************************************)
 (* todo: hmm need to escape x no? In OCaml toplevel values can have a quote
  * in their name, like foo'', which will not work well with Prolog atoms.
- *)
+*)
 
 (* http://pleac.sourceforge.net/pleac_ocaml/strings.html *)
 let escape charlist str =
@@ -80,12 +80,12 @@ let string_of_entity (xs, x) =
   match xs with
   | [] -> spf "'%s'" (escape_quote_and_double_quote x)
   | xs -> spf "('%s', '%s')" (Common.join "." xs)
-    (escape_quote_and_double_quote x)
+            (escape_quote_and_double_quote x)
 
 (* Quite similar to database_code.string_of_id_kind, but with lowercase
  * because of prolog atom convention. See also prolog_code.pl comment
  * about kind/2.
- *)
+*)
 let string_of_entity_kind = function
   | E.Function -> "function"
   | E.Constant -> "constant"
@@ -132,13 +132,13 @@ let string_of_fact fact =
         spf "implements('%s', '%s')" s1 s2
 
     | Privacy (entity, p) ->
-      let predicate =
-        match p with
-        | E.Public -> "is_public"
-        | E.Private -> "is_private"
-        | E.Protected -> "is_protected"
-      in
-      spf "%s(%s)" predicate (string_of_entity entity)
+        let predicate =
+          match p with
+          | E.Public -> "is_public"
+          | E.Private -> "is_private"
+          | E.Protected -> "is_protected"
+        in
+        spf "%s(%s)" predicate (string_of_entity entity)
 
     (* less: depending on kind of e1 we could have 'method' or 'constructor'*)
     | Call (e1, e2) ->
@@ -148,9 +148,9 @@ let string_of_fact fact =
         spf "use(%s, %s, %s)"
           (string_of_entity e1) (string_of_entity e2)
           (match b with
-          | None -> "na"
-          | Some true -> "write"
-          | Some false -> "read"
+           | None -> "na"
+           | Some true -> "write"
+           | Some false -> "read"
           )
     | Special (e1, e2, e3, str) ->
         spf "special(%s, %s, %s, '%s')"

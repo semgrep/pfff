@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: Facebook copyright *)
 open Common
 
@@ -37,10 +37,10 @@ module Color = Simple_color
 let rec treemap_of_json j =
   match j with
   | J.Object [
-      "kind", J.String "Node";
-      "label", J.String s;
-      "children", J.Array xs;
-    ] ->
+    "kind", J.String "Node";
+    "label", J.String s;
+    "children", J.Array xs;
+  ] ->
       let children = xs |> List.map treemap_of_json in
 
       let sizes = children |> List.map Treemap.size_of_treemap_node in
@@ -55,11 +55,11 @@ let rec treemap_of_json j =
       Common2.Node ((rect, s), children)
 
   | J.Object [
-      "kind", J.String "Leaf";
-      "size", J.Int size;
-      "color", J.String scolor;
-      "label", J.String lbl;
-    ] ->
+    "kind", J.String "Leaf";
+    "size", J.Int size;
+    "color", J.String scolor;
+    "label", J.String lbl;
+  ] ->
       let rect = {
         label = lbl;
         color = Color.color_of_string scolor;
@@ -83,48 +83,48 @@ let json_of_color c = J.String (Color.string_of_color c)
 (*s: function json_of_treemap *)
 (* I was first using ocamltarzan to auto generate the json_of, but it
  * leds to verbosity, so I ended up manually coding it.
- *)
+*)
 let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
- = function
-  | Common2.Node (((rect, _a), xs)) ->
-      let { size = _v_sizeTODO; color = _v_colorTODO; label = v_label } = rect in
+  = function
+    | Common2.Node (((rect, _a), xs)) ->
+        let { size = _v_sizeTODO; color = _v_colorTODO; label = v_label } = rect in
 
-      let bnds = [] in
+        let bnds = [] in
 
-      let children =
-        J.Array (List.map json_of_treemap xs)
-      in
-      let bnd = ("children", children) in
-      let bnds = bnd :: bnds in
+        let children =
+          J.Array (List.map json_of_treemap xs)
+        in
+        let bnd = ("children", children) in
+        let bnds = bnd :: bnds in
 
-      let arg = J.String v_label in
-      let bnd = ("label", arg) in
-      let bnds = bnd :: bnds in
+        let arg = J.String v_label in
+        let bnd = ("label", arg) in
+        let bnds = bnd :: bnds in
 
-      let arg = J.String "Node" in
-      let bnd = ("kind", arg) in
-      let bnds = bnd :: bnds in
+        let arg = J.String "Node" in
+        let bnd = ("kind", arg) in
+        let bnds = bnd :: bnds in
 
-      J.Object bnds
+        J.Object bnds
 
-  | Common2.Leaf (rect, _b) ->
-      let { size = v_size; color = v_color; label = v_label } = rect in
+    | Common2.Leaf (rect, _b) ->
+        let { size = v_size; color = v_color; label = v_label } = rect in
 
-      let bnds = [] in
-      let arg = J.String v_label in
-      let bnd = ("label", arg) in
-      let bnds = bnd :: bnds in
-      let arg = json_of_color v_color in
-      let bnd = ("color", arg) in
-      let bnds = bnd :: bnds in
-      let arg = J.Int v_size in
-      let bnd = ("size", arg) in
-      let bnds = bnd :: bnds in
+        let bnds = [] in
+        let arg = J.String v_label in
+        let bnd = ("label", arg) in
+        let bnds = bnd :: bnds in
+        let arg = json_of_color v_color in
+        let bnd = ("color", arg) in
+        let bnds = bnd :: bnds in
+        let arg = J.Int v_size in
+        let bnd = ("size", arg) in
+        let bnds = bnd :: bnds in
 
-      let arg = J.String "Leaf" in
-      let bnd = ("kind", arg) in
-      let bnds = bnd :: bnds in
-      J.Object bnds
+        let arg = J.String "Leaf" in
+        let bnd = ("kind", arg) in
+        let bnds = bnd :: bnds in
+        J.Object bnds
 (*e: function json_of_treemap *)
 
 
@@ -150,12 +150,12 @@ and vof_point { x = v_x; y = v_y } =
 let rec vof_treemap_rendering v = OCaml.vof_list vof_treemap_rectangle v
 and
   vof_treemap_rectangle {
-                          tr_rect = v_tr_rect;
-                          tr_color = v_tr_color;
-                          tr_label = v_tr_label;
-                          tr_depth = v_tr_depth;
-                          tr_is_node = v_tr_is_node;
-                        } =
+    tr_rect = v_tr_rect;
+    tr_color = v_tr_color;
+    tr_label = v_tr_label;
+    tr_depth = v_tr_depth;
+    tr_is_node = v_tr_is_node;
+  } =
   let bnds = [] in
   let arg = OCaml.vof_bool v_tr_is_node in
   let bnd = ("tr_is_node", arg) in
@@ -186,15 +186,15 @@ let json_of_treemap_rendering rendering =
 let test_json_of dir =
   let maxc = 256 in
   let tree = tree_of_dirs_or_files
-    ~file_hook:(fun file -> Common2.filesize file) [dir] in
+      ~file_hook:(fun file -> Common2.filesize file) [dir] in
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (_f, intleaf) -> intleaf)
-    ~color_of_leaf:(fun (_f, _intleaf) ->
-      Color.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
-    )
-    ~label_of_dir:(fun dir -> Filename.basename dir)
-    ~label_of_file:(fun (f, _intleaf) -> f)
-    tree
+      ~size_of_leaf:(fun (_f, intleaf) -> intleaf)
+      ~color_of_leaf:(fun (_f, _intleaf) ->
+        Color.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
+      )
+      ~label_of_dir:(fun dir -> Filename.basename dir)
+      ~label_of_file:(fun (f, _intleaf) -> f)
+      tree
   in
   let json =
     json_of_treemap
@@ -209,12 +209,12 @@ let test_json_of dir =
 
 (*s: function test_of_json *)
 let test_of_json file =
-    let json = Json_in.load_json file in
-    let treemap = treemap_of_json json in
+  let json = Json_in.load_json file in
+  let treemap = treemap_of_json json in
 
-    let json2 = json_of_treemap treemap in
-    let s = Json_out.string_of_json json2 in
-    pr s
+  let json2 = json_of_treemap treemap in
+  let s = Json_out.string_of_json json2 in
+  pr s
 (*e: function test_of_json *)
 
 
@@ -223,12 +223,12 @@ let test_of_json file =
 (*****************************************************************************)
 
 let actions () = [
-(*s: treemap_json actions *)
+  (*s: treemap_json actions *)
   "-test_json_of", "<dir>",
   Common.mk_action_1_arg test_json_of;
   "-test_of_json", "<file>",
   Common.mk_action_1_arg test_of_json;
-(*e: treemap_json actions *)
+  (*e: treemap_json actions *)
 
 ]
 

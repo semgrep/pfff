@@ -7,7 +7,7 @@ type nodei = int
 (* The comparison function uses only the name of a variable (a string), so
  * two variables at different positions in the code will be agglomerated
  * correctly in the Set or Map.
- *)
+*)
 type var = string
 (*e: type [[Dataflow.var]] *)
 (*s: module [[Dataflow.VarMap]] *)
@@ -19,18 +19,18 @@ module VarSet : Set.S with type elt = String.t
 
 (* Return value of a dataflow analysis.
  * The array is indexed by nodei.
- *)
+*)
 (*s: type [[Dataflow.mapping]] *)
 type 'a mapping = 'a inout array
 (*e: type [[Dataflow.mapping]] *)
 (*s: type [[Dataflow.inout]] *)
-  and 'a inout = {
-    in_env : 'a env;
-    out_env : 'a env;
-   }
+and 'a inout = {
+  in_env : 'a env;
+  out_env : 'a env;
+}
 (*e: type [[Dataflow.inout]] *)
 (*s: type [[Dataflow.env]] *)
-  and 'a env = 'a VarMap.t
+and 'a env = 'a VarMap.t
 (*e: type [[Dataflow.env]] *)
 
 (*s: signature [[Dataflow.empty_env]] *)
@@ -52,7 +52,7 @@ val empty_inout : unit -> 'a inout
  * sharing of reference in the 'a, so that when one update the
  * value associated to a var, its reference variable get also
  * the update.
- *)
+*)
 type 'a transfn = 'a mapping -> nodei -> 'a inout
 (*e: type [[Dataflow.transfn]] *)
 
@@ -70,7 +70,7 @@ val varmap_diff:
 
 (* common/useful 'a for mapping: a set of nodes (via their indices),
  * used for example in the reaching analysis.
- *)
+*)
 (*s: module [[Dataflow.NodeiSet]] *)
 module NodeiSet : Set.S with type elt = Int.t
 (*e: module [[Dataflow.NodeiSet]] *)
@@ -97,7 +97,7 @@ val ns_to_str : NodeiSet.t -> string
 
 (* we use now a functor so we can reuse the same code for dataflow on
  * the IL (IL.cfg) or generic AST (Controlflow.flow)
- *)
+*)
 (*s: module type [[Dataflow.Flow]] *)
 module type Flow = sig
   type node
@@ -109,20 +109,20 @@ end
 (*s: functor signature [[Dataflow.Make]] *)
 module Make (F: Flow) : sig
 
-(* main entry point *)
-val fixpoint :
-  eq:('a -> 'a -> bool) ->
-  init:'a mapping ->
-  trans:'a transfn ->
-  flow:F.flow ->
-  forward:bool ->
-  'a mapping
+  (* main entry point *)
+  val fixpoint :
+    eq:('a -> 'a -> bool) ->
+    init:'a mapping ->
+    trans:'a transfn ->
+    flow:F.flow ->
+    forward:bool ->
+    'a mapping
 
-val new_node_array: F.flow -> 'a -> 'a array
+  val new_node_array: F.flow -> 'a -> 'a array
 
-(* debugging output *)
-val display_mapping :
-  F.flow -> 'a mapping -> ('a -> string) -> unit
+  (* debugging output *)
+  val display_mapping :
+    F.flow -> 'a mapping -> ('a -> string) -> unit
 end
 (*e: functor signature [[Dataflow.Make]] *)
 (*e: pfff/lang_GENERIC/analyze/Dataflow.mli *)

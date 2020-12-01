@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: pad/r2c copyright *)
 module FT = File_type
 
@@ -28,7 +28,7 @@ module FT = File_type
 (* coupling: if you add a language here, after fixing the compilation errors,
  * you probably still need to add also special code in list_of_lang and
  * langs_of_filename below.
- *)
+*)
 (*s: type [[Lang.t]] *)
 type t =
   | Python
@@ -47,7 +47,7 @@ type t =
   | Csharp
   | PHP
   | Kotlin
-(*e: type [[Lang.t]] *)
+  (*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -55,32 +55,32 @@ type t =
 
 (*s: constant [[Lang.list_of_lang]] *)
 let list_of_lang = [
-    "py", Python;
-    "python", Python;
-    "python2", Python2;
-    "python3", Python3;
+  "py", Python;
+  "python", Python;
+  "python2", Python2;
+  "python3", Python3;
 
-    "js", Javascript;
-    "javascript", Javascript;
-    "json", JSON;
-    "ts", Typescript;
-    "typescript", Typescript;
+  "js", Javascript;
+  "javascript", Javascript;
+  "json", JSON;
+  "ts", Typescript;
+  "typescript", Typescript;
 
-    "go", Go;
-    "golang", Go;
+  "go", Go;
+  "golang", Go;
 
-    "c", C;
-    "cpp", Cplusplus;
-    "c++", Cplusplus;
-    "ml", OCaml;
-    "ocaml", OCaml;
-    "java", Java;
-    "ruby", Ruby;
-    "rb", Ruby;
-    "cs", Csharp;
-    "php", PHP;
-    "kt", Kotlin;
-  ]
+  "c", C;
+  "cpp", Cplusplus;
+  "c++", Cplusplus;
+  "ml", OCaml;
+  "ocaml", OCaml;
+  "java", Java;
+  "ruby", Ruby;
+  "rb", Ruby;
+  "cs", Csharp;
+  "php", PHP;
+  "kt", Kotlin;
+]
 (*e: constant [[Lang.list_of_lang]] *)
 
 (*s: constant [[Lang.lang_of_string_map]] *)
@@ -94,25 +94,25 @@ let lang_of_string_opt x = Hashtbl.find_opt lang_of_string_map (String.lowercase
 
 (*s: function [[Lang.langs_of_filename]] *)
 let langs_of_filename filename =
- let typ = File_type.file_type_of_file filename in
- match typ with
- | FT.PL (FT.Web (FT.Js)) -> [Javascript] (* Add TypeScript too? *)
- | FT.PL (FT.Web (FT.TypeScript)) -> [Typescript]
- | FT.PL (FT.Web (FT.TSX)) -> [Typescript]
- | FT.PL (FT.Python) -> [Python;Python2;Python2]
- (* .h could also be Cpp at some point *)
- | FT.PL (FT.C ("c")) -> [C]
- | FT.PL (FT.C ("h")) -> [C;Cplusplus]
- | FT.PL (FT.Cplusplus _) -> [Cplusplus]
- | FT.PL (FT.ML _) -> [OCaml]
- | FT.PL (FT.Java) -> [Java]
- | FT.PL (FT.Go) -> [Go]
- | FT.PL (FT.Web FT.Json) -> [JSON]
- | FT.PL (FT.Ruby) -> [Ruby]
- | FT.PL (FT.Csharp) -> [Csharp]
- | FT.PL (FT.Web (FT.Php _)) -> [PHP]
- | FT.PL (FT.Kotlin) -> [Kotlin]
- | _ -> []
+  let typ = File_type.file_type_of_file filename in
+  match typ with
+  | FT.PL (FT.Web (FT.Js)) -> [Javascript] (* Add TypeScript too? *)
+  | FT.PL (FT.Web (FT.TypeScript)) -> [Typescript]
+  | FT.PL (FT.Web (FT.TSX)) -> [Typescript]
+  | FT.PL (FT.Python) -> [Python;Python2;Python2]
+  (* .h could also be Cpp at some point *)
+  | FT.PL (FT.C ("c")) -> [C]
+  | FT.PL (FT.C ("h")) -> [C;Cplusplus]
+  | FT.PL (FT.Cplusplus _) -> [Cplusplus]
+  | FT.PL (FT.ML _) -> [OCaml]
+  | FT.PL (FT.Java) -> [Java]
+  | FT.PL (FT.Go) -> [Go]
+  | FT.PL (FT.Web FT.Json) -> [JSON]
+  | FT.PL (FT.Ruby) -> [Ruby]
+  | FT.PL (FT.Csharp) -> [Csharp]
+  | FT.PL (FT.Web (FT.Php _)) -> [PHP]
+  | FT.PL (FT.Kotlin) -> [Kotlin]
+  | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
 (*s: function [[Lang.string_of_lang]] *)
@@ -155,21 +155,21 @@ let ext_of_lang = function
 (*s: function [[Lang.find_source]] *)
 let find_source lang xs =
   Common.files_of_dir_or_files_no_vcs_nofilter xs
-   |> List.filter (fun filename ->
-     List.mem lang (langs_of_filename filename)
+  |> List.filter (fun filename ->
+    List.mem lang (langs_of_filename filename)
   ) |> Common.sort
 (*e: function [[Lang.find_source]] *)
 
 (*s: function [[Lang.files_of_dirs_or_files]] *)
 (* this is used by sgrep, so it is probably better to keep the logic
  * simple and not perform any Skip_code filtering (bento already does that)
- *)
+*)
 let files_of_dirs_or_files lang xs =
   (* old: let xs = List.map Common.fullpath xs in
    * better to not transform in fullpath; does not interact
    * well with -exclude-dir and anyway this should be done in the caller
    * or not at all. Better just do one thing here.
-   *)
+  *)
   find_source lang xs
 (*e: function [[Lang.files_of_dirs_or_files]] *)
 (*e: pfff/lang_GENERIC/parsing/Lang.ml *)

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module Ast  = Cst_php
@@ -29,7 +29,7 @@ module PI = Parse_info
  *  - miamide, also in ocaml, but didn't support all of PHP
  *  - https://github.com/sfindeisen/phphard, also written in ocaml, but
  *    seems pretty rudimentary
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -57,49 +57,49 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
           Lexer_php._pending_tokens := xs;
           x
       | [] ->
-        (match Lexer_php.current_mode () with
-        | Lexer_php.INITIAL ->
-            Lexer_php.initial lexbuf
-        | Lexer_php.ST_IN_SCRIPTING ->
-            Lexer_php.st_in_scripting lexbuf
-        | Lexer_php.ST_IN_SCRIPTING2 ->
-            Lexer_php.st_in_scripting lexbuf
-        | Lexer_php.ST_DOUBLE_QUOTES ->
-            Lexer_php.st_double_quotes lexbuf
-        | Lexer_php.ST_BACKQUOTE ->
-            Lexer_php.st_backquote lexbuf
-        | Lexer_php.ST_LOOKING_FOR_PROPERTY ->
-            Lexer_php.st_looking_for_property lexbuf
-        | Lexer_php.ST_LOOKING_FOR_VARNAME ->
-            Lexer_php.st_looking_for_varname lexbuf
-        | Lexer_php.ST_VAR_OFFSET ->
-            Lexer_php.st_var_offset lexbuf
-        | Lexer_php.ST_START_HEREDOC s ->
-            Lexer_php.st_start_heredoc s lexbuf
-        | Lexer_php.ST_START_NOWDOC s ->
-            Lexer_php.st_start_nowdoc s lexbuf
+          (match Lexer_php.current_mode () with
+           | Lexer_php.INITIAL ->
+               Lexer_php.initial lexbuf
+           | Lexer_php.ST_IN_SCRIPTING ->
+               Lexer_php.st_in_scripting lexbuf
+           | Lexer_php.ST_IN_SCRIPTING2 ->
+               Lexer_php.st_in_scripting lexbuf
+           | Lexer_php.ST_DOUBLE_QUOTES ->
+               Lexer_php.st_double_quotes lexbuf
+           | Lexer_php.ST_BACKQUOTE ->
+               Lexer_php.st_backquote lexbuf
+           | Lexer_php.ST_LOOKING_FOR_PROPERTY ->
+               Lexer_php.st_looking_for_property lexbuf
+           | Lexer_php.ST_LOOKING_FOR_VARNAME ->
+               Lexer_php.st_looking_for_varname lexbuf
+           | Lexer_php.ST_VAR_OFFSET ->
+               Lexer_php.st_var_offset lexbuf
+           | Lexer_php.ST_START_HEREDOC s ->
+               Lexer_php.st_start_heredoc s lexbuf
+           | Lexer_php.ST_START_NOWDOC s ->
+               Lexer_php.st_start_nowdoc s lexbuf
 
-        )
-     in
-     if not (TH.is_comment tok)
-     then Lexer_php._last_non_whitespace_like_token := Some tok;
-     tok
+          )
+    in
+    if not (TH.is_comment tok)
+    then Lexer_php._last_non_whitespace_like_token := Some tok;
+    tok
   in
   Parse_info.tokenize_all_and_adjust_pos
-   file token TH.visitor_info_of_tok TH.is_eof
+    file token TH.visitor_info_of_tok TH.is_eof
 
 let tokens ?init_state a =
   Common.profile_code "Parse_php.tokens" (fun () -> tokens2 ?init_state a)
 
 
 let is_comment v =
-   TH.is_comment v ||
-   (* TODO a little bit specific to FB ? *)
-   (match v with
+  TH.is_comment v ||
+  (* TODO a little bit specific to FB ? *)
+  (match v with
    | Parser_php.T_OPEN_TAG _ -> true
    | Parser_php.T_CLOSE_TAG _ -> true
    | _ -> false
-   )
+  )
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -111,7 +111,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
   let filename =
     (* note that now that pfff support XHP constructs directly,
      * this code is not that needed.
-     *)
+    *)
     match pp with
     | None -> orig_filename
     | Some cmd ->
@@ -135,14 +135,14 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
           then orig_filename
           else begin
             Common.profile_code "Parse_php.pp" (fun () ->
-            let tmpfile = Common.new_temp_file "pp" ".pphp" in
-            let fullcmd =
-              spf "%s %s %s > %s" cmd pp_flag filename tmpfile in
-            if !Flag_php.verbose_pp then pr2 (spf "executing %s" fullcmd);
-            let ret = Sys.command fullcmd in
-            if ret <> 0
-            then failwith "The preprocessor command returned an error code";
-            tmpfile
+              let tmpfile = Common.new_temp_file "pp" ".pphp" in
+              let fullcmd =
+                spf "%s %s %s > %s" cmd pp_flag filename tmpfile in
+              if !Flag_php.verbose_pp then pr2 (spf "executing %s" fullcmd);
+              let ret = Sys.command fullcmd in
+              if ret <> 0
+              then failwith "The preprocessor command returned an error code";
+              tmpfile
             )
           end
         )
@@ -154,7 +154,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
   let toks = tokens filename in
   (* note that now that pfff support XHP constructs directly,
    * this code is not that needed.
-   *)
+  *)
   let toks =
     if filename = orig_filename
     then toks
@@ -175,8 +175,8 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
       (* -------------------------------------------------- *)
       Left
         (Common.profile_code "Parser_php.main" (fun () ->
-          Parser_php.main lexer lexbuf_fake
-        ))
+           Parser_php.main lexer lexbuf_fake
+         ))
     ) with Parsing.Parse_error ->
 
       let line_error = TH.line_of_tok tr.PI.current in
@@ -246,9 +246,9 @@ let (expr_of_string: string -> Cst_php.expr) = fun s ->
 
   let res =
     (match ast with
-    | [Ast.TopStmt (Ast.ExprStmt (e, _tok));Ast.FinalDef _] -> e
-  | _ -> failwith "only expr pattern are supported for now"
-  )
+     | [Ast.TopStmt (Ast.ExprStmt (e, _tok));Ast.FinalDef _] -> e
+     | _ -> failwith "only expr pattern are supported for now"
+    )
   in
   Common.erase_this_temp_file tmpfile;
   res

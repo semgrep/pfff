@@ -2,13 +2,13 @@
 (* relevant test files exercising source, with term-frequency of
  * file in the test *)
 type tests_coverage = (Common.filename (* source *), tests_score) Common.assoc
- and tests_score = (Common.filename (* a test *) * float) list
+and tests_score = (Common.filename (* a test *) * float) list
 
 type lines_coverage = (Common.filename, file_lines_coverage) Common.assoc
- and file_lines_coverage = {
-   covered_sites: int list;
-   all_sites: int list;
- }
+and file_lines_coverage = {
+  covered_sites: int list;
+  all_sites: int list;
+}
 
 (* input/output *)
 val json_of_tests_coverage: tests_coverage -> JSON.t

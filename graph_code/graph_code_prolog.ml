@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Prolog_code
@@ -25,7 +25,7 @@ module E = Entity_code
  *
  * For more information look at h_program-lang/prolog_code.pl
  * and its many predicates.
- *)
+*)
 
 
 (*****************************************************************************)
@@ -36,7 +36,7 @@ module E = Entity_code
  * hooks of hooks ... it's just that the model of graph_code
  * does not allow to do certain things that we want in codequery
  * such as tracking the flow of values.
- *)
+*)
 let hook_facts = ref []
 
 let build g =
@@ -55,45 +55,45 @@ let build g =
   g |> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (match kind with
-    | E.Function | E.Global | E.Constant | E.Type | E.Macro
-    | E.Package | E.Module
-    (* todo? field and constructor have a X.Y.type.fld so should
-     * we generate for the entity a ([X;Y;type], fld) or ([X;Y], "type.fld")
+     | E.Function | E.Global | E.Constant | E.Type | E.Macro
+     | E.Package | E.Module
+     (* todo? field and constructor have a X.Y.type.fld so should
+      * we generate for the entity a ([X;Y;type], fld) or ([X;Y], "type.fld")
      *)
-    | E.Field | E.Constructor
-    | E.Method | E.ClassConstant
-    | E.Exception
-        -> add (Kind (entity_of_str str, kind))
-    (* todo: interface | trait *)
-    | E.Class ->
-        add (Kind (entity_of_str str, kind))
+     | E.Field | E.Constructor
+     | E.Method | E.ClassConstant
+     | E.Exception
+       -> add (Kind (entity_of_str str, kind))
+     (* todo: interface | trait *)
+     | E.Class ->
+         add (Kind (entity_of_str str, kind))
 
-    (* less: hmm if only have a proto, e.g. in lib.h should add it no? *)
-    | E.Prototype | E.GlobalExtern
-      -> ()
+     (* less: hmm if only have a proto, e.g. in lib.h should add it no? *)
+     | E.Prototype | E.GlobalExtern
+       -> ()
 
-    | E.File | E.Dir
-      -> ()
+     | E.File | E.Dir
+       -> ()
 
-    | (E.TopStmts|E.Other _|E.MultiDirs) ->
-        pr2_gen n;
-        raise Todo
+     | (E.TopStmts|E.Other _|E.MultiDirs) ->
+         pr2_gen n;
+         raise Todo
     );
 
     (try
-      (* todo: should avoid adding it twice when have both proto and func
-       * defined
+       (* todo: should avoid adding it twice when have both proto and func
+        * defined
        *)
-      let nodeinfo = G.nodeinfo n g in
-      add (At (entity_of_str str,
-               nodeinfo.G.pos.Parse_info.file,
-               nodeinfo.G.pos.Parse_info.line));
-      let t =
-        match nodeinfo.G.typ with
-        | None -> "unknown"
-        | Some s -> s
-      in
-      add (Type (entity_of_str str, t))
+       let nodeinfo = G.nodeinfo n g in
+       add (At (entity_of_str str,
+                nodeinfo.G.pos.Parse_info.file,
+                nodeinfo.G.pos.Parse_info.line));
+       let t =
+         match nodeinfo.G.typ with
+         | None -> "unknown"
+         | Some s -> s
+       in
+       add (Type (entity_of_str str, t))
      with Not_found -> ()
     );
   );
@@ -102,15 +102,15 @@ let build g =
 
   (* we iter on the Use edges of the graph_code (see graph_code.ml), which
    * contains the inheritance tree, call graph, and data graph information.
-   *)
+  *)
   g |> G.iter_use_edges (fun n1 n2 ->
     match n1, n2 with
     (* less: at some point have to differentiate Extends and Implements
      * depending on the _kind, but for now let's simplify and convert
      * everything to a regular class inheritance
-     *)
+    *)
     | ((s1, E.Class), (s2, E.Class)) ->
-      add (Extends (s1, s2))
+        add (Extends (s1, s2))
 
     | ((s1, (E.Function|E.Method)), (s2, (E.Function|E.Prototype|E.Method)))->
         add (Call (entity_of_str s1, entity_of_str s2))
@@ -119,16 +119,16 @@ let build g =
        (s2, (E.Field | E.ClassConstant | E.Global) )) ->
         let info = G.edgeinfo_opt (n1, n2) G.Use g in
         (match info with
-        | None ->
-            add (UseData (entity_of_str s1, entity_of_str s2, None))
-        | Some { G.read = false; G.write = false } ->
-            failwith (spf "use access with neither read or write: %s -> %s"
-                      s1 s2)
-        | Some info ->
-            if info.G.read
-            then add (UseData (entity_of_str s1, entity_of_str s2, Some false));
-            if info.G.write
-            then add (UseData (entity_of_str s1, entity_of_str s2, Some true));
+         | None ->
+             add (UseData (entity_of_str s1, entity_of_str s2, None))
+         | Some { G.read = false; G.write = false } ->
+             failwith (spf "use access with neither read or write: %s -> %s"
+                         s1 s2)
+         | Some info ->
+             if info.G.read
+             then add (UseData (entity_of_str s1, entity_of_str s2, Some false));
+             if info.G.write
+             then add (UseData (entity_of_str s1, entity_of_str s2, Some true));
         )
 
     | _ -> ()
@@ -153,7 +153,7 @@ let build g =
       then add (P.Kind ((xs, Common.matched1 x), kind))
       else failwith ("field does not contain $: " ^ x)
 
-  (* uses *)
+   (* uses *)
     | ((s1, E.Class _kind1), (s2, E.Class E.RegularClass)) ->
       add (P.Extends (s1, s2))
     | ((s1, E.Class _kind1), (s2, E.Class E.Trait)) ->
@@ -167,7 +167,7 @@ let build g =
 (* This is for codequery. In C the flow of values goes either
  * via assignments of via calls (where the argument is assigned in
  * the parameter)
- *)
+*)
 type context =
   | NoCtx
   | CallCtx of Graph_code.node
@@ -177,30 +177,30 @@ let hook_use_edge_for_prolog ctx in_assign (src, dst) g _loc =
   let kind = snd dst in
 
   (match kind with
-  | E.Global | E.Field ->
-    let oldinfoopt = G.edgeinfo_opt (src, dst) G.Use g in
-    let info =
-      match oldinfoopt with
-      | Some info -> info
-      | None -> { G.read = false; G.write = false }
-    in
-    let newinfo =
-      if in_assign
-      then { info with G.write = true }
-      else { info with G.read = true }
-    in
-    G.add_edgeinfo (src, dst) G.Use newinfo g
-  | _ -> ()
+   | E.Global | E.Field ->
+       let oldinfoopt = G.edgeinfo_opt (src, dst) G.Use g in
+       let info =
+         match oldinfoopt with
+         | Some info -> info
+         | None -> { G.read = false; G.write = false }
+       in
+       let newinfo =
+         if in_assign
+         then { info with G.write = true }
+         else { info with G.read = true }
+       in
+       G.add_edgeinfo (src, dst) G.Use newinfo g
+   | _ -> ()
   );
   let esrc = entity_of_str (fst src) in
   let edst = entity_of_str (fst dst) in
   (match ctx, kind with
-  | NoCtx, _ -> ()
-  | AssignCtx fld_node, E.Function ->
-      let efld = entity_of_str (fst fld_node) in
-      hook_facts |> Common.push (Special (esrc, efld, edst, "field"))
-  | CallCtx func_node, E.Function ->
-      let efunc = entity_of_str (fst func_node) in
-      hook_facts |> Common.push (Special (esrc, efunc, edst, "function"))
-  | _ -> ()
+   | NoCtx, _ -> ()
+   | AssignCtx fld_node, E.Function ->
+       let efld = entity_of_str (fst fld_node) in
+       hook_facts |> Common.push (Special (esrc, efld, edst, "field"))
+   | CallCtx func_node, E.Function ->
+       let efunc = entity_of_str (fst func_node) in
+       hook_facts |> Common.push (Special (esrc, efunc, edst, "function"))
+   | _ -> ()
   )

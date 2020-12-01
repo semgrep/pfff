@@ -8,8 +8,8 @@ module Flag = Flag_parsing
 
 let test_tokens_hs file =
   (match File_type.file_type_of_file file with
-  | File_type.PL (File_type.Haskell _) -> ()
-  | _ -> pr2 "warning: seems not a haskell file";
+   | File_type.PL (File_type.Haskell _) -> ()
+   | _ -> pr2 "warning: seems not a haskell file";
   );
 
   Flag.verbose_lexing := true;

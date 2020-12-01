@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: pad/r2c copyright *)
 module G = AST_generic
 
@@ -74,7 +74,7 @@ module G = AST_generic
  *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
  *    but probably too close to assembly/bytecode
  *  - Jimpl in Soot/Wala
- *)
+*)
 
 (*****************************************************************************)
 (* Token (leaf) *)
@@ -84,16 +84,16 @@ module G = AST_generic
 (* the classic *)
 type tok = G.tok
 (*e: type [[IL.tok]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 (*s: type [[IL.wrap]] *)
 type 'a wrap = 'a G.wrap
 (*e: type [[IL.wrap]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 (*s: type [[IL.bracket]] *)
 (* useful mainly for empty containers *)
 type 'a bracket = tok * 'a * tok
 (*e: type [[IL.bracket]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
@@ -102,7 +102,7 @@ type 'a bracket = tok * 'a * tok
 (*s: type [[IL.ident]] *)
 type ident = G.ident
 (*e: type [[IL.ident]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*s: type [[IL.name]] *)
 (* 'sid' below is the result of name resolution and variable disambiguation
@@ -112,10 +112,10 @@ type ident = G.ident
  * TODO: use it to also do SSA! so some control-flow insensitive analysis
  * can become control-flow sensitive? (e.g., DOOP)
  *
- *)
+*)
 type name = ident * G.sid
 (*e: type [[IL.name]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Lvalue *)
@@ -130,15 +130,15 @@ type lval = {
 }
 (*e: type [[IL.lval]] *)
 (*s: type [[IL.base]] *)
-  and base =
-    | Var of name
-    | VarSpecial of var_special wrap
-    (* aka DeRef, e.g. *E in C *)
-    | Mem of exp
-(*e: type [[IL.base]] *)
+and base =
+  | Var of name
+  | VarSpecial of var_special wrap
+  (* aka DeRef, e.g. *E in C *)
+  | Mem of exp
+  (*e: type [[IL.base]] *)
 
 (*s: type [[IL.offset]] *)
-  and offset =
+and offset =
   | NoOffset
   (* What about nested field access? foo.x.y?
    * - use intermediate variable for that. TODO? same semantic?
@@ -149,17 +149,17 @@ type lval = {
    * Note that Dot is used to access many different kinds of entities:
    *  objects/records (fields), classes (static fields), but also
    *  packages, modules, namespaces depending on the type of 'var' above.
-   *)
+  *)
   | Dot   of ident
   | Index of exp
-(*e: type [[IL.offset]] *)
+  (*e: type [[IL.offset]] *)
 
-   (* transpile at some point? *)
+(* transpile at some point? *)
 (*s: type [[IL.var_special]] *)
-   and var_special =
-     | This | Super
-     | Self | Parent
-(*e: type [[IL.var_special]] *)
+and var_special =
+  | This | Super
+  | Self | Parent
+  (*e: type [[IL.var_special]] *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -168,16 +168,16 @@ type lval = {
 (* We use 'exp' instead of 'expr' to accentuate the difference
  * with AST_generic.expr.
  * Here 'exp' does not contain any side effect!
- *)
+*)
 (*s: type [[IL.exp]] *)
 and exp = {
   e: exp_kind;
   (* todo: etype: typ; *)
   eorig: G.expr;
- }
+}
 (*e: type [[IL.exp]] *)
 (*s: type [[IL.exp_kind]] *)
-  and exp_kind =
+and exp_kind =
   | Lvalue of lval (* lvalue used in a rvalue context *)
   | Literal of G.literal
   | Composite of composite_kind * exp list bracket
@@ -187,27 +187,27 @@ and exp = {
    * TODO should we transform that in a New followed by a series of Assign
    * with Dot? simpler?
    * This could also be used for Dict.
-   *)
+  *)
   | Record of (ident * exp) list
   | Cast of G.type_ * exp
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
   | Operator of G.operator wrap * exp list
-(*e: type [[IL.exp_kind]] *)
+  (*e: type [[IL.exp_kind]] *)
 
 (*s: type [[IL.composite_kind]] *)
- and composite_kind =
+and composite_kind =
   | CTuple
   | CArray | CList | CSet
   | CDict (* could be merged with Record *)
   | Constructor of name (* OCaml *)
 (*e: type [[IL.composite_kind]] *)
-  [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*s: type [[IL.argument]] *)
 type argument = exp
 (*e: type [[IL.argument]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Instruction *)
@@ -215,15 +215,15 @@ type argument = exp
 
 (* Easier type to compute lvalue/rvalue set of a too general 'expr', which
  * is now split in  instr vs exp vs lval.
- *)
+*)
 (*s: type [[IL.instr]] *)
 type instr = {
   i: instr_kind;
   iorig: G.expr;
- }
+}
 (*e: type [[IL.instr]] *)
 (*s: type [[IL.instr_kind]] *)
-  and instr_kind =
+and instr_kind =
   (* was called Set in CIL, but a bit ambiguous with Set module *)
   | Assign of lval * exp
   | AssignAnon of lval * anonymous_entity
@@ -233,36 +233,36 @@ type instr = {
 (*e: type [[IL.instr_kind]] *)
 
 (*s: type [[IL.call_special]] *)
-  and call_special =
-    | Eval
-    (* Note that in some languages (e.g., Python) some regular calls are
-     * actually New under the hood.
-     * The type_ argument is usually a name, but it can also be an name[] in
-     * Java/C++.
-     *)
-    | New (* TODO: lift up and add 'of type_ * argument list'? *)
-    | Typeof | Instanceof | Sizeof
-    (* old: better in exp: | Operator of G.arithmetic_operator *)
-    | Concat
-    | Spread
-    | Yield | Await
-    (* was in stmt before, but with a new clean 'instr' type, better here *)
-    | Assert
-    (* was in expr before (only in C/PHP) *)
-    | Ref (* TODO: lift up, have AssignRef? *)
-    (* when transpiling certain features (e.g., patterns, foreach) *)
-    | ForeachNext | ForeachHasNext (* primitives called under the hood *)
+and call_special =
+  | Eval
+  (* Note that in some languages (e.g., Python) some regular calls are
+   * actually New under the hood.
+   * The type_ argument is usually a name, but it can also be an name[] in
+   * Java/C++.
+  *)
+  | New (* TODO: lift up and add 'of type_ * argument list'? *)
+  | Typeof | Instanceof | Sizeof
+  (* old: better in exp: | Operator of G.arithmetic_operator *)
+  | Concat
+  | Spread
+  | Yield | Await
+  (* was in stmt before, but with a new clean 'instr' type, better here *)
+  | Assert
+  (* was in expr before (only in C/PHP) *)
+  | Ref (* TODO: lift up, have AssignRef? *)
+  (* when transpiling certain features (e.g., patterns, foreach) *)
+  | ForeachNext | ForeachHasNext (* primitives called under the hood *)
 (*e: type [[IL.call_special]] *)
-    (* | IntAccess of composite_kind * int (* for tuples/array/list *)
-       | StringAccess of string (* for records/hashes *)
-    *)
+(* | IntAccess of composite_kind * int (* for tuples/array/list *)
+   | StringAccess of string (* for records/hashes *)
+*)
 
 (*s: type [[IL.anonymous_entity]] *)
-  and anonymous_entity =
-    | Lambda of G.function_definition
-    | AnonClass of G.class_definition
-(*e: type [[IL.anonymous_entity]] *)
-  [@@deriving show { with_path = false }] (* with tarzan *)
+and anonymous_entity =
+  | Lambda of G.function_definition
+  | AnonClass of G.class_definition
+  (*e: type [[IL.anonymous_entity]] *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -271,10 +271,10 @@ type instr = {
 type stmt = {
   s: stmt_kind;
   (* sorig: G.stmt; ?*)
-  }
+}
 (*e: type [[IL.stmt]] *)
 (*s: type [[IL.stmt_kind]] *)
-  and stmt_kind =
+and stmt_kind =
   | Instr of instr
 
   (* Switch are converted to a series of If *)
@@ -283,7 +283,7 @@ type stmt = {
    * Break/Continue are handled via Label.
    * alt: we could go further and transform in If+Goto, but nice to
    * not be too far from the original code.
-   *)
+  *)
   | Loop of tok * exp * stmt list
 
   | Return of tok * exp (* use Unit instead of 'exp option' *)
@@ -296,19 +296,19 @@ type stmt = {
   | Throw of tok * exp (* less: enforce lval here? *)
 
   | MiscStmt of other_stmt
-(*e: type [[IL.stmt_kind]] *)
+  (*e: type [[IL.stmt_kind]] *)
 
 (*s: type [[IL.other_stmt]] *)
-  and other_stmt =
-    (* everything except VarDef (which is transformed in a Set instr) *)
-    | DefStmt of G.definition
-    | DirectiveStmt of G.directive
-(*e: type [[IL.other_stmt]] *)
+and other_stmt =
+  (* everything except VarDef (which is transformed in a Set instr) *)
+  | DefStmt of G.definition
+  | DirectiveStmt of G.directive
+  (*e: type [[IL.other_stmt]] *)
 
 (*s: type [[IL.label]] *)
 and label = ident * G.sid
 (*e: type [[IL.label]] *)
-   [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Defs *)
@@ -325,29 +325,29 @@ type node = {
   n: node_kind;
   (* old: there are tok in the nodes anyway
    * t: Parse_info.t option;
-   *)
+  *)
 }
 (*e: type [[IL.node]] *)
 (*s: type [[IL.node_kind]] *)
-  and node_kind =
-    | Enter | Exit
-    | TrueNode | FalseNode (* for Cond *)
-    | Join (* after Cond *)
+and node_kind =
+  | Enter | Exit
+  | TrueNode | FalseNode (* for Cond *)
+  | Join (* after Cond *)
 
-    | NInstr of instr
+  | NInstr of instr
 
-    | NCond   of tok * exp
-    | NReturn of tok * exp
-    | NThrow  of tok * exp
+  | NCond   of tok * exp
+  | NReturn of tok * exp
+  | NThrow  of tok * exp
 
-    | NOther of other_stmt
-(*e: type [[IL.node_kind]] *)
-   [@@deriving show { with_path = false }] (* with tarzan *)
+  | NOther of other_stmt
+  (*e: type [[IL.node_kind]] *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*s: type [[IL.edge]] *)
 (* For now there is just one kind of edge. Later we may have more,
  * see the ShadowNode idea of Julia Lawall.
- *)
+*)
 type edge = Direct
 (*e: type [[IL.edge]] *)
 
@@ -370,9 +370,9 @@ type any =
   | I of instr
   | S of stmt
   | Ss of stmt list
-(*  | N of node *)
+  (*  | N of node *)
 (*e: type [[IL.any]] *)
-   [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* L/Rvalue helpers *)
@@ -383,8 +383,8 @@ let lvar_of_instr_opt x =
   | Assign (lval, _) | AssignAnon (lval, _)
   | Call (Some lval, _, _) | CallSpecial (Some lval, _, _) ->
       (match lval.base with
-      | Var n -> Some n
-      | VarSpecial _ | Mem _ -> None
+       | Var n -> Some n
+       | VarSpecial _ | Mem _ -> None
       )
   | Call _ | CallSpecial _ -> None
 (*e: function [[IL.lvar_of_instr_opt]] *)

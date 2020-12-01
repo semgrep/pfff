@@ -55,6 +55,6 @@ let test_highlight_cpp file =
 (*****************************************************************************)
 
 let actions () = [
-    "-test_highlight_cpp",  " <file>",
-    Common.mk_action_1_arg test_highlight_cpp;
+  "-test_highlight_cpp",  " <file>",
+  Common.mk_action_1_arg test_highlight_cpp;
 ]

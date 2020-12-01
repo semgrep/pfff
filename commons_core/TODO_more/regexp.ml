@@ -2,7 +2,7 @@ open Common
 
 (* because Str of ocaml sux with word boundary, newline, etc.
  * ex: \\bcia_pci_tbi_try2\\b
- *)
+*)
 
 let find_offset_all_matches ~regexp str =
 
@@ -16,9 +16,9 @@ let find_offset_all_matches ~regexp str =
       Common.push (pos1,pos2) res;
     done;
     (try
-        let subs2 = Pcre.next_match ~rex:regexp substrings in
-        loop subs2
-      with  Not_found -> ()
+       let subs2 = Pcre.next_match ~rex:regexp substrings in
+       loop subs2
+     with  Not_found -> ()
     );
   in
   loop substrings;
@@ -37,10 +37,10 @@ cia_pci_tbi_try2(struct pci_controller *hose,);
 
   let re1 = Str.regexp ("\\b" ^ s ^ "\\b") in
   (try
-      let _i = Str.search_forward  re1 str_ast 0 in
-      pr2 "found Str";
-    with Not_found ->
-      pr2 "no match Str here";
+     let _i = Str.search_forward  re1 str_ast 0 in
+     pr2 "found Str";
+   with Not_found ->
+     pr2 "no match Str here";
   );
 
   let re2 = Pcre.regexp ("\\b" ^ s ^ "\\b") in
@@ -57,9 +57,9 @@ cia_pci_tbi_try2(struct pci_controller *hose,);
       pr2_gen (pos1,pos2);
     done;
     (try
-      let subs2 = Pcre.next_match ~rex:re2 substrings in
-      loop subs2
-      with  Not_found -> ()
+       let subs2 = Pcre.next_match ~rex:re2 substrings in
+       loop subs2
+     with  Not_found -> ()
     );
   in
   loop substrings;
@@ -72,8 +72,8 @@ cia_pci_tbi_try2(struct pci_controller *hose,);
   write_file ~file:tmpfile str_ast;
   let com = spf "egrep -q '(%s)' %s" re3 tmpfile in
   (match Sys.command com with
-  | 0 (* success *) -> pr2 "found egrep"
-  | _ (* failure *) -> pr2 "no match egrep here"
+   | 0 (* success *) -> pr2 "found egrep"
+   | _ (* failure *) -> pr2 "no match egrep here"
   );
   ()
 

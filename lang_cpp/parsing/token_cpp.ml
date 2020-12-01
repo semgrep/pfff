@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -60,7 +60,7 @@ type cppcommentkind =
   | CppMacroExpanded
   | CppPassingNormal (* ifdef 0, cplusplus, etc *)
   | CppPassingCosWouldGetError (* expr passsing *)
-(* TODO  | CppPassingExplicit (* skip_start/end tag *) instead of CppOther? *)
+  (* TODO  | CppPassingExplicit (* skip_start/end tag *) instead of CppOther? *)
   | CppOther
 
 (* at some point we are supposed to also parse those constructs *)

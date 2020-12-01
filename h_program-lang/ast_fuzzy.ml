@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -107,7 +107,7 @@ open Common
  *      'class X { ... function(...) { ... foo() ... } ... }
  *    so sgrep powerful for microlevel queries, and prolog for macrolevel
  *    queries. Xpath? Css selector?
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -125,12 +125,12 @@ type tree =
 
   (* note that gcc allows $ in identifiers, so using $ for metavariables
    * means we will not be able to match such identifiers. No big deal.
-   *)
+  *)
   | Metavar of string wrap
   (* note that "..." are allowed in many languages, so using "..."
    * to represent a list of anything means we will not be able to
    * match specifically "...".
-   *)
+  *)
   | Dots of tok
 
   (* Should we split Tok in
@@ -140,11 +140,11 @@ type tree =
    * ?
    * Maybe, but at least you can build a hash from the Parse_info.t to
    * the origin token if you need a better classification of Tok.
-   *)
+  *)
   | Tok of string wrap
 
 and trees = tree list
- (* with tarzan *)
+(* with tarzan *)
 
 let is_metavar s =
   s =~ "^\\$.*"

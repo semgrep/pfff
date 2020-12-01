@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Ast_lisp
@@ -54,7 +54,7 @@ type env = {
   pr2_and_log: string -> unit;
 }
 
- and phase = Defs | Uses
+and phase = Defs | Uses
 
 (*****************************************************************************)
 (* Parsing *)
@@ -69,8 +69,8 @@ let parse file =
     with
     | Timeout -> raise Timeout
     | exn ->
-      pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-      []
+        pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
+        []
   )
 
 (*****************************************************************************)
@@ -93,27 +93,27 @@ let _error s tok =
 let add_node_and_edge_if_defs_mode env (s, kind) tok =
   let node = (s, kind) in
   (if env.phase = Defs then
-    if G.has_node node env.g
-    then begin
-      env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
-      let nodeinfo = G.nodeinfo node env.g in
-      let orig_file = nodeinfo.G.pos.Parse_info.file in
-      env.log (spf " orig = %s" orig_file);
-      env.log (spf " dupe = %s" env.readable_file);
-      Hashtbl.replace env.dupes node true;
-    end
-    else begin
-      let pos = Parse_info.token_location_of_info tok in
-      let pos = { pos with Parse_info.file = env.readable_file } in
-      let nodeinfo = { Graph_code.
-          pos;
-          typ = None;
-          props = [];
-        } in
-      env.g |> G.add_node node;
-      env.g |> G.add_edge (env.current, node) G.Has;
-      env.g |> G.add_nodeinfo node nodeinfo;
-    end
+     if G.has_node node env.g
+     then begin
+       env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
+       let nodeinfo = G.nodeinfo node env.g in
+       let orig_file = nodeinfo.G.pos.Parse_info.file in
+       env.log (spf " orig = %s" orig_file);
+       env.log (spf " dupe = %s" env.readable_file);
+       Hashtbl.replace env.dupes node true;
+     end
+     else begin
+       let pos = Parse_info.token_location_of_info tok in
+       let pos = { pos with Parse_info.file = env.readable_file } in
+       let nodeinfo = { Graph_code.
+                        pos;
+                        typ = None;
+                        props = [];
+                      } in
+       env.g |> G.add_node node;
+       env.g |> G.add_edge (env.current, node) G.Has;
+       env.g |> G.add_nodeinfo node nodeinfo;
+     end
   );
   { env with current = node }
 
@@ -130,9 +130,9 @@ let add_use_edge env (s, kind) tok =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
   | _ ->
-        env.pr2_and_log (spf "Lookup failure on %s (%s)"
-                           (G.string_of_node dst)
-                           (Parse_info.string_of_info tok))
+      env.pr2_and_log (spf "Lookup failure on %s (%s)"
+                         (G.string_of_node dst)
+                         (Parse_info.string_of_info tok))
 
 
 (*****************************************************************************)
@@ -167,19 +167,19 @@ and sexp env x =
 and sexp_bis env x =
   match x with
   | Sexp (_, [Atom (Id ("provide", _)); Special ((Quote, _),
-                                                  (Atom (Id (s, t))))], _) ->
-    let _env = add_node_and_edge_if_defs_mode env (s, E.Module) t in
-    ()
+                                                 (Atom (Id (s, t))))], _) ->
+      let _env = add_node_and_edge_if_defs_mode env (s, E.Module) t in
+      ()
 
   | Sexp (_, Atom (Id ("defmacro", _))::Atom (Id (s, t))::rest, _)
-      when env.at_toplevel ->
-    let env = add_node_and_edge_if_defs_mode env (s, E.Macro) t in
-    sexps env rest
+    when env.at_toplevel ->
+      let env = add_node_and_edge_if_defs_mode env (s, E.Macro) t in
+      sexps env rest
   (* todo: use Sexp x below because don't handle long symbol like xxx-`S *)
   | Sexp (_, Atom (Id ("defun", _))::Atom (Id (s, t))::Sexp x::rest, _)
-      when env.at_toplevel ->
-    let env = add_node_and_edge_if_defs_mode env (s, E.Function) t in
-    sexps env (Sexp x::rest)
+    when env.at_toplevel ->
+      let env = add_node_and_edge_if_defs_mode env (s, E.Function) t in
+      sexps env (Sexp x::rest)
 (*
   | Sexp (_, Atom (Id ("defvar", _))::Atom (Id (s, t))::rest, _) ->
     let env = add_node_and_edge_if_defs_mode env (s, E.Global) t in
@@ -188,44 +188,44 @@ and sexp_bis env x =
 
 
   | Sexp (_, [Atom (Id ("require", _)); Special ((Quote, _),
-                                                  (Atom (Id (s, t))))], _) ->
-    if env.phase = Uses then begin
-      let node = (s, E.Module) in
-      add_use_edge env node t
-    end
+                                                 (Atom (Id (s, t))))], _) ->
+      if env.phase = Uses then begin
+        let node = (s, E.Module) in
+        add_use_edge env node t
+      end
 
   | Sexp (_, Atom (Id (s, t))::xs, _) ->
-    if env.phase = Uses &&
-      (G.has_node (s, E.Macro) env.g || G.has_node (s, E.Function) env.g)
-    then
-      let kind = find_existing_node env s
-        [E.Macro;
-         E.Function;
-        ]
-        E.Function
-      in
-      add_use_edge env (s, kind) t;
-      sexps env xs
-    else
-      (* todo: too many errors for now, do not generate lookup failure for now
-       * e.g. all builtins are not taken into account
-      *)
-      sexps env xs
+      if env.phase = Uses &&
+         (G.has_node (s, E.Macro) env.g || G.has_node (s, E.Function) env.g)
+      then
+        let kind = find_existing_node env s
+            [E.Macro;
+             E.Function;
+            ]
+            E.Function
+        in
+        add_use_edge env (s, kind) t;
+        sexps env xs
+      else
+        (* todo: too many errors for now, do not generate lookup failure for now
+         * e.g. all builtins are not taken into account
+        *)
+        sexps env xs
 
 
   (* boilerplate *)
   | Sexp (_, xs, _) -> sexps env xs
   | Atom _ -> ()
   | Special ((special, _t), s) ->
-    (match special with
-    | Quote -> ()
-    | BackQuote ->
-        (* todo: should actually evaluate when inside a comma! *)
-        ()
-    (* hmm but should happen only when in backquote mode *)
-    | Comma | At ->
-        sexp env s
-    )
+      (match special with
+       | Quote -> ()
+       | BackQuote ->
+           (* todo: should actually evaluate when inside a comma! *)
+           ()
+       (* hmm but should happen only when in backquote mode *)
+       | Comma | At ->
+           sexp env s
+      )
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -264,9 +264,9 @@ let build ?(verbose=true) root files =
       let ast = parse file in
       let readable_file = Common.readable ~root file in
       extract_defs_uses { env with
-        phase = Defs; readable_file;
-      } ast
-   ));
+                          phase = Defs; readable_file;
+                        } ast
+    ));
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract Uses";
@@ -276,8 +276,8 @@ let build ?(verbose=true) root files =
       let ast = parse file in
       let readable_file = Common.readable ~root file in
       extract_defs_uses { env with
-        phase = Uses; readable_file;
-      } ast
+                          phase = Uses; readable_file;
+                        } ast
     ));
 
   g

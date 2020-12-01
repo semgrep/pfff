@@ -8,7 +8,7 @@ let short_open_tag = ref true
 
 (* PHP is case insensitive, which is I think a bad idea, so
  * by default let's have a case sensitive lexer.
- *)
+*)
 let case_sensitive = ref true
 
 (* e.g. yield *)
@@ -19,7 +19,7 @@ let verbose_pp = ref false
  * Slower than builtin_xhp and have some issues where the comments
  * are removed, unless you use the experimental_merge_tokens_xhp
  * but which has some issues itself.
- *)
+*)
 let pp_default = ref (None: string option)
 
 (*s: flag_parsing_php.ml pp related flags *)

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module V = Visitor_js
@@ -40,7 +40,7 @@ let find_source_files_of_dir_or_files ?(include_scripts=true)xs =
     (* less: could also consider Typescript files *)
     | FT.PL (FT.Web FT.Js) -> true
     | _ ->
-      if include_scripts then is_js_script filename else false
+        if include_scripts then is_js_script filename else false
   ) |> Common.sort
 
 (*****************************************************************************)
@@ -50,8 +50,8 @@ let find_source_files_of_dir_or_files ?(include_scripts=true)xs =
 let extract_info_visitor recursor =
   let globals = ref [] in
   let hooks = { V.default_visitor with
-    V.kinfo = (fun (_k, _) i -> Common.push i globals)
-  } in
+                V.kinfo = (fun (_k, _) i -> Common.push i globals)
+              } in
   begin
     let vout = V.mk_visitor hooks in
     recursor vout;

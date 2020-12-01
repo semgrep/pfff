@@ -10,7 +10,7 @@ type state =
  *    Lexer_ruby.token to do the switch
  *  - instead of passing continuations, have a state for each lexer rule
  *    and let the lexer caller do the switch (see parse_php.ml)
- *)
+*)
 type t = {
   mutable state : state;
   lexer_stack : (string (* to debug *) * cps_lexer) Stack.t;
@@ -25,10 +25,10 @@ let local_state t = t.state <- AfterLocal
 
 let create entry =
   let stk = Stack.create () in
-    Stack.push entry stk;
-    {state = Bol;
-     lexer_stack = stk;
-    }
+  Stack.push entry stk;
+  {state = Bol;
+   lexer_stack = stk;
+  }
 
 let string_of_state = function
   | Bol -> "Bol"
@@ -39,6 +39,6 @@ let string_of_state = function
 
 let string_of_t x =
   Common.spf "state = %s, stack = [%s]"
-     (string_of_state x.state)
-     (x.lexer_stack |> Stack.to_seq |> List.of_seq
-      |> List.map fst |> String.concat ",")
+    (string_of_state x.state)
+    (x.lexer_stack |> Stack.to_seq |> List.of_seq
+     |> List.map fst |> String.concat ",")

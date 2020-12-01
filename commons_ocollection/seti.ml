@@ -13,7 +13,7 @@ open Common
 
 (*****************************************************************************)
 type seti = elt list (* last elements is in first pos, ordered reverse *)
-  and elt = Exact of int | Interv of int * int
+and elt = Exact of int | Interv of int * int
 
 (* invariant= ordered list, no incoherent interv (one elem or zero elem),
  * merged (intervalle are separated) *)
@@ -37,10 +37,10 @@ let invariant xs =
 
 let string_of_seti xs =
   "[" ^
-    join "," (xs |> List.rev |> List.map (function
+  join "," (xs |> List.rev |> List.map (function
     | (Exact i) -> string_of_int i
     | (Interv (i,j)) -> Printf.sprintf "%d - %d" i j)) ^
-    "]"
+  "]"
 
 (*****************************************************************************)
 let empty = []
@@ -66,15 +66,15 @@ let rec (add2: int -> seti -> seti) = fun x -> function
   | (Exact i)::xs when i =|= x   -> (Exact i)::xs
   | (Interv (i,j)::xs) when x <= j && x >= i -> (Interv (i,j))::xs
   | other ->
-(*         let _ = log "Cache miss" in *)
+      (*         let _ = log "Cache miss" in *)
       let _ = Common2.count2 () in
       (match other with
-      |       (Exact i)::xs when x =|= i-1 -> pack x i xs
-      |       (Exact i)::xs when x < i-1 -> (Exact i)::add x xs
+       |       (Exact i)::xs when x =|= i-1 -> pack x i xs
+       |       (Exact i)::xs when x < i-1 -> (Exact i)::add x xs
 
-      |       (Interv (i,j)::xs) when x =|= i-1 -> pack x j xs
-      |       (Interv (i,j)::xs) when x < i-1 -> (Interv (i,j))::add x xs
-      |       _ -> raise Impossible
+       |       (Interv (i,j)::xs) when x =|= i-1 -> pack x j xs
+       |       (Interv (i,j)::xs) when x < i-1 -> (Interv (i,j))::add x xs
+       |       _ -> raise Impossible
       )
 and add x y = let _ = Common2.count5 () in add2 x y
 
@@ -101,21 +101,21 @@ let rec (remove: int -> seti -> seti) = fun x xs ->
   | [] -> [] (*  pb, not in  *)
   | (Exact z)::zs ->
       (match x <=> z with
-      | Equal -> zs
-      | Sup -> xs  (*  pb, not in *)
-      | Inf -> (Exact z)::remove x zs
+       | Equal -> zs
+       | Sup -> xs  (*  pb, not in *)
+       | Inf -> (Exact z)::remove x zs
       )
   | (Interv (i,j)::zs) ->
       if x > j then xs (*  pb not in *)
       else
-        if x >= i && x <= j then
-          (
-            let _ = assert (j > i) in (* otherwise can lead to construct seti such as [7,6] when removing 6 from [6,6] *)
-            match () with
-            | _ when x =|= i -> [exactize2 (i+1) j]
-            | _ when x =|= j -> [exactize2 i (j-1)]
-            | _ -> [exactize2 (x+1) j; exactize2 i (x-1)]
-          ) @ zs
+      if x >= i && x <= j then
+        (
+          let _ = assert (j > i) in (* otherwise can lead to construct seti such as [7,6] when removing 6 from [6,6] *)
+          match () with
+          | _ when x =|= i -> [exactize2 (i+1) j]
+          | _ when x =|= j -> [exactize2 i (j-1)]
+          | _ -> [exactize2 (x+1) j; exactize2 i (x-1)]
+        ) @ zs
       else (Interv (i,j))::remove x zs
 
 (* let _ = Example (remove 635 [Interv (3, 635)] = [Interv (3, 634)]) *)
@@ -132,21 +132,21 @@ let rec mem e = function
   | [] -> false
   | (Exact x)::xs ->
       (match e <=> x with
-      | Equal -> true
-      | Sup -> false
-      | Inf -> mem e xs
+       | Equal -> true
+       | Sup -> false
+       | Inf -> mem e xs
       )
   | (Interv (i,j)::xs) ->
       if e > j then false
       else
-        if e >= i && e <= j then true
+      if e >= i && e <= j then true
       else mem e xs
 
 let iter f xs = xs |> List.iter
-  (function
-  | Exact i -> f i
-  | Interv (i, j) -> for k = i to j do f k done
-  )
+                  (function
+                    | Exact i -> f i
+                    | Interv (i, j) -> for k = i to j do f k done
+                  )
 
 let is_empty xs = xs =*= []
 let choose = function
@@ -169,39 +169,39 @@ let inter xs ys =
     | ([],_)  -> []
     | (x::xs, y::ys) ->
         (match (x, y) with
-        | (Interv (i1, j1), Interv (i2, j2)) ->
-            (match i1 <=> i2 with
-            | Equal ->
-                (match j1 <=> j2 with
-                | Equal -> (Interv (i1,j1))::aux xs ys
-                    (*  [  ] *)
-                    (*  [  ] *)
-                | Inf -> (Interv (i1, j1))::aux xs      ((Interv (j1+1, j2))::ys)
-                    (*  [  ] [      TODO? could have [ so cant englobe right now, but would be better *)
-                    (*  [      ] *)
-                | Sup -> (Interv (i1, j2))::aux ((Interv (j2+1, j1))::xs) ys
-                    (*  [    ] *)
-                    (*  [ ] [       same *)
-                )
-            | Inf ->
-                if j1 < i2 then aux xs (y::ys) (* need order ? *)
+         | (Interv (i1, j1), Interv (i2, j2)) ->
+             (match i1 <=> i2 with
+              | Equal ->
+                  (match j1 <=> j2 with
+                   | Equal -> (Interv (i1,j1))::aux xs ys
+                   (*  [  ] *)
+                   (*  [  ] *)
+                   | Inf -> (Interv (i1, j1))::aux xs      ((Interv (j1+1, j2))::ys)
+                   (*  [  ] [      TODO? could have [ so cant englobe right now, but would be better *)
+                   (*  [      ] *)
+                   | Sup -> (Interv (i1, j2))::aux ((Interv (j2+1, j1))::xs) ys
+                   (*  [    ] *)
+                   (*  [ ] [       same *)
+                  )
+              | Inf ->
+                  if j1 < i2 then aux xs (y::ys) (* need order ? *)
                   (*  [    ] *)
                   (*         [ ] *)
-                else
-                  (match j1 <=> j2 with
-                  | Equal -> (Interv (i2, j1))::aux xs ys
-                      (*  [    ] *)
-                      (*     [ ] *)
-                  | Inf ->   (Interv (i2, j1))::aux xs ((Interv (j1+1, j2))::ys)
-                      (*  [    ] [    same *)
-                      (*     [     ]   *)
-                  | Sup ->   (Interv (i2, j2))::aux ((Interv (j2+1, j1))::xs) ys
-                      (*  [       ] *)
-                      (*     [ ] [  same *)
-                  )
-            | Sup -> aux (y::ys) (x::xs) (* can cos commutative *)
-            )
-        | _ -> raise Impossible (* intervise *)
+                  else
+                    (match j1 <=> j2 with
+                     | Equal -> (Interv (i2, j1))::aux xs ys
+                     (*  [    ] *)
+                     (*     [ ] *)
+                     | Inf ->   (Interv (i2, j1))::aux xs ((Interv (j1+1, j2))::ys)
+                     (*  [    ] [    same *)
+                     (*     [     ]   *)
+                     | Sup ->   (Interv (i2, j2))::aux ((Interv (j2+1, j1))::xs) ys
+                     (*  [       ] *)
+                     (*     [ ] [  same *)
+                    )
+              | Sup -> aux (y::ys) (x::xs) (* can cos commutative *)
+             )
+         | _ -> raise Impossible (* intervise *)
         )
   in
   (* TODO avoid the rev rev, but aux good ? need order ?  *)
@@ -214,42 +214,42 @@ let union xs ys =
     | ([],vs)  -> vs
     | (x::xs, y::ys) ->
         (match (x, y) with
-        | (Interv (i1, j1), Interv (i2, j2)) ->
-            (match i1 <=> i2 with
-            | Equal ->
-                (match j1 <=> j2 with
-                | Equal -> (Interv (i1,j1))::aux xs ys
-                    (*  [  ] *)
-                    (*  [  ] *)
-                | Inf -> (Interv (i1, j1))::aux xs      ((Interv (j1+1, j2))::ys)
-                    (*  [  ] [      TODO? could have [ so cant englobe right now, but would be better *)
-                    (*  [      ] *)
-                | Sup -> (Interv (i1, j2))::aux ((Interv (j2+1, j1))::xs) ys
-                    (*  [    ] *)
-                    (*  [ ] [       same *)
-                )
-            | Inf ->
-                if j1 < i2 then Interv (i1, j1):: aux xs (y::ys)
+         | (Interv (i1, j1), Interv (i2, j2)) ->
+             (match i1 <=> i2 with
+              | Equal ->
+                  (match j1 <=> j2 with
+                   | Equal -> (Interv (i1,j1))::aux xs ys
+                   (*  [  ] *)
+                   (*  [  ] *)
+                   | Inf -> (Interv (i1, j1))::aux xs      ((Interv (j1+1, j2))::ys)
+                   (*  [  ] [      TODO? could have [ so cant englobe right now, but would be better *)
+                   (*  [      ] *)
+                   | Sup -> (Interv (i1, j2))::aux ((Interv (j2+1, j1))::xs) ys
+                   (*  [    ] *)
+                   (*  [ ] [       same *)
+                  )
+              | Inf ->
+                  if j1 < i2 then Interv (i1, j1):: aux xs (y::ys)
                   (*  [    ] *)
                   (*         [ ] *)
-                else
-                  (match j1 <=> j2 with
-                  | Equal -> (Interv (i1, j1))::aux xs ys
-                      (*  [    ] *)
-                      (*     [ ] *)
-                  | Inf ->   (Interv (i1, j1))::aux xs ((Interv (j1+1, j2))::ys)
-                      (*  [    ] [    same *)
-                      (*     [     ]   *)
-                  | Sup ->   (Interv (i1, j2))::aux ((Interv (j2+1, j1))::xs) ys
-                      (*  [       ] *)
-                      (*     [ ] [  same *)
-                  )
-            | Sup -> aux (y::ys) (x::xs) (* can cos commutative *)
-            )
-        | _ -> raise Impossible (* intervise *)
+                  else
+                    (match j1 <=> j2 with
+                     | Equal -> (Interv (i1, j1))::aux xs ys
+                     (*  [    ] *)
+                     (*     [ ] *)
+                     | Inf ->   (Interv (i1, j1))::aux xs ((Interv (j1+1, j2))::ys)
+                     (*  [    ] [    same *)
+                     (*     [     ]   *)
+                     | Sup ->   (Interv (i1, j2))::aux ((Interv (j2+1, j1))::xs) ys
+                     (*  [       ] *)
+                     (*     [ ] [  same *)
+                    )
+              | Sup -> aux (y::ys) (x::xs) (* can cos commutative *)
+             )
+         | _ -> raise Impossible (* intervise *)
         )
   in
-(*     union_set (tolist xs) (tolist ys) +> fromlist *)
+  (*     union_set (tolist xs) (tolist ys) +> fromlist *)
   List.rev_map exactize (aux (List.rev_map intervise xs) (List.rev_map intervise ys))
 
 (* bug/feature:   discovered by vlad rusu, my invariant for intervalle is
@@ -263,57 +263,57 @@ let diff xs ys =
     | ([],_vs)  -> []
     | (x::xs, y::ys) ->
         (match (x, y) with
-        | (Interv (i1, j1), Interv (i2, j2)) ->
-            (match i1 <=> i2 with
-            | Equal ->
-                (match j1 <=> j2 with
-                | Equal -> aux xs ys
-                    (*  [  ] *)
-                    (*  [  ] *)
-                | Inf -> aux xs      ((Interv (j1+1, j2))::ys)
-                    (*  [  ]  *)
-                    (*  [      ] *)
-                | Sup -> aux ((Interv (j2+1, j1))::xs) ys
-                    (*  [    ] *)
-                    (*  [ ]  *)
-                )
-            | Inf ->
-                if j1 < i2 then Interv (i1, j1):: aux xs (y::ys)
+         | (Interv (i1, j1), Interv (i2, j2)) ->
+             (match i1 <=> i2 with
+              | Equal ->
+                  (match j1 <=> j2 with
+                   | Equal -> aux xs ys
+                   (*  [  ] *)
+                   (*  [  ] *)
+                   | Inf -> aux xs      ((Interv (j1+1, j2))::ys)
+                   (*  [  ]  *)
+                   (*  [      ] *)
+                   | Sup -> aux ((Interv (j2+1, j1))::xs) ys
+                   (*  [    ] *)
+                   (*  [ ]  *)
+                  )
+              | Inf ->
+                  if j1 < i2 then Interv (i1, j1):: aux xs (y::ys)
                   (*  [    ] *)
                   (*         [ ] *)
-                else
-                  (match j1 <=> j2 with
-                  | Equal -> (Interv (i1, i2-1))::aux xs ys (* -1 cos exlude [ *)
-                      (*  [    ] *)
-                      (*     [ ] *)
-                  | Inf ->   (Interv (i1, i2-1))::aux xs ((Interv (j1+1, j2))::ys)
-                      (*  [    ]  *)
-                      (*     [     ]   *)
-                  | Sup ->   (Interv (i1, i2-1))::aux ((Interv (j2+1, j1))::xs) ys
-                      (*  [       ] *)
-                      (*     [ ]  *)
-                  )
-            | Sup ->
-                if j2 < i1 then aux (x::xs) ys
+                  else
+                    (match j1 <=> j2 with
+                     | Equal -> (Interv (i1, i2-1))::aux xs ys (* -1 cos exlude [ *)
+                     (*  [    ] *)
+                     (*     [ ] *)
+                     | Inf ->   (Interv (i1, i2-1))::aux xs ((Interv (j1+1, j2))::ys)
+                     (*  [    ]  *)
+                     (*     [     ]   *)
+                     | Sup ->   (Interv (i1, i2-1))::aux ((Interv (j2+1, j1))::xs) ys
+                     (*  [       ] *)
+                     (*     [ ]  *)
+                    )
+              | Sup ->
+                  if j2 < i1 then aux (x::xs) ys
                   (*       [    ] *)
                   (*  [ ] *)
-                else
-                  (match j1 <=> j2 with
-                  | Equal -> aux xs ys
-                      (*         [    ] *)
-                      (*     [        ] *)
-                  | Inf ->   aux xs ((Interv (j1+1, j2))::ys)
-                      (*         [    ]  *)
-                      (*     [           ]   *)
-                  | Sup ->   aux ((Interv (j2+1, j1))::xs) ys
-                      (*         [    ] *)
-                      (*     [      ]  *)
-                  )
-            )
-        | _ -> raise Impossible (* intervise *)
+                  else
+                    (match j1 <=> j2 with
+                     | Equal -> aux xs ys
+                     (*         [    ] *)
+                     (*     [        ] *)
+                     | Inf ->   aux xs ((Interv (j1+1, j2))::ys)
+                     (*         [    ]  *)
+                     (*     [           ]   *)
+                     | Sup ->   aux ((Interv (j2+1, j1))::xs) ys
+                     (*         [    ] *)
+                     (*     [      ]  *)
+                    )
+             )
+         | _ -> raise Impossible (* intervise *)
         )
   in
-(*       minus_set (tolist xs) (tolist ys) +> fromlist *)
+  (*       minus_set (tolist xs) (tolist ys) +> fromlist *)
   List.rev_map exactize (aux (List.rev_map intervise xs) (List.rev_map intervise ys))
 
 

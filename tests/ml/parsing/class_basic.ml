@@ -1,4 +1,4 @@
 class foo =
-object(self)
-  method foo = 1
-end
+  object(self)
+    method foo = 1
+  end

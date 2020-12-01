@@ -165,7 +165,7 @@ and tof_definition_kind =
          ("ModuleDef", [ OCaml.Var "module_definition" ]);
          ("MacroDef", [ OCaml.Var "macro_definition" ]);
          ("Signature", [ OCaml.Var "type_" ]);
- ])
+       ])
 
 and tof_macro_definition =
   OCaml.add_new_type "macro_definition"

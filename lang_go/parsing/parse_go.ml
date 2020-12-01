@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -27,7 +27,7 @@ module Lexer = Lexer_go
  * TODO:
  *  - error recovery: could skip until next toplevel decl (func/type/const/var)
  *
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -47,7 +47,7 @@ let error_msg_tok tok =
 
 let tokens2 file =
   let token lexbuf =
-      Lexer.token lexbuf
+    Lexer.token lexbuf
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 module PI = Parse_info
 
@@ -86,7 +86,7 @@ type pinfo = Parse_info.token_origin
 type info = Parse_info.t
 and tok = info
 and 'a wrap = 'a * info
- (* with tarzan *)
+(* with tarzan *)
 
 (*****************************************************************************)
 (* HTML raw version *)
@@ -122,7 +122,7 @@ type html_raw = HtmlRaw of string
  * a definition). In order to read other encodings, the text must be
  * first recoded to an ASCII-compatible encoding (example below).
  * Names of elements and attributes must additionally be ASCII-only.
- *)
+*)
 
 (* src: ocamlnet/netstring/nethtml.mli, extended with pad's wrap and newtype *)
 type html_tree =
@@ -132,11 +132,11 @@ type html_tree =
       html_tree list
   | Data of string wrap
 
- and tag = Tag of string wrap
- and attr_name  = Attr of string wrap
- and attr_value = Val  of string wrap
+and tag = Tag of string wrap
+and attr_name  = Attr of string wrap
+and attr_value = Val  of string wrap
 
- (* with tarzan *)
+(* with tarzan *)
 
 (* a small wrapper over ocamlnet *)
 (* type html_tree2 = Nethtml.document list *)
@@ -164,239 +164,239 @@ type html_tree =
 
 type html = Html of attrs * head * (body, frameset) Common.either
 
- and head = Head of attrs * head_content list
+and head = Head of attrs * head_content list
 
-  and head_content =
-    | Title of attrs * plain_text
-    | Style of attrs * plain_text (* CSS *)
-    | Meta of attrs
-    | Link of attrs (* usually link to css file *)
-    (* note: a script tag may be placed anywhere within a HTML document *)
-    | Head_Script of attrs * plain_text  (* JS *)
-    (* note: a server tag may be placed anywhere within a HTML document *)
-    | Head_Server of attrs * plain_text
+and head_content =
+  | Title of attrs * plain_text
+  | Style of attrs * plain_text (* CSS *)
+  | Meta of attrs
+  | Link of attrs (* usually link to css file *)
+  (* note: a script tag may be placed anywhere within a HTML document *)
+  | Head_Script of attrs * plain_text  (* JS *)
+  (* note: a server tag may be placed anywhere within a HTML document *)
+  | Head_Server of attrs * plain_text
 
-    (* ?? *)
-    | Base of attrs | HeadContent_IsIndex of attrs | NextId of attrs
+  (* ?? *)
+  | Base of attrs | HeadContent_IsIndex of attrs | NextId of attrs
 
- and body = Body of attrs * body_content list
+and body = Body of attrs * body_content list
 
- (* obsolete with html5 *)
- and frameset = Frameset of attrs * frameset_content list
-  and frameset_content =
-    | Frame of attrs
-    | NoFrame of attrs * body_content list
+(* obsolete with html5 *)
+and frameset = Frameset of attrs * frameset_content list
+and frameset_content =
+  | Frame of attrs
+  | NoFrame of attrs * body_content list
 
 (* ------------------------------------------------------------------------- *)
 (* Body content *)
 (* ------------------------------------------------------------------------- *)
 
-  (* diff between body_content and block_content ? *)
-  and body_content =
-    | Body_Heading of heading
-    | Hr of attrs (* also in <pre> *)
-    | Body_Flow of flow (* was Body_Block and Body_Text originally *)
-    | Del of attrs * flow | Ins of attrs * flow
-    | Address of attrs * address_content list
-    | Marquee of attrs * style_text  (* erling :) *)
-    | Map of attrs * area list
+(* diff between body_content and block_content ? *)
+and body_content =
+  | Body_Heading of heading
+  | Hr of attrs (* also in <pre> *)
+  | Body_Flow of flow (* was Body_Block and Body_Text originally *)
+  | Del of attrs * flow | Ins of attrs * flow
+  | Address of attrs * address_content list
+  | Marquee of attrs * style_text  (* erling :) *)
+  | Map of attrs * area list
 
-    (* ?? *)
-    | Layer of attrs * body_content | Bgsound of attrs
+  (* ?? *)
+  | Layer of attrs * body_content | Bgsound of attrs
 
-   (* also in <a> content, not sure why *)
-   and heading =
-     | H1 of attrs * text | H2 of attrs * text
-     | H3 of attrs * text | H4 of attrs * text
-     | H5 of attrs * text | H6 of attrs * text
+(* also in <a> content, not sure why *)
+and heading =
+  | H1 of attrs * text | H2 of attrs * text
+  | H3 of attrs * text | H4 of attrs * text
+  | H5 of attrs * text | H6 of attrs * text
 
 (* ------------------------------------------------------------------------- *)
 (* Block *)
 (* ------------------------------------------------------------------------- *)
 
-  (* diff between block and text ? *)
-   and block = block_content list
-    and block_content =
-      | Block_P of attrs * text
-      | Div of attrs * body_content (* !! *)
-      | Blockquote of attrs * body_content (* ? why not block_content ? *)
-      | Center of attrs * body_content (* obsolete in html5 *)
-      | Form of attrs * form_content list
-      | Table of attrs * caption option * colgroup list * table_content list
-      | Pre of attrs * pre_content list
-      | Samp of attrs * text (* todo? right place ? *)
-      | Listing of attrs * literal_text
-      (* note: "the li_tag within the menu mayu not contain any element found
-       * in a block" *)
-      | Menu of attrs * li list
-      | Multicol of attrs * body_content
-      | Dl of attrs * dl_content list1
-      | Ul of attrs * li list1 | Ol of attrs * li list1
+(* diff between block and text ? *)
+and block = block_content list
+and block_content =
+  | Block_P of attrs * text
+  | Div of attrs * body_content (* !! *)
+  | Blockquote of attrs * body_content (* ? why not block_content ? *)
+  | Center of attrs * body_content (* obsolete in html5 *)
+  | Form of attrs * form_content list
+  | Table of attrs * caption option * colgroup list * table_content list
+  | Pre of attrs * pre_content list
+  | Samp of attrs * text (* todo? right place ? *)
+  | Listing of attrs * literal_text
+  (* note: "the li_tag within the menu mayu not contain any element found
+   * in a block" *)
+  | Menu of attrs * li list
+  | Multicol of attrs * body_content
+  | Dl of attrs * dl_content list1
+  | Ul of attrs * li list1 | Ol of attrs * li list1
 
-      | Block_Script of attrs * plain_text
+  | Block_Script of attrs * plain_text
 
-      (* ?? *)
-      | Block_IsIndex of attrs
-      | Basefont of attrs * body_content (* ?? *)
-      (* note: "the li_tag within the dir_tag may not contain any element
-       * found in a block" *)
-      | Dir of attrs * li list1
-      | Nobr of attrs * text
-      | Xmp of attrs * literal_text
+  (* ?? *)
+  | Block_IsIndex of attrs
+  | Basefont of attrs * body_content (* ?? *)
+  (* note: "the li_tag within the dir_tag may not contain any element
+   * found in a block" *)
+  | Dir of attrs * li list1
+  | Nobr of attrs * text
+  | Xmp of attrs * literal_text
 
 (* ------------------------------------------------------------------------- *)
 (* Text *)
 (* ------------------------------------------------------------------------- *)
 
-  and text = text_content list
-   and text_content =
-     | PlainText of plain_text
-     | PhysicalStyle of physical_style
-     | ContentStyle of content_style
-     | A of attrs * a_content list (* also in <pre> *)
-     | Br of attrs (* also in <pre> *)
-     | Img of attrs
-     | Iframe of attrs
-     | Embed of attrs | NoEmbed of attrs * text
-     | Applet of attrs * applet_content | Object of attrs * object_content
+and text = text_content list
+and text_content =
+  | PlainText of plain_text
+  | PhysicalStyle of physical_style
+  | ContentStyle of content_style
+  | A of attrs * a_content list (* also in <pre> *)
+  | Br of attrs (* also in <pre> *)
+  | Img of attrs
+  | Iframe of attrs
+  | Embed of attrs | NoEmbed of attrs * text
+  | Applet of attrs * applet_content | Object of attrs * object_content
 
-     (* ?? *)
-     | NoScript of attrs * text | Ilayer of attrs * body_content
-     | Spacer of attrs | Wbr of attrs
+  (* ?? *)
+  | NoScript of attrs * text | Ilayer of attrs * body_content
+  | Spacer of attrs | Wbr of attrs
 
-   and physical_style =
-    | B of attrs * text | I of attrs * text | Tt of attrs * text
-    | Big of attrs * text | Small of attrs * text
-    | Strike of attrs * text | S of attrs * text (* <=> strike, new browsers *)
-    | Blink of attrs * text | U of attrs * text
-    | Font of attrs * style_text
-    | Sub of attrs * text | Sup of attrs * text
-    | Span of attrs * text (* !! *)
+and physical_style =
+  | B of attrs * text | I of attrs * text | Tt of attrs * text
+  | Big of attrs * text | Small of attrs * text
+  | Strike of attrs * text | S of attrs * text (* <=> strike, new browsers *)
+  | Blink of attrs * text | U of attrs * text
+  | Font of attrs * style_text
+  | Sub of attrs * text | Sup of attrs * text
+  | Span of attrs * text (* !! *)
 
-    (* ?? *)
-    | Bdo of attrs * text
+  (* ?? *)
+  | Bdo of attrs * text
 
-   (* the difference with physical_style is subtle *)
-   and content_style =
-    | Em of  attrs * text | Strong of attrs * text
-    | Abbr of attrs * text | Acronym of attrs * text
-    | Cite of attrs * text
-    | Code of attrs * text
+(* the difference with physical_style is subtle *)
+and content_style =
+  | Em of  attrs * text | Strong of attrs * text
+  | Abbr of attrs * text | Acronym of attrs * text
+  | Cite of attrs * text
+  | Code of attrs * text
 
-    (* ?? *)
-    | Dfn of attrs * text | Kbd of attrs * text | Q of attrs * text
-    | Var of attrs * text
+  (* ?? *)
+  | Dfn of attrs * text | Kbd of attrs * text | Q of attrs * text
+  | Var of attrs * text
 
 (* ------------------------------------------------------------------------- *)
 (* Flow (Block or Text) *)
 (* ------------------------------------------------------------------------- *)
 
-   and flow = flow_content list
-    and flow_content =
-      | Flow_Block of block
-      | Flow_Text of text
+and flow = flow_content list
+and flow_content =
+  | Flow_Block of block
+  | Flow_Text of text
 
 (* ------------------------------------------------------------------------- *)
 (* Forms *)
 (* ------------------------------------------------------------------------- *)
-  (* note: "form_content nay not contain form_tags; you may not nest <form>" *)
-  and form_content =
-    | Form_Input of attrs (* lots of options here *)
-    | Form_Body of body_content
-    | Form_TextArea of attrs * plain_text
-    | Form_Select of attrs * select_content list
+(* note: "form_content nay not contain form_tags; you may not nest <form>" *)
+and form_content =
+  | Form_Input of attrs (* lots of options here *)
+  | Form_Body of body_content
+  | Form_TextArea of attrs * plain_text
+  | Form_Select of attrs * select_content list
 
-    | Fieldset of attrs * legend option * form_content list
-    | Label of attrs * label_content list
+  | Fieldset of attrs * legend option * form_content list
+  | Label of attrs * label_content list
 
-    (* ?? *)
-    | Keygen of attrs
+  (* ?? *)
+  | Keygen of attrs
 
-  (* note: "as with <form>, you cannot embed <form> or <label> in <label>" *)
-  (* factorize with form_content ? *)
-   and label_content =
-     | Label_Input of attrs
-     | Label_Body of body_content
-     | Label_TextArea of attrs * plain_text
-     | Label_Select of attrs * select_content list
+(* note: "as with <form>, you cannot embed <form> or <label> in <label>" *)
+(* factorize with form_content ? *)
+and label_content =
+  | Label_Input of attrs
+  | Label_Body of body_content
+  | Label_TextArea of attrs * plain_text
+  | Label_Select of attrs * select_content list
 
-   and select_content =
-     | OptGroup of attrs * option_tag list
-     | SelectOption of option_tag
-  and legend = Legend of attrs * text
+and select_content =
+  | OptGroup of attrs * option_tag list
+  | SelectOption of option_tag
+and legend = Legend of attrs * text
 
-  (* I call it option_tag and not option to not conflict with Common.option *)
-  and option_tag = Option of attrs * plain_text
+(* I call it option_tag and not option to not conflict with Common.option *)
+and option_tag = Option of attrs * plain_text
 
 (* ------------------------------------------------------------------------- *)
 (* Tables *)
 (* ------------------------------------------------------------------------- *)
-  and caption = Caption of attrs * body_content
+and caption = Caption of attrs * body_content
 
-  and colgroup =
-    | Colgroup of attrs
-    | ColgroupContent of colgroup_content list
-   and colgroup_content = Col of attrs
+and colgroup =
+  | Colgroup of attrs
+  | ColgroupContent of colgroup_content list
+and colgroup_content = Col of attrs
 
-  and table_content =
-    | THead of attrs | TFoot of attrs | TBody of attrs
-    | Tr of attrs * table_cell list
+and table_content =
+  | THead of attrs | TFoot of attrs | TBody of attrs
+  | Tr of attrs * table_cell list
 
-   and table_cell =
-     | Th of attrs * body_content
-     | Td of attrs * body_content
+and table_cell =
+  | Th of attrs * body_content
+  | Td of attrs * body_content
 
 
 (* ------------------------------------------------------------------------- *)
 (* Applets/Objects *)
 (* ------------------------------------------------------------------------- *)
 
-  and applet_content =
-    | Applet_Body of body_content
-    | AppletParams of param list
-  and object_content = applet_content
+and applet_content =
+  | Applet_Body of body_content
+  | AppletParams of param list
+and object_content = applet_content
 
-    and param = unit
+and param = unit
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
 (* ------------------------------------------------------------------------- *)
 
-  and li = Li of attrs * flow
+and li = Li of attrs * flow
 
-  and dl_content = dt * dd
-   and dt = Dt of attrs * text
-   and dd = Dd of attrs * flow
+and dl_content = dt * dd
+and dt = Dt of attrs * text
+and dd = Dd of attrs * flow
 
-  (* note: "a_content may not contain a_tags; you may not nest <a> tags" *)
-  and a_content =
-    | A_Heading of heading
-    | A_Text of text
+(* note: "a_content may not contain a_tags; you may not nest <a> tags" *)
+and a_content =
+  | A_Heading of heading
+  | A_Text of text
 
-  and pre_content =
-    | Pre_Br of attrs
-    | Pre_Hr of attrs
-    | Pre_A of attrs
-    | Pre_Text of style_text
+and pre_content =
+  | Pre_Br of attrs
+  | Pre_Hr of attrs
+  | Pre_A of attrs
+  | Pre_Text of style_text
 
-  and address_content =
-    | Address_P of attrs * text
-    | Address_Text of text
-  and area = unit
+and address_content =
+  | Address_P of attrs * text
+  | Address_Text of text
+and area = unit
 
 (* ------------------------------------------------------------------------- *)
 (* Helpers *)
 (* ------------------------------------------------------------------------- *)
 
- and attrs = (attr_name * attr_value) list
+and attrs = (attr_name * attr_value) list
 
- and plain_text = string wrap
- and style_text = string wrap
- and literal_text = string wrap
+and plain_text = string wrap
+and style_text = string wrap
+and literal_text = string wrap
 
- and 'a list1 = 'a * 'a list
+and 'a list1 = 'a * 'a list
 
-  (* with tarzan *)
+(* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* any *)
@@ -426,7 +426,7 @@ type any =
 let fakeInfo ?(next_to=None) ?(str="") () = {
   PI.token = PI.FakeTokStr (str, next_to);
   transfo = PI.NoTransfo;
-  }
+}
 
 let str_of_tag (Tag (s,_)) = s
 

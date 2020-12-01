@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -66,18 +66,18 @@ let rec find_next_synchro ~next ~already_passed =
   then find_next_synchro_define (last_round @ next) []
   else
 
-  let (before, after) =
-    last_round |> Common.span (fun tok ->
-      match tok with
-      (* by looking at TOBrace we are sure that the "start of something"
-       * will not arrive too early
-       *)
-      | T.TOBrace _ -> false
-      | T.TDefine _ -> false
-      | _ -> true
-    )
-  in
-  find_next_synchro_orig (after @ next)  (List.rev before)
+    let (before, after) =
+      last_round |> Common.span (fun tok ->
+        match tok with
+        (* by looking at TOBrace we are sure that the "start of something"
+         * will not arrive too early
+        *)
+        | T.TOBrace _ -> false
+        | T.TDefine _ -> false
+        | _ -> true
+      )
+    in
+    find_next_synchro_orig (after @ next)  (List.rev before)
 
 
 
@@ -105,30 +105,30 @@ and find_next_synchro_orig next already_passed =
       pr2_err (spf "found sync '}' at line %d" (PI.line_of_info i));
 
       (match xs with
-      | [] -> raise Impossible (* there is a EOF token normally *)
+       | [] -> raise Impossible (* there is a EOF token normally *)
 
-      (* still useful: now parser.mly allow empty ';' so normally no pb *)
-      | T.TPtVirg iptvirg::xs ->
-          pr2_err "found sync bis, eating } and ;";
-          (T.TPtVirg iptvirg)::v::already_passed, xs
+       (* still useful: now parser.mly allow empty ';' so normally no pb *)
+       | T.TPtVirg iptvirg::xs ->
+           pr2_err "found sync bis, eating } and ;";
+           (T.TPtVirg iptvirg)::v::already_passed, xs
 
-      | T.TIdent x::T.TPtVirg iptvirg::xs ->
-          pr2_err "found sync bis, eating ident, }, and ;";
-          (T.TPtVirg iptvirg)::(T.TIdent x)::v::already_passed,
-          xs
+       | T.TIdent x::T.TPtVirg iptvirg::xs ->
+           pr2_err "found sync bis, eating ident, }, and ;";
+           (T.TPtVirg iptvirg)::(T.TIdent x)::v::already_passed,
+           xs
 
-      | T.TCommentSpace sp::T.TIdent x::T.TPtVirg iptvirg
-        ::xs ->
-          pr2_err "found sync bis, eating ident, }, and ;";
-          (T.TCommentSpace sp)::
-            (T.TPtVirg iptvirg)::
-            (T.TIdent x)::
-            v::
-            already_passed,
-          xs
+       | T.TCommentSpace sp::T.TIdent x::T.TPtVirg iptvirg
+         ::xs ->
+           pr2_err "found sync bis, eating ident, }, and ;";
+           (T.TCommentSpace sp)::
+           (T.TPtVirg iptvirg)::
+           (T.TIdent x)::
+           v::
+           already_passed,
+           xs
 
-      | _ ->
-          v::already_passed, xs
+       | _ ->
+           v::already_passed, xs
       )
   | v::xs ->
       let info = TH.info_of_tok v in

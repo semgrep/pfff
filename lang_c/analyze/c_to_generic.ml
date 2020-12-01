@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = AST_generic
@@ -25,7 +25,7 @@ open Ast_c
 (* Ast_c to AST_generic.
  *
  * See ast_generic.ml for more information.
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -68,13 +68,13 @@ let rec unaryOp (a, tok) =
   | GetRef -> (fun e -> G.Ref (tok,e))
   | DeRef -> (fun e -> G.DeRef (tok, e))
   | UnPlus -> (fun e ->
-          G.Call (G.IdSpecial (G.Op G.Plus, tok), fb[G.Arg e]))
+    G.Call (G.IdSpecial (G.Op G.Plus, tok), fb[G.Arg e]))
   | UnMinus -> (fun e ->
-          G.Call (G.IdSpecial (G.Op G.Minus, tok), fb[G.Arg e]))
+    G.Call (G.IdSpecial (G.Op G.Minus, tok), fb[G.Arg e]))
   | Tilde -> (fun e ->
-          G.Call (G.IdSpecial (G.Op G.BitNot, tok), fb[G.Arg e]))
+    G.Call (G.IdSpecial (G.Op G.BitNot, tok), fb[G.Arg e]))
   | Not ->  (fun e ->
-          G.Call (G.IdSpecial (G.Op G.Not, tok), fb[G.Arg e]))
+    G.Call (G.IdSpecial (G.Op G.Not, tok), fb[G.Arg e]))
   | GetRefLabel -> (fun e -> G.OtherExpr (G.OE_GetRefLabel, [G.E e]))
 and assignOp =
   function
@@ -163,13 +163,13 @@ and expr =
   | Null v1 -> G.L (G.Null v1)
   | ConcatString xs ->
       G.Call (G.IdSpecial (G.ConcatString (G.SequenceConcat), fake " "),
-        fb (xs |> List.map (fun x -> G.Arg (G.L (G.String x)))))
+              fb (xs |> List.map (fun x -> G.Arg (G.L (G.String x)))))
   | Defined (t, id) ->
       let e = G.Id (id, G.empty_id_info()) in
       G.Call (G.IdSpecial (G.Defined, t), fb [G.Arg e])
 
   | Id v1 -> let v1 = name v1 in
-             G.Id (v1, G.empty_id_info())
+      G.Id (v1, G.empty_id_info())
   | Ellipses v1 -> let v1 = info v1 in G.Ellipsis v1
   | DeepEllipsis v1 -> let v1 = bracket (expr) v1 in G.DeepEllipsis v1
   | Call (v1, v2) -> let v1 = expr v1 and v2 = bracket (list argument) v2 in
@@ -180,8 +180,8 @@ and expr =
       and v3 = expr v3
       in
       (match v1 with
-      | Left tok -> G.Assign (v2, tok, v3)
-      | Right (op, tok) -> G.AssignOp (v2, (op, tok), v3)
+       | Left tok -> G.Assign (v2, tok, v3)
+       | Right (op, tok) -> G.AssignOp (v2, (op, tok), v3)
       )
   | ArrayAccess (v1, v2) -> let v1 = expr v1 and v2 = bracket expr v2 in
       G.ArrayAccess (v1, v2)
@@ -211,39 +211,39 @@ and expr =
       G.Seq [v1;v2]
   | SizeOf (t, v1) -> let v1 = either expr type_ v1 in
       G.Call (G.IdSpecial (G.Sizeof, t),
-       (match v1 with
-       | Left e -> fb[G.Arg e]
-       | Right t -> fb[G.ArgType t]
-       ))
+              (match v1 with
+               | Left e -> fb[G.Arg e]
+               | Right t -> fb[G.ArgType t]
+              ))
   | ArrayInit v1 ->
       let v1 =
         bracket (list
-          (fun (v1, v2) ->
-             let v1 = option expr v1 and v2 = expr v2 in
-             (match v1 with
-             | None -> v2
-             | Some e ->
-                  G.OtherExpr (G.OE_ArrayInitDesignator, [G.E e; G.E v2])
-            )
-        ))
+                   (fun (v1, v2) ->
+                      let v1 = option expr v1 and v2 = expr v2 in
+                      (match v1 with
+                       | None -> v2
+                       | Some e ->
+                           G.OtherExpr (G.OE_ArrayInitDesignator, [G.E e; G.E v2])
+                      )
+                   ))
           v1
       in G.Container (G.Array, v1)
   | RecordInit v1 ->
       let v1 =
         bracket (list (fun (v1, v2) -> let v1 = name v1 and v2 = expr v2 in
-            G.basic_field v1 (Some v2) None
-        ))
+                        G.basic_field v1 (Some v2) None
+                      ))
           v1
       in G.Record v1
   | GccConstructor (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.New, fake "new"),
-        fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
+              fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
 
 and argument v =
   match v with
   | Arg v  ->
-    let v = expr v in
-    G.Arg v
+      let v = expr v in
+      G.Arg v
 
 and const_expr v =
   expr v
@@ -298,12 +298,12 @@ and expr_or_vars v1 =
 (* todo: should use OtherStmtWithStmt really *)
 and case_stmt = function
   | Case (t, e, st) ->
-    let e = expr e in
-    let st = list stmt st in
-    G.OtherStmt (G.OS_Todo, [G.TodoK ("case", t); G.E e; G.Ss st])
+      let e = expr e in
+      let st = list stmt st in
+      G.OtherStmt (G.OS_Todo, [G.TodoK ("case", t); G.E e; G.Ss st])
   | Default (t, st) ->
-    let st = list stmt st in
-    G.OtherStmt (G.OS_Todo, [G.TodoK ("default", t); G.Ss st])
+      let st = list stmt st in
+      G.OtherStmt (G.OS_Todo, [G.TodoK ("default", t); G.Ss st])
 
 and case =
   function
@@ -313,11 +313,11 @@ and case =
       [G.Default t], G.stmt1 v1
 and
   var_decl {
-               v_name = xname;
-               v_type = xtype;
-               v_storage = xstorage;
-               v_init = init
-             } =
+    v_name = xname;
+    v_type = xtype;
+    v_storage = xstorage;
+    v_init = init
+  } =
   let v1 = name xname in
   let v2 = type_ xtype in
   let v3 = storage xstorage in
@@ -333,36 +333,36 @@ and storage = function
   | DefaultStorage -> []
 
 and func_def {
-                 f_name = f_name;
-                 f_type = f_type;
-                 f_body = f_body;
-                 f_static = f_static
-               } =
+  f_name = f_name;
+  f_type = f_type;
+  f_body = f_body;
+  f_static = f_static
+} =
   let v1 = name f_name in
   let (ret, params) = function_type f_type in
   let v3 = bracket (list stmt) f_body in
   let v4 = if f_static then [G.attr G.Static (fake "static")] else [] in
   let entity = G.basic_entity v1 v4 in
   entity, G.FuncDef { G.
-    fparams = params;
-    frettype = Some ret;
-    fbody = G.Block v3;
-    fkind = G.Function, G.fake "";
-    }
+                      fparams = params;
+                      frettype = Some ret;
+                      fbody = G.Block v3;
+                      fkind = G.Function, G.fake "";
+                    }
 
 and struct_def { s_name = s_name; s_kind = s_kind; s_flds = s_flds } =
   let v1 = name s_name in
   let v3 = bracket (list field_def) s_flds in
   let entity = G.basic_entity v1 [] in
   (match s_kind with
-  | Struct ->
-        let fields = bracket (List.map (fun (n, t) ->
-              G.basic_field n None (Some t))) v3 in
-        entity, G.TypeDef ({ G.tbody = G.AndType fields })
-  | Union ->
-        let ctors = v3 |> G.unbracket |> (List.map (fun (n, t) ->
-              G.OrUnion (n,t)))   in
-        entity, G.TypeDef ({ G.tbody = G.OrType ctors })
+   | Struct ->
+       let fields = bracket (List.map (fun (n, t) ->
+         G.basic_field n None (Some t))) v3 in
+       entity, G.TypeDef ({ G.tbody = G.AndType fields })
+   | Union ->
+       let ctors = v3 |> G.unbracket |> (List.map (fun (n, t) ->
+         G.OrUnion (n,t)))   in
+       entity, G.TypeDef ({ G.tbody = G.OrType ctors })
   )
 
 
@@ -400,9 +400,9 @@ and directive =
   | Include (t, v1) -> let v1 = wrap string v1 in
       G.DirectiveStmt (G.ImportAs (t, G.FileName v1, None))
   | Define (_t, v1, v2) ->
-    let v1 = name v1 and v2 = define_body v2 in
-    let ent = G.basic_entity v1 [] in
-    G.DefStmt (ent, G.MacroDef { G.macroparams = []; G.macrobody = v2})
+      let v1 = name v1 and v2 = define_body v2 in
+      let ent = G.basic_entity v1 [] in
+      G.DefStmt (ent, G.MacroDef { G.macroparams = []; G.macrobody = v2})
   | Macro (_t, v1, v2, v3) ->
       let v1 = name v1
       and v2 = list name v2
@@ -437,7 +437,7 @@ and definition = function
 let toplevel x = stmt x
 
 let program v =
- list toplevel v
+  list toplevel v
 
 let any =
   function

@@ -66,37 +66,37 @@ let main files_or_dirs =
     (* step2: visit the AST  *)
     let visitor = V.mk_visitor { V.default_visitor with
 
-      (* here is the relevant section of 'pfff -dump_php return_this.php'
-       *             [Method(
-       *                {f_tok=i_4; f_type=MethodRegular; f_attrs=None;
-       *                 f_modifiers=[(Public, i_5)]; f_ref=None;
-       *                 f_name=Name("getFoo", i_6); f_tparams=None;
-       *                 f_params=(i_7, [], i_8); f_return_type=None;
-       *                 f_body
-       *)
-      V.kfunc_def = (fun (k, _) def ->
-        (match def with
-        | {f_type = MethodRegular; f_name = Name(str, _); _ } ->
-          current_method := str;
-        | _ -> ();
-        );
-        (* call the continuation *)
-        k def;
-      );
+                                 (* here is the relevant section of 'pfff -dump_php return_this.php'
+                                  *             [Method(
+                                  *                {f_tok=i_4; f_type=MethodRegular; f_attrs=None;
+                                  *                 f_modifiers=[(Public, i_5)]; f_ref=None;
+                                  *                 f_name=Name("getFoo", i_6); f_tparams=None;
+                                  *                 f_params=(i_7, [], i_8); f_return_type=None;
+                                  *                 f_body
+                                 *)
+                                 V.kfunc_def = (fun (k, _) def ->
+                                   (match def with
+                                    | {f_type = MethodRegular; f_name = Name(str, _); _ } ->
+                                        current_method := str;
+                                    | _ -> ();
+                                   );
+                                   (* call the continuation *)
+                                   k def;
+                                 );
 
-      V.kstmt = (fun (k, _) st ->
-        match st with
-        (* here is the relevant section of 'pfff -dump_php return_this.php'
-         * f_body=(i_9, [Return(i_10, Some(This(i_11)), i_12)], i_13); })],
-         *)
-        | Return(i_10, Some(This(i_11)), i_12) ->
-          if !current_method =~ "get.*"
-          then
-            pr2 (spf "FOUND A MATCH in %s at %s" !current_method
-                    (PI.string_of_info i_10))
-        | _ -> k st
-      );
-    }
+                                 V.kstmt = (fun (k, _) st ->
+                                   match st with
+                                   (* here is the relevant section of 'pfff -dump_php return_this.php'
+                                    * f_body=(i_9, [Return(i_10, Some(This(i_11)), i_12)], i_13); })],
+                                   *)
+                                   | Return(i_10, Some(This(i_11)), i_12) ->
+                                       if !current_method =~ "get.*"
+                                       then
+                                         pr2 (spf "FOUND A MATCH in %s at %s" !current_method
+                                                (PI.string_of_info i_10))
+                                   | _ -> k st
+                                 );
+                               }
     in
     visitor (Program ast);
     ()

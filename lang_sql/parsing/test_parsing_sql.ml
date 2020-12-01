@@ -19,8 +19,8 @@ let test_tokens_sql file =
 
 (* ------------------------------------------------------------------------ *)
 let test_parse_sql file  =
-    let _x = Parse_sql.parse file in
-    ()
+  let _x = Parse_sql.parse file in
+  ()
 
 
 (* ------------------------------------------------------------------------ *)
@@ -49,11 +49,11 @@ let stress_parse_sql file =
 (* Main entry for Arg *)
 (*****************************************************************************)
 let actions () = [
-    "-lexer_sql", "   <file>",
-      Common.mk_action_1_arg test_tokens_sql;
-    "-parse_sql", "   <file>",
-    Common.mk_action_1_arg test_parse_sql;
-    "-stress_sql", "   <file>",
-    Common.mk_action_1_arg stress_parse_sql;
+  "-lexer_sql", "   <file>",
+  Common.mk_action_1_arg test_tokens_sql;
+  "-parse_sql", "   <file>",
+  Common.mk_action_1_arg test_parse_sql;
+  "-stress_sql", "   <file>",
+  Common.mk_action_1_arg stress_parse_sql;
 ]
 

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Parser_php
 module PI = Parse_info
@@ -58,7 +58,7 @@ let token_kind_of_tok t =
  * Indeed the ocamlyacc token  cant be a pair of a sum type, it must be
  * directly a sum type. Fortunately most of the code was generated via an
  * emacs macro working on the type definition of token in parser_php.mli
- *)
+*)
 
 let visitor_info_of_tok f = function
   | LDots ii -> LDots (f ii)

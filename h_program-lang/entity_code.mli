@@ -30,31 +30,31 @@ val string_of_entity_kind: entity_kind -> string
 val entity_kind_of_string: string -> entity_kind
 
 type property =
-   (* mostly for Function|Method kind, for codemap to highlight! *)
-   | ContainDynamicCall | ContainReflectionCall
+  (* mostly for Function|Method kind, for codemap to highlight! *)
+  | ContainDynamicCall | ContainReflectionCall
 
-   | TakeArgNByRef of int (* the argument position taken by ref *)
-   | UseGlobal of string
-   | ContainDeadStatements
+  | TakeArgNByRef of int (* the argument position taken by ref *)
+  | UseGlobal of string
+  | ContainDeadStatements
 
-   | DeadCode (* the function itself is dead, e.g. never called *)
-   | CodeCoverage of int list (* e.g. covered lines by unit tests *)
+  | DeadCode (* the function itself is dead, e.g. never called *)
+  | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
-   (* for class *)
-   | ClassKind of class_kind
+  (* for class *)
+  | ClassKind of class_kind
 
-   | Privacy of privacy
-   | Abstract | Final
-   | Static
+  | Privacy of privacy
+  | Abstract | Final
+  | Static
 
-   (* facebook specific: used for the xhp @required fields for now *)
-   | Required | Async
+  (* facebook specific: used for the xhp @required fields for now *)
+  | Required | Async
 
-  and privacy = Public | Protected | Private
-  and class_kind =
+and privacy = Public | Protected | Private
+and class_kind =
   | Struct | Class_ | Interface
   | Trait
   (* in Scala, Java, and now PHP enums are actually closer to class
    * than C enums.
-   *)
+  *)
   | Enum

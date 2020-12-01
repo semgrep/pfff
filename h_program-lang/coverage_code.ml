@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module J = JSON
@@ -43,8 +43,8 @@ module J = JSON
 (* relevant test files exercising source, with term-frequency of
  * file in the test *)
 type tests_coverage = (Common.filename, tests_score) Common.assoc
- and tests_score = (Common.filename * float) list
- (* with tarzan *)
+and tests_score = (Common.filename * float) list
+(* with tarzan *)
 
 (* Note that xdebug by default does not trace assignements but only
  * function and method calls, which mean the list of lines returned
@@ -56,13 +56,13 @@ type tests_coverage = (Common.filename, tests_score) Common.assoc
  * this type is actually independent of such design decision.
  * It's line-based though, so don't expect complex path coverage
  * or MCDC stuff. Just simple line coverage ...
- *)
+*)
 type lines_coverage = (Common.filename, file_lines_coverage) Common.assoc
- and file_lines_coverage = {
-   covered_sites: int list;
-   all_sites: int list;
- }
- (* with tarzan *)
+and file_lines_coverage = {
+  covered_sites: int list;
+  all_sites: int list;
+}
+(* with tarzan *)
 
 (*****************************************************************************)
 (* String of, json, etc *)
@@ -87,10 +87,10 @@ let (tests_coverage_of_json: J.t -> tests_coverage) = fun j ->
         | J.Array zs ->
             zs |> List.map (fun test_file_score_pair ->
               (match test_file_score_pair with
-              | J.Array [J.String test_file; J.String str_score] ->
-                  test_file, float_of_string str_score
+               | J.Array [J.String test_file; J.String str_score] ->
+                   test_file, float_of_string str_score
 
-              | _ -> failwith "Bad json, tests_coverage_of_json"
+               | _ -> failwith "Bad json, tests_coverage_of_json"
               )
             )
         | _ ->  failwith "Bad json, tests_coverage_of_json"
@@ -116,19 +116,19 @@ let (lines_coverage_of_json: J.t -> lines_coverage) = fun j ->
         file,
         match cover with
         | J.Object ([
-            "cov", J.Array covered_lines;
-            "all", J.Array call_sites;
-          ]) ->
+          "cov", J.Array covered_lines;
+          "all", J.Array call_sites;
+        ]) ->
             {
               covered_sites =
                 covered_lines |> List.map (function
-                | J.Int l -> l
-                | _ -> failwith "Bad json, files_coverage_of_json"
+                  | J.Int l -> l
+                  | _ -> failwith "Bad json, files_coverage_of_json"
                 );
               all_sites =
                 call_sites |> List.map (function
-                | J.Int l -> l
-                | _ -> failwith "Bad json, files_coverage_of_json"
+                  | J.Int l -> l
+                  | _ -> failwith "Bad json, files_coverage_of_json"
                 );
             }
         | _ ->  failwith "Bad json, files_coverage_of_json"
@@ -137,20 +137,20 @@ let (lines_coverage_of_json: J.t -> lines_coverage) = fun j ->
 
 
 let (save_tests_coverage: tests_coverage -> Common.filename -> unit) =
- fun cov file ->
-   cov |> json_of_tests_coverage |> (fun x -> J.string_of_json x)
-   |> Common.write_file ~file
+  fun cov file ->
+  cov |> json_of_tests_coverage |> (fun x -> J.string_of_json x)
+  |> Common.write_file ~file
 
 let (load_tests_coverage: Common.filename -> tests_coverage) =
- fun file ->
-   file |> J.load_json |> tests_coverage_of_json
+  fun file ->
+  file |> J.load_json |> tests_coverage_of_json
 
 
 let (save_lines_coverage: lines_coverage -> Common.filename -> unit) =
- fun cov file ->
-   cov |> json_of_lines_coverage |> (fun x -> J.string_of_json x)
-   |> Common.write_file ~file
+  fun cov file ->
+  cov |> json_of_lines_coverage |> (fun x -> J.string_of_json x)
+  |> Common.write_file ~file
 
 let (load_lines_coverage: Common.filename -> lines_coverage) =
- fun file ->
-   file |> J.load_json |> lines_coverage_of_json
+  fun file ->
+  file |> J.load_json |> lines_coverage_of_json

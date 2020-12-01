@@ -1,4 +1,4 @@
 class type t_item = object
-method sel : bool
+  method sel : bool
 end
 

@@ -6,7 +6,7 @@ type program_and_tokens =
 (* This is the main function. It may raise
  *  - Parse_info.Parsing_error if Flag_parsing.error_recovery is false
  *  - Parse_info.Lexical_error if Flag_parsing.exn_when_lexical_error is true.
- *)
+*)
 val parse:
   ?timeout: int ->
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)

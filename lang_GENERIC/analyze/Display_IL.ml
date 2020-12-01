@@ -2,14 +2,14 @@ open IL
 
 let string_of_lval x =
   (match x.base with
-  | Var n -> str_of_name n
-  | VarSpecial _ -> "<varspecial>"
-  | Mem  _ -> "<Mem>"
+   | Var n -> str_of_name n
+   | VarSpecial _ -> "<varspecial>"
+   | Mem  _ -> "<Mem>"
   ) ^
   (match x.offset with
-  | NoOffset -> ""
-  | Dot (s, _) -> "." ^ s
-  | Index _ -> "[...]"
+   | NoOffset -> ""
+   | Dot (s, _) -> "." ^ s
+   | Index _ -> "[...]"
   )
 
 let string_of_exp e =
@@ -32,11 +32,11 @@ let short_string_of_node_kind nkind =
   | NOther _ -> "<other>"
   | NInstr x ->
       (match x.i with
-      | Assign (lval, _) -> string_of_lval lval ^ " = ..."
-      | AssignAnon _ -> " ... = <lambda|class>"
-      | Call (_lopt, exp, _) ->
-            string_of_exp exp ^ "(...)"
-      | CallSpecial _ -> "<special>"
+       | Assign (lval, _) -> string_of_lval lval ^ " = ..."
+       | AssignAnon _ -> " ... = <lambda|class>"
+       | Call (_lopt, exp, _) ->
+           string_of_exp exp ^ "(...)"
+       | CallSpecial _ -> "<special>"
       )
 
 

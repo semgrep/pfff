@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -30,9 +30,9 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
       | s, E.GlobalExtern -> Some (s, E.Global)
       (* todo: actually should look at env.typedefs because it's not
        * necessaraly T_Xxxx -> S_Xxxx
-       *)
+      *)
       | s, E.Type when s =~ "T__\\(.*\\)$" ->
-        Some ("S__" ^(Common.matched1 s), E.Type)
+          Some ("S__" ^(Common.matched1 s), E.Type)
       | _ -> None
     in
     n_def_opt |> Common.do_option (fun n_def ->

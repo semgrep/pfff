@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -50,7 +50,7 @@ let gen_red_green_layer lines_coverage =
         try
           Common2.pourcent_good_bad
             (List.length covered) (List.length not_covered)
-       with Division_by_zero -> 0
+        with Division_by_zero -> 0
       in
       file,
       { Layer_code.
@@ -60,9 +60,9 @@ let gen_red_green_layer lines_coverage =
         ;
         macro_level = [
           (match percent with
-          | 0 -> "no_info"
-          | n when n < 50 -> "bad"
-          | _ -> "ok"
+           | 0 -> "no_info"
+           | n when n < 50 -> "bad"
+           | _ -> "ok"
           ),
           1.
         ];
@@ -86,7 +86,7 @@ let gen_heatmap_layer lines_coverage =
         try
           Common2.pourcent_good_bad
             (List.length covered) (List.length not_covered)
-       with Division_by_zero -> 0
+        with Division_by_zero -> 0
       in
 
       file,
@@ -97,7 +97,7 @@ let gen_heatmap_layer lines_coverage =
         ;
         macro_level = [
           (let percent_round = (percent / 10) * 10 in
-          spf "cover %d%%" percent_round
+           spf "cover %d%%" percent_round
           ),
           1.
         ];

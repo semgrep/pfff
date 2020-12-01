@@ -13,10 +13,10 @@ let test_parse_generic xs =
     match Lang.langs_of_filename file with
     | [] -> pr2 (spf "skipping %s" file)
     | _x::_xs ->
-       Error_code.try_with_print_exn_and_reraise file (fun () ->
-        let _ast = Parse_generic.parse_program file in
-        ()
-       )
+        Error_code.try_with_print_exn_and_reraise file (fun () ->
+          let _ast = Parse_generic.parse_program file in
+          ()
+        )
   )
 (*e: function [[Test_parsing_generic.test_parse_generic]] *)
 
@@ -39,12 +39,12 @@ let test_dump_pattern_generic file =
   match Lang.lang_of_string_opt !lang with
   | _ when !lang = "" -> failwith "use -lang"
   | Some lang ->
-     let s = Common.read_file file in
-     Error_code.try_with_print_exn_and_reraise file (fun () ->
-       let any = Parse_generic.parse_pattern lang s in
-       let s = AST_generic.show_any any in
+      let s = Common.read_file file in
+      Error_code.try_with_print_exn_and_reraise file (fun () ->
+        let any = Parse_generic.parse_pattern lang s in
+        let s = AST_generic.show_any any in
         pr2 s
-     )
+      )
   | None -> failwith (spf "unsupported language: %s" !lang)
 (*e: function [[Test_parsing_generic.test_dump_pattern_generic]] *)
 

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 [@@@warning "-42"]
 
 open Migrate_parsetree
@@ -31,7 +31,7 @@ open Location
  * alt:
  *  - my request for [@@deriving like for function definitions
  *    https://github.com/ocaml-ppx/ppxlib/issues/168#issuecomment-688748491
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -74,7 +74,7 @@ open Location
  *  (in my opinion it's not worth the complexity)
  *  - update to use ocaml-migrate-parsetree so portable ppx rewriter
  *   http://ocamllabs.io/projects/2017/02/15/ocaml-migrate-parsetree.html
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -97,7 +97,7 @@ let rec mk_args loc n =
   then []
   else
     let arg = "a" ^ string_of_int n in
-  (Nolabel, (Exp.ident {txt = Lident arg; loc}))::mk_args loc (n-1)
+    (Nolabel, (Exp.ident {txt = Lident arg; loc}))::mk_args loc (n-1)
 
 (* copy paste of pfff/lang_ml/module_ml.ml *)
 let module_name_of_filename s =
@@ -116,55 +116,55 @@ let mapper _config _cookies =
         (* let <fname> = ... [@@profiling <args_opt> *)
         | { pstr_desc =
               Pstr_value (_,
-                [{pvb_pat = {ppat_desc = Ppat_var {txt = fname; _}; _};
-                  pvb_expr = body;
-                  pvb_attributes = [
-                     { attr_name = {txt = "profiling"; loc};
-                       attr_payload = PStr args; attr_loc = _;
-                     }
-                   ];
-                  pvb_loc = _;
-                 }
-                ])
+                          [{pvb_pat = {ppat_desc = Ppat_var {txt = fname; _}; _};
+                            pvb_expr = body;
+                            pvb_attributes = [
+                              { attr_name = {txt = "profiling"; loc};
+                                attr_payload = PStr args; attr_loc = _;
+                              }
+                            ];
+                            pvb_loc = _;
+                           }
+                          ])
           ; _} ->
-          let nbparams = nb_parameters body in
-          (* you can change the action name by specifying an explicit name
-           * with [@@profiling "<explicit_name>"]
-           *)
-          let action_name =
-            match args with
-            | [] ->
-              let pos = loc.Location.loc_start in
-              let file = pos.Lexing.pos_fname in
-              let m = module_name_of_filename file in
-              m ^ "." ^ fname
-            | [{pstr_desc =
-                Pstr_eval
-                  ({pexp_desc = Pexp_constant (Pconst_string (name, None));_},
-                   _); _}] -> name
-            | _ ->
-              raise (Location.Error (
-                Location.error ~loc
-                  "@@profiling accepts nothing or a string"))
-          in
-          (* let <fname> a b = Common.profile_code <action_name> (fun () ->
-           *         <fname> a b)
-           *)
-          let item2 =
-            Str.value Nonrecursive [
-              Vb.mk (Pat.var {txt = fname; loc})
-              (mk_params loc nbparams
-              (Exp.apply
-                 (Exp.ident
-                    {txt = Ldot (Lident "Common", "profile_code" ); loc})
-                 [Nolabel, Exp.constant (Pconst_string (action_name, None));
-                  Nolabel, Exp.fun_ Nolabel None (Pat.any ())
-                       (Exp.apply (Exp.ident {txt = Lident fname; loc})
-                          (mk_args loc nbparams))
-                 ]))
-           ]
-          in
-          [ item; item2]
+            let nbparams = nb_parameters body in
+            (* you can change the action name by specifying an explicit name
+             * with [@@profiling "<explicit_name>"]
+            *)
+            let action_name =
+              match args with
+              | [] ->
+                  let pos = loc.Location.loc_start in
+                  let file = pos.Lexing.pos_fname in
+                  let m = module_name_of_filename file in
+                  m ^ "." ^ fname
+              | [{pstr_desc =
+                    Pstr_eval
+                      ({pexp_desc = Pexp_constant (Pconst_string (name, None));_},
+                       _); _}] -> name
+              | _ ->
+                  raise (Location.Error (
+                    Location.error ~loc
+                      "@@profiling accepts nothing or a string"))
+            in
+            (* let <fname> a b = Common.profile_code <action_name> (fun () ->
+             *         <fname> a b)
+            *)
+            let item2 =
+              Str.value Nonrecursive [
+                Vb.mk (Pat.var {txt = fname; loc})
+                  (mk_params loc nbparams
+                     (Exp.apply
+                        (Exp.ident
+                           {txt = Ldot (Lident "Common", "profile_code" ); loc})
+                        [Nolabel, Exp.constant (Pconst_string (action_name, None));
+                         Nolabel, Exp.fun_ Nolabel None (Pat.any ())
+                           (Exp.apply (Exp.ident {txt = Lident fname; loc})
+                              (mk_args loc nbparams))
+                        ]))
+              ]
+            in
+            [ item; item2]
         | x -> [default_mapper.structure_item mapper x]
       ) |> List.concat
   }

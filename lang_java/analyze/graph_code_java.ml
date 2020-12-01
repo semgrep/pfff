@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -87,19 +87,19 @@ type env = {
    *
    * The boolean final is because such locals/parameters should be
    * passed to anonymouse classes.
-   *)
+  *)
   params_or_locals: (string * bool (* is_final *)) list;
   (* To avoid looking up type parameters in the graph. *)
   type_parameters: string list;
 }
 
-  (* We need 3 phases, one to get all the definitions, one to
-   * get the inheritance information, and one to get all the Uses.
-   * The inheritance is a kind of use, but certain uses like using
-   * a field needs the full inheritance tree to already be computed
-   * as we may need to lookup entities up in the parents.
-   *)
-  and phase = Defs | Inheritance | Uses
+(* We need 3 phases, one to get all the definitions, one to
+ * get the inheritance information, and one to get all the Uses.
+ * The inheritance is a kind of use, but certain uses like using
+ * a field needs the full inheritance tree to already be computed
+ * as we may need to lookup entities up in the parents.
+*)
+and phase = Defs | Inheritance | Uses
 
 (*****************************************************************************)
 (* Helpers *)
@@ -113,7 +113,7 @@ let parse ~show_parse_error file =
   | exn ->
       if show_parse_error
       then pr2_once (spf "PARSE ERROR with %s, exn = %s" file
-                        (Common.exn_to_s exn));
+                       (Common.exn_to_s exn));
       []
 
 
@@ -122,7 +122,7 @@ let str_of_qualified_ident xs =
 
 let str_of_name xs =
   xs |> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) |>
-    Common.join "."
+  Common.join "."
 
 let unbracket (_, x, _) = x
 
@@ -184,42 +184,42 @@ let add_use_edge env (name, kind) =
   let src = env.current in
   let dst = (name, kind) in
   (match () with
-  | _ when not (G.has_node src env.g) ->
-      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
+   | _ when not (G.has_node src env.g) ->
+       pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
               (G.string_of_node src) (G.string_of_node dst));
 
-  | _ when G.has_node dst env.g ->
-      G.add_edge (src, dst) G.Use env.g
+   | _ when G.has_node dst env.g ->
+       G.add_edge (src, dst) G.Use env.g
 
-  | _ ->
-      (match kind with
-      | _ ->
-          let kind_original = kind in
-          let dst = (name, kind_original) in
-          let parent_target = G.not_found in
-          (match kind_original with
-          | E.Package ->
-              let fake_package =
-                (Common.split "\\." name) |> List.map (fun s -> s^"2") in
-              let dst = (Common.join "." fake_package, kind_original) in
-              if not (G.has_node dst env.g)
-              then begin
-                create_intermediate_packages_if_not_present
-                  env.g parent_target
-                  (fake_package |> List.map (fun s -> s,()));
-                pr2 (spf "PB: lookup fail on %s (in %s)"
+   | _ ->
+       (match kind with
+        | _ ->
+            let kind_original = kind in
+            let dst = (name, kind_original) in
+            let parent_target = G.not_found in
+            (match kind_original with
+             | E.Package ->
+                 let fake_package =
+                   (Common.split "\\." name) |> List.map (fun s -> s^"2") in
+                 let dst = (Common.join "." fake_package, kind_original) in
+                 if not (G.has_node dst env.g)
+                 then begin
+                   create_intermediate_packages_if_not_present
+                     env.g parent_target
+                     (fake_package |> List.map (fun s -> s,()));
+                   pr2 (spf "PB: lookup fail on %s (in %s)"
+                          (G.string_of_node dst) (G.string_of_node src));
+                 end;
+                 env.g |> G.add_edge (src, dst) G.Use;
+                 ()
+             | _ ->
+                 pr2 (spf "PB: lookup fail on %s (in %s)"
                         (G.string_of_node dst) (G.string_of_node src));
-              end;
-              env.g |> G.add_edge (src, dst) G.Use;
-              ()
-          | _ ->
-              pr2 (spf "PB: lookup fail on %s (in %s)"
-                      (G.string_of_node dst) (G.string_of_node src));
-              G.add_node dst env.g;
-              env.g |> G.add_edge (parent_target, dst) G.Has;
-              env.g |> G.add_edge (src, dst) G.Use;
-          )
-      )
+                 G.add_node dst env.g;
+                 env.g |> G.add_edge (parent_target, dst) G.Has;
+                 env.g |> G.add_edge (src, dst) G.Use;
+            )
+       )
   )
 
 (*****************************************************************************)
@@ -242,7 +242,7 @@ let lookup_fully_qualified_memoized env x =
  * in which case we unsugar by preprending the package name.
  * Note that extending a class also imports its namespace (and
  * of all its parents too), hence import_of_inherited_classes below.
- *)
+*)
 let with_full_qualifier env xs =
   env.imported_namespace |> List.map (fun (qualified_ident) ->
     let rev = List.rev qualified_ident in
@@ -261,9 +261,9 @@ let with_full_qualifier env xs =
  * packages or in global scope. Return fully qualified entity.
  *
  * Note that the code graph store nodes in fully qualified form.
- *)
+*)
 let (lookup2: env -> Ast.qualified_ident -> Graph_code.node option) =
- fun env xs ->
+  fun env xs ->
   let candidates = with_full_qualifier env xs in
   (* pr2_gen candidates; *)
   candidates |> Common.find_some_opt (fun full_qualifier ->
@@ -275,12 +275,12 @@ let lookup a b =
 
 (* pre: the Inheritance phase must have been done already
  * otherwise parents_inheritance can be empty or incomplete.
- *)
+*)
 let rec import_of_inherited_classes env n =
   (* A class should Use only entities its extends or implements.
    * less: could filter out interface but needs them to store
    * then as E.Class E.Interface
-   *)
+  *)
   let parents_inheritance = G.succ n G.Use env.g in
   parents_inheritance |> Common.map_filter (fun (str, kind) ->
     match kind with
@@ -296,7 +296,7 @@ let rec import_of_inherited_classes env n =
 (*****************************************************************************)
 (* Note that there is no ~dupe argument. Java code uses packages and
  * fully qualified entities so there should be no name conflicts.
- *)
+*)
 let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
   ignore(lookup_fails);
 
@@ -304,36 +304,36 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     g; phase;
 
     current =
-     (match ast with
-     | (DirectiveStmt (Package (_, long_ident, _)))::_ ->
-            (str_of_qualified_ident long_ident, E.Package)
-     | _ ->            (readable, E.File)
-     );
+      (match ast with
+       | (DirectiveStmt (Package (_, long_ident, _)))::_ ->
+           (str_of_qualified_ident long_ident, E.Package)
+       | _ ->            (readable, E.File)
+      );
     current_qualifier =
       (match ast with
-      | (DirectiveStmt (Package (_, long_ident, _)))::_ -> long_ident
-      | _ -> []
+       | (DirectiveStmt (Package (_, long_ident, _)))::_ -> long_ident
+       | _ -> []
       );
     params_or_locals = [];
     type_parameters = [];
     imported_namespace =
       (match ast with
-      (* we automatically import the current.package.* *)
-      | (DirectiveStmt (Package (_, long_ident,_ )))::_ ->
-            [List.map Ast.unwrap long_ident @ ["*"]]
-      | _ -> []
+       (* we automatically import the current.package.* *)
+       | (DirectiveStmt (Package (_, long_ident,_ )))::_ ->
+           [List.map Ast.unwrap long_ident @ ["*"]]
+       | _ -> []
       ) @
-     ((ast |> Common.map_filter (function
-        | DirectiveStmt (Import (_is_static, _import)) ->
-       (* List.map Ast.unwrap qualified_ident *) raise Todo
-        | _ -> None
+      ((ast |> Common.map_filter (function
+         | DirectiveStmt (Import (_is_static, _import)) ->
+             (* List.map Ast.unwrap qualified_ident *) raise Todo
+         | _ -> None
        )) @ [
-       (* we automatically import java.lang.* *)
-       ["java";"lang";"*"];
-       (* we automatically import top packages *)
-       ["*"]
-     ]
-     );
+         (* we automatically import java.lang.* *)
+         ["java";"lang";"*"];
+         (* we automatically import top packages *)
+         ["*"]
+       ]
+      );
     imported_qualified = ast |> Common.map_filter (function
       | DirectiveStmt (Import (_is_static, _import)) ->
           raise Todo
@@ -352,7 +352,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     match ast with
     | (DirectiveStmt (Package (_, long_ident, _)))::_ ->
         create_intermediate_packages_if_not_present g G.root long_ident;
-    (* have None usually for scripts, tests, or entry points *)
+        (* have None usually for scripts, tests, or entry points *)
     | _ ->
         let dir = Common2.dirname readable in
         G.create_intermediate_directories_if_not_present g dir;
@@ -362,11 +362,11 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
   (* double check if we can find some of the imports
    * (especially useful when have a better java_stdlib/ to report
    * third-party packages not-yet handled).
-   *)
+  *)
   if phase = Inheritance then begin
     ast |> List.iter (function
       | DirectiveStmt (Import (_is_static, _import)) ->
-      let qualified_ident_bis =
+          let qualified_ident_bis =
             raise Todo
       (*
         match List.rev qualified_ident with
@@ -375,20 +375,20 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
         | _x::xs when is_static -> List.rev xs
         | _ -> qualified_ident
       *)
-      in
-      let entity = List.map Ast.unwrap qualified_ident_bis in
-      (match lookup_fully_qualified_memoized env entity with
-      | Some _ ->
-        (* no need add_use_edge here, it will be done later when
-         * one use the entity
-         * less: could be used to detect useless import
-         *)
-         ()
-      | None ->
-        pr2_once (spf "PB: wrong import: %s"
-                    (str_of_qualified_ident qualified_ident_bis))
-      )
-    | _ -> ()
+          in
+          let entity = List.map Ast.unwrap qualified_ident_bis in
+          (match lookup_fully_qualified_memoized env entity with
+           | Some _ ->
+               (* no need add_use_edge here, it will be done later when
+                * one use the entity
+                * less: could be used to detect useless import
+               *)
+               ()
+           | None ->
+               pr2_once (spf "PB: wrong import: %s"
+                           (str_of_qualified_ident qualified_ident_bis))
+          )
+      | _ -> ()
     );
   end;
 
@@ -396,7 +396,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * also just qualify the classname or static method so we need
    * to visit the AST and lookup classnames (possibly using information
    * from the import to know where to look for first).
-   *)
+  *)
   stmts env ast
 
 (* ---------------------------------------------------------------------- *)
@@ -418,9 +418,9 @@ and decl env = function
         env.g |> G.add_edge (env.current, node) G.Has;
       end;
       let env = { env with
-        current = node;
-        current_qualifier = full_ident;
-      }
+                  current = node;
+                  current_qualifier = full_ident;
+                }
       in
       stmt env st
   | EmptyDecl _, _ -> ()
@@ -439,14 +439,14 @@ and class_decl env def =
     env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
-    current = node;
-    current_qualifier = full_ident;
-    (* with anon classes we need to lookup enclosing final parameters/locals *)
-    params_or_locals = env.params_or_locals |> List.filter (fun (_x,b) -> b);
-    type_parameters = def.cl_tparams |> List.map (function
-    | TParam ((str,_tok), _constraints) -> str
-    );
-  }
+              current = node;
+              current_qualifier = full_ident;
+              (* with anon classes we need to lookup enclosing final parameters/locals *)
+              params_or_locals = env.params_or_locals |> List.filter (fun (_x,b) -> b);
+              type_parameters = def.cl_tparams |> List.map (function
+                | TParam ((str,_tok), _constraints) -> str
+              );
+            }
   in
   let parents =
     Common2.option_to_list def.cl_extends @
@@ -457,21 +457,21 @@ and class_decl env def =
   let imports =
     if env.phase = Defs then []
     else
-    (* Java allows programmer to use fields without qualifying them
-     * (without a class.xxx, or this.xxx) so we need to unsugar this
-     * by prepending the full current classname. We can just
-     * generate a fake import package.classname.*. This will also
-     * allow nested classes to access siblings.
-     *)
-     (List.map Ast.unwrap full_ident @ ["*"]) ::
-    import_of_inherited_classes env (full_str, E.Class)
+      (* Java allows programmer to use fields without qualifying them
+       * (without a class.xxx, or this.xxx) so we need to unsugar this
+       * by prepending the full current classname. We can just
+       * generate a fake import package.classname.*. This will also
+       * allow nested classes to access siblings.
+      *)
+      (List.map Ast.unwrap full_ident @ ["*"]) ::
+      import_of_inherited_classes env (full_str, E.Class)
   in
   decls {env with imported_namespace = imports @ env.imported_namespace }
     (unbracket def.cl_body)
 
 (* Java allow some forms of overloading, so the same method name can be
  * used multiple times.
- *)
+*)
 and method_decl env def =
 
   let full_ident = env.current_qualifier @ [def.m_var.name] in
@@ -489,31 +489,31 @@ and method_decl env def =
     end
   end;
   let env = { env with
-    current = node;
-    (* No change to the qualifier? methods are not a namespace?
-     * Hmm but can have nested classes inside a methods that
-     * share the same name so yes need full_ident as a qualifier.
-    *)
-    current_qualifier = full_ident;
-    params_or_locals =
-      (def.m_formals |> Common.map_filter (function
-             | ParamClassic p | ParamReceiver p | ParamSpread (_, p) -> Some p
-             | ParamEllipsis _ -> None)
-                     |> List.map p_or_l)
-      @
-     (* with methods of anon classes we need to lookup enclosing
-      * final parameters/locals
-      *)
-     (env.params_or_locals |> List.filter (fun (_x,b) -> b));
+              current = node;
+              (* No change to the qualifier? methods are not a namespace?
+               * Hmm but can have nested classes inside a methods that
+               * share the same name so yes need full_ident as a qualifier.
+              *)
+              current_qualifier = full_ident;
+              params_or_locals =
+                (def.m_formals |> Common.map_filter (function
+                   | ParamClassic p | ParamReceiver p | ParamSpread (_, p) -> Some p
+                   | ParamEllipsis _ -> None)
+                 |> List.map p_or_l)
+                @
+                (* with methods of anon classes we need to lookup enclosing
+                 * final parameters/locals
+                *)
+                (env.params_or_locals |> List.filter (fun (_x,b) -> b));
 
-    (* TODO use m_tparams *)
-    type_parameters = [];
-  }
+              (* TODO use m_tparams *)
+              type_parameters = [];
+            }
   in
   var env def.m_var;
   def.m_formals |> List.iter (function
-      | ParamEllipsis _ -> ()
-      | ParamClassic v | ParamReceiver v | ParamSpread (_, v) -> var env v
+    | ParamEllipsis _ -> ()
+    | ParamClassic v | ParamReceiver v | ParamSpread (_, v) -> var env v
   );
   (* todo: m_throws *)
   stmt env def.m_body
@@ -534,16 +534,16 @@ and field_decl env def =
     env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
-    current = node;
-    current_qualifier = env.current_qualifier
-  }
+              current = node;
+              current_qualifier = env.current_qualifier
+            }
   in
   field env def
 
 and enum_decl env def =
   let full_ident = env.current_qualifier @ [def.en_name] in
   let full_str = str_of_qualified_ident full_ident in
-    (* less: make it a class? or a Type? *)
+  (* less: make it a class? or a Type? *)
   let node = (full_str, E.Class) in
   if env.phase = Defs then begin
     env.g |> G.add_node node;
@@ -551,12 +551,12 @@ and enum_decl env def =
     env.g |> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
-    current = node;
-    current_qualifier = full_ident;
-    params_or_locals = [];
-    (* TODO *)
-    type_parameters = [];
-  }
+              current = node;
+              current_qualifier = full_ident;
+              params_or_locals = [];
+              (* TODO *)
+              type_parameters = [];
+            }
   in
   let parents = (def.en_impls) in
   List.iter (typ env) parents;
@@ -573,9 +573,9 @@ and enum_decl env def =
       env.g |> G.add_edge (env.current, node) G.Has;
     end;
     let env = { env with
-      current = node;
-      current_qualifier = full_ident;
-    }
+                current = node;
+                current_qualifier = full_ident;
+              }
     in
     args_opt |> Common.do_option (fun (_, xs, _) -> exprs env xs);
     body_opt |> Common.do_option (fun (_, xs, _) -> decls env xs);
@@ -616,26 +616,26 @@ and stmt env = function
 
         | ForClassic (init, es1, es2) ->
             (match init with
-            | ForInitExprs es0 ->
-                exprs env (es0 @ es1 @ es2);
-                env
-            | ForInitVars xs ->
-                List.iter (field env) xs;
-                let env = { env with
-                  params_or_locals =
-                    (xs |> List.map (fun fld -> p_or_l fld.f_var)
-                    ) @ env.params_or_locals;
-                }
-                in
-                exprs env (es1 @ es2);
-                env
+             | ForInitExprs es0 ->
+                 exprs env (es0 @ es1 @ es2);
+                 env
+             | ForInitVars xs ->
+                 List.iter (field env) xs;
+                 let env = { env with
+                             params_or_locals =
+                               (xs |> List.map (fun fld -> p_or_l fld.f_var)
+                               ) @ env.params_or_locals;
+                           }
+                 in
+                 exprs env (es1 @ es2);
+                 env
             )
       in
       stmt env st;
 
-  (* could have an entity and dependency ... but it's intra procedural
-   * so not that useful
-   *)
+      (* could have an entity and dependency ... but it's intra procedural
+       * so not that useful
+      *)
   | Label (_id, st) -> stmt env st
   | Break (_, _idopt) | Continue (_, _idopt) -> ()
   | Return (_, eopt) -> exprs env (Common2.option_to_list eopt)
@@ -691,39 +691,39 @@ and expr env = function
       if env.phase = Uses then begin
         let str = str_of_name n in
         (match str, n with
-        (* TODO: look at the type and continue lookup *)
-        | _, (_,(s,_))::_rest when List.mem_assoc s env.params_or_locals -> ()
-        (* TODO *)
-        | "super", _ | "this", _ ->
-            ()
-        | _ ->
-            (match lookup env (long_ident_of_name n) with
-            | Some n2 ->
-                add_use_edge env n2
-            | None ->
-                (match n with
-                | [] ->
-                    pr2 "Name is empty??";
-                    pr2_gen (env.current, n);
-                    raise Impossible
-                | (_, (s,_))::_ when List.mem_assoc s env.imported_qualified ->
-                    let (_is_static, full_ident) =
-                      List.assoc s env.imported_qualified in
-                    let str = str_of_qualified_ident full_ident in
-                    add_use_edge env (str, E.Package)
+         (* TODO: look at the type and continue lookup *)
+         | _, (_,(s,_))::_rest when List.mem_assoc s env.params_or_locals -> ()
+         (* TODO *)
+         | "super", _ | "this", _ ->
+             ()
+         | _ ->
+             (match lookup env (long_ident_of_name n) with
+              | Some n2 ->
+                  add_use_edge env n2
+              | None ->
+                  (match n with
+                   | [] ->
+                       pr2 "Name is empty??";
+                       pr2_gen (env.current, n);
+                       raise Impossible
+                   | (_, (s,_))::_ when List.mem_assoc s env.imported_qualified ->
+                       let (_is_static, full_ident) =
+                         List.assoc s env.imported_qualified in
+                       let str = str_of_qualified_ident full_ident in
+                       add_use_edge env (str, E.Package)
 
-                | [_x] when looks_like_enum_constant str ->
-                    pr2 ("PB: " ^ Common.dump n);
-                | [_x] when looks_like_class_name str ->
-                    add_use_edge env (str, E.Package)
-                | [_x] ->
-                    pr2 ("PB: " ^ Common.dump n);
-                    (* env.imported_namespace +> List.iter pr2_gen; *)
-                | _x::_y::_xs ->
-                    (* unknown package probably *)
-                    add_use_edge env (str, E.Package)
-                )
-            )
+                   | [_x] when looks_like_enum_constant str ->
+                       pr2 ("PB: " ^ Common.dump n);
+                   | [_x] when looks_like_class_name str ->
+                       add_use_edge env (str, E.Package)
+                   | [_x] ->
+                       pr2 ("PB: " ^ Common.dump n);
+                       (* env.imported_namespace +> List.iter pr2_gen; *)
+                   | _x::_y::_xs ->
+                       (* unknown package probably *)
+                       add_use_edge env (str, E.Package)
+                  )
+             )
         )
       end
   | NameOrClassType _ -> ()
@@ -734,24 +734,24 @@ and expr env = function
       typ env t;
       exprs env args;
       (match decls_opt with
-      | None -> ()
-      | Some xs ->
-        (* less: quite similar to class_decl, factorize code? *)
-          let classname, info  = classname_and_info_of_typ t in
-          let charpos = PI.pos_of_info info in
-          let anon_class = spf "__anon__%s__%d" classname charpos in
-          let cdecl = {
-            cl_name = (anon_class, info);
-            cl_extends = Some t;
-            cl_impls = [];
-            cl_kind = (ClassRegular, tok) ;
-            cl_body = xs;
-            (* ?? *)
-            cl_tparams = [];
-            cl_mods = [];
-          }
-          in
-          class_decl env cdecl
+       | None -> ()
+       | Some xs ->
+           (* less: quite similar to class_decl, factorize code? *)
+           let classname, info  = classname_and_info_of_typ t in
+           let charpos = PI.pos_of_info info in
+           let anon_class = spf "__anon__%s__%d" classname charpos in
+           let cdecl = {
+             cl_name = (anon_class, info);
+             cl_extends = Some t;
+             cl_impls = [];
+             cl_kind = (ClassRegular, tok) ;
+             cl_body = xs;
+             (* ?? *)
+             cl_tparams = [];
+             cl_mods = [];
+           }
+           in
+           class_decl env cdecl
       )
   | NewQualifiedClass (_e, _t1, tok, ty, (args), decls_opt) ->
       (*
@@ -774,7 +774,7 @@ and expr env = function
        * if e is a Name, lookup it, and if a class then
        * lookup children. If local ... then need get its type
        * lookup its node, and then lookup children.
-       *)
+      *)
       expr env e;
 
   | ArrayAccess (e1, (_, e2, _)) -> exprs env [e1;e2]
@@ -818,33 +818,33 @@ and typ env = function
       let str = str_of_qualified_ident xs in
       if env.phase = Uses || env.phase = Inheritance then begin
         (match str, reft with
-        (* TODO: look at the type and continue lookup *)
-        | _, (((s,_),_))::_rest when List.mem s env.type_parameters -> ()
-        | _ ->
-            (match lookup env xs with
-            (* TODO: look in type_params_local ! *)
-            | Some n2 ->
-                (* pr2 ("FOUND: " ^ Common.dump n); *)
-                add_use_edge env n2
-            | None ->
-                (match xs with
-                | [] -> raise Impossible
-                | (s,_)::_ when List.mem_assoc s env.imported_qualified ->
-                    let (_is_static, full_ident) =
-                      List.assoc s env.imported_qualified in
-                    let str = str_of_qualified_ident full_ident in
-                    add_use_edge env (str, E.Package)
+         (* TODO: look at the type and continue lookup *)
+         | _, (((s,_),_))::_rest when List.mem s env.type_parameters -> ()
+         | _ ->
+             (match lookup env xs with
+              (* TODO: look in type_params_local ! *)
+              | Some n2 ->
+                  (* pr2 ("FOUND: " ^ Common.dump n); *)
+                  add_use_edge env n2
+              | None ->
+                  (match xs with
+                   | [] -> raise Impossible
+                   | (s,_)::_ when List.mem_assoc s env.imported_qualified ->
+                       let (_is_static, full_ident) =
+                         List.assoc s env.imported_qualified in
+                       let str = str_of_qualified_ident full_ident in
+                       add_use_edge env (str, E.Package)
 
-                | [_x] ->
-                    if looks_like_class_name str
-                    then add_use_edge env (str, E.Package)
-                    else
-                      pr2 ("PB: " ^ Common.dump reft);
-                | _x::_y::_xs ->
-                    (* unknown package probably *)
-                    add_use_edge env (str, E.Package)
-                )
-            )
+                   | [_x] ->
+                       if looks_like_class_name str
+                       then add_use_edge env (str, E.Package)
+                       else
+                         pr2 ("PB: " ^ Common.dump reft);
+                   | _x::_y::_xs ->
+                       (* unknown package probably *)
+                       add_use_edge env (str, E.Package)
+                  )
+             )
         )
       end
 
@@ -877,28 +877,28 @@ let build ?(verbose=true) ?(only_defs=false) root files =
       k();
       let readable = Common.readable ~root file in
       let ast = parse ~show_parse_error:true file in
-     extract_defs_uses ~phase:Defs ~g ~ast ~readable ~lookup_fails;
+      extract_defs_uses ~phase:Defs ~g ~ast ~readable ~lookup_fails;
     ));
   if not only_defs then begin
 
-  (* step2: creating the 'Use' edges just for inheritance *)
-  if verbose then pr2 "\nstep2: extract inheritance information";
-  files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-     k();
-     let readable = Common.readable ~root file in
-     let ast = parse ~show_parse_error:false file in
-     extract_defs_uses ~phase:Inheritance ~g ~ast ~readable ~lookup_fails;
-   ));
+    (* step2: creating the 'Use' edges just for inheritance *)
+    if verbose then pr2 "\nstep2: extract inheritance information";
+    files |> Console.progress ~show:verbose (fun k ->
+      List.iter (fun file ->
+        k();
+        let readable = Common.readable ~root file in
+        let ast = parse ~show_parse_error:false file in
+        extract_defs_uses ~phase:Inheritance ~g ~ast ~readable ~lookup_fails;
+      ));
 
-  (* step3: creating the 'Use' edges that can rely on recursive inheritance *)
-  if verbose then pr2 "\nstep3: extract uses";
-  files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-     k();
-     let readable = Common.readable ~root file in
-     let ast = parse ~show_parse_error:false file in
-     extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
-   ));
+    (* step3: creating the 'Use' edges that can rely on recursive inheritance *)
+    if verbose then pr2 "\nstep3: extract uses";
+    files |> Console.progress ~show:verbose (fun k ->
+      List.iter (fun file ->
+        k();
+        let readable = Common.readable ~root file in
+        let ast = parse ~show_parse_error:false file in
+        extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
+      ));
   end;
   g

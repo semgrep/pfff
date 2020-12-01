@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,7 +29,7 @@
 (* todo? could use open polymorphic variant for that ? the scoping will
  * be differerent for each language but they will also have stuff
  * in common which may be a good spot for open polymorphic variant.
- *)
+*)
 type t =
   | Global
   | Local
@@ -45,7 +45,7 @@ type t =
   | ListBinded
   (* closure, could be same as Local, but can be good to visually
    * differentiate them in codemap
-   *)
+  *)
   | Closed
 
   | NoScope

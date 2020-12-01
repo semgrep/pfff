@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Entity_code open Highlight_code
@@ -27,7 +27,7 @@ module T = Parser_csharp
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -44,7 +44,7 @@ let is_module_name s =
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 
 let visit_program
     ~tag_hook
@@ -70,28 +70,28 @@ let visit_program
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline _ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline _ii4
+        ::T.TComment(ii5)
+        ::xs ->
         let s = Parse_info.str_of_info ii in
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ ->
-            ()
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ ->
+             ()
         );
         aux_toks xs
 
@@ -112,8 +112,8 @@ let visit_program
         aux_toks xs
 
     |   T.TIdent (s1, ii1)::T.TDot _
-      ::T.TIdent (_s3, ii3)::T.TIdent (_s4,ii4)::xs
-       ->
+        ::T.TIdent (_s3, ii3)::T.TIdent (_s4,ii4)::xs
+      ->
         if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
         then begin
           tag ii4 (Entity (Field, (Def2 fake_no_def2)));
@@ -127,7 +127,7 @@ let visit_program
     (* uses *)
 
     |   T.TIdent (s1, ii1)::T.TDot _
-      ::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
+        ::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin
           tag ii3 (Entity (Method, (Use2 fake_no_use2)));
@@ -140,7 +140,7 @@ let visit_program
         aux_toks xs
 
     |   T.TIdent (s1, ii1)::T.TDot _
-      ::T.TIdent (_s3, ii3)::T.TEq _::xs ->
+        ::T.TIdent (_s3, ii3)::T.TEq _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin
           tag ii3 (Entity (Field, (Use2 fake_no_use2)));
@@ -150,7 +150,7 @@ let visit_program
 
 
     |  T.TIdent (s1, ii1)::T.TDot _
-     ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
+       ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then begin
           if is_module_name s1 then tag ii1 (Entity (Module, (Use2 fake_no_use2)))
@@ -202,14 +202,14 @@ let visit_program
 
     (* keywords  *)
     | T.Tbool ii
-        -> tag ii TypeInt
+      -> tag ii TypeInt
 
     | T.Tbyte ii
     | T.Tchar ii
-        -> tag ii TypeInt (* TODO *)
+      -> tag ii TypeInt (* TODO *)
 
     | T.Tvoid ii
-        -> tag ii TypeVoid
+      -> tag ii TypeVoid
 
     | T.Tdouble ii
     | T.Tfloat ii
@@ -220,11 +220,11 @@ let visit_program
     | T.Tushort ii
     | T.Tuint ii
     | T.Tulong ii
-       -> tag ii TypeInt
+      -> tag ii TypeInt
 
     | T.Tstring ii
     | T.Tsbyte ii
-        -> tag ii TypeInt
+      -> tag ii TypeInt
 
     | T.Tclass ii
     | T.Tabstract ii
@@ -234,21 +234,21 @@ let visit_program
     | T.Tinterface ii
     | T.Tnew ii
     | T.Tobject ii
-        -> tag ii KeywordObject
+      -> tag ii KeywordObject
 
     | T.Tprivate ii
     | T.Tprotected ii
     | T.Tpublic ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Treturn ii
     | T.Tbreak ii
     | T.Tcontinue ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tswitch ii
     | T.Tcase ii
-        -> tag ii KeywordConditional
+      -> tag ii KeywordConditional
 
     | T.Tstruct ii
 
@@ -256,11 +256,11 @@ let visit_program
     | T.Tenum ii
     | T.Tconst ii
     | T.Tunsafe ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tnamespace ii
     | T.Tusing ii
-        -> tag ii KeywordModule
+      -> tag ii KeywordModule
 
     | T.Tstatic ii
     | T.Tvolatile ii
@@ -268,18 +268,18 @@ let visit_program
 
     | T.Tif ii  | T.Telse ii -> tag ii KeywordConditional
     | T.Tdo ii  | T.Twhile ii | T.Tfor ii | T.Tforeach ii
-          -> tag ii KeywordLoop
+      -> tag ii KeywordLoop
 
     | T.Tgoto ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tthrow ii | T.Ttry ii | T.Tcatch ii
     | T.Tfinally ii
     | T.Tchecked ii | T.Tunchecked ii
-        -> tag ii KeywordExn
+      -> tag ii KeywordExn
 
     | T.Tnull ii
-        -> tag ii Null
+      -> tag ii Null
 
     | T.Ttrue ii | T.Tfalse ii
       ->  tag ii Boolean
@@ -305,14 +305,14 @@ let visit_program
     | T.Tsizeof ii
     | T.Tstackalloc ii
     | T.Ttypeof ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.TCppLine ii
     | T.TCppError ii
     | T.TCppWarning ii
     | T.TCppRegion ii
     | T.TCppEndRegion ii
-        -> tag ii CppOther
+      -> tag ii CppOther
 
     | T.TDefine ii -> tag ii Define
     | T.TUndef ii -> tag ii Define
@@ -321,7 +321,7 @@ let visit_program
     | T.TIfdefElif ii
     | T.TIfdefElse ii
     | T.TIfdefEndif ii
-        -> tag ii Ifdef
+      -> tag ii Ifdef
 
     (* symbols *)
     | T.TEq ii ->
@@ -332,15 +332,15 @@ let visit_program
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
-          -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TPlus ii | T.TMinus ii
     | T.TLess ii | T.TMore ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TDot ii
     | T.TColon ii
-        ->
+      ->
         tag ii Punctuation
 
     | T.TTilde ii
@@ -348,7 +348,7 @@ let visit_program
       -> tag ii Operator
 
     | T.TAnd ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TAssignOp (_, ii) -> tag ii Punctuation
 
@@ -360,12 +360,12 @@ let visit_program
     | T.TXor ii
     | T.TOr ii
     | T.TPercent ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TComma ii
     | T.TCAngle ii
     | T.TOAngle ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TDiv ii
     | T.TDec ii
@@ -373,12 +373,12 @@ let visit_program
     | T.TOrOr ii
     | T.TAndAnd ii
     | T.TBang ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TArrow ii
     | T.TQuestion ii
     | T.TSemiColon ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TIdent (_s, _ii) ->
         ()

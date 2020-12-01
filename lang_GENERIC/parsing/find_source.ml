@@ -1,29 +1,29 @@
 (* UPDATE: this is mostly obsolete. You should use Lang.files_of_dirs_or_files
  * instead.
- *)
+*)
 
 open Common
 
 let finder lang =
   match lang with
   | "php" | "phpfuzzy" | "php2" ->
-    Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:false
+      Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:false
   | "hack" ->
-    Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:true
+      Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false ~include_hack:true
   | "c++" ->
-    Lib_parsing_cpp.find_source_files_of_dir_or_files
+      Lib_parsing_cpp.find_source_files_of_dir_or_files
   | "c" ->
-    Lib_parsing_c.find_source_files_of_dir_or_files
+      Lib_parsing_c.find_source_files_of_dir_or_files
   | "ml" | "ocaml" | "mlfuzzy" ->
-    Lib_parsing_ml.find_source_files_of_dir_or_files
+      Lib_parsing_ml.find_source_files_of_dir_or_files
   | "java" | "javafuzzy" ->
-    Lib_parsing_java.find_source_files_of_dir_or_files
+      Lib_parsing_java.find_source_files_of_dir_or_files
   | "js" | "javascript" | "jsfuzzy" | "jsgen"  ->
-    Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
+      Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
   | "py" | "python"  ->
-    Lib_parsing_python.find_source_files_of_dir_or_files
+      Lib_parsing_python.find_source_files_of_dir_or_files
   | "lisp" ->
-    Lib_parsing_lisp.find_source_files_of_dir_or_files
+      Lib_parsing_lisp.find_source_files_of_dir_or_files
   | "dot" -> (fun _ -> [])
   | _ -> failwith ("Find_source: unsupported language: " ^ lang)
 
@@ -39,7 +39,7 @@ let files_of_dir_or_files ~lang xs =
 
 (* todo: factorize with filter_files_if_skip_list?
  * less: a ~verbose argument to not always display the pr2 below?
- *)
+*)
 let files_of_root ~lang root =
   let finder = finder lang in
   let files = finder [root] in

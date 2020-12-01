@@ -4,14 +4,14 @@
  *
  * related: json-wheel Json_type.t, but does not have the Parse_info.t
  * in it so easier to just reuse the Javascript parser.
- *)
+*)
 type expr = Ast_js.expr
- [@@deriving show]
+[@@deriving show]
 
 type program = expr
- [@@deriving show]
+[@@deriving show]
 
 type any =
   | E of Ast_js.expr
- [@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }]
 

@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 open Parser_go
 
@@ -28,7 +28,7 @@ module F = Ast_fuzzy
  *
  * See lang_cpp/parsing/parsing_hacks.ml for more information about
  * this technique.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -53,33 +53,33 @@ let fix_tokens_asi xs =
 
     (* ASI: automatic semicolon insertion, similar in Javascript *)
     | ((LNAME _
-      | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
-      | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
-      | LINC _ | LDEC _
-      | RPAREN _
-      | RBRACE _
-      | RBRACKET _
-      (* sgrep-ext: *)
-      | LDDD _
-      ) as x) ::((TCommentNewline ii | EOF ii) as y)::xs ->
-          (match x, y, !Flag_parsing.sgrep_mode with
-          (* do NOT ASI *)
+       | LINT _ | LFLOAT _ | LIMAG _ | LRUNE _ | LSTR _
+       | LBREAK _ | LCONTINUE _ | LFALL _ | LRETURN _
+       | LINC _ | LDEC _
+       | RPAREN _
+       | RBRACE _
+       | RBRACKET _
+       (* sgrep-ext: *)
+       | LDDD _
+       ) as x) ::((TCommentNewline ii | EOF ii) as y)::xs ->
+        (match x, y, !Flag_parsing.sgrep_mode with
+         (* do NOT ASI *)
 
-          (* sgrep-ext: only in sgrep-mode *)
-          | LDDD _, _, false
-          (* sgrep-ext: we don't want $X==$X to be transformed
-           * in $X==$X; in sgrep mode
-           *)
-          | _, EOF _, true
+         (* sgrep-ext: only in sgrep-mode *)
+         | LDDD _, _, false
+         (* sgrep-ext: we don't want $X==$X to be transformed
+          * in $X==$X; in sgrep mode
+         *)
+         | _, EOF _, true
            ->
-            x::y::aux env xs
+             x::y::aux env xs
 
-          (* otherwise do ASI *)
-          | _ ->
-          let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
-          (* implicit semicolon insertion *)
-          x::LSEMICOLON iifake::y::aux env xs
-         )
+         (* otherwise do ASI *)
+         | _ ->
+             let iifake = Parse_info.rewrap_str "FAKE ';'" ii in
+             (* implicit semicolon insertion *)
+             x::LSEMICOLON iifake::y::aux env xs
+        )
 
     | x::xs -> x::aux env xs
   in
@@ -89,19 +89,19 @@ let fix_tokens_asi xs =
 (* LBODY *)
 (*****************************************************************************)
 let fix_tokens_lbody toks =
- try
-  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks
-  in
-  let retag_lbrace = Hashtbl.create 101 in
+  try
+    let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+                                         tokf = TH.info_of_tok;
+                                         kind = TH.token_kind_of_tok;
+                                       } toks
+    in
+    let retag_lbrace = Hashtbl.create 101 in
 
-  let rec aux env trees =
+    let rec aux env trees =
       match trees with
       | [] -> ()
 
-       (* if func(...) bool { return ... }(...) { ... } *)
+      (* if func(...) bool { return ... }(...) { ... } *)
       | (F.Braces (_lb1, xs1, _rb1))::
         (F.Parens (_lb2, xs2, _rb2))::
         (F.Braces (lb3, xs3, _rb3))::
@@ -110,13 +110,13 @@ let fix_tokens_lbody toks =
           Hashtbl.add retag_lbrace lb3 true;
           aux Normal xs1;
           xs2 |> List.iter (function
-              | Left xs -> aux Normal xs
-              | Right _ -> ()
+            | Left xs -> aux Normal xs
+            | Right _ -> ()
           );
           aux Normal xs3;
           aux Normal ys;
 
-      (* for a := struct {...} { ... } { ... } *)
+          (* for a := struct {...} { ... } { ... } *)
       | F.Tok (("struct" | "interface"), _)::
         (F.Braces (_lb1, xs1, _rb1))::
         (F.Braces (_lb2, xs2, _rb2))::
@@ -129,8 +129,8 @@ let fix_tokens_lbody toks =
           aux Normal xs3;
           aux Normal ys;
 
-      (* must be after previous case *)
-      (* skipping: if ok := interface{} ... *)
+          (* must be after previous case *)
+          (* skipping: if ok := interface{} ... *)
       | F.Tok (("struct" | "interface"), _)::
         (F.Braces (_lb1, xs1, _rb1))::
         ys
@@ -146,16 +146,16 @@ let fix_tokens_lbody toks =
           aux Normal xs2;
           aux Normal ys;
 
-      (* False Positive (FP): for ... {}[...] *)
+          (* False Positive (FP): for ... {}[...] *)
       | (F.Braces (_lb, xs, _rb))::F.Bracket (_, ys, _)::zs
-          when env = InIfHeader ->
+        when env = InIfHeader ->
           aux Normal xs;
           aux Normal ys;
           aux env zs
 
       (* False Positive (FP): if ... {}; ... { *)
       | (F.Braces (_lb, xs, _rb))::F.Tok (";", _)::zs
-          when env = InIfHeader ->
+        when env = InIfHeader ->
           aux Normal xs;
           aux env zs
 
@@ -173,28 +173,28 @@ let fix_tokens_lbody toks =
 
       | x::xs ->
           (match x with
-          | F.Parens (_, xs, _) ->
-                xs |> List.iter (function
-                  | Left trees -> aux Normal trees
-                  | Right _comma -> ()
-                )
+           | F.Parens (_, xs, _) ->
+               xs |> List.iter (function
+                 | Left trees -> aux Normal trees
+                 | Right _comma -> ()
+               )
            | _ -> ()
           );
           aux env xs
-  in
-  aux Normal trees;
+    in
+    aux Normal trees;
 
-  (* use the tagged information and transform tokens *)
-  toks |> List.map (function
-    | T.LBRACE info when Hashtbl.mem retag_lbrace info ->
-      T.LBODY info
-    | x -> x
-  )
+    (* use the tagged information and transform tokens *)
+    toks |> List.map (function
+      | T.LBRACE info when Hashtbl.mem retag_lbrace info ->
+          T.LBODY info
+      | x -> x
+    )
 
   with Lib_ast_fuzzy.Unclosed (msg, info) ->
-   if !Flag.error_recovery
-   then toks
-   else raise (Parse_info.Lexical_error (msg, info))
+    if !Flag.error_recovery
+    then toks
+    else raise (Parse_info.Lexical_error (msg, info))
 
 
 (*****************************************************************************)

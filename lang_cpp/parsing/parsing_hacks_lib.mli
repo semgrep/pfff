@@ -8,7 +8,7 @@ val msg_context:
   Parser_cpp.token -> Token_views_cpp.context -> unit
 
 val change_tok:
- Token_views_cpp.token_extended -> Parser_cpp.token -> unit
+  Token_views_cpp.token_extended -> Parser_cpp.token -> unit
 val fresh_tok:
   Parser_cpp.token -> Parser_cpp.token
 

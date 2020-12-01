@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -40,7 +40,7 @@ type overlay = {
   (* in realpath format. This information is then specific
    * to one user ... but infering back the root_orig/root_overlay
    * from an arbitrary directory can be tedious.
-   *)
+  *)
   root_orig: Common.dirname;
   root_overlay: Common.dirname;
 }
@@ -83,8 +83,8 @@ let check_overlay ~dir_orig ~dir_overlay =
     ) |> List.flatten
   in
   pr2 (spf "#files orig = %d, #links overlay = %d, #files overlay = %d"
-    (List.length files) (List.length links) (List.length files2)
-  );
+         (List.length files) (List.length links) (List.length files2)
+      );
   let h = Hashtbl.create 101 in
   files2 |> List.iter (fun file ->
     if Hashtbl.mem h file
@@ -124,7 +124,7 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
       | Unix.S_DIR ->
           let (children, _) =
             Common2.cmd_to_list_and_status (spf
-              "cd %s; find * -type f" (link)) in
+                                              "cd %s; find * -type f" (link)) in
           let dir = Common.fullpath link in
 
           children |> List.map (fun child ->
@@ -139,16 +139,16 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
     ) |> List.flatten
   in
   let data =
-  equiv |> Common.map_filter (fun (overlay, orig) ->
-    try
-      Some (
-        Common.readable ~root:dir_overlay overlay,
-        Common.readable ~root:dir_orig orig
-      )
-    with exn ->
-      pr2 (spf "PB with %s, exn = %s" orig (Common.exn_to_s exn));
-      None
-  )
+    equiv |> Common.map_filter (fun (overlay, orig) ->
+      try
+        Some (
+          Common.readable ~root:dir_overlay overlay,
+          Common.readable ~root:dir_orig orig
+        )
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s" orig (Common.exn_to_s exn));
+        None
+    )
   in
   {
     data = data;
@@ -169,13 +169,13 @@ let gen_overlay ~dir_orig ~dir_overlay ~output =
 
 let adapt_layer layer overlay =
   { layer with Layer_code.
-    files = layer.Layer_code.files |> Common.map_filter (fun (file, info) ->
-      try
-        Some (Hashtbl.find overlay.orig_to_overlay file, info)
-      with Not_found ->
-        pr2 (spf "PB could not find %s in overlay" file);
-        None
-    );
+            files = layer.Layer_code.files |> Common.map_filter (fun (file, info) ->
+              try
+                Some (Hashtbl.find overlay.orig_to_overlay file, info)
+              with Not_found ->
+                pr2 (spf "PB could not find %s in overlay" file);
+                None
+            );
   }
 
 (* copy paste of the one in main_codemap.ml *)
@@ -204,20 +204,20 @@ let adapt_layers ~overlay ~dir_layers_orig ~dir_layers_overlay =
 
 let adapt_database db overlay =
   { db with Database_code.
-    files = db.Database_code.files |> Common.map_filter (fun (file, info) ->
-      try
-        Some (Hashtbl.find overlay.orig_to_overlay file, info)
-      with Not_found ->
-        pr2 (spf "PB could not find %s in overlay" file);
-        None
-    );
-    entities = db.Database_code.entities |> Array.map (fun e ->
-      { e with Database_code.
-        e_file =
-          try
-            (Hashtbl.find overlay.orig_to_overlay e.Database_code.e_file)
-          with Not_found ->
-            "not_found_file_overlay";
-      }
-    );
+         files = db.Database_code.files |> Common.map_filter (fun (file, info) ->
+           try
+             Some (Hashtbl.find overlay.orig_to_overlay file, info)
+           with Not_found ->
+             pr2 (spf "PB could not find %s in overlay" file);
+             None
+         );
+         entities = db.Database_code.entities |> Array.map (fun e ->
+           { e with Database_code.
+                 e_file =
+                   try
+                     (Hashtbl.find overlay.orig_to_overlay e.Database_code.e_file)
+                   with Not_found ->
+                     "not_found_file_overlay";
+           }
+         );
   }

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -106,7 +106,7 @@ open Common
  * todo: maybe time to use the non generic implementation and
  * use something more efficient, especially for G.pred,
  * see Imperative.ConcreteBidirectional for instance
- *)
+*)
 module OG = Graph.Pack.Digraph
 
 (* Polymorphic graph *)
@@ -117,7 +117,7 @@ type 'key graph = {
    * from which one can get its 'label' which is an int. It's a little
    * bit tedious because to create such a 't' you also have to use
    * yet another function: OG.V.create that takes an int ...
-   *)
+  *)
 
   key_of_vertex: (OG.V.t, 'key) Hashtbl.t;
   vertex_of_key: ('key, OG.V.t) Hashtbl.t;
@@ -324,10 +324,10 @@ let nb_nodes g = OG.nb_vertex g.og
 let nb_edges g = OG.nb_edges g.og
 
 let succ k g = OG.succ g.og (g |> vertex_of_key k)
-  |> List.map (fun k -> key_of_vertex k g)
+               |> List.map (fun k -> key_of_vertex k g)
 (* this seems slow on the version of ocamlgraph I currently have *)
 let pred k g  = OG.pred  g.og (g |> vertex_of_key k)
-  |> List.map (fun k -> key_of_vertex k g)
+                |> List.map (fun k -> key_of_vertex k g)
 
 let ivertex k g =
   let v = vertex_of_key k g in
@@ -343,7 +343,7 @@ let entry_nodes2 g =
   (* old: slow: nodes g +> List.filter (fun n -> pred n g = [])
    * Once I use a better underlying graph implementation maybe I
    * will not need this kind of things.
-   *)
+  *)
   let res = ref [] in
   let hdone = Hashtbl.create 101 in
   let finished = ref false in
@@ -402,7 +402,7 @@ let remove_edge k1 k2 g =
 (* todo? make the graph more functional ? it's very imperative right now
  * which forces the caller to write in an imperative way and use functions
  * like this 'copy()'. Look at launchbary haskell paper?
- *)
+*)
 let copy oldg =
 (*
  * bugfix: we can't just OG.copy the graph and Hashtbl.copy the vertex because
@@ -411,10 +411,10 @@ let copy oldg =
  * the new copied graph.
  *)
   (* {
-  og = OG.copy g.og;
-  key_of_vertex = Hashtbl.copy g.key_of_vertex;
-  vertex_of_key = Hashtbl.copy g.vertex_of_key;
-  cnt = ref !(g.cnt);
+     og = OG.copy g.og;
+     key_of_vertex = Hashtbl.copy g.key_of_vertex;
+     vertex_of_key = Hashtbl.copy g.vertex_of_key;
+     cnt = ref !(g.cnt);
      }
   *)
   (* naive way, enough? optimize? all those iter are ugly ... *)
@@ -453,7 +453,7 @@ let shortest_path k1 k2 g =
  *  is it because node references something from g? Is is the same
  *  issue that for copy?
  *
- *)
+*)
 let transitive_closure g =
 
   let label_to_vertex = Hashtbl.create 101 in
@@ -542,7 +542,7 @@ let depth_nodes2 g =
         (* todo: max or min? can lead to different metrics,
          * either to know the longest path from the top, or to know some
          * possible shortest path from the top.
-         *)
+        *)
         else max (Hashtbl.find hres v2) (ncurrent + 1)
       in
       Hashtbl.replace hres v2 nchild;
@@ -567,7 +567,7 @@ let display_with_gv g =
   OG.display_with_gv g.og
 
 let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
- filename g =
+    filename g =
   Common.with_open_outfile filename (fun (pr,_) ->
     pr "digraph misc {\n" ;
     (* pr "size = \"10,10\";\n" ; *)
@@ -578,8 +578,8 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
       let k = key_of_vertex v g in
       (* todo? could also use the str_of_key to represent the node *)
       pr (spf "%d [label=\"%s\"];\n"
-             (OG.V.label v)
-             (str_of_key k));
+            (OG.V.label v)
+            (str_of_key k));
     );
 
     g.og |> OG.iter_vertex (fun v ->
@@ -589,10 +589,10 @@ let print_graph_generic ?(launch_gv=true) ?(extra_string="") ~str_of_key
       )
     );
     pr "}\n" ;
-    );
+  );
   if launch_gv
   then failwith "TODO: Ograph_extended.launch_gv_cmd filename";
-    (* Ograph_extended.launch_gv_cmd filename; *)
+  (* Ograph_extended.launch_gv_cmd filename; *)
   ()
 
 let tmpfile = "/tmp/graph_ml.dot"

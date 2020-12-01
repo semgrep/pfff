@@ -19,7 +19,7 @@ let is_space = function
 let is_comment_or_space = function
   | TCommentSpace _  | TCommentNewline _
   | TComment _
-      -> true
+    -> true
   | _ -> false
 
 let is_just_comment = function
@@ -30,7 +30,7 @@ let is_comment = function
   | TCommentSpace _ | TCommentNewline _
   | TComment _
   | TComment_Pp _ | TComment_Cpp _
-      -> true
+    -> true
   | _ -> false
 
 let is_real_comment = function
@@ -62,7 +62,7 @@ let is_pp_instruction = function
   | TIfdefBool _ | TIfdefMisc _ | TIfdefVersion _
   | TUndef _
   | TCppDirectiveOther _
-      -> true
+    -> true
   | _ -> false
 
 
@@ -89,7 +89,7 @@ let is_statement = function
   | Tgoto _
   | TPtVirg _
   | TIdent_MacroIterator _
-      -> true
+    -> true
   | _ -> false
 
 (* is_start_of_something is used in parse_c for error recovery, to find
@@ -107,7 +107,7 @@ let is_statement = function
  *
  * Can look in parser_c.output to know what can be at toplevel
  * at the very beginning.
- *)
+*)
 
 let is_start_of_something = function
   | Tchar _  | Tshort _ | Tint _ | Tdouble _ |  Tfloat _ | Tlong _
@@ -129,7 +129,7 @@ let is_binary_operator = function
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _
   | TShl _ | TShr _
   | TPlus _ |  TMinus _ |  TMul _ |  TDiv _ |  TMod _
-        -> true
+    -> true
   | _ -> false
 
 let is_binary_operator_except_star = function
@@ -138,7 +138,7 @@ let is_binary_operator_except_star = function
   | TEqEq _ |  TNotEq _  | TInf _ |  TSup _ |  TInfEq _ |  TSupEq _
   | TShl _ | TShr _
   | TPlus _ |  TMinus _  |  TDiv _ |  TMod _
-        -> true
+    -> true
   | _ -> false
 
 let is_stuff_taking_parenthized = function
@@ -160,7 +160,7 @@ let is_basic_type = function
   | Tbool _ | Twchar_t _
   | Tunsigned _ | Tsigned _
   | Tvoid _
-        -> true
+    -> true
   | _ -> false
 
 
@@ -201,17 +201,17 @@ let is_cpp_keyword = function
   | Texplicit _
   | Tmutable _
 
-      -> true
+    -> true
 
   | _ -> false
 
 let is_really_cpp_keyword = function
   | Tconst_cast _ | Tdynamic_cast _ | Tstatic_cast _ | Treinterpret_cast  _
+    -> true
+  (* when have some asm volatile, can have some ::
+     | TColCol  _
         -> true
-(* when have some asm volatile, can have some ::
-  | TColCol  _
-      -> true
-*)
+  *)
   | _ -> false
 
 (* some false positive on some C file like sqlite3.c *)
@@ -225,12 +225,12 @@ let is_maybenot_cpp_keyword = function
 
 (* used in the algorithm for "10 most problematic tokens". C-s for TIdent
  * in parser_cpp.mly
- *)
+*)
 let is_ident_like = function
   | TIdent _
   | TIdent_Typedef _
   | TIdent_Define  _
-(*  | TDefParamVariadic _*)
+  (*  | TDefParamVariadic _*)
 
   | TUnknown _
 
@@ -238,7 +238,7 @@ let is_ident_like = function
   | TIdent_MacroString _
   | TIdent_MacroIterator _
   | TIdent_MacroDecl _
-(*  | TIdent_MacroDeclConst _ *)
+  (*  | TIdent_MacroDeclConst _ *)
 (*
   | TIdent_MacroAttr _
   | TIdent_MacroAttrStorage _
@@ -251,13 +251,13 @@ let is_ident_like = function
   | TIdent_TemplatenameInQualifier_BeforeTypedef _
   | TIdent_Constructor _
   | TIdent_TypedefConstr _
-      -> true
+    -> true
 
   | _ -> false
 
 let is_privacy_keyword = function
   | Tpublic _ | Tprivate _ | Tprotected _
-        -> true
+    -> true
   | _ -> false
 
 
@@ -292,7 +292,7 @@ let token_kind_of_tok t =
 
 (* Because ocamlyacc force us to do it that way. The ocamlyacc token
  * cant be a pair of a sum type, it must be directly a sum type.
- *)
+*)
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
@@ -341,7 +341,7 @@ let visitor_info_of_tok f = function
   | TIdent_MacroIterator       (s,i) -> TIdent_MacroIterator        (s,f i)
   | TIdent_MacroDecl           (s,i) -> TIdent_MacroDecl            (s, f i)
   | Tconst_MacroDeclConst      i   -> Tconst_MacroDeclConst       (f i)
-(*  | TMacroTop          (s,i) -> TMacroTop             (s,f i) *)
+  (*  | TMacroTop          (s,i) -> TMacroTop             (s,f i) *)
   | TCPar_EOL i ->     TCPar_EOL (f i)
 
 

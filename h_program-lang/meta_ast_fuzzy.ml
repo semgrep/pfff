@@ -2,7 +2,7 @@ open Ast_fuzzy
 
 let vof_token t =
   OCaml.VString (Parse_info.str_of_info t)
-  (* Parse_info.vof_token t*)
+(* Parse_info.vof_token t*)
 
 let rec vof_multi_grouped =
   function

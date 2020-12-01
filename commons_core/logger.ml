@@ -27,8 +27,8 @@ let log config cmd extra_args =
         server cmd tmpfile in
     profile_code "pfff_logger" (fun () ->
       try
-       timeout_function 1 (fun () ->
-        command2 cmd
-      ) with Timeout -> ()
+        timeout_function 1 (fun () ->
+          command2 cmd
+        ) with Timeout -> ()
     )
   )

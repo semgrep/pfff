@@ -15,7 +15,7 @@ module J = JSON
  *
  * related:
  *  - https://astexplorer.net/, supports many languages, many parsers
- *)
+*)
 
 (*****************************************************************************)
 (* Flags *)
@@ -24,7 +24,7 @@ module J = JSON
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this
  * program also depends on external files?
- *)
+*)
 
 (*s: constant [[Main.verbose]] *)
 let verbose = ref false
@@ -84,44 +84,44 @@ let all_actions () =
   (*s: [[Main.all_actions]] concatenated actions *)
   Test_parsing_generic.actions() @
   (*x: [[Main.all_actions]] concatenated actions *)
-    Test_parsing_ml.actions()@
-    Test_analyze_ml.actions()@
-    Test_parsing_skip.actions()@
+  Test_parsing_ml.actions()@
+  Test_analyze_ml.actions()@
+  Test_parsing_skip.actions()@
 
-    Test_parsing_php.actions()@
-    Test_parsing_js.actions()@
-    Test_parsing_json.actions()@
-    Test_analyze_js.actions()@
-    Test_parsing_python.actions()@
-    Test_parsing_ruby.actions()@
-    Test_analyze_ruby.actions()@
+  Test_parsing_php.actions()@
+  Test_parsing_js.actions()@
+  Test_parsing_json.actions()@
+  Test_analyze_js.actions()@
+  Test_parsing_python.actions()@
+  Test_parsing_ruby.actions()@
+  Test_analyze_ruby.actions()@
 
-    Test_parsing_c.actions()@
-    Test_parsing_cpp.actions()@
-    Test_parsing_java.actions()@
-    Test_parsing_go.actions()@
+  Test_parsing_c.actions()@
+  Test_parsing_cpp.actions()@
+  Test_parsing_java.actions()@
+  Test_parsing_go.actions()@
 
-    Test_parsing_nw.actions()@
-    Test_parsing_hs.actions()@
-    Test_parsing_csharp.actions()@
-    Test_parsing_rust.actions()@
-    Test_parsing_erlang.actions()@
+  Test_parsing_nw.actions()@
+  Test_parsing_hs.actions()@
+  Test_parsing_csharp.actions()@
+  Test_parsing_rust.actions()@
+  Test_parsing_erlang.actions()@
 
-    Test_parsing_text.actions()@
-    Test_parsing_html.actions()@
-(* TODO need dune file
-    Test_parsing_css.actions()@
-    Test_parsing_web.actions()@
+  Test_parsing_text.actions()@
+  Test_parsing_html.actions()@
+  (* TODO need dune file
+      Test_parsing_css.actions()@
+      Test_parsing_web.actions()@
 
-    Test_parsing_sql.actions()@
-*)
+      Test_parsing_sql.actions()@
+  *)
 
-    Test_parsing_lisp.actions()@
+  Test_parsing_lisp.actions()@
 
-    (* beta *)
+  (* beta *)
 
 
-    Test_analyze_generic.actions() @
+  Test_analyze_generic.actions() @
   (*
     Test_analyze_cpp.actions () ++
     Test_analyze_php.actions () ++
@@ -148,7 +148,7 @@ let options () = [
   "-sgrep_mode", Arg.Set Flag_parsing.sgrep_mode,
   " enable sgrep mode parsing (to debug)";
   (*e: [[Main.options]] main cases *)
-  ] @
+] @
   (*s: [[Main.options]] concatenated flags *)
   Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing.cmdline_flags_debugging () @
@@ -185,7 +185,7 @@ let main () =
 
   let usage_msg =
     "Usage: " ^ Filename.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -194,29 +194,29 @@ let main () =
   Common.profile_code "Main total" (fun () ->
 
     (match args with
-    (*s: [[Main.main()]] match [[args]] actions *)
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (*s: [[Main.main()]] match [[args]] actions *)
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
-    (*e: [[Main.main()]] match [[args]] actions *)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
+     (*e: [[Main.main()]] match [[args]] actions *)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | x::xs ->
-        main_action (x::xs)
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | x::xs ->
+         main_action (x::xs)
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] ->
-        Common.usage usage_msg (options());
-        failwith "too few arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] ->
+         Common.usage usage_msg (options());
+         failwith "too few arguments"
     )
   )
 (*e: function [[Main.main]] *)

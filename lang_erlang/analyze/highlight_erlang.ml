@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Entity_code open Highlight_code
@@ -28,7 +28,7 @@ module PI = Parse_info
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -40,7 +40,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 
 let visit_program
     ~tag_hook
@@ -68,32 +68,32 @@ let visit_program
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline _ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline _ii4
+        ::T.TComment(ii5)
+        ::xs ->
         let s = Parse_info.str_of_info ii in
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ when s =~ ".*=========" && s5 =~ ".*========" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ ->
-            ()
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ when s =~ ".*=========" && s5 =~ ".*========" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ ->
+             ()
         );
         aux_toks xs
 
@@ -190,23 +190,23 @@ let visit_program
     | T.Tcond ii
     | T.Tcase ii
     | T.Twhen ii
-        -> tag ii KeywordConditional
+      -> tag ii KeywordConditional
 
     | T.Treceive ii
     | T.Tquery ii
     | T.Tafter ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tfun ii
     | T.Tlet ii
     | T.Tof ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tend ii |T.Tbegin ii  ->
         tag ii Keyword
 
     | T.Tcatch ii
-        -> tag ii KeywordExn
+      -> tag ii KeywordExn
 
     | T.TIdent (("module" | "include" | "export"), ii) ->
         tag ii KeywordModule
@@ -225,7 +225,7 @@ let visit_program
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
-          -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TPlus ii | T.TMinus ii
     | T.TStar ii | T.TDiv ii
@@ -233,19 +233,19 @@ let visit_program
     | T.TLess ii | T.TMore ii
     | T.TLessEq ii | T.TMoreEq ii
     | T.TEqEq ii | T.TEqSlashEq ii| T.TEqColonEq ii | T.TSlashEq ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TDot ii
     | T.TColon ii
-        ->
+      ->
         tag ii Punctuation
 
     | T.TComma ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TDec ii | T.TInc ii
     | T.TBang ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     (* todo? put in pink/bad-smell ? *)
     | T.TAssign ii ->
@@ -254,20 +254,20 @@ let visit_program
     | T.TArrow ii
     | T.TQuestion ii
     | T.TSemiColon ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.Tbnot ii | T.Tnot ii
     | T.Tband ii  | T.Tand ii
     | T.Tbsr ii  | T.Tbsl ii | T.Tbxor ii | T.Tbor ii
     | T.Txor ii | T.Tor ii
     | T.Trem ii | T.Tdiv ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TUnderscore ii
     | T.TSharp ii
     | T.TPipePipe ii
     | T.TPipe ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
 
     | T.TIdent (_s, _ii) ->

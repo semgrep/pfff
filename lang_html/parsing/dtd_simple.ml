@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -51,7 +51,7 @@
 (** We need a type that declares how to handle the various tags.
  * This is called a "simplified DTD", as it is derived from SGML DTDs,
  * but simplified to the extent used in the HTML definition.
- *)
+*)
 
 (** Element classes are a property used in the HTML DTD. For our purposes,
  * we define element classes simply as an enumeration:
@@ -63,7 +63,7 @@
  *   inline elements, but have to be handled specially
  * - [`Everywhere] means that the members of the class can occur everywhere,
  *   regardless of whether a constraint allows it or not.
- *)
+*)
 type element_class =
   | Inline
   | Block
@@ -103,7 +103,7 @@ type element_class =
  *   allows a list of elements in all sub elements.
  * - Optional tags: Whether start or end tags can be omitted (to some extent,
  *   this can be expressed with [`Essential_block], however)
- *)
+*)
 type model_constraint =
   | Inline2
   | Block2
@@ -183,13 +183,13 @@ let html40_dtd =
     "select",             (Inline, Elements ["optgroup"; "option"]);
     "textarea",           (Inline, Elements []);    (* #PCDATA *)
     "label",              (Inline, Sub_exclusions( ["label"],
-						    Inline2));
+                                                   Inline2));
     "button",             (Inline, Sub_exclusions( ["a"; "input"; "select";
-						     "textarea"; "label";
-						     "button"; "form";
-						     "fieldset"; "isindex";
-						     "iframe"],
-						    Flow));
+                                                    "textarea"; "label";
+                                                    "button"; "form";
+                                                    "fieldset"; "isindex";
+                                                    "iframe"],
+                                                   Flow));
     (* ------------ BLOCK ELEMENTS ----------*)
     "p",                  (Block, Inline2);
     (* %heading; *)
@@ -204,27 +204,27 @@ let html40_dtd =
     "ol",                 (Block, Elements ["li"]);
     (* transitional: *)
     "dir",                (Block, Sub_exclusions( block_elements,
-						   Elements ["li"]));
+                                                  Elements ["li"]));
     "menu",               (Block, Sub_exclusions( block_elements,
-						   Elements ["li"]));
+                                                  Elements ["li"]));
     (* %preformatted; *)
     "pre",                (Block, Sub_exclusions( [ "img"; "object"; "applet";
-						      "big"; "small"; "sub";
-						      "sup"; "font"; "basefont"],
-						    Inline2));
+                                                    "big"; "small"; "sub";
+                                                    "sup"; "font"; "basefont"],
+                                                  Inline2));
     (* other: *)
     "dl",                 (Block, Elements ["dt"; "dd"]);
     "div",                (Block, Flow);
     "noscript",           (Block, Flow);
     "blockquote",         (Block, (Flow |. Elements ["script"]));
-                          (* strict DTD has Block here *)
+    (* strict DTD has Block here *)
     "form",               (Block, Sub_exclusions( ["form"],
-						    Flow |.
-						       Elements ["script"]));
-                          (* strict DTD has Block here *)
+                                                  Flow |.
+                                                  Elements ["script"]));
+    (* strict DTD has Block here *)
     "hr",                 (Block, Empty);
     "table",              (Block, Elements ["caption"; "col"; "colgroup";
-					      "thead"; "tfoot"; "tbody"; "tr"]);
+                                            "thead"; "tfoot"; "tbody"; "tr"]);
     "fieldset",           (Block, (Flow |. Elements ["legend"]));
     "address",            (Block, Inline2);
     (* transitional: *)
@@ -233,7 +233,7 @@ let html40_dtd =
     "isindex",            (Block, Empty);
     (* ------------ OTHER ELEMENTS ----------*)
     "body",               (None, (Flow |. Elements ["script"]));
-                          (* strict DTD has Block here *)
+    (* strict DTD has Block here *)
     "area",               (None, Empty);
     "link",               (None, Empty);
     "param",              (None, Empty);
@@ -255,18 +255,18 @@ let html40_dtd =
     "th",                 (None, Flow);
     "td",                 (None, Flow);
     "head",               (None, Elements ["title"; "base"; "script";
-					     "style"; "meta"; "link";
-					     "object"]);
+                                           "style"; "meta"; "link";
+                                           "object"]);
     "title",              (None, Elements []);   (* #PCDATA *)
     "base",               (None, Empty);
     "meta",               (None, Empty);
     "style",              (None, Special);
     "html",               (None, (Flow |.
-				       Elements ["head";
-						  "title"; "base"; "script";
-						  "style"; "meta"; "link";
-						  "object";
-						  "body"; "frameset"]));
+                                  Elements ["head";
+                                            "title"; "base"; "script";
+                                            "style"; "meta"; "link";
+                                            "object";
+                                            "body"; "frameset"]));
     (* transitional: *)
     "frameset",           (None, Elements ["frameset"; "frame"; "noframes"]);
     "frame",              (None, Empty);
@@ -305,5 +305,5 @@ let html40_dtd =
  * this problem, tables are now essential meaning that it is not allowed
  * to implicitly add a missing [</TABLE>]; every table element has to
  * be explicitly ended. This rule seems to be what many browsers implement.
- *)
+*)
 (* TODO? val relaxed_html40_dtd : simplified_dtd *)

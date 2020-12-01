@@ -8,7 +8,7 @@ val empty_index: unit -> index
 
 (* the list is supposed to be sorted by importance so that the
  * top n search returns first the most important entities
- *)
+*)
 val build_index:
   ?case_sensitive:bool ->
   Database_code.entity list -> index

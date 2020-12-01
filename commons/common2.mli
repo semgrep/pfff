@@ -9,7 +9,7 @@
 (*s: common.mli globals flags *)
 (* see the corresponding section for the use of those flags. See also
  * the "Flags and actions" section at the end of this file.
- *)
+*)
 
 val verbose_level : int ref
 
@@ -70,7 +70,7 @@ type path = string
 (* Trick in case you dont want to do an 'open Common' while still wanting
  * more pervasive types than the one in Pervasives. Just do the selective
  * open Common.BasicType.
- *)
+*)
 module BasicType : sig
   type filename = string
 end
@@ -104,7 +104,7 @@ end
  * enough. In such case, add a case before such as
  * with Timeout -> raise Timeout | _ -> ...
  * The same is true for UnixExit (see below).
- *)
+*)
 (*x: common.mli basic features *)
 (*****************************************************************************)
 (* Debugging/logging *)
@@ -121,7 +121,7 @@ val reset_pr_indent : unit -> unit
  *
  * The use of 2 in pr2 is because 2 is under UNIX the second descriptor
  * which corresponds to stderr.
- *)
+*)
 val _prefix_pr : string ref
 
 val pr : string -> unit
@@ -271,7 +271,7 @@ val laws : string -> ('a -> bool) -> 'a gen -> 'a option
 
 (* example of use:
  * let b = laws "unit" (fun x -> reverse [x] = [x])    ig
- *)
+*)
 
 val statistic_number : 'a list -> (int * 'a) list
 val statistic : 'a list -> (int * 'a) list
@@ -403,14 +403,14 @@ val cache_in_ref : 'a option ref -> (unit -> 'a) -> 'a
 (* take file from which computation is done, an extension, and the function
  * and will compute the function only once and then save result in
  * file ^ extension
- *)
+*)
 val cache_computation :
   ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) ->
   (unit -> 'a) -> 'a
 
 (* a more robust version where the client describes the dependencies of the
  * computation so it will relaunch the computation in 'f' if needed.
- *)
+*)
 val cache_computation_robust :
   filename ->
   string (* extension for marshalled object *) ->
@@ -487,7 +487,7 @@ val _init_gc_stack : unit
  * (=) return an exception when applied to a function, then you simply
  * use ocamldebug to detect where the code has to be transformed by
  * finding where the exception was launched from.
- *)
+*)
 
 val (=|=) : int    -> int    -> bool
 val (=<=) : char   -> char   -> bool
@@ -497,7 +497,7 @@ val (=:=) : bool   -> bool   -> bool
 (* the evil generic (=). I define another symbol to more easily detect
  * it, cos the '=' sign is syntaxically overloaded in caml. It is also
  * used to define function.
- *)
+*)
 val (=*=): 'a -> 'a -> bool
 
 (* if want to restrict the use of '=', uncomment this:
@@ -593,7 +593,7 @@ val int_of_all : string -> int
 (* useful but sometimes when want grep for all places where do modif,
  * easier to have just code using ':=' and '<-' to do some modifications.
  * In the same way avoid using {contents = xxx} to build some ref.
- *)
+*)
 val ( += ) : int ref -> int -> unit
 val ( -= ) : int ref -> int -> unit
 
@@ -628,18 +628,18 @@ val testd : 'a numdict -> 'a -> 'a
 
 
 module ArithFloatInfix : sig
-    val (+) : float -> float -> float
-    val (-) : float -> float -> float
-    val (/) : float -> float -> float
-    val ( * ) : float -> float -> float
+  val (+) : float -> float -> float
+  val (-) : float -> float -> float
+  val (/) : float -> float -> float
+  val ( * ) : float -> float -> float
 
 
-    val (+..) : int -> int -> int
-    val (-..) : int -> int -> int
-    val (/..) : int -> int -> int
-    val ( *..) : int -> int -> int
+  val (+..) : int -> int -> int
+  val (-..) : int -> int -> int
+  val (/..) : int -> int -> int
+  val ( *..) : int -> int -> int
 
-    val (+=) : float ref -> float -> unit
+  val (+=) : float ref -> float -> unit
 end
 (*x: common.mli for basic types *)
 (*****************************************************************************)
@@ -705,7 +705,7 @@ val option_to_list: 'a option -> 'a list
 val partition_either :
   ('a -> ('b, 'c) either) -> 'a list -> 'b list * 'c list
 val partition_either3 :
-    ('a -> ('b, 'c, 'd) either3) -> 'a list -> 'b list * 'c list * 'd list
+  ('a -> ('b, 'c, 'd) either3) -> 'a list -> 'b list * 'c list * 'd list
 
 val filter_some : 'a option list -> 'a list
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
@@ -739,7 +739,7 @@ val s_to_i : string -> int
 
 (* strings take space in memory. Better when can share the space used by
  * similar strings.
- *)
+*)
 val _shareds : (string, string) Hashtbl.t
 val shared_string : string -> string
 
@@ -870,7 +870,7 @@ val is_absolute: filename -> bool
 val filename_without_leading_path : string -> filename -> filename
 
 (* see below
-val tree2_of_files: filename list -> (dirname, (string * filename)) tree2
+   val tree2_of_files: filename list -> (dirname, (string * filename)) tree2
 *)
 
 val realpath: filename -> filename
@@ -892,7 +892,7 @@ type langage =
   | English
   | Francais
   | Deutsch
-(*x: common.mli for basic types *)
+  (*x: common.mli for basic types *)
 (*****************************************************************************)
 (* Dates *)
 (*****************************************************************************)
@@ -979,7 +979,7 @@ val day_secs: float_time
 val rough_days_since_jesus : date_dmy -> days
 (* to get a positive numbers the second date must be more recent than
  * the first.
- *)
+*)
 val rough_days_between_dates : date_dmy -> date_dmy -> days
 
 val string_of_unix_time_lfs : Unix.tm -> string
@@ -1115,7 +1115,7 @@ val files_of_dir_or_files_no_vcs :
 val files_of_dir_or_files_no_vcs_post_filter :
   string (* regexp *) -> string list -> filename list
 val files_of_dir_or_files_no_vcs_nofilter:
- string list -> filename list
+  string list -> filename list
 
 val dirs_of_dir: dirname -> dirname list
 
@@ -1145,7 +1145,7 @@ exception Timeout
  * with Timeout -> raise Timeout | _ -> ...
  *
  * The same is true for UnixExit (see below).
- *)
+*)
 val timeout_function :
   ?verbose:bool ->
   int -> (unit -> 'a) -> 'a
@@ -1163,7 +1163,7 @@ val with_tmp_dir: (dirname -> 'a) -> 'a
  *
  * subtil: same problem than with Timeout. Do not intercept such exception
  * with some blind try (...) with _ -> ...
- *)
+*)
 exception UnixExit of int
 val exn_to_real_unixexit : (unit -> 'a) -> 'a
 (*e: common.mli for basic types *)
@@ -1215,7 +1215,7 @@ val group_and_count: 'a list -> ('a * int) list
 (* Use hash internally to not be in O(n2). If you want to use it on a
  * simple list, then first do a List.map to generate a key, for instance the
  * first char of the element, and then use this function.
- *)
+*)
 val group_assoc_bykey_eff : ('a * 'b) list -> ('a * 'b list) list
 
 val splitAt : int -> 'a list -> 'a list * 'a list
@@ -1293,7 +1293,7 @@ val exclude : ('a -> bool) -> 'a list -> 'a list
 
 (* Not like unix uniq command line tool that only delete contiguous repeated
  * line. Here we delete any repeated line (here list element).
- *)
+*)
 val uniq : 'a list -> 'a list
 val uniq_eff: 'a list -> 'a list
 val big_union_eff: 'a list list -> 'a list
@@ -1341,7 +1341,7 @@ val iter_with_previous : ('a -> 'a -> 'b) -> 'a list -> unit
 val iter_with_previous_opt : ('a option -> 'a -> 'b) -> 'a list -> unit
 
 val iter_with_before_after :
- ('a list -> 'a -> 'a list -> unit) -> 'a list -> unit
+  ('a list -> 'a -> 'a list -> unit) -> 'a list -> unit
 
 val get_pair : 'a list -> ('a * 'a) list
 
@@ -1378,7 +1378,7 @@ val array_find_index_via_elem : ('a -> bool) -> 'a array -> int
 
 (* for better type checking, as sometimes when have an 'int array', can
  * easily mess up the index from the value.
- *)
+*)
 type idx = Idx of int
 val next_idx: idx -> idx
 val int_of_idx: idx -> int
@@ -1474,7 +1474,7 @@ val nub : 'a list -> 'a list
  * - the common part,
  * - part only in a,
  * - part only in b
- *)
+*)
 val diff_set_eff : 'a list -> 'a list ->
   'a list * 'a list * 'a list
 (*x: common.mli for collection types *)
@@ -1493,43 +1493,43 @@ val diff_set_eff : 'a list -> 'a list ->
 (*****************************************************************************)
 
 module StringSet :
-  sig
-    type elt = string
-    type t
-    val empty : t
-    val add : string -> t -> t
-    val remove : string -> t -> t
-    val singleton : string -> t
+sig
+  type elt = string
+  type t
+  val empty : t
+  val add : string -> t -> t
+  val remove : string -> t -> t
+  val singleton : string -> t
 
-    val of_list: string list -> t
-    val to_list: t -> string list
+  val of_list: string list -> t
+  val to_list: t -> string list
 
-    val is_empty : t -> bool
-    val mem : string -> t -> bool
+  val is_empty : t -> bool
+  val mem : string -> t -> bool
 
-    val union : t -> t -> t
-    val inter : t -> t -> t
-    val diff : t -> t -> t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
 
-    val subset : t -> t -> bool
-    val equal : t -> t -> bool
+  val subset : t -> t -> bool
+  val equal : t -> t -> bool
 
-    val compare : t -> t -> int
-    val iter : (string -> unit) -> t -> unit
-    val fold : (string -> 'a -> 'a) -> t -> 'a -> 'a
-    val for_all : (string -> bool) -> t -> bool
-    val exists : (string -> bool) -> t -> bool
-    val filter : (string -> bool) -> t -> t
-    val partition : (string -> bool) -> t -> t * t
-    val cardinal : t -> int
-    val elements : t -> string list
+  val compare : t -> t -> int
+  val iter : (string -> unit) -> t -> unit
+  val fold : (string -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (string -> bool) -> t -> bool
+  val exists : (string -> bool) -> t -> bool
+  val filter : (string -> bool) -> t -> t
+  val partition : (string -> bool) -> t -> t * t
+  val cardinal : t -> int
+  val elements : t -> string list
       (*
         val min_string : t -> string
         val max_string : t -> string
       *)
-    val choose : t -> string
-    val split : string -> t -> t * bool * t
-  end
+  val choose : t -> string
+  val split : string -> t -> t * bool * t
+end
 
 (*x: common.mli for collection types *)
 (*****************************************************************************)
@@ -1583,42 +1583,42 @@ val sortgen_by_key_highfirst: ('a,'b) assoc -> ('a * 'b) list
 (*****************************************************************************)
 
 module IntMap :
-  sig
-    type key = int
-    type +'a t
-    val empty : 'a t
-    val is_empty : 'a t -> bool
-    val add : key -> 'a -> 'a t -> 'a t
-    val find : key -> 'a t -> 'a
-    val remove : key -> 'a t -> 'a t
-    val mem : key -> 'a t -> bool
-    val iter : (key -> 'a -> unit) -> 'a t -> unit
-    val map : ('a -> 'b) -> 'a t -> 'b t
-    val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-    val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-    val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  end
+sig
+  type key = int
+  type +'a t
+  val empty : 'a t
+  val is_empty : 'a t -> bool
+  val add : key -> 'a -> 'a t -> 'a t
+  val find : key -> 'a t -> 'a
+  val remove : key -> 'a t -> 'a t
+  val mem : key -> 'a t -> bool
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
+  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+end
 val intmap_to_list : 'a IntMap.t -> (IntMap.key * 'a) list
 val intmap_string_of_t : 'a -> 'b -> string
 
 module IntIntMap :
-  sig
-    type key = int * int
-    type +'a t
-    val empty : 'a t
-    val is_empty : 'a t -> bool
-    val add : key -> 'a -> 'a t -> 'a t
-    val find : key -> 'a t -> 'a
-    val remove : key -> 'a t -> 'a t
-    val mem : key -> 'a t -> bool
-    val iter : (key -> 'a -> unit) -> 'a t -> unit
-    val map : ('a -> 'b) -> 'a t -> 'b t
-    val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-    val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-    val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  end
+sig
+  type key = int * int
+  type +'a t
+  val empty : 'a t
+  val is_empty : 'a t -> bool
+  val add : key -> 'a -> 'a t -> 'a t
+  val find : key -> 'a t -> 'a
+  val remove : key -> 'a t -> 'a t
+  val mem : key -> 'a t -> bool
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
+  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+end
 val intintmap_to_list : 'a IntIntMap.t -> (IntIntMap.key * 'a) list
 val intintmap_string_of_t : 'a -> 'b -> string
 (*x: common.mli for collection types *)
@@ -1632,7 +1632,7 @@ val intintmap_string_of_t : 'a -> 'b -> string
  *
  * Note that Hashtbl module use different convention :( the object is
  * the first argument, not last as for List or Map.
- *)
+*)
 
 (* obsolete: can use directly the Hashtbl module *)
 val hcreate : unit -> ('a, 'b) Hashtbl.t
@@ -1680,7 +1680,7 @@ val hashset_union: 'a hashset -> 'a hashset -> unit
 val hashset_inter: 'a hashset -> 'a hashset -> unit
 
 val hashset_to_set :
- < fromlist : ('a ) list -> 'c; .. > -> ('a, 'b) Hashtbl.t -> 'c
+  < fromlist : ('a ) list -> 'c; .. > -> ('a, 'b) Hashtbl.t -> 'c
 
 val hashset_to_list : 'a hashset -> 'a list
 val hashset_of_list : 'a list -> 'a hashset
@@ -1784,17 +1784,17 @@ val treeref_children_ref:
   'a treeref -> 'a treeref list ref
 
 val find_treeref_with_parents_some:
- ('a * 'a treeref list ref -> 'a list -> 'c option) ->
- 'a treeref -> 'c
+  ('a * 'a treeref list ref -> 'a list -> 'c option) ->
+  'a treeref -> 'c
 
 val find_multi_treeref_with_parents_some:
- ('a * 'a treeref list ref -> 'a list -> 'c option) ->
- 'a treeref -> 'c list
+  ('a * 'a treeref list ref -> 'a list -> 'c option) ->
+  'a treeref -> 'c list
 
 
 (* Leaf can seem redundant, but sometimes want to directly see if
  * a children is a leaf without looking if the list is empty.
- *)
+*)
 type ('a, 'b) treeref2 =
   | NodeRef2 of 'a * ('a, 'b) treeref2 list ref
   | LeafRef2 of 'b
@@ -2026,11 +2026,11 @@ val add_in_scope_h : ('a, 'b) scoped_h_env ref -> 'a * 'b -> unit
 (* opti: to avoid stressing the GC with a huge graph, we sometimes
  * change a big AST into a string, which reduces the size of the graph
  * to explore when garbage collecting.
- *)
+*)
 type 'a cached = 'a serialized_maybe ref
- and 'a serialized_maybe =
-    | Serial of string
-    | Unfold of 'a
+and 'a serialized_maybe =
+  | Serial of string
+  | Unfold of 'a
 
 val serial: 'a -> 'a cached
 val unserial: 'a cached -> 'a

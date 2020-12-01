@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -45,7 +45,7 @@ let gen_package_file_with_class_defs pr xs g =
         pr (spf "%sint %s;" (Common2.n_space depth) str);
     | E.Method
     | E.ClassConstant
-        -> ()
+      -> ()
 
     | _ -> ()
   in
@@ -65,29 +65,29 @@ let extract_from_sources ~src ~dst files =
 
     let classes_or_files =
       xs |> List.filter (function
-      | _, E.Class -> true
-      | _, E.File -> true
-      | _ -> false
+        | _, E.Class -> true
+        | _, E.File -> true
+        | _ -> false
       )
     in
     let subpackages =
       xs |> List.filter (function
-      | _, E.Package -> true
-      | _ -> false
+        | _, E.Package -> true
+        | _ -> false
       )
     in
     (match current, classes_or_files with
-    | _, [] -> ()
-    | (str, E.Package), xs ->
-        let filename = Filename.concat dst (str ^ ".java") in
-        pr2 (spf "generating %s" filename);
-        Common.with_open_outfile filename (fun (pr, _chan) ->
-          let pr s = pr (s ^ "\n") in
-          pr (spf "package %s;" str);
-          gen_package_file_with_class_defs pr xs g
-        )
-    | _ ->
-        ()
+     | _, [] -> ()
+     | (str, E.Package), xs ->
+         let filename = Filename.concat dst (str ^ ".java") in
+         pr2 (spf "generating %s" filename);
+         Common.with_open_outfile filename (fun (pr, _chan) ->
+           let pr s = pr (s ^ "\n") in
+           pr (spf "package %s;" str);
+           gen_package_file_with_class_defs pr xs g
+         )
+     | _ ->
+         ()
     );
     List.iter aux subpackages;
 

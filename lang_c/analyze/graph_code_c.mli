@@ -6,11 +6,11 @@ val build:
 (* if want prolog facts generation *)
 val hook_use_edge:
   (Graph_code_prolog.context -> bool (* in_assign *) ->
-  (Graph_code.node * Graph_code.node) ->
+   (Graph_code.node * Graph_code.node) ->
    Graph_code.graph ->
    Parse_info.token_location ->
    unit)
-  ref
+    ref
 
 val hook_def_node:
   (Graph_code.node -> Graph_code.graph -> unit) ref

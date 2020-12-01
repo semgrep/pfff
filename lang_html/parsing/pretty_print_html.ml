@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -38,8 +38,8 @@ let string_of_html_tree tree =
               | _ ->
                   spf "<%s %s>" stag
                     (attrs |> List.map (fun ((Attr (sattr,_)), (Val (sval,_)))->
-                      spf "%s=%s" sattr sval
-                    ) |> Common.join " "
+                       spf "%s=%s" sattr sval
+                     ) |> Common.join " "
                     )
             in
             let end_tag = spf "</%s>" stag in

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -89,7 +89,7 @@ let string_of_value = function
 type _rule = string
 
 type _meta_fact =
-    string * value list
+  string * value list
 
 let meta_fact = function
   | PointTo (a, b) -> "point_to", [ V a; V b; ]
@@ -119,8 +119,8 @@ let string_of_fact fact =
   let str, xs = meta_fact fact in
   spf "%s(%s)" str
     (xs |> List.map (function
-      | V x | F x | N x | I x -> spf "'%s'" x
-      | Z i -> spf "%d" i
+       | V x | F x | N x | I x -> spf "'%s'" x
+       | Z i -> spf "%d" i
      ) |> Common.join ", "
     )
 
@@ -174,9 +174,9 @@ let bddbddb_of_facts facts dir =
       add_v v;
       (* for field_to_var and var_to_func *)
       (match v with
-      | F s -> add_v (V s)
-      | N s -> add_v (V s)
-      | _ -> ()
+       | F s -> add_v (V s)
+       | N s -> add_v (V s)
+       | _ -> ()
       )
     )
   );
@@ -209,56 +209,56 @@ let bddbddb_of_facts facts dir =
 
   (* generate .tuples *)
   hrules |> Common.hash_to_list |> List.iter (fun (arule, xxs) ->
-      let arule =
-        match arule with
-        | "point_to" -> "point_to0"
-        | "assign" -> "assign0"
-        | s -> s
-      in
+    let arule =
+      match arule with
+      | "point_to" -> "point_to0"
+      | "assign" -> "assign0"
+      | s -> s
+    in
 
-      let file = Filename.concat dir (arule ^ ".tuples") in
-      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
-        let pr s = pr_no_nl (s ^ "\n") in
+    let file = Filename.concat dir (arule ^ ".tuples") in
+    Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+      let pr s = pr_no_nl (s ^ "\n") in
 
-        (* todo: header?? *)
-        (match !xxs with
-        | [] -> ()
-        | xs::_xxs ->
-          let hcnt = Hashtbl.create 6 in
-          pr (spf "# %s"
-                (xs |> List.map (fun v ->
-                  let domain = domain_of_value v in
-                  let cnt =
-                    try Hashtbl.find hcnt domain
-                    with Not_found ->
-                      let cnt = ref 0 in
-                      Hashtbl.add hcnt domain cnt;
-                      cnt
-                  in
-                  let i = !cnt in
-                  incr cnt;
-                  (* less: size? *)
-                  spf "%s%d:18" domain i
-                 ) |> Common.join " "))
-        );
-
-        !xxs |> List.iter (fun xs ->
-          let ints =
-            xs |> List.map (fun v ->
-              let i =
-                match v with
-                | Z i -> i
-                | _ ->
+      (* todo: header?? *)
+      (match !xxs with
+       | [] -> ()
+       | xs::_xxs ->
+           let hcnt = Hashtbl.create 6 in
+           pr (spf "# %s"
+                 (xs |> List.map (fun v ->
                     let domain = domain_of_value v in
-                    let (_, hdomainconv) = List.assoc domain domains_idx in
-                    Hashtbl.find hdomainconv v
-              in
-              i
-            )
-          in
-          pr (ints |> List.map i_to_s |> Common.join " ")
-        );
-      )
+                    let cnt =
+                      try Hashtbl.find hcnt domain
+                      with Not_found ->
+                        let cnt = ref 0 in
+                        Hashtbl.add hcnt domain cnt;
+                        cnt
+                    in
+                    let i = !cnt in
+                    incr cnt;
+                    (* less: size? *)
+                    spf "%s%d:18" domain i
+                  ) |> Common.join " "))
+      );
+
+      !xxs |> List.iter (fun xs ->
+        let ints =
+          xs |> List.map (fun v ->
+            let i =
+              match v with
+              | Z i -> i
+              | _ ->
+                  let domain = domain_of_value v in
+                  let (_, hdomainconv) = List.assoc domain domains_idx in
+                  Hashtbl.find hdomainconv v
+            in
+            i
+          )
+        in
+        pr (ints |> List.map i_to_s |> Common.join " ")
+      );
+    )
   );
 
   (* generate extra .tuples *)
@@ -267,44 +267,44 @@ let bddbddb_of_facts facts dir =
   let (_vvals, vconv) = List.assoc "V" domains_idx in
   let arule = "field_to_var" in
 
-      let file = Filename.concat dir (arule ^ ".tuples") in
-      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
-        let pr s = pr_no_nl (s ^ "\n") in
+  let file = Filename.concat dir (arule ^ ".tuples") in
+  Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+    let pr s = pr_no_nl (s ^ "\n") in
 
-        pr "# F0:18 V0:18";
+    pr "# F0:18 V0:18";
 
-        fvals |> List.iter (fun (fld, idx) ->
-          match fld with
-          | F s ->
-            let v = V s in
-            let idx2 = Hashtbl.find vconv v in
-            pr (spf "%d %d" idx idx2)
-          | _ ->
-            pr2_gen (fld, idx);
-            raise Impossible
-        )
-      );
+    fvals |> List.iter (fun (fld, idx) ->
+      match fld with
+      | F s ->
+          let v = V s in
+          let idx2 = Hashtbl.find vconv v in
+          pr (spf "%d %d" idx idx2)
+      | _ ->
+          pr2_gen (fld, idx);
+          raise Impossible
+    )
+  );
 
   let arule = "var_to_func" in
 
-      let file = Filename.concat dir (arule ^ ".tuples") in
-      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
-        let pr s = pr_no_nl (s ^ "\n") in
+  let file = Filename.concat dir (arule ^ ".tuples") in
+  Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+    let pr s = pr_no_nl (s ^ "\n") in
 
-        pr "# V0:18 N0:18";
+    pr "# V0:18 N0:18";
 
-        nvals |> List.iter (fun (n, idx) ->
-          match n with
-          | N s ->
-            let v = V s in
-            let idx2 = Hashtbl.find vconv v in
-            (* subtle, different order than for field_to_var, idx2 before *)
-            pr (spf "%d %d" idx2 idx)
-          | _ ->
-            pr2_gen (n, idx);
-            raise Impossible
-        )
-      );
+    nvals |> List.iter (fun (n, idx) ->
+      match n with
+      | N s ->
+          let v = V s in
+          let idx2 = Hashtbl.find vconv v in
+          (* subtle, different order than for field_to_var, idx2 before *)
+          pr (spf "%d %d" idx2 idx)
+      | _ ->
+          pr2_gen (n, idx);
+          raise Impossible
+    )
+  );
 
 
   ()
@@ -317,41 +317,41 @@ let bddbddb_explain_tuples file =
   Common.with_open_outfile dst (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
 
-  let xs = Common.cat file in
-  (match xs with
-  | header::xs ->
-    if header =~ "# \\(.*\\)"
-    then
-      let s = Common.matched1 header in
-      let flds = Common.split "[ \t]" s in
-      let fld_domains =
-        flds |> List.map (fun s ->
-          if s =~ "\\([A-Z]\\)[0-9]?:"
-          then Common.matched1 s
-          else failwith (spf "could not find header in %s" file)
-        )
-      in
-      let fld_translates =
-        fld_domains |> List.map (fun s ->
-          let mapfile = Common2.filename_of_dbe (d,s,"map") in
-          Common.cat mapfile |> Array.of_list
-        )
-      in
+    let xs = Common.cat file in
+    (match xs with
+     | header::xs ->
+         if header =~ "# \\(.*\\)"
+         then
+           let s = Common.matched1 header in
+           let flds = Common.split "[ \t]" s in
+           let fld_domains =
+             flds |> List.map (fun s ->
+               if s =~ "\\([A-Z]\\)[0-9]?:"
+               then Common.matched1 s
+               else failwith (spf "could not find header in %s" file)
+             )
+           in
+           let fld_translates =
+             fld_domains |> List.map (fun s ->
+               let mapfile = Common2.filename_of_dbe (d,s,"map") in
+               Common.cat mapfile |> Array.of_list
+             )
+           in
 
-      xs |> List.iter (fun s ->
-        let vs = Common.split "[ \t]" s |> List.map s_to_i in
+           xs |> List.iter (fun s ->
+             let vs = Common.split "[ \t]" s |> List.map s_to_i in
 
-        let args =
-          Common2.zip vs fld_translates |> List.map (fun (i, arr) ->
-            arr.(i)
-          )
-        in
-        pr (spf "%s(%s)" b (Common.join ", " args))
-      )
+             let args =
+               Common2.zip vs fld_translates |> List.map (fun (i, arr) ->
+                 arr.(i)
+               )
+             in
+             pr (spf "%s(%s)" b (Common.join ", " args))
+           )
 
-    else failwith (spf "could not find header in %s" file)
+         else failwith (spf "could not find header in %s" file)
 
-  | [] -> pr2 (spf "empty file %s" file)
-  )
+     | [] -> pr2 (spf "empty file %s" file)
+    )
   );
   dst

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = Graph_code
@@ -48,7 +48,7 @@ module G2 = Graph_code_opti
  *
  * todo: coupling/cohesion metrics! the dsm can be helpful to visualize
  * this? see patterns? use more colors?
- *)
+*)
 type dm = {
   matrix: int array array;
   i_to_name: Graph_code.node array;
@@ -56,32 +56,32 @@ type dm = {
   (* which nodes are currently expanded *)
   config: config;
 }
-  (* It's actually more a 'tree set' than a 'tree list' below
-   * when we pass the config to build(). Indeed it's build() which
-   * will order this set according to some partitionning algorithm
-   * that tries to "layer" the code.
-   * less: could reuse Common.tree2.
-   *)
-  and tree =
-    | Node of Graph_code.node * tree list
-  and config = tree
+(* It's actually more a 'tree set' than a 'tree list' below
+ * when we pass the config to build(). Indeed it's build() which
+ * will order this set according to some partitionning algorithm
+ * that tries to "layer" the code.
+ * less: could reuse Common.tree2.
+*)
+and tree =
+  | Node of Graph_code.node * tree list
+and config = tree
 
 
 let basic_config g =
   Node (G.root, Graph_code.children G.root g
-    |> List.map (fun n -> Node (n, [])))
+                |> List.map (fun n -> Node (n, [])))
 let basic_config_opti gopti =
   Node (G.root, Graph_code_opti.children G.root gopti
-    |> List.map (fun n -> Node (n, [])))
+                |> List.map (fun n -> Node (n, [])))
 
 type config_path_elem =
   | Expand of Graph_code.node
   | Focus of Graph_code.node * deps_style
 
-  and deps_style =
-   | DepsIn
-   | DepsOut
-   | DepsInOut
+and deps_style =
+  | DepsIn
+  | DepsOut
+  | DepsInOut
 
 type config_path = config_path_elem list
 
@@ -93,7 +93,7 @@ type config_path = config_path_elem list
  * we may want to specify the order only for certain deeply
  * nested directories in which case we will do a find -name "info.txt"
  * to build all the partial constraints.
- *)
+*)
 type partition_constraints =
   (string, string list) Hashtbl.t
 
@@ -101,7 +101,7 @@ type partition_constraints =
 
 (* Phantom types for safer array access between the graph_opti, dm, and
  * the full matrix dm. Not really used, but could one day.
- *)
+*)
 type 'a idx = int
 
 type idm
@@ -149,7 +149,7 @@ let display dm =
  * - iterate over all edges
  * - iterate only on the children of i
  * - use graph_opti instead of the memoized projection index
- *)
+*)
 let explain_cell_list_use_edges (i, j) dm gopti =
   let res = ref [] in
 
@@ -179,10 +179,10 @@ let explain_cell_list_use_edges (i, j) dm gopti =
       let parent_j2 = projected_parent_of_igopti.(j2) in
       if parent_i2 = i && parent_j2 = j
       then
-       Common.push (
-         gopti.G2.i_to_name.(i2),
-         gopti.G2.i_to_name.(j2)
-       ) res;
+        Common.push (
+          gopti.G2.i_to_name.(i2),
+          gopti.G2.i_to_name.(j2)
+        ) res;
     )
   );
 (*
@@ -246,7 +246,7 @@ let expand_node_opti n tree g =
  * This function is mainly used in a Model.config_of_path
  * where we fold over an initial dm and given a path element
  * expand or focus to get a new dm and so on.
- *)
+*)
 let focus_on_node n deps_style tree dm =
   let i = hashtbl_find_node dm.name_to_i n in
   let (deps: int list ref) = ref [] in
@@ -258,8 +258,8 @@ let focus_on_node n deps_style tree dm =
       | DepsIn -> dm.matrix.(j).(i) > 0
       | DepsInOut -> dm.matrix.(i).(j) > 0 || dm.matrix.(j).(i) > 0
     in
-   (* we do || i = j because we want the node under focus in too, in the
-    * right order
+    (* we do || i = j because we want the node under focus in too, in the
+     * right order
     *)
     if to_include || i = j
     then Common.push j deps
@@ -268,7 +268,7 @@ let focus_on_node n deps_style tree dm =
    *  Node (G.root, !deps +> List.rev +> List.map (fun i ->
    *    Node (hashtbl_find_node dm.i_to_name i, []))
    *  )
-   *)
+  *)
   let rec aux tree =
     match tree with
     | Node (n2, []) ->
@@ -295,9 +295,9 @@ let string_of_config_path_elem = function
   | Focus (n, style) ->
       spf "Focus%s(%s)"
         (match style with
-        | DepsIn -> "<-"
-        | DepsOut -> "->"
-        | DepsInOut -> "<->"
+         | DepsIn -> "<-"
+         | DepsOut -> "->"
+         | DepsInOut -> "<->"
         )
         (G.string_of_node n)
 
@@ -311,7 +311,7 @@ let is_dead_column j dm =
   let mat = dm.matrix in
   let has_user = ref false in
   for i = 0 to Array.length mat - 1 do
-      if mat.(i).(j) > 0 && i <> j then has_user := true
+    if mat.(i).(j) > 0 && i <> j then has_user := true
   done;
   not !has_user
 
@@ -331,11 +331,11 @@ let parents_of_indexes dm =
     match tree with
     (* a leaf *)
     | Node (_, []) ->
-      arr.(!i) <- List.rev acc;
-      incr i
+        arr.(!i) <- List.rev acc;
+        incr i
     (* a node *)
     | Node (n, xs) ->
-      xs |> List.iter (aux (n::acc))
+        xs |> List.iter (aux (n::acc))
   in
   aux [] dm.config;
   arr
@@ -352,9 +352,9 @@ let distance_entity (i, j) arr =
     | [], _ -> 0
 
     | x::xs, y::ys ->
-      if x =*= y
-      then aux xs ys
-      else 1
+        if x =*= y
+        then aux xs ys
+        else 1
   in
   aux xs ys
 
@@ -363,7 +363,7 @@ let distance_entity (i, j) arr =
  * a whole package because they are really used outside this package,
  * so depth of escape > X. ===> remember max depth of escape
  * 0 = same module, 1, brother, etc.
- *)
+*)
 let is_internal_helper j dm =
   let mat = dm.matrix in
   let arr = parents_of_indexes dm in
@@ -371,8 +371,8 @@ let is_internal_helper j dm =
   let has_users_outside_parent = ref false in
   let parents = arr.(j) in
   for i = 0 to Array.length mat - 1 do
-      if mat.(i).(j) > 0 && i <> j && distance_entity (j, i) arr > 0
-      then has_users_outside_parent := true
+    if mat.(i).(j) > 0 && i <> j && distance_entity (j, i) arr > 0
+    then has_users_outside_parent := true
   done;
   not !has_users_outside_parent &&
   (* the elements at the root can't have dependencies outside parents *)
