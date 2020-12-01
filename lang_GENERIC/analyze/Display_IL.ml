@@ -37,8 +37,9 @@ let short_string_of_node_kind nkind =
        | Call (_lopt, exp, _) ->
            string_of_exp exp ^ "(...)"
        | CallSpecial _ -> "<special>"
+       | TodoInstr _ -> "<to-do instr>"
       )
-
+  | NTodo _ -> "<to-do stmt>"
 
 (* using internally graphviz dot and ghostview on X11 *)
 let (display_cfg: cfg -> unit) = fun flow ->
