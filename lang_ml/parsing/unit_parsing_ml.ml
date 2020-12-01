@@ -29,41 +29,41 @@ let unittest =
         "open Foo1
 module A = Foo2
 "      (fun file ->
-          let _ast = Parse_ml.parse_program file in
-          let _cnt = ref 0 in
-          (* TODO use Visitor_AST of ml_to_generic
-                   let visitor = V.mk_visitor { V.default_visitor with
-                     V.kmodule_expr = (fun (k, _) x ->
-                       (match x with
-                       | ModuleName (_qu, _name) ->
-                           incr cnt
-                       | _ -> ()
-                       );
-                       k x
-                     );
-                     V.kitem = (fun (k, _) x ->
-                       (match x with
-                       | Open (_tok, (_qu, _name)) ->
-                           incr cnt;
-                       | _ -> ()
-                       );
-                       k x
-                     );
-                     V.kqualifier = (fun (_k, _) xs ->
-                       (match xs with
-                       | [Name (s, _), _tok] ->
-                           pr2 s;
-                           incr cnt;
-                       | _ ->
-                           ()
-                       );
-                     );
-                   }
-                   in
-                   visitor (Program ast);
-                   assert_equal 2 !cnt;
-          *)
-          ()
-        )
+         let _ast = Parse_ml.parse_program file in
+         let _cnt = ref 0 in
+         (* TODO use Visitor_AST of ml_to_generic
+                  let visitor = V.mk_visitor { V.default_visitor with
+                    V.kmodule_expr = (fun (k, _) x ->
+                      (match x with
+                      | ModuleName (_qu, _name) ->
+                          incr cnt
+                      | _ -> ()
+                      );
+                      k x
+                    );
+                    V.kitem = (fun (k, _) x ->
+                      (match x with
+                      | Open (_tok, (_qu, _name)) ->
+                          incr cnt;
+                      | _ -> ()
+                      );
+                      k x
+                    );
+                    V.kqualifier = (fun (_k, _) xs ->
+                      (match xs with
+                      | [Name (s, _), _tok] ->
+                          pr2 s;
+                          incr cnt;
+                      | _ ->
+                          ()
+                      );
+                    );
+                  }
+                  in
+                  visitor (Program ast);
+                  assert_equal 2 !cnt;
+         *)
+         ()
+       )
     );
   ]
