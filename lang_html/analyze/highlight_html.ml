@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -39,7 +39,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
 
   let already_tagged = Hashtbl.create 101 in
@@ -57,41 +57,41 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
     | Element ((Tag (s_tag, _tok_t)), attrs, xs) ->
         attrs |> List.iter
           (fun (Attr (s_attr, _tok_a), (Val (_s_val, tok_v))) ->
-            match s_attr with
-            | "href" | "xmlns" -> tag tok_v EmbededUrl
-            | "id" -> tag tok_v (Local Def)
-            | _ -> ()
+             match s_attr with
+             | "href" | "xmlns" -> tag tok_v EmbededUrl
+             | "id" -> tag tok_v (Local Def)
+             | _ -> ()
           );
         (match s_tag, xs with
-        | "pre", _ ->
-            xs |> List.iter (function
-            | Element _ -> raise Impossible
-            | Data (_s, tok) -> tag tok Verbatim
-            )
-        | "script", _ ->
-            xs |> List.iter (function
-            | Element _ -> raise Impossible
-            | Data (_s, tok) -> tag tok EmbededCode
-            )
-        | "style", _ ->
-            xs |> List.iter (function
-            | Element _ -> raise Impossible
-            | Data (_s, tok) -> tag tok EmbededStyle
-            )
+         | "pre", _ ->
+             xs |> List.iter (function
+               | Element _ -> raise Impossible
+               | Data (_s, tok) -> tag tok Verbatim
+             )
+         | "script", _ ->
+             xs |> List.iter (function
+               | Element _ -> raise Impossible
+               | Data (_s, tok) -> tag tok EmbededCode
+             )
+         | "style", _ ->
+             xs |> List.iter (function
+               | Element _ -> raise Impossible
+               | Data (_s, tok) -> tag tok EmbededStyle
+             )
 
-        | "h1", _ ->
-            xs |> List.iter (function
-            | Element _ -> () | Data (_s, tok) -> tag tok CommentSection1
-            )
-        | "h2", _ ->
-            xs |> List.iter (function
-            | Element _ -> () | Data (_s, tok) -> tag tok CommentSection2
-            )
-        | "h3", _ ->
-            xs |> List.iter (function
-            | Element _ -> () | Data (_s, tok) -> tag tok CommentSection3
-            )
-        | _ -> ()
+         | "h1", _ ->
+             xs |> List.iter (function
+               | Element _ -> () | Data (_s, tok) -> tag tok CommentSection1
+             )
+         | "h2", _ ->
+             xs |> List.iter (function
+               | Element _ -> () | Data (_s, tok) -> tag tok CommentSection2
+             )
+         | "h3", _ ->
+             xs |> List.iter (function
+               | Element _ -> () | Data (_s, tok) -> tag tok CommentSection3
+             )
+         | _ -> ()
         );
         xs |> List.iter visit
     | Data _ -> ()

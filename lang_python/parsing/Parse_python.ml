@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -40,7 +40,7 @@ type parsing_mode =
   | Python3
   (* will start with Python3 and fallback to Python2 in case of an error *)
   | Python
-(*e: type [[Parse_python.parsing_mode]] *)
+  (*e: type [[Parse_python.parsing_mode]] *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)
@@ -61,35 +61,35 @@ let tokens2 parsing_mode file =
   let token lexbuf =
     match Lexer.top_mode state with
     | Lexer.STATE_TOKEN ->
-      Lexer.token python2 state lexbuf
+        Lexer.token python2 state lexbuf
     | Lexer.STATE_OFFSET ->
         failwith "impossibe STATE_OFFSET in python lexer"
     | Lexer.STATE_UNDERSCORE_TOKEN ->
-      let tok = Lexer._token python2 state lexbuf in
-      (match tok, Lexer.top_mode state with
-      | T.TCommentSpace _, _ -> ()
-      | T.FSTRING_START _, _ -> ()
-      | _, Lexer.STATE_UNDERSCORE_TOKEN ->
-          (* Note that _token() may have changed the top state.
-           * For example, after having lexed 'f"{foo '", which puts us in a state
-           * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
-           * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
-           * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
-           * don't want to replace with ST_TOKEN. This is why we should switch
-           * back to ST_TOKEN only when the current state is
-           * STATE_UNDERSCORE_TOKEN. *)
-          Lexer.set_mode state Lexer.STATE_TOKEN
-      | _ -> ()
-      );
-      tok
+        let tok = Lexer._token python2 state lexbuf in
+        (match tok, Lexer.top_mode state with
+         | T.TCommentSpace _, _ -> ()
+         | T.FSTRING_START _, _ -> ()
+         | _, Lexer.STATE_UNDERSCORE_TOKEN ->
+             (* Note that _token() may have changed the top state.
+              * For example, after having lexed 'f"{foo '", which puts us in a state
+              * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
+              * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
+              * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
+              * don't want to replace with ST_TOKEN. This is why we should switch
+              * back to ST_TOKEN only when the current state is
+              * STATE_UNDERSCORE_TOKEN. *)
+             Lexer.set_mode state Lexer.STATE_TOKEN
+         | _ -> ()
+        );
+        tok
     | Lexer.STATE_IN_FSTRING_SINGLE ->
-       Lexer.fstring_single state lexbuf
+        Lexer.fstring_single state lexbuf
     | Lexer.STATE_IN_FSTRING_DOUBLE ->
-       Lexer.fstring_double state lexbuf
+        Lexer.fstring_double state lexbuf
     | Lexer.STATE_IN_FSTRING_TRIPLE_SINGLE ->
-       Lexer.fstring_triple_single state lexbuf
+        Lexer.fstring_triple_single state lexbuf
     | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE ->
-       Lexer.fstring_triple_double state lexbuf
+        Lexer.fstring_triple_double state lexbuf
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
@@ -140,18 +140,18 @@ let rec parse_basic ?(parsing_mode=Python) filename =
      * would trigger a parsing with a python2 mode, which change the
      * significance of the print and exec identifiers, which may give
      * strange error messages for python3 code.
-     *)
+    *)
     if parsing_mode = Python &&
        (tr.PI.passed |> Common.take_safe 10 |> List.exists (function
-         | T.NAME (("print" | "exec"), _)
-         | T.ASYNC _ | T.AWAIT _ | T.NONLOCAL _ | T.TRUE _ | T.FALSE _
-              -> true
-         | _ -> false))
+          | T.NAME (("print" | "exec"), _)
+          | T.ASYNC _ | T.AWAIT _ | T.NONLOCAL _ | T.TRUE _ | T.FALSE _
+            -> true
+          | _ -> false))
     then
-        (* note that we cant use tokens as the tokens are actually different
-         * in Python2 mode, but we could optimize things a bit and just
-         * transform those tokens here *)
-        parse_basic ~parsing_mode:Python2 filename
+      (* note that we cant use tokens as the tokens are actually different
+       * in Python2 mode, but we could optimize things a bit and just
+       * transform those tokens here *)
+      parse_basic ~parsing_mode:Python2 filename
     else begin
       let cur = tr.PI.current in
       if not !Flag.error_recovery
@@ -169,14 +169,14 @@ let rec parse_basic ?(parsing_mode=Python) filename =
 
       stat.PI.bad     <- Common.cat filename |> List.length;
       (None, toks), stat
-     end
+    end
 (*e: function [[Parse_python.parse_basic]] *)
 
 
 (*s: function [[Parse_python.parse]] *)
 let parse ?parsing_mode a =
   Common.profile_code "Parse_python.parse" (fun () ->
-      parse_basic ?parsing_mode a)
+    parse_basic ?parsing_mode a)
 (*e: function [[Parse_python.parse]] *)
 
 (*s: function [[Parse_python.parse_program]] *)

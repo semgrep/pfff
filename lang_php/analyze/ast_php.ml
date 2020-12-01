@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -103,36 +103,36 @@
  *  - put back types! at least the basic one like f_return_type
  *    with no generics
  *  - less: factorize more? string vs Guil?
- *)
+*)
 
 (*****************************************************************************)
 (* Token (leaves) *)
 (*****************************************************************************)
 
 type tok = Parse_info.t
- [@@deriving show]
+[@@deriving show]
 type 'a wrap = 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 
 type ident = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 (* the string contains the $ prefix *)
 type var = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* The keyword 'namespace' can be in a leading position. The special
  * ident 'ROOT' can also be leading.
- *)
+*)
 type qualified_ident = ident list
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 type name = qualified_ident
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -140,7 +140,7 @@ type name = qualified_ident
 
 (* lvalue and expr have been mixed in this AST, but an lvalue should be
  * an expr restricted to: Var $var, Array_get, Obj_get, Class_get, or List.
- *)
+*)
 type expr =
   (* booleans are really just Int in PHP :( *)
   | Int of string wrap
@@ -149,7 +149,7 @@ type expr =
    * as strings so the string wrap below can actually correspond to a
    * 'Id name' sometimes. Some magic functions like param_post() also
    * introduce entities (variables) via strings.
-   *)
+  *)
   | String of string wrap
 
   (* Id is valid for "entities" (functions, classes, constants). Id is also
@@ -159,15 +159,15 @@ type expr =
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
-   *)
+  *)
   | Id of name (* less: should be renamed Name *)
   | IdSpecial of special wrap
 
-   (* Var used to be merged with Id. But then we were doing lots of
-    * 'when Ast.is_variable name' so maybe better to have Id and Var
-    * (at the same time OCaml does not differentiate Id from Var).
-    * The string contains the '$'.
-    *)
+  (* Var used to be merged with Id. But then we were doing lots of
+   * 'when Ast.is_variable name' so maybe better to have Id and Var
+   * (at the same time OCaml does not differentiate Id from Var).
+   * The string contains the '$'.
+  *)
   | Var of var
 
   (* when None it means add to the end when used in lvalue position *)
@@ -177,7 +177,7 @@ type expr =
    * ex: $o->foo() ==> Call(Obj_get(Var "$o", Id "foo"), [])
    * ex: A::foo()  ==> Call(Class_get(Id "A", Id "foo"), [])
    * note that Id can be "self", "parent", "static".
-   *)
+  *)
   | Obj_get of expr * tok * expr
   | Class_get of expr * tok * expr
 
@@ -187,21 +187,21 @@ type expr =
 
   (* pad: could perhaps be at the statement level? The left expr
    * must be an lvalue (e.g. a variable).
-   *)
+  *)
   | Assign of expr * tok * expr
   | AssignOp of expr * binaryOp wrap * expr
   (* really a destructuring tuple let; always used as part of an Assign or
    * in foreach_pattern.
-   *)
+  *)
   | List of expr list bracket
   (* used only inside array_value or foreach_pattern, or for yield
    * (which is translated as a builtin and so a Call)
-   *)
+  *)
   | Arrow of expr * tok * expr
 
   (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In
    * PHP refs are always used in an Assign context.
-   *)
+  *)
   | Ref of tok * expr
 
   (* e.g. f(...$x) *)
@@ -228,26 +228,26 @@ type expr =
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
 
-  and special =
+and special =
   (* often transformed in Var "$this" in the analysis *)
   | This
   (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
   | Eval
 
-  and binaryOp =
-   | BinaryConcat
-   | CombinedComparison
-   | ArithOp of AST_generic.operator
-  and unaryOp = AST_generic.operator
+and binaryOp =
+  | BinaryConcat
+  | CombinedComparison
+  | ArithOp of AST_generic.operator
+and unaryOp = AST_generic.operator
 
 (* only Var, List, or Arrow, and apparently also Array_get is ok, so
  * basically any lvalue
- *)
+*)
 and foreach_pattern = expr
 (* often an Arrow *)
 and array_value = expr
 (* string_const_expr is for shape field names which are permitted to be either
-* literal strings or class constants. *)
+ * literal strings or class constants. *)
 and string_const_expr = expr
 
 (*****************************************************************************)
@@ -255,13 +255,13 @@ and string_const_expr = expr
 (*****************************************************************************)
 
 and hint_type =
- | Hint of name (* todo: add the generics *)
- | HintArray of tok
- | HintQuestion of tok * hint_type
- | HintTuple of hint_type list bracket
- | HintCallback of hint_type list * (hint_type option)
- | HintTypeConst of hint_type * tok * hint_type (* ?? *)
- | HintVariadic of tok * hint_type option
+  | Hint of name (* todo: add the generics *)
+  | HintArray of tok
+  | HintQuestion of tok * hint_type
+  | HintTuple of hint_type list bracket
+  | HintCallback of hint_type list * (hint_type option)
+  | HintTypeConst of hint_type * tok * hint_type (* ?? *)
+  | HintVariadic of tok * hint_type option
 
 and class_name = hint_type
 
@@ -308,13 +308,13 @@ and stmt =
   (* expr is most of the time a simple variable name *)
   | Global of tok * expr list
 
-  and case =
-    | Case of tok * expr * stmt list
-    | Default of tok * stmt list
+and case =
+  | Case of tok * expr * stmt list
+  | Default of tok * stmt list
 
-  (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = tok * hint_type * var * stmt list
-  and finally = tok * stmt list
+(* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
+and catch = tok * hint_type * var * stmt list
+and finally = tok * stmt list
 
 
 (*****************************************************************************)
@@ -327,7 +327,7 @@ and stmt =
  * For methods, a few names are specials:
  *  - __construct, __destruct
  *  - __call, __callStatic
- *)
+*)
 and func_def = {
   (* "_lambda" when used for lambda, see also AnonLambda for f_kind below *)
   f_name: ident;
@@ -345,26 +345,26 @@ and func_def = {
 
   f_body: stmt list;
 }
-   and function_kind =
-     | Function
-     | AnonLambda
-     | ShortLambda (* they have different scoping rules for free variables *)
-     | Method
+and function_kind =
+  | Function
+  | AnonLambda
+  | ShortLambda (* they have different scoping rules for free variables *)
+  | Method
 
-   and parameter = {
-     p_type: hint_type option;
-     p_ref: tok option;
-     p_name: var;
-     p_default: expr option;
-     p_attrs: attribute list;
-     p_variadic: tok option;
-   }
+and parameter = {
+  p_type: hint_type option;
+  p_ref: tok option;
+  p_name: var;
+  p_default: expr option;
+  p_attrs: attribute list;
+  p_variadic: tok option;
+}
 
-  (* for methods, and below for fields too *)
-  and modifier = Cst_php.modifier wrap
+(* for methods, and below for fields too *)
+and modifier = Cst_php.modifier wrap
 
-  (* normally either an Id or Call with only static arguments *)
-  and attribute = expr
+(* normally either an Id or Call with only static arguments *)
+and attribute = expr
 
 and constant_def = {
   cst_tok: tok;
@@ -407,7 +407,7 @@ and class_kind =
   | Enum
 and xhp_field = class_var * bool
 and class_var = {
-    (* note that the name will contain a $ *)
+  (* note that the name will contain a $ *)
   cv_name: var;
   cv_type: hint_type option;
   cv_value: expr option;
@@ -419,10 +419,10 @@ and type_def = {
   t_name: ident;
   t_kind: type_def_kind;
 }
-  and type_def_kind =
+and type_def_kind =
   | Alias of hint_type
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 
 (*****************************************************************************)
@@ -431,7 +431,7 @@ and type_def = {
 
 
 type program = stmt list
-  [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 
 (*****************************************************************************)
@@ -443,7 +443,7 @@ type any =
   | Stmt of stmt
   | Expr2 of expr
   | Param of parameter
-  [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -470,12 +470,12 @@ let wrap_fake s = s, Parse_info.fake_info s
  *
  * coupling: if modify the string, git grep it because it's probably
  *  used in patterns too.
- *)
+*)
 let builtin x = "__builtin__" ^ x
 (* for 'self'/'parent', 'static', 'lambda', 'namespace', root namespace '\',
  * 'class' as in C::class
  * TODO: transform in IdSpecial!
- *)
+*)
 let special x = "__special__" ^ x
 
 (* AST helpers *)

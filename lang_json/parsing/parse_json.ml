@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 open Parse_js
 module PI = Parse_info
@@ -31,10 +31,10 @@ let parse_program filename =
   try
     Parser_js.json lexer lexbuf_fake
   with Parsing.Parse_error ->
-      let cur = tr.PI.current in
-      if !Flag.show_parsing_error
-      then pr2 ("parse error \n = " ^ error_msg_tok cur);
-      raise (PI.Parsing_error (TH.info_of_tok cur))
+    let cur = tr.PI.current in
+    if !Flag.show_parsing_error
+    then pr2 ("parse error \n = " ^ error_msg_tok cur);
+    raise (PI.Parsing_error (TH.info_of_tok cur))
 
 let any_of_string str =
   Common2.with_tmp_file ~str ~ext:"json" (fun file ->
@@ -45,7 +45,7 @@ let any_of_string str =
      * assignment_expr_no_stmt because of possible ambiguities
      * when seeing { } which can be a block or an object,
      * so let's call directly Parser_js.json
-     *)
+    *)
     let e = Parser_js.json lexer lexbuf_fake in
     Ast_json.E e
   )

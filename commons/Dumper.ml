@@ -1,7 +1,7 @@
 (* Dump an OCaml value into a printable string.
  * By Richard W.M. Jones (rich@annexia.org).
  * dumper.ml 1.2 2005/02/06 12:38:21 rich Exp
- *)
+*)
 
 open Obj
 
@@ -15,12 +15,12 @@ let rec dump r =
     in
     let rec is_list r =
       if is_int r then (
-	if (magic r : int) = 0 then true (* [] *)
-	else false
+        if (magic r : int) = 0 then true (* [] *)
+        else false
       ) else (
-	let s = size r and t = tag r in
-	if t = 0 && s = 2 then is_list (field r 1) (* h :: t *)
-	else false
+        let s = size r and t = tag r in
+        if t = 0 && s = 2 then is_list (field r 1) (* h :: t *)
+        else false
       )
     in
     let rec get_list r =
@@ -30,7 +30,7 @@ let rec dump r =
     let opaque name =
       (* XXX In future, print the address of value 'r'.  Not possible in
        * pure OCaml at the moment.
-       *)
+      *)
       "<" ^ name ^ ">"
     in
 
@@ -46,18 +46,18 @@ let rec dump r =
       "(" ^ String.concat ", " (List.map dump fields) ^ ")"
     )
 
-      (* Note that [lazy_tag .. forward_tag] are < no_scan_tag.  Not
-       * clear if very large constructed values could have the same
-       * tag. XXX *)
+    (* Note that [lazy_tag .. forward_tag] are < no_scan_tag.  Not
+     * clear if very large constructed values could have the same
+     * tag. XXX *)
     else if t = lazy_tag then opaque "lazy"
     else if t = closure_tag then opaque "closure"
     else if t = object_tag then (	(* Object. *)
       let fields = get_fields [] s in
       let _clasz, id, slots =
-	match fields with h::h'::t -> h, h', t | _ -> assert false in
+        match fields with h::h'::t -> h, h', t | _ -> assert false in
       (* No information on decoding the class (first field).  So just print
        * out the ID and the slots.
-       *)
+      *)
       "Object #" ^ dump id ^
       " (" ^ String.concat ", " (List.map dump slots) ^ ")"
     )

@@ -9,7 +9,7 @@ type comment_style =
 
 type skeleton =
   (string (* section1 *) *
-      ((string (* section2 title *) * section) list))
+   ((string (* section2 title *) * section) list))
     list
 
 type sections = (section, code_excerpt) Common.assoc

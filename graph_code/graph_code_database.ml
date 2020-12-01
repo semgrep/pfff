@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = Graph_code
@@ -40,7 +40,7 @@ let db_of_graph_code root g =
    * its e_good_examples_of_use field, then we need to
    * do something a bit different here and map
    * nodes to indices first.
-   *)
+  *)
   let (res: D.entity list ref) = ref [] in
   let hfiles = Hashtbl.create 101 in
   let hdirs = Hashtbl.create 101 in
@@ -59,48 +59,48 @@ let db_of_graph_code root g =
     | E.Macro
     | E.Prototype | E.GlobalExtern
       ->
-      if Hashtbl.mem hnot_found node
-      then ()
-      else begin
-        let nodeinfo =
-          try G.nodeinfo node g
-          with Not_found ->
-            failwith (spf "No nodeinfo for %s" (G.string_of_node node))
-        in
-        let pos = nodeinfo.G.pos in
-        let file = pos.Parse_info.file in
-        (* they should be in readable path format *)
-        Hashtbl.replace hfiles file true;
-        Hashtbl.replace hdirs (Filename.dirname file) true;
+        if Hashtbl.mem hnot_found node
+        then ()
+        else begin
+          let nodeinfo =
+            try G.nodeinfo node g
+            with Not_found ->
+              failwith (spf "No nodeinfo for %s" (G.string_of_node node))
+          in
+          let pos = nodeinfo.G.pos in
+          let file = pos.Parse_info.file in
+          (* they should be in readable path format *)
+          Hashtbl.replace hfiles file true;
+          Hashtbl.replace hdirs (Filename.dirname file) true;
 
-      (* select users that are outside! that are not in the same file *)
-        let pred = use_pred node in
-        let extern = pred |> List.filter (fun n ->
-          try
-            let file2 = G.file_of_node n g in
-            file <> file2
-          with Not_found -> false
-        )
-        in
-        let nb_users = List.length extern in
+          (* select users that are outside! that are not in the same file *)
+          let pred = use_pred node in
+          let extern = pred |> List.filter (fun n ->
+            try
+              let file2 = G.file_of_node n g in
+              file <> file2
+            with Not_found -> false
+          )
+          in
+          let nb_users = List.length extern in
 
-        let e = { Database_code.
-                  e_kind = kind;
-                  e_name = G.shortname_of_node node;
-                  e_fullname = s;
-                  e_file = pos.Parse_info.file;
-                  e_pos = { Common2.
-                            l = pos.Parse_info.line;
-                            c = pos.Parse_info.column;
-                          };
-                  e_number_external_users = nb_users;
-                  (* todo *)
-                  e_good_examples_of_use = [];
-                  e_properties = [];
-                }
-        in
-        Common.push e res
-      end
+          let e = { Database_code.
+                    e_kind = kind;
+                    e_name = G.shortname_of_node node;
+                    e_fullname = s;
+                    e_file = pos.Parse_info.file;
+                    e_pos = { Common2.
+                              l = pos.Parse_info.line;
+                              c = pos.Parse_info.column;
+                            };
+                    e_number_external_users = nb_users;
+                    (* todo *)
+                    e_good_examples_of_use = [];
+                    e_properties = [];
+                  }
+          in
+          Common.push e res
+        end
 
     | E.TopStmts
     | E.Module | E.Package

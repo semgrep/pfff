@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -66,30 +66,30 @@ let error_msg_tok tok =
  *
  * see also top comment in tests/js/items.js
  *
- *)
+*)
 let put_back_lookahead_token_if_needed tr item_opt =
   match item_opt with
   | None -> ()
   | Some item ->
-     let iis = Lib_parsing_js.ii_of_any (Ast.Program [item]) in
-     let current = tr.PI.current in
-     let info = TH.info_of_tok current in
-     (* bugfix: without test on is_origintok, the parser timeout
-      * TODO: why?
+      let iis = Lib_parsing_js.ii_of_any (Ast.Program [item]) in
+      let current = tr.PI.current in
+      let info = TH.info_of_tok current in
+      (* bugfix: without test on is_origintok, the parser timeout
+       * TODO: why?
       *)
-     if not (PI.is_origintok info) || List.mem info iis
-     then ()
-     else begin
-       (* TODO: could sanity check that what we put back make sense, for
-        * example we should never put back a closing '}', which can
-        * happen if the item returned is incomplete and does not contain
-        * all the tokens (more risky now that we use ast_js.ml instead of
-        * cst_js.ml)
+      if not (PI.is_origintok info) || List.mem info iis
+      then ()
+      else begin
+        (* TODO: could sanity check that what we put back make sense, for
+         * example we should never put back a closing '}', which can
+         * happen if the item returned is incomplete and does not contain
+         * all the tokens (more risky now that we use ast_js.ml instead of
+         * cst_js.ml)
         *)
-       logger#debug "putting back lookahead token %s" (Common.dump current);
-       tr.PI.rest <- current::tr.PI.rest;
-       tr.PI.passed <- List.tl tr.PI.passed;
-     end
+        logger#debug "putting back lookahead token %s" (Common.dump current);
+        tr.PI.rest <- current::tr.PI.rest;
+        tr.PI.passed <- List.tl tr.PI.passed;
+      end
 
 (*****************************************************************************)
 (* ASI (Automatic Semicolon Insertion) part 2 *)
@@ -109,15 +109,15 @@ let put_back_lookahead_token_if_needed tr item_opt =
  * look like a parse error. To handle those cases we
  * need a parsing_hack phase that inserts semicolon after the
  * continue if there is a newline after.
- *)
+*)
 
 let rec line_previous_tok xs =
   match xs with
   | [] -> None
   | x::xs ->
-    if TH.is_comment x
-    then line_previous_tok xs
-    else Some (TH.line_of_tok x)
+      if TH.is_comment x
+      then line_previous_tok xs
+      else Some (TH.line_of_tok x)
 
 let asi_opportunity charpos last_charpos_error cur tr =
   match tr.PI.passed with
@@ -125,70 +125,70 @@ let asi_opportunity charpos last_charpos_error cur tr =
   | [] -> None
   (* see tests/js/parsing/asi_incr_bis.js *)
   | offending::((Parser_js.T_INCR _|Parser_js.T_DECR _) as real_offender)::xs ->
-    (match line_previous_tok xs, offending with
-    | Some line, _ when TH.line_of_tok real_offender > line ->
-       Some ([offending], real_offender, xs)
-    | _, (Parser_js.T_RCURLY _ | Parser_js.EOF _) ->
-         Some ([], offending, (real_offender::xs))
-    | _ -> None
-    )
+      (match line_previous_tok xs, offending with
+       | Some line, _ when TH.line_of_tok real_offender > line ->
+           Some ([offending], real_offender, xs)
+       | _, (Parser_js.T_RCURLY _ | Parser_js.EOF _) ->
+           Some ([], offending, (real_offender::xs))
+       | _ -> None
+      )
   | offending::xs ->
-     (match line_previous_tok xs, cur with
-     | Some line, _ when TH.line_of_tok cur > line -> Some ([], offending, xs)
-     | _, (Parser_js.T_RCURLY _ | Parser_js.EOF _) -> Some ([], offending, xs)
-     | _ -> None
-     )
+      (match line_previous_tok xs, cur with
+       | Some line, _ when TH.line_of_tok cur > line -> Some ([], offending, xs)
+       | _, (Parser_js.T_RCURLY _ | Parser_js.EOF _) -> Some ([], offending, xs)
+       | _ -> None
+      )
 
 
 let asi_insert charpos last_charpos_error tr
-  (passed_before, passed_offending, passed_after) =
+    (passed_before, passed_offending, passed_after) =
 
-    let info = TH.info_of_tok passed_offending in
-    let virtual_semi =
-      Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
-    logger#debug "ASI: insertion fake ';' at %s" (PI.string_of_info info);
+  let info = TH.info_of_tok passed_offending in
+  let virtual_semi =
+    Parser_js.T_VIRTUAL_SEMICOLON (Ast.fakeInfoAttach info) in
+  logger#debug "ASI: insertion fake ';' at %s" (PI.string_of_info info);
 
-    let toks = List.rev passed_after @
-               [virtual_semi; passed_offending] @
-               passed_before @
-               tr.PI.rest
-    in
-    (* like in Parse_info.mk_tokens_state *)
-    tr.PI.rest <- toks;
-    tr.PI.current <- List.hd toks;
-    tr.PI.passed <- [];
-    (* try again!
-     * This significantly slow-down parsing, especially on minimized
-     * files. Indeed, minimizers put all the code inside a giant
-     * function, which means no incremental parsing, and leverage ASI
-     * before right curly brace to save one character (hmmm). This means
-     * that we parse again and again the same series of tokens, just
-     * progressing a bit more everytime, and restarting from scratch.
-     * This is quadratic behavior.
-     *)
-    last_charpos_error := charpos
+  let toks = List.rev passed_after @
+             [virtual_semi; passed_offending] @
+             passed_before @
+             tr.PI.rest
+  in
+  (* like in Parse_info.mk_tokens_state *)
+  tr.PI.rest <- toks;
+  tr.PI.current <- List.hd toks;
+  tr.PI.passed <- [];
+  (* try again!
+   * This significantly slow-down parsing, especially on minimized
+   * files. Indeed, minimizers put all the code inside a giant
+   * function, which means no incremental parsing, and leverage ASI
+   * before right curly brace to save one character (hmmm). This means
+   * that we parse again and again the same series of tokens, just
+   * progressing a bit more everytime, and restarting from scratch.
+   * This is quadratic behavior.
+  *)
+  last_charpos_error := charpos
 
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
 let tokens file =
-   Lexer_js.reset();
-   let token lexbuf =
-     let tok =
-        match Lexer_js.current_mode() with
-        | Lexer_js.ST_IN_CODE ->
-            Lexer_js.initial lexbuf
-        | Lexer_js.ST_IN_XHP_TAG current_tag ->
-            Lexer_js.st_in_xhp_tag current_tag lexbuf
-        | Lexer_js.ST_IN_XHP_TEXT current_tag ->
-            Lexer_js.st_in_xhp_text current_tag lexbuf
-        | Lexer_js.ST_IN_BACKQUOTE ->
-            Lexer_js.backquote lexbuf
-     in
-     if not (TH.is_comment tok)
-     then Lexer_js._last_non_whitespace_like_token := Some tok;
-     tok
+  Lexer_js.reset();
+  let token lexbuf =
+    let tok =
+      match Lexer_js.current_mode() with
+      | Lexer_js.ST_IN_CODE ->
+          Lexer_js.initial lexbuf
+      | Lexer_js.ST_IN_XHP_TAG current_tag ->
+          Lexer_js.st_in_xhp_tag current_tag lexbuf
+      | Lexer_js.ST_IN_XHP_TEXT current_tag ->
+          Lexer_js.st_in_xhp_text current_tag lexbuf
+      | Lexer_js.ST_IN_BACKQUOTE ->
+          Lexer_js.backquote lexbuf
+    in
+    if not (TH.is_comment tok)
+    then Lexer_js._last_non_whitespace_like_token := Some tok;
+    tok
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
@@ -211,29 +211,29 @@ let parse2 ?(timeout=0) filename =
   let last_charpos_error = ref 0 in
 
   if timeout > 0 then begin
-   Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
-   (* todo: minimized files abusing ASI before '}' requires a very long time
-    * to parse
+    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
+    (* todo: minimized files abusing ASI before '}' requires a very long time
+     * to parse
     *)
-   ignore(Unix.alarm timeout);
+    ignore(Unix.alarm timeout);
   end;
 
   let rec parse_module_item_or_eof tr =
     try
-     let item =
-       (* -------------------------------------------------- *)
-       (* Call parser *)
-       (* -------------------------------------------------- *)
-       Common.profile_code "Parser_js.module_item" (fun () ->
-         Parser_js.module_item_or_eof lexer lexbuf_fake
-       )
-     in
-     (* this seems optional *)
-     Parsing.clear_parser ();
-     put_back_lookahead_token_if_needed tr item;
-     Left item
+      let item =
+        (* -------------------------------------------------- *)
+        (* Call parser *)
+        (* -------------------------------------------------- *)
+        Common.profile_code "Parser_js.module_item" (fun () ->
+          Parser_js.module_item_or_eof lexer lexbuf_fake
+        )
+      in
+      (* this seems optional *)
+      Parsing.clear_parser ();
+      put_back_lookahead_token_if_needed tr item;
+      Left item
 
-   with Parsing.Parse_error ->
+    with Parsing.Parse_error ->
       (* coupling: update also any_of_string if you modify the code below *)
       let cur = tr.PI.current in
       let info = TH.info_of_tok cur in
@@ -241,14 +241,14 @@ let parse2 ?(timeout=0) filename =
 
       (* try Automatic Semicolon Insertion *)
       (match asi_opportunity charpos last_charpos_error cur tr with
-      | None ->
-         if !Flag.show_parsing_error
-         then pr2 ("parse error \n = " ^ error_msg_tok cur);
-         Right cur
-      | Some (passed_before, passed_offending, passed_after) ->
-          asi_insert charpos last_charpos_error tr
+       | None ->
+           if !Flag.show_parsing_error
+           then pr2 ("parse error \n = " ^ error_msg_tok cur);
+           Right cur
+       | Some (passed_before, passed_offending, passed_after) ->
+           asi_insert charpos last_charpos_error tr
              (passed_before, passed_offending, passed_after);
-          parse_module_item_or_eof tr
+           parse_module_item_or_eof tr
       )
   in
   let rec aux tr =
@@ -272,31 +272,31 @@ let parse2 ?(timeout=0) filename =
     | Left (Some x) ->
         stat.PI.correct <- stat.PI.correct + lines;
         logger#ldebug (lazy
-          (spf "parsed: %s" (Ast.Program [x] |> Ast_js.show_any)));
+                        (spf "parsed: %s" (Ast.Program [x] |> Ast_js.show_any)));
 
         x::aux tr
     | Right err_tok ->
-       let max_line = Common.cat filename |> List.length in
-       if !Flag.show_parsing_error
-       then begin
-         let filelines = Common2.cat_array filename in
-         let cur = tr.PI.current in
-         let line_error = TH.line_of_tok cur in
-         PI.print_bad line_error (line_start, min max_line (line_error + 10))
-              filelines;
-       end;
-       if !Flag.error_recovery
-       then begin
-        (* todo? try to recover? call 'aux tr'? but then can be really slow *)
-        stat.PI.bad <- stat.PI.bad + (max_line - line_start);
-        []
-       end
-       else raise (PI.Parsing_error (TH.info_of_tok err_tok))
+        let max_line = Common.cat filename |> List.length in
+        if !Flag.show_parsing_error
+        then begin
+          let filelines = Common2.cat_array filename in
+          let cur = tr.PI.current in
+          let line_error = TH.line_of_tok cur in
+          PI.print_bad line_error (line_start, min max_line (line_error + 10))
+            filelines;
+        end;
+        if !Flag.error_recovery
+        then begin
+          (* todo? try to recover? call 'aux tr'? but then can be really slow *)
+          stat.PI.bad <- stat.PI.bad + (max_line - line_start);
+          []
+        end
+        else raise (PI.Parsing_error (TH.info_of_tok err_tok))
   in
   let items =
-   try
-     aux tr
-   with Timeout when timeout > 0 ->
+    try
+      aux tr
+    with Timeout when timeout > 0 ->
       ignore(Unix.alarm 0);
       if !Flag.show_parsing_error
       then pr2 (spf "TIMEOUT on %s" filename);
@@ -308,7 +308,7 @@ let parse2 ?(timeout=0) filename =
   if timeout > 0 then ignore(Unix.alarm 0);
   (* the correct count is accurate because items do not fall always
    * on clean line boundaries so we may count multiple times the same line
-   *)
+  *)
   if stat.PI.bad = 0
   then stat.PI.correct <- Common.cat filename |> List.length;
 
@@ -345,21 +345,21 @@ let any_of_string s =
     let last_charpos_error = ref 0 in
 
     let rec parse_pattern tr =
-        try
-          Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
+      try
+        Parser_js.sgrep_spatch_pattern lexer lexbuf_fake
 
-        with Parsing.Parse_error ->
-          let cur = tr.PI.current in
-          let info = TH.info_of_tok cur in
-          let charpos = Parse_info.pos_of_info info in
-          (* try Automatic Semicolon Insertion *)
-          (match asi_opportunity charpos last_charpos_error cur tr with
-          | None -> raise Parsing.Parse_error
-          | Some (passed_before, passed_offending, passed_after) ->
-            asi_insert charpos last_charpos_error tr
+      with Parsing.Parse_error ->
+        let cur = tr.PI.current in
+        let info = TH.info_of_tok cur in
+        let charpos = Parse_info.pos_of_info info in
+        (* try Automatic Semicolon Insertion *)
+        (match asi_opportunity charpos last_charpos_error cur tr with
+         | None -> raise Parsing.Parse_error
+         | Some (passed_before, passed_offending, passed_after) ->
+             asi_insert charpos last_charpos_error tr
                (passed_before, passed_offending, passed_after);
-            parse_pattern tr
-          )
+             parse_pattern tr
+        )
     in
     parse_pattern tr
   )

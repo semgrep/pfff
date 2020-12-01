@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Cst_php
@@ -38,7 +38,7 @@ module Db = Database_code
 
 (* todo: should do that generically via the light db.
  * look if def in same file of current file
- *)
+*)
 (*
 let place_ids current_file ids db =
   match ids with
@@ -68,7 +68,7 @@ let place_ids current_file ids db =
 
 (* obsolete: this is now computed generically in pfff_visual via the light_db
  * in rewrite_categ_using_entities using x.e_number_external_users.
- *)
+*)
 (*
 let arity_of_number nbuses =
   match nbuses with
@@ -95,7 +95,7 @@ let use_arity_ident_function_or_macro s db =
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let _fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -116,25 +116,25 @@ let _highlight_funcall_simple ~tag ~hentities f _args info =
   end;
 *)
   (match () with
-  (* security: *)
+   (* security: *)
 (*
   | _ when Hashtbl.mem Env_php.hbad_functions f ->
       tag info BadSmell
 *)
-  | _ ->
-      (match Hashtbl.find_all hentities f with
-      | [e] ->
-          let ps = e.Db.e_properties in
-          (* dynamic call *)
-          (if List.mem E.ContainDynamicCall ps
+   | _ ->
+       (match Hashtbl.find_all hentities f with
+        | [e] ->
+            let ps = e.Db.e_properties in
+            (* dynamic call *)
+            (if List.mem E.ContainDynamicCall ps
             (* todo: should try to find instead which arguments
              * is called dynamically using dataflow analysis
-             *)
-           then tag info PointerCall
-           else tag info (Entity (Function, (Use2 fake_no_use2)))
-          );
+            *)
+             then tag info PointerCall
+             else tag info (Entity (Function, (Use2 fake_no_use2)))
+            );
 
-          (* args by ref *)
+            (* args by ref *)
 (*
           ps |> List.iter (function
           | E.TakeArgNByRef i ->
@@ -149,15 +149,15 @@ let _highlight_funcall_simple ~tag ~hentities f _args info =
           | _ -> raise Todo
           );
 *)
-          ()
-      | _x::_y::_xs ->
-          pr2_once ("highlight_php: multiple entities for: " ^ f);
-          (* todo: place of id *)
-          tag info (Entity (Function, (Use2 fake_no_use2)));
-      | [] ->
-          (* todo: place of id *)
-          tag info (Entity (Function, (Use2 fake_no_use2)));
-      );
+            ()
+        | _x::_y::_xs ->
+            pr2_once ("highlight_php: multiple entities for: " ^ f);
+            (* todo: place of id *)
+            tag info (Entity (Function, (Use2 fake_no_use2)));
+        | [] ->
+            (* todo: place of id *)
+            tag info (Entity (Function, (Use2 fake_no_use2)));
+       );
   );
   ()
 
@@ -179,7 +179,7 @@ let tag_name ~tag name =
   | XName qu ->
       let info = Ast.info_of_qualified_ident qu in
       tag info (Entity (Class, (Use2 fake_no_use2)));
-  (* will be highlighted by the 'toks phase 2' *)
+      (* will be highlighted by the 'toks phase 2' *)
   | Self _tok | Parent _tok -> ()
   | LateStatic tok ->
       tag tok BadSmell
@@ -226,7 +226,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
      * tagged.
      *
      * The same is true for other kinds of tokens.
-     *)
+    *)
     if not (Hashtbl.mem already_tagged ii)
     then begin
       tag ii categ;
@@ -244,33 +244,33 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
 
     (* a little bit pad specific *)
     |   T.T_COMMENT(ii)
-      ::T.TNewline _ii2
-      ::T.T_COMMENT(ii3)
-      ::T.TNewline _ii4
-      ::T.T_COMMENT(ii5)
-      ::xs ->
-      let s = Parse_info.str_of_info ii in
-      let s5 =  Parse_info.str_of_info ii5 in
-      (match () with
-      | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-        tag ii CommentEstet;
-        tag ii5 CommentEstet;
-        tag ii3 CommentSection1
-      | _ when s =~ ".*------" && s5 =~ ".*------" ->
-        tag ii CommentEstet;
-        tag ii5 CommentEstet;
-        tag ii3 CommentSection2
-      | _ when s =~ ".*####" && s5 =~ ".*####" ->
-        tag ii CommentEstet;
-        tag ii5 CommentEstet;
-        tag ii3 CommentSection0
-      | _ ->
-        ()
-      );
-      aux_toks xs
+        ::T.TNewline _ii2
+        ::T.T_COMMENT(ii3)
+        ::T.TNewline _ii4
+        ::T.T_COMMENT(ii5)
+        ::xs ->
+        let s = Parse_info.str_of_info ii in
+        let s5 =  Parse_info.str_of_info ii5 in
+        (match () with
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ ->
+             ()
+        );
+        aux_toks xs
 
     | _x::xs ->
-      aux_toks xs
+        aux_toks xs
   in
   aux_toks toks;
 
@@ -278,347 +278,347 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
   (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
-(* TODO: use generic AST highlighter
+  (* TODO: use generic AST highlighter
 
-  (* less: some of the logic duplicates what is in check_variables_php.ml
-   * where we differentiate the diffent variables uses (parameters, static,
-   * global, local, etc). See the pattern for Static, Global, parameter,
-   * catch.
+     (* less: some of the logic duplicates what is in check_variables_php.ml
+     * where we differentiate the diffent variables uses (parameters, static,
+     * global, local, etc). See the pattern for Static, Global, parameter,
+     * catch.
+     *)
+     let hooks = { V.default_visitor with
+
+      (* -------------------------------------------------------------------- *)
+      V.ktop = (fun (k, _) top ->
+        match top with
+        | ConstantDef def ->
+          let info = Ast.info_of_ident def.cst_name in
+          tag info (Entity (Constant, (Def2 fake_no_def2)));
+          k top
+        | _ -> k top
+      );
+      V.kfunc_def = (fun (k, _) def ->
+        let info = Ast.info_of_ident def.f_name in
+        let kind =
+          match def.f_type with
+          | FunctionRegular | FunctionLambda ->
+            tag def.f_tok Keyword;
+            (Entity (Function, (Def2 NoUse)))
+
+          | MethodRegular | MethodAbstract ->
+            tag def.f_tok KeywordObject;
+     (*
+            if Class_php.is_static_method def
+            then StaticMethod (Def2 fake_no_def2)
+            else
    *)
-  let hooks = { V.default_visitor with
-
-    (* -------------------------------------------------------------------- *)
-    V.ktop = (fun (k, _) top ->
-      match top with
-      | ConstantDef def ->
-        let info = Ast.info_of_ident def.cst_name in
-        tag info (Entity (Constant, (Def2 fake_no_def2)));
-        k top
-      | _ -> k top
-    );
-    V.kfunc_def = (fun (k, _) def ->
-      let info = Ast.info_of_ident def.f_name in
-      let kind =
-        match def.f_type with
-        | FunctionRegular | FunctionLambda ->
-          tag def.f_tok Keyword;
-          (Entity (Function, (Def2 NoUse)))
-
-        | MethodRegular | MethodAbstract ->
-          tag def.f_tok KeywordObject;
-(*
-          if Class_php.is_static_method def
-          then StaticMethod (Def2 fake_no_def2)
-          else
-*)
-           Entity (Method, (Def2 fake_no_def2))
-      in
-      tag info kind;
-      k def
-    );
-
-    V.kclass_def = (fun (k, _) def ->
-      let info = Ast.info_of_ident def.c_name in
-      tag info (Entity (Class, (Def2 fake_no_def2)));
-      def.c_extends |> Common.do_option (fun (_, name) ->
-        let name = name_of_class_name name in
-        let info = Ast.info_of_name name in
-        tag info (Entity (Class, (Use2 fake_no_use2)));
+             Entity (Method, (Def2 fake_no_def2))
+        in
+        tag info kind;
+        k def
       );
-      def.c_implements |> Common.do_option (fun (_, xs) ->
-        xs |> Ast.uncomma |> List.iter (fun name ->
+
+      V.kclass_def = (fun (k, _) def ->
+        let info = Ast.info_of_ident def.c_name in
+        tag info (Entity (Class, (Def2 fake_no_def2)));
+        def.c_extends |> Common.do_option (fun (_, name) ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
           tag info (Entity (Class, (Use2 fake_no_use2)));
         );
-      );
-      k def
-    );
-
-    (* -------------------------------------------------------------------- *)
-    V.kparameter = (fun (k, _) param ->
-      let info = Ast.info_of_dname param.p_name in
-      (* we highlight parameters passed by ref elsewhere *)
-      (if not (Hashtbl.mem already_tagged info)
-      then
-        if param.p_ref = None
-        then tag info (Parameter Def)
-        else tag info ParameterRef
-      );
-      k param
-    );
-
-    (* -------------------------------------------------------------------- *)
-    V.kclass_stmt = (fun (k, _) x ->
-      match x with
-      (* done in kfunc_def *)
-      | Ast.Method _ -> k x
-
-      | Ast.XhpDecl d ->
-        (match d with
-        | XhpAttributesDecl _ -> k x
-        | XhpChildrenDecl _ -> k x
-        | XhpCategoriesDecl (_, decls, _) ->
-          decls |> Ast.uncomma |> List.iter (fun (_tag, ii) ->
-            tag ii (Entity (Type, (Use2 fake_no_use2)))
-          );
-        )
-      | Ast.ClassConstants (_, _, _, vars, _) ->
-        vars |> Ast.uncomma |> List.iter (fun (name, _opt) ->
-          let info = Ast.info_of_ident name in
-          tag info (Entity (Constant, (Def2 NoUse)));
-        );
-        k x;
-      | Ast.ClassVariables (_modifiers, _opt_ty, vars, _) ->
-        vars |> Ast.uncomma |> List.iter (fun (dname, _opt) ->
-          let info = Ast.info_of_dname dname in
-          tag info (Entity (Field, (Def2 fake_no_def2)));
-        );
-        k x
-      | Ast.UseTrait (_, names, _rules_or_tok) ->
-         names |> Ast.uncomma |> List.iter (fun name ->
-          let name = name_of_class_name name in
-          let info = Ast.info_of_name name in
-          tag info (Entity (Class, (Use2 fake_no_use2)));
-         );
-        k x
-      | Ast.TraitConstraint (_, _, _, _)
-      | Ast.ClassType _ ->
-          k x
-    );
-
-    (* -------------------------------------------------------------------- *)
-    V.kstmt = (fun (k,_bigf) stmt ->
-      k stmt;
-      match stmt with
-      | Globals (_v1, v2, _v3) ->
-        v2 |> Ast.uncomma |> List.iter (fun x ->
-          match x  with
-          | GlobalVar dname ->
-            let info = Ast.info_of_dname dname in
-            tag info (Entity (Global, (Def2 NoUse)))
-
-            (* TODO ?? *)
-          | GlobalDollar _ -> ()
-          | GlobalDollarExpr _ ->  ()
-        );
-      | StaticVars (_v1, v2, _v3) ->
-        v2 |> Ast.uncomma |> List.iter (fun svar ->
-          let (dname, _affect_opt) = svar in
-          let info = Ast.info_of_dname dname in
-          tag info (Local Def);
-        );
-        ()
-      | _ -> ()
-    );
-    (* -------------------------------------------------------------------- *)
-    V.kcatch = (fun (k, _) c ->
-      let (_, (_, (cname, dname), _), _stmts) = c in
-      let name = name_of_class_name cname in
-      let info_class = Ast.info_of_name name in
-      tag info_class (Entity (Class, (Use2 fake_no_use2)));
-
-      let info_dname = Ast.info_of_dname dname in
-      tag info_dname (Local Use);
-      k c
-    );
-
-    (* -------------------------------------------------------------------- *)
-    V.kexpr = (fun (k,vx) expr ->
-      (* do not call k expr; here, let each case call it. Also
-       * remember that tag() will not retag something already tagged,
-       * so it simplifies a bit the logic where you can visit
-       * the children without being scared it will retag things
-       * (compared to check_variables_php or graph_code_php).
-       *)
-      (match expr with
-      | This tok ->
-        tag tok (Entity (Class, (Use2 fake_no_use2)))
-
-      | ArrayGet (var, exprbracket) ->
-        (match Ast.unbracket exprbracket with
-        | None ->
-          k expr
-        | Some exprbis ->
-          (match exprbis with
-          | Sc (C (Ast.String (_s, info))) ->
-            tag info (Entity (Field, (Use2 fake_no_use2)));
-            vx (Expr var);
-
-          | Sc (C (Int (_s, _info))) ->
-            k expr
-          | _ -> k expr
-          )
-        )
-
-      (* Call *)
-      | Call (a, args) ->
-        (match a with
-        | Id callname ->
-          let info = Ast.info_of_name callname in
-          let f = Ast.str_of_name callname in
-          let args = args |> Ast.unparen |> Ast.uncomma in
-          highlight_funcall_simple ~tag ~hentities f args info;
-        | ClassGet (_lval, _, Id name) ->
-          let info = Ast.info_of_name name in
-          tag info (StaticMethod (Use2 fake_no_use2));
-        | ClassGet (lval, _, _var) ->
-          let ii = Lib_parsing_php.ii_of_any (Expr lval) in
-          ii |> List.iter (fun info -> tag info PointerCall);
-        | ObjGet(_lval, _tok, Id name) ->
-          let info = Ast.info_of_name name in
-          tag info (Entity (Method, (Use2 fake_no_use2)));
-        | e ->
-          (* function pointer call !!! put in big font *)
-          let ii = Lib_parsing_php.ii_of_any (Expr e) in
-          ii |> List.iter (fun info -> tag info PointerCall);
-        );
-        k expr
-
-      (* ObjGet *)
-      | ObjGet (_lval, _tok, Id name) ->
-        let info = Ast.info_of_name name in
-        tag info (Entity (Field, (Use2 fake_no_use2)));
-        k expr
-
-      (* ClassGet *)
-      | ClassGet (qualif, tok, b) ->
-        tag_class_name_reference ~tag qualif;
-        (match b with
-        | Id name ->
+        def.c_implements |> Common.do_option (fun (_, xs) ->
+          xs |> Ast.uncomma |> List.iter (fun name ->
+            let name = name_of_class_name name in
             let info = Ast.info_of_name name in
-            tag info (Entity (Constant, (Use2 fake_no_use2)))
-        | IdVar (dname, _) ->
-            let info = Ast.info_of_dname dname in
-            (* todo? special category for class variables ? *)
-            tag info (Entity (Global, (Use2 fake_no_use2)));
-        | _v2 ->
-          (* todo? colorize qualif? bad to use dynamic variable ...
-             let info = Ast.info_of_dname dname in
-             tag info BadSmell
-          *)
-          tag tok BadSmell;
-        );
-        k expr
-      | New (_, qualif, _) | AssignNew (_, _, _, _, qualif, _)
-      | InstanceOf (_, _, qualif)
-        ->
-        tag_class_name_reference ~tag qualif;
-        k expr
-
-      | Id name ->
-        (* cf also typing_php.ml *)
-        let s = Ast.str_of_name name in
-        let info = Ast.info_of_name name in
-        (match s with
-        | "true" | "false" -> tag info Boolean
-        | "null" -> tag info Null
-        | _ ->
-          if not (Hashtbl.mem already_tagged info)
-          then tag info (Entity (Constant, (Use2 fake_no_use2)))
-        )
-
-      | IdVar (dname, aref) ->
-        (* see check_variables_php.ml *)
-        let info = Ast.info_of_dname dname in
-        (match !aref with
-        | S.Local -> tag info (Local Use)
-        | S.Param -> tag info (Parameter Use)
-        | S.Class -> tag info (Entity (Field, (Use2 fake_no_use2)))
-        (* TODO, need global_used table *)
-        | S.Global | S.Closed -> tag info (Entity (Global, (Use2 fake_no_use2)));
-        (* less: could invent a Static in highlight_code ? *)
-        | S.Static -> tag info (Entity (Global, (Use2 fake_no_use2)))
-        | S.ListBinded | S.LocalIterator | S.LocalExn -> tag info (Local Use)
-        | S.NoScope -> tag info (NoType)
-        )
-
-      | Cast (((_cast, v1), _v2)) ->
-        tag v1 (TypeInt);
-        k expr;
-      | _ ->
-        k expr
-      )
-    );
-    (* -------------------------------------------------------------------- *)
-    V.kxhp_attribute = (fun (k, _) x ->
-      let ((attr_name, _ii_attr_name), _tok_eq, attr_val) = x in
-      (match attr_name with
-      | "href" | "src" ->
-        (match attr_val with
-        | XhpAttrString (tok1, xs, tok2) ->
-          tag tok1 String;
-          tag tok2 String;
-          xs |> List.iter (function
-          | EncapsString (_s, ii) ->
-            tag ii EmbededUrl
-          | EncapsExpr (_, _, _) | EncapsDollarCurly (_, _, _)
-          | EncapsCurly (_, _, _) | EncapsVar _
-            -> ()
+            tag info (Entity (Class, (Use2 fake_no_use2)));
           );
-        | XhpAttrExpr _e -> ()
-        | SgrepXhpAttrValueMvar _ -> ()
-        )
-      | _ -> ()
+        );
+        k def
       );
-      k x
-    );
 
-    V.kxhp_attr_decl = (fun (k, _) x ->
-      match x with
-      | XhpAttrInherit (_xhp_tag, ii) ->
-          tag ii (Entity (Class, (Use2 fake_no_use2)));
-      | XhpAttrDecl ((_attr_type, (_attr_name, iiname), _affect_opt, _tok_opt))->
-          tag iiname (Entity (Field, (Use2 fake_no_use2)));
+      (* -------------------------------------------------------------------- *)
+      V.kparameter = (fun (k, _) param ->
+        let info = Ast.info_of_dname param.p_name in
+        (* we highlight parameters passed by ref elsewhere *)
+        (if not (Hashtbl.mem already_tagged info)
+        then
+          if param.p_ref = None
+          then tag info (Parameter Def)
+          else tag info ParameterRef
+        );
+        k param
+      );
+
+      (* -------------------------------------------------------------------- *)
+      V.kclass_stmt = (fun (k, _) x ->
+        match x with
+        (* done in kfunc_def *)
+        | Ast.Method _ -> k x
+
+        | Ast.XhpDecl d ->
+          (match d with
+          | XhpAttributesDecl _ -> k x
+          | XhpChildrenDecl _ -> k x
+          | XhpCategoriesDecl (_, decls, _) ->
+            decls |> Ast.uncomma |> List.iter (fun (_tag, ii) ->
+              tag ii (Entity (Type, (Use2 fake_no_use2)))
+            );
+          )
+        | Ast.ClassConstants (_, _, _, vars, _) ->
+          vars |> Ast.uncomma |> List.iter (fun (name, _opt) ->
+            let info = Ast.info_of_ident name in
+            tag info (Entity (Constant, (Def2 NoUse)));
+          );
+          k x;
+        | Ast.ClassVariables (_modifiers, _opt_ty, vars, _) ->
+          vars |> Ast.uncomma |> List.iter (fun (dname, _opt) ->
+            let info = Ast.info_of_dname dname in
+            tag info (Entity (Field, (Def2 fake_no_def2)));
+          );
           k x
-    );
-
-    (* -------------------------------------------------------------------- *)
-    V.kconstant = (fun (_k, _) e ->
-      match e with
-      | Int v1 | Double v1 ->
-        tag (snd v1) Number
-
-      | Ast.String (s, ii) ->
-        (* this can be sometimes tagged as url, or field access in array *)
-        if not (Hashtbl.mem already_tagged ii)
-        then tag_string ~tag s ii
-      | PreProcess v1 -> tag (snd v1) Builtin
-      | XdebugClass (_, _) | XdebugResource -> ()
-    );
-
-    V.kencaps = (fun (k, _) e ->
-      match e with
-      | EncapsString (s, ii) ->
-        if not (Hashtbl.mem already_tagged ii)
-        then tag_string ~tag s ii
-      | _ -> k e
-    );
-    (* -------------------------------------------------------------------- *)
-    V.khint_type = (fun (k, _) x ->
-      (match x with
-      (* TODO: emit info for type args *)
-      | Hint (name, _targsTODO) ->
-        tag_name ~tag name
-      | HintArray _ | HintQuestion _ | HintTuple _
-      | HintCallback _
-        (* todo: colorize as record the keys? *)
-      | HintShape _
-      | HintTypeConst _
-      | HintVariadic _
-        ->
-        ()
+        | Ast.UseTrait (_, names, _rules_or_tok) ->
+           names |> Ast.uncomma |> List.iter (fun name ->
+            let name = name_of_class_name name in
+            let info = Ast.info_of_name name in
+            tag info (Entity (Class, (Use2 fake_no_use2)));
+           );
+          k x
+        | Ast.TraitConstraint (_, _, _, _)
+        | Ast.ClassType _ ->
+            k x
       );
-      k x
-    );
-  }
-  in
-  let visitor = V.mk_visitor hooks in
-  (try
-    visitor (Program ast)
-  with Cst_php.TodoNamespace _ -> ()
-  );
-*)
+
+      (* -------------------------------------------------------------------- *)
+      V.kstmt = (fun (k,_bigf) stmt ->
+        k stmt;
+        match stmt with
+        | Globals (_v1, v2, _v3) ->
+          v2 |> Ast.uncomma |> List.iter (fun x ->
+            match x  with
+            | GlobalVar dname ->
+              let info = Ast.info_of_dname dname in
+              tag info (Entity (Global, (Def2 NoUse)))
+
+              (* TODO ?? *)
+            | GlobalDollar _ -> ()
+            | GlobalDollarExpr _ ->  ()
+          );
+        | StaticVars (_v1, v2, _v3) ->
+          v2 |> Ast.uncomma |> List.iter (fun svar ->
+            let (dname, _affect_opt) = svar in
+            let info = Ast.info_of_dname dname in
+            tag info (Local Def);
+          );
+          ()
+        | _ -> ()
+      );
+      (* -------------------------------------------------------------------- *)
+      V.kcatch = (fun (k, _) c ->
+        let (_, (_, (cname, dname), _), _stmts) = c in
+        let name = name_of_class_name cname in
+        let info_class = Ast.info_of_name name in
+        tag info_class (Entity (Class, (Use2 fake_no_use2)));
+
+        let info_dname = Ast.info_of_dname dname in
+        tag info_dname (Local Use);
+        k c
+      );
+
+      (* -------------------------------------------------------------------- *)
+      V.kexpr = (fun (k,vx) expr ->
+        (* do not call k expr; here, let each case call it. Also
+         * remember that tag() will not retag something already tagged,
+         * so it simplifies a bit the logic where you can visit
+         * the children without being scared it will retag things
+         * (compared to check_variables_php or graph_code_php).
+         *)
+        (match expr with
+        | This tok ->
+          tag tok (Entity (Class, (Use2 fake_no_use2)))
+
+        | ArrayGet (var, exprbracket) ->
+          (match Ast.unbracket exprbracket with
+          | None ->
+            k expr
+          | Some exprbis ->
+            (match exprbis with
+            | Sc (C (Ast.String (_s, info))) ->
+              tag info (Entity (Field, (Use2 fake_no_use2)));
+              vx (Expr var);
+
+            | Sc (C (Int (_s, _info))) ->
+              k expr
+            | _ -> k expr
+            )
+          )
+
+        (* Call *)
+        | Call (a, args) ->
+          (match a with
+          | Id callname ->
+            let info = Ast.info_of_name callname in
+            let f = Ast.str_of_name callname in
+            let args = args |> Ast.unparen |> Ast.uncomma in
+            highlight_funcall_simple ~tag ~hentities f args info;
+          | ClassGet (_lval, _, Id name) ->
+            let info = Ast.info_of_name name in
+            tag info (StaticMethod (Use2 fake_no_use2));
+          | ClassGet (lval, _, _var) ->
+            let ii = Lib_parsing_php.ii_of_any (Expr lval) in
+            ii |> List.iter (fun info -> tag info PointerCall);
+          | ObjGet(_lval, _tok, Id name) ->
+            let info = Ast.info_of_name name in
+            tag info (Entity (Method, (Use2 fake_no_use2)));
+          | e ->
+            (* function pointer call !!! put in big font *)
+            let ii = Lib_parsing_php.ii_of_any (Expr e) in
+            ii |> List.iter (fun info -> tag info PointerCall);
+          );
+          k expr
+
+        (* ObjGet *)
+        | ObjGet (_lval, _tok, Id name) ->
+          let info = Ast.info_of_name name in
+          tag info (Entity (Field, (Use2 fake_no_use2)));
+          k expr
+
+        (* ClassGet *)
+        | ClassGet (qualif, tok, b) ->
+          tag_class_name_reference ~tag qualif;
+          (match b with
+          | Id name ->
+              let info = Ast.info_of_name name in
+              tag info (Entity (Constant, (Use2 fake_no_use2)))
+          | IdVar (dname, _) ->
+              let info = Ast.info_of_dname dname in
+              (* todo? special category for class variables ? *)
+              tag info (Entity (Global, (Use2 fake_no_use2)));
+          | _v2 ->
+            (* todo? colorize qualif? bad to use dynamic variable ...
+               let info = Ast.info_of_dname dname in
+               tag info BadSmell
+            *)
+            tag tok BadSmell;
+          );
+          k expr
+        | New (_, qualif, _) | AssignNew (_, _, _, _, qualif, _)
+        | InstanceOf (_, _, qualif)
+          ->
+          tag_class_name_reference ~tag qualif;
+          k expr
+
+        | Id name ->
+          (* cf also typing_php.ml *)
+          let s = Ast.str_of_name name in
+          let info = Ast.info_of_name name in
+          (match s with
+          | "true" | "false" -> tag info Boolean
+          | "null" -> tag info Null
+          | _ ->
+            if not (Hashtbl.mem already_tagged info)
+            then tag info (Entity (Constant, (Use2 fake_no_use2)))
+          )
+
+        | IdVar (dname, aref) ->
+          (* see check_variables_php.ml *)
+          let info = Ast.info_of_dname dname in
+          (match !aref with
+          | S.Local -> tag info (Local Use)
+          | S.Param -> tag info (Parameter Use)
+          | S.Class -> tag info (Entity (Field, (Use2 fake_no_use2)))
+          (* TODO, need global_used table *)
+          | S.Global | S.Closed -> tag info (Entity (Global, (Use2 fake_no_use2)));
+          (* less: could invent a Static in highlight_code ? *)
+          | S.Static -> tag info (Entity (Global, (Use2 fake_no_use2)))
+          | S.ListBinded | S.LocalIterator | S.LocalExn -> tag info (Local Use)
+          | S.NoScope -> tag info (NoType)
+          )
+
+        | Cast (((_cast, v1), _v2)) ->
+          tag v1 (TypeInt);
+          k expr;
+        | _ ->
+          k expr
+        )
+      );
+      (* -------------------------------------------------------------------- *)
+      V.kxhp_attribute = (fun (k, _) x ->
+        let ((attr_name, _ii_attr_name), _tok_eq, attr_val) = x in
+        (match attr_name with
+        | "href" | "src" ->
+          (match attr_val with
+          | XhpAttrString (tok1, xs, tok2) ->
+            tag tok1 String;
+            tag tok2 String;
+            xs |> List.iter (function
+            | EncapsString (_s, ii) ->
+              tag ii EmbededUrl
+            | EncapsExpr (_, _, _) | EncapsDollarCurly (_, _, _)
+            | EncapsCurly (_, _, _) | EncapsVar _
+              -> ()
+            );
+          | XhpAttrExpr _e -> ()
+          | SgrepXhpAttrValueMvar _ -> ()
+          )
+        | _ -> ()
+        );
+        k x
+      );
+
+      V.kxhp_attr_decl = (fun (k, _) x ->
+        match x with
+        | XhpAttrInherit (_xhp_tag, ii) ->
+            tag ii (Entity (Class, (Use2 fake_no_use2)));
+        | XhpAttrDecl ((_attr_type, (_attr_name, iiname), _affect_opt, _tok_opt))->
+            tag iiname (Entity (Field, (Use2 fake_no_use2)));
+            k x
+      );
+
+      (* -------------------------------------------------------------------- *)
+      V.kconstant = (fun (_k, _) e ->
+        match e with
+        | Int v1 | Double v1 ->
+          tag (snd v1) Number
+
+        | Ast.String (s, ii) ->
+          (* this can be sometimes tagged as url, or field access in array *)
+          if not (Hashtbl.mem already_tagged ii)
+          then tag_string ~tag s ii
+        | PreProcess v1 -> tag (snd v1) Builtin
+        | XdebugClass (_, _) | XdebugResource -> ()
+      );
+
+      V.kencaps = (fun (k, _) e ->
+        match e with
+        | EncapsString (s, ii) ->
+          if not (Hashtbl.mem already_tagged ii)
+          then tag_string ~tag s ii
+        | _ -> k e
+      );
+      (* -------------------------------------------------------------------- *)
+      V.khint_type = (fun (k, _) x ->
+        (match x with
+        (* TODO: emit info for type args *)
+        | Hint (name, _targsTODO) ->
+          tag_name ~tag name
+        | HintArray _ | HintQuestion _ | HintTuple _
+        | HintCallback _
+          (* todo: colorize as record the keys? *)
+        | HintShape _
+        | HintTypeConst _
+        | HintVariadic _
+          ->
+          ()
+        );
+        k x
+      );
+     }
+     in
+     let visitor = V.mk_visitor hooks in
+     (try
+      visitor (Program ast)
+     with Cst_php.TodoNamespace _ -> ()
+     );
+  *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -633,12 +633,12 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
 
     (* all the name and varname should have been tagged by now. *)
     | T.T_IDENT (_, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Error
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii Error
     (* they should have been covered before *)
     | T.T_VARIABLE (_, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Error
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii Error
 
     | T.TOPAR ii   | T.TCPAR ii
     | T.T_LAMBDA_OPAR ii | T.T_LAMBDA_CPAR ii
@@ -648,7 +648,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
 
     | T.T_ELLIPSIS ii
     | T.LDots ii | T.RDots ii
-    -> tag ii Punctuation
+      -> tag ii Punctuation
     | T.TANTISLASH ii -> tag ii KeywordModule
     | T.T_NAMESPACE ii -> tag ii Keyword
 
@@ -659,11 +659,11 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.TSEMICOLON ii -> tag ii Punctuation
     | T.TBACKQUOTE ii -> tag ii Punctuation
 
-      (* we want to highlight code using eval! *)
+    (* we want to highlight code using eval! *)
     | T.T_EVAL ii -> tag ii BadSmell
 
     | T.T_OPEN_TAG ii ->
-      tag ii Keyword
+        tag ii Keyword
 
     | T.T_REQUIRE_ONCE ii | T.T_REQUIRE ii
     | T.T_INCLUDE_ONCE ii | T.T_INCLUDE ii
@@ -679,7 +679,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.T_ROCKET ii
       -> tag ii Operator
 
-      (* done in Cast *)
+    (* done in Cast *)
     | T.T_UNSET_CAST _ii   | T.T_OBJECT_CAST _ii
     | T.T_ARRAY_CAST _ii   | T.T_STRING_CAST _ii
     | T.T_DOUBLE_CAST _ii   | T.T_INT_CAST _ii
@@ -716,16 +716,16 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.T_CLOSE_TAG_OF_ECHO ii | T.T_OPEN_TAG_WITH_ECHO ii -> tag ii Punctuation
     | T.T_CLOSE_TAG ii -> tag ii Punctuation
 
-      (* done in PreProcess *)
+    (* done in PreProcess *)
     | T.T_FILE _ii  | T.T_LINE _ii | T.T_DIR _ii
     | T.T_FUNC_C _ii | T.T_METHOD_C _ii | T.T_CLASS_C _ii | T.T_TRAIT_C _ii
     | T.T_NAMESPACE_C _ii
       -> ()
 
-      (* can be a type hint *)
+    (* can be a type hint *)
     | T.T_ARRAY ii ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Builtin
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii Builtin
     | T.T_LIST ii -> tag ii Builtin
 
     | T.T_ARROW ii ->  tag ii Punctuation
@@ -735,7 +735,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.T_CLASS ii | T.T_TRAIT ii | T.T_ENUM ii -> tag ii KeywordObject
 
     | T.T_IMPLEMENTS ii | T.T_EXTENDS ii | T.T_INTERFACE ii ->
-      tag ii KeywordObject
+        tag ii KeywordObject
 
     | T.T_INSTEADOF ii -> tag ii KeywordObject
 
@@ -751,12 +751,12 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.T_CONST ii -> tag ii Keyword
 
     | T.T_SELF ii | T.T_PARENT ii ->
-      tag ii (Entity (Class, (Use2 fake_no_use2)));
+        tag ii (Entity (Class, (Use2 fake_no_use2)));
 
-      (* could be for func or method or lambda so tagged via ast *)
+        (* could be for func or method or lambda so tagged via ast *)
     | T.T_FUNCTION ii ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Keyword
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii Keyword
 
     | T.T_AS ii -> tag ii Keyword
     | T.T_SUPER ii -> tag ii Keyword
@@ -793,14 +793,14 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.T_NUM_STRING _ii -> ()
 
     | T.T_ENCAPSED_AND_WHITESPACE (s, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag_string ~tag s ii
+        if not (Hashtbl.mem already_tagged ii)
+        then tag_string ~tag s ii
 
     | T.T_CONSTANT_ENCAPSED_STRING (s, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag_string ~tag s ii
+        if not (Hashtbl.mem already_tagged ii)
+        then tag_string ~tag s ii
 
-      (* should been handled in Constant *)
+    (* should been handled in Constant *)
     | T.T_DNUMBER _ii | T.T_LNUMBER _ii -> ()
   );
 
@@ -808,8 +808,8 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
   (* ast phase 2 *)
   (* -------------------------------------------------------------------- *)
   (match ast with
-  | NotParsedCorrectly iis::_ ->
-    iis |> List.iter (fun ii -> tag ii NotParsed)
-  | _ -> ()
+   | NotParsedCorrectly iis::_ ->
+       iis |> List.iter (fun ii -> tag ii NotParsed)
+   | _ -> ()
   );
   ()

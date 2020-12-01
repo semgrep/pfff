@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Ast_ruby
@@ -30,7 +30,7 @@ module PI = Parse_info
  *    of stmt_as_expr, but expr may be too far from original expr
  *  - start from an ast_ruby_stmt.ml which is half between ast_ruby.ml and
  *    il_ruby.ml
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -68,9 +68,9 @@ let rec expr = function
   | Atom x -> atom x
   | Id (id, kind) ->
       (match kind with
-      | ID_Self -> G.IdSpecial (G.Self, (snd id))
-      | ID_Super -> G.IdSpecial (G.Super, (snd id))
-      | _ -> G.Id (ident id, G.empty_id_info())
+       | ID_Self -> G.IdSpecial (G.Self, (snd id))
+       | ID_Super -> G.IdSpecial (G.Super, (snd id))
+       | _ -> G.Id (ident id, G.empty_id_info())
       )
   | ScopedId x -> let name = scope_resolution x in
       G.IdQualified (name, G.empty_id_info())
@@ -78,8 +78,8 @@ let rec expr = function
   | Array xs -> G.Container (G.Array, bracket (list expr) xs)
   | Tuple xs -> G.Tuple (G.fake_bracket (list expr xs))
   | Unary (op, e) ->
-    let e = expr e in
-    unary op e
+      let e = expr e in
+      unary op e
   | Binop (e1, op, e2) ->
       let e1 = expr e1 in
       let e2 = expr e2 in
@@ -121,15 +121,15 @@ let rec expr = function
       let st = definition x in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Ellipsis x ->
-     let x = info x in
-     G.Ellipsis x
+      let x = info x in
+      G.Ellipsis x
   | DeepEllipsis x ->
-     let x = bracket expr x in
-     G.DeepEllipsis x
+      let x = bracket expr x in
+      G.DeepEllipsis x
   | TypedMetavar (v1, v2, v3) ->
-     let v1 = ident v1 in
-     let v3 = type_ v3 in
-     G.TypedMetavar (v1, v2, v3)
+      let v1 = ident v1 in
+      let v3 = type_ v3 in
+      G.TypedMetavar (v1, v2, v3)
 
 and formal_param = function
   | Formal_id id ->
@@ -150,8 +150,8 @@ and formal_param = function
         | None ->
             { G.pattrs = []; pinfo = G.empty_id_info ();
               ptype = None; pname = None; pdefault = None }
-       in
-       G.ParamHashSplat (t, p)
+      in
+      G.ParamHashSplat (t, p)
   | Formal_default (id, _t, e) ->
       let e = expr e in
       let p = { (G.param_of_id id) with G.pdefault = Some e } in
@@ -180,7 +180,7 @@ and formal_param_pattern = function
   | Formal_amp _ | Formal_star _ | Formal_rest _
   | Formal_default _ | Formal_hash_splat _ | Formal_kwd _
   | ParamEllipsis _
-      as x ->
+  as x ->
       let x = formal_param x in
       G.OtherPat (G.OP_Todo, [G.Pa x])
 
@@ -195,7 +195,7 @@ and scope_resolution = function
       (* TODO: use an 'expr_for_scope' instead of 'expr' below, because
        * the expression itself could be another Scope ...
        * in which case we could generate a QDots instead of a QEXpr
-       *)
+      *)
       let e = expr e in
       let qualif = G.QExpr (e, t) in
       id, { G.name_qualifier = Some qualif; name_typeargs = None }
@@ -208,8 +208,8 @@ and variable_or_method_name = function
   | SV v -> variable v
   | SM m ->
       (match method_name m with
-      | Left id -> id
-      | Right _ -> failwith "TODO: variable_or_method_name"
+       | Left id -> id
+       | Right _ -> failwith "TODO: variable_or_method_name"
       )
 
 and method_name mn =
@@ -222,21 +222,21 @@ and method_name mn =
       Left (PI.str_of_info t, t)
   | MethodDynamic e -> Right (expr e)
   | MethodAtom x ->
-     (match x with
-     | AtomSimple x -> Left x
-     | AtomFromString (l, xs, r) ->
-      (match xs with
-      | [StrChars (s,t2)] ->
-        let t = PI.combine_infos l [t2;r] in
-        Left (s, t)
-      | _ -> Right (string_contents_list (l, xs, r))
+      (match x with
+       | AtomSimple x -> Left x
+       | AtomFromString (l, xs, r) ->
+           (match xs with
+            | [StrChars (s,t2)] ->
+                let t = PI.combine_infos l [t2;r] in
+                Left (s, t)
+            | _ -> Right (string_contents_list (l, xs, r))
+           )
       )
-    )
 
 and string_contents_list (t1, xs, t2) =
   let xs = list string_contents xs in
   G.OtherExpr (G.OE_Todo,
-     [G.Tk t1] @ (xs |> List.map (fun e -> G.E e)) @ [G.Tk t2])
+               [G.Tk t1] @ (xs |> List.map (fun e -> G.E e)) @ [G.Tk t2])
 
 and string_contents = function
   | StrChars s -> G.L (G.String s)
@@ -277,13 +277,13 @@ and binary (op, t) e1 e2 =
   match op with
   | B msg ->
       let op = binary_msg msg in
-     G.Call (G.IdSpecial (G.Op op, t), fb [G.Arg e1; G.Arg e2])
+      G.Call (G.IdSpecial (G.Op op, t), fb [G.Arg e1; G.Arg e2])
   | Op_kAND | Op_AND ->
-     G.Call (G.IdSpecial (G.Op G.And, t), fb [G.Arg e1; G.Arg e2])
+      G.Call (G.IdSpecial (G.Op G.And, t), fb [G.Arg e1; G.Arg e2])
   | Op_kOR | Op_OR ->
-     G.Call (G.IdSpecial (G.Op G.Or, t), fb [G.Arg e1; G.Arg e2])
+      G.Call (G.IdSpecial (G.Op G.Or, t), fb [G.Arg e1; G.Arg e2])
   | Op_ASSIGN ->
-     G.Assign (e1, t, e2)
+      G.Assign (e1, t, e2)
   | Op_OP_ASGN op ->
       let op =
         match op with
@@ -293,12 +293,12 @@ and binary (op, t) e1 e2 =
         (* see lexer_ruby.mll code for T_OP_ASGN *)
         | _ -> raise Impossible
       in
-     G.AssignOp (e1, (op, t), e2)
-   | Op_ASSOC ->
+      G.AssignOp (e1, (op, t), e2)
+  | Op_ASSOC ->
       G.Tuple (G.fake_bracket [e1;e2])
-   | Op_DOT3 ->
-     (* coupling: make sure to check for the string in generic_vs_generic *)
-     G.Call (G.IdSpecial (G.Op G.Range, t), fb [G.Arg e1; G.Arg e2])
+  | Op_DOT3 ->
+      (* coupling: make sure to check for the string in generic_vs_generic *)
+      G.Call (G.IdSpecial (G.Op G.Range, t), fb [G.Arg e1; G.Arg e2])
 
 
 
@@ -313,21 +313,21 @@ and unary (op,t) e =
         | Op_UTilde -> G.BitNot
       in
       G.Call (G.IdSpecial (G.Op op, t), fb [G.Arg e])
-   | Op_UNot -> G.Call (G.IdSpecial (G.Op G.Not, t), fb [G.Arg e])
-   | Op_DefinedQuestion -> G.Call (G.IdSpecial (G.Defined, t), fb [G.Arg e])
-   | Op_UStarStar -> G.Call (G.IdSpecial (G.HashSplat, t), fb [G.Arg e])
-   (* should be only in arguments, to pass procs. I abuse Ref for now *)
-   | Op_UAmper -> G.Ref (t, e)
+  | Op_UNot -> G.Call (G.IdSpecial (G.Op G.Not, t), fb [G.Arg e])
+  | Op_DefinedQuestion -> G.Call (G.IdSpecial (G.Defined, t), fb [G.Arg e])
+  | Op_UStarStar -> G.Call (G.IdSpecial (G.HashSplat, t), fb [G.Arg e])
+  (* should be only in arguments, to pass procs. I abuse Ref for now *)
+  | Op_UAmper -> G.Ref (t, e)
 
 and atom x =
   match x with
   | AtomSimple x -> G.L (G.Atom x)
   | AtomFromString (l, xs, r) ->
       (match xs with
-      | [StrChars (s, t2)] ->
-            let t = PI.combine_infos l [t2; r] in
-            G.L (G.Atom (s, t))
-      | _ -> string_contents_list (l, xs, r)
+       | [StrChars (s, t2)] ->
+           let t = PI.combine_infos l [t2; r] in
+           G.L (G.Atom (s, t))
+       | _ -> string_contents_list (l, xs, r)
       )
 
 and literal x =
@@ -343,23 +343,23 @@ and literal x =
   | Nil t -> G.L (G.Null (tok t))
   | String skind ->
       (match skind with
-      | Single x -> G.L (G.String x)
-      | Double (l, [], r) ->
-            let t = PI.combine_infos l [r] in
-            G.L (G.String ("", t))
-      | Double (l, [StrChars (s, t2)], r) ->
-            let t = PI.combine_infos l [t2;r] in
-            G.L (G.String (s, t))
-      (* TODO: generate interpolation Special *)
-      | Double xs -> string_contents_list xs
-      | Tick xs -> string_contents_list xs
+       | Single x -> G.L (G.String x)
+       | Double (l, [], r) ->
+           let t = PI.combine_infos l [r] in
+           G.L (G.String ("", t))
+       | Double (l, [StrChars (s, t2)], r) ->
+           let t = PI.combine_infos l [t2;r] in
+           G.L (G.String (s, t))
+       (* TODO: generate interpolation Special *)
+       | Double xs -> string_contents_list xs
+       | Tick xs -> string_contents_list xs
       )
   | Regexp ((xs, s2), t) ->
       (match xs with
-      | [StrChars (s, _t2)] -> G.L (G.Regexp (s ^ s2, t))
-      | _ ->
-            let l, r = t, t in (* TODO *)
-            string_contents_list (l, xs, r)
+       | [StrChars (s, _t2)] -> G.L (G.Regexp (s ^ s2, t))
+       | _ ->
+           let l, r = t, t in (* TODO *)
+           string_contents_list (l, xs, r)
       )
 
 and expr_as_stmt = function
@@ -446,7 +446,7 @@ and when_clause (t, pats, sts) =
   let pats = list pattern pats in
   let st = list_stmt1 sts in
   pats |> List.map (fun pat ->
-      G.Case (t, pat)),
+    G.Case (t, pat)),
   st
 
 and exprs_to_label_ident = function
@@ -484,47 +484,47 @@ and definition def =
       let funcdef = { G.fparams = params; frettype = None; fbody = body;
                       fkind = G.Method, t } in
       (match kind with
-      | M mn ->
-        (match method_name mn with
-        | Left id ->
-           let ent = G.basic_entity id [] in
-           G.DefStmt (ent, G.FuncDef funcdef)
-        | Right e ->
+       | M mn ->
+           (match method_name mn with
+            | Left id ->
+                let ent = G.basic_entity id [] in
+                G.DefStmt (ent, G.FuncDef funcdef)
+            | Right e ->
+                let ent = G.basic_entity ("",fake"") [] in
+                G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
+           )
+       | SingletonM e ->
+           let e = expr e in
            let ent = G.basic_entity ("",fake"") [] in
            G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
-        )
-      | SingletonM e ->
-            let e = expr e in
-            let ent = G.basic_entity ("",fake"") [] in
-            G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
       )
   | ClassDef (t, kind, body) ->
       let body = body_exn body in
       (match kind with
-      | C (name, inheritance_opt) ->
-         let extends =
-            match inheritance_opt with
-            | None -> []
-            | Some (_t2, e) ->
-               let e = expr e in
-               [G.expr_to_type e]
-         in
-         let ent =
-            match name with
-            | NameConstant id -> G.basic_entity id []
-            | NameScope x ->
-                let name = scope_resolution x in
-                nonbasic_entity (G.EName name)
-          in
-          let def = { G.ckind = (G.Class, t); cextends = extends;
-                   (* TODO: this is done by special include/require builtins *)
-                      cimplements = []; cmixins = [];
-                      cbody = fb ([G.FieldStmt body]);
+       | C (name, inheritance_opt) ->
+           let extends =
+             match inheritance_opt with
+             | None -> []
+             | Some (_t2, e) ->
+                 let e = expr e in
+                 [G.expr_to_type e]
+           in
+           let ent =
+             match name with
+             | NameConstant id -> G.basic_entity id []
+             | NameScope x ->
+                 let name = scope_resolution x in
+                 nonbasic_entity (G.EName name)
+           in
+           let def = { G.ckind = (G.Class, t); cextends = extends;
+                       (* TODO: this is done by special include/require builtins *)
+                       cimplements = []; cmixins = [];
+                       cbody = fb ([G.FieldStmt body]);
                      } in
-          G.DefStmt (ent, G.ClassDef def)
-      | SingletonC (t, e) ->
-          let e = expr e in
-          G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body])
+           G.DefStmt (ent, G.ClassDef def)
+       | SingletonC (t, e) ->
+           let e = expr e in
+           G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body])
       )
   | ModuleDef (_t, name, body) ->
       let body = body_exn body in
@@ -573,12 +573,12 @@ and body_exn x =
             Some (t, st)
       in
       (match elseopt with
-      | None -> G.Try (fake "try", body, catches, finally_opt)
-      | Some (_t, sts) ->
-         let st = list_stmt1 sts in
-         let try_ = G.Try (fake "try", body, catches, finally_opt) in
-         let st = G.Block (fb [try_; st]) in
-         G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st)
+       | None -> G.Try (fake "try", body, catches, finally_opt)
+       | Some (_t, sts) ->
+           let st = list_stmt1 sts in
+           let try_ = G.Try (fake "try", body, catches, finally_opt) in
+           let st = G.Block (fb [try_; st]) in
+           G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st)
 
       )
 
@@ -589,16 +589,16 @@ and rescue_clause (t, exns, exnvaropt, sts) =
   | [], None ->
       t, G.PatUnderscore t, st
   | [], Some (t, lhs) ->
-     let e = expr lhs in
-     t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e]), st
+      let e = expr lhs in
+      t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e]), st
   | x::xs, None ->
-    let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
-    t, disjs, st
+      let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
+      t, disjs, st
 
   | x::xs, Some (t, lhs) ->
-    let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
-    let e = expr lhs in
-    t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e; G.P disjs]), st
+      let disjs = List.fold_left (fun e acc -> G.PatDisj (e, acc)) x xs in
+      let e = expr lhs in
+      t, G.OtherPat (G.OP_Todo, [G.Tk t; G.E e; G.P disjs]), st
 
 and exception_ e =
   let t = type_ e in
@@ -635,9 +635,9 @@ and list_stmt1 xs =
    *
    * in which case we remove the G.Block around it.
    * hacky ...
-   *)
+  *)
   | [G.ExprStmt (G.Id ((s, _), _), _) as x] when G.is_metavar_name s
-      -> x
+    -> x
   | xs -> G.Block (fb xs)
 
 (* was called stmts, but you should either use list_stmt1 or list_stmts *)
@@ -651,9 +651,9 @@ let any x =
   match x with
   | E x ->
       (match x with
-      | S x -> G.S (stmt x)
-      | D x -> G.S (definition x)
-      | _ -> G.E (expr x)
+       | S x -> G.S (stmt x)
+       | D x -> G.S (definition x)
+       | _ -> G.E (expr x)
       )
   | S2 x -> G.S (stmt x)
   | Ss xs -> G.Ss (list_stmts xs)

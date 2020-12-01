@@ -26,12 +26,12 @@ let test_parse_php xs  =
   let dirname_opt, fullxs =
     match xs with
     | [x] when Common2.is_directory x ->
-      let skip_list =
-        if Sys.file_exists (x ^ "/skip_list.txt")
-        then Skip_code.load (x ^ "/skip_list.txt")
-        else []
-      in
-      Some x,  Skip_code.filter_files skip_list x fullxs
+        let skip_list =
+          if Sys.file_exists (x ^ "/skip_list.txt")
+          then Skip_code.load (x ^ "/skip_list.txt")
+          else []
+        in
+        Some x,  Skip_code.filter_files skip_list x fullxs
     | _ -> None, fullxs
   in
 
@@ -43,7 +43,7 @@ let test_parse_php xs  =
   Common2.check_stack_nbfiles (List.length fullxs);
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
-     k ();
+    k ();
 
     let (_xs, stat) =
       Common.save_excursion Flag.error_recovery true (fun () ->
@@ -52,29 +52,29 @@ let test_parse_php xs  =
     in
     Common.push stat stat_list;
     (*s: add stat for regression testing in hash *)
-        let s = spf "bad = %d" stat.Parse_info.bad in
-        if stat.Parse_info.bad = 0
-        then Hashtbl.add newscore file (Common2.Ok)
-        else Hashtbl.add newscore file (Common2.Pb s)
-        ;
+    let s = spf "bad = %d" stat.Parse_info.bad in
+    if stat.Parse_info.bad = 0
+    then Hashtbl.add newscore file (Common2.Ok)
+    else Hashtbl.add newscore file (Common2.Pb s)
+    ;
     (*e: add stat for regression testing in hash *)
   ));
 
   Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
-    let score_path = Config_pfff.regression_data_dir in
-    dirname_opt |> Common.do_option (fun dirname ->
-      let dirname = Common.fullpath dirname in
-      pr2 "--------------------------------";
-      pr2 "regression testing  information";
-      pr2 "--------------------------------";
-      let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common2.regression_testing newscore
-        (Filename.concat score_path
+  let score_path = Config_pfff.regression_data_dir in
+  dirname_opt |> Common.do_option (fun dirname ->
+    let dirname = Common.fullpath dirname in
+    pr2 "--------------------------------";
+    pr2 "regression testing  information";
+    pr2 "--------------------------------";
+    let str = Str.global_replace (Str.regexp "/") "__" dirname in
+    Common2.regression_testing newscore
+      (Filename.concat score_path
          ("score_parsing__" ^str ^ "php.marshalled"))
-    );
-    ()
-  (*e: print regression testing results *)
+  );
+  ()
+(*e: print regression testing results *)
 (*e: test_parse_php *)
 (*****************************************************************************)
 (* Export *)
@@ -161,15 +161,15 @@ let test_parse_xdebug_expr s =
 (*****************************************************************************)
 let actions () = [
   (*s: test_parsing_php actions *)
-    "-parse_php", "   <file or dir>",
-    Common.mk_action_n_arg test_parse_php;
+  "-parse_php", "   <file or dir>",
+  Common.mk_action_n_arg test_parse_php;
   (*x: test_parsing_php actions *)
 (*
     "-visit_php", "   <file>",
       Common.mk_action_1_arg test_visit_php;
 *)
   (*x: test_parsing_php actions *)
-    (* an alias for -sexp_php *)
+  (* an alias for -sexp_php *)
 (*
     "-json", "   <file> export the AST of file into JSON",
       Common.mk_action_1_arg test_json_php;
@@ -177,16 +177,16 @@ let actions () = [
       Common.mk_action_1_arg test_json_fast_php;
 *)
   (*x: test_parsing_php actions *)
-    (* an alias for -sexp_php *)
-    "-dump_php", "   <file>",
-    Common.mk_action_1_arg test_dump_php;
-    "-dump_php_ml", "   <file>",
-    Common.mk_action_1_arg test_dump_php;
+  (* an alias for -sexp_php *)
+  "-dump_php", "   <file>",
+  Common.mk_action_1_arg test_dump_php;
+  "-dump_php_ml", "   <file>",
+  Common.mk_action_1_arg test_dump_php;
   (*x: test_parsing_php actions *)
   (*x: test_parsing_php actions *)
   (*x: test_parsing_php actions *)
-    "-tokens_php", "   <file>",
-    Common.mk_action_1_arg test_tokens_php;
+  "-tokens_php", "   <file>",
+  Common.mk_action_1_arg test_tokens_php;
   (*e: test_parsing_php actions *)
 (*
     "-unparse_php", "   <file>",

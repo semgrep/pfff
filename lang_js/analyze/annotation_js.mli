@@ -7,7 +7,7 @@ type annotation =
 
 (* The returned parse_info is the one associated with the whole comment.
  * We use it in the tag generation.
- *)
+*)
 val annotations_of_program_with_comments:
   Parse_js.program_and_tokens -> (annotation * Parse_info.t) list
 

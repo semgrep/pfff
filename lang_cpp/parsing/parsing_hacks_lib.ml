@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -45,8 +45,8 @@ let msg_gen is_known printer s =
   if not (!Flag_cpp.filter_msg)
   then printer s
   else
-    if not (is_known s)
-    then printer s
+  if not (is_known s)
+  then printer s
 
 let pos ii = Parse_info.string_of_info ii
 
@@ -89,13 +89,13 @@ let msg_change_tok tok =
         | "u8" | "u16" | "u32" | "u64"
         | "s8"  | "s16" | "s32" | "s64"
         | "__u8" | "__u16" | "__u32"  | "__u64"
-            -> true
+          -> true
         | "acpi_handle" | "acpi_status" -> true
         | "FILE" | "DIR"                -> true
         | s when s =~ ".*_t$"           -> true
         | _                             -> false
       )
-      (fun s -> pr2_typedef (spf "promoting %s at %s " s (pos ii)))
+        (fun s -> pr2_typedef (spf "promoting %s at %s " s (pos ii)))
 
   (* mostly in parsing_hacks_pp.ml *)
 
@@ -104,22 +104,22 @@ let msg_change_tok tok =
   | TComment_Pp (directive, ii) ->
       let s = PI.str_of_info ii in
       (match directive, s with
-      | Token_cpp.CppMacro, _ ->
-          pr2_pp (spf "MACRO: commented at %s" (pos ii))
+       | Token_cpp.CppMacro, _ ->
+           pr2_pp (spf "MACRO: commented at %s" (pos ii))
 
-      | Token_cpp.CppDirective, _ when s =~ "#define.*" ->
-          pr2_pp (spf "DEFINE: commented at %s" (pos ii));
-      | Token_cpp.CppDirective, _ when s =~ "#include.*" ->
-          pr2_pp (spf "INCLUDE: commented at %s" (pos ii));
-      | Token_cpp.CppDirective, _ when s =~ "#if.*" ->
-          pr2_pp (spf "IFDEF: commented at %s" (pos ii));
-      | Token_cpp.CppDirective, _ when s =~ "#undef.*" ->
-          pr2_pp (spf "UNDEF: commented at %s" (pos ii));
-      | Token_cpp.CppDirective, _ ->
-          pr2_pp (spf "OTHER: commented directive at %s" (pos ii));
-      | _ ->
-          (* todo? *)
-          ()
+       | Token_cpp.CppDirective, _ when s =~ "#define.*" ->
+           pr2_pp (spf "DEFINE: commented at %s" (pos ii));
+       | Token_cpp.CppDirective, _ when s =~ "#include.*" ->
+           pr2_pp (spf "INCLUDE: commented at %s" (pos ii));
+       | Token_cpp.CppDirective, _ when s =~ "#if.*" ->
+           pr2_pp (spf "IFDEF: commented at %s" (pos ii));
+       | Token_cpp.CppDirective, _ when s =~ "#undef.*" ->
+           pr2_pp (spf "UNDEF: commented at %s" (pos ii));
+       | Token_cpp.CppDirective, _ ->
+           pr2_pp (spf "OTHER: commented directive at %s" (pos ii));
+       | _ ->
+           (* todo? *)
+           ()
       )
 
   | TOBrace_DefineInit ii ->
@@ -130,11 +130,11 @@ let msg_change_tok tok =
       s |> msg_gen (fun s ->
         match s with
         | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
-            -> true
-            (* s when s =~ ".*STR.*" -> true  *)
+          -> true
+        (* s when s =~ ".*STR.*" -> true  *)
         | _ -> false
       )
-      (fun s -> pr2_pp (spf "MACRO: string-macro %s at %s " s (pos ii)))
+        (fun s -> pr2_pp (spf "MACRO: string-macro %s at %s " s (pos ii)))
 
   | TIdent_MacroStmt ii ->
       pr2_pp (spf "MACRO: stmt-macro at %s" (pos ii));
@@ -160,7 +160,7 @@ let msg_change_tok tok =
             *)
         | _ -> false
       )
-      (fun _s -> pr2_pp (spf "MACRO: macro-declare at %s" (pos ii)))
+        (fun _s -> pr2_pp (spf "MACRO: macro-declare at %s" (pos ii)))
 
   | Tconst_MacroDeclConst ii ->
       pr2_pp (spf "MACRO: retag const at %s" (pos ii))
@@ -177,10 +177,10 @@ let msg_change_tok tok =
   | TComment_Cpp (directive, ii) ->
       let s = PI.str_of_info ii in
       (match directive, s with
-      | Token_cpp.CplusplusTemplate, _ ->
-          pr2_cplusplus (spf "COM-TEMPLATE: commented at %s" (pos ii))
-      | Token_cpp.CplusplusQualifier, _ ->
-          pr2_cplusplus (spf "COM-QUALIFIER: commented at %s" (pos ii))
+       | Token_cpp.CplusplusTemplate, _ ->
+           pr2_cplusplus (spf "COM-TEMPLATE: commented at %s" (pos ii))
+       | Token_cpp.CplusplusQualifier, _ ->
+           pr2_cplusplus (spf "COM-QUALIFIER: commented at %s" (pos ii))
       )
 
   | TOPar_CplusplusInit ii ->
@@ -195,7 +195,7 @@ let msg_change_tok tok =
   | Tchar_Constr ii | Tint_Constr ii | Tfloat_Constr ii | Tdouble_Constr ii
   | Tshort_Constr ii | Tlong_Constr ii | Tbool_Constr ii
   | Tunsigned_Constr ii | Tsigned_Constr ii
-     ->
+    ->
       pr2_cplusplus(spf "constructed object builtin at %s" (pos ii));
   | TIdent_TypedefConstr (s, ii) ->
       pr2_cplusplus (spf "constructed object %s at %s" s (pos ii))
@@ -236,7 +236,7 @@ let change_tok extended_tok tok =
   (* otherwise parse_c will be lost if don't find a EOF token
    * why? because paren detection had a pb because of
    * some ifdef-exp?
-   *)
+  *)
   if TH.is_eof extended_tok.t
   then pr2 "PB: wierd, I try to tag an EOF token as something else"
   else extended_tok.t <- tok
@@ -247,7 +247,7 @@ let fresh_tok tok =
 
 (* normally the caller have first filtered the set of tokens to have
  * a clearer "view" to work on
- *)
+*)
 let set_as_comment cppkind x =
   assert(not (TH.is_real_comment x.t));
   change_tok x (TComment_Pp (cppkind, TH.info_of_tok x.t))
@@ -267,20 +267,20 @@ val regexp_typedef: Str.regexp
 (* opti: better to built then once and for all, especially regexp_foreach *)
 
 let regexp_macro =  Str.regexp
-  "^[A-Z_][A-Z_0-9]*$"
+    "^[A-Z_][A-Z_0-9]*$"
 
 (* linuxext: *)
 let regexp_declare =  Str.regexp
-  ".*DECLARE.*"
+    ".*DECLARE.*"
 
 (* firefoxext: *)
 let regexp_ns_decl_like = Str.regexp
-  ("\\(" ^
-   "NS_DECL_\\|NS_DECLARE_\\|NS_IMPL_\\|" ^
-   "NS_IMPLEMENT_\\|NS_INTERFACE_\\|NS_FORWARD_\\|NS_HTML_\\|" ^
-   "NS_DISPLAY_\\|NS_IMPL_\\|" ^
-   "TX_DECL_\\|DOM_CLASSINFO_\\|NS_CLASSINFO_\\|IMPL_INTERNAL_\\|" ^
-   "ON_\\|EVT_\\|NS_UCONV_\\|NS_GENERIC_\\|NS_COM_" ^
-   "\\).*")
+    ("\\(" ^
+     "NS_DECL_\\|NS_DECLARE_\\|NS_IMPL_\\|" ^
+     "NS_IMPLEMENT_\\|NS_INTERFACE_\\|NS_FORWARD_\\|NS_HTML_\\|" ^
+     "NS_DISPLAY_\\|NS_IMPL_\\|" ^
+     "TX_DECL_\\|DOM_CLASSINFO_\\|NS_CLASSINFO_\\|IMPL_INTERNAL_\\|" ^
+     "ON_\\|EVT_\\|NS_UCONV_\\|NS_GENERIC_\\|NS_COM_" ^
+     "\\).*")
 
 

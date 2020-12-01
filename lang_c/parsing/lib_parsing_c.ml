@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 module FT = File_type
 (*module V = Visitor_c*)
@@ -26,8 +26,8 @@ let find_source_files_of_dir_or_files xs =
     match File_type.file_type_of_file filename with
     | FT.PL (FT.C ("l" | "y")) -> false
     | FT.PL (FT.C _) ->
-      (* todo: fix syncweb so don't need this! *)
-      not (FT.is_syncweb_obj_file filename)
+        (* todo: fix syncweb so don't need this! *)
+        not (FT.is_syncweb_obj_file filename)
     | _ -> false
   ) |> Common.sort
 

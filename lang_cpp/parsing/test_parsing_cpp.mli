@@ -10,5 +10,5 @@ val test_dump_cpp:
 (* This makes accessible the different test_xxx functions above from
  * the command line, e.g. '$ pfff -parse_cpp foo.cpp will call the
  * test_parse_cpp function.
- *)
+*)
 val actions : unit -> Common.cmdline_actions

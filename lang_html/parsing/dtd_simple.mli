@@ -21,6 +21,6 @@ type model_constraint =
   | Sub_exclusions of (string list * model_constraint)
 
 type simplified_dtd =
-    (string * (element_class * model_constraint)) list
+  (string * (element_class * model_constraint)) list
 
 val html40_dtd: simplified_dtd

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -27,7 +27,7 @@ open Parse_info
 
 (* todo: do some generic red_green_and_heatmap helpers? so can factorize
  * code with layer_coverage.ml
- *)
+*)
 
 (*****************************************************************************)
 (* Helper *)
@@ -44,17 +44,17 @@ let gen_red_green_layer ~root stats =
     title = "Parsing errors (red/green)";
     description = "";
     files = stats |> List.map (fun stat ->
-     let file =
-       stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
-     in
+      let file =
+        stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
+      in
 
       file,
       { Layer_code.
         micro_level = []; (* TODO use problematic_lines *)
         macro_level = [
           (if stat.bad > 0
-          then "bad"
-          else "ok"
+           then "bad"
+           else "ok"
           ), 1.
         ];
       }
@@ -69,17 +69,17 @@ let gen_heatmap_layer ~root stats =
     title = "Parsing errors (heatmap)";
     description = "lower is better";
     files = stats |> List.map (fun stat ->
-     let file =
-       stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
-     in
-     let covered = stat.correct in
-     let not_covered = stat.bad in
+      let file =
+        stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
+      in
+      let covered = stat.correct in
+      let not_covered = stat.bad in
 
-     let percent =
+      let percent =
         try
           Common2.pourcent_good_bad not_covered covered
-       with Division_by_zero -> 0
-     in
+        with Division_by_zero -> 0
+      in
 
       file,
       { Layer_code.
@@ -89,7 +89,7 @@ let gen_heatmap_layer ~root stats =
           );
         macro_level = [
           (let percent_round = (percent / 10) * 10 in
-          spf "cover %d%%" percent_round
+           spf "cover %d%%" percent_round
           ),
           1.
         ];

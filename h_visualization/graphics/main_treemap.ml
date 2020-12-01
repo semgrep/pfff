@@ -85,43 +85,43 @@ let main_action jsonfile =
 (*****************************************************************************)
 
 let all_actions () =
- Treemap.actions () @
- Treemap_json.actions () @
- []
+  Treemap.actions () @
+  Treemap_json.actions () @
+  []
 
 let options () =
   [
-  (*s: treemap_viewer cmdline options *)
-      "-algorithm", Arg.String (fun s ->
-        algorithm := Treemap.algo_of_s s;
-      ),
-      (spf " <algo> (choices are: %s, default = %s"
-          (Treemap.algos |> List.map Treemap.s_of_algo |> Common.join ", ")
-          (Treemap.s_of_algo !algorithm));
+    (*s: treemap_viewer cmdline options *)
+    "-algorithm", Arg.String (fun s ->
+      algorithm := Treemap.algo_of_s s;
+    ),
+    (spf " <algo> (choices are: %s, default = %s"
+       (Treemap.algos |> List.map Treemap.s_of_algo |> Common.join ", ")
+       (Treemap.s_of_algo !algorithm));
 
-      "-big_screen", Arg.Set big_screen,
-      " ";
-      "-verbose", Arg.Set verbose,
-      " ";
-  (*e: treemap_viewer cmdline options *)
+    "-big_screen", Arg.Set big_screen,
+    " ";
+    "-verbose", Arg.Set verbose,
+    " ";
+    (*e: treemap_viewer cmdline options *)
   ] @
   Common.options_of_actions action (all_actions()) @
   Common.cmdline_flags_devel () @
   Common.cmdline_flags_verbose () @
   Common.cmdline_flags_other () @
   [
-  "-version",   Arg.Unit (fun () ->
-    pr2 (spf "ocamltreemap version: %s" version);
-    exit 0;
-  ),
+    "-version",   Arg.Unit (fun () ->
+      pr2 (spf "ocamltreemap version: %s" version);
+      exit 0;
+    ),
     "  guess what";
 
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () ->
-    pr2 "version: $Date: 2008/10/26 00:44:57 $";
-    raise (Common.UnixExit 0)
+    (* this can not be factorized in Common *)
+    "-date",   Arg.Unit (fun () ->
+      pr2 "version: $Date: 2008/10/26 00:44:57 $";
+      raise (Common.UnixExit 0)
     ),
-  "   guess what";
+    "   guess what";
   ] @
   []
 
@@ -132,7 +132,7 @@ let options () =
 let main () =
   let usage_msg =
     "Usage: " ^ Common.basename Sys.argv.(0) ^
-      " [options] <json file> " ^ "\n" ^ "Options are:"
+    " [options] <json file> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -142,38 +142,38 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | [x] ->
-        main_action x
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | [x] ->
+         main_action x
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] ->
-        Common.usage usage_msg (options());
-        failwith "too few arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] ->
+         Common.usage usage_msg (options());
+         failwith "too few arguments"
 
-    | x::y::xs ->
-        Common.usage usage_msg (options());
-        failwith "too many arguments"
+     | x::y::xs ->
+         Common.usage usage_msg (options());
+         failwith "too many arguments"
     )
   )
 
 (*****************************************************************************)
 let _ =
   Common.main_boilerplate (fun () ->
-      main ();
+    main ();
   )
 
 (*e: main_treemap.ml *)

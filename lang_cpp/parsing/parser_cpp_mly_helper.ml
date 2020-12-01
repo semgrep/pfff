@@ -31,7 +31,7 @@ type shortLong = Short | Long | LongLong
 (* note: have a full_info: parse_info list; to remember ordering
  * between storage, qualifier, type? well this info is already in
  * the Ast_c.info, just have to sort them to get good order
- *)
+*)
 type decl = {
   storageD: storage;
   typeD: (sign option * shortLong option * typeC option) wrapx;
@@ -117,77 +117,77 @@ let addQualifD qu qu2 =
 (* stdC: type section, basic integer types (and ritchie)
  * To understand the code, just look at the result (right part of the PM)
  * and go back.
- *)
+*)
 let type_and_storage_from_decl
-  {storageD = st;
-   qualifD = qu;
-   typeD = (ty,iit);
-   inlineD = (inline,iinl);
-  }  =
- (qu,
+    {storageD = st;
+     qualifD = qu;
+     typeD = (ty,iit);
+     inlineD = (inline,iinl);
+    }  =
+  (qu,
    (match ty with
- | (None, None, None)     ->
-   (* c++ext: *)
-   (match st with
-   | Sto (Auto, ii) -> BaseType (Void ii)(* TODO AST *)
-   | _ ->
-    (* mine (originally default to int, but this looks like bad style) *)
-     let decl =
-      { v_namei = None; v_type = qu, (BaseType (Void (List.hd iit)));
-        v_storage = st }
-     in
-     raise (Semantic ("no type (could default to 'int')",
-                    List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
-   )
- | (None, None, Some t)   ->
-    t
- | (Some sign,  None, None) ->
-     BaseType(IntType (Si (sign, CInt), List.hd iit))
- | (Some sign,  None, Some (BaseType (IntType (Si (_,CInt), t1)))) ->
-     BaseType(IntType (Si (sign, CInt), t1))
+    | (None, None, None)     ->
+        (* c++ext: *)
+        (match st with
+         | Sto (Auto, ii) -> BaseType (Void ii)(* TODO AST *)
+         | _ ->
+             (* mine (originally default to int, but this looks like bad style) *)
+             let decl =
+               { v_namei = None; v_type = qu, (BaseType (Void (List.hd iit)));
+                 v_storage = st }
+             in
+             raise (Semantic ("no type (could default to 'int')",
+                              List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
+        )
+    | (None, None, Some t)   ->
+        t
+    | (Some sign,  None, None) ->
+        BaseType(IntType (Si (sign, CInt), List.hd iit))
+    | (Some sign,  None, Some (BaseType (IntType (Si (_,CInt), t1)))) ->
+        BaseType(IntType (Si (sign, CInt), t1))
 
- | ((None|Some Signed), Some x, None) ->
-     BaseType(IntType (Si (Signed,
-       [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
-              List.hd iit))
- | ((None|Some Signed), Some x, Some(BaseType(IntType (Si (_,CInt), t1)))) ->
-     BaseType(IntType (Si (Signed,
-        [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
+    | ((None|Some Signed), Some x, None) ->
+        BaseType(IntType (Si (Signed,
+                              [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
+                          List.hd iit))
+    | ((None|Some Signed), Some x, Some(BaseType(IntType (Si (_,CInt), t1)))) ->
+        BaseType(IntType (Si (Signed,
+                              [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
 
- | (Some UnSigned, Some x, None) ->
-     BaseType(IntType (Si (UnSigned,
-       [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
-          List.hd iit))
+    | (Some UnSigned, Some x, None) ->
+        BaseType(IntType (Si (UnSigned,
+                              [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
+                          List.hd iit))
 
- | (Some UnSigned, Some x, Some (BaseType (IntType (Si (_,CInt), t1))))->
-     BaseType(IntType (Si (UnSigned,
-       [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
+    | (Some UnSigned, Some x, Some (BaseType (IntType (Si (_,CInt), t1))))->
+        BaseType(IntType (Si (UnSigned,
+                              [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
 
- | (Some sign,   None, (Some (BaseType (IntType (CChar, ii)))))   ->
-     BaseType(IntType (Si (sign, CChar2), ii))
+    | (Some sign,   None, (Some (BaseType (IntType (CChar, ii)))))   ->
+        BaseType(IntType (Si (sign, CChar2), ii))
 
- | (None, Some Long,(Some(BaseType(FloatType (CDouble, ii)))))    ->
-     BaseType (FloatType (CLongDouble, ii))
+    | (None, Some Long,(Some(BaseType(FloatType (CDouble, ii)))))    ->
+        BaseType (FloatType (CLongDouble, ii))
 
- | (Some _,_, Some _) ->
-   raise (Semantic("signed, unsigned valid only for char and int", List.hd iit))
- | (_,Some _,(Some(BaseType(FloatType ((CFloat|CLongDouble), _))))) ->
-   raise (Semantic ("long or short specified with floatint type", List.hd iit))
- | (_,Some Short,(Some(BaseType(FloatType (CDouble, _))))) ->
-     raise (Semantic ("the only valid combination is long double", List.hd iit))
+    | (Some _,_, Some _) ->
+        raise (Semantic("signed, unsigned valid only for char and int", List.hd iit))
+    | (_,Some _,(Some(BaseType(FloatType ((CFloat|CLongDouble), _))))) ->
+        raise (Semantic ("long or short specified with floatint type", List.hd iit))
+    | (_,Some Short,(Some(BaseType(FloatType (CDouble, _))))) ->
+        raise (Semantic ("the only valid combination is long double", List.hd iit))
 
- | (_, Some _, Some _) ->
-     (* mine *)
-     raise (Semantic ("long, short valid only for int or float", List.hd iit))
+    | (_, Some _, Some _) ->
+        (* mine *)
+        raise (Semantic ("long, short valid only for int or float", List.hd iit))
 
-     (* if do short uint i, then gcc say parse error, strange ? it is
-      * not a parse error, it is just that we dont allow with typedef
-      * either short/long or signed/unsigned. In fact, with
-      * parse_typedef_fix2 (with et() and dt()) now I say too parse
-      * error so this code is executed only when do short struct
-      * {....} and never with a typedef cos now we parse short uint i
-      * as short ident ident => parse error (cos after first short i
-      * pass in dt() mode) *)
+    (* if do short uint i, then gcc say parse error, strange ? it is
+     * not a parse error, it is just that we dont allow with typedef
+     * either short/long or signed/unsigned. In fact, with
+     * parse_typedef_fix2 (with et() and dt()) now I say too parse
+     * error so this code is executed only when do short struct
+     * {....} and never with a typedef cos now we parse short uint i
+     * as short ident ident => parse error (cos after first short i
+     * pass in dt() mode) *)
    )), st, (inline, iinl)
 
 
@@ -204,15 +204,15 @@ let fixNameForParam (name, ftyp) =
   match name with
   | None, [], IdIdent id -> id, ftyp
   | _ ->
-    let ii =  Lib_parsing_cpp.ii_of_any (Name name) |> List.hd in
-    raise (Semantic ("parameter have qualifier", ii))
+      let ii =  Lib_parsing_cpp.ii_of_any (Name name) |> List.hd in
+      raise (Semantic ("parameter have qualifier", ii))
 
 let type_and_storage_for_funcdef_from_decl decl =
   let (returnType, storage, _inline) = type_and_storage_from_decl decl in
   (match storage with
-  | StoTypedef tok ->
-      raise (Semantic ("function definition declared 'typedef'", tok))
-  | _x -> (returnType, storage)
+   | StoTypedef tok ->
+       raise (Semantic ("function definition declared 'typedef'", tok))
+   | _x -> (returnType, storage)
   )
 
 (*
@@ -235,40 +235,40 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
        * definition), then you must write a name within the declarator.
        * Otherwise, you can omit the name. *)
       (match Ast.unparen params with
-      | [{p_name = None; p_type = ty2;_},_] ->
-          (match Ast.unwrap_typeC ty2 with
-          | BaseType (Void _) -> ty
-          | _ ->
-            (* less: there is some valid case actually, when use interfaces
-             * and generic callbacks where specific instances do not
-             * need the extra parameter (happens a lot in plan9).
-             * Maybe this check is better done in a scheck for C.
-              let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
-              pr2 (spf "SEMANTIC: parameter name omitted (but I continue) at %s"
-                     (Parse_info.string_of_info info)
-              );
-            *)
-              ty
-          )
-      | params ->
-          (params |> List.iter (fun (param,_) ->
-            match param with
-            | {p_name = None; p_type = _ty2; _} ->
-              (* see above
-              let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
-              (* if majuscule, then certainly macro-parameter *)
-              pr2 (spf "SEMANTIC: parameter name omitted (but I continue) at %s"
-                     (Parse_info.string_of_info info)
-              );
-              *)
-              ()
-	    | _ -> ()
-           ));
-          ty
+       | [{p_name = None; p_type = ty2;_},_] ->
+           (match Ast.unwrap_typeC ty2 with
+            | BaseType (Void _) -> ty
+            | _ ->
+                (* less: there is some valid case actually, when use interfaces
+                 * and generic callbacks where specific instances do not
+                 * need the extra parameter (happens a lot in plan9).
+                 * Maybe this check is better done in a scheck for C.
+                   let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
+                   pr2 (spf "SEMANTIC: parameter name omitted (but I continue) at %s"
+                         (Parse_info.string_of_info info)
+                   );
+                *)
+                ty
+           )
+       | params ->
+           (params |> List.iter (fun (param,_) ->
+              match param with
+              | {p_name = None; p_type = _ty2; _} ->
+                  (* see above
+                     let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
+                     (* if majuscule, then certainly macro-parameter *)
+                     pr2 (spf "SEMANTIC: parameter name omitted (but I continue) at %s"
+                         (Parse_info.string_of_info info)
+                     );
+                  *)
+                  ()
+              | _ -> ()
+            ));
+           ty
       )
-     (* todo? can we declare prototype in the decl or structdef,
-      *  ... => length <> but good kan meme
-      *)
+  (* todo? can we declare prototype in the decl or structdef,
+   *  ... => length <> but good kan meme
+  *)
   | _ ->
       (* gcc says parse error but I dont see why *)
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
@@ -282,18 +282,18 @@ let fixFunc ((name, ty, sto), cp) =
       assert (aQ =*= nQ);
 
       (match Ast.unparen params with
-      [{p_name= None; p_type = ty2;_}, _] ->
-          (match Ast.unwrap_typeC ty2 with
-          | BaseType (Void _) -> ()
-          (* failwith "internal errror: fixOldCDecl not good" *)
-          | _ -> ()
-          )
-      | params ->
-          params |> List.iter (function
-          | ({p_name = Some _s;_}, _) -> ()
-          (* failwith "internal errror: fixOldCDecl not good" *)
-          | _ -> ()
-          )
+         [{p_name= None; p_type = ty2;_}, _] ->
+           (match Ast.unwrap_typeC ty2 with
+            | BaseType (Void _) -> ()
+            (* failwith "internal errror: fixOldCDecl not good" *)
+            | _ -> ()
+           )
+       | params ->
+           params |> List.iter (function
+             | ({p_name = Some _s;_}, _) -> ()
+             (* failwith "internal errror: fixOldCDecl not good" *)
+             | _ -> ()
+           )
       );
       { f_name = name; f_type = ftyp; f_storage = sto; f_body = cp; }
   | _ ->
@@ -303,23 +303,23 @@ let fixFunc ((name, ty, sto), cp) =
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
   | [FieldDecl({
-      v_namei = Some (name, ini_opt);
-      v_type = (q, (FunctionType ft));
-      v_storage = sto;
-    }), _noiicomma] ->
+    v_namei = Some (name, ini_opt);
+    v_type = (q, (FunctionType ft));
+    v_storage = sto;
+  }), _noiicomma] ->
       (* todo? define another type instead of onedecl? *)
       MemberDecl (MethodDecl ({
         v_namei = Some (name, None);
         v_type = (q, (FunctionType ft));
         v_storage = sto;
       },
-      (match ini_opt with
-      | None -> None
-      | Some (EqInit(tokeq, InitExpr(C(Int ("0", iizero))))) ->
-          Some (tokeq, iizero)
-      | _ ->
-          raise (Semantic ("can't assign expression to method decl", semicolon))
-      ), semicolon
+        (match ini_opt with
+         | None -> None
+         | Some (EqInit(tokeq, InitExpr(C(Int ("0", iizero))))) ->
+             Some (tokeq, iizero)
+         | _ ->
+             raise (Semantic ("can't assign expression to method decl", semicolon))
+        ), semicolon
       ))
 
   | _ -> MemberField (xs, semicolon)

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Entity_code open Highlight_code
@@ -27,7 +27,7 @@ module T = Parser_rust
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -41,7 +41,7 @@ let lexer_based_tagger = true
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 
 let visit_program
     ~tag_hook
@@ -67,28 +67,28 @@ let visit_program
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline _ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline _ii4
+        ::T.TComment(ii5)
+        ::xs ->
         let s = Parse_info.str_of_info ii in
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ ->
-            ()
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ ->
+             ()
         );
         aux_toks xs
 
@@ -192,23 +192,23 @@ let visit_program
 
     | T.Tstruct ii | T.Ttrait ii | T.Timpl ii
     | T.Tself ii | T.Tsuper ii
-        -> tag ii KeywordObject
+      -> tag ii KeywordObject
 
     | T.Tpub ii| T.Tpriv ii -> tag ii Keyword
 
     | T.Treturn ii | T.Tbreak ii | T.Tcontinue ii -> tag ii Keyword
 
     | T.Tmatch ii
-        -> tag ii KeywordConditional
+      -> tag ii KeywordConditional
 
     | T.Tcrate ii
     | T.Tuse ii
     | T.Tmod ii
-        -> tag ii KeywordModule
+      -> tag ii KeywordModule
 
     | T.Tstatic ii
     | T.Textern ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tif ii  | T.Telse ii -> tag ii KeywordConditional
     | T.Twhile ii | T.Tfor ii | T.Tloop ii -> tag ii KeywordLoop
@@ -217,30 +217,30 @@ let visit_program
 
     | T.Tenum ii
     | T.Ttype ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tlet ii
     | T.Tfn ii
     | T.Tas ii
     | T.Tin ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tproc ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tmut ii
-        -> tag ii UseOfRef
+      -> tag ii UseOfRef
 
     | T.Tref ii
     | T.Tbox ii
-        -> tag ii UseOfRef
+      -> tag ii UseOfRef
 
     | T.Tunsafe ii
-        -> tag ii BadSmell
+      -> tag ii BadSmell
 
 
     | T.TCppLine ii
-        -> tag ii CppOther
+      -> tag ii CppOther
 
     (* symbols *)
     | T.TEq ii ->
@@ -262,7 +262,7 @@ let visit_program
     | T.TComma ii
     | T.TSemiColon ii
 
-          -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TPlus ii | T.TMinus ii
     | T.TStar ii | T.TDiv ii
@@ -281,14 +281,14 @@ let visit_program
     | T.TLessEq ii
     | T.TMoreEq ii
     | T.TEqEq ii
-        -> tag ii Operator
+      -> tag ii Operator
 
     | T.TIdent (s, ii) ->
-       if not (Hashtbl.mem already_tagged ii)
-       then
-        if s =~ "^[A-Z].*" && false (* some false positive with types *)
-        then tag ii (Entity (Constructor,(Use2 fake_no_use2)))
-        else ()
+        if not (Hashtbl.mem already_tagged ii)
+        then
+          if s =~ "^[A-Z].*" && false (* some false positive with types *)
+          then tag ii (Entity (Constructor,(Use2 fake_no_use2)))
+          else ()
   );
   (* -------------------------------------------------------------------- *)
   (* ast phase 2 *)

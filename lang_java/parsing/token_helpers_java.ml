@@ -42,7 +42,7 @@ let token_kind_of_tok t =
 
 (* Because ocamlyacc force us to do it that way. The ocamlyacc token
  * cant be a pair of a sum type, it must be directly a sum type.
- *)
+*)
 
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
@@ -178,7 +178,7 @@ let info_of_tok tok =
 
 (* todo: remove, just use by parse_java.ml checkpoint mechanism that
  * we actually don't use
- *)
+*)
 let line_of_tok tok =
   let info = info_of_tok tok in
   PI.line_of_info info

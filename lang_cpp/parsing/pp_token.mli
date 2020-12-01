@@ -4,12 +4,12 @@
 type define_body = (unit,string list) Common.either * Parser_cpp.token list
 
 (* TODO
-(* corresponds to what is in the yacfe configuration file (e.g. standard.h) *)
-type define_def = string * define_param * define_body
- and define_param =
+   (* corresponds to what is in the yacfe configuration file (e.g. standard.h) *)
+   type define_def = string * define_param * define_body
+   and define_param =
    | NoParam
    | Params of string list
- and define_body =
+   and define_body =
    | DefineBody of Parser_c.token list
    | DefineHint of parsinghack_hint
 
@@ -33,7 +33,7 @@ val extract_macros:
   Parser_cpp.token list -> (string, define_body) Common.assoc
 
 (* TODO
-val string_of_define_def: define_def -> string
+   val string_of_define_def: define_def -> string
 *)
 
 (* used internally *)
@@ -46,7 +46,7 @@ val string_of_define_def: define_def -> string
  *
  * note: it does not do some fixpoint, so the generated code may also
  * contain some macros names.
- *)
+*)
 
 val apply_macro_defs:
 (*

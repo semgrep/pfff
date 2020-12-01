@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Entity_code
@@ -98,7 +98,7 @@ module HC = Highlight_code
  * So it's better to use an id. Moreover at some point we want to provide
  * callers/callees navigations and more entities relationships
  * so we need a real way to reference an entity.
- *)
+*)
 type entity_id = int
 
 type entity = {
@@ -115,12 +115,12 @@ type entity = {
    * The fields are set as mutable because usually we compute
    * the set of all entities in a first phase and then we
    * do another pass where we adjust numbers of other entity references.
-   *)
+  *)
 
   (* todo: could give more importance when used externally not just
    * from another file but from another directory!
    * or could refine this int with more information.
-   *)
+  *)
   mutable e_number_external_users: int;
 
   (* Usually the id of a unit test of pleac file.
@@ -135,29 +135,29 @@ type entity = {
    * documentations.
    * If there is no examples_of_use then the user can visually
    * see that some functions should be unit tested :)
-   *)
+  *)
   mutable e_good_examples_of_use: entity_id list;
 
   (* todo? code_rank ? this is more useful for number_internal_users
    * when we want to know what is the core function in a module,
-  * even when it's called only once, but by a small wrapper that is
-  * itself very often called.
+   * even when it's called only once, but by a small wrapper that is
+   * itself very often called.
   *)
 
   e_properties: property list;
- }
+}
 
 (* Note that because we now use indexed entities, you can not
  * play with.entities as before. For instance merging databases
  * requires to adjust all the entity_id internal references.
- *)
+*)
 type database = {
 
   (* The common root if the database was built with multiple dirs
    * as an argument. Such a root is mostly useful when displaying
    * filenames in which case we can strip the root from it
    * (e.g. in the treemap browser when we mouse over a rectangle).
-   *)
+  *)
   root: Common.dirname;
 
   (* Such list can be used in a search box powered by completion.
@@ -170,7 +170,7 @@ type database = {
 
   (* see also build_top_k_sorted_entities_per_file for dynamically
    * computed summary information for a file
-   *)
+  *)
   files: (Common.filename * int) list;
 
   (* indexed by entity_id *)
@@ -237,8 +237,8 @@ let ids_of_json json =
   match json with
   | J.Array xs ->
       xs |> List.map (function
-      | J.Int id -> id
-      | _ -> failwith "bad json"
+        | J.Int id -> id
+        | _ -> failwith "bad json"
       )
   | _ -> failwith "bad json"
 
@@ -264,7 +264,7 @@ let properties_of_json json =
 
 (* Reverse of json_of_entity_info; must follow same convention for the order
  * of the fields.
- *)
+*)
 let entity_of_json2 json =
   match json with
   | J.Object [
@@ -277,7 +277,7 @@ let entity_of_json2 json =
     "cnt", J.Int e_number_external_users;
     "u", ids;
     "ps", properties;
-    ] -> {
+  ] -> {
       e_kind = entity_kind_of_string e_kind;
       e_name = e_name;
       e_file = e_file;
@@ -301,7 +301,7 @@ let database_of_json2 json =
     "dirs", J.Array db_dirs;
     "files", J.Array db_files;
     "entities", J.Array db_entities;
-    ] -> {
+  ] -> {
       root = db_root;
 
       dirs = db_dirs |> List.map (fun json ->
@@ -339,7 +339,7 @@ let load_database2 file =
     (* This code is mostly obsolete. It's more efficient to use Marshall
      * to store big database. This should be used only when
      * one wants to have a readable database.
-     *)
+    *)
     let json =
       Common.profile_code "Json_in.load_json" (fun () ->
         J.load_json file
@@ -355,7 +355,7 @@ let load_database file =
  *
  * less: could use the more efficient json pretty printer, but really
  * marshall is probably better. Only biniou could be a valid alternative.
- *)
+*)
 let save_database database file =
   if File_type.is_json_filename file
   then
@@ -373,7 +373,7 @@ let save_database database file =
  * don't forget to modify size_font_multiplier_of_categ in code_map/
  *
  * How sure this list is exhaustive ? C-c for usedef2
- *)
+*)
 let entity_kind_of_highlight_category_def categ =
   match categ with
   | HC.Entity (kind, HC.Def2 _) -> Some kind
@@ -400,17 +400,17 @@ let entity_kind_of_highlight_category_use categ =
 
 let matching_def_short_kind_kind short_kind kind =
   (match short_kind, kind with
-  (* Struct/Union are generated as Type for now in graph_code_clang.ml *)
-  | Class, Type -> true
-  | Global, GlobalExtern -> true
-  | Function, Prototype -> true
-  | a, b -> a =*= b
+   (* Struct/Union are generated as Type for now in graph_code_clang.ml *)
+   | Class, Type -> true
+   | Global, GlobalExtern -> true
+   | Function, Prototype -> true
+   | a, b -> a =*= b
   )
 
 (* See the code of the different highlight_code_xxx.ml to
  * know the different possible pairs.
  * todo: merge with other functions too?
- *)
+*)
 let matching_use_categ_kind categ kind =
   match kind, categ with
   | kind1, HC.Entity (kind2, _) when kind1 =*= kind2 -> true
@@ -451,7 +451,7 @@ let matching_use_categ_kind categ kind =
  * for an entity in the environment will return multiple
  * entities of different kinds. Here we filter back the
  * non valid entities.
- *)
+*)
 let entity_and_highlight_category_correpondance entity categ =
   let entity_kind_use =
     Common2.some (entity_kind_of_highlight_category_use categ) in
@@ -475,7 +475,7 @@ let entity_and_highlight_category_correpondance entity categ =
  * as the starting point. In fact we could define a
  * Common.dirs_of_dirs but then directory without any interesting files
  * would be listed.
- *)
+*)
 let alldirs_and_parent_dirs_of_relative_dirs dirs =
   dirs
   |> List.map Common2.inits_of_relative_dir
@@ -487,7 +487,7 @@ let merge_databases db1 db2 =
   if db1.root <> db2.root
   then begin
     pr2 (spf "merge_database: the root differs, %s != %s"
-            db1.root db2.root);
+           db1.root db2.root);
     if not (Common2.y_or_no "Continue ?")
     then failwith "ok we stop";
   end;
@@ -495,7 +495,7 @@ let merge_databases db1 db2 =
   (* entities now contain references to other entities through
    * the index to the entities array. So concatenating 2 array
    * entities requires care.
-   *)
+  *)
   let length_entities1 = Array.length db1.entities in
 
   let db2_entities = db2.entities in
@@ -512,10 +512,10 @@ let merge_databases db1 db2 =
   {
     root = db1.root;
     dirs = (db1.dirs @ db2.dirs)
-      |> Common.group_assoc_bykey_eff
-      |> List.map (fun (file, xs) ->
-        file, Common2.sum xs
-      );
+           |> Common.group_assoc_bykey_eff
+           |> List.map (fun (file, xs) ->
+             file, Common2.sum xs
+           );
     files = db1.files @ db2.files; (* should ensure exclusive ? *)
     entities = Array.append db1.entities db2_entities_adjusted;
   }
@@ -565,20 +565,20 @@ let mk_multi_dirs_entity name dirs_entities =
   let dirs_fullnames = dirs_entities |> List.map (fun e -> e.e_file) in
 
   {
-  e_name = name ^ "//";
-  (* hack *)
-  e_fullname = "";
+    e_name = name ^ "//";
+    (* hack *)
+    e_fullname = "";
 
-  (* hack *)
-  e_file = Common.join "|" dirs_fullnames;
+    (* hack *)
+    e_file = Common.join "|" dirs_fullnames;
 
-  e_pos = { Common2.l = 1; c = 0 };
-  e_kind = MultiDirs;
-  e_number_external_users =
-    (* todo? *)
-    (List.length dirs_fullnames);
-  e_good_examples_of_use = [];
-  e_properties = [];
+    e_pos = { Common2.l = 1; c = 0 };
+    e_kind = MultiDirs;
+    e_number_external_users =
+      (* todo? *)
+      (List.length dirs_fullnames);
+    e_good_examples_of_use = [];
+    e_properties = [];
   }
 
 let multi_dirs_entities_of_dirs es =
@@ -609,9 +609,9 @@ let files_and_dirs_database_from_files ~root files =
 
 
 let files_and_dirs_and_sorted_entities_for_completion2
- ~threshold_too_many_entities
- db
- =
+    ~threshold_too_many_entities
+    db
+  =
   let nb_entities = Array.length db.entities in
 
   let dirs =
@@ -623,36 +623,36 @@ let files_and_dirs_and_sorted_entities_for_completion2
   let multidirs = multi_dirs_entities_of_dirs dirs in
 
   let xs =
-   multidirs @ dirs @ files @
-   (if nb_entities > threshold_too_many_entities
-    then begin
-      pr2 "Too many entities. Completion just for filenames";
-      []
-    end else
+    multidirs @ dirs @ files @
+    (if nb_entities > threshold_too_many_entities
+     then begin
+       pr2 "Too many entities. Completion just for filenames";
+       []
+     end else
        (db.entities |> Array.to_list |> List.map (fun e ->
-         (* we used to return 2 entities per entity by having
-          * both an entity with the short name and one with the long
-          * name, but now that we do a suffix search, no need
-          * to keep the short one
+          (* we used to return 2 entities per entity by having
+           * both an entity with the short name and one with the long
+           * name, but now that we do a suffix search, no need
+           * to keep the short one
           *)
-         if e.e_fullname = ""
-         then e
-         else { e with e_name = e.e_fullname }
+          if e.e_fullname = ""
+          then e
+          else { e with e_name = e.e_fullname }
+        )
        )
-       )
-   )
+    )
   in
 
   (* note: return first the dirs and files so that when offer
    * completion the dirs and files will be proposed first
    * (could also enforce this rule when building the gtk completion model).
-   *)
+  *)
   xs |> List.map (fun e ->
     (match e.e_kind with
-    | MultiDirs -> 100
-    | Dir -> 40
-    | File -> 20
-    | _ -> e.e_number_external_users
+     | MultiDirs -> 100
+     | Dir -> 40
+     | File -> 20
+     | _ -> e.e_number_external_users
     ), e
   ) |> Common.sort_by_key_highfirst
   |> List.map snd
@@ -660,16 +660,16 @@ let files_and_dirs_and_sorted_entities_for_completion2
 
 let files_and_dirs_and_sorted_entities_for_completion
     ~threshold_too_many_entities a =
- Common.profile_code "Db.sorted_entities" (fun () ->
-   files_and_dirs_and_sorted_entities_for_completion2
-    ~threshold_too_many_entities a)
+  Common.profile_code "Db.sorted_entities" (fun () ->
+    files_and_dirs_and_sorted_entities_for_completion2
+      ~threshold_too_many_entities a)
 
 
 
 (* The e_number_external_users count is not always very accurate for methods
  * when we do very trivial class/methods analysis for some languages.
  * This helper function can compensate back this approximation.
- *)
+*)
 let adjust_method_or_field_external_users ~verbose entities =
   (* phase1: collect all method counts *)
   let h_method_def_count = Common2.hash_with_default (fun () -> 0) in

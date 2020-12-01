@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -38,7 +38,7 @@ open Ast_js
  *  - look at the deadcode detected by codegraph on the graph built
  *    by this file; they usually contains FP indicating bugs in this file
  *  - too many stuff
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -51,7 +51,7 @@ open Ast_js
  * shorter names when exploring a codebase (and maybe also when hovering
  * a function in codemap).
  * This is computed after ast_js_build in graph_code_js.ml
- *)
+*)
 type qualified_name = string
 
 (* for the extract_uses visitor *)
@@ -69,11 +69,11 @@ type env = {
   imports: (string, qualified_name (* orig name *)) Hashtbl.t;
   (* 'locals' covers also the parameters; I handle block scope by not using
    * a ref of mutable here! Just build a new list and passed it down.
-   *)
+  *)
   locals: string list;
   (* 'var' has a function scope.
    * alt: lift var up in a ast_js_build.ml transforming phase
-   *)
+  *)
   vars: (string, bool) Hashtbl.t;
 
   (* less: use it? could use to check if the import match the exports *)
@@ -90,7 +90,7 @@ type env = {
   pr2_and_log: string -> unit;
   lookup_fail: env -> Graph_code.node -> Parse_info.t -> unit;
 }
- and phase = Defs | Uses
+and phase = Defs | Uses
 
 (* useful to evaluate the amount of constructs not yet handled *)
 let error_recovery = ref true
@@ -110,10 +110,10 @@ let parse file =
     with
     | Timeout -> raise Timeout
     | exn ->
-      pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-      if !error_recovery
-      then []
-      else raise exn
+        pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
+        if !error_recovery
+        then []
+        else raise exn
   )
 
 (*****************************************************************************)
@@ -151,15 +151,15 @@ let mk_qualified_name readable s =
   let str =
     try Filename.chop_extension readable
     with Invalid_argument _ ->
-     failwith (spf "readable filename without any extension: %s" readable)
+      failwith (spf "readable filename without any extension: %s" readable)
   in
   str ^ "." ^ s
 
 let qualified_name env name =
   (let s = s_of_n name in
-  if Hashtbl.mem env.imports s
-  then Hashtbl.find env.imports s
-  else s
+   if Hashtbl.mem env.imports s
+   then Hashtbl.find env.imports s
+   else s
   )|> (fun s -> assert (not (s =~ "^\\./")); s)
 
 (*****************************************************************************)
@@ -177,7 +177,7 @@ let add_locals env vs =
         Hashtbl.replace env.vars s true;
         None
     | _ -> Some s
-     ) in
+  ) in
   { env with locals = locals @ env.locals }
 
 let kind_of_expr_opt v_kind eopt =
@@ -186,12 +186,12 @@ let kind_of_expr_opt v_kind eopt =
   | Some (Class _) -> E.Class
   | Some (Obj _) -> E.Class
   | _ ->
-        (* without types, this might be wrong; a constant might
-         * actually refer to a function, and a global to an object
-         *)
-        if fst v_kind = Const
-        then E.Constant
-        else E.Global
+      (* without types, this might be wrong; a constant might
+       * actually refer to a function, and a global to an object
+      *)
+      if fst v_kind = Const
+      then E.Constant
+      else E.Global
 
 
 (*****************************************************************************)
@@ -210,7 +210,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
     match () with
     (* if parent is a dupe, then don't want to attach yourself to the
      * original parent, mark this child as a dupe too.
-     *)
+    *)
     | _ when Hashtbl.mem env.dupes env.current ->
         Hashtbl.replace env.dupes node true
 
@@ -221,18 +221,18 @@ let add_node_and_edge_if_defs_mode env (name, kind) =
         env.log (spf " orig = %s" orig_file);
         env.log (spf " dupe = %s" env.file_readable);
         Hashtbl.replace env.dupes node true;
-    (* ok not a dupe, let's add it then *)
+        (* ok not a dupe, let's add it then *)
     | _ ->
-      (* try but should never happen, see comment below *)
-      try
-        let pos = pos_of_tok (snd name) env.file_readable in
-        let nodeinfo = { Graph_code. pos; typ = None; props = []; } in
-        env.g |> G.add_node node;
-        env.g |> G.add_edge (env.current, node) G.Has;
-        env.g |> G.add_nodeinfo node nodeinfo;
-      (* this should never happen, but it's better to give a good err msg *)
-      with Not_found ->
-        error ("Not_found:" ^ str) (snd name)
+        (* try but should never happen, see comment below *)
+        try
+          let pos = pos_of_tok (snd name) env.file_readable in
+          let nodeinfo = { Graph_code. pos; typ = None; props = []; } in
+          env.g |> G.add_node node;
+          env.g |> G.add_edge (env.current, node) G.Has;
+          env.g |> G.add_nodeinfo node nodeinfo;
+          (* this should never happen, but it's better to give a good err msg *)
+        with Not_found ->
+          error ("Not_found:" ^ str) (snd name)
   end;
   if Hashtbl.mem env.dupes node
   then env
@@ -258,7 +258,7 @@ let add_use_edge env (name, kind) =
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
-  (* error *)
+      (* error *)
   | _ -> env.lookup_fail env dst loc
 
 let add_use_edge_candidates env (name, kind) (*scope*) =
@@ -270,17 +270,17 @@ let add_use_edge_candidates env (name, kind) (*scope*) =
     else
       let candidates = [E.Function; E.Class; E.Constant; E.Global] in
       let valids = candidates |> List.filter (fun k ->
-           G.has_node (s, k) env.g) in
+        G.has_node (s, k) env.g) in
       (match valids with
-      | [x] -> x
-      | _ -> kind (* default to first kind, but could report error *)
+       | [x] -> x
+       | _ -> kind (* default to first kind, but could report error *)
       )
   in
   add_use_edge env (name, kind);
-(* old: I've removed scope info in ast_js, use the generic AST for that
-  let s = qualified_name env name in
-  scope := Global s;
-*)
+  (* old: I've removed scope info in ast_js, use the generic AST for that
+     let s = qualified_name env name in
+     scope := Global s;
+  *)
   ()
 
 
@@ -307,14 +307,14 @@ let rec extract_defs_uses env ast =
  * So we need to first extract all those toplevel entities and
  * create an import for them to not get lookup failures otherwise
  * on those forward uses.
- *)
+*)
 and toplevels_entities_adjust_imports env xs =
   xs |> List.iter (function
     | DefStmt (ent, _def) ->
-      let str = s_of_n ent.name in
-      Hashtbl.replace env.imports str
-        (mk_qualified_name env.file_readable str);
- (*    | M _ | S _ -> () *)
+        let str = s_of_n ent.name in
+        Hashtbl.replace env.imports str
+          (mk_qualified_name env.file_readable str);
+        (*    | M _ | S _ -> () *)
     | _ -> ()
   )
 
@@ -324,7 +324,7 @@ and toplevels_entities_adjust_imports env xs =
 and toplevel env x =
   match x with
   | DefStmt ({name; _}, VarDef { v_kind; v_init; v_type = _}) ->
-       name_expr env name v_kind v_init
+      name_expr env name v_kind v_init
   (* TODO: other DefStmt now that have separate FuncDef and ClassDef *)
   | M x -> module_directive env x
 (*
@@ -338,44 +338,44 @@ and toplevel env x =
       then stmt env st
 *)
   | _ ->
-     stmt env x
+      stmt env x
 
 and module_directive env x =
   match x with
   | Import (_, name1, name2opt, (file, tok)) ->
-    if env.phase = Uses then begin
-      let str1 = s_of_n name1 in
-      let str2_opt = Common.map_opt s_of_n name2opt in
-      let path_opt = Module_path_js.resolve_path
-        ~root:env.root
-        ~pwd:(Filename.dirname env.file_readable)
-        file in
-      let readable =
-        match path_opt with
-        | None ->
-          env.pr2_and_log (spf "could not resolve path %s at %s" file
-                               (Parse_info.string_of_info tok));
-          spf "NOTFOUND-|%s|.js" file
-        | Some fullpath -> Common.readable env.root fullpath
-      in
-      str2_opt |> Common.do_option (fun str2 ->
-        Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
-      )
-    end
+      if env.phase = Uses then begin
+        let str1 = s_of_n name1 in
+        let str2_opt = Common.map_opt s_of_n name2opt in
+        let path_opt = Module_path_js.resolve_path
+            ~root:env.root
+            ~pwd:(Filename.dirname env.file_readable)
+            file in
+        let readable =
+          match path_opt with
+          | None ->
+              env.pr2_and_log (spf "could not resolve path %s at %s" file
+                                 (Parse_info.string_of_info tok));
+              spf "NOTFOUND-|%s|.js" file
+          | Some fullpath -> Common.readable env.root fullpath
+        in
+        str2_opt |> Common.do_option (fun str2 ->
+          Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
+        )
+      end
   | Export (_t, name) ->
-     if env.phase = Defs then begin
-       let exports =
-         try
-           Hashtbl.find env.exports env.file_readable
-         with Not_found -> []
-       in
-       let str = s_of_n name in
-       Hashtbl.replace env.exports env.file_readable (str::exports)
-     end
+      if env.phase = Defs then begin
+        let exports =
+          try
+            Hashtbl.find env.exports env.file_readable
+          with Not_found -> []
+        in
+        let str = s_of_n name in
+        Hashtbl.replace env.exports env.file_readable (str::exports)
+      end
   | ModuleAlias (_, name, _fileTODO) ->
       (* for now just add name as a local; anyway we do not
        * generate dependencies for fields yet
-       *)
+      *)
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
   | ReExportNamespace (_t, _, _, _file) -> ()
@@ -392,91 +392,91 @@ and name_expr env name v_kind eopt (*v_resolved*) =
     let (qualified, _kind) = env.current in
     (* v_resolved := Global qualified; *)
     Hashtbl.add env.db qualified
-     (basic_entity name ,{ v_kind; v_init = eopt; v_type = None; })
+      (basic_entity name ,{ v_kind; v_init = eopt; v_type = None; })
   end
 
 (* ---------------------------------------------------------------------- *)
 (* Statements *)
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
- | DefStmt v ->
-    let env = add_locals env [v] in
-    (match snd v with
-    | VarDef { v_init; _ } ->
-            option (expr env) v_init
-    | _ -> raise Todo
-    )
- | M m -> module_directive env m
- | Block (_, xs, _) -> stmts env xs
- | ExprStmt (e, _) -> expr env e
- | If (_, e, st1, st2) ->
-   expr env e;
-   stmt env st1;
-   option (stmt env) st2
- | Do (_, st, e) ->
-   stmt env st;
-   expr env e;
- | While (_, e, st) ->
-   expr env e;
-   stmt env st
- | For (_, header, st) ->
-   let env = for_header env header in
-   stmt env st
- | Switch (_tok, e, xs) ->
-   expr env e;
-   cases env xs
- | Continue (_, lopt, _) | Break (_, lopt, _) ->
-   Common.opt (label env) lopt
- | Return (_, eopt, _) ->
-   option (expr env) eopt
- | Label (l, st) ->
-   label env l;
-   stmt env st
- | Throw (_, e, _) ->
-   expr env e
- | Try (_, st1, catchopt, finalopt) ->
-   stmt env st1;
-   catchopt |> Common.opt (catch_block env);
-   finalopt |> Common.opt (fun (_t, st) -> stmt env st);
- | With (_, e, st) ->
-    expr env e;
-    stmt env st
+  | DefStmt v ->
+      let env = add_locals env [v] in
+      (match snd v with
+       | VarDef { v_init; _ } ->
+           option (expr env) v_init
+       | _ -> raise Todo
+      )
+  | M m -> module_directive env m
+  | Block (_, xs, _) -> stmts env xs
+  | ExprStmt (e, _) -> expr env e
+  | If (_, e, st1, st2) ->
+      expr env e;
+      stmt env st1;
+      option (stmt env) st2
+  | Do (_, st, e) ->
+      stmt env st;
+      expr env e;
+  | While (_, e, st) ->
+      expr env e;
+      stmt env st
+  | For (_, header, st) ->
+      let env = for_header env header in
+      stmt env st
+  | Switch (_tok, e, xs) ->
+      expr env e;
+      cases env xs
+  | Continue (_, lopt, _) | Break (_, lopt, _) ->
+      Common.opt (label env) lopt
+  | Return (_, eopt, _) ->
+      option (expr env) eopt
+  | Label (l, st) ->
+      label env l;
+      stmt env st
+  | Throw (_, e, _) ->
+      expr env e
+  | Try (_, st1, catchopt, finalopt) ->
+      stmt env st1;
+      catchopt |> Common.opt (catch_block env);
+      finalopt |> Common.opt (fun (_t, st) -> stmt env st);
+  | With (_, e, st) ->
+      expr env e;
+      stmt env st
   | StmtTodo _ -> failwith "StmtTodo"
 
 and catch_block env = function
   | BoundCatch (_t, pat, st) ->
-     expr env pat;
-     stmt env st
+      expr env pat;
+      stmt env st
   | UnboundCatch (_t, st) -> stmt env st
 
 and for_header env = function
- | ForClassic (e1, e2, e3) ->
-   let env =
-     match e1 with
-     | Left vars ->
-       (* less: need fold_with_env? *)
-       vars |> vars_to_stmts |> List.iter (stmt env);
-       add_locals env (vars_to_defs vars)
-     | Right e ->
-       expr env e;
-       env
-   in
-   option (expr env) e2;
-   option (expr env) e3;
-   env
- | ForIn (e1, _, e2) | ForOf (e1, _, e2) ->
-   let env =
-     match e1 with
-     | Left var ->
-       (* less: need fold_with_env? *)
-       [var] |> vars_to_stmts |> List.iter (stmt env);
-       add_locals env ([var] |> vars_to_defs)
-     | Right e ->
-       expr env e;
-       env
-   in
-   expr env e2;
-   env
+  | ForClassic (e1, e2, e3) ->
+      let env =
+        match e1 with
+        | Left vars ->
+            (* less: need fold_with_env? *)
+            vars |> vars_to_stmts |> List.iter (stmt env);
+            add_locals env (vars_to_defs vars)
+        | Right e ->
+            expr env e;
+            env
+      in
+      option (expr env) e2;
+      option (expr env) e3;
+      env
+  | ForIn (e1, _, e2) | ForOf (e1, _, e2) ->
+      let env =
+        match e1 with
+        | Left var ->
+            (* less: need fold_with_env? *)
+            [var] |> vars_to_stmts |> List.iter (stmt env);
+            add_locals env ([var] |> vars_to_defs)
+        | Right e ->
+            expr env e;
+            env
+      in
+      expr env e2;
+      env
   | ForEllipsis _t -> env
 
 (* less: could check def/use of lbls, but less important *)
@@ -486,11 +486,11 @@ and label _env _lbl =
 and cases env xs = List.iter (case env) xs
 
 and case env = function
- | Case (_, e, st) ->
-   expr env e;
-   stmt env st
- | Default (_, st) ->
-   stmt env st
+  | Case (_, e, st) ->
+      expr env e;
+      stmt env st
+  | Default (_, st) ->
+      stmt env st
 
 and stmts env xs =
   let rec aux env = function
@@ -516,88 +516,88 @@ and expr env e =
 
   | Bool _ | Num _ | String _ | Regexp _ -> ()
   | Id (n(*, scope*)) ->
-    if not (is_local env n)
-    then
-     (* the big one! *)
-     add_use_edge_candidates env (n, E.Global) (*scope*);
+      if not (is_local env n)
+      then
+        (* the big one! *)
+        add_use_edge_candidates env (n, E.Global) (*scope*);
 
 
   | IdSpecial _ -> ()
   | Assign (e1, _tok, e2) ->
-    expr env e1;
-    expr env e2
+      expr env e1;
+      expr env e2
 
   | Obj o ->
-     obj_ env o
+      obj_ env o
   | Arr xs ->
-     xs |> unbracket |> List.iter (expr env)
+      xs |> unbracket |> List.iter (expr env)
   | Class (c, nopt) ->
-     let env =
-      match nopt with
-      | None -> env
-      | Some n ->
-        let v = basic_entity n, VarDef { v_kind = Let, fake "let";
-                                         v_init = None; v_type = None;
-                                      (* v_resolved = ref Local *)}
-        in
-        add_locals env [v]
-     in
-     class_ env c
+      let env =
+        match nopt with
+        | None -> env
+        | Some n ->
+            let v = basic_entity n, VarDef { v_kind = Let, fake "let";
+                                             v_init = None; v_type = None;
+                                             (* v_resolved = ref Local *)}
+            in
+            add_locals env [v]
+      in
+      class_ env c
   | ObjAccess (e, _, prop) ->
-    (match e with
-    | Id (n (*, scope*)) when not (is_local env n) ->
-       add_use_edge_candidates env (n, E.Class) (*scope*)
-    | _ ->
-      expr env e
-    );
-    property_name env prop
+      (match e with
+       | Id (n (*, scope*)) when not (is_local env n) ->
+           add_use_edge_candidates env (n, E.Class) (*scope*)
+       | _ ->
+           expr env e
+      );
+      property_name env prop
   | ArrAccess (e1, (_, e2, _)) ->
-    (match e1 with
-    | Id (n(*, scope*)) when not (is_local env n) ->
-       add_use_edge_candidates env (n, E.Class) (*scope*)
-    | _ ->
-      expr env e1
-    );
-    expr env e2
+      (match e1 with
+       | Id (n(*, scope*)) when not (is_local env n) ->
+           add_use_edge_candidates env (n, E.Class) (*scope*)
+       | _ ->
+           expr env e1
+      );
+      expr env e2
 
   | Fun (f, nopt) ->
-    let env =
-      match nopt with
-      | None -> env
-      | Some n ->
-        let v = basic_entity n, VarDef {v_kind = Let, fake "let";
-                                      v_init = None; v_type = None;
-                                      (*v_resolved = ref Local*)}
-        in
-        add_locals env [v]
-    in
-    fun_ env f
+      let env =
+        match nopt with
+        | None -> env
+        | Some n ->
+            let v = basic_entity n, VarDef {v_kind = Let, fake "let";
+                                            v_init = None; v_type = None;
+                                            (*v_resolved = ref Local*)}
+            in
+            add_locals env [v]
+      in
+      fun_ env f
   | Apply (e, (_, es, _)) ->
-    (match e with
-    | Id (n(*, scope*)) when not (is_local env n) ->
-        add_use_edge_candidates env (n, E.Function) (*scope*)
-    | IdSpecial (special, _tok) ->
-       (match special, es with
-       | New, _ -> (* TODO *) ()
-       | _ -> ()
-       )
-    | _ ->
-      expr env e
-    );
-    List.iter (expr env) es
+      (match e with
+       | Id (n(*, scope*)) when not (is_local env n) ->
+           add_use_edge_candidates env (n, E.Function) (*scope*)
+       | IdSpecial (special, _tok) ->
+           (match special, es with
+            | New, _ -> (* TODO *) ()
+            | _ -> ()
+           )
+       | _ ->
+           expr env e
+      );
+      List.iter (expr env) es
 
   | Conditional (e1, e2, e3) ->
-    List.iter (expr env) [e1;e2;e3]
+      List.iter (expr env) [e1;e2;e3]
   | Xml x -> xml env x
 
 and xml env x =
   (* TODO add_use_edge env ([x.xml_tag], E.Class); *)
   x.xml_attrs |> List.iter (function
-   | XmlAttr (_identTODO, xhp_attr) ->
-    (* TODO add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field; *)
-    expr env xhp_attr
-  | XmlAttrExpr (_, e, _) -> expr env e
-  | XmlEllipsis _ -> ()
+    | XmlAttr (_identTODO, xhp_attr) ->
+        (* TODO add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field; *)
+        expr env xhp_attr
+    | XmlAttrExpr (_, e, _) -> expr env e
+    | XmlEllipsis _ -> ()
   );
   x.xml_body |> List.iter (xhp env)
 
@@ -626,14 +626,14 @@ and class_ env c =
   List.iter (property env) (unbracket c.c_body)
 
 and field_classic env {fld_name = pname; fld_body = e; _} =
-     property_name env pname;
-     option (expr env) e
+  property_name env pname;
+  option (expr env) e
 
 and property env = function
   | Field v1 -> field_classic env v1
   | FieldColon v1 -> field_classic env v1
   | FieldSpread (_, e) ->
-     expr env e
+      expr env e
   | FieldPatDefault (pat, _, e) ->
       pattern env pat;
       expr env e
@@ -645,21 +645,21 @@ and pattern env x = expr env x
 and property_name env = function
   | PN _n2 -> ()
   | PN_Computed e ->
-     expr env e
+      expr env e
 
 and fun_ env f =
   (* less: need fold_with_env here? can not use previous param in p_default? *)
   parameters env f.f_params;
   let params = f.f_params |> Common.map_filter (function
-        | ParamClassic p -> Some (s_of_n p.p_name)
-        | ParamEllipsis _ -> None
-        | ParamPattern _ -> None (* TODO *)
+    | ParamClassic p -> Some (s_of_n p.p_name)
+    | ParamEllipsis _ -> None
+    | ParamPattern _ -> None (* TODO *)
   ) in
   let env = { env with
-        locals = params @ env.locals;
-        (* new scope, but still inherits enclosing vars *)
-        vars = Hashtbl.copy env.vars;
-  } in
+              locals = params @ env.locals;
+              (* new scope, but still inherits enclosing vars *)
+              vars = Hashtbl.copy env.vars;
+            } in
   stmt env f.f_body
 
 and parameters env xs = List.iter (parameter env) xs
@@ -711,8 +711,8 @@ let build_gen ?(verbose=false) root files =
         else env.pr2_and_log
       in
       fprinter (spf "PB: lookup_fail on %s (in %s, at %s)"
-             (G.string_of_node dst) (G.string_of_node src)
-             (Parse_info.string_of_info loc));
+                  (G.string_of_node dst) (G.string_of_node src)
+                  (Parse_info.string_of_info loc));
       (* note: could also use Hashtbl.replace to count entities only once *)
       Hashtbl.add hstat_lookup_failures dst true;
     );
@@ -726,13 +726,13 @@ let build_gen ?(verbose=false) root files =
       k();
       let ast = parse file in
       let file_readable =
-         if file = Stdlib_js.path_stdlib
-         then "Stdlib.js"
-         else Common.readable ~root file
+        if file = Stdlib_js.path_stdlib
+        then "Stdlib.js"
+        else Common.readable ~root file
       in
       extract_defs_uses { env with
-        phase = Defs; file_readable; imports = Hashtbl.create 13;
-      } ast
+                          phase = Defs; file_readable; imports = Hashtbl.create 13;
+                        } ast
     ));
 
   (* step2: creating the 'Use' edges *)
@@ -740,7 +740,7 @@ let build_gen ?(verbose=false) root files =
   let default_import =
     let ast = parse Stdlib_js.path_stdlib in
     let env = { env with phase = Uses; file_readable = "Stdlib.js";
-                locals = []; imports = Hashtbl.create 13; } in
+                         locals = []; imports = Hashtbl.create 13; } in
     toplevels_entities_adjust_imports env ast;
     env.imports
   in
@@ -752,9 +752,9 @@ let build_gen ?(verbose=false) root files =
       let ast = parse file in
       let file_readable = Common.readable ~root file in
       extract_defs_uses { env with
-        phase = Uses; file_readable;
-        locals = []; imports = Hashtbl.copy default_import;
-      } ast;
+                          phase = Uses; file_readable;
+                          locals = []; imports = Hashtbl.copy default_import;
+                        } ast;
       Common.push (file_readable, ast) env.asts;
 
     ));
@@ -765,11 +765,11 @@ let build_gen ?(verbose=false) root files =
   (* less: lookup failures summary *)
   let xs = Common2.hkeys hstat_lookup_failures in
   let counts =
-     xs |> List.map (fun (x)->
-         G.string_of_node x,
-         List.length (Hashtbl.find_all hstat_lookup_failures x))
-        |> Common.sort_by_val_highfirst
-        |> Common.take_safe 20
+    xs |> List.map (fun (x)->
+      G.string_of_node x,
+      List.length (Hashtbl.find_all hstat_lookup_failures x))
+    |> Common.sort_by_val_highfirst
+    |> Common.take_safe 20
   in
   pr2 "Top lookup failures per modules";
   counts |> List.iter (fun (s, n) -> pr2 (spf "%-30s = %d" s n));
@@ -788,7 +788,7 @@ let build ?verbose root files =
 (* todo: actually probably better to generate the code database on demand
  * while abstract-interpreting the code and its import/require so we
  * can actually even handle some dynamic imports.
- *)
+*)
 let build_for_ai root files =
   let (_, db, asts) = build_gen ~verbose:false root files in
   db, asts

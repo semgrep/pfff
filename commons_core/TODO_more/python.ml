@@ -30,7 +30,7 @@ open Pycaml
  *   ocaml code -> nltk.ml -> pycaml -> nltk_ocaml.py -> nltk -> python code
  *
  *
- *)
+*)
 
 exception PythonError of string
 
@@ -48,15 +48,15 @@ let cpr = check_python_return
 
 (* need to initialize ? apparently no *)
 (* src: henrik
-  Unix.putenv "PYTHONPATH"
+   Unix.putenv "PYTHONPATH"
       (Printf.sprintf "%s/coccinelle" (Unix.getenv "HOME"));
-  let _ = if not (py_isinitialized () != 0) then
-  	(if !Flag.show_misc then Common.pr2 "Initializing python\n%!";
-	py_initialize()) in
+   let _ = if not (py_isinitialized () != 0) then
+   	(if !Flag.show_misc then Common.pr2 "Initializing python\n%!";
+   	py_initialize()) in
 
-  (* set argv *)
-  let argv0 = Printf.sprintf "%s%sspatch" (Sys.getcwd ()) (match Sys.os_type with "Win32" -> "\\" | _ -> "/") in
-  let _ = pycaml_setargs argv0 in
+   (* set argv *)
+   let argv0 = Printf.sprintf "%s%sspatch" (Sys.getcwd ()) (match Sys.os_type with "Win32" -> "\\" | _ -> "/") in
+   let _ = pycaml_setargs argv0 in
 *)
 
 
@@ -64,7 +64,7 @@ let cpr = check_python_return
 (* Why no guarded_pystring_fromstring as have a guarded_pystring_asstring ?
  * Because ocaml is strongly typed so no pb in this direction;
  * converting from an ocaml string to a python string is always safe.
- *)
+*)
 let string_list_to_python xs =
   xs
   |> Array.of_list
@@ -97,20 +97,20 @@ let test_pycaml () =
   let dict = Pycaml.pymodule_getdict colorsys in
 
   let triplet = pytuple3 (pyfloat_fromdouble 1.0,
-			 pyfloat_fromdouble 0.5,
-			 pyfloat_fromdouble 0.2) in
+                          pyfloat_fromdouble 0.5,
+                          pyfloat_fromdouble 0.2) in
 
   let rgbtoyiq = pydict_getitemstring (dict,"rgb_to_yiq") in
   let triplet = pyeval_callobject (rgbtoyiq,triplet) in
 
   print_endline ((string_of_float
-		     (pyfloat_asdouble (pytuple_getitem (triplet,0)))) ^
-		    " " ^
-		     (string_of_float
-			 (pyfloat_asdouble (pytuple_getitem (triplet,1)))) ^
-		     " " ^
-		     (string_of_float
-			 (pyfloat_asdouble (pytuple_getitem (triplet,2)))));
+                    (pyfloat_asdouble (pytuple_getitem (triplet,0)))) ^
+                 " " ^
+                 (string_of_float
+                    (pyfloat_asdouble (pytuple_getitem (triplet,1)))) ^
+                 " " ^
+                 (string_of_float
+                    (pyfloat_asdouble (pytuple_getitem (triplet,2)))));
   ()
 
 let test_pycaml2 () =
@@ -148,10 +148,10 @@ let test_pycaml4 () =
 
 let test_python_direct () =
   let _ = Pycaml.pyrun_simplestring
-    (Common.unlines
-        ["import nltk";
-         "nltk.draw.tree.demo()";
-        ]) in
+      (Common.unlines
+         ["import nltk";
+          "nltk.draw.tree.demo()";
+         ]) in
   ()
 
 (*

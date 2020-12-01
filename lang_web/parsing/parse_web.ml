@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Ast_web
 open Ast_html
@@ -42,21 +42,21 @@ let parse2 filename =
   let rec visit = function
     | Element ((Tag (s_tag, _tok_t)), _attrs, xs) ->
         (match s_tag, xs with
-        | "script", [Data (s, tok)] ->
-            let tmpfile = Common.new_temp_file "web" ".js" in
-            Common.write_file ~file:tmpfile s;
-            let ast = Parse_js.parse_program tmpfile in
-            Common.push (tok, ast) js;
+         | "script", [Data (s, tok)] ->
+             let tmpfile = Common.new_temp_file "web" ".js" in
+             Common.write_file ~file:tmpfile s;
+             let ast = Parse_js.parse_program tmpfile in
+             Common.push (tok, ast) js;
 
-        | "style", [Data (s, tok)] ->
-            let tmpfile = Common.new_temp_file "web" ".css" in
-            Common.write_file ~file:tmpfile s;
-            let (ast, _toks) = Parse_css.parse tmpfile in
-            Common.push (tok, ast) css;
+         | "style", [Data (s, tok)] ->
+             let tmpfile = Common.new_temp_file "web" ".css" in
+             Common.write_file ~file:tmpfile s;
+             let (ast, _toks) = Parse_css.parse tmpfile in
+             Common.push (tok, ast) css;
 
-        | ("script" | "style"), _ ->
-            failwith "wrong script/style tag"
-        | _ -> ()
+         | ("script" | "style"), _ ->
+             failwith "wrong script/style tag"
+         | _ -> ()
         );
         xs |> List.iter visit;
     | Data _ ->

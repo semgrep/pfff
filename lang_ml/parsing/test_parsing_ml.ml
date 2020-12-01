@@ -61,15 +61,15 @@ let refactor_grammar subst_file file =
     | x::y::xs ->
         (if x =~ "\\([A-Za-z]+\\)"
          then
-          let target = Common.matched1 x in
-          if y =~ " \\([A-Za-z]+\\)"
-          then
-            let orig = Common.matched1 y in
-            Hashtbl.add h orig target
-          else
-            failwith ("wrong format: " ^ x ^ y)
-        else
-            failwith ("wrong format: " ^ x ^ y)
+           let target = Common.matched1 x in
+           if y =~ " \\([A-Za-z]+\\)"
+           then
+             let orig = Common.matched1 y in
+             Hashtbl.add h orig target
+           else
+             failwith ("wrong format: " ^ x ^ y)
+         else
+           failwith ("wrong format: " ^ x ^ y)
         );
         populate_hash xs
   in
@@ -81,7 +81,7 @@ let refactor_grammar subst_file file =
       try
         Hashtbl.find h s
       with
-      Not_found -> s
+        Not_found -> s
     ) l
     in
     pr s

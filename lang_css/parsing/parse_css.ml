@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -62,8 +62,8 @@ let parse2 filename =
   (* -------------------------------------------------- *)
   try
     (Common.profile_code "Parser_css.main" (fun () ->
-      Parser_css.stylesheet lexer lexbuf_fake, toks
-    ))
+       Parser_css.stylesheet lexer lexbuf_fake, toks
+     ))
   with Parsing.Parse_error ->
     let current = tr.PI.current in
 

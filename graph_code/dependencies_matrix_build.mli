@@ -8,13 +8,13 @@ val threshold_pack: int ref
  * The 'config' parameter passed is a default configuration but the returned
  * config in dm.config will probably be a better ordering of the
  * nodes that minimizes backward dependencies.
- *)
+*)
 val build:
   config -> partition_constraints option -> Graph_code_opti.graph ->
   dm * Graph_code_opti.graph
 
 val info_orders:
- dm -> unit
+  dm -> unit
 
 (* we return a gopti because of threshold_pack that may alter the graph *)
 val config_of_path:
@@ -22,7 +22,7 @@ val config_of_path:
 
 (* internals *)
 val build_with_tree:
- config -> Graph_code_opti.graph -> dm
+  config -> Graph_code_opti.graph -> dm
 val partition_matrix:
   Graph_code.node list -> dm -> Graph_code.node list
 

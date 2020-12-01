@@ -22,7 +22,7 @@ let valid_rect r =
   r.q.x >= r.p.x && r.q.y >= r.p.y
 
 let s_of_rectangle r =
-   spf "p:%f, %f;  q:%f, %f" r.p.x r.p.y r.q.x r.q.y
+  spf "p:%f, %f;  q:%f, %f" r.p.x r.p.y r.q.x r.q.y
 
 
 let point_is_in_rectangle p r =
@@ -46,13 +46,13 @@ let intersection_rectangles r1 r2 =
   if valid_rect r then Some r else None
 
 (* TODO: does not work with js_of_ocaml !!!!
-let _ = assert
- (intersection_rectangles
+   let _ = assert
+   (intersection_rectangles
     { p = { x=0.; y=0.}; q = { x=4.; y=4.};}
     { p = { x=2.; y=2.}; q = { x=6.; y=6.};}
-  =
+   =
     Some { p = { x=2.; y=2.}; q = { x=4.; y=4.};}
- )
+   )
 *)
 
 (*****************************************************************************)

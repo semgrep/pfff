@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -22,7 +22,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)

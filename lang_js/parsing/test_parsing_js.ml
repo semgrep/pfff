@@ -17,7 +17,7 @@ let test_tokens_js file =
   Flag.verbose_parsing := true;
 
   let toks = Parse_js.tokens file
-    (* |> Parsing_hacks_js.fix_tokens  *)
+  (* |> Parsing_hacks_js.fix_tokens  *)
   in
   toks |> List.iter (fun x -> pr2_gen x);
   ()
@@ -26,12 +26,12 @@ let test_parse_common xs fullxs ext  =
   let dirname_opt, fullxs =
     match xs with
     | [x] when Common2.is_directory x ->
-      let skip_list =
-        if Sys.file_exists (x ^ "/skip_list.txt")
-        then Skip_code.load (x ^ "/skip_list.txt")
-        else []
-      in
-      Some x,  Skip_code.filter_files skip_list x fullxs
+        let skip_list =
+          if Sys.file_exists (x ^ "/skip_list.txt")
+          then Skip_code.load (x ^ "/skip_list.txt")
+          else []
+        in
+        Some x,  Skip_code.filter_files skip_list x fullxs
     | _ -> None, fullxs
   in
 
@@ -44,22 +44,22 @@ let test_parse_common xs fullxs ext  =
     k();
 
     let (_xs, stat) =
-     try (
-      Common.save_excursion Flag.error_recovery true (fun () ->
-      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-        Parse_js.parse ~timeout:5 file
+      try (
+        Common.save_excursion Flag.error_recovery true (fun () ->
+          Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+            Parse_js.parse ~timeout:5 file
 
-      (* to have a better comparison with semgrep -lang js -test_parse_lang: *)
-      (* let _gen = Js_to_generic.program ast in *)
-      (* note that there's still Naming_AST.resolve and
-       * Constant_propafation.propagate done with -test_parse_lang.
-       * You may also want to remove the timeout and save_excursion above.
-       *)
+           (* to have a better comparison with semgrep -lang js -test_parse_lang: *)
+           (* let _gen = Js_to_generic.program ast in *)
+           (* note that there's still Naming_AST.resolve and
+            * Constant_propafation.propagate done with -test_parse_lang.
+            * You may also want to remove the timeout and save_excursion above.
+           *)
 
-      ))
-     ) with Stack_overflow as exn ->
-       pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
-       (None, []), PI.bad_stat file
+          ))
+      ) with Stack_overflow as exn ->
+        pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
+        (None, []), PI.bad_stat file
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.Parse_info.bad in
@@ -69,17 +69,17 @@ let test_parse_common xs fullxs ext  =
   ));
   Parse_info.print_parsing_stat_list !stat_list;
 
-    let score_path = Config_pfff.regression_data_dir in
-    dirname_opt |> Common.do_option (fun dirname ->
-      let dirname = Common.fullpath dirname in
-      pr2 "--------------------------------";
-      pr2 "regression testing  information";
-      pr2 "--------------------------------";
-      let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common2.regression_testing newscore
-        (Filename.concat score_path
+  let score_path = Config_pfff.regression_data_dir in
+  dirname_opt |> Common.do_option (fun dirname ->
+    let dirname = Common.fullpath dirname in
+    pr2 "--------------------------------";
+    pr2 "regression testing  information";
+    pr2 "--------------------------------";
+    let str = Str.global_replace (Str.regexp "/") "__" dirname in
+    Common2.regression_testing newscore
+      (Filename.concat score_path
          (spf "score_parsing__%s%s.marshalled" str ext))
-    );
+  );
 
   ()
 
@@ -92,12 +92,12 @@ let test_parse_js xs =
 module FT = File_type
 let test_parse_ts xs =
   let fullxs =
-   Common.files_of_dir_or_files_no_vcs_nofilter xs
-  |> List.filter (fun filename ->
-    match FT.file_type_of_file filename with
-    | FT.PL (FT.Web FT.TypeScript) -> true
-    | _ -> false
-  ) |> Common.sort
+    Common.files_of_dir_or_files_no_vcs_nofilter xs
+    |> List.filter (fun filename ->
+      match FT.file_type_of_file filename with
+      | FT.PL (FT.Web FT.TypeScript) -> true
+      | _ -> false
+    ) |> Common.sort
   in
   (* typescript and JSX have lexing conflicts *)
   Common.save_excursion Flag_parsing_js.jsx false (fun () ->
@@ -110,12 +110,12 @@ let test_dump_js file =
   pr s
 
 let test_dump_ts file =
- (* typescript and JSX have lexing conflicts *)
- Common.save_excursion Flag_parsing_js.jsx false (fun () ->
-  let ast = Parse_js.parse_program file in
-  let s = Ast_js.show_program ast in
-  pr s
- )
+  (* typescript and JSX have lexing conflicts *)
+  Common.save_excursion Flag_parsing_js.jsx false (fun () ->
+    let ast = Parse_js.parse_program file in
+    let s = Ast_js.show_program ast in
+    pr s
+  )
 
 (*****************************************************************************)
 (* JSON output *)
@@ -139,42 +139,42 @@ let parse_js_r2c xs =
   let json = J.Array (fullxs |> Common.map_filter (fun file ->
     let nblines = Common.cat file |> List.length in
     try
-     let (_xs, _stat) =
-      Common.save_excursion Flag.error_recovery false (fun () ->
-      Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
-      Common.save_excursion Flag.show_parsing_error true (fun () ->
-        Parse_js.parse file
-      )))
+      let (_xs, _stat) =
+        Common.save_excursion Flag.error_recovery false (fun () ->
+          Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
+            Common.save_excursion Flag.show_parsing_error true (fun () ->
+              Parse_js.parse file
+            )))
       in
       (* only return a finding if there was a parse error so we can
        * sort by the number of parse errors in the triage tool
-       *)
+      *)
       None
     with (Parse_info.Parsing_error info | Parse_info.Lexical_error (_,info))
       as exn ->
-     let (startp, endp) = info_to_json_range info in
-     let message =
-       match exn with
-       | Parse_info.Parsing_error _ -> "parse error"
-       | Parse_info.Lexical_error (s, _) -> "lexical error: " ^ s
-       | _ -> raise Impossible
-     in
-     Some (J.Object [
-      "check_id", J.String "pfff-parse_js_r2c";
-      "path", J.String file;
-      "start", startp;
-      "end", endp;
-      "extra", J.Object [
-         "size", J.Int nblines;
-         "message", J.String message;
+        let (startp, endp) = info_to_json_range info in
+        let message =
+          match exn with
+          | Parse_info.Parsing_error _ -> "parse error"
+          | Parse_info.Lexical_error (s, _) -> "lexical error: " ^ s
+          | _ -> raise Impossible
+        in
+        Some (J.Object [
+          "check_id", J.String "pfff-parse_js_r2c";
+          "path", J.String file;
+          "start", startp;
+          "end", endp;
+          "extra", J.Object [
+            "size", J.Int nblines;
+            "message", J.String message;
 (*
          "correct", J.Int stat.PI.correct;
          "bad", J.Int stat.PI.bad;
          "timeout", J.Bool stat.PI.have_timeout;
 *)
-        ]
-     ])
-    ))
+          ]
+        ])
+  ))
   in
   let json = J.Object ["results", json] in
   let s = J.string_of_json json in
@@ -201,10 +201,10 @@ let actions () = [
   "-parse_js_r2c", "   <file or dir>",
   Common.mk_action_n_arg parse_js_r2c;
 
-(* old:
-  "-json_js", "   <file> export the AST of file into JSON",
-  Common.mk_action_1_arg test_json_js;
-  "-parse_esprima_json", " <file> ",
-  Common.mk_action_1_arg test_esprima;
-*)
+  (* old:
+     "-json_js", "   <file> export the AST of file into JSON",
+     Common.mk_action_1_arg test_json_js;
+     "-parse_esprima_json", " <file> ",
+     Common.mk_action_1_arg test_esprima;
+  *)
 ]

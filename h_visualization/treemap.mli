@@ -8,22 +8,22 @@ type ('dir, 'file) tree =
 
 (*s: type treemap *)
 type ('dir, 'file) treemap =
- (treemap_data * 'dir, treemap_data * 'file) tree
-    and treemap_data = {
-      size : int;
-      color : Simple_color.color;
-      label: string;
-    }
+  (treemap_data * 'dir, treemap_data * 'file) tree
+and treemap_data = {
+  size : int;
+  color : Simple_color.color;
+  label: string;
+}
 (*e: type treemap *)
 
 type treemap_rendering = treemap_rectangle list
- and treemap_rectangle = {
-   tr_rect: rectangle;
-   tr_color: int (* Simple_color.color *);
-   tr_label: string;
-   tr_depth: int;
-   tr_is_node: bool;
- }
+and treemap_rectangle = {
+  tr_rect: rectangle;
+  tr_color: int (* Simple_color.color *);
+  tr_label: string;
+  tr_depth: int;
+  tr_is_node: bool;
+}
 
 
 
@@ -52,10 +52,10 @@ type algorithm =
   | SquarifiedNoSort
   | Ordered of pivot
 
-  and pivot =
-    | PivotBySize
-    | PivotByMiddle
-(*e: type algorithm *)
+and pivot =
+  | PivotBySize
+  | PivotByMiddle
+  (*e: type algorithm *)
 
 (*s: type layout_func *)
 type ('a, 'b) layout_func =
@@ -130,7 +130,7 @@ val algo_of_s: string -> algorithm
 (* tests *)
 (*s: signature tree and treemap examples *)
 val treemap_rectangles_ex:
-   ((float * float) list * (float * float) list * (float * float * float)) list
+  ((float * float) list * (float * float) list * (float * float * float)) list
 
 val tree_ex_shneiderman_1991 : (unit, int) tree
 val tree_ex_wijk_1999: (unit, int) tree

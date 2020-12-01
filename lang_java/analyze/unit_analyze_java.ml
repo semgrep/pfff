@@ -6,7 +6,7 @@ open OUnit
 (*****************************************************************************)
 
 let unittest =
-"analyze_java" >::: [
+  "analyze_java" >::: [
 
     "regression files" >:: (fun () ->
       let dir = Config_pfff.tests_path "java/parsing" in
@@ -47,4 +47,4 @@ let unittest =
    );
  ]
 *)
-]
+  ]

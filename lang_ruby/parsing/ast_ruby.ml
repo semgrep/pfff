@@ -24,7 +24,7 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -48,7 +48,7 @@
  *    like method_name, method_kind, rescue_clause, scope_resolution instead
  *    of the very broad 'expr'. This will help also when converting to
  *    the generic AST.
- *)
+*)
 
 (*****************************************************************************)
 (* Names *)
@@ -57,13 +57,13 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* Below we derive also eq, and ord, which is unusual compared to our other
  * parsers. Indeed, we use the GLR parser generator dypgen to parse Ruby
  * and in case of ambiguities dypgen needs to _compare_ resulting ASTs
  * and filter out equivalent trees.
- *)
+*)
 
 (* we don't care about difference in token positions *)
 let compare_tok _a _b = 0
@@ -71,23 +71,23 @@ let equal_tok _a _b = true
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- [@@deriving show, eq, ord]
+[@@deriving show, eq, ord]
 
 (* round(), square[], curly{}, angle<>, and also pipes|| brackets  *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show, eq, ord]
+[@@deriving show, eq, ord]
 
 (* ------------------------------------------------------------------------- *)
 (* Ident/name *)
 (* ------------------------------------------------------------------------- *)
 type ident = string wrap
-  and uident = ident
-  and _lident = ident
- [@@deriving show, eq, ord]
+and uident = ident
+and _lident = ident
+[@@deriving show, eq, ord]
 
 (* less: Self of tok | Id of lident | Cst of uident | ...  *)
 type variable = ident * id_kind
- and id_kind =
+and id_kind =
   | ID_Self
   (* treesitter: *)
   | ID_Super
@@ -98,9 +98,9 @@ type variable = ident * id_kind
   | ID_Class     (* prefixed by @@ *)
   (* pattern: \\$-?(([!@&`'+~=/\\\\,;.<>*$?:\"])|([0-9]* )|([a-zA-Z_][a-zA-Z0-9_]* ))"
    * old: was split in 2 before with a ID_Builtin but was not in tree-sitter
-   *)
+  *)
   | ID_Global    (* prefixed by $ *)
- [@@deriving show { with_path = false }, eq, ord]
+[@@deriving show { with_path = false }, eq, ord]
 
 (* ------------------------------------------------------------------------- *)
 (* Operators *)
@@ -117,10 +117,10 @@ type unary_op =
   (* tree-sitter: in argument and hash *)
   | Op_UStarStar (* ** *)
 
-  and unary_msg =
+and unary_msg =
   | Op_UMinus    (* -x, -@ when in msg_id *)  | Op_UPlus (* +x, +@ in msg_id *)
   | Op_UBang     (* !x *) | Op_UTilde    (* ~x *)
- [@@deriving show { with_path = false }, eq, ord]
+[@@deriving show { with_path = false }, eq, ord]
 
 
 type binary_op =
@@ -140,7 +140,7 @@ type binary_op =
   (* sugar for .. and = probably *)
   | Op_DOT3     (* ... *)
 
-  and binary_msg =
+and binary_msg =
   (* binary and msg_id and assign op *)
   | Op_PLUS     (* + *)  | Op_MINUS    (* - *)
   | Op_TIMES    (* * *)  | Op_REM      (* % *)  | Op_DIV      (* / *)
@@ -164,14 +164,14 @@ type binary_op =
   (* note that one of the binary argument might be a fake nil, because
    * 42.. is equivalent to 42..nil.
    * See https://ruby-doc.org/core-2.6.1/Range.html
-   *)
+  *)
   | Op_DOT2     (* .. *)
 
   (* only in DotAccess method_name or MethodDef; Never in Binop *)
   | Op_AREF     (* [] *)
   | Op_ASET     (* []= *)
 
- [@@deriving show { with_path = false }, eq, ord]
+[@@deriving show { with_path = false }, eq, ord]
 
 (* ------------------------------------------------------------------------- *)
 (* Method name, scope resolution, class/module name are later *)
@@ -209,7 +209,7 @@ type expr =
   (* in argument, pattern, exn, assignment lhs or rhs.
    * old: was Unary(Op_UStar), or UOperator(Op_UStar).
    * expr is None only when Splat is used as last element in assign.
-   *)
+  *)
   | Splat of tok (* '*', but also ',' in mlhs *) * expr option
 
   (* true = {}, false = do/end *)
@@ -224,8 +224,8 @@ type expr =
   (* TODO: unused for now, need find a syntax *)
   | TypedMetavar of ident * tok * type_
 
-  (* less: use for Assign, can be Id, Tuple, Array, more? *)
-  and lhs = expr
+(* less: use for Assign, can be Id, Tuple, Array, more? *)
+and lhs = expr
 
 (* the pattern: below are copy pasted from tree-sitter-ruby, they may not be
  * the one actually used in lexer_ruby.mll *)
@@ -250,21 +250,21 @@ and literal =
 
   | Nil of tok
 
-  and atom =
+and atom =
   (* the atom string includes the ':' prefix *)
   | AtomSimple of string wrap
   (* less: tok for ':' ? *)
   | AtomFromString of interp list bracket (* '' or "" *)
 
-  and string_kind =
-    | Single of string wrap
-    | Double of interp list bracket
-    | Tick of interp list bracket
+and string_kind =
+  | Single of string wrap
+  | Double of interp list bracket
+  | Tick of interp list bracket
 
-    (* interpolated strings (a.k.a encapsulated/template strings) *)
-    and interp =
-      | StrChars of string wrap
-      | StrExpr of expr
+(* interpolated strings (a.k.a encapsulated/template strings) *)
+and interp =
+  | StrChars of string wrap
+  | StrExpr of expr
 
 (* ------------------------------------------------------------------------- *)
 (* Method name *)
@@ -284,25 +284,25 @@ and method_name =
 (* Class or module name *)
 (* ------------------------------------------------------------------------- *)
 and class_or_module_name =
-   | NameConstant of uident
-   | NameScope of scope_resolution
+  | NameConstant of uident
+  | NameScope of scope_resolution
 
 (* ------------------------------------------------------------------------- *)
 (* Scope resolution *)
 (* ------------------------------------------------------------------------- *)
 (* The variable below is actually either an ID_Lowercase or ID_Uppercase
  * less: replace variable with ident?
- *)
+*)
 and scope_resolution =
   (* old: was called Op_UScope before *)
   | TopScope of tok (* :: *) * variable
   (* old: was called Op_SCOPE before *)
   | Scope of expr * tok (* :: *) * variable_or_method_name
 
-  and variable_or_method_name =
-   | SV of variable
-   (* TODO: this is not in tree-sitter *)
-   | SM of method_name
+and variable_or_method_name =
+  | SV of variable
+  (* TODO: this is not in tree-sitter *)
+  | SM of method_name
 
 
 (*****************************************************************************)
@@ -310,7 +310,7 @@ and scope_resolution =
 (*****************************************************************************)
 (* arg or splat_argument in case/when, but
  * also tuple in lhs of Assign.
- *)
+*)
 and pattern = expr
 
 (*****************************************************************************)
@@ -324,7 +324,7 @@ and type_ = expr
 (* Note that in Ruby everything is an expr, but I still like to split expr
  * with the different "subtypes" 'stmt' and 'definition'.
  * Note that ../analyze/il_ruby.ml has proper separate expr and stmt types.
- *)
+*)
 and stmt =
   | Block of stmts bracket (* ( ) *)
 
@@ -347,31 +347,31 @@ and stmt =
 
   | ExnBlock of body_exn (* less: bracket *)
 
-  and case_block = {
-    case_guard : expr option;
-    (* the pattern list is a comma separated list of expressions and
-     * is converted in a || list by Ruby. The use of such comma is
-     * actually deprecated *)
-    case_whens: (tok (* when *) * pattern list * stmts) list;
-    case_else: (tok (* else *) * stmts) option;
-  }
+and case_block = {
+  case_guard : expr option;
+  (* the pattern list is a comma separated list of expressions and
+   * is converted in a || list by Ruby. The use of such comma is
+   * actually deprecated *)
+  case_whens: (tok (* when *) * pattern list * stmts) list;
+  case_else: (tok (* else *) * stmts) option;
+}
 
-  (* tokens around body_exn are usually begin/end or do/end or
-   * <nothing>/end for class and module defs *)
-  and body_exn = {
-    body_exprs: stmts;
-    rescue_exprs: rescue_clause list;
-    ensure_expr: (tok (* ensure *) * stmts) option;
-    else_expr: (tok (* else *) * stmts) option;
-  }
-    (* less: the list can be empty, in which case it maybe mean
-     * implicitely StandardError exn? *)
-    and rescue_clause =
-      tok * exception_ list * exception_variable option * stmts
-        (* usually an Id, or a Splat *)
-        and exception_ = expr
-        (* lhs is usually an Id *)
-        and exception_variable = tok (* => *) * lhs
+(* tokens around body_exn are usually begin/end or do/end or
+ * <nothing>/end for class and module defs *)
+and body_exn = {
+  body_exprs: stmts;
+  rescue_exprs: rescue_clause list;
+  ensure_expr: (tok (* ensure *) * stmts) option;
+  else_expr: (tok (* else *) * stmts) option;
+}
+(* less: the list can be empty, in which case it maybe mean
+ * implicitely StandardError exn? *)
+and rescue_clause =
+  tok * exception_ list * exception_variable option * stmts
+(* usually an Id, or a Splat *)
+and exception_ = expr
+(* lhs is usually an Id *)
+and exception_variable = tok (* => *) * lhs
 
 and stmts = expr list
 
@@ -389,36 +389,36 @@ and definition =
   | Alias of tok * method_name * method_name
   | Undef of tok * method_name list
 
-  (* treesitter: TODO stuff with ; and identifier list? in block params? *)
-  and formal_param =
-    (* old: was of expr before *)
-    | Formal_id of ident (* usually just xx but sometimes also @xx or $xx *)
-    | Formal_amp of tok * ident
+(* treesitter: TODO stuff with ; and identifier list? in block params? *)
+and formal_param =
+  (* old: was of expr before *)
+  | Formal_id of ident (* usually just xx but sometimes also @xx or $xx *)
+  | Formal_amp of tok * ident
 
-    (* less: Formal_splat of tok * ident option *)
-    | Formal_star of tok * ident (* as in *x *)
-    | Formal_rest of tok (* just '*' *)
+  (* less: Formal_splat of tok * ident option *)
+  | Formal_star of tok * ident (* as in *x *)
+  | Formal_rest of tok (* just '*' *)
 
-    | Formal_tuple of formal_param list bracket
-    | Formal_default of ident * tok (* = *) * expr
+  | Formal_tuple of formal_param list bracket
+  | Formal_default of ident * tok (* = *) * expr
 
-    (* treesitter: TSNOTDYP *)
-    | Formal_hash_splat of tok * ident option
-    | Formal_kwd of ident * tok * expr option
+  (* treesitter: TSNOTDYP *)
+  | Formal_hash_splat of tok * ident option
+  | Formal_kwd of ident * tok * expr option
 
-     (* sgrep-ext: *)
-     | ParamEllipsis of tok
+  (* sgrep-ext: *)
+  | ParamEllipsis of tok
 
-  and class_kind =
-   | C of class_or_module_name * (tok (* < *) * expr) option
-   | SingletonC of tok (* << *) * expr
+and class_kind =
+  | C of class_or_module_name * (tok (* < *) * expr) option
+  | SingletonC of tok (* << *) * expr
 
-  (* old: was just expr before *)
-  and method_kind =
-   | M of method_name
-   | SingletonM of expr (* TODO (variable | expr) * scope_op * method_name *)
+(* old: was just expr before *)
+and method_kind =
+  | M of method_name
+  | SingletonM of expr (* TODO (variable | expr) * scope_op * method_name *)
 
- [@@deriving show { with_path = false }, eq, ord] (* with tarzan *)
+[@@deriving show { with_path = false }, eq, ord] (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
@@ -427,14 +427,14 @@ and definition =
  * comment format.
  * less: maybe leverage the new work on gradual typing of Ruby in
  * Sorbet and steep?
- *)
+*)
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 type program = stmts
- [@@deriving show, eq, ord] (* with tarzan *)
+[@@deriving show, eq, ord] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -451,16 +451,16 @@ type any =
   | Pa of formal_param
   | Pr of program
 
- [@@deriving show { with_path = false}, eq] (* with tarzan *)
+[@@deriving show { with_path = false}, eq] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 let empty_body_exn = {
-    body_exprs = [];
-    rescue_exprs = [];
-    ensure_expr = None;
-    else_expr = None;
+  body_exprs = [];
+  rescue_exprs = [];
+  ensure_expr = None;
+  else_expr = None;
 }
 
 let sm = function

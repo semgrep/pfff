@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Ast_java
@@ -31,7 +31,7 @@ module HC = Highlight_code
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -43,7 +43,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 
 let visit_toplevel ~tag_hook _prefs (ast, toks) =
   let already_tagged = Hashtbl.create 101 in
@@ -62,80 +62,80 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
   (* tagging the idents of the AST *)
   let visitor = V.mk_visitor { V.default_visitor with
 
-    (* defs *)
-    V.kdecl = (fun (k, _) d ->
-      (match d with
-      | Ast.Class x ->
-          let ident = x.cl_name in
-          tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
-      | Ast.Field x ->
-          let var = x.f_var in
-          let ident = var.name in
-          tag_ident ident (Entity (Field, (Def2 fake_no_def2)))
-      | Ast.Method x ->
-          let var = x.m_var in
-          let ident = var.name in
-          tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
-          x.m_formals |> List.iter (function
-            | Ast.ParamEllipsis _  -> ()
-            | Ast.ParamClassic v
-            | Ast.ParamReceiver v | Ast.ParamSpread (_, v) ->
-            let ident = v.name in
-            tag_ident ident (Parameter Def)
-          )
-      | Ast.Enum x ->
-          let ident = x.en_name in
-          tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
-      | Ast.Init (_bool, _stmt) -> ()
-      | Ast.DeclEllipsis _ -> ()
-      | Ast.EmptyDecl _ -> ()
-      | Ast.AnnotationTypeElementTodo _ -> raise Todo
-      );
-      k d
-    );
-    V.kstmt = (fun (k, _) x ->
-      (match x with
-      | LocalVar v ->
-        let ident = v.f_var.name in
-        tag_ident ident (Local Def)
-      | _ -> ()
-      );
-      k x
-    );
+                               (* defs *)
+                               V.kdecl = (fun (k, _) d ->
+                                 (match d with
+                                  | Ast.Class x ->
+                                      let ident = x.cl_name in
+                                      tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
+                                  | Ast.Field x ->
+                                      let var = x.f_var in
+                                      let ident = var.name in
+                                      tag_ident ident (Entity (Field, (Def2 fake_no_def2)))
+                                  | Ast.Method x ->
+                                      let var = x.m_var in
+                                      let ident = var.name in
+                                      tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
+                                      x.m_formals |> List.iter (function
+                                        | Ast.ParamEllipsis _  -> ()
+                                        | Ast.ParamClassic v
+                                        | Ast.ParamReceiver v | Ast.ParamSpread (_, v) ->
+                                            let ident = v.name in
+                                            tag_ident ident (Parameter Def)
+                                      )
+                                  | Ast.Enum x ->
+                                      let ident = x.en_name in
+                                      tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
+                                  | Ast.Init (_bool, _stmt) -> ()
+                                  | Ast.DeclEllipsis _ -> ()
+                                  | Ast.EmptyDecl _ -> ()
+                                  | Ast.AnnotationTypeElementTodo _ -> raise Todo
+                                 );
+                                 k d
+                               );
+                               V.kstmt = (fun (k, _) x ->
+                                 (match x with
+                                  | LocalVar v ->
+                                      let ident = v.f_var.name in
+                                      tag_ident ident (Local Def)
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
 
-    (* uses *)
-    V.kexpr = (fun (k, _) e ->
-      (match e with
-      | Call (Dot (e, _, ident), (_, args, _)) ->
-          tag_ident ident (HC.Entity (Method, (Use2 fake_no_use2)));
-          k e;
-          List.iter k args
+                               (* uses *)
+                               V.kexpr = (fun (k, _) e ->
+                                 (match e with
+                                  | Call (Dot (e, _, ident), (_, args, _)) ->
+                                      tag_ident ident (HC.Entity (Method, (Use2 fake_no_use2)));
+                                      k e;
+                                      List.iter k args
 
-      | Dot (e, _t, ident) ->
-          tag_ident ident (Entity (Field, (Use2 fake_no_use2)));
-          k e
-      | _ -> k e
-      );
-    );
+                                  | Dot (e, _t, ident) ->
+                                      tag_ident ident (Entity (Field, (Use2 fake_no_use2)));
+                                      k e
+                                  | _ -> k e
+                                 );
+                               );
 
-    V.ktype = (fun (k, _) e ->
-      (match e with
-      (* done on PRIMITIVE_TYPE below *)
-      | TBasic (_s, _ii) -> ()
-      | TClass xs ->
-          (match List.rev xs with
-          | [] -> raise Impossible
-          | (id, _targs)::xs ->
-            tag_ident id (Entity (Type, (Use2 fake_no_use2)));
-            xs |> List.iter (fun (id, _targs) ->
-              tag_ident id (Entity (Module, (Use2 fake_no_use2)))
-            )
-          )
-      | TArray _ -> ()
-      );
-      k e
-    );
-  }
+                               V.ktype = (fun (k, _) e ->
+                                 (match e with
+                                  (* done on PRIMITIVE_TYPE below *)
+                                  | TBasic (_s, _ii) -> ()
+                                  | TClass xs ->
+                                      (match List.rev xs with
+                                       | [] -> raise Impossible
+                                       | (id, _targs)::xs ->
+                                           tag_ident id (Entity (Type, (Use2 fake_no_use2)));
+                                           xs |> List.iter (fun (id, _targs) ->
+                                             tag_ident id (Entity (Module, (Use2 fake_no_use2)))
+                                           )
+                                      )
+                                  | TArray _ -> ()
+                                 );
+                                 k e
+                               );
+                             }
   in
   visitor (AProgram ast);
 
@@ -146,28 +146,28 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline _ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline _ii4
+        ::T.TComment(ii5)
+        ::xs ->
         let s = Parse_info.str_of_info ii in
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ ->
-            ()
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ ->
+             ()
         );
         aux_toks xs
 
@@ -219,8 +219,8 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     | T.PRIMITIVE_TYPE (s, ii) ->
         (match s with
-        | "boolean" -> tag ii TypeInt
-        | _ -> tag ii TypeInt
+         | "boolean" -> tag ii TypeInt
+         | _ -> tag ii TypeInt
         )
 
     | T.OPERATOR_EQ (_s, ii) ->
@@ -237,49 +237,49 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.THIS ii | T.SUPER ii | T.NEW ii
     | T.INSTANCEOF ii
     | T.EXTENDS ii  | T.FINAL ii | T.IMPLEMENTS ii
-          -> tag ii KeywordObject
+      -> tag ii KeywordObject
 
     | T.BREAK ii | T.CONTINUE ii
     | T.RETURN ii | T.GOTO ii
-          -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.TRY ii  | T.THROW ii | T.THROWS ii
     | T.CATCH ii  | T.FINALLY ii
-          -> tag ii KeywordExn
+      -> tag ii KeywordExn
 
     | T.IF ii | T.ELSE ii
-          -> tag ii KeywordConditional
+      -> tag ii KeywordConditional
 
     | T.FOR ii | T.DO ii | T.WHILE ii
-          -> tag ii KeywordLoop
+      -> tag ii KeywordLoop
 
     | T.SWITCH ii
     | T.CASE ii
     | T.DEFAULT ii | T.DEFAULT_COLON ii
-        -> tag ii KeywordConditional
+      -> tag ii KeywordConditional
 
     | T.PACKAGE ii
     | T.IMPORT ii
-        -> tag ii KeywordModule
+      -> tag ii KeywordModule
 
     | T.NATIVE ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.VOLATILE ii | T.STATIC ii
     | T.CONST ii | T.VAR ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.SYNCHRONIZED ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.STRICTFP ii
     | T.TRANSIENT ii
     | T.ASSERT ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     (* java ext *)
     | T.ENUM ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.AT ii ->
         tag ii Punctuation
@@ -323,6 +323,6 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.LS ii
     | T.SRS ii
     | T.URS ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
   );
   ()

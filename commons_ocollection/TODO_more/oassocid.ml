@@ -21,4 +21,4 @@ class ['a] oassoc_id xs =
     method keys =
       List.map fst (o#tolist)
 
-end
+  end

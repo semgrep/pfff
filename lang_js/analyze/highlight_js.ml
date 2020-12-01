@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Highlight_code
 open Ast_js
@@ -25,7 +25,7 @@ module V = Visitor_js
 (* Prelude *)
 (*****************************************************************************)
 (* Syntax highlighting for Javascript code for codemap (and now also efuns).
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers when have global-analysis information *)
@@ -43,11 +43,11 @@ let visit_program ~tag_hook _prefs (ast, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     (match categ with
-    (* Javascript allows to use keywords as identifiers for flds/methods/...*)
-    | Keyword | KeywordExn | KeywordLoop | KeywordModule
+     (* Javascript allows to use keywords as identifiers for flds/methods/...*)
+     | Keyword | KeywordExn | KeywordLoop | KeywordModule
        when Hashtbl.mem already_tagged ii -> ()
-    | _ ->
-      tag_hook ii categ;
+     | _ ->
+         tag_hook ii categ;
     );
     Hashtbl.add already_tagged ii true
   )
@@ -57,86 +57,86 @@ let visit_program ~tag_hook _prefs (ast, toks) =
      * do not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
-     *)
+    *)
     if not (Hashtbl.mem already_tagged ii)
     then tag ii categ
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)
-   then tag ii categ
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
   in
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
-   *)
+  *)
   let visitor = V.mk_visitor { V.default_visitor with
-     V.ktop = (fun (k, _) t ->
-       (match t with
-       (* TODO: after split VarDef FuncDef ClasDef, no need kind_of_expr_opt *)
-       | DefStmt ({name; _}, VarDef { v_kind; v_init; _ }) ->
-           let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
-           tag_name name (Entity (kind, (Def2 fake_no_def2)));
-       | _ -> ()
-       );
-       k t
-     );
-     V.kprop = (fun (k,_) x ->
-      (match x with
-      | Field {fld_name = PN name; fld_body = Some (Fun _); _} ->
-          tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
-      | Field {fld_name = PN name; _ } ->
-          tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
-      | _ -> ()
-      );
-      k x
-      );
-     V.kexpr = (fun (k,_) x ->
-      (match x with
-      | ObjAccess (_, _, PN name) ->
-          tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
-      | IdSpecial (special, ii) ->
-         (match special with
-         | Eval -> tag ii BadSmell
-         | _ -> tag ii Builtin
-         )
-(* TODO: use generic AST based highlighter
-      | Id (name, scope) ->
-         (match !scope with
-         | NotResolved | Global _ ->
-            tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
-         | Local -> tag_name name (H.Local Use)
-         | Param -> tag_name name (H.Parameter Use)
-         );
-      | Apply (Id (name, {contents = Global _ | NotResolved}), _) ->
-         tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-      | Apply (Id (_name, {contents = Local | Param}), _) ->
-         (* todo: tag_name name PointerCall; *)
-         ()
-*)
-      | Apply (ObjAccess (_, _, PN name), _) ->
-         tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
-      | Fun (_, Some name) ->
-         tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-      | _ -> ()
-      ); k x
-     );
-     V.kstmt = (fun (k,_) x ->
-      (match x with
-      | DefStmt ({name = name; _}, _) ->
-          tag_name name (H.Local Def);
-      | _ -> ()
-      ); k x
-     );
-     V.kparam = (fun (k, _) x ->
-       (match x with
-       | {p_name = name; _} ->
-           tag_name name (H.Parameter Def);
-       ); k x
-     );
+                               V.ktop = (fun (k, _) t ->
+                                 (match t with
+                                  (* TODO: after split VarDef FuncDef ClasDef, no need kind_of_expr_opt *)
+                                  | DefStmt ({name; _}, VarDef { v_kind; v_init; _ }) ->
+                                      let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
+                                      tag_name name (Entity (kind, (Def2 fake_no_def2)));
+                                  | _ -> ()
+                                 );
+                                 k t
+                               );
+                               V.kprop = (fun (k,_) x ->
+                                 (match x with
+                                  | Field {fld_name = PN name; fld_body = Some (Fun _); _} ->
+                                      tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
+                                  | Field {fld_name = PN name; _ } ->
+                                      tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
+                               V.kexpr = (fun (k,_) x ->
+                                 (match x with
+                                  | ObjAccess (_, _, PN name) ->
+                                      tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
+                                  | IdSpecial (special, ii) ->
+                                      (match special with
+                                       | Eval -> tag ii BadSmell
+                                       | _ -> tag ii Builtin
+                                      )
+                                  (* TODO: use generic AST based highlighter
+                                        | Id (name, scope) ->
+                                           (match !scope with
+                                           | NotResolved | Global _ ->
+                                              tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
+                                           | Local -> tag_name name (H.Local Use)
+                                           | Param -> tag_name name (H.Parameter Use)
+                                           );
+                                        | Apply (Id (name, {contents = Global _ | NotResolved}), _) ->
+                                           tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
+                                        | Apply (Id (_name, {contents = Local | Param}), _) ->
+                                           (* todo: tag_name name PointerCall; *)
+                                           ()
+                                  *)
+                                  | Apply (ObjAccess (_, _, PN name), _) ->
+                                      tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
+                                  | Fun (_, Some name) ->
+                                      tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
+                                  | _ -> ()
+                                 ); k x
+                               );
+                               V.kstmt = (fun (k,_) x ->
+                                 (match x with
+                                  | DefStmt ({name = name; _}, _) ->
+                                      tag_name name (H.Local Def);
+                                  | _ -> ()
+                                 ); k x
+                               );
+                               V.kparam = (fun (k, _) x ->
+                                 (match x with
+                                  | {p_name = name; _} ->
+                                      tag_name name (H.Parameter Def);
+                                 ); k x
+                               );
 
-    } in
+                             } in
   visitor (Program ast);
 
   (* -------------------------------------------------------------------- *)
@@ -174,8 +174,8 @@ let visit_program ~tag_hook _prefs (ast, toks) =
 
     (* all the name and varname should have been tagged by now. *)
     | T.T_ID (_, ii) ->
-       if not (Hashtbl.mem already_tagged ii)
-       then tag ii Error
+        if not (Hashtbl.mem already_tagged ii)
+        then tag ii Error
 
     (* keywords *)
 
@@ -204,14 +204,14 @@ let visit_program ~tag_hook _prefs (ast, toks) =
       -> tag ii Keyword
     | T.T_CLASS ii | T.T_INTERFACE ii
     | T.T_EXTENDS ii | T.T_IMPLEMENTS ii
-     -> tag ii KeywordObject
+      -> tag ii KeywordObject
     | T.T_CONSTRUCTOR ii    | T.T_GET ii | T.T_SET ii
-     -> tag ii KeywordObject
+      -> tag ii KeywordObject
     | T.T_IMPORT ii | T.T_EXPORT ii
     | T.T_FROM ii | T.T_AS ii
       -> tag ii KeywordModule
     | T.T_STATIC ii | T.T_WITH ii
-       -> tag ii Keyword
+      -> tag ii Keyword
     | T.T_TYPE ii | T.T_ENUM ii | T.T_DECLARE ii
       -> tag ii Keyword
     | T.T_MODULE ii ->
@@ -226,7 +226,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     | T.T_NUMBER_TYPE ii ->
         tag_if_not_tagged ii TypeInt
     | T.T_ANY_TYPE ii  | T.T_BOOLEAN_TYPE ii | T.T_STRING_TYPE ii
-     -> tag_if_not_tagged ii (Entity (E.Type, Use2 fake_no_use2))
+      -> tag_if_not_tagged ii (Entity (E.Type, Use2 fake_no_use2))
 
     | T.T_XHP_TEXT (_, ii) -> tag ii H.String
     | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (E.Field, (Use2 fake_no_use2)))
@@ -246,7 +246,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     | T.T_COMMA ii
     | T.T_PERIOD ii
     | T.T_DOTS ii | T.LDots ii | T.RDots ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
     | T.T_AT ii -> tag ii Attribute
 
     (* Operators *)
@@ -255,13 +255,13 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     | T.T_BIT_XOR_ASSIGN (ii) | T.T_BIT_OR_ASSIGN (ii)| T.T_BIT_AND_ASSIGN ii
     | T.T_MOD_ASSIGN (ii)  | T.T_DIV_ASSIGN ii
     | T.T_MULT_ASSIGN (ii) | T.T_MINUS_ASSIGN (ii) | T.T_PLUS_ASSIGN ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.T_ASSIGN ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
     | T.T_PLING ii
     | T.T_COLON ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
     | T.T_ARROW ii -> tag ii Punctuation
 
     | T.T_OR (ii) | T.T_AND ii
@@ -275,12 +275,12 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     | T.T_EXPONENT ii
     | T.T_MOD ii
     | T.T_NOT (ii) | T.T_BIT_NOT ii
-        -> tag ii Operator
+      -> tag ii Operator
     | T.T_INCR (ii)| T.T_DECR ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.T_VIRTUAL_SEMICOLON _ii
-        -> ()
+      -> ()
 
   );
 

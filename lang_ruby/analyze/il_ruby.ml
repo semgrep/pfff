@@ -24,7 +24,7 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -35,7 +35,7 @@
  * Mike Furr in diamondback-ruby.
  *
  * For more information, See "The Ruby Intermediate Language" paper at DLS'09.
- *)
+*)
 
 (*****************************************************************************)
 (* Names *)
@@ -45,7 +45,7 @@
 (* ------------------------------------------------------------------------- *)
 
 type tok = Parse_info.t
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
@@ -67,11 +67,11 @@ and var_kind =
   | Global
   | Constant
   (* old: | Builtin, now merged in Global *)
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (* convenience alias that is a subtype of identifier *)
 type builtin_or_global = var_kind (* [`Var_Builtin|`Var_Global] *) * string
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 type msg_id =
   | ID_UOperator of unary_op
@@ -80,34 +80,34 @@ type msg_id =
   | ID_Assign of string
   | ID_Super
 
-  and unary_op =
-    | Op_UMinus | Op_UPlus
-    | Op_UTilde
+and unary_op =
+  | Op_UMinus | Op_UPlus
+  | Op_UTilde
 
-  and binary_op =
-    | Op_Plus | Op_Minus
-    | Op_Times | Op_Rem | Op_Div
-    | Op_Pow
-    | Op_CMP
-    | Op_EQ | Op_EQQ
-    | Op_GEQ | Op_LEQ
-    | Op_LT | Op_GT
-    | Op_BAnd  | Op_BOr
-    | Op_LShift | Op_RShift
+and binary_op =
+  | Op_Plus | Op_Minus
+  | Op_Times | Op_Rem | Op_Div
+  | Op_Pow
+  | Op_CMP
+  | Op_EQ | Op_EQQ
+  | Op_GEQ | Op_LEQ
+  | Op_LT | Op_GT
+  | Op_BAnd  | Op_BOr
+  | Op_LShift | Op_RShift
 
-    | Op_Match
-    | Op_XOR
-    | Op_ARef
-    | Op_ASet
- [@@deriving show { with_path = false }] (* with tarzan *)
+  | Op_Match
+  | Op_XOR
+  | Op_ARef
+  | Op_ASet
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
 (*****************************************************************************)
 
 type expr =
- | EId of identifier
- | ELit of literal
+  | EId of identifier
+  | ELit of literal
 
 and literal =
   (* atomic *)
@@ -129,7 +129,7 @@ and star_expr =
   | SE of expr
   | SStar of expr
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 
 (*****************************************************************************)
@@ -140,31 +140,31 @@ type instr =
   | Assign of lhs * tuple_expr
   | Call of lhs option * method_call
 
-  (* lhs is like a tuple expression, but no literals are allowed *)
-  and lhs =
-    | LId of identifier
-    | LTup of lhs list
-    | LStar of identifier
+(* lhs is like a tuple expression, but no literals are allowed *)
+and lhs =
+  | LId of identifier
+  | LTup of lhs list
+  | LStar of identifier
 
-  and tuple_expr =
-    | TTup of tuple_expr list
-    | TE of expr
-    | TStar of tuple_expr  (* again, no nested stars *)
+and tuple_expr =
+  | TTup of tuple_expr list
+  | TE of expr
+  | TStar of tuple_expr  (* again, no nested stars *)
 
-  and method_call = {
-    mc_target : expr option;
-    mc_msg : msg_id;
-    mc_args : star_expr list;
-    mc_cb : codeblock option;
-  }
-     and codeblock =
-      | CB_Arg of expr
-      | CB_Block of block_formal_param list * stmt (* recurse stmt *)
+and method_call = {
+  mc_target : expr option;
+  mc_msg : msg_id;
+  mc_args : star_expr list;
+  mc_cb : codeblock option;
+}
+and codeblock =
+  | CB_Arg of expr
+  | CB_Block of block_formal_param list * stmt (* recurse stmt *)
 
-      and block_formal_param =
-        | Formal_block_id of var_kind * string
-        | Formal_star2 of string
-        | Formal_tuple of block_formal_param list
+and block_formal_param =
+  | Formal_block_id of var_kind * string
+  | Formal_star2 of string
+  | Formal_tuple of block_formal_param list
 
 (*****************************************************************************)
 (* Statement (and CFG) *)
@@ -175,11 +175,11 @@ and stmt = {
   pos : tok;
   sid : int;
   mutable lexical_locals : Utils_ruby.StrSet.t
-    [@printer fun fmt _ -> fprintf fmt "lexical_locals:??"];
+                           [@printer fun fmt _ -> fprintf fmt "lexical_locals:??"];
   mutable preds : stmt Set_.t
-    [@printer fun fmt _ -> fprintf fmt "preds:??"];
+                  [@printer fun fmt _ -> fprintf fmt "preds:??"];
   mutable succs : stmt Set_.t
-    [@printer fun fmt _ -> fprintf fmt "succs:??"];
+                  [@printer fun fmt _ -> fprintf fmt "succs:??"];
 }
 
 and stmt_node =
@@ -204,27 +204,27 @@ and stmt_node =
   | Begin of stmt
   | End of stmt
 
-  and exn_block = {
-    exn_body : stmt;
-    exn_rescue : rescue_block list;
-    exn_else : stmt option;
-    exn_ensure : stmt option;
-  }
+and exn_block = {
+  exn_body : stmt;
+  exn_rescue : rescue_block list;
+  exn_else : stmt option;
+  exn_ensure : stmt option;
+}
 
-     and rescue_block = {
-       rescue_guards : rescue_guard list;
-       rescue_body : stmt;
-     }
+and rescue_block = {
+  rescue_guards : rescue_guard list;
+  rescue_body : stmt;
+}
 
-     and rescue_guard =
-       | Rescue_Expr of tuple_expr
-       | Rescue_Bind of tuple_expr * identifier
+and rescue_guard =
+  | Rescue_Expr of tuple_expr
+  | Rescue_Bind of tuple_expr * identifier
 
-  and case_block = {
-    case_guard : expr;
-    case_whens: (tuple_expr * stmt) list;
-    case_else: stmt option;
-  }
+and case_block = {
+  case_guard : expr;
+  case_whens: (tuple_expr * stmt) list;
+  case_else: stmt option;
+}
 
 (*****************************************************************************)
 (* Definitions *)
@@ -238,33 +238,33 @@ and definition =
   | Alias of alias_kind
   | Undef of msg_id list
 
-  and class_kind =
-    | MetaClass of identifier
-    | NominalClass of identifier * identifier option
+and class_kind =
+  | MetaClass of identifier
+  | NominalClass of identifier * identifier option
 
-  and def_name =
-    | Instance_Method of msg_id
-    | Singleton_Method of identifier * msg_id
+and def_name =
+  | Instance_Method of msg_id
+  | Singleton_Method of identifier * msg_id
 
-    and method_formal_param =
-      | Formal_meth_id of string
-      | Formal_amp of string
-      | Formal_star of string
-      | Formal_default of string * tuple_expr
+and method_formal_param =
+  | Formal_meth_id of string
+  | Formal_amp of string
+  | Formal_star of string
+  | Formal_default of string * tuple_expr
 
 
-  and alias_kind =
-    | Alias_Method of msg_id * msg_id
-    | Alias_Global of builtin_or_global * builtin_or_global
+and alias_kind =
+  | Alias_Method of msg_id * msg_id
+  | Alias_Global of builtin_or_global * builtin_or_global
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
 
 type t = stmt
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Misc *)
@@ -274,7 +274,7 @@ type any_formal =
   | B of block_formal_param
   | M of method_formal_param
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 let b_to_any x = B x
 let m_to_any x = M x

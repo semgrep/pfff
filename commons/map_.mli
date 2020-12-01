@@ -16,17 +16,17 @@
 
 (** Association tables over ordered types.
 
-   This module implements applicative association tables, also known as
-   finite maps or dictionaries, given a total ordering function
-   over the keys.
-   All operations over maps are purely applicative (no side-effects).
-   The implementation uses balanced binary trees, and therefore searching
-   and insertion take time logarithmic in the size of the map.
+    This module implements applicative association tables, also known as
+    finite maps or dictionaries, given a total ordering function
+    over the keys.
+    All operations over maps are purely applicative (no side-effects).
+    The implementation uses balanced binary trees, and therefore searching
+    and insertion take time logarithmic in the size of the map.
 *)
 
 (* pad:
-module type OrderedType =
-  sig
+   module type OrderedType =
+   sig
     type t
       (** The type of the map keys. *)
     val compare : t -> t -> int
@@ -37,64 +37,64 @@ module type OrderedType =
           and [f e1 e2] is strictly positive if [e1] is greater than [e2].
           Example: a suitable ordering function is the generic structural
           comparison function {!Pervasives.compare}. *)
-  end
-(** Input signature of the functor {!Map.Make}. *)
+   end
+   (** Input signature of the functor {!Map.Make}. *)
 *)
 (*
 module type S =
   sig
 *)
-    (* type key *)
-    (** The type of the map keys. *)
+(* type key *)
+(** The type of the map keys. *)
 
-    (*type (+'a) t *)
-    type ('key, 'a) t
-    (** The type of maps from type [key] to type ['a]. *)
+(*type (+'a) t *)
+type ('key, 'a) t
+(** The type of maps from type [key] to type ['a]. *)
 
-    val empty: ('key, 'a) t
-    (** The empty map. *)
+val empty: ('key, 'a) t
+(** The empty map. *)
 
-    val is_empty: ('key, 'a) t -> bool
-    (** Test whether a map is empty or not. *)
+val is_empty: ('key, 'a) t -> bool
+(** Test whether a map is empty or not. *)
 
-    val add: 'key -> 'a -> ('key, 'a) t -> ('key, 'a) t
-    (** [add x y m] returns a map containing the same bindings as
-       [m], plus a binding of [x] to [y]. If [x] was already bound
-       in [m], its previous binding disappears. *)
+val add: 'key -> 'a -> ('key, 'a) t -> ('key, 'a) t
+(** [add x y m] returns a map containing the same bindings as
+    [m], plus a binding of [x] to [y]. If [x] was already bound
+    in [m], its previous binding disappears. *)
 
-    val find: 'key -> ('key, 'a) t -> 'a
-    (** [find x m] returns the current binding of [x] in [m],
-       or raises [Not_found] if no such binding exists. *)
+val find: 'key -> ('key, 'a) t -> 'a
+(** [find x m] returns the current binding of [x] in [m],
+    or raises [Not_found] if no such binding exists. *)
 
-    val remove: 'key -> ('key, 'a) t -> ('key, 'a) t
-    (** [remove x m] returns a map containing the same bindings as
-       [m], except for [x] which is unbound in the returned map. *)
+val remove: 'key -> ('key, 'a) t -> ('key, 'a) t
+(** [remove x m] returns a map containing the same bindings as
+    [m], except for [x] which is unbound in the returned map. *)
 
-    val mem: 'key -> ('key, 'a) t -> bool
-    (** [mem x m] returns [true] if [m] contains a binding for [x],
-       and [false] otherwise. *)
+val mem: 'key -> ('key, 'a) t -> bool
+(** [mem x m] returns [true] if [m] contains a binding for [x],
+    and [false] otherwise. *)
 
-    val iter: ('key -> 'a -> unit) -> ('key, 'a) t -> unit
-    (** [iter f m] applies [f] to all bindings in map [m].
-       [f] receives the key as first argument, and the associated value
-       as second argument.  The bindings are passed to [f] in increasing
-       order with respect to the ordering over the type of the keys. *)
+val iter: ('key -> 'a -> unit) -> ('key, 'a) t -> unit
+(** [iter f m] applies [f] to all bindings in map [m].
+    [f] receives the key as first argument, and the associated value
+    as second argument.  The bindings are passed to [f] in increasing
+    order with respect to the ordering over the type of the keys. *)
 
-    val map: ('a -> 'b) -> ('key, 'a) t -> ('key, 'b) t
-    (** [map f m] returns a map with same domain as [m], where the
-       associated value [a] of all bindings of [m] has been
-       replaced by the result of the application of [f] to [a].
-       The bindings are passed to [f] in increasing order
-       with respect to the ordering over the type of the keys. *)
+val map: ('a -> 'b) -> ('key, 'a) t -> ('key, 'b) t
+(** [map f m] returns a map with same domain as [m], where the
+    associated value [a] of all bindings of [m] has been
+    replaced by the result of the application of [f] to [a].
+    The bindings are passed to [f] in increasing order
+    with respect to the ordering over the type of the keys. *)
 
-    val mapi: ('key -> 'a -> 'b) -> ('key, 'a) t -> ('key, 'b) t
-    (** Same as {!Map.S.map}, but the function receives as arguments both the
-       key and the associated value for each binding of the map. *)
+val mapi: ('key -> 'a -> 'b) -> ('key, 'a) t -> ('key, 'b) t
+(** Same as {!Map.S.map}, but the function receives as arguments both the
+    key and the associated value for each binding of the map. *)
 
-    val fold: ('key -> 'a -> 'b -> 'b) -> ('key, 'a) t -> 'b -> 'b
-    (** [fold f m a] computes [(f kN dN ... (f k1 d1 a)...)],
-       where [k1 ... kN] are the keys of all bindings in [m]
-       (in increasing order), and [d1 ... dN] are the associated data. *)
+val fold: ('key -> 'a -> 'b -> 'b) -> ('key, 'a) t -> 'b -> 'b
+(** [fold f m a] computes [(f kN dN ... (f k1 d1 a)...)],
+    where [k1 ... kN] are the keys of all bindings in [m]
+    (in increasing order), and [d1 ... dN] are the associated data. *)
 
 (*
     val compare: ('a -> 'a -> int) -> ('key, 'a) t -> ('key, 'a) t -> int
@@ -119,5 +119,5 @@ module Make (Ord : OrderedType) : S with type key = Ord.t
 *)
 
 (* addons pad *)
-      val of_list: ('key * 'a) list -> ('key, 'a) t
-      val to_list: ('key, 'a) t -> ('key * 'a) list
+val of_list: ('key * 'a) list -> ('key, 'a) t
+val to_list: ('key, 'a) t -> ('key * 'a) list

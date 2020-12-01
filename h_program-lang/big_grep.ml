@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module Db = Database_code
@@ -47,7 +47,7 @@ type index = {
 (* using \n is convenient so can allow regexp queries like
  * employee.* without having the regexp engine to try to match
  * the whole string; it will stop at the first \n.
- *)
+*)
 let separation_marker_char = '\n'
 
 let empty_index () = {
@@ -75,13 +75,13 @@ let naive_top_n_search2 ~top_n ~query xs =
     then []
     else
       (match xs with
-      | [] -> []
-      | e::xs ->
-          if e.Db.e_name ==~ re
-          then
-            e::aux ~n:(n+1) xs
-          else
-            aux ~n xs
+       | [] -> []
+       | e::xs ->
+           if e.Db.e_name ==~ re
+           then
+             e::aux ~n:(n+1) xs
+           else
+             aux ~n xs
       )
   in
   aux ~n:0 xs
@@ -107,7 +107,7 @@ let build_index2 ?(case_sensitive=false) entities =
     (* Use fullname ? The caller, that is for instance
      * files_and_dirs_and_sorted_entities_for_completion
      * should have done the job of putting the fullename in e_name.
-     *)
+    *)
     let s = Common2.string_of_char separation_marker_char ^ e.Db.e_name in
     let s =
       if case_sensitive
@@ -121,7 +121,7 @@ let build_index2 ?(case_sensitive=false) entities =
   );
   (* just to make it easier to code certain algorithms such as
    * find_position_marker_after
-   *)
+  *)
   Buffer.add_string buf (Common2.string_of_char separation_marker_char);
 
   {
@@ -164,8 +164,8 @@ let top_n_search2 ~top_n ~query idx =
     | [_] -> Str.regexp (".*" ^ query)
     | [a;b] ->
         Str.regexp (spf
-                       ".*\\(%s.*%s\\)\\|\\(%s.*%s\\)"
-                       a b b a)
+                      ".*\\(%s.*%s\\)\\|\\(%s.*%s\\)"
+                      a b b a)
     | _ ->
         failwith "more-than-2-words query is not supported; give money to pad"
   in

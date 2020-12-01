@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open AST_generic
 module A = AST_generic
@@ -30,7 +30,7 @@ module A = AST_generic
  *  - CFG for C for coccinelle
  *  - CFG for PHP for checkModule at Facebook
  *  - CFG for AST generic for scheck at r2c
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -42,82 +42,82 @@ type node = {
    *  in each CFG nodes.
    * alt: We could also record such extra information in an external table
    *  that maps Ograph_extended.nodei, that is nodeid, to some information.
-   *)
+  *)
   n: node_kind;
 
   (* for error report *)
   i: Parse_info.t option;
 }
 
-  and node_kind =
+and node_kind =
 
-      (* special fake cfg nodes *)
-      | Enter
-      | Exit
+  (* special fake cfg nodes *)
+  | Enter
+  | Exit
 
-      (* alt: An alternative is to store such information in the edges, but
-       * experience shows it's easier to encode it via regular nodes
-       *)
-      | TrueNode
-      | FalseNode
+  (* alt: An alternative is to store such information in the edges, but
+   * experience shows it's easier to encode it via regular nodes
+  *)
+  | TrueNode
+  | FalseNode
 
-      | Join
+  | Join
 
-      | IfHeader of expr
-      | WhileHeader of expr
-      | DoHeader
-      | DoWhileTail of expr
-      | ForHeader
-      | ForeachHeader of pattern * expr
+  | IfHeader of expr
+  | WhileHeader of expr
+  | DoHeader
+  | DoWhileTail of expr
+  | ForHeader
+  | ForeachHeader of pattern * expr
 
-      | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator *  expr option
+  | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator *  expr option
 
-      | SwitchHeader of expr option
-      | SwitchEnd
-      | Case
-      | Default
+  | SwitchHeader of expr option
+  | SwitchEnd
+  | Case
+  | Default
 
-      | Return of expr option
-      | Break
-      | Continue
+  | Return of expr option
+  | Break
+  | Continue
 
-      | TryHeader
-      | CatchStart
-      | Catch
-      | TryEnd
-      | Throw of expr
+  | TryHeader
+  | CatchStart
+  | Catch
+  | TryEnd
+  | Throw of expr
 
-      (* statements without multiple outgoing or ingoing edges, such as
-       * expression statements.
-       *)
-      | SimpleNode of simple_node
+  (* statements without multiple outgoing or ingoing edges, such as
+   * expression statements.
+  *)
+  | SimpleNode of simple_node
 
-    (* not used for now, was used in coccinelle:
-      | BlockStart of tok (* { *)
-      | BlockEnd of tok (* } *)
-      | Else
-      | Elsif
-    *)
+(* not used for now, was used in coccinelle:
+   | BlockStart of tok (* { *)
+   | BlockEnd of tok (* } *)
+   | Else
+   | Elsif
+*)
 
-     (* mostly a copy-paste of a subset of Ast.stmt *)
-     and simple_node =
-         (* later: some expr includes Exit, Eval, Include, etc which
-          * also have an influence on the control flow ...
-          * We may want to uplift those constructors here and have
-          * a better expr type
-          *)
-         | ExprStmt of expr
-         | DefStmt of definition
-         | DirectiveStmt of directive
-         | Assert of tok * expr * expr option
-         | OtherStmt of other_stmt_operator * any list
-         (* not part of Ast.stmt but useful to have in CFG for
-          * dataflow analysis purpose *)
-         | Parameter of parameter
+(* mostly a copy-paste of a subset of Ast.stmt *)
+and simple_node =
+  (* later: some expr includes Exit, Eval, Include, etc which
+   * also have an influence on the control flow ...
+   * We may want to uplift those constructors here and have
+   * a better expr type
+  *)
+  | ExprStmt of expr
+  | DefStmt of definition
+  | DirectiveStmt of directive
+  | Assert of tok * expr * expr option
+  | OtherStmt of other_stmt_operator * any list
+  (* not part of Ast.stmt but useful to have in CFG for
+   * dataflow analysis purpose *)
+  | Parameter of parameter
 
 (* For now there is just one kind of edge.
  * later: we may have more, see the ShadowNode idea of Julia Lawall?
- *)
+*)
 type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable
@@ -130,7 +130,7 @@ type nodei = Ograph_extended.nodei
 
 (* This is useful in graphviz and in dataflow analysis result tables
  * to just get a quick idea of what a node is (without too much details).
- *)
+*)
 let short_string_of_node_kind nkind =
   match nkind with
   | Enter -> "<enter>"
@@ -165,12 +165,12 @@ let short_string_of_node_kind nkind =
 
   | SimpleNode x ->
       (match x with
-      | ExprStmt _ -> "<expt_stmt>;"
-      | DefStmt _ -> "<def>"
-      | DirectiveStmt _ -> "<directive>"
-      | Assert _ -> "<assert>"
-      | Parameter _ -> "<param>"
-      | OtherStmt _ -> "<other_stmt>"
+       | ExprStmt _ -> "<expt_stmt>;"
+       | DefStmt _ -> "<def>"
+       | DirectiveStmt _ -> "<directive>"
+       | Assert _ -> "<assert>"
+       | Parameter _ -> "<param>"
+       | OtherStmt _ -> "<other_stmt>"
       )
 
 let short_string_of_node node =

@@ -34,18 +34,18 @@ let test_parse_go xs =
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
-   Error_code.try_with_print_exn_and_reraise file(fun () ->
-    let (_xs, stat) =
-     Common.save_excursion Flag.error_recovery true (fun () ->
-     Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-       Parse_go.parse file
-    )) in
-    Common.push stat stat_list;
-    let s = spf "bad = %d" stat.PI.bad in
-    if stat.PI.bad = 0
-    then Hashtbl.add newscore file (Common2.Ok)
-    else Hashtbl.add newscore file (Common2.Pb s)
-   )
+    Error_code.try_with_print_exn_and_reraise file(fun () ->
+      let (_xs, stat) =
+        Common.save_excursion Flag.error_recovery true (fun () ->
+          Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+            Parse_go.parse file
+          )) in
+      Common.push stat stat_list;
+      let s = spf "bad = %d" stat.PI.bad in
+      if stat.PI.bad = 0
+      then Hashtbl.add newscore file (Common2.Ok)
+      else Hashtbl.add newscore file (Common2.Pb s)
+    )
   ));
 
   flush stdout; flush stderr;
@@ -65,7 +65,7 @@ let test_parse_go xs =
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
     Common2.regression_testing newscore
       (Filename.concat score_path
-       ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+         ("score_parsing__" ^str ^ ext ^ ".marshalled"))
   );
   ()
 

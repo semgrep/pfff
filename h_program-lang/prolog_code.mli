@@ -16,8 +16,8 @@ type fact =
 
   | Misc of string
 
-  and entity =
-   string list (* package/module/namespace/class qualifier*) * string (* name *)
+and entity =
+  string list (* package/module/namespace/class qualifier*) * string (* name *)
 
 val string_of_fact: fact -> string
 val entity_of_str: string -> entity

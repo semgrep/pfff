@@ -10,17 +10,17 @@ let test_dump_cil file =
   let _ast = Parse_c.parse_program file in
 
   let env = { Datalog_c.
-     (* only thing that actually matters *)
-     locals = ref [];
-     globals = Graph_code.create ();
-     globals_renames = (fun x -> x);
+              (* only thing that actually matters *)
+              locals = ref [];
+              globals = Graph_code.create ();
+              globals_renames = (fun x -> x);
 
-     (* not actually used by instrs_of_expr *)
-     scope = "";
-     c_file_readable = "";
-     long_format = false;
-     facts = ref [];
-  }
+              (* not actually used by instrs_of_expr *)
+              scope = "";
+              c_file_readable = "";
+              long_format = false;
+              facts = ref [];
+            }
   in
   ignore(env);
   raise Todo

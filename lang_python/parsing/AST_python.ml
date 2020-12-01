@@ -14,7 +14,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -56,7 +56,7 @@
  * todo:
  *  - could use records for all the XxxDef, but what matters now is
  *    AST_generic.ml, which uses records at least.
- *)
+*)
 
 (*****************************************************************************)
 (* Names *)
@@ -69,41 +69,41 @@
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
  * transformation field that makes possible spatch on the code.
- *)
+*)
 type tok = Parse_info.t
 (*e: type [[AST_python.tok]] *)
- [@@deriving show]
+[@@deriving show]
 (*s: type [[AST_python.wrap]] *)
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
 (*e: type [[AST_python.wrap]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 (*s: type [[AST_python.bracket]] *)
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
 (*e: type [[AST_python.bracket]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 (*s: type [[AST_python.name]] *)
 type name = string wrap
 (*e: type [[AST_python.name]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_python.dotted_name]] *)
 (* note that name can be also the special "*" in an import context. *)
 type dotted_name = name list
 (*e: type [[AST_python.dotted_name]] *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_python.module_name]] *)
 type module_name =
- dotted_name *
- (* https://realpython.com/absolute-vs-relative-python-imports/ *)
- (tok (* . or ... toks *) list) option (* levels, for relative imports *)
+  dotted_name *
+  (* https://realpython.com/absolute-vs-relative-python-imports/ *)
+  (tok (* . or ... toks *) list) option (* levels, for relative imports *)
 (*e: type [[AST_python.module_name]] *)
- [@@deriving show]
+[@@deriving show]
 
 (*s: type [[AST_python.resolved_name]] *)
 (* TODO: reuse AST_generic one? *)
@@ -119,8 +119,8 @@ type resolved_name =
 
   (* default case *)
   | NotResolved
-(*e: type [[AST_python.resolved_name]] *)
- [@@deriving show { with_path = false }] (* with tarzan *)
+  (*e: type [[AST_python.resolved_name]] *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expression *)
@@ -185,120 +185,120 @@ type expr =
   | Repr of expr bracket (* `` *)
   (* =~ ObjAccess *)
   | Attribute of expr (* value *) * tok (* . *) * name (* attr *) *
-       expr_context (* ctx *)
+                 expr_context (* ctx *)
 (*e: type [[AST_python.expr]] *)
 
 (*s: type [[AST_python.number]] *)
-  and number =
-    | Int of string wrap
-    | LongInt of string wrap
-    | Float of string wrap
-    | Imag of string wrap
-(*e: type [[AST_python.number]] *)
+and number =
+  | Int of string wrap
+  | LongInt of string wrap
+  | Float of string wrap
+  | Imag of string wrap
+  (*e: type [[AST_python.number]] *)
 
-  (* less: could reuse AST_generic.arithmetic_operator *)
+(* less: could reuse AST_generic.arithmetic_operator *)
 (*s: type [[AST_python.boolop]] *)
-  and boolop = And | Or
+and boolop = And | Or
 (*e: type [[AST_python.boolop]] *)
 
-  (* the % operator can also be used for strings! "foo %s" % name *)
+(* the % operator can also be used for strings! "foo %s" % name *)
 (*s: type [[AST_python.operator]] *)
-  and operator =
-    | Add | Sub | Mult | Div
-    | Mod | Pow | FloorDiv
-    | LShift | RShift
-    | BitOr | BitXor | BitAnd
-    | MatMult (* Matrix Multiplication *)
+and operator =
+  | Add | Sub | Mult | Div
+  | Mod | Pow | FloorDiv
+  | LShift | RShift
+  | BitOr | BitXor | BitAnd
+  | MatMult (* Matrix Multiplication *)
 (*e: type [[AST_python.operator]] *)
 
 (*s: type [[AST_python.unaryop]] *)
-  and unaryop = Invert | Not | UAdd | USub
+and unaryop = Invert | Not | UAdd | USub
 (*e: type [[AST_python.unaryop]] *)
 
 (*s: type [[AST_python.cmpop]] *)
-  and cmpop =
-    | Eq | NotEq
-    | Lt | LtE | Gt | GtE
-    | Is | IsNot
-    | In | NotIn
-(*e: type [[AST_python.cmpop]] *)
+and cmpop =
+  | Eq | NotEq
+  | Lt | LtE | Gt | GtE
+  | Is | IsNot
+  | In | NotIn
+  (*e: type [[AST_python.cmpop]] *)
 
- (* usually a Str or a simple expr.
-  * TODO: should also handle format specifier, they are skipped for now
-  * during parsing
-  *)
+(* usually a Str or a simple expr.
+ * TODO: should also handle format specifier, they are skipped for now
+ * during parsing
+*)
 (*s: type [[AST_python.interpolated]] *)
-  and interpolated = expr
+and interpolated = expr
 (*e: type [[AST_python.interpolated]] *)
 
 (*s: type [[AST_python.list_or_comprehension]] *)
-  and 'a list_or_comprehension =
-    | CompList of 'a list bracket
-    | CompForIf of 'a comprehension
-(*e: type [[AST_python.list_or_comprehension]] *)
+and 'a list_or_comprehension =
+  | CompList of 'a list bracket
+  | CompForIf of 'a comprehension
+  (*e: type [[AST_python.list_or_comprehension]] *)
 
 (*s: type [[AST_python.comprehension]] *)
-    and 'a comprehension = 'a * for_if list
+and 'a comprehension = 'a * for_if list
 (*e: type [[AST_python.comprehension]] *)
 (*s: type [[AST_python.for_if]] *)
-      and for_if =
-      | CompFor of expr (* introduce new vars *) * (* in *) expr
-      | CompIf of expr
-(*e: type [[AST_python.for_if]] *)
+and for_if =
+  | CompFor of expr (* introduce new vars *) * (* in *) expr
+  | CompIf of expr
+  (*e: type [[AST_python.for_if]] *)
 
 (*s: type [[AST_python.dictorset_elt]] *)
-  and dictorset_elt =
-    | KeyVal of expr * expr
-    | Key of expr
-    (* python3: *)
-    | PowInline of expr
-(*e: type [[AST_python.dictorset_elt]] *)
+and dictorset_elt =
+  | KeyVal of expr * expr
+  | Key of expr
+  (* python3: *)
+  | PowInline of expr
+  (*e: type [[AST_python.dictorset_elt]] *)
 
-  (* AugLoad and AugStore are not used *)
+(* AugLoad and AugStore are not used *)
 (*s: type [[AST_python.expr_context]] *)
-  and expr_context =
-    | Load | Store
-    | Del
-    | AugLoad | AugStore
-    | Param
-(*e: type [[AST_python.expr_context]] *)
+and expr_context =
+  | Load | Store
+  | Del
+  | AugLoad | AugStore
+  | Param
+  (*e: type [[AST_python.expr_context]] *)
 
 (*s: type [[AST_python.slice]] *)
-  and slice =
-    | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
-    | Index of expr (* value *)
+and slice =
+  | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
+  | Index of expr (* value *)
 (*e: type [[AST_python.slice]] *)
 
 (*s: type [[AST_python.parameters]] *)
-  and parameters = parameter list
+and parameters = parameter list
 (*e: type [[AST_python.parameters]] *)
 (*s: type [[AST_python.parameter]] *)
-   and parameter =
-      (* the first expr can only be a Name or a Tuple (pattern?),
-       * and the Name can have a type associated with it
-       *)
-     | ParamDefault of (name * type_ option) * expr (* default value *)
-     (* pattern can be either a name or a tuple pattern *)
-     | ParamPattern of param_pattern * type_ option
-     | ParamStar of tok (* '*' *)  * (name * type_ option)
-     | ParamPow  of tok (* '**' *) * (name * type_ option)
-     (* python3: single star delimiter to force keyword-only arguments after.
-      * reference: https://www.python.org/dev/peps/pep-3102/ *)
-     | ParamSingleStar of tok
-     (* python3: single slash delimiter to force positional-only arg prior. *)
-     | ParamSlash of tok
-     (* sgrep-ext: *)
-     | ParamEllipsis of tok
-(*e: type [[AST_python.parameter]] *)
+and parameter =
+  (* the first expr can only be a Name or a Tuple (pattern?),
+   * and the Name can have a type associated with it
+  *)
+  | ParamDefault of (name * type_ option) * expr (* default value *)
+  (* pattern can be either a name or a tuple pattern *)
+  | ParamPattern of param_pattern * type_ option
+  | ParamStar of tok (* '*' *)  * (name * type_ option)
+  | ParamPow  of tok (* '**' *) * (name * type_ option)
+  (* python3: single star delimiter to force keyword-only arguments after.
+   * reference: https://www.python.org/dev/peps/pep-3102/ *)
+  | ParamSingleStar of tok
+  (* python3: single slash delimiter to force positional-only arg prior. *)
+  | ParamSlash of tok
+  (* sgrep-ext: *)
+  | ParamEllipsis of tok
+  (*e: type [[AST_python.parameter]] *)
 
 (*s: type [[AST_python.argument]] *)
-  and argument =
-    | Arg of expr (* this can be Ellipsis for sgrep *)
-    | ArgKwd of name (* arg *) * expr (* value *)
-    | ArgStar of (* '*' *)  tok * expr
-    | ArgPow  of (* '**' *) tok * expr
-    | ArgComp of expr * for_if list
-(*e: type [[AST_python.argument]] *)
+and argument =
+  | Arg of expr (* this can be Ellipsis for sgrep *)
+  | ArgKwd of name (* arg *) * expr (* value *)
+  | ArgStar of (* '*' *)  tok * expr
+  | ArgPow  of (* '**' *) tok * expr
+  | ArgComp of expr * for_if list
+  (*e: type [[AST_python.argument]] *)
 
 (*****************************************************************************)
 (* Type *)
@@ -308,7 +308,7 @@ type expr =
  * and https://www.python.org/dev/peps/pep-3107/ (function annotations)
  * for https://www.python.org/dev/peps/pep-0526/ (variable annotations)
  * for its syntax.
- *)
+*)
 (*s: type [[AST_python.type_]] *)
 and type_ = expr
 (*e: type [[AST_python.type_]] *)
@@ -330,7 +330,7 @@ and pattern = expr
 and param_pattern =
   | PatternName of name
   | PatternTuple of param_pattern list
- [@@deriving show { with_path = false }]  (* with tarzan *)
+[@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -344,7 +344,7 @@ type stmt =
    * (see also Parser_python.set_expr_ctx).
    * This can introduce new vars.
    * TODO: why take an expr list? can reuse Tuple for tuple assignment
-   *)
+  *)
   | Assign of expr list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
@@ -354,10 +354,10 @@ type stmt =
   | While of tok * expr (* test *) * stmt list (* body *) *
              stmt list (* orelse *)
   | If of tok * expr (* test *) * stmt list (* body *) *
-             stmt list option (* orelse *)
+          stmt list option (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
   | With of tok * expr (* context_expr *) * expr option (* optional_vars *) *
-      stmt list (* body *)
+            stmt list (* body *)
 
   | Return of tok * expr option (* value *)
   | Break of tok | Continue of tok
@@ -366,7 +366,7 @@ type stmt =
   | Raise of tok * (expr * expr option (* from *)) option
   | RaisePython2 of tok * expr * expr option (* arguments *) * expr option (* location *)
   | TryExcept of tok * stmt list (* body *) * excepthandler list (* handlers *)
-           * stmt list (* orelse *)
+                 * stmt list (* orelse *)
   | TryFinally of tok * stmt list (* body *) * tok * stmt list (* finalbody *)
   | Assert of tok * expr (* test *) * expr option (* msg *)
 
@@ -388,29 +388,29 @@ type stmt =
 
   (* should be allowed just at the toplevel *)
   | FunctionDef of
-       tok (* 'def' *) *
-       name (* name *) *
-       parameters (* args *) *
-       type_ option * (* return type *)
-       stmt list (* body *) *
-       decorator list (* decorator_list *)
+    tok (* 'def' *) *
+    name (* name *) *
+    parameters (* args *) *
+    type_ option * (* return type *)
+    stmt list (* body *) *
+    decorator list (* decorator_list *)
 
   | ClassDef of
-        tok (* 'class' *) *
-        name (* name *) *
-        type_parent list (* bases *) *
-        stmt list (* body *) *
-        decorator list (* decorator_list *)
+    tok (* 'class' *) *
+    name (* name *) *
+    type_parent list (* bases *) *
+    stmt list (* body *) *
+    decorator list (* decorator_list *)
 (*e: type [[AST_python.stmt]] *)
 
 
 (*s: type [[AST_python.excepthandler]] *)
 and excepthandler =
-  ExceptHandler of
-    tok *
-    expr option (* type, possibly a list of types as in (Error,Fatal) *) *
-    name option (* name, introduce new var, todo: only if pattern is Some *) *
-    stmt list (* body *)
+    ExceptHandler of
+      tok *
+      expr option (* type, possibly a list of types as in (Error,Fatal) *) *
+      name option (* name, introduce new var, todo: only if pattern is Some *) *
+      stmt list (* body *)
 (*e: type [[AST_python.excepthandler]] *)
 
 (*****************************************************************************)
@@ -445,7 +445,7 @@ and decorator = tok (* @ *) * dotted_name * argument list bracket option
 (*s: type [[AST_python.alias]] *)
 and alias = name (* name *) * name option (* asname *)
 (*e: type [[AST_python.alias]] *)
-  [@@deriving show { with_path = false }]  (* with tarzan *)
+[@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -453,7 +453,7 @@ and alias = name (* name *) * name option (* asname *)
 (*s: type [[AST_python.program]] *)
 type program = stmt list
 (*e: type [[AST_python.program]] *)
-  [@@deriving show]   (* with tarzan *)
+[@@deriving show]   (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -466,8 +466,8 @@ type any =
   | Program of program
 
   | DictElem of dictorset_elt
-(*e: type [[AST_python.any]] *)
-  [@@deriving show { with_path = false }] (* with tarzan *)
+  (*e: type [[AST_python.any]] *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)

@@ -40,46 +40,46 @@ let invoke2 f x =
   match Unix.fork() with
   (* error, could not create process, well compute now then *)
   | -1 ->
-    let v = f x in
-    (fun () -> v)
+      let v = f x in
+      (fun () -> v)
   (* child *)
   | 0 ->
-     (* bugfix: subtle: the parent may die (for example because of a Timeout),
-      * which would generate a Sys_error "broken pipe" exn. This exn may
-      * not be captured by the inner try (maybe because
-      * the child didn't get a chance to run yet, or because it finished
-      * correctly but the exn got generated while inside the call to
-      * Marshal.to_channel). In that case, without the outer try, the exn
-      * would bubble up and the exit() below would never be executed which
-      * would cause the child to execute code after the caller of invoke.
+      (* bugfix: subtle: the parent may die (for example because of a Timeout),
+       * which would generate a Sys_error "broken pipe" exn. This exn may
+       * not be captured by the inner try (maybe because
+       * the child didn't get a chance to run yet, or because it finished
+       * correctly but the exn got generated while inside the call to
+       * Marshal.to_channel). In that case, without the outer try, the exn
+       * would bubble up and the exit() below would never be executed which
+       * would cause the child to execute code after the caller of invoke.
       *)
-     (try
-      Unix.close input;
-      let output = Unix.out_channel_of_descr output in
+      (try
+         Unix.close input;
+         let output = Unix.out_channel_of_descr output in
 
-      Marshal.to_channel output
-          (try `Res(f x)
-           with e ->
+         Marshal.to_channel output
+           (try `Res(f x)
+            with e ->
               if !backtrace_when_exn
               then begin
                 let backtrace = Printexc.get_backtrace () in
                 pr2 (spf "Exception in invoked func: %s" (Common.exn_to_s e));
                 pr2 backtrace;
               end;
-             `Exn e
-          ) [];
-       close_out output;
+              `Exn e
+           ) [];
+         close_out output;
 
-      (* if it happens, it's probably a Sys_error "Broken pipe" *)
-      with
-      | Sys_error _ ->
-        (* we always want to execute exit below, hence this catch all try
-         * which is the equivalence of Common.finalize ... (fun () exit 0)
-         *)
-        ()
+         (* if it happens, it's probably a Sys_error "Broken pipe" *)
+       with
+       | Sys_error _ ->
+           (* we always want to execute exit below, hence this catch all try
+            * which is the equivalence of Common.finalize ... (fun () exit 0)
+           *)
+           ()
        | exn -> pr2 (spf "really unexpected exn in invoke child: %s"
-                     (Common.exn_to_s exn))
-       );
+                       (Common.exn_to_s exn))
+      );
       exit 0
   (* parent *)
   | pid ->
@@ -90,8 +90,8 @@ let invoke2 f x =
           try
             Marshal.from_channel input
           with End_of_file ->
-          `Exn
-           (Failure "End_of_file in Parallel.invoke parent, probably segfault in child")
+            `Exn
+              (Failure "End_of_file in Parallel.invoke parent, probably segfault in child")
         in
         ignore (Unix.waitpid [] pid);
         close_in input;
@@ -101,18 +101,18 @@ let invoke2 f x =
             (* TODO: this actually does not work! The documentation in
              * marshal.mli is pretty clear:
 
-   Values of extensible variant types, for example exceptions (of
-   extensible type [exn]), returned by the unmarshaller should not be
-   pattern-matched over through [match ... with] or [try ... with],
-   because unmarshalling does not preserve the information required for
-   matching their constructors. Structural equalities with other
-   extensible variant values does not work either.  Most other uses such
-   as Printexc.to_string, will still work as expected.
+               Values of extensible variant types, for example exceptions (of
+               extensible type [exn]), returned by the unmarshaller should not be
+               pattern-matched over through [match ... with] or [try ... with],
+               because unmarshalling does not preserve the information required for
+               matching their constructors. Structural equalities with other
+               extensible variant values does not work either.  Most other uses such
+               as Printexc.to_string, will still work as expected.
 
               * which means you can't match or intercept the raised
               * exception. You can just print it or do ugly Obj.magic
               * level stuff with it.
-              *)
+            *)
             raise e
 
 let invoke a b =
@@ -173,11 +173,11 @@ let map_batch_jobs ~tasks xs =
   else
     (* todo? a double pack ? because the initial pack/chunks can
      * be computationaly "inbalanced".
-     *)
+    *)
     let xxs = Common2.chunks tasks xs in
     let jobs = xxs |> List.map (fun xs ->
       (fun () ->
-        xs |> List.map (fun job -> job ())
+         xs |> List.map (fun job -> job ())
       ))
     in
     parallel_map (fun job -> job ()) jobs |> List.flatten

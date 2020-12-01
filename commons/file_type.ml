@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -33,8 +33,8 @@ type file_type =
   | Archive of string (* tgz, rpm, etc *)
   | Other of string
 
- (* programming languages *)
- and pl_type =
+(* programming languages *)
+and pl_type =
   | ML of string  (* mli, ml, mly, mll *)
   | Haskell of string
   | Lisp of lisp_type
@@ -67,19 +67,19 @@ type file_type =
 
   | MiscPL of string
 
-   and lisp_type = CommonLisp | Elisp | Scheme | Clojure
+and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
-   and webpl_type =
-     | Php of string (* php or phpt or script *)
-     | Js | Coffee | TypeScript | TSX
-     | Css
-     | Html | Xml | Json
-     | Sql
+and webpl_type =
+  | Php of string (* php or phpt or script *)
+  | Js | Coffee | TypeScript | TSX
+  | Css
+  | Html | Xml | Json
+  | Sql
 
- and media_type =
-   | Sound of string
-   | Picture of string
-   | Video of string
+and media_type =
+  | Sound of string
+  | Picture of string
+  | Video of string
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -87,7 +87,7 @@ type file_type =
 
 (* this function is used by codemap and archi_parse and called for each
  * filenames, so it has to be fast!
- *)
+*)
 let file_type_of_file2 file =
   let (_d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
@@ -95,11 +95,11 @@ let file_type_of_file2 file =
   | "ml" | "mli"
   | "mly" | "mll"
   | "dyp" (* dypgen =~ GLR ocamlyacc *)
-      -> PL (ML e)
+    -> PL (ML e)
   | "mlb" (* mlburg *)
   | "mlp" (* used in some source *)
   | "eliom" (* ocsigen, obviously *)
-      -> PL (ML e)
+    -> PL (ML e)
 
   | "sml" -> PL (ML e)
   (* fsharp *)
@@ -121,7 +121,7 @@ let file_type_of_file2 file =
 
   (* todo detect false C file, look for "Mode: Objective-C++" string in file ?
    * can also be a c++, use Parser_cplusplus.is_problably_cplusplus_file
-   *)
+  *)
   | "c" -> PL (C e)
   | "h" -> PL (C e)
   (* todo? have a PL of xxx_kind * pl_kind ?  *)
@@ -246,7 +246,7 @@ let file_type_of_file2 file =
   | "out" | "output"
   | "hi"
   | "msi"
-      -> Obj e
+    -> Obj e
   (* pad: I use it to store marshalled data *)
   | "db" -> Obj e
   | "po"  | "pot"  | "gmo" -> Obj e

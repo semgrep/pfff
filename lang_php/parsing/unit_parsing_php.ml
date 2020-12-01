@@ -21,7 +21,7 @@ module Flag = Flag_parsing
  *  assert_bool "bad: have a NotParsedCorrectly"
  *  (List.for_all (function NotParsedCorrectly _ -> false | _ -> true) ast);
  *  ()
- *)
+*)
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -38,7 +38,7 @@ let unittest =
       let toks = Parse_php.tokens_of_string "echo 1+2;" in
       assert_bool "it should have a Echo token"
         (toks |> List.exists (function
-          Parser_php.T_ECHO _ -> true | _ -> false));
+             Parser_php.T_ECHO _ -> true | _ -> false));
     );
 
     "lexing and case sensitivity" >:: (fun () ->
@@ -46,7 +46,7 @@ let unittest =
           "function foo() { echo __function__; }" in
       assert_bool "it should have a __FUNCTION__ token"
         (toks |> List.exists (function
-          Parser_php.T_FUNC_C _ -> true | _ -> false));
+             Parser_php.T_FUNC_C _ -> true | _ -> false));
     );
 
     (*-----------------------------------------------------------------------*)
@@ -69,19 +69,19 @@ let unittest =
         let _ = Parse_php.program_of_string "echo 1+" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_info.Parsing_error _ ->
-         ()
-      (* old:
-       * The PHP parser does not return an exception when a PHP file contains
-       * an error, to allow some form of error recovery by not stopping
-       * at the first mistake. Instead it returns a NotParsedCorrectly
-       * AST toplevel element for parts of the code that were not parsed.
-       * Here we check that correctly formed code do not contain such
-       * NotParsedCorrectly element.
-       *
-       *  assert_bool "bad: should have a NotParsedCorrectly"
-       * (List.exists (function NotParsedCorrectly _ -> true | _ -> false) ast)
-       *)
+        Parse_info.Parsing_error _ ->
+          ()
+          (* old:
+           * The PHP parser does not return an exception when a PHP file contains
+           * an error, to allow some form of error recovery by not stopping
+           * at the first mistake. Instead it returns a NotParsedCorrectly
+           * AST toplevel element for parts of the code that were not parsed.
+           * Here we check that correctly formed code do not contain such
+           * NotParsedCorrectly element.
+           *
+           *  assert_bool "bad: should have a NotParsedCorrectly"
+           * (List.exists (function NotParsedCorrectly _ -> true | _ -> false) ast)
+          *)
     );
 
     "rejecting variadic param with default" >:: (fun () ->
@@ -90,8 +90,8 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo($x, ...$rest=123) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_info.Parsing_error _ ->
-         ()
+        Parse_info.Parsing_error _ ->
+          ()
     );
 
     "rejecting multiple variadic params" >:: (fun () ->
@@ -100,8 +100,8 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo($x, ...$rest, ...$another) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_info.Parsing_error _ ->
-         ()
+        Parse_info.Parsing_error _ ->
+          ()
     );
     "rejecting non-tail variadic param without variable name" >:: (fun () ->
       Flag.show_parsing_error := false;
@@ -109,8 +109,8 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo($x, ..., ...$rest) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_info.Parsing_error _ ->
-         ()
+        Parse_info.Parsing_error _ ->
+          ()
     );
 
     "rejecting ellipsis with optional constructs" >:: (fun () ->
@@ -119,8 +119,8 @@ let unittest =
         let _ = Parse_php.program_of_string "function foo(int ...) {}" in
         assert_failure "it should have thrown a Parse_error exception"
       with
-       Parse_info.Parsing_error _ ->
-         ()
+        Parse_info.Parsing_error _ ->
+          ()
     );
 
     "regression files" >:: (fun () ->
@@ -179,7 +179,7 @@ let unittest =
     (* Check that the visitor implementation correctly visit all AST
      * subelements, even when they are deep inside the AST tree (e.g.
      * sub-sub expressions inside parenthesis).
-     *)
+    *)
 (*
     "visitor" >:: (fun () ->
       let ast = Parse_php.program_of_string "echo 1+2+(3+4);" in
@@ -207,10 +207,10 @@ let unittest =
       let e = Parse_php.expr_of_string "$o->foo" in
       match e with
       | ObjGet (_v, _tok, Id name) ->
-        let info = Ast.info_of_name name in
-        assert_equal 4 (Parse_info.col_of_info info)
+          let info = Ast.info_of_name name in
+          assert_equal 4 (Parse_info.col_of_info info)
       | _ ->
-        assert_failure "not good AST"
+          assert_failure "not good AST"
     );
 
     (*-----------------------------------------------------------------------*)
@@ -254,9 +254,9 @@ let unittest =
 
     );
 *)
-  (* todo:
-   *  - ? sexp and json output
-   *  - ? correctness of Ast (too many cases)
-   *)
+    (* todo:
+     *  - ? sexp and json output
+     *  - ? correctness of Ast (too many cases)
+    *)
   ]
 (*e: unit_parsing_php.ml *)

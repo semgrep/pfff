@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -66,20 +66,20 @@ let commentized xs = xs |> Common.map_filter (function
       if !Flag_cpp.filter_classic_passed
       then
         (match cppkind with
-        | Token_cpp.CppOther ->
-            let s = PI.str_of_info ii in
-            (match s with
-            | s when s =~ "KERN_.*" -> None
-            | s when s =~ "__.*" -> None
-            | _ -> Some (ii.PI.token)
-            )
+         | Token_cpp.CppOther ->
+             let s = PI.str_of_info ii in
+             (match s with
+              | s when s =~ "KERN_.*" -> None
+              | s when s =~ "__.*" -> None
+              | _ -> Some (ii.PI.token)
+             )
 
-        | Token_cpp.CppDirective | Token_cpp.CppAttr | Token_cpp.CppMacro
-            -> None
-        | Token_cpp.CppMacroExpanded
-        | Token_cpp.CppPassingNormal
-        | Token_cpp.CppPassingCosWouldGetError
-          -> raise Todo
+         | Token_cpp.CppDirective | Token_cpp.CppAttr | Token_cpp.CppMacro
+           -> None
+         | Token_cpp.CppMacroExpanded
+         | Token_cpp.CppPassingNormal
+         | Token_cpp.CppPassingCosWouldGetError
+           -> raise Todo
         )
       else Some (ii.PI.token)
 
@@ -87,7 +87,7 @@ let commentized xs = xs |> Common.map_filter (function
       Some (ii.PI.token)
   | _ ->
       None
- )
+)
 
 let count_lines_commentized xs =
   let line = ref (-1) in
@@ -139,31 +139,31 @@ and multi_grouped = function
   | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
       Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
   | Token_views_cpp.Tok tok ->
-    (match PI.str_of_info (tokext tok) with
-    | "..." -> Ast_fuzzy.Dots (tokext tok)
-    | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (s, tokext tok)
-    | s -> Ast_fuzzy.Tok (s, tokext tok)
-    )
+      (match PI.str_of_info (tokext tok) with
+       | "..." -> Ast_fuzzy.Dots (tokext tok)
+       | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (s, tokext tok)
+       | s -> Ast_fuzzy.Tok (s, tokext tok)
+      )
   | _ -> failwith "could not find closing brace/parens/angle"
 and tokext tok_extended =
   TH.info_of_tok tok_extended.Token_views_cpp.t
 and multi_grouped_list_comma xs =
   let rec aux acc xs =
-  match xs with
-  | [] ->
-      if null acc
-      then []
-      else [Left (acc |> List.rev |> multi_grouped_list)]
-  | (x::xs) ->
-      (match x with
-      | Token_views_cpp.Tok tok when PI.str_of_info (tokext tok) = "," ->
-          let before = acc |> List.rev |> multi_grouped_list in
-          if null before
-          then aux [] xs
-          else (Left before)::(Right (tokext tok))::aux [] xs
-      | _ ->
-        aux (x::acc) xs
-      )
+    match xs with
+    | [] ->
+        if null acc
+        then []
+        else [Left (acc |> List.rev |> multi_grouped_list)]
+    | (x::xs) ->
+        (match x with
+         | Token_views_cpp.Tok tok when PI.str_of_info (tokext tok) = "," ->
+             let before = acc |> List.rev |> multi_grouped_list in
+             if null before
+             then aux [] xs
+             else (Left before)::(Right (tokext tok))::aux [] xs
+         | _ ->
+             aux (x::acc) xs
+        )
   in
   aux [] xs
 
@@ -173,24 +173,24 @@ and multi_grouped_list_comma xs =
  * on its own, e.g. for a not too bad sgrep/spatch.
  *
  * note: this is similar to what cpplint/fblint of andrei does?
- *)
+*)
 let parse_fuzzy file =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
-  let toks_orig = tokens file in
-  let toks =
-    toks_orig |> Common.exclude (fun x ->
-      Token_helpers_cpp.is_comment x || Token_helpers_cpp.is_eof x
-    )
-  in
-  let extended = toks |> List.map Token_views_cpp.mk_token_extended in
-  Parsing_hacks_cpp.find_template_inf_sup extended;
-  let groups = Token_views_cpp.mk_multi extended in
-  let trees = multi_grouped_list groups in
-  let hooks = { Lib_ast_fuzzy.
-     kind = TH.token_kind_of_tok;
-     tokf = TH.info_of_tok
-  } in
-  trees, Lib_ast_fuzzy.mk_tokens hooks toks_orig
+    let toks_orig = tokens file in
+    let toks =
+      toks_orig |> Common.exclude (fun x ->
+        Token_helpers_cpp.is_comment x || Token_helpers_cpp.is_eof x
+      )
+    in
+    let extended = toks |> List.map Token_views_cpp.mk_token_extended in
+    Parsing_hacks_cpp.find_template_inf_sup extended;
+    let groups = Token_views_cpp.mk_multi extended in
+    let trees = multi_grouped_list groups in
+    let hooks = { Lib_ast_fuzzy.
+                  kind = TH.token_kind_of_tok;
+                  tokf = TH.info_of_tok
+                } in
+    trees, Lib_ast_fuzzy.mk_tokens hooks toks_orig
   )
 
 (*****************************************************************************)
@@ -212,7 +212,7 @@ let extract_macros a =
 
 (* less: pass it as a parameter to parse_program instead ?
  * old: was a ref, but a hashtbl.t is actually already a kind of ref
- *)
+*)
 let (_defs : (string, Pp_token.define_body) Hashtbl.t)  =
   Hashtbl.create 101
 
@@ -222,7 +222,7 @@ let (_defs : (string, Pp_token.define_body) Hashtbl.t)  =
  * that the user could customize for his own project.
  * But this was adding complexity so now we just have _defs and people
  * can call add_defs to add local macro definitions.
- *)
+*)
 let add_defs file =
   if not (Sys.file_exists file)
   then failwith (spf "Could not find %s, have you set PFFF_HOME correctly?"
@@ -255,7 +255,7 @@ let init_defs file =
  * calling some lookahead heuristics to reclassify
  * tokens such as TIdent into TIdent_Typeded but this is
  * now done in a fix_tokens style in parsing_hacks_typedef.ml.
- *)
+*)
 let rec lexer_function tr = fun lexbuf ->
   match tr.PI.rest with
   | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
@@ -274,15 +274,15 @@ let rec lexer_function tr = fun lexbuf ->
 let passed_a_define tr =
   let xs = tr.PI.passed |> List.rev |> Common.exclude TH.is_comment in
   if List.length xs >= 2
-   then
-      (match Common2.head_middle_tail xs with
-      | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ -> true
-      | _ -> false
-      )
-   else begin
-     pr2 "WIERD: length list of error recovery tokens < 2 ";
-     false
-   end
+  then
+    (match Common2.head_middle_tail xs with
+     | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ -> true
+     | _ -> false
+    )
+  else begin
+    pr2 "WIERD: length list of error recovery tokens < 2 ";
+    false
+  end
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -325,12 +325,12 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
      * is not the first token of the next parsing phase. Same with checkpoint2.
      * It would be better to record when we have a } or ; in parser.mly,
      *  cos we know that they are the last symbols of external_declaration2.
-     *)
+    *)
     let checkpoint = PI.line_of_info info in
     (* bugfix: may not be equal to 'file' as after macro expansions we can
      * start to parse a new entity from the body of a macro, for instance
      * when parsing a define_machine() body, cf standard.h
-     *)
+    *)
     let checkpoint_file = PI.file_of_info info in
 
     tr.PI.passed <- [];
@@ -341,86 +341,86 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
       if not use_dypgen
       then Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
       else
-       let (save1, save2, save3) = tr.PI.rest, tr.PI.current, tr.PI.passed in
-       try
-         Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
-       with _e ->
-         tr.PI.rest <- save1; tr.PI.current <- save2; tr.PI.passed <- save3;
-         (try
-           Parser_cpp2.toplevel (lexer_function tr) lexbuf_fake
-           |> List.hd |> fst
-          with Failure "hd" ->
-            pr2 "no elements";
-            raise Parsing.Parse_error
+        let (save1, save2, save3) = tr.PI.rest, tr.PI.current, tr.PI.passed in
+        try
+          Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
+        with _e ->
+          tr.PI.rest <- save1; tr.PI.current <- save2; tr.PI.passed <- save3;
+          (try
+             Parser_cpp2.toplevel (lexer_function tr) lexbuf_fake
+             |> List.hd |> fst
+           with Failure "hd" ->
+             pr2 "no elements";
+             raise Parsing.Parse_error
           )
     in
 
     let elem =
       (try
-          (* -------------------------------------------------- *)
-          (* Call parser *)
-          (* -------------------------------------------------- *)
-          parse_toplevel tr lexbuf_fake
-        with e ->
-          if not !Flag.error_recovery
-          then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
+         (* -------------------------------------------------- *)
+         (* Call parser *)
+         (* -------------------------------------------------- *)
+         parse_toplevel tr lexbuf_fake
+       with e ->
+         if not !Flag.error_recovery
+         then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
 
-          if !Flag.show_parsing_error then
-            (match e with
+         if !Flag.show_parsing_error then
+           (match e with
             (* ocamlyacc *)
             | Parsing.Parse_error
             (* dypgen *)
             | Dyp.Syntax_error
             (* menhir *)
             | Parser_cpp.Error ->
-              pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
+                pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Semantic.Semantic (s, _i) ->
-              pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
+                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
             | e -> raise e
-            );
+           );
 
-          let line_error = TH.line_of_tok tr.PI.current in
+         let line_error = TH.line_of_tok tr.PI.current in
 
-          let pbline =
-            tr.PI.passed
-            |> List.filter (is_same_line_or_close line_error)
-            |> List.filter TH.is_ident_like
-          in
-          let error_info =
-            (pbline |> List.map (fun tok->PI.str_of_info (TH.info_of_tok tok))),
-            line_error
-          in
-          stat.Stat.problematic_lines <-
-            error_info::stat.Stat.problematic_lines;
+         let pbline =
+           tr.PI.passed
+           |> List.filter (is_same_line_or_close line_error)
+           |> List.filter TH.is_ident_like
+         in
+         let error_info =
+           (pbline |> List.map (fun tok->PI.str_of_info (TH.info_of_tok tok))),
+           line_error
+         in
+         stat.Stat.problematic_lines <-
+           error_info::stat.Stat.problematic_lines;
 
-          (*  error recovery, go to next synchro point *)
-          let (passed', rest') =
-            Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
-          tr.PI.rest <- rest';
-          tr.PI.passed <- passed';
+         (*  error recovery, go to next synchro point *)
+         let (passed', rest') =
+           Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
+         tr.PI.rest <- rest';
+         tr.PI.passed <- passed';
 
-          tr.PI.current <- List.hd passed';
+         tr.PI.current <- List.hd passed';
 
-          (* <> line_error *)
-          let info = TH.info_of_tok tr.PI.current in
-          let checkpoint2 = PI.line_of_info info in
-          let checkpoint2_file = PI.file_of_info info in
+         (* <> line_error *)
+         let info = TH.info_of_tok tr.PI.current in
+         let checkpoint2 = PI.line_of_info info in
+         let checkpoint2_file = PI.file_of_info info in
 
-          was_define := passed_a_define tr;
-          (if !was_define && !Flag_cpp.filter_define_error
-           then ()
-           else
-              (* bugfix: *)
-              (if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
-              then PI.print_bad line_error (checkpoint, checkpoint2) filelines
-              else pr2 "PB: bad: but on tokens not from original file"
-              )
-          );
+         was_define := passed_a_define tr;
+         (if !was_define && !Flag_cpp.filter_define_error
+          then ()
+          else
+            (* bugfix: *)
+            (if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
+             then PI.print_bad line_error (checkpoint, checkpoint2) filelines
+             else pr2 "PB: bad: but on tokens not from original file"
+            )
+         );
 
-          let info_of_bads =
-            Common2.map_eff_rev TH.info_of_tok tr.PI.passed in
+         let info_of_bads =
+           Common2.map_eff_rev TH.info_of_tok tr.PI.passed in
 
-          Some (Ast.NotParsedCorrectly info_of_bads)
+         Some (Ast.NotParsedCorrectly info_of_bads)
       )
     in
 
@@ -433,12 +433,12 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
       if (checkpoint_file = checkpoint2_file) && (checkpoint_file = file)
       then (checkpoint2 - checkpoint)
       else 0
-        (* TODO? so if error come in middle of something ? where the
-         * start token was from original file but synchro found in body
-         * of macro ? then can have wrong number of lines stat.
-         * Maybe simpler just to look at tr.passed and count
-         * the lines in the token from the correct file ?
-         *)
+      (* TODO? so if error come in middle of something ? where the
+       * start token was from original file but synchro found in body
+       * of macro ? then can have wrong number of lines stat.
+       * Maybe simpler just to look at tr.passed and count
+       * the lines in the token from the correct file ?
+      *)
     in
     let info = List.rev tr.PI.passed in
 
@@ -446,17 +446,17 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     stat.Stat.commentized <-
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
-    | Some (Ast.NotParsedCorrectly _xs) ->
-        if !was_define && !Flag_cpp.filter_define_error
-        then stat.Stat.commentized <- stat.Stat.commentized + diffline
-        else stat.Stat.bad     <- stat.Stat.bad     + diffline
+     | Some (Ast.NotParsedCorrectly _xs) ->
+         if !was_define && !Flag_cpp.filter_define_error
+         then stat.Stat.commentized <- stat.Stat.commentized + diffline
+         else stat.Stat.bad     <- stat.Stat.bad     + diffline
 
-    | _ -> stat.Stat.correct <- stat.Stat.correct + diffline
+     | _ -> stat.Stat.correct <- stat.Stat.correct + diffline
     );
 
     (match elem with
-    | None -> []
-    | Some xs -> (xs, info):: loop () (* recurse *)
+     | None -> []
+     | Some xs -> (xs, info):: loop () (* recurse *)
     )
   in
   let v = loop() in
@@ -465,13 +465,13 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
 let parse2 file =
   match File_type.file_type_of_file file with
   | FT.PL (FT.C _) ->
-    (try
-      parse_with_lang ~lang:Flag_cpp.C file
-    with _exn ->
-      parse_with_lang ~lang:Flag_cpp.Cplusplus file
-    )
+      (try
+         parse_with_lang ~lang:Flag_cpp.C file
+       with _exn ->
+         parse_with_lang ~lang:Flag_cpp.Cplusplus file
+      )
   | FT.PL (FT.Cplusplus _) ->
-    parse_with_lang ~lang:Flag_cpp.Cplusplus file
+      parse_with_lang ~lang:Flag_cpp.Cplusplus file
   | _ -> failwith (spf "not a C/C++ file: %s" file)
 
 
@@ -482,13 +482,13 @@ let parse file  =
     with Stack_overflow ->
       pr2 (spf "PB stack overflow in %s" file);
       [(Ast.NotParsedCorrectly [], ([]))], {Stat.
-        correct = 0;
-        bad = Common2.nblines_with_wc file;
-        filename = file;
-        have_timeout = true;
-        commentized = 0;
-        problematic_lines = [];
-      }
+                                             correct = 0;
+                                             bad = Common2.nblines_with_wc file;
+                                             filename = file;
+                                             have_timeout = true;
+                                             commentized = 0;
+                                             problematic_lines = [];
+                                           }
   )
 
 let parse_program file =
@@ -502,24 +502,24 @@ let parse_program file =
 (* for sgrep/spatch *)
 let any_of_string lang s =
   Common2.with_tmp_file ~str:s ~ext:"c" (fun file ->
-  let toks_orig = tokens file in
+    let toks_orig = tokens file in
 
-  let toks =
-    try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
-    with Token_views_cpp.UnclosedSymbol s ->
-      pr2 s;
-      if !Flag_cpp.debug_cplusplus
-      then raise (Token_views_cpp.UnclosedSymbol s)
-      else toks_orig
-  in
+    let toks =
+      try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
+      with Token_views_cpp.UnclosedSymbol s ->
+        pr2 s;
+        if !Flag_cpp.debug_cplusplus
+        then raise (Token_views_cpp.UnclosedSymbol s)
+        else toks_orig
+    in
 
-  let tr = Parse_info.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+    let tr = Parse_info.mk_tokens_state toks in
+    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
-  (* -------------------------------------------------- *)
-  (* Call parser *)
-  (* -------------------------------------------------- *)
-  Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+    (* -------------------------------------------------- *)
+    (* Call parser *)
+    (* -------------------------------------------------- *)
+    Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
   )
 
 (* experimental *)
@@ -547,9 +547,9 @@ let parse_with_dypgen file =
   (* -------------------------------------------------- *)
   (* TODO: not sure why but calling main is significanctly faster
    * than calling toplevel in a loop
-   *)
+  *)
   try
     Parser_cpp2.main (lexer_function tr) lexbuf_fake
     |> List.hd |> fst
   with Dyp.Syntax_error ->
-     raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current))
+    raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current))

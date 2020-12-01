@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = Graph
@@ -68,7 +68,7 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
                 "for", "modularity_class";
                 "value", modularity_class;
               ], [])
-              ])
+            ])
             ])
           )
       | Some tree ->
@@ -87,8 +87,8 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
                   "label", String.uppercase (str_of_node dir) ^ "/";
                 ], [
 
-                  Element ("nodes", [], children);
-                ])
+                           Element ("nodes", [], children);
+                         ])
           in
           [aux tree]
     in
@@ -104,13 +104,13 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
         if weight = 0.
         then None
         else Some (
-        Element ("edge", [
-          "source", i_to_s (G.ivertex n g);
-          "target", i_to_s (G.ivertex n2 g);
-          "weight", spf "%5.1f" weight;
-        ], [])
+          Element ("edge", [
+            "source", i_to_s (G.ivertex n g);
+            "target", i_to_s (G.ivertex n2 g);
+            "weight", spf "%5.1f" weight;
+          ], [])
         )
-    )) |> List.flatten
+      )) |> List.flatten
     in
     let xml =
       Element (
@@ -134,12 +134,12 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
                 "class", "node";
                 "mode", "static";
               ], [
-                Element("attribute", [
-                  "id", "modularity_class";
-                  "title", "Modularity Class";
-                  "type", "string";
-                ], [])
-              ]);
+                         Element("attribute", [
+                           "id", "modularity_class";
+                           "title", "Modularity Class";
+                           "type", "string";
+                         ], [])
+                       ]);
               Element ("nodes", [], nodes_xml);
               Element ("edges", [], edges_xml);
             ]

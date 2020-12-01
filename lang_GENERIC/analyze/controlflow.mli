@@ -4,43 +4,43 @@ type node = {
   n: node_kind;
   i: Parse_info.t option;
 }
-  and node_kind =
-    | Enter | Exit
-    | TrueNode | FalseNode
-    | Join
+and node_kind =
+  | Enter | Exit
+  | TrueNode | FalseNode
+  | Join
 
-    | IfHeader of expr
-    | WhileHeader of expr
-    | DoHeader | DoWhileTail of expr
-    | ForHeader (*TODO*) | ForeachHeader of pattern * expr
-    | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr option
+  | IfHeader of expr
+  | WhileHeader of expr
+  | DoHeader | DoWhileTail of expr
+  | ForHeader (*TODO*) | ForeachHeader of pattern * expr
+  | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr option
 
-    | SwitchHeader of expr option | SwitchEnd
-    | Case (* TODO of expr? *) | Default
+  | SwitchHeader of expr option | SwitchEnd
+  | Case (* TODO of expr? *) | Default
 
-    | Return of expr option
-    | Break  | Continue
+  | Return of expr option
+  | Break  | Continue
 
-    | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd
-    | Throw of expr
+  | TryHeader | CatchStart | Catch (* of pattern? *) | TryEnd
+  | Throw of expr
 
-    | SimpleNode of simple_node
+  | SimpleNode of simple_node
 
-    and simple_node =
-      | ExprStmt of expr
-      | DefStmt of definition
-      | DirectiveStmt of directive
-      | Assert of tok * expr * expr option
-      (* The 'any' below should not containt stmts, otherwise the CFG will
-       * be incomplete. Use other_stmt_with_stmt_operator instead.
-       *)
-      | OtherStmt of other_stmt_operator * any list
-      | Parameter of parameter
+and simple_node =
+  | ExprStmt of expr
+  | DefStmt of definition
+  | DirectiveStmt of directive
+  | Assert of tok * expr * expr option
+  (* The 'any' below should not containt stmts, otherwise the CFG will
+   * be incomplete. Use other_stmt_with_stmt_operator instead.
+  *)
+  | OtherStmt of other_stmt_operator * any list
+  | Parameter of parameter
 
 
 (* For now there is just one kind of edge. Later we may have more,
  * see the ShadowNode idea of Julia Lawall.
- *)
+*)
 type edge = Direct
 
 type flow = (node, edge) Ograph_extended.ograph_mutable

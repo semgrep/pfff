@@ -1,36 +1,36 @@
 
 (* the main types *)
 type node = string * Entity_code.entity_kind
-  type nodeinfo = {
-    (* the filename embedded inside token_location can be a readable path *)
-    pos: Parse_info.token_location;
-    props: Entity_code.property list;
-    typ: string option;
-  }
+type nodeinfo = {
+  (* the filename embedded inside token_location can be a readable path *)
+  pos: Parse_info.token_location;
+  props: Entity_code.property list;
+  typ: string option;
+}
 type edge = Has | Use
-  type edgeinfo = {
-    write: bool;
-    read: bool;
-  }
+type edgeinfo = {
+  write: bool;
+  read: bool;
+}
 (* !! the main type!! really an hypergraph actually *)
 type graph
 
 (* error and statistics *)
 type error =
- | NodeAlreadyPresent of node
+  | NodeAlreadyPresent of node
 exception Error of error
 val string_of_error: error -> string
 
 type statistics = {
   parse_errors: Common.filename list ref;
- (* could be Parse_info.token_location*)
+  (* could be Parse_info.token_location*)
   lookup_fail: (Parse_info.t * node) list ref;
   method_calls: (Parse_info.t * resolved) list ref;
   field_access: (Parse_info.t * resolved) list ref;
   unresolved_class_access: Parse_info.t list ref;
   unresolved_calls: Parse_info.t list ref;
 }
- and resolved = bool
+and resolved = bool
 val empty_statistics: unit -> statistics
 
 (* moving around directories to have less backward dependencies *)
@@ -50,9 +50,9 @@ val default_filename: string
 
 
 val root: node
- val pb: node
-  val not_found: node
-  val dupe: node
+val pb: node
+val not_found: node
+val dupe: node
 (* val stdlib: node *)
 
 (* similar API to graph.ml *)

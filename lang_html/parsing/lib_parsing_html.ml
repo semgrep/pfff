@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -42,12 +42,12 @@ let find_html_files_of_dir_or_files xs =
 
 let get_data_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.khtml_tree = (fun (k, _) x ->
-      match x with
-      | Data (s, _info) -> Common.push s aref
-      | _ -> k x
-    )
-  }) any
+                                     V.khtml_tree = (fun (k, _) x ->
+                                       match x with
+                                       | Data (s, _info) -> Common.push s aref
+                                       | _ -> k x
+                                     )
+                                   }) any
 
 let html_tree_to_html _tree =
   raise Todo

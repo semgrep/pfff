@@ -15,7 +15,7 @@ let tmpfile = "/tmp/test.jgr"
 
 
 let prelude () =
-"  newgraph
+  "  newgraph
       xaxis
       size 7in
       min 0
@@ -25,7 +25,7 @@ let prelude () =
 
 
 let xaxis_font () =
-"hash_labels hjr font Helvetica fontsize 10 rotate 45"
+  "hash_labels hjr font Helvetica fontsize 10 rotate 45"
 
 
 
@@ -90,7 +90,7 @@ let plot_matrix ~lines ~columns ~xlabel ~ylabel matrix =
       in
       let lbl = List.nth lines j in
       pr (spf "newcurve marktype x linetype solid %s label : %s"
-             color lbl);
+            color lbl);
       pr "pts";
 
       for i = 0 to limx do

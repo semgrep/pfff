@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: pad/r2c copyright *)
 
 module V = Visitor_AST
@@ -27,8 +27,8 @@ module M = Map_AST
 let extract_info_visitor recursor =
   let globals = ref [] in
   let hooks = { V.default_visitor with
-    V.kinfo = (fun (_k, _) i -> Common.push i globals);
-  } in
+                V.kinfo = (fun (_k, _) i -> Common.push i globals);
+              } in
   begin
     let vout = V.mk_visitor hooks in
     recursor vout;
@@ -47,10 +47,10 @@ let ii_of_any any =
 (*s: function [[Lib_AST.abstract_position_visitor]] *)
 let abstract_position_visitor recursor =
   let hooks = { M.default_visitor with
-    M.kinfo = (fun (_k, _) i ->
-      { i with Parse_info.token = Parse_info.Ab }
-    )
-  } in
+                M.kinfo = (fun (_k, _) i ->
+                  { i with Parse_info.token = Parse_info.Ab }
+                )
+              } in
   begin
     let vout = M.mk_visitor hooks in
     recursor vout;

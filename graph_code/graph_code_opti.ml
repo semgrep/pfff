@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -85,11 +85,11 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
     );
     g |> G.succ node G.Use |> List.iter (fun node2 ->
       (match node2 with
-      (* ugly: less important dependency *)
-(*   | _, E.Constant  | _, E.ClassConstant -> () *)
-      | _ ->
-        let j = hashtbl_find h.name_to_i node2 in
-        h.use.(i) <- j :: h.use.(i);
+       (* ugly: less important dependency *)
+       (*   | _, E.Constant  | _, E.ClassConstant -> () *)
+       | _ ->
+           let j = hashtbl_find h.name_to_i node2 in
+           h.use.(i) <- j :: h.use.(i);
       )
     );
   );
@@ -105,7 +105,7 @@ let convert a =
 let children n g =
   g.has_children.(hashtbl_find g.name_to_i n)
   |> List.map (fun i ->
-      g.i_to_name.(i)
+    g.i_to_name.(i)
   )
 
 (* todo? does it include n? *)
@@ -130,7 +130,7 @@ let has_node n g =
 
 (* put polluting entries under an intermediate "parent/..." entry
  * less: use extensible array so faster?
- *)
+*)
 let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
   let dotdotdot = fst parent ^ "/..." in
   let new_node = (dotdotdot, E.MultiDirs) in
@@ -151,7 +151,7 @@ let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
   new_g.has_children.(idx_parent) <-
     (* bugfix: don't forget to add new_idx *)
     new_idx ::
-     new_g.has_children.(idx_parent) |> Common.exclude (fun i ->
+    new_g.has_children.(idx_parent) |> Common.exclude (fun i ->
       Hashtbl.mem idx_packs i
-     );
+    );
   new_g, new_node

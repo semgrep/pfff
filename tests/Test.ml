@@ -19,7 +19,7 @@ module J = JSON
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this
  * program also depends on external files ?
- *)
+*)
 let verbose = ref false
 
 (* action mode *)
@@ -32,7 +32,7 @@ let action = ref ""
 let graph_of_string str =
   let tmpfile = Parse_php.tmp_php_file_from_string str in
   let (g, _stat) = Graph_code_php.build
-    ~verbose:false ~logfile:"/dev/null" "/tmp" [tmpfile] in
+      ~verbose:false ~logfile:"/dev/null" "/tmp" [tmpfile] in
   g
 
 (*****************************************************************************)
@@ -47,7 +47,7 @@ let test regexp =
 
   (* There is no reflection in OCaml so the unit test framework OUnit requires
    * us to explicitely build the test suites (which is not that bad).
-   *)
+  *)
   let tests =
     "all" >::: [
 
@@ -57,46 +57,46 @@ let test regexp =
 
       (* PHP related tests *)
       Unit_parsing_php.unittest;
-(* TODO dune .opam file
-      Unit_pretty_print_php.unittest;
-*)
+      (* TODO dune .opam file
+            Unit_pretty_print_php.unittest;
+      *)
 (*
       Unit_foundation_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
 *)
-(*      Unit_analyze_db_php.unittest; *)
-(*      Unit_static_analysis_simple_php.unittest;*)
-(* TODO need extra deps to swipl
-      Unit_prolog_php.unittest;
-*)
-(*      Unit_checker_php.unittest; should be in check_generic/ now *)
+      (*      Unit_analyze_db_php.unittest; *)
+      (*      Unit_static_analysis_simple_php.unittest;*)
+      (* TODO need extra deps to swipl
+            Unit_prolog_php.unittest;
+      *)
+      (*      Unit_checker_php.unittest; should be in check_generic/ now *)
       (* this one needs xdebug to work *)
-(* TODO dune .opam file
-      Unit_coverage_php.unittest;
-*)
+      (* TODO dune .opam file
+            Unit_coverage_php.unittest;
+      *)
 
       (* non PHP related tests *)
 
       Unit_parsing_ml.unittest;
-(* TODO path issue when run outside of pfff (e.g., in semgrep-core)
-      Unit_analyze_ml.unittest;
-*)
+      (* TODO path issue when run outside of pfff (e.g., in semgrep-core)
+            Unit_analyze_ml.unittest;
+      *)
       Unit_parsing_java.unittest;
       Unit_analyze_java.unittest;
-(* TODO dune
-#if FEATURE_BYTECODE
-      Unit_analyze_bytecode.unittest;
-#endif
-*)
+      (* TODO dune
+         #if FEATURE_BYTECODE
+            Unit_analyze_bytecode.unittest;
+         #endif
+      *)
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
       Unit_parsing_json.unittest;
       Unit_parsing_python.unittest;
       Unit_parsing_ruby.unittest;
-(* TODO dune .opan files
-      Unit_parsing_html.unittest;
-*)
+      (* TODO dune .opan files
+            Unit_parsing_html.unittest;
+      *)
       Unit_parsing_cpp.unittest;
       Unit_parsing_go.unittest;
 
@@ -112,9 +112,9 @@ let test regexp =
       let paths =
         OUnit.test_case_paths tests |> List.map OUnit.string_of_path in
       let keep = paths
-        |> List.filter (fun path ->
-          pr2 path;
-          path =~ (".*" ^ regexp))
+                 |> List.filter (fun path ->
+                   pr2 path;
+                   path =~ (".*" ^ regexp))
       in
       Common2.some (OUnit.test_filter keep tests)
   in
@@ -122,8 +122,8 @@ let test regexp =
   let results = OUnit.run_test_tt ~verbose:!verbose suite in
   let has_an_error =
     results |> List.exists (function
-    | OUnit.RSuccess _ | OUnit.RSkip _ | OUnit.RTodo _ -> false
-    | OUnit.RFailure _ | OUnit.RError _ -> true
+      | OUnit.RSuccess _ | OUnit.RSkip _ | OUnit.RTodo _ -> false
+      | OUnit.RFailure _ | OUnit.RError _ -> true
     )
   in
   raise (Common.UnixExit (if has_an_error then 1 else 0))
@@ -180,12 +180,12 @@ let pfff_extra_actions () = [
   "-adapt_layers_overlay", " <overlay> <dir_layers> <dir_ayers_overlay>",
   Common.mk_action_3_arg
     (fun overlay dir_layers_orig dir_layers_overlay ->
-    Overlay_code.adapt_layers
-      ~overlay:(Overlay_code.load_overlay overlay)
-      ~dir_layers_orig
-      ~dir_layers_overlay
-      ;
-  );
+       Overlay_code.adapt_layers
+         ~overlay:(Overlay_code.load_overlay overlay)
+         ~dir_layers_orig
+         ~dir_layers_overlay
+       ;
+    );
   "-adapt_database_overlay", "<overlay> <file> <output>",
   Common.mk_action_3_arg (fun overlay orig output ->
     let db =
@@ -218,15 +218,15 @@ let pfff_extra_actions () = [
     match fcandidates (Filename.basename file) with
     | [] -> failwith "No candidate found"
     | [x] ->
-      let x = "/" ^ x in
-      let cmd s = Sys.command s |> ignore in
-      cmd (spf "cp %s /tmp" x);
-      cmd (spf "rm -f %s" x);
-      cmd (spf "mv %s %s" file dirdst);
-      let file = Filename.concat dirdst (Filename.basename file) in
-      let file = Common.fullpath file in
-      cmd (spf "ln -s %s %s" file x);
-      pr2 (spf "ln -s %s %s" file x);
+        let x = "/" ^ x in
+        let cmd s = Sys.command s |> ignore in
+        cmd (spf "cp %s /tmp" x);
+        cmd (spf "rm -f %s" x);
+        cmd (spf "mv %s %s" file dirdst);
+        let file = Filename.concat dirdst (Filename.basename file) in
+        let file = Common.fullpath file in
+        cmd (spf "ln -s %s %s" file x);
+        pr2 (spf "ln -s %s %s" file x);
     | _ -> failwith "too many candidates"
   );
 
@@ -283,17 +283,17 @@ let pfff_extra_actions () = [
 
 let all_actions () =
   pfff_extra_actions() @
-(* TODO .opam dune file
- Test_analyze_php.actions()@
-*)
- Test_analyze_js.actions()@
- Test_analyze_ruby.actions()@
- Test_analyze_ml.actions()@
- Test_analyze_cpp.actions()@
- Test_analyze_c.actions()@
- Test_parsing_generic.actions()@
- Test_analyze_generic.actions()@
- Test_program_lang.actions()@
+  (* TODO .opam dune file
+     Test_analyze_php.actions()@
+  *)
+  Test_analyze_js.actions()@
+  Test_analyze_ruby.actions()@
+  Test_analyze_ml.actions()@
+  Test_analyze_cpp.actions()@
+  Test_analyze_c.actions()@
+  Test_parsing_generic.actions()@
+  Test_analyze_generic.actions()@
+  Test_program_lang.actions()@
 (*
  Builtins_php.actions()@
 *)
@@ -302,7 +302,7 @@ let all_actions () =
 let options () = [
   "-verbose", Arg.Set verbose,
   " ";
-  ] @
+] @
   Common.options_of_actions action (all_actions()) @
   Common2.cmdline_flags_devel () @
   Common2.cmdline_flags_other () @
@@ -330,7 +330,7 @@ let main () =
 
   let usage_msg =
     "Usage: " ^ Common2.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -340,28 +340,28 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | [x] ->
-        main_action x
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | [x] ->
+         main_action x
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] -> main_action "all"
-    | _ ->
-        Common.usage usage_msg (options());
-        failwith "too few or too many arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] -> main_action "all"
+     | _ ->
+         Common.usage usage_msg (options());
+         failwith "too few or too many arguments"
     )
   )
 

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -62,7 +62,7 @@ open Common
  * less:
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
- *)
+*)
 
 (*****************************************************************************)
 (* Names *)
@@ -74,35 +74,35 @@ open Common
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
  * transformation field that makes possible spatch on the code.
- *)
+*)
 type tok = Parse_info.t
- [@@deriving show]
+[@@deriving show]
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 type todo_category = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* real or fake when ASI (automatic semicolon insertion) *)
 type sc = AST_generic.sc
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
 type ident = string wrap
- [@@deriving show]
+[@@deriving show]
 
 (* old: there used to be 'resolved_name' and 'qualified_name' types, but
  * the name resolution is now done on the generic AST instead.
- *)
+*)
 
 type special =
   (* Special values *)
@@ -123,7 +123,7 @@ type special =
   | Seq
   (* a kind of cast operator:
    * See https://stackoverflow.com/questions/7452341/what-does-void-0-mean
-   *)
+  *)
   | Void
   | Typeof | Instanceof
   | In | Delete
@@ -138,22 +138,22 @@ type special =
   | ArithOp of AST_generic.operator
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
   | IncrDecr of (AST_generic.incr_decr * AST_generic.prefix_postfix)
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 type label = string wrap
- [@@deriving show ] (* with tarzan *)
+[@@deriving show ] (* with tarzan *)
 
 (* the filename is not "resolved".
  * alt: use a reference like for resolved_name set in graph_code_js.ml and
  * module_path_js.ml? *)
 type filename = string wrap
- [@@deriving show ] (* with tarzan *)
+[@@deriving show ] (* with tarzan *)
 
 (* Used for decorators and for TyName in AST_generic.type_.
  * Otherwise for regular JS dotted names are encoded with ObjAccess instead.
- *)
+*)
 type dotted_ident = ident list
- [@@deriving show ] (* with tarzan *)
+[@@deriving show ] (* with tarzan *)
 
 (* when doing export default Foo and import Bar, ... *)
 let default_entity = "!default!"
@@ -182,7 +182,7 @@ and expr =
    * 'expr' (for v_init, ForClassic, Return) but this bited us in the long term
    * in semgrep where we don't want metavariables to match code that does
    * not exist.
-   *)
+  *)
 
   (* should be a statement ... *)
   | Assign of pattern * tok * expr
@@ -194,7 +194,7 @@ and expr =
    * This can also contain "holes" when the array is used in lhs of an assign
    * called "elision" which currently are skipped
    * TODO: have an (expr, elision) Common.either list bracket here.
-   *)
+  *)
   | Arr of expr list bracket
   (* ident is None when assigned in module.exports  *)
   | Class of class_definition * ident option
@@ -224,27 +224,27 @@ and expr =
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
 
-  and arguments = argument list bracket
-   and argument = expr
+and arguments = argument list bracket
+and argument = expr
 
-    (* transpiled: to regular Calls when Ast_js_build.transpile_xml *)
-    and xml = {
-      xml_tag: ident; (* this can be "" for React "fragment", <>xxx</> *)
-      xml_attrs: xml_attribute list;
-      xml_body: xml_body list;
-    }
-     and xml_attribute =
-       | XmlAttr of ident * xml_attr_value
-       (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
-       | XmlAttrExpr of expr bracket
-       (* sgrep-ext: *)
-       | XmlEllipsis of tok
-       and xml_attr_value = expr
+(* transpiled: to regular Calls when Ast_js_build.transpile_xml *)
+and xml = {
+  xml_tag: ident; (* this can be "" for React "fragment", <>xxx</> *)
+  xml_attrs: xml_attribute list;
+  xml_body: xml_body list;
+}
+and xml_attribute =
+  | XmlAttr of ident * xml_attr_value
+  (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
+  | XmlAttrExpr of expr bracket
+  (* sgrep-ext: *)
+  | XmlEllipsis of tok
+and xml_attr_value = expr
 
-     and xml_body =
-      | XmlText of string wrap
-      | XmlExpr of expr
-      | XmlXml of xml
+and xml_body =
+  | XmlText of string wrap
+  | XmlExpr of expr
+  | XmlXml of xml
 
 (*****************************************************************************)
 (* Statement *)
@@ -277,34 +277,34 @@ and stmt =
    * and tree-sitter-javascript accepts directives there too, so we allow
    * them at the stmt level too.
    * update: now toplevel = stmt, so definitely stmt-level material.
-   *)
+  *)
   | M of module_directive
 
   (* again, mostly used for unsupported typescript features *)
   | StmtTodo of todo_category * any list
 
-  (* less: could use some Special instead? *)
-  and for_header =
-   | ForClassic of vars_or_expr * expr option * expr option
-   (* TODO: tok option (* await *) *)
-   | ForIn of var_or_expr * tok (* in *) * expr
-   (* transpiled: when Ast_js_build.transpile_forof *)
-   | ForOf of var_or_expr * tok (* of *) * expr
-   (* sgrep-ext: *)
-   | ForEllipsis of tok
+(* less: could use some Special instead? *)
+and for_header =
+  | ForClassic of vars_or_expr * expr option * expr option
+  (* TODO: tok option (* await *) *)
+  | ForIn of var_or_expr * tok (* in *) * expr
+  (* transpiled: when Ast_js_build.transpile_forof *)
+  | ForOf of var_or_expr * tok (* of *) * expr
+  (* sgrep-ext: *)
+  | ForEllipsis of tok
 
-    (* the expr is usually just an assign *)
-    and vars_or_expr = (var list, expr) Common.either
-    and var_or_expr = (var, expr) Common.either
+(* the expr is usually just an assign *)
+and vars_or_expr = (var list, expr) Common.either
+and var_or_expr = (var, expr) Common.either
 
-  and case =
-   | Case of tok * expr * stmt
-   | Default of tok * stmt
+and case =
+  | Case of tok * expr * stmt
+  | Default of tok * stmt
 
-  and catch =
-   | BoundCatch of tok * pattern * stmt
-   (* js-ext: es2019, catch {...} *)
-   | UnboundCatch of tok * stmt
+and catch =
+  | BoundCatch of tok * pattern * stmt
+  (* js-ext: es2019, catch {...} *)
+  | UnboundCatch of tok * stmt
 
 (*****************************************************************************)
 (* Pattern (destructuring binding) *)
@@ -315,7 +315,7 @@ and stmt =
  * transpiled: to regular assignments when Ast_js_build.transpile_pattern.
  * sgrep: this is useful for sgrep to keep the ability to match over
  * JS destructuring patterns.
- *)
+*)
 and pattern = expr
 
 (*****************************************************************************)
@@ -334,19 +334,19 @@ and attribute =
   (* a.k.a decorators *)
   | NamedAttr of tok (* @ *) * dotted_ident * arguments option
 
- and keyword_attribute =
-   (* field properties *)
-    | Static
-    (* todo? not in tree-sitter-js *)
-    | Public | Private | Protected
-    (* typescript-ext: for fields *)
-    | Readonly | Optional (* '?' *) | NotNull (* '!' *)
-    | Abstract (* also valid for class *)
+and keyword_attribute =
+  (* field properties *)
+  | Static
+  (* todo? not in tree-sitter-js *)
+  | Public | Private | Protected
+  (* typescript-ext: for fields *)
+  | Readonly | Optional (* '?' *) | NotNull (* '!' *)
+  | Abstract (* also valid for class *)
 
-   (* method properties *)
-    | Generator (* '*' *) | Async
-    (* only inside classes *)
-    | Get | Set
+  (* method properties *)
+  | Generator (* '*' *) | Async
+  (* only inside classes *)
+  | Get | Set
 
 (*****************************************************************************)
 (* Definitions *)
@@ -354,18 +354,18 @@ and attribute =
 
 (* similar to what we do in AST_generic *)
 and definition = entity * definition_kind
-  and entity = {
+and entity = {
   (* ugly: can be AST_generic.special_multivardef_pattern when
    * Ast_js_build.transpile_pattern is false with a vinit an Assign itself.
    * actually in a ForIn/ForOf the init will be just the pattern, not even
    * an Assign.
-   *)
-    name: ident;
-   (* TODO: put type parameters *)
-    attrs: attribute list;
-  }
+  *)
+  name: ident;
+  (* TODO: put type parameters *)
+  attrs: attribute list;
+}
 
-  and definition_kind =
+and definition_kind =
   | FuncDef of function_definition
   | VarDef of variable_definition
   | ClassDef of class_definition
@@ -379,7 +379,7 @@ and variable_definition = {
   (* typescript-ext: *)
   v_type: type_ option;
 }
-  and var_kind = Var | Let | Const
+and var_kind = Var | Let | Const
 
 and var = entity * variable_definition
 
@@ -392,27 +392,27 @@ and function_definition = {
   f_rettype: type_ option;
   f_body: stmt;
 }
-  and parameter =
-   | ParamClassic of parameter_classic
-   (* transpiled: when Ast_js_build.transpile_pattern
-    * TODO: can also have types and default, so factorize with
-    * parameter_classic?
-    *)
-   | ParamPattern of pattern
-   (* sgrep-ext: *)
-   | ParamEllipsis of tok
-  and parameter_classic = {
-    p_name: ident;
-    p_default: expr option;
-    (* typescript-ext: *)
-    p_type: type_ option;
-    p_dots: tok option;
-    p_attrs: attribute list;
-  }
+and parameter =
+  | ParamClassic of parameter_classic
+  (* transpiled: when Ast_js_build.transpile_pattern
+   * TODO: can also have types and default, so factorize with
+   * parameter_classic?
+  *)
+  | ParamPattern of pattern
+  (* sgrep-ext: *)
+  | ParamEllipsis of tok
+and parameter_classic = {
+  p_name: ident;
+  p_default: expr option;
+  (* typescript-ext: *)
+  p_type: type_ option;
+  p_dots: tok option;
+  p_attrs: attribute list;
+}
 
 (* expr is usually simply an Id
  * typescript-ext: can have complex type
- *)
+*)
 and parent = (expr, type_) Common.either
 
 and class_definition = {
@@ -427,34 +427,34 @@ and class_definition = {
   c_body: property list bracket;
 }
 
-  and obj_ = property list bracket
+and obj_ = property list bracket
 
-  and property =
-    (* field_classic.fld_body is a (Some Fun) for methods.
-     * None is possible only for class fields. For objects there is
-     * always a value and it's using FieldColon instead of Field.
-     *)
-    | Field of field_classic
-    | FieldColon of field_classic
-    (* less: can unsugar? *)
-    | FieldSpread of tok * expr
-    (* This is present only when in pattern context.
-     * ugly: we should have a clean separate pattern type instead of abusing
-     * expr, which forces us to add this construct.
-     *)
-    | FieldPatDefault of pattern * tok * expr
+and property =
+  (* field_classic.fld_body is a (Some Fun) for methods.
+   * None is possible only for class fields. For objects there is
+   * always a value and it's using FieldColon instead of Field.
+  *)
+  | Field of field_classic
+  | FieldColon of field_classic
+  (* less: can unsugar? *)
+  | FieldSpread of tok * expr
+  (* This is present only when in pattern context.
+   * ugly: we should have a clean separate pattern type instead of abusing
+   * expr, which forces us to add this construct.
+  *)
+  | FieldPatDefault of pattern * tok * expr
 
-    | FieldTodo of todo_category * stmt
+  | FieldTodo of todo_category * stmt
 
-    (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
-    | FieldEllipsis of tok
+  (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
+  | FieldEllipsis of tok
 
-  and field_classic = {
-    fld_name: property_name;
-    fld_attrs: attribute list;
-    fld_type: type_ option;
-    fld_body: expr option;
-  }
+and field_classic = {
+  fld_name: property_name;
+  fld_attrs: attribute list;
+  fld_type: type_ option;
+  fld_body: expr option;
+}
 
 (*****************************************************************************)
 (* Directives *)
@@ -466,14 +466,14 @@ and class_definition = {
  * can be inside ifs.
  * update: for tree-sitter we allow them at the stmt level, hence the
  * recursive 'and' below.
- *)
+*)
 and module_directive =
   (* 'ident' can be the special Ast_js.default_entity.
    * 'filename' is not "resolved"
    * (you may need for example to add node_modules/xxx/index.js
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
-   *)
+  *)
   | Import of tok * ident * ident option (* 'name1 as name2' *) * filename
   | Export of tok * ident
   (* export * from 'foo' *)
@@ -484,7 +484,7 @@ and module_directive =
 
   (* those should not exist (except for sgrep where they are useful),
    * unless file is a CSS file.
-   *)
+  *)
   | ImportFile of tok * filename
 
 (*  [@@deriving show { with_path = false} ] *)
@@ -496,25 +496,25 @@ and module_directive =
  * but tree-sitter allows module directives at stmt level, and anyway
  * we don't enforce those constraints on the generic AST so simpler to
  * move those at the stmt level.
- *)
+*)
 (* less: can remove and below when StmtTodo disappear *)
 and toplevel = stmt
- (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
+(* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
 
 and program = toplevel list
- (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
+(* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
 
 and partial =
- (* the stmt will be empty in f_body and c_body *)
- | PartialDef of definition
+  (* the stmt will be empty in f_body and c_body *)
+  | PartialDef of definition
 
 (* this is now mutually recursive with the previous types because of StmtTodo*)
 and any =
@@ -528,7 +528,7 @@ and any =
   | Partial of partial
   | Tk of tok
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -565,7 +565,7 @@ let idexp_or_special id =
 (* note that this should be avoided as much as possible for sgrep, because
  * what was before a simple sequence of stmts in the same block can suddently
  * be in different blocks.
- *)
+*)
 and stmt1 xs =
   match xs with
   | [] -> Block (AST_generic.fake_bracket [])
@@ -579,7 +579,7 @@ let mk_default_entity_def tok exp =
   let n = default_entity, tok in
   (* TODO: look at exp and transform in FuncDef/ClassDef? *)
   let def = basic_entity n,
-             VarDef { v_kind = Const, tok; v_init = Some exp; v_type = None}
+            VarDef { v_kind = Const, tok; v_init = Some exp; v_type = None}
   in
   def, n
 
@@ -594,15 +594,15 @@ let var_pattern_to_var v_kind pat tok init_opt =
   | Id id, None ->
       basic_entity id, {v_kind; v_init = None; v_type = None}
   | _ ->
-  let s = AST_generic.special_multivardef_pattern in
-  let id = s, tok in
-  let init =
-    match init_opt with
-    | Some init -> Assign (pat, tok, init)
-    | None -> pat
-  in
-  (* less: use x.vpat_type *)
-  (basic_entity id, {v_kind; v_init = Some init; v_type = None; })
+      let s = AST_generic.special_multivardef_pattern in
+      let id = s, tok in
+      let init =
+        match init_opt with
+        | Some init -> Assign (pat, tok, init)
+        | None -> pat
+      in
+      (* less: use x.vpat_type *)
+      (basic_entity id, {v_kind; v_init = Some init; v_type = None; })
 
 let build_var kwd (id_or_pat, ty_opt, initopt) =
   match id_or_pat with

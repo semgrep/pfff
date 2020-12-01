@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -40,7 +40,7 @@ open Common
 
 (* coupling: if add category, dont forget to extend the source_archi_list
  * below
- *)
+*)
 type source_archi =
   | Main
   | Init
@@ -50,7 +50,7 @@ type source_archi =
    * unit tests, but have some code to logs his action, then it's quite
    * similar. Such code should be more robust and it's good to see it
    * visually.
-   *)
+  *)
   | Test
   | Logging
 
@@ -74,7 +74,7 @@ type source_archi =
    * Memory (e.g. malloc, buffer), Fonts (font, charset)
    * IO (e.g. keyboard, mouse)
    * Strings (e.g. regex
-   *)
+  *)
 
   | Architecture (* e.g. x86 *)
   | OS (* e.g. win32, macos, unix *)
@@ -89,7 +89,7 @@ type source_archi =
 
   (* a project often contains itself some infrastructure to run tests or
    * benchmarks.
-   *)
+  *)
   | Unittester
   | Profiler
 
@@ -99,7 +99,7 @@ type source_archi =
   | Script
 
   | Regular
- (* with tarzan *)
+  (* with tarzan *)
 
 
 let source_archi_list = [
@@ -185,7 +185,7 @@ let find_duplicate_dirname dir =
       if Hashtbl.mem h dir
       then begin
         pr2 (spf "duplicate dir for %s already there: %s"
-                dir (Hashtbl.find h dir));
+               dir (Hashtbl.find h dir));
         dups#update dir (fun old -> old + 1);
       end else begin
         Hashtbl.add h dir path;

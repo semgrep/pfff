@@ -17,7 +17,7 @@ type t =
   | Csharp
   | PHP
   | Kotlin
-(*e: type [[Lang.t]] *)
+  (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)
 val lang_of_string_map: (string, t) Hashtbl.t

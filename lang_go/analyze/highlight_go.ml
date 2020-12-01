@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Ast_go
 open Highlight_code
@@ -30,7 +30,7 @@ module G = AST_generic
  *  - parameters semantic in Go is special (foo(a,b,c,d int)) or foo(int,int)
  *  - need List.rev for stmts in many more places, not just compound_stmt
  *  -
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers when have global-analysis information *)
@@ -38,7 +38,7 @@ module G = AST_generic
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let def2 = Def2 NoUse
 let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -56,16 +56,16 @@ let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
  *    len,
  *  - nil
  *  - _ (blank identifier)
- *)
+*)
 let builtin_functions = Common.hashset_of_list [
-    "iota";
-    "new"; "make";
+  "iota";
+  "new"; "make";
 
-    "print"; "println";
-    "complex"; "imag"; "real";
-    "append"; "cap";
-    "close"; "delete";"copy";
-    "len";
+  "print"; "println";
+  "complex"; "imag"; "real";
+  "append"; "cap";
+  "close"; "delete";"copy";
+  "len";
 ]
 
 let unbracket (_, x, _) = x
@@ -78,7 +78,7 @@ let unbracket (_, x, _) = x
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The AST is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 
 let visit_program ~tag_hook _prefs (program, toks) =
   let already_tagged = Hashtbl.create 101 in
@@ -92,9 +92,9 @@ let visit_program ~tag_hook _prefs (program, toks) =
      * and then not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
-     *)
-   if not (Hashtbl.mem already_tagged ii)
-   then tag ii categ
+    *)
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
   in
   let tag_ident (_s, ii) categ = tag_if_not_tagged ii categ in
   let tag_qid xs categ =
@@ -104,7 +104,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | [x;y] ->
         tag_ident x (Entity (E.Module, use2));
         tag_ident y categ
-   in
+  in
 
   Resolve_go.resolve program;
 
@@ -113,147 +113,147 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* -------------------------------------------------------------------- *)
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
-   *)
+  *)
   let in_toplevel = ref true in
 
   let visitor = V.mk_visitor { V.default_visitor with
-    (* use 'k x' as much as possible below. No need to
-     * do v (Stmt st1); v (Expr e); ... Go deep to tag
-     * special stuff (e.g., a local var in an exception handler) but then
-     * just recurse from the top with 'k x', tag_if_not_tagged will
-     * do its job.
-     *)
+                               (* use 'k x' as much as possible below. No need to
+                                * do v (Stmt st1); v (Expr e); ... Go deep to tag
+                                * special stuff (e.g., a local var in an exception handler) but then
+                                * just recurse from the top with 'k x', tag_if_not_tagged will
+                                * do its job.
+                               *)
 
-    (* defs *)
-    V.kprogram = (fun (k, _) x ->
-      let (package, imports) = package_and_imports_of_program x in
+                               (* defs *)
+                               V.kprogram = (fun (k, _) x ->
+                                 let (package, imports) = package_and_imports_of_program x in
 
-      tag_ident (snd package) (Entity (E.Module, def2));
-      imports |> List.iter (fun import ->
-        tag_ident import.i_path (Entity (E.Module, use2));
-        match import.i_kind with
-        | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
-        | ImportOrig | ImportDot _ -> ()
-      );
-      k x
-    );
-    V.ktop_decl = (fun (k, _) x ->
-      (match x with
-      | DFunc   (_, id,   (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
-      | DMethod (_, id,_o,(_t, _st)) -> tag_ident id (Entity (E.Method, def2))
-      | DTop _ | STop _ -> ()
-      | Package _ | Import _ -> ()
-      );
-     Common.save_excursion in_toplevel false (fun () ->
-       k x
-     );
-    );
-    V.kdecl = (fun (k, _) x ->
-      (match x with
-      | DTypeDef (id, _) | DTypeAlias (id, _, _) ->
-         tag_ident id (Entity (E.Type, def2))
-      | DConst (id, _, _) -> tag_ident id (Entity (E.Constant, def2))
-      | DVar (id, _, _) ->
-          if !in_toplevel
-          then tag_ident id (Entity (E.Global, def2))
-          else tag_ident id (Local Def)
-      );
-      k x
-    );
-    V.kparameter = (fun (k, _) x ->
-      x.pname |> Common.do_option (fun id ->
-        tag_ident id (Parameter Def)
-      );
-      k x
-    );
-    V.kstmt = (fun (k, _) x ->
-      (match x with
-      | SimpleStmt (DShortVars (xs, _, _)) ->
-         xs |> List.iter (function
-           | Id (id, _) ->
-              if !in_toplevel
-              then tag_ident id (Entity (E.Global, def2))
-              else tag_ident id (Local Def)
-           | _ -> ()
-         )
-       (* general case *)
-       | _ -> ()
-      );
-      k x
-    );
+                                 tag_ident (snd package) (Entity (E.Module, def2));
+                                 imports |> List.iter (fun import ->
+                                   tag_ident import.i_path (Entity (E.Module, use2));
+                                   match import.i_kind with
+                                   | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
+                                   | ImportOrig | ImportDot _ -> ()
+                                 );
+                                 k x
+                               );
+                               V.ktop_decl = (fun (k, _) x ->
+                                 (match x with
+                                  | DFunc   (_, id,   (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
+                                  | DMethod (_, id,_o,(_t, _st)) -> tag_ident id (Entity (E.Method, def2))
+                                  | DTop _ | STop _ -> ()
+                                  | Package _ | Import _ -> ()
+                                 );
+                                 Common.save_excursion in_toplevel false (fun () ->
+                                   k x
+                                 );
+                               );
+                               V.kdecl = (fun (k, _) x ->
+                                 (match x with
+                                  | DTypeDef (id, _) | DTypeAlias (id, _, _) ->
+                                      tag_ident id (Entity (E.Type, def2))
+                                  | DConst (id, _, _) -> tag_ident id (Entity (E.Constant, def2))
+                                  | DVar (id, _, _) ->
+                                      if !in_toplevel
+                                      then tag_ident id (Entity (E.Global, def2))
+                                      else tag_ident id (Local Def)
+                                 );
+                                 k x
+                               );
+                               V.kparameter = (fun (k, _) x ->
+                                 x.pname |> Common.do_option (fun id ->
+                                   tag_ident id (Parameter Def)
+                                 );
+                                 k x
+                               );
+                               V.kstmt = (fun (k, _) x ->
+                                 (match x with
+                                  | SimpleStmt (DShortVars (xs, _, _)) ->
+                                      xs |> List.iter (function
+                                        | Id (id, _) ->
+                                            if !in_toplevel
+                                            then tag_ident id (Entity (E.Global, def2))
+                                            else tag_ident id (Local Def)
+                                        | _ -> ()
+                                      )
+                                  (* general case *)
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
 
 
-    (* uses *)
+                               (* uses *)
 
-    V.ktype = (fun (k, _) x ->
-      (match x with
-      | TName ([(
-        "int" | "uint32" | "float" | "double"
-        ), ii]) -> tag ii TypeInt
-      | TName qid -> tag_qid qid (Entity (E.Type, use2))
+                               V.ktype = (fun (k, _) x ->
+                                 (match x with
+                                  | TName ([(
+                                    "int" | "uint32" | "float" | "double"
+                                  ), ii]) -> tag ii TypeInt
+                                  | TName qid -> tag_qid qid (Entity (E.Type, use2))
 
-      | TStruct (_, flds) ->
-        flds |> unbracket |> List.iter (fun (fld, tag_opt) ->
-          tag_opt |> Common.do_option (fun tag -> tag_ident tag Attribute);
-          (match fld with
-          | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
-          | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
-          | FieldEllipsis _ -> ()
-          );
-        );
-      | TInterface (_, flds) ->
-        flds |> unbracket |> List.iter (function
-          | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
-          | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
-          | FieldEllipsis2 _ -> ()
-        );
-      (* general case *)
-      | _ -> ()
-      );
-      k x
-    );
+                                  | TStruct (_, flds) ->
+                                      flds |> unbracket |> List.iter (fun (fld, tag_opt) ->
+                                        tag_opt |> Common.do_option (fun tag -> tag_ident tag Attribute);
+                                        (match fld with
+                                         | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
+                                         | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
+                                         | FieldEllipsis _ -> ()
+                                        );
+                                      );
+                                  | TInterface (_, flds) ->
+                                      flds |> unbracket |> List.iter (function
+                                        | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
+                                        | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
+                                        | FieldEllipsis2 _ -> ()
+                                      );
+                                      (* general case *)
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
 
-    V.kexpr = (fun (k, _) x ->
-      (match x with
-      | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
-          tag_ident fld (Entity (E.Function, use2));
-      | Call (Selector (_, _, fld),_) ->
-          tag_ident fld (Entity (E.Method, use2));
-      | Selector (Id (_m, {contents=_}), _, fld) ->
-          tag_ident fld (Entity (E.Field, use2));
-      | Id (id, resolved) ->
-        (match !resolved with
-        | None -> ()
-        | Some x ->
-          (match fst x with
-          | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
-          | G.Param -> tag_ident id (Parameter (Use))
-          | G.Local -> tag_ident id (Local (Use))
-          | G.EnclosedVar -> tag_ident id (Local Use) (* TODO *)
-          (* unless matched before in a Call *)
-          | G.Global -> tag_ident id (Entity (E.Global, use2))
-          | G.ImportedEntity _ -> tag_ident id (Entity (E.Global, use2))
-          | G.TypeName -> tag_ident id (Entity (E.Type, use2))
-          | G.Macro | G.EnumConstant -> ()
-          )
-        )
-      (* general case *)
-      | _ -> ()
-      );
-      k x
-    );
+                               V.kexpr = (fun (k, _) x ->
+                                 (match x with
+                                  | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
+                                      tag_ident fld (Entity (E.Function, use2));
+                                  | Call (Selector (_, _, fld),_) ->
+                                      tag_ident fld (Entity (E.Method, use2));
+                                  | Selector (Id (_m, {contents=_}), _, fld) ->
+                                      tag_ident fld (Entity (E.Field, use2));
+                                  | Id (id, resolved) ->
+                                      (match !resolved with
+                                       | None -> ()
+                                       | Some x ->
+                                           (match fst x with
+                                            | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
+                                            | G.Param -> tag_ident id (Parameter (Use))
+                                            | G.Local -> tag_ident id (Local (Use))
+                                            | G.EnclosedVar -> tag_ident id (Local Use) (* TODO *)
+                                            (* unless matched before in a Call *)
+                                            | G.Global -> tag_ident id (Entity (E.Global, use2))
+                                            | G.ImportedEntity _ -> tag_ident id (Entity (E.Global, use2))
+                                            | G.TypeName -> tag_ident id (Entity (E.Type, use2))
+                                            | G.Macro | G.EnumConstant -> ()
+                                           )
+                                      )
+                                  (* general case *)
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
 
-    V.kinit = (fun (k, _) x ->
-      (match x with
-      | InitKeyValue (InitExpr (Id (id, _)), _, _) ->
-         tag_ident id (Entity (E.Field, use2))
-      | _ -> ()
-      );
-      k x
+                               V.kinit = (fun (k, _) x ->
+                                 (match x with
+                                  | InitKeyValue (InitExpr (Id (id, _)), _, _) ->
+                                      tag_ident id (Entity (E.Field, use2))
+                                  | _ -> ()
+                                 );
+                                 k x
 
-    );
+                               );
 
-  } in
+                             } in
   visitor (P program);
 
   (* -------------------------------------------------------------------- *)
@@ -268,13 +268,13 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     (* specials *)
     | T.TUnknown ii ->
-       tag ii Error
+        tag ii Error
     | T.EOF _ii ->
-       ()
+        ()
 
     (* comments *)
     | T.TComment ii ->
-       tag_if_not_tagged ii Comment
+        tag_if_not_tagged ii Comment
     | T.TCommentSpace _ | T.TCommentNewline _ -> ()
 
     (* values  *)
@@ -288,18 +288,18 @@ let visit_program ~tag_hook _prefs (program, toks) =
     (* ident  *)
     | T.LNAME (s, ii) ->
         (match s with
-        | "true" | "false" -> tag_if_not_tagged ii Boolean
-        | "nil" -> tag_if_not_tagged ii Null
+         | "true" | "false" -> tag_if_not_tagged ii Boolean
+         | "nil" -> tag_if_not_tagged ii Null
 
-        | "panic" | "recover" -> tag ii KeywordExn
-        | "int" | "uint32" | "string" ->
-            tag_if_not_tagged ii (Entity (E.Type, use2))
-        | s when Hashtbl.mem builtin_functions s ->
-            tag_if_not_tagged ii Builtin
+         | "panic" | "recover" -> tag ii KeywordExn
+         | "int" | "uint32" | "string" ->
+             tag_if_not_tagged ii (Entity (E.Type, use2))
+         | s when Hashtbl.mem builtin_functions s ->
+             tag_if_not_tagged ii Builtin
 
-        (* should have been tagged by the AST visitor *)
-        | _ ->
-          tag_if_not_tagged ii IdentUnknown
+         (* should have been tagged by the AST visitor *)
+         | _ ->
+             tag_if_not_tagged ii IdentUnknown
         )
 
     (* keywords  *)
@@ -307,27 +307,27 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag ii Keyword
     | T.LSTRUCT ii -> tag ii Keyword
     | T.LINTERFACE ii
-        -> tag ii KeywordObject
+      -> tag ii KeywordObject
     | T.LIF ii | T.LELSE ii
     | T.LSWITCH ii | T.LCASE ii | T.LDEFAULT ii
-        ->
+      ->
         tag ii KeywordConditional
     | T.LFOR ii | T.LRANGE ii
       -> tag ii KeywordLoop
     | T.LPACKAGE ii  | T.LIMPORT ii
-        -> tag ii KeywordModule
+      -> tag ii KeywordModule
     | T.LSELECT ii | T.LGO ii | T.LCHAN ii
-        -> tag ii KeywordConcurrency
+      -> tag ii KeywordConcurrency
     | T.LCONTINUE ii | T.LBREAK ii
     | T.LFALL ii
     | T.LRETURN ii
-        -> tag ii Keyword
+      -> tag ii Keyword
     | T.LGOTO ii
-        -> tag ii Keyword (* dangerous? *)
+      -> tag ii Keyword (* dangerous? *)
     | T.LMAP ii ->
-          tag ii (Entity (E.Type, use2))
+        tag ii (Entity (E.Type, use2))
     | T.LDEFER ii ->
-          tag ii KeywordExn
+        tag ii KeywordExn
 
     (* symbols *)
     | T.LEQ ii | T.LCOLAS ii ->
@@ -339,7 +339,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.RBRACE ii
     | T.LBRACKET ii | T.RBRACKET ii
     | T.LPAREN ii | T.RPAREN ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.LPLUS ii  -> tag ii Punctuation
     | T.LMINUS ii -> tag ii Punctuation
@@ -363,13 +363,13 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LCOLON ii
     | T.LCOMMA ii
     | T.LSEMICOLON ii
-    ->
+      ->
         tag ii Punctuation
 
     | T.LCOMM ii ->
-          tag ii KeywordConcurrency
+        tag ii KeywordConcurrency
 
     | T.LDDD ii | T.LDots ii | T.RDots ii ->
-          tag ii Punctuation
+        tag ii Punctuation
   );
   ()

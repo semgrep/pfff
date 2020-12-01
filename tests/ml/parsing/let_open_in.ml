@@ -1,6 +1,6 @@
 
 module A = struct
-    let bar () = ()
+  let bar () = ()
 end
 
 let f () =

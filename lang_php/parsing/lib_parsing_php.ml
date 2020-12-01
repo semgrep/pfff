@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: Facebook copyright *)
 open Common
 
@@ -52,7 +52,7 @@ let is_php_filename filename =
    * of DUPE in codegraph
    *
    * (filename =~ ".*\\.hhi")
-   *)
+  *)
   false
 
 let is_hhi_filename filename =
@@ -79,11 +79,11 @@ let find_source_files_of_dir_or_files ?(verbose=false) ?(include_hack=false) xs 
      * do the 'find' and the time we call is_php_file(), the file may have
      * disappeared (this happens for instance because of watchman).
      * Hence the Sys.file_exists guard.
-     *)
+    *)
     let valid =
       (* note that there is still a race between the call to file_exists
        * and is_php_file, but this one is far shorter :)
-       *)
+      *)
       Sys.file_exists filename && (
         is_php_file filename ||
         (include_hack && is_hhi_filename filename)
@@ -92,7 +92,7 @@ let find_source_files_of_dir_or_files ?(verbose=false) ?(include_hack=false) xs 
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
     valid
-   ) |> Common.sort
+  ) |> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)
@@ -137,7 +137,7 @@ let ii_of_any any =
 (*x: max min range *)
 
 let (range_of_origin_ii: Cst_php.tok list -> (int * int) option) =
- fun ii ->
+  fun ii ->
   let ii = List.filter Parse_info.is_origintok ii in
   try
     let (min, max) = Parse_info.min_max_ii_by_pos ii in

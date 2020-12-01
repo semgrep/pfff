@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 open Ast_fuzzy
 module PI = Parse_info
@@ -21,7 +21,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* A few helpers function to build Ast_fuzzy tree from a list of tokens.
  * It factorizes the language-independent part of those AST fuzzy builder.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -38,10 +38,10 @@ exception Unclosed of string * Parse_info.t (* starting point *)
 (* Helpers *)
 (*****************************************************************************)
 let char_of_token_kind = function
- | PI.RAngle -> '>'
- | PI.RBracket -> ']'
- | PI.RBrace -> '}'
- | _ -> raise (Impossible)
+  | PI.RAngle -> '>'
+  | PI.RBracket -> ']'
+  | PI.RBrace -> '}'
+  | _ -> raise (Impossible)
 
 (*****************************************************************************)
 (* Entry point *)
@@ -57,12 +57,12 @@ let char_of_token_kind = function
 
 let mk_trees h xs =
 
- (* filter comment tokens *)
+  (* filter comment tokens *)
   let xs = xs |> Common.exclude (fun t ->
-      let kind = h.kind t in
-      match kind with
-      | PI.Esthet _ | PI.Eof -> true
-      | _ -> false
+    let kind = h.kind t in
+    match kind with
+    | PI.Esthet _ | PI.Eof -> true
+    | _ -> false
   )
   in
 
@@ -82,7 +82,7 @@ let mk_trees h xs =
         let body' = split_comma body in
         Ast_fuzzy.Parens (h.tokf x, body', h.tokf closing), rest
     | tok ->
-      Ast_fuzzy.Tok (PI.str_of_info (h.tokf tok), h.tokf x), xs
+        Ast_fuzzy.Tok (PI.str_of_info (h.tokf tok), h.tokf x), xs
 (*
     (match Ast.str_of_info (tokext tok) with
     | "..." -> Ast_fuzzy.Dots (tokext tok)
@@ -91,25 +91,25 @@ let mk_trees h xs =
 *)
 
   and aux xs =
-  match xs with
-  | [] -> []
-  | x::xs ->
-      let x', xs' = consume x xs in
-      x'::aux xs'
+    match xs with
+    | [] -> []
+    | x::xs ->
+        let x', xs' = consume x xs in
+        x'::aux xs'
 
   and look_close close_kind tok_start accbody xs =
     match xs with
     | [] ->
         raise (Unclosed (spf "look_close '%c'"
-                         (char_of_token_kind close_kind),
+                           (char_of_token_kind close_kind),
                          h.tokf tok_start))
 
     | x::xs ->
         (match x with
-        | tok when h.kind tok = close_kind ->
-          List.rev accbody, x, xs
-        | _ -> let (x', xs') = consume x xs in
-               look_close close_kind tok_start (x'::accbody) xs'
+         | tok when h.kind tok = close_kind ->
+             List.rev accbody, x, xs
+         | _ -> let (x', xs') = consume x xs in
+             look_close close_kind tok_start (x'::accbody) xs'
         )
 
   (* todo? diff with look_close PI.RPar ? *)
@@ -119,32 +119,32 @@ let mk_trees h xs =
         raise (Unclosed ("look_close_paren", h.tokf tok_start))
     | x::xs ->
         (match x with
-        | tok when h.kind tok = PI.RPar ->
-            List.rev accbody, x, xs
-        | _ ->
-            let (x', xs') = consume x xs in
-            look_close_paren tok_start (x'::accbody) xs'
+         | tok when h.kind tok = PI.RPar ->
+             List.rev accbody, x, xs
+         | _ ->
+             let (x', xs') = consume x xs in
+             look_close_paren tok_start (x'::accbody) xs'
         )
 
   and split_comma xs =
-     let rec aux acc xs =
-       match xs with
-       | [] ->
-         if null acc
-         then []
-         else [Left (acc |> List.rev)]
-       | x::xs ->
-         (match x with
-         | Ast_fuzzy.Tok (",", info) ->
-           let before = acc |> List.rev in
-           if null before
-           then aux [] xs
-           else (Left before)::(Right info)::aux [] xs
-         | _ ->
-           aux (x::acc) xs
-         )
-     in
-     aux [] xs
+    let rec aux acc xs =
+      match xs with
+      | [] ->
+          if null acc
+          then []
+          else [Left (acc |> List.rev)]
+      | x::xs ->
+          (match x with
+           | Ast_fuzzy.Tok (",", info) ->
+               let before = acc |> List.rev in
+               if null before
+               then aux [] xs
+               else (Left before)::(Right info)::aux [] xs
+           | _ ->
+               aux (x::acc) xs
+          )
+    in
+    aux [] xs
   in
   aux xs
 
@@ -174,35 +174,35 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   let rec v_tree x =
     let k x = match x with
       | Braces (v1, v2, v3) ->
-        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+          let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Parens (v1, v2, v3) ->
-        let _v1 = v_tok v1
-        and _v2 = OCaml.v_list (OCaml.v_either v_trees v_tok) v2
-        and _v3 = v_tok v3
-      in ()
+          let _v1 = v_tok v1
+          and _v2 = OCaml.v_list (OCaml.v_either v_trees v_tok) v2
+          and _v3 = v_tok v3
+          in ()
 
       | Angle (v1, v2, v3) ->
-        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+          let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Bracket (v1, v2, v3) ->
-        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+          let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Metavar v1 -> let _v1 = v_wrap v1 in ()
       | Dots v1 -> let _v1 = v_tok v1 in ()
       | Tok v1 -> let _v1 = v_wrap v1 in ()
     in
     vin.ktree (k, all_functions) x
- and v_trees a =
+  and v_trees a =
     let k xs =
       match xs with
       | [] -> ()
       | x::xs ->
-        v_tree x;
-        v_trees xs;
+          v_tree x;
+          v_trees xs;
     in
     vin.ktrees (k, all_functions) a
 
- and v_wrap (_s, x) = v_tok x
+  and v_wrap (_s, x) = v_tok x
 
- and v_tok x =
+  and v_tok x =
     let k _x = () in
     vin.ktok (k, all_functions) x
 
@@ -221,28 +221,28 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
   let rec map_tree =
     function
     | Braces (v1, v2, v3) ->
-      let v1 = map_tok v1
-      and v2 = map_trees v2
-      and v3 = map_tok v3
-      in Braces (v1, v2, v3)
+        let v1 = map_tok v1
+        and v2 = map_trees v2
+        and v3 = map_tok v3
+        in Braces (v1, v2, v3)
     | Parens (v1, v2, v3) ->
-      let v1 = map_tok v1
-      and v2 = List.map (OCaml.map_of_either map_trees map_tok) v2
-      and v3 = map_tok v3
-      in Parens (v1, v2, v3)
+        let v1 = map_tok v1
+        and v2 = List.map (OCaml.map_of_either map_trees map_tok) v2
+        and v3 = map_tok v3
+        in Parens (v1, v2, v3)
     | Angle (v1, v2, v3) ->
-      let v1 = map_tok v1
-      and v2 = map_trees v2
-      and v3 = map_tok v3
-      in Angle (v1, v2, v3)
+        let v1 = map_tok v1
+        and v2 = map_trees v2
+        and v3 = map_tok v3
+        in Angle (v1, v2, v3)
     | Bracket (v1, v2, v3) ->
-      let v1 = map_tok v1
-      and v2 = map_trees v2
-      and v3 = map_tok v3
-      in Bracket (v1, v2, v3)
-  | Metavar v1 -> let v1 = map_wrap v1 in Metavar v1
-  | Dots v1 -> let v1 = map_tok v1 in Dots v1
-  | Tok v1 -> let v1 = map_wrap v1 in Tok v1
+        let v1 = map_tok v1
+        and v2 = map_trees v2
+        and v3 = map_tok v3
+        in Bracket (v1, v2, v3)
+    | Metavar v1 -> let v1 = map_wrap v1 in Metavar v1
+    | Dots v1 -> let v1 = map_tok v1 in Dots v1
+    | Tok v1 -> let v1 = map_wrap v1 in Tok v1
   and map_trees v = List.map map_tree v
   and map_tok v =
     let k v = v in
@@ -258,8 +258,8 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
 let (toks_of_trees: trees -> Parse_info.t list) = fun trees ->
   let globals = ref [] in
   let hooks = { default_visitor with
-    ktok = (fun (_k, _) i -> Common.push i globals)
-  } in
+                ktok = (fun (_k, _) i -> Common.push i globals)
+              } in
   begin
     let vout = mk_visitor hooks in
     vout trees;

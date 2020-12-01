@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -19,7 +19,7 @@ open Ast_lisp
 module PI = Parse_info
 (* we don't need a full grammar for lisp code, so we put everything,
  * the token type, the helper in parser_ml. No token_helpers_lisp.ml
- *)
+*)
 module TH = Parser_lisp
 
 (*****************************************************************************)
@@ -46,7 +46,7 @@ type program_and_tokens =
 
 (* could factorize and take the tokenf and visitor_of_infof in argument
  * but sometimes copy-paste is ok.
- *)
+*)
 let tokens2 file =
   let token = Lexer_lisp.token in
   Parse_info.tokenize_all_and_adjust_pos
@@ -66,60 +66,60 @@ let rec sexps toks =
   | [EOF _] -> [], []
   | (TCParen _ | TCBracket _)::_ -> [], toks
   | xs ->
-    let s, rest = sexp xs in
-    let xs, rest = sexps rest in
-    s::xs, rest
+      let s, rest = sexp xs in
+      let xs, rest = sexps rest in
+      s::xs, rest
 
 and sexp toks =
   match toks with
   | [] -> raise Todo
   | x::xs ->
-    (match x with
-    | TComment _ | TCommentSpace _ | TCommentNewline _ -> raise Impossible
+      (match x with
+       | TComment _ | TCommentSpace _ | TCommentNewline _ -> raise Impossible
 
-    | TNumber x -> Atom (Number x), xs
-    | TString x -> Atom (String x), xs
-    | TIdent x -> Atom (Id x), xs
+       | TNumber x -> Atom (Number x), xs
+       | TString x -> Atom (String x), xs
+       | TIdent x -> Atom (Id x), xs
 
-    | TOParen t1 ->
-      let (xs, rest) = sexps xs in
-      (match rest with
-      | TCParen t2::rest ->
-          Sexp (t1, xs, t2), rest
-      | _ -> raise (PI.Other_error ("unclosed parenthesis", t1))
+       | TOParen t1 ->
+           let (xs, rest) = sexps xs in
+           (match rest with
+            | TCParen t2::rest ->
+                Sexp (t1, xs, t2), rest
+            | _ -> raise (PI.Other_error ("unclosed parenthesis", t1))
+           )
+
+       | TOBracket t1 ->
+           let (xs, rest) = sexps xs in
+           (match rest with
+            | TCBracket t2::rest ->
+                Sexp (t1, xs, t2), rest
+            | _ -> raise (PI.Other_error ("unclosed bracket", t1))
+           )
+
+       | TCParen t | TCBracket t ->
+           raise (PI.Other_error ("closing bracket/paren without opening one", t))
+
+       | TQuote t ->
+           let (s, rest) = sexp xs in
+           Special ((Quote, t), s), rest
+       | TBackQuote t ->
+           let (s, rest) = sexp xs in
+           Special ((BackQuote, t), s), rest
+       | TAt t ->
+           let (s, rest) = sexp xs in
+           Special ((At, t), s), rest
+       | TComma t ->
+           let (s, rest) = sexp xs in
+           Special ((Comma, t), s), rest
+
+       (* hmmm probably unicode *)
+       | TUnknown t ->
+           Atom (String (PI.str_of_info t, t)), xs
+
+       | EOF t ->
+           raise (PI.Other_error ("unexpected eof", t))
       )
-
-    | TOBracket t1 ->
-      let (xs, rest) = sexps xs in
-      (match rest with
-      | TCBracket t2::rest ->
-          Sexp (t1, xs, t2), rest
-      | _ -> raise (PI.Other_error ("unclosed bracket", t1))
-      )
-
-    | TCParen t | TCBracket t ->
-      raise (PI.Other_error ("closing bracket/paren without opening one", t))
-
-    | TQuote t ->
-      let (s, rest) = sexp xs in
-      Special ((Quote, t), s), rest
-    | TBackQuote t ->
-      let (s, rest) = sexp xs in
-      Special ((BackQuote, t), s), rest
-    | TAt t ->
-      let (s, rest) = sexp xs in
-      Special ((At, t), s), rest
-    | TComma t ->
-      let (s, rest) = sexp xs in
-      Special ((Comma, t), s), rest
-
-    (* hmmm probably unicode *)
-    | TUnknown t ->
-      Atom (String (PI.str_of_info t, t)), xs
-
-    | EOF t ->
-      raise (PI.Other_error ("unexpected eof", t))
-    )
 
 
 (*****************************************************************************)
@@ -137,22 +137,22 @@ let parse2 filename =
   let ast =
     try
       (match sexps toks with
-      | xs, [] ->
-        stat.PI.correct <- nblines;
-        Some xs
-      | _, x::_xs ->
-        raise (PI.Other_error ("trailing constructs", (TH.info_of_tok x)))
+       | xs, [] ->
+           stat.PI.correct <- nblines;
+           Some xs
+       | _, x::_xs ->
+           raise (PI.Other_error ("trailing constructs", (TH.info_of_tok x)))
       )
     with
     | PI.Other_error (s, info) ->
-      pr2 (spf "Parse error: %s, {%s} at %s"
-             s
-             (PI.str_of_info info)
-             (PI.string_of_info info));
-      stat.PI.bad <- nblines;
-      None
+        pr2 (spf "Parse error: %s, {%s} at %s"
+               s
+               (PI.str_of_info info)
+               (PI.string_of_info info));
+        stat.PI.bad <- nblines;
+        None
     | exn ->
-      raise exn
+        raise exn
   in
   (ast, toks_orig), stat
 

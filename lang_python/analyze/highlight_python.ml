@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open AST_python
 open Highlight_code
@@ -24,7 +24,7 @@ module E = Entity_code
 (* Prelude *)
 (*****************************************************************************)
 (* Syntax highlighting for Python code for codemap (and now also efuns)
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers when have global-analysis information *)
@@ -32,7 +32,7 @@ module E = Entity_code
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
- *)
+*)
 let def2 = Def2 NoUse
 let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
 
@@ -51,7 +51,7 @@ let builtin_functions = Common.hashset_of_list [
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The AST is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 
 let visit_program ~tag_hook _prefs (program, toks) =
 
@@ -67,13 +67,13 @@ let visit_program ~tag_hook _prefs (program, toks) =
      * do not fear to write very general case patterns later because
      * the specific will have priority over the general
      * (e.g., a Method use vs a Field use)
-     *)
+    *)
     if not (Hashtbl.mem already_tagged ii)
     then tag ii categ
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)
-   then tag ii categ
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
   in
 
   let lexer_based_tagger = (program = None) in
@@ -83,192 +83,192 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* -------------------------------------------------------------------- *)
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
-   *)
+  *)
   let in_class = ref false in
   let in_type = ref false in
   let in_decorator = ref false in
 
   let visitor = V.mk_visitor { V.default_visitor with
-    (* use 'k x' as much as possible below. No need to
-     * do v (Stmt st1); v (Expr e); ... Go deep to tag
-     * special stuff (e.g., a local var in an exception handler) but then
-     * just recurse from the top with 'k x'
-     *)
-    V.kexpr = (fun (k, _) x ->
-     match x with
-     | Name (name, ctx, resolved) ->
-        (match !resolved with
-        | _ when !in_type ->
-          (match fst name with
-          | "int" -> tag_name name TypeInt
-          | _ ->
-            let kind = E.Type in
-            tag_name name (Entity (kind, use2))
-          )
-        | _ when !in_decorator ->
-           tag_name name Highlight_code.Attribute
-        | AST_python.Parameter ->
-             tag_name name (Highlight_code.Parameter Use)
-        | GlobalVar ->
-            let usedef =
-              match ctx with
-              | Store -> def2
-              | Load -> use2
-              | _ -> use2 (* TODO *)
-            in
-            tag_name name (Entity (E.Global, usedef))
-        | ClassField ->
-            let usedef =
-              match ctx with
-              | Store -> def2
-              | Load -> use2
-              | _ -> use2 (* TODO *)
-            in
-            tag_name name (Entity (E.Field, usedef))
-        | LocalVar ->
-            let usedef =
-              match ctx with
-              | Store -> Def
-              | Load -> Use
-              | _ -> Use (* TODO *)
-             in
-             tag_name name (Local usedef)
-        | ImportedEntity _ ->
-            let kind = E.Function in
-            tag_name name (Entity (kind, use2))
-        | ImportedModule _ ->
-            let kind = E.Module in
-            tag_name name (Entity (kind, use2))
-        | NotResolved ->
+                               (* use 'k x' as much as possible below. No need to
+                                * do v (Stmt st1); v (Expr e); ... Go deep to tag
+                                * special stuff (e.g., a local var in an exception handler) but then
+                                * just recurse from the top with 'k x'
+                               *)
+                               V.kexpr = (fun (k, _) x ->
+                                 match x with
+                                 | Name (name, ctx, resolved) ->
+                                     (match !resolved with
+                                      | _ when !in_type ->
+                                          (match fst name with
+                                           | "int" -> tag_name name TypeInt
+                                           | _ ->
+                                               let kind = E.Type in
+                                               tag_name name (Entity (kind, use2))
+                                          )
+                                      | _ when !in_decorator ->
+                                          tag_name name Highlight_code.Attribute
+                                      | AST_python.Parameter ->
+                                          tag_name name (Highlight_code.Parameter Use)
+                                      | GlobalVar ->
+                                          let usedef =
+                                            match ctx with
+                                            | Store -> def2
+                                            | Load -> use2
+                                            | _ -> use2 (* TODO *)
+                                          in
+                                          tag_name name (Entity (E.Global, usedef))
+                                      | ClassField ->
+                                          let usedef =
+                                            match ctx with
+                                            | Store -> def2
+                                            | Load -> use2
+                                            | _ -> use2 (* TODO *)
+                                          in
+                                          tag_name name (Entity (E.Field, usedef))
+                                      | LocalVar ->
+                                          let usedef =
+                                            match ctx with
+                                            | Store -> Def
+                                            | Load -> Use
+                                            | _ -> Use (* TODO *)
+                                          in
+                                          tag_name name (Local usedef)
+                                      | ImportedEntity _ ->
+                                          let kind = E.Function in
+                                          tag_name name (Entity (kind, use2))
+                                      | ImportedModule _ ->
+                                          let kind = E.Module in
+                                          tag_name name (Entity (kind, use2))
+                                      | NotResolved ->
             (*
             let kind = E.Global in
             tag_name name (Entity (kind, (Use2 fake_no_use2)))
             *)
-            ()
-        );
-        k x
-     | Call (f, (_, args, _)) ->
-       (match f with
-       | Name (name, _ctx, _resolved) ->
-           let kind = E.Function in
-           tag_name name (Entity (kind, use2))
-       | AST_python.Attribute (_e, _t, name, _ctx) ->
-           let kind = E.Method in
-           tag_name name (Entity (kind, use2))
-       | _ -> ()
-       );
-       args |> List.iter (function
-          | ArgKwd (name, _) -> tag_name name Comment
-          | _ -> ();
-       );
-       k x
-     | AST_python.Attribute (_e, _, name, _ctx) ->
-         (match () with
-         | _ when !in_type ->
-          (match fst name with
-          | "int" -> tag_name name TypeInt
-          | _ ->
-            let kind = E.Type in
-            tag_name name (Entity (kind, use2))
-          )
-         | _ ->
-           let kind = E.Field in
-           tag_name name (Entity (kind, use2));
-         );
-        k x
+                                          ()
+                                     );
+                                     k x
+                                 | Call (f, (_, args, _)) ->
+                                     (match f with
+                                      | Name (name, _ctx, _resolved) ->
+                                          let kind = E.Function in
+                                          tag_name name (Entity (kind, use2))
+                                      | AST_python.Attribute (_e, _t, name, _ctx) ->
+                                          let kind = E.Method in
+                                          tag_name name (Entity (kind, use2))
+                                      | _ -> ()
+                                     );
+                                     args |> List.iter (function
+                                       | ArgKwd (name, _) -> tag_name name Comment
+                                       | _ -> ();
+                                     );
+                                     k x
+                                 | AST_python.Attribute (_e, _, name, _ctx) ->
+                                     (match () with
+                                      | _ when !in_type ->
+                                          (match fst name with
+                                           | "int" -> tag_name name TypeInt
+                                           | _ ->
+                                               let kind = E.Type in
+                                               tag_name name (Entity (kind, use2))
+                                          )
+                                      | _ ->
+                                          let kind = E.Field in
+                                          tag_name name (Entity (kind, use2));
+                                     );
+                                     k x
 
-(* TODO
-      | ListComp (_, xs) ->
-          xs |> List.iter (fun (target, _iter, _ifs) ->
-            match target with
-            | Name (name, _ctx, _res) ->
-              tag_name name (Local Def);
-            (* tuples? *)
-            | _ -> ()
-          );
-         k x
-*)
+                                 (* TODO
+                                       | ListComp (_, xs) ->
+                                           xs |> List.iter (fun (target, _iter, _ifs) ->
+                                             match target with
+                                             | Name (name, _ctx, _res) ->
+                                               tag_name name (Local Def);
+                                             (* tuples? *)
+                                             | _ -> ()
+                                           );
+                                          k x
+                                 *)
 
-     (* the general case *)
-     | _ -> k x
-    );
-    V.kstmt = (fun (k, _) x ->
-     match x with
-     | FunctionDef (_t, name, _params, _typopt, _body, _decorators) ->
-       let kind = if !in_class then E.Method else E.Function in
-       tag_name name (Entity (kind, def2));
-       k x
-     | ClassDef (_t, name, _bases, _body, _decorators) ->
-       let kind = E.Class in
-       tag_name name (Entity (kind, def2));
-       Common.save_excursion in_class true (fun () ->
-          k x);
-     | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
-           let kind = E.Module in
-           dotted_name |> List.iter (fun name ->
-             tag_name name (Entity (kind, use2));
-           );
-           asname_opt |> Common.do_option (fun asname ->
-             tag_name asname (Entity (kind, def2));
-           );
-         k x
+                                 (* the general case *)
+                                 | _ -> k x
+                               );
+                               V.kstmt = (fun (k, _) x ->
+                                 match x with
+                                 | FunctionDef (_t, name, _params, _typopt, _body, _decorators) ->
+                                     let kind = if !in_class then E.Method else E.Function in
+                                     tag_name name (Entity (kind, def2));
+                                     k x
+                                 | ClassDef (_t, name, _bases, _body, _decorators) ->
+                                     let kind = E.Class in
+                                     tag_name name (Entity (kind, def2));
+                                     Common.save_excursion in_class true (fun () ->
+                                       k x);
+                                 | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
+                                     let kind = E.Module in
+                                     dotted_name |> List.iter (fun name ->
+                                       tag_name name (Entity (kind, use2));
+                                     );
+                                     asname_opt |> Common.do_option (fun asname ->
+                                       tag_name asname (Entity (kind, def2));
+                                     );
+                                     k x
 
-     | ImportFrom (_, (dotted_name, _dotsTODO), aliases) ->
-         let kind = E.Module in
-         dotted_name |> List.iter (fun name ->
-           tag_name name (Entity (kind, use2));
-         );
-         aliases |> List.iter (fun (name, asname_opt) ->
-           let kind = E.Function in
-           tag_name name (Entity (kind, use2));
-           asname_opt |> Common.do_option (fun asname ->
-             tag_name asname (Entity (kind, def2));
-           );
-         );
-         k x
+                                 | ImportFrom (_, (dotted_name, _dotsTODO), aliases) ->
+                                     let kind = E.Module in
+                                     dotted_name |> List.iter (fun name ->
+                                       tag_name name (Entity (kind, use2));
+                                     );
+                                     aliases |> List.iter (fun (name, asname_opt) ->
+                                       let kind = E.Function in
+                                       tag_name name (Entity (kind, use2));
+                                       asname_opt |> Common.do_option (fun asname ->
+                                         tag_name asname (Entity (kind, def2));
+                                       );
+                                     );
+                                     k x
 
-     | With (_, _e, eopt, _stmts) ->
-       eopt |> Common.do_option (fun e ->
-          match e with
-         | Name (name, _ctx, _res) ->
-            tag_name name (Local Def);
-         (* todo: tuples? *)
-         | _ -> ()
-       );
-       k x
-     | TryExcept (_, _stmts1, excepts, _stmts2) ->
-       excepts |> List.iter (fun (ExceptHandler (_t, _typ, e, _)) ->
-         match e with
-         | None -> ()
-         | Some name ->
-           tag_name name (Local Def)
-       );
-       k x
+                                 | With (_, _e, eopt, _stmts) ->
+                                     eopt |> Common.do_option (fun e ->
+                                       match e with
+                                       | Name (name, _ctx, _res) ->
+                                           tag_name name (Local Def);
+                                           (* todo: tuples? *)
+                                       | _ -> ()
+                                     );
+                                     k x
+                                 | TryExcept (_, _stmts1, excepts, _stmts2) ->
+                                     excepts |> List.iter (fun (ExceptHandler (_t, _typ, e, _)) ->
+                                       match e with
+                                       | None -> ()
+                                       | Some name ->
+                                           tag_name name (Local Def)
+                                     );
+                                     k x
 
-     (* general case *)
-     | _ -> k x
-    );
-    V.ktype_ = (fun (k, _) x ->
-       Common.save_excursion in_type true (fun () ->
-          k x);
-    );
-    V.kdecorator = (fun (k, _) x ->
-       Common.save_excursion in_decorator true (fun () ->
-          k x);
-    );
-    V.kparameter = (fun (k, _) x ->
-      (match x with
-      | ParamPattern (PatternName name, _)
-      | ParamDefault ((name, _), _)
-      | ParamStar (_, (name, _)) | ParamPow (_, (name, _)) ->
-        tag_name name (Parameter Def);
-      | ParamSingleStar _ | ParamSlash _ | ParamEllipsis _
-      | ParamPattern (PatternTuple _, _) ->
-        ()
-      );
-      k x
-    );
-  }
+                                 (* general case *)
+                                 | _ -> k x
+                               );
+                               V.ktype_ = (fun (k, _) x ->
+                                 Common.save_excursion in_type true (fun () ->
+                                   k x);
+                               );
+                               V.kdecorator = (fun (k, _) x ->
+                                 Common.save_excursion in_decorator true (fun () ->
+                                   k x);
+                               );
+                               V.kparameter = (fun (k, _) x ->
+                                 (match x with
+                                  | ParamPattern (PatternName name, _)
+                                  | ParamDefault ((name, _), _)
+                                  | ParamStar (_, (name, _)) | ParamPow (_, (name, _)) ->
+                                      tag_name name (Parameter Def);
+                                  | ParamSingleStar _ | ParamSlash _ | ParamEllipsis _
+                                  | ParamPattern (PatternTuple _, _) ->
+                                      ()
+                                 );
+                                 k x
+                               );
+                             }
   in
   program |> Common.do_option (fun prog ->
     visitor (Program prog);
@@ -339,32 +339,32 @@ let visit_program ~tag_hook _prefs (program, toks) =
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then
           (if Hashtbl.mem builtin_functions s
-          then tag ii1 Builtin
-          else tag ii1 (Entity (E.Function, use2))
+           then tag ii1 Builtin
+           else tag ii1 (Entity (E.Function, use2))
           );
         aux_toks xs
 
     | T.NAME (_s, ii1)::T.DOT _::T.NAME (s3, ii3)::xs ->
         (match xs with
-        | (T.DOT _)::_ ->
+         | (T.DOT _)::_ ->
 
-            if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-            then tag ii3 (Entity (E.Field, use2));
+             if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+             then tag ii3 (Entity (E.Field, use2));
 
-            if not (Hashtbl.mem already_tagged ii1)
-            then tag ii1 (Local Use);
+             if not (Hashtbl.mem already_tagged ii1)
+             then tag ii1 (Local Use);
 
-            aux_toks (T.NAME (s3, ii3)::xs)
+             aux_toks (T.NAME (s3, ii3)::xs)
 
-        | _ ->
-          if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-          then begin
-            tag ii3 (Entity (E.Field, use2));
-            (* TODO *)
-            if not (Hashtbl.mem already_tagged ii1)
-            then tag ii1 (Local Use);
-          end;
-            aux_toks xs
+         | _ ->
+             if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+             then begin
+               tag ii3 (Entity (E.Field, use2));
+               (* TODO *)
+               if not (Hashtbl.mem already_tagged ii1)
+               then tag ii1 (Local Use);
+             end;
+             aux_toks xs
         )
 
     | T.NAME (_s, _ii1)::xs ->
@@ -398,21 +398,21 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     (* specials *)
     | T.TUnknown ii ->
-       tag ii Error
+        tag ii Error
     | T.EOF _ii ->
-       ()
+        ()
     | T.INDENT _ii | T.DEDENT _ii ->
-       ()
+        ()
 
     (* comments *)
     | T.TComment ii ->
-       tag_if_not_tagged ii Comment
+        tag_if_not_tagged ii Comment
     (* in lexer_python.mll comments and space and newlines are sometimes
      * put together *)
     | T.TCommentSpace ii ->
-       tag_if_not_tagged ii Comment
+        tag_if_not_tagged ii Comment
     | T.NEWLINE ii ->
-       tag_if_not_tagged ii Comment
+        tag_if_not_tagged ii Comment
 
 
     (* values  *)
@@ -432,22 +432,22 @@ let visit_program ~tag_hook _prefs (program, toks) =
 *)
     | T.FSTRING_START ii | T.FSTRING_END ii
     | T.FSTRING_STRING (_, ii)
-     -> tag ii String
+      -> tag ii String
     | T.FSTRING_LBRACE ii | T.BANG ii -> tag ii Punctuation
 
     (* ident  *)
     | T.NAME (s, ii) ->
         (match s with
-        | "self" -> tag ii KeywordObject
+         | "self" -> tag ii KeywordObject
 
-        | "str" | "list" | "int" | "bool"
-        | "object"
-        | "Exception"
+         | "str" | "list" | "int" | "bool"
+         | "object"
+         | "Exception"
            ->  tag_if_not_tagged ii (Entity (E.Type, use2))
 
-        | "__file__" | "__dir__" | "__package__" | "__name__"
-            -> tag_if_not_tagged ii CppOther
-        | _ -> tag_if_not_tagged ii Error
+         | "__file__" | "__dir__" | "__package__" | "__name__"
+           -> tag_if_not_tagged ii CppOther
+         | _ -> tag_if_not_tagged ii Error
         )
 
     (* keywords  *)
@@ -460,16 +460,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.TRY ii  | T.FINALLY ii | T.RAISE ii| T.EXCEPT ii
       -> tag ii KeywordExn
     | T.CLASS ii
-        -> tag ii KeywordObject
+      -> tag ii KeywordObject
     | T.IMPORT ii  | T.AS ii | T.FROM ii
-        -> tag ii KeywordModule
+      -> tag ii KeywordModule
 
     | T.CONTINUE ii | T.BREAK ii
     | T.YIELD ii
     | T.RETURN ii
     | T.ASYNC ii | T.AWAIT ii
     | T.EXEC ii | T.PRINT ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.IS ii | T.IN ii
     | T.PASS ii
@@ -477,10 +477,10 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.WITH ii
     | T.DEL ii
     | T.GLOBAL ii | T.NONLOCAL ii
-        -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.NOT ii  | T.AND ii | T.OR ii ->
-       tag ii BuiltinBoolean
+        tag ii BuiltinBoolean
 
 
     (* symbols *)
@@ -492,12 +492,12 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.MODEQ ii  | T.POWEQ ii | T.FDIVEQ ii
     | T.ANDEQ ii | T.OREQ ii | T.XOREQ ii
     | T.LSHEQ ii | T.RSHEQ ii
-       -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.LBRACE ii | T.RBRACE ii
     | T.LBRACK ii | T.RBRACK ii
     | T.LPAREN ii | T.RPAREN ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.ADD ii ->
         tag ii Punctuation
@@ -524,7 +524,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LDots ii | T.RDots ii
 
     | T.AT ii
-        ->
+      ->
         tag ii Punctuation
 (*
     | T.TEllipsis ii

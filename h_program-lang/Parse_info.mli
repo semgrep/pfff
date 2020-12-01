@@ -4,10 +4,10 @@
 (*s: type [[Parse_info.token_location]] *)
 (* to report errors, regular position information *)
 type token_location = {
-    str: string; (* the content of the "token" *)
-    charpos: int; (* byte position *)
-    line: int; column: int;
-    file: Common.filename;
+  str: string; (* the content of the "token" *)
+  charpos: int; (* byte position *)
+  line: int; column: int;
+  file: Common.filename;
 }
 (*e: type [[Parse_info.token_location]] *)
 (* see also type filepos = { l: int; c: int; } in Common.mli *)
@@ -23,7 +23,7 @@ type token_origin =
 
 (* to allow source to source transformation via token "annotations",
  * see the documentation for spatch.
- *)
+*)
 (*s: type [[Parse_info.token_mutable]] *)
 type token_mutable = {
   token: token_origin;
@@ -33,27 +33,27 @@ type token_mutable = {
 (*e: type [[Parse_info.token_mutable]] *)
 
 (*s: type [[Parse_info.transformation]] *)
- and transformation =
+and transformation =
   | NoTransfo
   | Remove
   | AddBefore of add
   | AddAfter of add
   | Replace of add
   | AddArgsBefore of string list
-(*e: type [[Parse_info.transformation]] *)
+  (*e: type [[Parse_info.transformation]] *)
 
 (*s: type [[Parse_info.add]] *)
-  and add =
-    | AddStr of string
-    | AddNewlineAndIdent
-(*e: type [[Parse_info.add]] *)
+and add =
+  | AddStr of string
+  | AddNewlineAndIdent
+  (*e: type [[Parse_info.add]] *)
 
 (*s: type [[Parse_info.t]] *)
 (* Shortcut.
  * Technically speaking this is not a token, because we do not have
  * the kind of the token (e.g., PLUS | IDENT | IF | ...).
  * It's just a lexeme, but the word lexeme is not as known as token.
- *)
+*)
 type t = token_mutable
 (*e: type [[Parse_info.t]] *)
 (*s: type [[Parse_info.info_]] *)
@@ -75,17 +75,17 @@ type token_kind =
   | Esthet of esthet
   | Eof
   | Other
-(*e: type [[Parse_info.token_kind]] *)
+  (*e: type [[Parse_info.token_kind]] *)
 (*s: type [[Parse_info.esthet]] *)
-  and esthet =
-   | Comment
-   | Newline
-   | Space
-(*e: type [[Parse_info.esthet]] *)
+and esthet =
+  | Comment
+  | Newline
+  | Space
+  (*e: type [[Parse_info.esthet]] *)
 
 (* note that those exceptions can be converted in Error_code.error with
  * Error_code.try_with_exn_to_error()
- *)
+*)
 (*s: exception [[Parse_info.Lexical_error]] *)
 (* see also Parsing.Parse_error and Failure "empty token" raised by Lexing *)
 exception Lexical_error of string * t
@@ -234,8 +234,8 @@ val tokenize_all_and_adjust_pos:
 (*s: signature [[Parse_info.mk_lexer_for_yacc]] *)
 val mk_lexer_for_yacc: 'tok list -> ('tok -> bool) (* is_comment *) ->
   'tok tokens_state * (* token stream for error recovery *)
-   (Lexing.lexbuf -> 'tok) * (* the lexer to pass to the ocamlyacc parser *)
-   Lexing.lexbuf (* fake lexbuf needed by ocamlyacc API *)
+  (Lexing.lexbuf -> 'tok) * (* the lexer to pass to the ocamlyacc parser *)
+  Lexing.lexbuf (* fake lexbuf needed by ocamlyacc API *)
 (*e: signature [[Parse_info.mk_lexer_for_yacc]] *)
 
 (* can deprecate? just use tokenize_all_and_adjust_pos *)

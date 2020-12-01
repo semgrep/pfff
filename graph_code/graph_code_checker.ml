@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -52,9 +52,9 @@ let check_imperative g =
       if ps = []
       then
         (match n with
-        | s, E.Function when s =$= "main" || s =~ "^main__.*" -> ()
-        | _ ->
-          Error.warning_loc info.G.pos (Error.Deadcode n);
+         | s, E.Function when s =$= "main" || s =~ "^main__.*" -> ()
+         | _ ->
+             Error.warning_loc info.G.pos (Error.Deadcode n);
         );
 
       (* todo: factorize with graph_code_clang, put in database_code? *)
@@ -71,7 +71,7 @@ let check_imperative g =
           (* actually in C we can have things that looks like GlobalExtern
            * e.g. Syscall sysnop; but are actually Prototype, so we must look
            * for E.Function in that case
-           *)
+          *)
           if (G.has_node (fst n_def, E.Function) g)
           then ()
           else
@@ -100,16 +100,16 @@ let check_imperative g =
           in
           if users_outside = [] && ps <> [] && is_header_file file_decl
           then Error.warning_loc info_decl.G.pos
-            (Error.UnusedExport (n_decl, file_def));
+              (Error.UnusedExport (n_decl, file_def));
 
           (* for clang I usually add a Use edge between the def and the decl
            * so the decl would not have been marked as dead without this:
-           *)
+          *)
           if ps = []
           then Error.warning_loc info_decl.G.pos (Error.Deadcode n_decl);
         end
       );
-  ))
+    ))
 
 let check g =
   Common.save_excursion Error.g_errors [] (fun () ->

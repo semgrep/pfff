@@ -18,7 +18,7 @@ let test_parse_simple xs  =
 
   let stat_list = ref [] in
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
-     k ();
+    k ();
     let ((cst, _toks), stat) =
       Common.save_excursion Flag_parsing.error_recovery true (fun () ->
         Parse_php.parse file
@@ -28,8 +28,8 @@ let test_parse_simple xs  =
     if stat.Parse_info.bad = 0
     then
       Error_code.try_with_print_exn_and_reraise file (fun () ->
-      let _ast = Ast_php_build.program cst in
-      ()
+        let _ast = Ast_php_build.program cst in
+        ()
       )
   ));
 
@@ -60,7 +60,7 @@ let test_pp_simple file =
 (* Will annotate with Local or Param or Global the Var AST elements.
  * See also codemap which does the same and use different colors for
  * different scopes.
- *)
+*)
 (*
 let test_scope_php file =
   let ast = Parse_php.parse_program file in
@@ -403,7 +403,7 @@ let test_php_serialize file =
 
 (* Note that other files in this directory define some cmdline actions:
  *  - database_php_build.ml
- *)
+*)
 let actions () = [
   "-parse_php_simple", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_simple;

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module PI = Parse_info
@@ -119,11 +119,11 @@ let vim_tag_kind_str tag_kind =
   | E.File | E.Dir | E.MultiDirs
   | E.Exception
   | E.Prototype | E.GlobalExtern
-      -> ""
+    -> ""
 
 (* vim uses '/' as a marker for the tag definition text, so if this
  * test contains '/' they must be escaped.
- *)
+*)
 let vim_escape_slash str =
   Str.global_replace (Str.regexp "/") "\\/" str
 
@@ -134,7 +134,7 @@ let vim_escape_slash str =
  * method name. Of course if there is also a function somewhere using the
  * same name then this function could be hard to reach so we generate
  * an (imprecise) method tag only when there is no ambiguity.
- *)
+*)
 let add_method_tags_when_unambiguous files_and_defs =
 
   (* step1: global analysis on all defs, remember all names and methods *)
@@ -157,7 +157,7 @@ let add_method_tags_when_unambiguous files_and_defs =
             else failwith ("method tag should contain '::[, got: " ^ t.tagname)
         | _ -> None
       )
-    (* could skip the group_assoc_bykey and do Hashtbl.find_all below instead *)
+      (* could skip the group_assoc_bykey and do Hashtbl.find_all below instead *)
     ) |> List.flatten |> Common.group_assoc_bykey_eff |> Common.hash_of_list
   in
   (* step2: add method tag when no ambiguity *)
@@ -226,12 +226,12 @@ let generate_vi_tags_file tags_file files_and_defs =
        * "The two characters semicolon and double quote [...] are
        * interpreted by Vi as the start of a comment, which makes the
        * following be ignored."
-       *)
+      *)
       pr_no_nl (spf "%s\t%s\t/%s/;\"\t%s\n"
-                   tag.tagname
-                   file
-                   (vim_escape_slash tag.tag_definition_text)
-                   (vim_tag_kind_str tag.kind)
-      );
+                  tag.tagname
+                  file
+                  (vim_escape_slash tag.tag_definition_text)
+                  (vim_tag_kind_str tag.kind)
+               );
     );
   )

@@ -5,7 +5,7 @@
  *
  * This software is distributed under the terms of the GNU GPL version 2.
  * See LICENSE file for full license text.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -55,38 +55,38 @@ and tok = info
 
 type selector = simplesel * (combinator * simplesel) list
 
- and simplesel =
-   | Explicit of element * qualifier list
-   | Generic of qualifier * qualifier list
+and simplesel =
+  | Explicit of element * qualifier list
+  | Generic of qualifier * qualifier list
 
- and combinator = Descendant | GeneralSibling | AdjacentSibling | Child
+and combinator = Descendant | GeneralSibling | AdjacentSibling | Child
 
-  and element =
-    | Tag of string
-    | Universal
+and element =
+  | Tag of string
+  | Universal
 
-  and qualifier =
-    | Id of string
-    | Class of string
-    | Attr of string * attr
-    | PseudoClass of string
-    | PseudoElement of string
-    | SelFunc of string * functiont
+and qualifier =
+  | Id of string
+  | Class of string
+  | Attr of string * attr
+  | PseudoClass of string
+  | PseudoElement of string
+  | SelFunc of string * functiont
 
-    and functiont =
-      | Qualified of qualifier list
-      | Nth of string
+and functiont =
+  | Qualified of qualifier list
+  | Nth of string
 
-    and attr =
-      | AttrExists
-      | AttrEquals of string
-      | AttrIncludes of string
-      | AttrDashmatch of string
-      | AttrPrefix of string
-      | AttrSuffix of string
-      | AttrSubstring of string
+and attr =
+  | AttrExists
+  | AttrEquals of string
+  | AttrIncludes of string
+  | AttrDashmatch of string
+  | AttrPrefix of string
+  | AttrSuffix of string
+  | AttrSubstring of string
 
- (* with tarzan *)
+(* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Declaration *)
@@ -94,41 +94,41 @@ type selector = simplesel * (combinator * simplesel) list
 
 type declaration = property * expression * important
 
-  and property = string
-  and important = bool
+and property = string
+and important = bool
 
-  and expression = sentence list
-   and sentence = term list
+and expression = sentence list
+and sentence = term list
 
-   and term =
-     | Calc of calc
-     | String of string
-     | Ident of string
-     | Uri of string
-     | Hash of string
-     | TermFunc of string * expression
-     | Slash
+and term =
+  | Calc of calc
+  | String of string
+  | Ident of string
+  | Uri of string
+  | Hash of string
+  | TermFunc of string * expression
+  | Slash
 
-     and calc =
-       | Varref of variable
-       | Quantity of quantity
-       (* ccss only *)
-       | Sum of calc * calc
-       | Sub of calc * calc
-       | Mul of calc * calc
-       | Div of calc * calc
+and calc =
+  | Varref of variable
+  | Quantity of quantity
+  (* ccss only *)
+  | Sum of calc * calc
+  | Sub of calc * calc
+  | Mul of calc * calc
+  | Div of calc * calc
 
-       and quantity = float * string option
+and quantity = float * string option
 
-       and variable = string
+and variable = string
 
- (* with tarzan *)
+(* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Rule *)
 (* ------------------------------------------------------------------------- *)
 type rule = selector list * declaration list
- (* with tarzan *)
+(* with tarzan *)
 
 type stylesheet = rule list
- (* with tarzan *)
+(* with tarzan *)

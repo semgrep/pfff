@@ -260,22 +260,22 @@ val (|||): 'a option -> 'a -> 'a
 type ('a, 'b) either = Left of 'a | Right of 'b
 (*e: type [[Common.either]] *)
 val pp_either: (Format.formatter -> 'a -> 'b) ->
-               (Format.formatter -> 'c -> 'd) ->
-               Format.formatter -> ('a, 'c) either -> unit
+  (Format.formatter -> 'c -> 'd) ->
+  Format.formatter -> ('a, 'c) either -> unit
 (*s: type [[Common.either3]] *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
 (*e: type [[Common.either3]] *)
 val pp_either3: (Format.formatter -> 'a -> 'b) ->
-               (Format.formatter -> 'c -> 'd) ->
-               (Format.formatter -> 'e -> 'f) ->
-               Format.formatter -> ('a, 'c, 'e) either3 -> unit
+  (Format.formatter -> 'c -> 'd) ->
+  (Format.formatter -> 'e -> 'f) ->
+  Format.formatter -> ('a, 'c, 'e) either3 -> unit
 (*s: signature [[Common.partition_either]] *)
 val partition_either :
   ('a -> ('b, 'c) either) -> 'a list -> 'b list * 'c list
 (*e: signature [[Common.partition_either]] *)
 (*s: signature [[Common.partition_either3]] *)
 val partition_either3 :
-    ('a -> ('b, 'c, 'd) either3) -> 'a list -> 'b list * 'c list * 'd list
+  ('a -> ('b, 'c, 'd) either3) -> 'a list -> 'b list * 'c list * 'd list
 (*e: signature [[Common.partition_either3]] *)
 
 
@@ -297,7 +297,7 @@ type cmdline_sections = options_with_title list
 (*s: signature [[Common.parse_options]] *)
 (* A wrapper around Arg modules that have more logical argument order,
  * and returns the remaining args.
- *)
+*)
 val parse_options :
   cmdline_options -> Arg.usage_msg -> string array -> string list
 (* Another wrapper that does Arg.align automatically *)
@@ -310,7 +310,7 @@ val usage : Arg.usage_msg -> cmdline_options -> unit
 (*s: signature [[Common.short_usage]] *)
 (* Work with the options_with_title type way to organize a long
  * list of command line switches.
- *)
+*)
 val short_usage :
   Arg.usage_msg -> short_opt:cmdline_options -> unit
 (*e: signature [[Common.short_usage]] *)
@@ -323,7 +323,7 @@ val long_usage :
 (*s: signature [[Common.arg_align2]] *)
 (* With the options_with_title way, we don't want the default -help and --help
  * so need adapter of Arg module, not just wrapper.
- *)
+*)
 val arg_align2 : cmdline_options -> cmdline_options
 (*e: signature [[Common.arg_align2]] *)
 (*s: signature [[Common.arg_parse2]] *)
@@ -341,7 +341,7 @@ type flag_spec   = Arg.key * Arg.spec * Arg.doc
 type action_spec = Arg.key * Arg.doc * action_func
 (*e: type [[Common.action_spec]] *)
 (*s: type [[Common.action_func]] *)
-   and action_func = (string list -> unit)
+and action_func = (string list -> unit)
 (*e: type [[Common.action_func]] *)
 
 (*s: type [[Common.cmdline_actions]] *)
@@ -392,7 +392,7 @@ val action_list:
  * helps in ocamldebug and also in getting better backtraces.
  * This is also useful to set in a js_of_ocaml (jsoo) context to
  * again get better backtraces.
- *)
+*)
 val debugger : bool ref
 (*e: signature [[Common.debugger]] *)
 
@@ -412,7 +412,7 @@ val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 
 (*s: signature [[Common.memoized]] *)
 val memoized :
-   ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
+  ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 (*e: signature [[Common.memoized]] *)
 
 (*s: exception [[Common.UnixExit]] *)
@@ -464,7 +464,7 @@ val profile_code2 : string -> (unit -> 'a) -> 'a
 (*s: signature [[Common._temp_files_created]] *)
 (* creation of /tmp files, a la gcc
  * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c"
- *)
+*)
 val _temp_files_created : string list ref
 (*e: signature [[Common._temp_files_created]] *)
 (*s: signature [[Common.save_tmp_files]] *)
@@ -503,7 +503,7 @@ val follow_symlinks: bool ref
 (*e: signature [[Common.follow_symlinks]] *)
 (*s: signature [[Common.files_of_dir_or_files_no_vcs_nofilter]] *)
 val files_of_dir_or_files_no_vcs_nofilter:
- string list -> filename list
+  string list -> filename list
 (*e: signature [[Common.files_of_dir_or_files_no_vcs_nofilter]] *)
 
 (*s: signature [[Common.main_boilerplate]] *)

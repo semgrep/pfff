@@ -53,7 +53,7 @@ open Common
  *    programs, compatability with other operating systems, less important
  *    or obsolete features. Then came the idea of trying to automate this
  *    codeslicing, especially for www.
- *)
+*)
 
 (*****************************************************************************)
 (* Flags *)
@@ -62,7 +62,7 @@ open Common
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this
  * program also depends on external files ?
- *)
+*)
 
 let output_dir = ref "CODESLICER"
 
@@ -114,7 +114,7 @@ let find_big_branching_factor graph_file =
     big_parents
     (* Inheritance transtive closure,
      * todo: could keep 1? the biggest one in terms of use?
-     *)
+    *)
     |> List.map (fun parent -> Graphe.succ parent hierarchy_transitive)
     |> List.flatten
     (* Has transitive closure, to also remove the fields, methods of a class *)
@@ -141,7 +141,7 @@ let find_big_branching_factor graph_file =
     (* ok the previous phase may have discovered newly dead code, that
      * may have rendered live children of big parents originally,
      * but that should not anymore, so let''s reconsider all children!
-     *)
+    *)
     dead_candidates () |> List.iter (fun node ->
       Hashtbl.replace hdead_candidates node true
     );
@@ -200,7 +200,7 @@ let find_big_branching_factor graph_file =
         Common.push node dead;
         (* a newly dead, should reconsider children of original
          * big parents!
-         *)
+        *)
         progress := true;
       )
     in
@@ -238,11 +238,11 @@ let find_big_branching_factor graph_file =
     pr2 (spf "step4(%d): candidates for removal = %d" !pass
            (Hashtbl.length hdead_candidates));
 
-  (* debug
-    hdead_candidates +> Common.hashset_to_list +> List.iter (fun node ->
-      pr (spf "DEAD: %s" (Graph_code.string_of_node node))
-    );
-  *)
+    (* debug
+       hdead_candidates +> Common.hashset_to_list +> List.iter (fun node ->
+        pr (spf "DEAD: %s" (Graph_code.string_of_node node))
+       );
+    *)
     incr pass;
     if Hashtbl.length hdead_candidates = !last_cnt
     then progress := false
@@ -252,38 +252,38 @@ let find_big_branching_factor graph_file =
   (* step5: slice the code! *)
 
   hlivermakes_stats |> Common.hash_to_list |> Common.sort_by_val_highfirst
-    |> Common.take_safe 10 |> List.iter (fun (k, v) ->
-      pr2 (spf "livemaker: %s (%d)"
-             (Graph_code.string_of_node k) v)
-    );
+  |> Common.take_safe 10 |> List.iter (fun (k, v) ->
+    pr2 (spf "livemaker: %s (%d)"
+           (Graph_code.string_of_node k) v)
+  );
 
   (* First approximation *)
 
   (* later: do the actual slice of the code given a list of dead nodes
    * but will probably  need range info
-   *)
+  *)
 
   let files_to_remove =
     Graph_code.all_nodes g |> Common.map_filter (fun node ->
       match node with
       | filename, Entity_code.File ->
-        (* ? should look for all children recursively? *)
-        let children = Graph_code.children node g in
+          (* ? should look for all children recursively? *)
+          let children = Graph_code.children node g in
 
-(* debug
-        if filename =~ ".*AbstractDirectedGraphTestCase" then begin
-          children +> List.iter (fun child ->
-            if not (Hashtbl.mem hdead_candidates child)
-            then pr2_gen child
-          )
-        end;
-*)
-        if children |> List.for_all
-          (fun node -> Hashtbl.mem hdead_candidates node) &&
-          (* for files like webroot/index.php with no entities *)
-          List.length children >= 1
-        then Some filename
-        else None
+          (* debug
+                  if filename =~ ".*AbstractDirectedGraphTestCase" then begin
+                    children +> List.iter (fun child ->
+                      if not (Hashtbl.mem hdead_candidates child)
+                      then pr2_gen child
+                    )
+                  end;
+          *)
+          if children |> List.for_all
+               (fun node -> Hashtbl.mem hdead_candidates node) &&
+             (* for files like webroot/index.php with no entities *)
+             List.length children >= 1
+          then Some filename
+          else None
       | _ -> None
     ) |> Common.sort
   in
@@ -302,7 +302,7 @@ module E = Entity_code
 
 (* xs are the set of dirs or files we are interested in; the starting points
  * for the DFS.
- *)
+*)
 let extract_transitive_deps xs =
   let pwd = Sys.getcwd () in
   let graph_file = Filename.concat pwd Graph_code.default_filename in
@@ -331,15 +331,15 @@ let extract_transitive_deps xs =
     | ("flib_init", E.Function)::xs -> dfs depth xs
     | n::xs ->
         (if Hashtbl.mem hdone n || depth > max_depth
-        then ()
-        else begin
-          Hashtbl.add hdone n true;
-          let uses = GC.succ n GC.Use g in
-          dfs (depth + 1) uses;
-          let children = GC.children n g in
-          (* we want all children, especially subdirectories *)
-          dfs (depth + 0) children
-        end);
+         then ()
+         else begin
+           Hashtbl.add hdone n true;
+           let uses = GC.succ n GC.Use g in
+           dfs (depth + 1) uses;
+           let children = GC.children n g in
+           (* we want all children, especially subdirectories *)
+           dfs (depth + 0) children
+         end);
         dfs depth xs
 
   in
@@ -398,7 +398,7 @@ let options () = [
   "-o", Arg.Set_string output_dir,
   " <dir> generate codeslice in dir";
 
-  ] @
+] @
   Flag_parsing.cmdline_flags_verbose () @
   Flag_parsing_cpp.cmdline_flags_debugging () @
   Flag_parsing_cpp.cmdline_flags_macrofile () @
@@ -426,7 +426,7 @@ let main () =
 
   let usage_msg =
     "Usage: " ^ Common2.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -436,27 +436,27 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | x::xs ->
-        main_action (x::xs)
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | x::xs ->
+         main_action (x::xs)
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] ->
-        Common.usage usage_msg (options());
-        failwith "too few arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] ->
+         Common.usage usage_msg (options());
+         failwith "too few arguments"
     )
   )
 

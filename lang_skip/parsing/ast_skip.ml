@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -36,18 +36,18 @@ type tok = Parse_info.t
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap = 'a * tok
 
- (* with tarzan *)
+(* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
 type name = string wrap
 
-  (* lower and uppernames aliases, just for clarity *)
-  and lname = name
-  and uname = name
+(* lower and uppernames aliases, just for clarity *)
+and lname = name
+and uname = name
 
- (* with tarzan *)
+(* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -83,7 +83,7 @@ type name = string wrap
 
 type program = unit
 
- (* with tarzan *)
+(* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -93,7 +93,7 @@ type any =
   | Program of program
   | Info of tok
 
-  (* with tarzan *)
+(* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)

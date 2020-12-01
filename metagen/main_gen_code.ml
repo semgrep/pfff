@@ -216,7 +216,7 @@ let ffi_extra_actions () = [
 
 let all_actions () =
   ffi_extra_actions() @
- []
+  []
 
 let options () =
   [
@@ -224,10 +224,10 @@ let options () =
     " ";
   ] @
   Common.options_of_actions action (all_actions()) @
-(*  Common.cmdline_flags_devel () @
-  Common.cmdline_flags_verbose () @
-  Common.cmdline_flags_other () @
-*)
+  (*  Common.cmdline_flags_devel () @
+      Common.cmdline_flags_verbose () @
+      Common.cmdline_flags_other () @
+  *)
   [
 (*
   "-version",   Arg.Unit (fun () ->
@@ -237,12 +237,12 @@ let options () =
     "  guess what";
 *)
 
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () ->
-    pr2 "version: $Date: 2008/10/26 00:44:57 $";
-    raise (Common.UnixExit 0)
+    (* this can not be factorized in Common *)
+    "-date",   Arg.Unit (fun () ->
+      pr2 "version: $Date: 2008/10/26 00:44:57 $";
+      raise (Common.UnixExit 0)
     ),
-  "   guess what";
+    "   guess what";
   ] @
   []
 
@@ -253,7 +253,7 @@ let options () =
 let main () =
   let usage_msg =
     "Usage: " ^ Filename.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -263,30 +263,30 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | [] when !action = "-yyy" ->
-        pr2 "yyy"
+     | [] when !action = "-yyy" ->
+         pr2 "yyy"
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | x::_xs ->
-        main_action x
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | x::_xs ->
+         main_action x
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] ->
-        Common.usage usage_msg (options());
-        failwith "too few arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] ->
+         Common.usage usage_msg (options());
+         failwith "too few arguments"
     )
   )
 
@@ -295,5 +295,5 @@ let main () =
 (*****************************************************************************)
 let _ =
   Common.main_boilerplate (fun () ->
-      main ();
+    main ();
   )
