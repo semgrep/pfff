@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: pad/r2c copyright *)
 open Common
 open IL
@@ -30,7 +30,7 @@ module VarMap = Dataflow.VarMap
  * This is a very rudimentary tainting analysis. Just intraprocedural,
  * very coarse grained (taint whole array/object).
  * This is step1 for taint tracking support in semgrep.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -54,12 +54,12 @@ type config = {
 
 (*s: module [[Dataflow.Make(Il)]] *)
 module DataflowX = Dataflow.Make (struct
-  type node = F.node
-  type edge = F.edge
-  type flow = (node, edge) Ograph_extended.ograph_mutable
-  let short_string_of_node n =
-        Display_IL.short_string_of_node_kind n.F.n
-end)
+    type node = F.node
+    type edge = F.edge
+    type flow = (node, edge) Ograph_extended.ograph_mutable
+    let short_string_of_node n =
+      Display_IL.short_string_of_node_kind n.F.n
+  end)
 (*e: module [[Dataflow.Make(Il)]] *)
 
 (*****************************************************************************)
@@ -68,7 +68,7 @@ end)
 
 (*s: function [[Dataflow_tainting.str_of_name]] *)
 let str_of_name ((s, _tok), sid) =
-    spf "%s:%d" s sid
+  spf "%s:%d" s sid
 (*e: function [[Dataflow_tainting.str_of_name]] *)
 
 (*s: function [[Dataflow_tainting.option_to_varmap]] *)
@@ -81,7 +81,7 @@ let option_to_varmap = function
 (* Transfer *)
 (*****************************************************************************)
 (* Not sure we can use the Gen/Kill framework here.
- *)
+*)
 
 (*s: constant [[Dataflow_tainting.union]] *)
 let union =
@@ -94,59 +94,59 @@ let diff =
 
 (*s: function [[Dataflow_tainting.transfer]] *)
 let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
- fun config ~flow ->
+  fun config ~flow ->
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
   let in' =
     (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
-       union acc mapping.(ni_pred).D.out_env
-     ) VarMap.empty
+      union acc mapping.(ni_pred).D.out_env
+    ) VarMap.empty
   in
   let node = flow#nodes#assoc ni in
 
   (* TODO: do that later? once everything if finished? *)
   (match node.F.n with
-  | NInstr x ->
-    if config.is_sink x
-    then begin
-       (* TODO: use metavar in sink to know which argument we should check
-        * for taint?
-        *)
-       let rvars = IL.rvars_of_instr x in
-       if rvars |> List.exists (fun rvar -> VarMap.mem (str_of_name rvar) in')
-       then config.found_tainted_sink x in'
-    end
-  | Enter | Exit | TrueNode | FalseNode | Join
-  | NCond _| NReturn _ | NThrow _ | NOther _ -> ()
+   | NInstr x ->
+       if config.is_sink x
+       then begin
+         (* TODO: use metavar in sink to know which argument we should check
+          * for taint?
+         *)
+         let rvars = IL.rvars_of_instr x in
+         if rvars |> List.exists (fun rvar -> VarMap.mem (str_of_name rvar) in')
+         then config.found_tainted_sink x in'
+       end
+   | Enter | Exit | TrueNode | FalseNode | Join
+   | NCond _| NReturn _ | NThrow _ | NOther _ -> ()
   );
 
 
   let gen_ni_opt =
     match node.F.n with
     | NInstr x ->
-       (match x.i with
-       | Call (Some ({base=Var lvar; _}),
-                    {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
-          Some lvar
-      (* this can use semgrep patterns under the hood to find source
-       * functions instead of the hardcoded source() above.
-       *)
-       | _ when config.is_source x ->
-           IL.lvar_of_instr_opt x
-       | _ ->
-           let lvar_opt = IL.lvar_of_instr_opt x in
-           let rvars = IL.rvars_of_instr x in
-           (match lvar_opt with
-           | None -> None
-           | Some lvar ->
-               (* one taint argument propagate the taint to the lvar *)
-               if rvars |> List.exists (fun rvar ->
-                                VarMap.mem (str_of_name rvar) in')
-               then Some lvar
-               else None
-            )
-       )
+        (match x.i with
+         | Call (Some ({base=Var lvar; _}),
+                 {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
+             Some lvar
+         (* this can use semgrep patterns under the hood to find source
+          * functions instead of the hardcoded source() above.
+         *)
+         | _ when config.is_source x ->
+             IL.lvar_of_instr_opt x
+         | _ ->
+             let lvar_opt = IL.lvar_of_instr_opt x in
+             let rvars = IL.rvars_of_instr x in
+             (match lvar_opt with
+              | None -> None
+              | Some lvar ->
+                  (* one taint argument propagate the taint to the lvar *)
+                  if rvars |> List.exists (fun rvar ->
+                    VarMap.mem (str_of_name rvar) in')
+                  then Some lvar
+                  else None
+             )
+        )
 
     | Enter | Exit | TrueNode | FalseNode | Join
     | NCond _| NReturn _ | NThrow _ | NOther _ -> None
@@ -159,33 +159,33 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
      *  then None
      * but now gen_ni <> None does not necessarily mean we had a source().
      * It can also be one tainted rvars which propagate to the lvar
-     *)
+    *)
     match node.F.n with
     | NInstr x ->
-       (match x.i with
-       | Call (Some ({base=Var _lvar; _}),
-                    {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
-          None
-       | _ when config.is_source x -> None
+        (match x.i with
+         | Call (Some ({base=Var _lvar; _}),
+                 {e=Lvalue({base=Var(("source",_),_);_}); _}, [])->
+             None
+         | _ when config.is_source x -> None
 
-       | Call (Some ({base=Var lvar; _}),
-               {e=Lvalue({base=Var(("sanitize",_),_);_}); _}, [])->
-          Some lvar
-       | _ when config.is_sanitizer x ->
-           IL.lvar_of_instr_opt x
-       | _ ->
-           let lvar_opt = IL.lvar_of_instr_opt x in
-           let rvars = IL.rvars_of_instr x in
-           (match lvar_opt with
-           | None -> None
-           | Some lvar ->
-               (* all clean arguments should reset the taint *)
-               if rvars |> List.for_all (fun rvar ->
-                                not (VarMap.mem (str_of_name rvar) in'))
-               then Some lvar
-               else None
-            )
-       )
+         | Call (Some ({base=Var lvar; _}),
+                 {e=Lvalue({base=Var(("sanitize",_),_);_}); _}, [])->
+             Some lvar
+         | _ when config.is_sanitizer x ->
+             IL.lvar_of_instr_opt x
+         | _ ->
+             let lvar_opt = IL.lvar_of_instr_opt x in
+             let rvars = IL.rvars_of_instr x in
+             (match lvar_opt with
+              | None -> None
+              | Some lvar ->
+                  (* all clean arguments should reset the taint *)
+                  if rvars |> List.for_all (fun rvar ->
+                    not (VarMap.mem (str_of_name rvar) in'))
+                  then Some lvar
+                  else None
+             )
+        )
     | Enter | Exit | TrueNode | FalseNode | Join
     | NCond _| NReturn _ | NThrow _ | NOther _ -> None
   in

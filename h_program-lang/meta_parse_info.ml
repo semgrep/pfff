@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Parse_info
 
 type dumper_precision = {
@@ -28,12 +28,12 @@ let default_dumper_precision = {
 let vof_filename v = OCaml.vof_string v
 
 let vof_token_location {
-                     str = v_str;
-                     charpos = v_charpos;
-                     line = v_line;
-                     column = v_column;
-                     file = v_file
-                   } =
+  str = v_str;
+  charpos = v_charpos;
+  line = v_line;
+  column = v_column;
+  file = v_file
+} =
   let bnds = [] in
   let arg = vof_filename v_file in
   let bnd = ("file", arg) in
@@ -78,7 +78,7 @@ let rec vof_transformation =
   | AddAfter v1 -> let v1 = vof_add v1 in OCaml.VSum ("AddAfter", [ v1 ])
   | Replace v1 -> let v1 = vof_add v1 in OCaml.VSum ("Replace", [ v1 ])
   | AddArgsBefore v1 -> let v1 = OCaml.vof_list OCaml.vof_string v1 in OCaml.VSum
-  ("AddArgsBefore", [ v1 ])
+        ("AddArgsBefore", [ v1 ])
 
 and vof_add =
   function
@@ -87,7 +87,7 @@ and vof_add =
   | AddNewlineAndIdent -> OCaml.VSum ("AddNewlineAndIdent", [])
 
 let vof_info
- { token = v_token; transfo = v_transfo } =
+    { token = v_token; transfo = v_transfo } =
   let bnds = [] in
   let arg = vof_transformation v_transfo in
   let bnd = ("transfo", arg) in
@@ -106,15 +106,15 @@ let cmdline_flags_precision () = [
     _current_precision := { default_dumper_precision with full_info = true; };
     Parse_info.pp_full_token_info := true;
   ), " print also token information in dumper";
- ]
+]
 
 let vof_info_adjustable_precision x =
   if !_current_precision.full_info
   then vof_info x
   else if !_current_precision.token_info
-       then
-        OCaml.VDict [
-          "line", OCaml.VInt (line_of_info x);
-          "col", OCaml.VInt (col_of_info x);
-        ]
-      else OCaml.VUnit
+  then
+    OCaml.VDict [
+      "line", OCaml.VInt (line_of_info x);
+      "col", OCaml.VInt (col_of_info x);
+    ]
+  else OCaml.VUnit

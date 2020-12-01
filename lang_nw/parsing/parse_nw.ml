@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 
 module TH   = Token_helpers_nw
 
@@ -33,14 +33,14 @@ let tokens2 file =
   Lexer_nw.reset();
   let token lexbuf =
     (match Lexer_nw.current_mode () with
-    | Lexer_nw.INITIAL ->
-        Lexer_nw.tex lexbuf
-    | Lexer_nw.IN_VERBATIM ->
-        Lexer_nw.verbatim lexbuf
-    | Lexer_nw.IN_VERB c ->
-        Lexer_nw.verb c lexbuf
-    | Lexer_nw.IN_NOWEB_CHUNK ->
-        Lexer_nw.noweb lexbuf
+     | Lexer_nw.INITIAL ->
+         Lexer_nw.tex lexbuf
+     | Lexer_nw.IN_VERBATIM ->
+         Lexer_nw.verbatim lexbuf
+     | Lexer_nw.IN_VERB c ->
+         Lexer_nw.verb c lexbuf
+     | Lexer_nw.IN_NOWEB_CHUNK ->
+         Lexer_nw.noweb lexbuf
     )
   in
   Parse_info.tokenize_all_and_adjust_pos
@@ -56,9 +56,9 @@ let tokens a =
 let parse_fuzzy file =
   let toks = tokens file in
   let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks
+                                       tokf = TH.info_of_tok;
+                                       kind = TH.token_kind_of_tok;
+                                     } toks
   in
   trees, toks
 

@@ -55,12 +55,12 @@ let several p = many (pred p)
 
 
 module Abstr : sig
-    type t
-    val x : t
-  end = struct
-    type t = int
-    let x = 0
-  end
+  type t
+  val x : t
+end = struct
+  type t = int
+  let x = 0
+end
 
 let fin = function
   | [] as t -> Abstr.x, t
@@ -90,7 +90,7 @@ let symbol = function
   | '&' | '|' | '!'
 
   | '=' | '~' | '@'
-      -> true
+    -> true
   | _ -> false
 
 let space = function
@@ -121,15 +121,15 @@ let string_of_chars cs =
 
 
 let collect(h, t) =
-    String.concat "" (List.map (String.make 1) (h::t))
+  String.concat "" (List.map (String.make 1) (h::t))
 
 let collectbis(xs) =
-    String.concat "" (List.map (String.make 1) (xs))
+  String.concat "" (List.map (String.make 1) (xs))
 
 let list_of_string string =
-    let list = ref [] in
-    String.iter (fun c -> list := c :: !list) string;
-    List.rev !list
+  let list = ref [] in
+  String.iter (fun c -> list := c :: !list) string;
+  List.rev !list
 
 
 (*****************************************************************************)
@@ -171,10 +171,10 @@ let rawstring =
   pred stringquote +++
   several (fun c -> not (stringquote c)) +++
   pred stringquote
-   >| (fun ((c1, cs), c3) ->
-        let s = string_of_chars cs in
-        STR s (* exclude the marker *)
-   )
+  >| (fun ((c1, cs), c3) ->
+    let s = string_of_chars cs in
+    STR s (* exclude the marker *)
+  )
 
 
 let lex_gen tokenf str =
@@ -182,42 +182,42 @@ let lex_gen tokenf str =
   val_of_parser (alltoks (list_of_string str))
 
 let parse_gen tokenf grammarf p string =
-    val_of_parser (grammarf (lex_gen tokenf string))
+  val_of_parser (grammarf (lex_gen tokenf string))
 
 (*****************************************************************************)
 (* not generic anymore *)
 (*****************************************************************************)
 (* the order is important if some "rules" overlap, as in ocamllex *)
 let token =
-    (rawident ||| rawnumber ||| rawkeyword) +++ several space >| fst
+  (rawident ||| rawnumber ||| rawkeyword) +++ several space >| fst
 
 (* pad: bugfix: was not defined in jon harrop article *)
 let tokens = many token
 
 let alltokens =
-    tokens +++ fin >| fst
+  tokens +++ fin >| fst
 
 let lex (string : string) =
-    val_of_parser (alltokens (list_of_string string))
+  val_of_parser (alltokens (list_of_string string))
 
 
 let test1 () =
   assert
-  (lex "a x^2 + b x + c"
-    =
-    [IDENT "a"; IDENT "x"; KWD "^"; INT "2"; KWD "+"; IDENT "b"; IDENT "x";
-     KWD "+"; IDENT "c"]
-  )
+    (lex "a x^2 + b x + c"
+     =
+     [IDENT "a"; IDENT "x"; KWD "^"; INT "2"; KWD "+"; IDENT "b"; IDENT "x";
+      KWD "+"; IDENT "c"]
+    )
 
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
 
 type expr =
-    | Int of int
-    | Var of string
-    | Add of expr * expr
-    | Mul of expr * expr
+  | Int of int
+  | Var of string
+  | Add of expr * expr
+  | Mul of expr * expr
 
 type 'a pparser = (token, 'a) genp
 
@@ -237,16 +237,16 @@ open Format;;
 *)
 
 let ident = function
-    | IDENT x :: t -> x, t
-    | _ -> raise Not_found
+  | IDENT x :: t -> x, t
+  | _ -> raise Not_found
 
 let int = function
-    | INT n :: t -> n, t
-    | _ -> raise Not_found
+  | INT n :: t -> n, t
+  | _ -> raise Not_found
 
 let string = function
-    | STR x :: t -> x, t
-    | _ -> raise Not_found
+  | STR x :: t -> x, t
+  | _ -> raise Not_found
 
 (* src: Jon Harrop
  * "This style of parsing, known as recursive descent parsing , has one
@@ -258,38 +258,38 @@ let string = function
  * and term calls factor first, to avoid this problem."
  *
  * pad: bugfix, added the KWD "*".
- *)
+*)
 
 (* pad: I think I remembered you cant eta-factorize the parameter
  * when you use mutually recursive
- *)
+*)
 let rec atom s =
- (
-  (int             >| fun n -> Int(int_of_string n))
-  |||
-  (ident           >| fun x -> Var x)
-  |||
-  (a (KWD "(") +++ term +++ a (KWD ")")     >| fun ((_, e), _) -> e)
+  (
+    (int             >| fun n -> Int(int_of_string n))
+    |||
+    (ident           >| fun x -> Var x)
+    |||
+    (a (KWD "(") +++ term +++ a (KWD ")")     >| fun ((_, e), _) -> e)
   ) s
 and factor s =
- (
-  (atom +++ a (KWD "*") +++ factor      >| fun ((f, _), g) -> Mul (f,g))
-  |||
-  atom
- ) s
+  (
+    (atom +++ a (KWD "*") +++ factor      >| fun ((f, _), g) -> Mul (f,g))
+    |||
+    atom
+  ) s
 and term s =
   (
-   (factor +++ a (KWD "+") +++ term     >| fun ((f, _), g) -> Add (f,g))
-   |||
-   factor
+    (factor +++ a (KWD "+") +++ term     >| fun ((f, _), g) -> Add (f,g))
+    |||
+    factor
   ) s
 
 
 let expr =
-    term +++ fin >| fst
+  term +++ fin >| fst
 
 let parse p string =
-    val_of_parser(p(lex string))
+  val_of_parser(p(lex string))
 
 (*
 parse expr "a x x + b x + c"

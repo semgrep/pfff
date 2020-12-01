@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Ast_java
@@ -23,7 +23,7 @@ module G = AST_generic
 (* Ast_java to AST_generic.
  *
  * See ast_generic.ml for more information.
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -50,7 +50,7 @@ let id_of_entname = function
 let entity_to_param { G.name; attrs; tparams = _unused; info } t =
   let id = id_of_entname name in
   { G. pname = Some id; ptype = t; pattrs = attrs; pinfo = info;
-       pdefault = None; }
+    pdefault = None; }
 
 (*****************************************************************************)
 (* Entry point *)
@@ -79,19 +79,19 @@ let rec typ =
       let v1 = typ v1 in G.TyArray ((t1, None, t2), v1)
 and class_type v =
   let res = list1
-    (fun (v1, v2) ->
-       let v1 = ident v1 and _v2TODO = list type_argument v2 in
-        (v1))
-    v
+      (fun (v1, v2) ->
+         let v1 = ident v1 and _v2TODO = list type_argument v2 in
+         (v1))
+      v
   in
   (match List.rev res with
-  | [] -> raise Impossible (* list1 *)
-  | name::xs ->
-        let info = { G.
-            name_typeargs = None; (* could be v1TODO above *)
-            name_qualifier = Some (G.QDots (List.rev xs));
-          } in
-        G.TyName (name, info)
+   | [] -> raise Impossible (* list1 *)
+   | name::xs ->
+       let info = { G.
+                    name_typeargs = None; (* could be v1TODO above *)
+                    name_qualifier = Some (G.QDots (List.rev xs));
+                  } in
+       G.TyName (name, info)
   )
 
 and type_argument =
@@ -100,8 +100,8 @@ and type_argument =
   | TWildCard (v1, v2) ->
       let v2 =
         option (fun (v1, v2) ->
-            let v1 = wrap bool v1 and v2 = ref_type v2 in
-            (v1,v2))
+          let v1 = wrap bool v1 and v2 = ref_type v2 in
+          (v1,v2))
           v2
       in
       G.TypeWildcard (v1, v2)
@@ -173,20 +173,20 @@ and annotation_pair =
 (* id_or_name_of_qualified_ident *)
 and name v =
   let res = list1
-    (fun (v1, v2) ->
-       let _v1TODO = list type_argument v1
-        and v2 = ident v2 in (v2))
-    v
+      (fun (v1, v2) ->
+         let _v1TODO = list type_argument v1
+         and v2 = ident v2 in (v2))
+      v
   in
   (match List.rev res with
-  | [] -> raise Impossible (* list1 *)
-  | [name] -> G.Id (name, G.empty_id_info())
-  | name::y::xs ->
-        let name_info = { G.
-            name_typeargs = None; (* could be v1TODO above *)
-            name_qualifier = Some (G.QDots (List.rev (y::xs)));
-          } in
-        G.IdQualified ((name, name_info), G.empty_id_info())
+   | [] -> raise Impossible (* list1 *)
+   | [name] -> G.Id (name, G.empty_id_info())
+   | name::y::xs ->
+       let name_info = { G.
+                         name_typeargs = None; (* could be v1TODO above *)
+                         name_qualifier = Some (G.QDots (List.rev (y::xs)));
+                       } in
+       G.IdQualified ((name, name_info), G.empty_id_info())
   )
 
 
@@ -206,7 +206,7 @@ and expr e =
   | NameOrClassType _v1 ->
       let ii = Lib_parsing_java.ii_of_any (AExpr e) in
       error (List.hd ii)
-      "NameOrClassType should only appear in (ignored) annotations"
+        "NameOrClassType should only appear in (ignored) annotations"
   | Literal v1 -> let v1 = literal v1 in
       G.L v1
   | ClassLiteral v1 -> let v1 = typ v1 in
@@ -216,16 +216,16 @@ and expr e =
       and v2 = list argument v2
       and v3 = option (bracket decls) v3 in
       (match v3 with
-      | None -> G.Call (G.IdSpecial (G.New, v0), (lp,(G.ArgType v1)::v2,rp))
-      | Some decls ->
-         let anonclass = G.AnonClass { G.
-                ckind = (G.Class, v0);
-                cextends = [v1];
-                cimplements = []; cmixins = [];
-                cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
-                }
-            in
-         G.Call (G.IdSpecial (G.New, v0), (lp,(G.Arg anonclass)::v2,rp))
+       | None -> G.Call (G.IdSpecial (G.New, v0), (lp,(G.ArgType v1)::v2,rp))
+       | Some decls ->
+           let anonclass = G.AnonClass { G.
+                                         ckind = (G.Class, v0);
+                                         cextends = [v1];
+                                         cimplements = []; cmixins = [];
+                                         cbody = decls |> bracket (List.map (fun x -> G.FieldStmt x))
+                                       }
+           in
+           G.Call (G.IdSpecial (G.New, v0), (lp,(G.Arg anonclass)::v2,rp))
       )
   | NewArray (v0, v1, v2, v3, v4) ->
       let v1 = typ v1
@@ -242,9 +242,9 @@ and expr e =
       in
       let t = mk_array (v3 + List.length v2) in
       (match v4 with
-      | None -> G.Call (G.IdSpecial (G.New, v0), fb ((G.ArgType t)::v2))
-      | Some e ->
-         G.Call (G.IdSpecial (G.New, v0), fb ((G.ArgType t)::(G.Arg e)::v2))
+       | None -> G.Call (G.IdSpecial (G.New, v0), fb ((G.ArgType t)::v2))
+       | Some e ->
+           G.Call (G.IdSpecial (G.New, v0), fb ((G.ArgType t)::(G.Arg e)::v2))
       )
 
   (* x.new Y(...) {...} *)
@@ -257,15 +257,15 @@ and expr e =
       let any =
         [G.E v0; G.T v2] @ (v3 |> G.unbracket |> List.map (fun arg -> G.Ar arg)) @
         (Common.opt_to_list v4 |> List.map G.unbracket |> List.flatten |> List.map
-            (fun st -> G.S st)) in
-       G.OtherExpr (G.OE_NewQualifiedClass, any)
+           (fun st -> G.S st)) in
+      G.OtherExpr (G.OE_NewQualifiedClass, any)
   | MethodRef (v1, v2, v3, v4) ->
       let v1 = expr_or_type v1 in
       let v2 = tok v2 in
       let _v3 = type_arguments v3 in
       let v4 = ident v4 in
       G.OtherExpr (G.OE_Todo,
-        [v1; G.Tk v2; G.I v4])
+                   [v1; G.Tk v2; G.I v4])
 
 
   | Call (v1, v2) -> let v1 = expr v1 and v2 = arguments v2 in
@@ -284,12 +284,12 @@ and expr e =
       let v1 = expr v1 and v2 = v2 and v3 = expr v3 in
       G.Call (G.IdSpecial (G.Op v2, tok), fb[G.Arg v1; G.Arg v3])
   | Cast (((_, v1, _), v2)) ->
-    let v1 = list typ v1 and v2 = expr v2 in
-    let t = Common2.foldl1 (fun acc e -> G.TyAnd (acc, fake "&", e)) v1 in
-    G.Cast (t, v2)
+      let v1 = list typ v1 and v2 = expr v2 in
+      let t = Common2.foldl1 (fun acc e -> G.TyAnd (acc, fake "&", e)) v1 in
+      G.Cast (t, v2)
   | InstanceOf (v1, v2) -> let v1 = expr v1 and v2 = ref_type v2 in
-    G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
-        fb[G.Arg v1; G.ArgType v2])
+      G.Call (G.IdSpecial (G.Instanceof, fake "instanceof"),
+              fb[G.Arg v1; G.ArgType v2])
   | Conditional (v1, v2, v3) ->
       let v1 = expr v1 and v2 = expr v2 and v3 = expr v3 in
       G.Conditional (v1, v2, v3)
@@ -334,7 +334,7 @@ and stmt =
         list
           (fun (v1, v2) -> let v1 = cases v1 and v2 = stmts v2 in
             v1, G.stmt1 v2
-        ) v2
+          ) v2
       in
       G.Switch (v0, Some v1, v2)
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
@@ -455,17 +455,17 @@ and parameter_binding = function
 
 and
   method_decl {
-                  m_var = m_var;
-                  m_formals = m_formals;
-                  m_throws = m_throws;
-                  m_body = m_body
-                } =
+    m_var = m_var;
+    m_formals = m_formals;
+    m_throws = m_throws;
+    m_body = m_body
+  } =
   let ent, rett = var m_var in
   let v2 = params m_formals in
   let v3 = list typ m_throws in
   let v4 = stmt m_body in
   let throws = v3 |> List.map (fun t ->
-        G.OtherAttribute (G.OA_AnnotThrow, [G.T t]))
+    G.OtherAttribute (G.OA_AnnotThrow, [G.T t]))
   in
   { ent with G.attrs = ent.G.attrs @ throws },
   { G.fparams = v2; frettype  = rett; fbody = v4; fkind = G.Method, G.fake "" }
@@ -473,11 +473,11 @@ and
 and field v = var_with_init v
 
 and enum_decl {
-                en_name = en_name;
-                en_mods = en_mods;
-                en_impls = en_impls;
-                en_body = en_body
-              } =
+  en_name = en_name;
+  en_mods = en_mods;
+  en_impls = en_impls;
+  en_body = en_body
+} =
   let v1 = ident en_name in
   let v2 = modifiers en_mods in
   let _v3TODO = list ref_type en_impls in
@@ -497,14 +497,14 @@ and enum_constant (v1, v2, v3) =
 and class_body x = bracket decls x
 
 and class_decl {
-                 cl_name = cl_name;
-                 cl_kind = cl_kind;
-                 cl_tparams = cl_tparams;
-                 cl_mods = cl_mods;
-                 cl_extends = cl_extends;
-                 cl_impls = cl_impls;
-                 cl_body = cl_body
-               } =
+  cl_name = cl_name;
+  cl_kind = cl_kind;
+  cl_tparams = cl_tparams;
+  cl_mods = cl_mods;
+  cl_extends = cl_extends;
+  cl_impls = cl_impls;
+  cl_body = cl_body
+} =
   let v1 = ident cl_name in
   let v2 = class_kind cl_kind in
   let v3 = list type_parameter cl_tparams in
@@ -514,23 +514,23 @@ and class_decl {
   let v7 = class_body cl_body in
   let fields = v7 |> bracket (List.map (fun x -> G.FieldStmt x)) in
   let ent = { (G.basic_entity v1 v4) with
-      G.tparams = v3 } in
+              G.tparams = v3 } in
   let cdef = { G.
-      ckind = v2;
-      cextends = Common.opt_to_list v5;
-      cimplements = v6;
-      cmixins = [];
-      cbody = fields;
-    } in
+               ckind = v2;
+               cextends = Common.opt_to_list v5;
+               cimplements = v6;
+               cmixins = [];
+               cbody = fields;
+             } in
   ent, cdef
 
 
 
 and class_kind (x, t) =
   (match x with
-  | ClassRegular ->  G.Class
-  | Interface -> G.Interface
-  | AtInterface -> G.AtInterface
+   | ClassRegular ->  G.Class
+   | Interface -> G.Interface
+   | AtInterface -> G.AtInterface
   ), t
 
 and decl decl =
@@ -573,8 +573,8 @@ let partial = function
   | PartialDecl x ->
       let x = decl x in
       (match x with
-      | G.DefStmt def -> G.PartialDef def
-      | _ -> failwith "unsupported PartialDecl"
+       | G.DefStmt def -> G.PartialDef def
+       | _ -> failwith "unsupported PartialDecl"
       )
 
 let any =

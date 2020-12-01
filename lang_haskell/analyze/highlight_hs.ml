@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module PI = Parse_info
@@ -54,37 +54,37 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline ii4
+        ::T.TComment(ii5)
+        ::xs ->
 
         let s = PI.str_of_info ii in
         let s5 =  PI.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ ->
-            ()
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ ->
+             ()
         );
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
     (* Poor's man semantic tagger. Infer if ident is a func, or variable,
      * based on the few tokens around and the column information.
-     *)
+    *)
     | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs
-        when PI.col_of_info ii1 = 0 ->
+      when PI.col_of_info ii1 = 0 ->
 
         tag ii1 (Entity (Function, (Def2 NoUse)));
         aux_toks xs
@@ -97,15 +97,15 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
 
     (* a few false positives, for instance local typed variable
      * and method definitions in type class
-     *)
+    *)
     | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs
-        when PI.col_of_info ii1 > 0 ->
+      when PI.col_of_info ii1 > 0 ->
 
         tag ii1 (Entity (Field, (Def2 NoUse)));
         aux_toks xs
 
     | T.TIdent (_s, ii1)::xs
-        when PI.col_of_info ii1 = 0 ->
+      when PI.col_of_info ii1 = 0 ->
 
         tag ii1 FunctionEquation;
         aux_toks xs
@@ -114,11 +114,11 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
         tag ii1 UseOfRef;
         aux_toks xs
 
-(* too many false positives, for instance records building
-    | T.TIdent (s, ii1)::T.TSymbol ("=", ii3)::xs  ->
-        tag ii1 (Local Def);
-        aux_toks xs
-*)
+    (* too many false positives, for instance records building
+        | T.TIdent (s, ii1)::T.TSymbol ("=", ii3)::xs  ->
+            tag ii1 (Local Def);
+            aux_toks xs
+    *)
 
     | T.TIdent (_s, ii1)::T.TSymbol ("@", _ii2)::xs  ->
         tag ii1 (Local Def);
@@ -171,7 +171,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
 
     | T.TCBracket ii
     | T.TOBracket ii
-        -> tag ii TypeVoid (* TODO *)
+      -> tag ii TypeVoid (* TODO *)
 
     | T.TCParen ii
     | T.TOParen ii
@@ -184,10 +184,10 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
     | T.TComma ii
     | T.TSemiColon ii
     | T.TPipe ii
-        -> tag ii Punctuation
+      -> tag ii Punctuation
 
     | T.TSymbol (s, ii)
-        ->
+      ->
         let kind =
           match s with
           | "::" | "->" | "<-" | "=" ->
@@ -228,14 +228,14 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
 
 
     | T.TIdent (s, ii)
-        ->
+      ->
         (match s with
-        | "unsafePerformIO" -> tag ii BadSmell
-        | _ -> ()
+         | "unsafePerformIO" -> tag ii BadSmell
+         | _ -> ()
         )
 
     | T.TUpperIdent (_s, ii)
-        ->
+      ->
         (* could be a type or a constructor *)
         tag ii TypeVoid
 

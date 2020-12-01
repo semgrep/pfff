@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: pad/r2c copyright *)
 
 module T = Parser_python
@@ -46,7 +46,7 @@ module T = Parser_python
  *  - could insert those closing tokens during error recovery
  *  - could look at state.offset_stack when encounters EOF in the lexer
  *    and also pop and create the DEDENT.
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -66,7 +66,7 @@ let add_dedent num ii xs =
   (* this closes the small_stmt from the stmt_list in suite (see grammar)
    * which then can be reduced by the series of DEDENT created by
    * add_dedent_aux.
-   *)
+  *)
   else T.NEWLINE ii::add_dedent_aux num ii xs
 (*e: function [[Parsing_hacks_python.add_dedent]] *)
 

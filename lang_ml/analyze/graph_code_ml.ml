@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -64,13 +64,13 @@ module G = Graph_code
 
 let parse file =
   Common.save_excursion Flag.show_parsing_error false (fun ()->
-  Common.save_excursion Flag.exn_when_lexical_error true (fun ()->
-    try
-      Parse_ml.parse_program file
-    with Parse_info.Parsing_error _ ->
-      pr2 ("PARSING problem in: " ^ file);
-      []
-  ))
+    Common.save_excursion Flag.exn_when_lexical_error true (fun ()->
+      try
+        Parse_ml.parse_program file
+      with Parse_info.Parsing_error _ ->
+        pr2 ("PARSING problem in: " ^ file);
+        []
+    ))
 
 (* todo: move this code in another file? module_analysis_ml.ml ? *)
 let lookup_module_name h_module_aliases s =
@@ -103,26 +103,26 @@ let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
        * don't create the intermediate Module node. If it's referenced
        * somewhere then it will generate a lookup failure.
        * So just Dir -> File here, no Dir -> Module -> File.
-       *)
+      *)
       g |> G.add_edge ((dir, E.Dir), (readable, E.File)) G.Has;
       (match m with
-      | s when s =~ "Main.*" || s =~ "Demo.*" ||
-          s =~ "Test.*" || s =~ "Foo.*"
-          -> ()
-      | _ when file =~ ".*external/" -> ()
-      | _ ->
-          pr2 (spf "PB: module %s is already present (%s)"
+       | s when s =~ "Main.*" || s =~ "Demo.*" ||
+                s =~ "Test.*" || s =~ "Foo.*"
+         -> ()
+       | _ when file =~ ".*external/" -> ()
+       | _ ->
+           pr2 (spf "PB: module %s is already present (%s)"
                   m (Common.dump (List.assoc m duplicate_modules)));
       )
   | _ when G.has_node (m, E.Module) g ->
       (match G.parents (m, E.Module) g with
-      (* probably because processed .mli or .ml before which created the node *)
-      | [p] when p =*= (dir, E.Dir) ->
-          g |> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
-      | x ->
-          pr2 "multiple parents or no parents or wrong dir";
-          pr2_gen (x, dir, m);
-          raise Impossible
+       (* probably because processed .mli or .ml before which created the node *)
+       | [p] when p =*= (dir, E.Dir) ->
+           g |> G.add_edge ((m, E.Module), (readable, E.File)) G.Has
+       | x ->
+           pr2 "multiple parents or no parents or wrong dir";
+           pr2_gen (x, dir, m);
+           raise Impossible
       )
   | _ ->
       (* Dir -> Module -> File *)
@@ -155,42 +155,42 @@ let extract_uses ~g ~ast ~readable ~dupes =
       g |> G.add_edge (parent_target, target) G.Has;
       g |> G.add_edge (src, target) G.Use;
       pr2 (spf "PB: lookup fail on module %s in %s"
-                   (fst target) readable)
+             (fst target) readable)
     end
   in
 
-(* TODO: use Visitor_AST.ml from ml_to_generic?
-  let visitor = V.mk_visitor { V.default_visitor with
-    (* todo? does it cover all use cases of modules ? maybe need
-     * to introduce a kmodule_name_ref helper in the visitor
-     * that does that for us.
-     * todo: if want to give more information on edges, need
-     * to intercept the module name reference at a upper level
-     * like in FunCallSimple. C-s for long_name in ast_ml.ml
-     *)
-    V.kitem = (fun (k, _) x ->
-      (match x with
-      | Open (_tok, (_qu, (Name (s,_)))) ->
-          add_edge_if_existing_module s
+  (* TODO: use Visitor_AST.ml from ml_to_generic?
+     let visitor = V.mk_visitor { V.default_visitor with
+      (* todo? does it cover all use cases of modules ? maybe need
+       * to introduce a kmodule_name_ref helper in the visitor
+       * that does that for us.
+       * todo: if want to give more information on edges, need
+       * to intercept the module name reference at a upper level
+       * like in FunCallSimple. C-s for long_name in ast_ml.ml
+       *)
+      V.kitem = (fun (k, _) x ->
+        (match x with
+        | Open (_tok, (_qu, (Name (s,_)))) ->
+            add_edge_if_existing_module s
 
-      | Module (_, Name (s,_), _, (ModuleName ([], Name (s2,__)))) ->
-          Hashtbl.add h_module_aliases s s2;
-      | _ -> ()
+        | Module (_, Name (s,_), _, (ModuleName ([], Name (s2,__)))) ->
+            Hashtbl.add h_module_aliases s s2;
+        | _ -> ()
+        );
+        k x
       );
-      k x
-    );
 
-    V.kqualifier = (fun (k,_) qu ->
-      (match qu with
-      | [] -> ()
-      | (Name (s, _), _tok)::_rest ->
-          add_edge_if_existing_module s
+      V.kqualifier = (fun (k,_) qu ->
+        (match qu with
+        | [] -> ()
+        | (Name (s, _), _tok)::_rest ->
+            add_edge_if_existing_module s
+        );
+        k qu
       );
-      k qu
-    );
-  } in
-  visitor (Program ast);
-*)
+     } in
+     visitor (Program ast);
+  *)
   ignore ast;
   let _ = raise Todo in
   ()
@@ -214,25 +214,25 @@ let build ?(verbose=true) root files =
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
   files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-    k();
-    let readable = Common.readable ~root file in
-    let ast = (* parse file *) () in
-    extract_defs ~g ~duplicate_modules ~ast ~readable ~file;
-  ));
+    List.iter (fun file ->
+      k();
+      let readable = Common.readable ~root file in
+      let ast = (* parse file *) () in
+      extract_defs ~g ~duplicate_modules ~ast ~readable ~file;
+    ));
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
   files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-     k();
-     let readable = Common.readable ~root file in
-     (* skip files under external/ for now *)
-     if readable =~ ".*external/" || readable =~ "web/.*" then ()
-     else begin
-       let ast = parse file in
-       extract_uses ~g ~ast ~readable ~dupes:(List.map fst duplicate_modules);
-     end
-  ));
+    List.iter (fun file ->
+      k();
+      let readable = Common.readable ~root file in
+      (* skip files under external/ for now *)
+      if readable =~ ".*external/" || readable =~ "web/.*" then ()
+      else begin
+        let ast = parse file in
+        extract_uses ~g ~ast ~readable ~dupes:(List.map fst duplicate_modules);
+      end
+    ));
 
   g

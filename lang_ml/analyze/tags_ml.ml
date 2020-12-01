@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Highlight_code
@@ -55,33 +55,33 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_ml.find_source_files_of_dir_or_files xs in
 
   files |> Console.progress ~show:verbose (fun k ->
-   List.map (fun file ->
-    k();
-     let (ast, toks) =
-       try
-         Common.save_excursion Flag.show_parsing_error false(fun()->
-           Parse_ml.parse file |> fst
-         )
-       with Parse_info.Parsing_error pos ->
-         pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
-         Some [], []
-     in
-    let filelines = Common2.cat_array file in
-    let defs = ref [] in
-    let h = Hashtbl.create 101 in
+    List.map (fun file ->
+      k();
+      let (ast, toks) =
+        try
+          Common.save_excursion Flag.show_parsing_error false(fun()->
+            Parse_ml.parse file |> fst
+          )
+        with Parse_info.Parsing_error pos ->
+          pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
+          Some [], []
+      in
+      let filelines = Common2.cat_array file in
+      let defs = ref [] in
+      let h = Hashtbl.create 101 in
 
-    (* computing the token attributes *)
-    let prefs = Highlight_code.default_highlighter_preferences in
+      (* computing the token attributes *)
+      let prefs = Highlight_code.default_highlighter_preferences in
 
-    Highlight_ml.visit_program
-      ~lexer_based_tagger:true (* !! *)
-      ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-      prefs
-      (Common2.some ast, toks)
-    ;
+      Highlight_ml.visit_program
+        ~lexer_based_tagger:true (* !! *)
+        ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+        prefs
+        (Common2.some ast, toks)
+      ;
 
-    (* processing the tokens in order *)
-    toks |> List.iter (fun tok ->
+      (* processing the tokens in order *)
+      toks |> List.iter (fun tok ->
 
         let info = Token_helpers_ml.info_of_tok tok in
         let s = Parse_info.str_of_info info in
@@ -91,26 +91,26 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         categ |> Common.do_option (fun x ->
           entity_of_highlight_category_opt x |> Common.do_option (fun kind ->
 
-              Common.push (Tags.tag_of_info filelines info kind) defs;
+            Common.push (Tags.tag_of_info filelines info kind) defs;
 
-              let (d,b,e) = Common2.dbe_of_filename file in
-              let module_name = String.capitalize_ascii b in
+            let (d,b,e) = Common2.dbe_of_filename file in
+            let module_name = String.capitalize_ascii b in
 
-              let info' = Parse_info.rewrap_str (module_name ^ "." ^ s) info in
+            let info' = Parse_info.rewrap_str (module_name ^ "." ^ s) info in
 
-              (* I prefer my tags to led me to the .ml file rather than
-               * the .mli because the .mli is usually small and
-               * I have a key to go from the .ml to .mli anyway.
-               *)
+            (* I prefer my tags to led me to the .ml file rather than
+             * the .mli because the .mli is usually small and
+             * I have a key to go from the .ml to .mli anyway.
+            *)
 
-              if e = "ml" ||
-                 (e = "mli" && not (Sys.file_exists
-                                      (Common2.filename_of_dbe (d,b, "ml"))))
-              then
-                Common.push (Tags.tag_of_info filelines info' kind) defs;
+            if e = "ml" ||
+               (e = "mli" && not (Sys.file_exists
+                                    (Common2.filename_of_dbe (d,b, "ml"))))
+            then
+              Common.push (Tags.tag_of_info filelines info' kind) defs;
           )
         )
       );
-    let defs = List.rev (!defs) in
-    (file, defs)
-  ))
+      let defs = List.rev (!defs) in
+      (file, defs)
+    ))

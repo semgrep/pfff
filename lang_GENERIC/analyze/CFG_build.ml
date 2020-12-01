@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 open IL
 module F = IL (* to be even more similar to controlflow_build.ml *)
@@ -29,7 +29,7 @@ module F = IL (* to be even more similar to controlflow_build.ml *)
  *  - factorize at some point with controlflow_build.ml?
  *  - remove controlflow.ml? now that we have the Il, maybe better to
  *    do any kind of cfg-based analysis on the IL rather than the generic AST.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -39,7 +39,7 @@ module F = IL (* to be even more similar to controlflow_build.ml *)
 (* Information passed recursively in stmt or stmt_list below.
  * The graph g is mutable, so most of the work is done by side effects on it.
  * No need to return a new state.
- *)
+*)
 type state = {
   g: F.cfg;
 
@@ -83,37 +83,37 @@ let add_arc_opt (starti_opt, nodei) g =
  *
  * subtle: try/throw. The current algo is not very precise, but
  * it's probably good enough for many analysis.
- *)
+*)
 
 
 let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
- fun state previ stmt ->
+  fun state previ stmt ->
 
-   match stmt.s with
-   | Instr x ->
+  match stmt.s with
+  | Instr x ->
       let newi = state.g#add_node { F.n = F.NInstr x } in
       state.g |> add_arc_opt (previ, newi);
       Some newi
 
-   | If (tok, e, st1, st2) ->
-     (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
-      *                |                                     |
-      *                |->  newfakeelse -> ... -> finalelse -|
-      *
-      * The lasti can be a Join when there is no return in either branch.
+  | If (tok, e, st1, st2) ->
+      (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
+       *                |                                     |
+       *                |->  newfakeelse -> ... -> finalelse -|
+       *
+       * The lasti can be a Join when there is no return in either branch.
       *)
-       let newi = state.g#add_node { F.n = F.NCond (tok, e) } in
-       state.g |> add_arc_opt (previ, newi);
+      let newi = state.g#add_node { F.n = F.NCond (tok, e) } in
+      state.g |> add_arc_opt (previ, newi);
 
-       let newfakethen = state.g#add_node { F.n = F.TrueNode } in
-       let newfakeelse = state.g#add_node { F.n = F.FalseNode } in
-       state.g |> add_arc (newi, newfakethen);
-       state.g |> add_arc (newi, newfakeelse);
+      let newfakethen = state.g#add_node { F.n = F.TrueNode } in
+      let newfakeelse = state.g#add_node { F.n = F.FalseNode } in
+      state.g |> add_arc (newi, newfakethen);
+      state.g |> add_arc (newi, newfakeelse);
 
-       let finalthen = cfg_stmt_list state (Some newfakethen) st1 in
-       let finalelse = cfg_stmt_list state (Some newfakeelse) st2 in
+      let finalthen = cfg_stmt_list state (Some newfakethen) st1 in
+      let finalelse = cfg_stmt_list state (Some newfakeelse) st2 in
 
-       (match finalthen, finalelse with
+      (match finalthen, finalelse with
        | None, None ->
            (* probably a return in both branches *)
            None
@@ -125,43 +125,43 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
            state.g |> add_arc (n1, lasti);
            state.g |> add_arc (n2, lasti);
            Some lasti
-       )
+      )
 
 
-   | Loop (tok, e, st) ->
-     (* previ -> newi ---> newfakethen -> ... -> finalthen -
-      *             |---|-----------------------------------|
-      *                 |-> newfakelse
+  | Loop (tok, e, st) ->
+      (* previ -> newi ---> newfakethen -> ... -> finalthen -
+       *             |---|-----------------------------------|
+       *                 |-> newfakelse
       *)
-       let newi = state.g#add_node { F.n = NCond (tok, e); } in
-       state.g |> add_arc_opt (previ, newi);
+      let newi = state.g#add_node { F.n = NCond (tok, e); } in
+      state.g |> add_arc_opt (previ, newi);
 
-       let newfakethen = state.g#add_node { F.n = F.TrueNode } in
-       let newfakeelse = state.g#add_node { F.n = F.FalseNode } in
-       state.g |> add_arc (newi, newfakethen);
-       state.g |> add_arc (newi, newfakeelse);
+      let newfakethen = state.g#add_node { F.n = F.TrueNode } in
+      let newfakeelse = state.g#add_node { F.n = F.FalseNode } in
+      state.g |> add_arc (newi, newfakethen);
+      state.g |> add_arc (newi, newfakeelse);
 
-       let finalthen = cfg_stmt_list state (Some newfakethen) st in
-       state.g |> add_arc_opt (finalthen, newi);
-       Some newfakeelse
+      let finalthen = cfg_stmt_list state (Some newfakethen) st in
+      state.g |> add_arc_opt (finalthen, newi);
+      Some newfakeelse
 
-   | Label _
-   | Goto _
-     -> raise Todo
+  | Label _
+  | Goto _
+    -> raise Todo
 
-   | Return (tok, e) ->
-       let newi = state.g#add_node { F.n = F.NReturn (tok, e); } in
-       state.g |> add_arc_opt (previ, newi);
-       state.g |> add_arc (newi, state.exiti);
-       (* the next statement if there is one will not be linked to
-        * this new node *)
-       None
+  | Return (tok, e) ->
+      let newi = state.g#add_node { F.n = F.NReturn (tok, e); } in
+      state.g |> add_arc_opt (previ, newi);
+      state.g |> add_arc (newi, state.exiti);
+      (* the next statement if there is one will not be linked to
+       * this new node *)
+      None
 
-   | Try _
-   | Throw (_, _)
-     -> raise Todo
+  | Try _
+  | Throw (_, _)
+    -> raise Todo
 
-   | MiscStmt x ->
+  | MiscStmt x ->
       let newi = state.g#add_node { F.n = F.NOther x } in
       state.g |> add_arc_opt (previ, newi);
       Some newi
@@ -196,7 +196,7 @@ let (cfg_of_stmts: stmt list -> F.cfg) =
   in
   (* maybe the body does not contain a single 'return', so by default
    * connect last stmt to the exit node
-   *)
+  *)
   g |> add_arc_opt (last_node_opt, exiti);
   g
 

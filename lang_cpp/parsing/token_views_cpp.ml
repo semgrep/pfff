@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -59,7 +59,7 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 type token_extended = {
   (* chose 't' and not 'tok' to have a short name because we will write
    * lots of ocaml patterns around this ... so better to be short
-   *)
+  *)
   mutable t: Parser_cpp.token;
   (* In C++ we have functions inside classes, so need a stack of context *)
   mutable where: context list;
@@ -71,15 +71,15 @@ type token_extended = {
   line: int;
   col : int;
 }
- (* The strategy to tag is mostly to look at the token(s) before the '{' *)
-  and context =
-    | InTopLevel
-    | InClassStruct of string (* can be __anon__ *) | InEnum
-    | InInitializer
-    | InAssign
-    | InParameter | InArgument
-   (* TODO actually commented in token_view_context because of c++ *)
-    | InFunction
+(* The strategy to tag is mostly to look at the token(s) before the '{' *)
+and context =
+  | InTopLevel
+  | InClassStruct of string (* can be __anon__ *) | InEnum
+  | InInitializer
+  | InAssign
+  | InParameter | InArgument
+  (* TODO actually commented in token_view_context because of c++ *)
+  | InFunction
 (*
     | InTemplateParam (* TODO *)
 *)
@@ -103,7 +103,7 @@ type brace_grouped =
  * have a #else part.
  *
  * x list list, because x list separated by #else or #elif
- *)
+*)
 type ifdef_grouped =
   | Ifdef     of ifdef_grouped list list * token_extended list
   | Ifdefbool of bool * ifdef_grouped list list * token_extended list
@@ -111,7 +111,7 @@ type ifdef_grouped =
 
 
 type 'a line_grouped =
-  Line of 'a list
+    Line of 'a list
 
 
 type body_function_grouped =
@@ -125,7 +125,7 @@ type multi_grouped =
   | Angle  of token_extended * multi_grouped list * token_extended option
   | Tok of token_extended
 
- (* with tarzan *)
+(* with tarzan *)
 
 exception UnclosedSymbol of string
 
@@ -178,17 +178,17 @@ let rebuild_tokens_extented toks_ext =
  * could confuse some heuristics.
  *
  * pre: have done the TInf->TInf_Template translation.
- *)
+*)
 let rec mk_parenthised xs =
   match xs with
   | [] -> []
   | x::xs ->
       (match x.t with
-      | xx when TH.is_opar xx ->
-          let body, extras, xs = mk_parameters [x] [] xs in
-          Parenthised (body,extras)::mk_parenthised xs
-      | _ ->
-          PToken x::mk_parenthised xs
+       | xx when TH.is_opar xx ->
+           let body, extras, xs = mk_parameters [x] [] xs in
+           Parenthised (body,extras)::mk_parenthised xs
+       | _ ->
+           PToken x::mk_parenthised xs
       )
 
 (* return the body of the parenthised expression and the rest of the tokens *)
@@ -200,23 +200,23 @@ and mk_parameters extras acc_before_sep  xs =
       [List.rev acc_before_sep], List.rev extras, []
   | x::xs ->
       (match x.t with
-      (* synchro *)
-      | xx when TH.is_obrace xx && x.col = 0 ->
-          pr2 "PB: found synchro point } in paren";
-          [List.rev acc_before_sep], List.rev (extras), (x::xs)
+       (* synchro *)
+       | xx when TH.is_obrace xx && x.col = 0 ->
+           pr2 "PB: found synchro point } in paren";
+           [List.rev acc_before_sep], List.rev (extras), (x::xs)
 
-      | xx when TH.is_cpar xx  ->
-          [List.rev acc_before_sep], List.rev (x::extras), xs
-      | xx when TH.is_opar xx ->
-          let body, extrasnest, xs = mk_parameters [x] [] xs in
-          mk_parameters extras
-            (Parenthised (body,extrasnest)::acc_before_sep)
-            xs
-      | TComma _ ->
-          let body, extras, xs = mk_parameters (x::extras) [] xs in
-          (List.rev acc_before_sep)::body, extras, xs
-      | _ ->
-          mk_parameters extras (PToken x::acc_before_sep) xs
+       | xx when TH.is_cpar xx  ->
+           [List.rev acc_before_sep], List.rev (x::extras), xs
+       | xx when TH.is_opar xx ->
+           let body, extrasnest, xs = mk_parameters [x] [] xs in
+           mk_parameters extras
+             (Parenthised (body,extrasnest)::acc_before_sep)
+             xs
+       | TComma _ ->
+           let body, extras, xs = mk_parameters (x::extras) [] xs in
+           (List.rev acc_before_sep)::body, extras, xs
+       | _ ->
+           mk_parameters extras (PToken x::acc_before_sep) xs
       )
 
 (* ------------------------------------------------------------------------- *)
@@ -228,14 +228,14 @@ let rec mk_braceised xs =
   | [] -> []
   | x::xs ->
       (match x.t with
-      | xx when TH.is_obrace xx ->
-          let body, endbrace, xs = mk_braceised_aux [] xs in
-          Braceised (body, x, endbrace)::mk_braceised xs
-      | xx when TH.is_cbrace xx ->
-          pr2 "PB: found closing brace alone in fuzzy parsing";
-          BToken x::mk_braceised xs
-      | _ ->
-          BToken x::mk_braceised xs
+       | xx when TH.is_obrace xx ->
+           let body, endbrace, xs = mk_braceised_aux [] xs in
+           Braceised (body, x, endbrace)::mk_braceised xs
+       | xx when TH.is_cbrace xx ->
+           pr2 "PB: found closing brace alone in fuzzy parsing";
+           BToken x::mk_braceised xs
+       | _ ->
+           BToken x::mk_braceised xs
       )
 
 (* return the body of the parenthised expression and the rest of the tokens *)
@@ -247,12 +247,12 @@ and mk_braceised_aux acc xs =
       [List.rev acc], None, []
   | x::xs ->
       (match x.t with
-      | xx when TH.is_cbrace xx -> [List.rev acc], Some x, xs
-      | xx when TH.is_obrace xx ->
-          let body, endbrace, xs = mk_braceised_aux [] xs in
-          mk_braceised_aux  (Braceised (body,x, endbrace)::acc) xs
-      | _ ->
-          mk_braceised_aux (BToken x::acc) xs
+       | xx when TH.is_cbrace xx -> [List.rev acc], Some x, xs
+       | xx when TH.is_obrace xx ->
+           let body, endbrace, xs = mk_braceised_aux [] xs in
+           mk_braceised_aux  (Braceised (body,x, endbrace)::acc) xs
+       | _ ->
+           mk_braceised_aux (BToken x::acc) xs
       )
 
 (* ------------------------------------------------------------------------- *)
@@ -263,26 +263,26 @@ let rec mk_ifdef xs =
   | [] -> []
   | x::xs ->
       (match x.t with
-      | TIfdef _ ->
-          let body, extra, xs = mk_ifdef_parameters [x] [] xs in
-          Ifdef (body, extra)::mk_ifdef xs
-      | TIfdefBool (b,_) ->
-          let body, extra, xs = mk_ifdef_parameters [x] [] xs in
+       | TIfdef _ ->
+           let body, extra, xs = mk_ifdef_parameters [x] [] xs in
+           Ifdef (body, extra)::mk_ifdef xs
+       | TIfdefBool (b,_) ->
+           let body, extra, xs = mk_ifdef_parameters [x] [] xs in
 
-          (* if not passing, then consider a #if 0 as an ordinary #ifdef *)
-          if !Flag_cpp.if0_passing
-          then Ifdefbool (b, body, extra)::mk_ifdef xs
-          else Ifdef(body, extra)::mk_ifdef xs
+           (* if not passing, then consider a #if 0 as an ordinary #ifdef *)
+           if !Flag_cpp.if0_passing
+           then Ifdefbool (b, body, extra)::mk_ifdef xs
+           else Ifdef(body, extra)::mk_ifdef xs
 
-      | TIfdefMisc (b,_) | TIfdefVersion (b,_) ->
-          let body, extra, xs = mk_ifdef_parameters [x] [] xs in
-          Ifdefbool (b, body, extra)::mk_ifdef xs
+       | TIfdefMisc (b,_) | TIfdefVersion (b,_) ->
+           let body, extra, xs = mk_ifdef_parameters [x] [] xs in
+           Ifdefbool (b, body, extra)::mk_ifdef xs
 
 
-      | _ ->
-          (* todo? can have some Ifdef in the line ? *)
-          let line, xs = Common.span (fun y -> y.line = x.line) (x::xs) in
-          NotIfdefLine line::mk_ifdef xs
+       | _ ->
+           (* todo? can have some Ifdef in the line ? *)
+           let line, xs = Common.span (fun y -> y.line = x.line) (x::xs) in
+           NotIfdefLine line::mk_ifdef xs
       )
 
 and mk_ifdef_parameters extras acc_before_sep xs =
@@ -292,42 +292,42 @@ and mk_ifdef_parameters extras acc_before_sep xs =
        * on their line. Because I do a span (fun x -> is_same_line ...)
        * I might take with me a #endif if this one is mixed on a line
        * with some "normal" tokens.
-       *)
+      *)
       pr2 "PB: not found closing ifdef in fuzzy parsing";
       [List.rev acc_before_sep], List.rev extras, []
   | x::xs ->
       (match x.t with
-      | TEndif _ ->
-          [List.rev acc_before_sep], List.rev (x::extras), xs
-      | TIfdef _ ->
-          let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
-          mk_ifdef_parameters
-            extras (Ifdef (body, extrasnest)::acc_before_sep) xs
+       | TEndif _ ->
+           [List.rev acc_before_sep], List.rev (x::extras), xs
+       | TIfdef _ ->
+           let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
+           mk_ifdef_parameters
+             extras (Ifdef (body, extrasnest)::acc_before_sep) xs
 
-      | TIfdefBool (b,_) ->
-          let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
+       | TIfdefBool (b,_) ->
+           let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
 
-          if !Flag_cpp.if0_passing
-          then
-            mk_ifdef_parameters
-              extras (Ifdefbool (b, body, extrasnest)::acc_before_sep) xs
-          else
-            mk_ifdef_parameters
-              extras (Ifdef (body, extrasnest)::acc_before_sep) xs
+           if !Flag_cpp.if0_passing
+           then
+             mk_ifdef_parameters
+               extras (Ifdefbool (b, body, extrasnest)::acc_before_sep) xs
+           else
+             mk_ifdef_parameters
+               extras (Ifdef (body, extrasnest)::acc_before_sep) xs
 
 
-      | TIfdefMisc (b,_) | TIfdefVersion (b,_) ->
-          let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
-          mk_ifdef_parameters
-            extras (Ifdefbool (b, body, extrasnest)::acc_before_sep) xs
+       | TIfdefMisc (b,_) | TIfdefVersion (b,_) ->
+           let body, extrasnest, xs = mk_ifdef_parameters [x] [] xs in
+           mk_ifdef_parameters
+             extras (Ifdefbool (b, body, extrasnest)::acc_before_sep) xs
 
-      | TIfdefelse _
-      | TIfdefelif _ ->
-          let body, extras, xs = mk_ifdef_parameters (x::extras) [] xs in
-          (List.rev acc_before_sep)::body, extras, xs
-      | _ ->
-          let line, xs = Common.span (fun y -> y.line = x.line) (x::xs) in
-          mk_ifdef_parameters extras (NotIfdefLine line::acc_before_sep) xs
+       | TIfdefelse _
+       | TIfdefelif _ ->
+           let body, extras, xs = mk_ifdef_parameters (x::extras) [] xs in
+           (List.rev acc_before_sep)::body, extras, xs
+       | _ ->
+           let line, xs = Common.span (fun y -> y.line = x.line) (x::xs) in
+           mk_ifdef_parameters extras (NotIfdefLine line::acc_before_sep) xs
       )
 
 (* ------------------------------------------------------------------------- *)
@@ -338,15 +338,15 @@ let line_of_paren = function
   | PToken x -> x.line
   | Parenthised (_xxs, info_parens) ->
       (match info_parens with
-      | [] -> raise Impossible
-      | x::_xs -> x.line
+       | [] -> raise Impossible
+       | x::_xs -> x.line
       )
 
 
 (* old
-let rec span_line_paren line = function
-  | [] -> [],[]
-  | x::xs ->
+   let rec span_line_paren line = function
+   | [] -> [],[]
+   | x::xs ->
       (match x with
       | PToken tok when TH.is_eof tok.t ->
           [], x::xs
@@ -358,10 +358,10 @@ let rec span_line_paren line = function
         else ([], x::xs)
       )
 
-let rec mk_line_parenthised xs =
-  match xs with
-  | [] -> []
-  | x::xs ->
+   let rec mk_line_parenthised xs =
+   match xs with
+   | [] -> []
+   | x::xs ->
       let line_no = line_of_paren x in
       let line, xs = span_line_paren line_no xs in
       Line (x::line)::mk_line_parenthised xs
@@ -371,26 +371,26 @@ let line_range_of_paren = function
   | PToken x -> x.line, x.line
   | Parenthised (_xxs, info_parens) ->
       (match info_parens with
-      | [] -> raise Impossible
-      | x::xs ->
-          let lines_no = (x::xs) |> List.map (fun x -> x.line) in
-          Common2.minimum lines_no, Common2.maximum lines_no
+       | [] -> raise Impossible
+       | x::xs ->
+           let lines_no = (x::xs) |> List.map (fun x -> x.line) in
+           Common2.minimum lines_no, Common2.maximum lines_no
       )
 
 let rec span_line_paren_range (imin, imax) = function
   | [] -> [],[]
   | x::xs ->
       (match x with
-      | PToken tok when TH.is_eof tok.t ->
-          [], x::xs
-      | _ ->
-        if line_of_paren x >= imin && line_of_paren x <= imax
-        then
-          (* may need to extend *)
-          let (_imin', imax') = line_range_of_paren x in
-          let (l1, l2) = span_line_paren_range (imin, max imax imax') xs in
-          (x::l1, l2)
-        else ([], x::xs)
+       | PToken tok when TH.is_eof tok.t ->
+           [], x::xs
+       | _ ->
+           if line_of_paren x >= imin && line_of_paren x <= imax
+           then
+             (* may need to extend *)
+             let (_imin', imax') = line_range_of_paren x in
+             let (l1, l2) = span_line_paren_range (imin, max imax imax') xs in
+             (x::l1, l2)
+           else ([], x::xs)
       )
 
 
@@ -410,24 +410,24 @@ let rec mk_body_function_grouped xs =
   | [] -> []
   | x::xs ->
       (match x with
-      | {t=TOBrace _; col = 0; _} ->
-          let is_closing_brace = function
-            | {t = TCBrace _; col = 0; _ } -> true
-            | _ -> false
-          in
-          let body, xs = Common.span (fun x -> not (is_closing_brace x)) xs in
-          (match xs with
-          | ({t = TCBrace _; col = 0; _ })::xs ->
-              BodyFunction body::mk_body_function_grouped xs
-          | [] ->
-              pr2 "PB:not found closing brace in fuzzy parsing";
-              [NotBodyLine body]
-          | _ -> raise Impossible
-          )
+       | {t=TOBrace _; col = 0; _} ->
+           let is_closing_brace = function
+             | {t = TCBrace _; col = 0; _ } -> true
+             | _ -> false
+           in
+           let body, xs = Common.span (fun x -> not (is_closing_brace x)) xs in
+           (match xs with
+            | ({t = TCBrace _; col = 0; _ })::xs ->
+                BodyFunction body::mk_body_function_grouped xs
+            | [] ->
+                pr2 "PB:not found closing brace in fuzzy parsing";
+                [NotBodyLine body]
+            | _ -> raise Impossible
+           )
 
-      | _ ->
-          let line, xs = Common.span (fun y -> y.line = x.line) (x::xs) in
-          NotBodyLine line::mk_body_function_grouped xs
+       | _ ->
+           let line, xs = Common.span (fun y -> y.line = x.line) (x::xs) in
+           NotBodyLine line::mk_body_function_grouped xs
       )
 
 (* ------------------------------------------------------------------------- *)
@@ -441,7 +441,7 @@ let rec mk_body_function_grouped xs =
  * todo? more fault tolerance, if col == 0 and { the reset!
  * less: could check that it's consistent with the indentation
  *
- *)
+*)
 let mk_multi xs =
 
   let rec consume x xs =
@@ -458,63 +458,63 @@ let mk_multi xs =
     | x -> Tok x, xs
 
   and aux xs =
-  match xs with
-  | [] -> []
-  | x::xs ->
-      let x', xs' = consume x xs in
-      x'::aux xs'
+    match xs with
+    | [] -> []
+    | x::xs ->
+        let x', xs' = consume x xs in
+        x'::aux xs'
 
   and look_close_brace tok_start accbody xs =
     match xs with
     | [] ->
         raise (UnclosedSymbol (spf "PB look_close_brace (started at %d)"
-                     (TH.line_of_tok tok_start.t)))
+                                 (TH.line_of_tok tok_start.t)))
     | x::xs ->
         (match x with
-        | {t=TCBrace _ii;_} -> List.rev accbody, Some x, xs
+         | {t=TCBrace _ii;_} -> List.rev accbody, Some x, xs
 
-        (* Many macros have unclosed '{'. An alternative
-         * would be to work on a view where define has been filtered
+         (* Many macros have unclosed '{'. An alternative
+          * would be to work on a view where define has been filtered
          *)
-        | {t=TCommentNewline_DefineEndOfMacro _ii;_} ->
-            List.rev accbody, None, x::xs
+         | {t=TCommentNewline_DefineEndOfMacro _ii;_} ->
+             List.rev accbody, None, x::xs
 
-        | _ -> let (x', xs') = consume x xs in
-               look_close_brace tok_start (x'::accbody) xs'
+         | _ -> let (x', xs') = consume x xs in
+             look_close_brace tok_start (x'::accbody) xs'
         )
 
   and look_close_paren tok_start accbody xs =
     match xs with
     | [] ->
         raise (UnclosedSymbol (spf "PB look_close_paren (started at %d)"
-                     (TH.line_of_tok tok_start.t)))
+                                 (TH.line_of_tok tok_start.t)))
     | x::xs ->
         (match x with
-        | {t=(*TCPar ii*)tok;_} when TH.is_cpar tok ->
-            List.rev accbody, Some x, xs
-        | _ ->
-            let (x', xs') = consume x xs in
-            look_close_paren tok_start (x'::accbody) xs'
+         | {t=(*TCPar ii*)tok;_} when TH.is_cpar tok ->
+             List.rev accbody, Some x, xs
+         | _ ->
+             let (x', xs') = consume x xs in
+             look_close_paren tok_start (x'::accbody) xs'
         )
 
   and look_close_template tok_start accbody xs =
     match xs with
     | [] ->
         raise (UnclosedSymbol (spf "PB look_close_template (started at %d)"
-                     (TH.line_of_tok tok_start.t)))
+                                 (TH.line_of_tok tok_start.t)))
     | x::xs ->
         (match x with
-        | {t=TSup_Template _ii;_} -> List.rev accbody, Some x, xs
-        | _ -> let (x', xs') = consume x xs in
-               look_close_template tok_start (x'::accbody) xs'
+         | {t=TSup_Template _ii;_} -> List.rev accbody, Some x, xs
+         | _ -> let (x', xs') = consume x xs in
+             look_close_template tok_start (x'::accbody) xs'
         )
   in
   aux xs
 
 let split_comma xs =
   xs |> Common2.split_gen_when (function
-  | Tok{t=TComma _;_}::xs -> Some xs
-  | _ -> None
+    | Tok{t=TComma _;_}::xs -> Some xs
+    | _ -> None
   )
 
 (*****************************************************************************)
@@ -523,39 +523,39 @@ let split_comma xs =
 
 let rec iter_token_paren f xs =
   xs |> List.iter (function
-  | PToken tok -> f tok;
-  | Parenthised (xxs, info_parens) ->
-      info_parens |> List.iter f;
-      xxs |> List.iter (fun xs -> iter_token_paren f xs)
+    | PToken tok -> f tok;
+    | Parenthised (xxs, info_parens) ->
+        info_parens |> List.iter f;
+        xxs |> List.iter (fun xs -> iter_token_paren f xs)
   )
 
 let rec iter_token_brace f xs =
   xs |> List.iter (function
-  | BToken tok -> f tok;
-  | Braceised (xxs, tok1, tok2opt) ->
-      f tok1; do_option f tok2opt;
-      xxs |> List.iter (fun xs -> iter_token_brace f xs)
+    | BToken tok -> f tok;
+    | Braceised (xxs, tok1, tok2opt) ->
+        f tok1; do_option f tok2opt;
+        xxs |> List.iter (fun xs -> iter_token_brace f xs)
   )
 
 let rec iter_token_ifdef f xs =
   xs |> List.iter (function
-  | NotIfdefLine xs -> xs |> List.iter f;
-  | Ifdefbool (_, xxs, info_ifdef)
-  | Ifdef (xxs, info_ifdef) ->
-      info_ifdef |> List.iter f;
-      xxs |> List.iter (iter_token_ifdef f)
+    | NotIfdefLine xs -> xs |> List.iter f;
+    | Ifdefbool (_, xxs, info_ifdef)
+    | Ifdef (xxs, info_ifdef) ->
+        info_ifdef |> List.iter f;
+        xxs |> List.iter (iter_token_ifdef f)
   )
 
 let rec iter_token_multi f xs =
   xs |> List.iter (function
-  | Tok t -> f t
-  | Braces (t1, xs, t2)
-  | Parens (t1, xs, t2)
-  | Angle (t1, xs, t2)
+    | Tok t -> f t
+    | Braces (t1, xs, t2)
+    | Parens (t1, xs, t2)
+    | Angle (t1, xs, t2)
       ->
-      f t1;
-      iter_token_multi f xs;
-      Common.do_option f t2
+        f t1;
+        iter_token_multi f xs;
+        Common.do_option f t2
   )
 
 let tokens_of_paren xs =
@@ -574,9 +574,9 @@ let tokens_of_paren_ordered xs =
           match info_parens with
           | opar::xs ->
               (match List.rev xs with
-              | cpar::xs ->
-                  opar, cpar, List.rev xs
-              | _ -> raise Impossible
+               | cpar::xs ->
+                   opar, cpar, List.rev xs
+               | _ -> raise Impossible
               )
           | _ -> raise Impossible
         in
@@ -606,13 +606,13 @@ let tokens_of_multi_grouped xs =
 
   let rec aux xs =
     xs |> List.iter (function
-    | Tok t1 -> add t1
-    | Braces (t1, xs, t2)
-    | Parens (t1, xs, t2)
-    | Angle (t1, xs, t2) ->
-        add t1;
-        aux xs;
-        Common.do_option add t2
+      | Tok t1 -> add t1
+      | Braces (t1, xs, t2)
+      | Parens (t1, xs, t2)
+      | Angle (t1, xs, t2) ->
+          add t1;
+          aux xs;
+          Common.do_option add t2
     )
   in
   aux xs;

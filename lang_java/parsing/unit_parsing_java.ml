@@ -28,11 +28,11 @@ let unittest =
       let count = ref 0 in
 
       let vis = Vis.mk_visitor
-        { Vis.default_visitor with
-          Vis.kexpr = (fun (k,_) e -> match e with
-          | NewClass _ -> incr count; k e
-          | _ -> k e)
-        } in
+          { Vis.default_visitor with
+            Vis.kexpr = (fun (k,_) e -> match e with
+              | NewClass _ -> incr count; k e
+              | _ -> k e)
+          } in
 
       let thecode = "
         class TestClass {
@@ -53,9 +53,9 @@ let unittest =
       in
 
       let ast = Common2.with_tmp_file
-                  ~str:thecode
-                  ~ext:"java"
-                  Parse_java.parse_program in
+          ~str:thecode
+          ~ext:"java"
+          Parse_java.parse_program in
 
       vis (AProgram ast);
 

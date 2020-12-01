@@ -9,7 +9,7 @@ type file_type =
   | Archive of string
   | Other of string
 
- and pl_type =
+and pl_type =
   | ML of string | Haskell of string | Lisp of lisp_type | Skip
   | Prolog of string
   | Makefile
@@ -27,19 +27,19 @@ type file_type =
   | Thrift
   | MiscPL of string
 
-   and lisp_type = CommonLisp | Elisp | Scheme | Clojure
+and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
-   and webpl_type =
-     | Php of string
-     | Js | Coffee | TypeScript | TSX
-     | Css
-     | Html | Xml | Json
-     | Sql
+and webpl_type =
+  | Php of string
+  | Js | Coffee | TypeScript | TSX
+  | Css
+  | Html | Xml | Json
+  | Sql
 
- and media_type =
-   | Sound of string
-   | Picture of string
-   | Video of string
+and media_type =
+  | Sound of string
+  | Picture of string
+  | Video of string
 
 
 val file_type_of_file:

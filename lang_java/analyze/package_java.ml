@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = Graph_code
@@ -22,8 +22,8 @@ module E = Entity_code
 (*****************************************************************************)
 
 let (lookup_fully_qualified2:
-  Graph_code.graph -> string list -> Graph_code.node option) =
- fun g xs ->
+       Graph_code.graph -> string list -> Graph_code.node option) =
+  fun g xs ->
   let rec aux current xs =
     match xs with
     | [] -> Some current
@@ -36,7 +36,7 @@ let (lookup_fully_qualified2:
           (* we prefer Package to Dir when we lookup, we don't want
            * The "multiple entities" warning when have both
            * a "net" package and "net" directory.
-           *)
+          *)
           | (_, E.Dir) -> []
           | _ -> [child]
         ) |> List.flatten
@@ -44,14 +44,14 @@ let (lookup_fully_qualified2:
         (* sanity check, quite expansive according to -profile *)
         Common.group_assoc_bykey_eff children |> List.iter (fun (k, xs) ->
           if List.length xs > 1
-             (* issue warnings lazily, only when the ambiguity concerns
-              * something we are actually looking for
-              *)
-             && k =$= x
+          (* issue warnings lazily, only when the ambiguity concerns
+           * something we are actually looking for
+          *)
+          && k =$= x
           then begin
             (* todo: this will be a problem when go from class-level
              * to method/field level dependencies
-             *)
+            *)
             pr2 "WARNING: multiple entities with same name";
             pr2_gen (k, xs);
           end
@@ -69,9 +69,9 @@ let (lookup_fully_qualified2:
             else None
           ) in
         (match new_current with
-        (* less: could return at least what we were able to resolve *)
-        | None -> None
-        | Some current -> aux current xs
+         (* less: could return at least what we were able to resolve *)
+         | None -> None
+         | Some current -> aux current xs
         )
   in
   aux G.root xs

@@ -1,10 +1,10 @@
 
 type outline = outline_node Common2.tree2
-    and outline_node = {
-      stars : string;
-      title : string;
-      before_first_children : string list;
-    }
+and outline_node = {
+  stars : string;
+  title : string;
+  before_first_children : string list;
+}
 
 
 

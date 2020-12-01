@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -30,7 +30,7 @@
 (*****************************************************************************)
 
 type info_txt = Outline.outline
- (* old: (string * string list) list *)
+(* old: (string * string list) list *)
 
 (*****************************************************************************)
 (* IO *)
@@ -40,20 +40,20 @@ let load file =
   Outline.parse_outline file
 
 (* old:
-  let xs =
+   let xs =
     Common.cat file
     +> List.map (Str.global_replace (Str.regexp "#.*") "" )
     +> List.map (Str.global_replace (Str.regexp "\\*+ -----.*") "" )
     +> Common.exclude Common.is_blank_string
-  in
-  let xxs = Common.split_list_regexp "^\\*+ " xs in
-  xxs +> List.map (fun (s, body) ->
+   in
+   let xxs = Common.split_list_regexp "^\\*+ " xs in
+   xxs +> List.map (fun (s, body) ->
     if s =~ "^\\*+ \\([^ ]+\\)[ \t]*$"
     then
       let dir = Common.matched1 s in
       dir, body
     else
       failwith (spf "wrong format in %s, entry: %s" file s)
-  )
+   )
 
 *)

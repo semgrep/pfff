@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -19,7 +19,7 @@
 (* julien: this is a copy/paste of the original pp.ml.
  * It is slightly modified, and I don't know how much these modifications
  * affect xhpizer. I hope to be able to merge these two files back together.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -88,7 +88,7 @@ let print env x =
    * we should normalize those comments?
    * if (String.contains x '\n')
    * then failwith (Printf.sprintf "%s contains a newline\n" x);
-   *)
+  *)
 
   env.last_nl <- false;
   env.emptyl <- false;
@@ -219,7 +219,7 @@ let choice_left env f1 f2 =
   with
   | Fail when env.level = 0 ->
       (try f2 env with Fail -> assert false)
-  (* otherwise, just let the exception bubble up more *)
+(* otherwise, just let the exception bubble up more *)
 
 
 let choice_right env f1 f2 =

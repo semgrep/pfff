@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Common2.BasicType
 
@@ -67,7 +67,7 @@ open Common2.BasicType
  *    data x = ... deriving (Read, Show, Eq, Ord, Enum, Bounded)
  *
  * Apparently this is what is considered basic by haskell.
- *)
+*)
 
 
 module type Check_able = sig
@@ -90,7 +90,7 @@ end
 
 (* Same, should not use compare normally, dangerous when evolve code.
  * Called Ord in haskell. Inherit Eq normally.
- *)
+*)
 module type Compare_able = sig
   type compareable
   val compare: compareable -> compareable -> bool
@@ -100,7 +100,7 @@ end
 
 (* Haskell have lots of related type class after Num such as
  * Real, Fractional, Integral, RealFrac, Floating, RealFloat
- *)
+*)
 module type Num_able = sig
   type numable
   (* +, -, etc *)
@@ -121,36 +121,36 @@ module type String_able = sig
 end
 
 module type Debug_able = sig
-    type debugable
-    val debug: debugable -> string
+  type debugable
+  val debug: debugable -> string
 end
 
 
 module type XML_able = sig
-    type xmlable
-    val of_xml: string -> xmlable
-    val to_xml: xmlable -> string
+  type xmlable
+  val of_xml: string -> xmlable
+  val to_xml: xmlable -> string
 end
 (* Jane street have also some BIN_able, and SEXP_able (but no sex_able) *)
 
 module type File_able = sig
-    type fileable
-    val load: filename -> fileable
-    val save: fileable -> filename -> unit
+  type fileable
+  val load: filename -> fileable
+  val save: fileable -> filename -> unit
 end
 
 (* a.k.a Marshall_able *)
 module type Serialize_able = sig
-    type serializeable
-    val serialize: serializeable -> string
-    val unserialize: string -> serializeable
+  type serializeable
+  val serialize: serializeable -> string
+  val unserialize: string -> serializeable
 end
 
 
 module type Open_able = sig
-    type openable
-    val openfile: filename -> openable
-    val close: openable -> unit
+  type openable
+  val openfile: filename -> openable
+  val close: openable -> unit
 end
 
 (*****************************************************************************)
@@ -161,15 +161,15 @@ end
 
 (* Require Constructor class ? So can not do it ? apparently can. Note the
  * 'b which is not declareted but seems to pose no problem to ocamlc.
- *)
+*)
 module type Map_able = sig
-    type 'a mapable
-    val map: ('a -> 'b) -> 'a mapable -> 'b mapable
+  type 'a mapable
+  val map: ('a -> 'b) -> 'a mapable -> 'b mapable
 end
 
 module type Iter_able = sig
-    type 'a iterable
-    val iter: ('a -> unit) -> 'a iterable -> unit
+  type 'a iterable
+  val iter: ('a -> unit) -> 'a iterable -> unit
 end
 
 
@@ -189,7 +189,7 @@ end
  *
  * It makes some code looks a little bit like Haskell* typeclass.
  *
- *)
+*)
 
 (* In Jane Street they put each interface in its own file but then have to
  * do that:
@@ -207,6 +207,6 @@ end
  *
  * And I dont like having too much files, especially as all those xxable
  * end with able, not start, so don't see them together in the directory.
- *)
+*)
 
 (*e: interfaces.ml *)

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Ast_c
 
 (*****************************************************************************)
@@ -43,10 +43,10 @@ open Ast_c
 
 (* for functions, constants, fields, builtins, types *)
 type name = string wrap
- [@@deriving show]
+[@@deriving show]
 (* for globals, locals, parameters *)
 type var = name
- [@@deriving show]
+[@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
 (* Lvalue *)
@@ -54,7 +54,7 @@ type var = name
 (* Used to be inlined in expr (now called rvalue), but it is cleaner
  * to separate rvalue and lvalue. Note that 'Call' is not there, it's
  * not an lvalue (you can not do 'foo() = x' in C).
- *)
+*)
 type lvalue =
   | Id of name (* actually a var or name *)
   | ObjField of var * name (* x->fld *)
@@ -62,7 +62,7 @@ type lvalue =
   (* hmm mv? *)
   | DeRef of var (* *x *)
 
-  [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Rvalue *)
@@ -83,7 +83,7 @@ type rvalue =
 
   | Lv of lvalue
 
-  [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Stmt *)
@@ -94,4 +94,4 @@ type instr =
   | AssignAddress of var * lvalue (* except Deref (no sense to do &*x) *)
   | AssignLvalue of lvalue * var (* Except Id, done by Assign *)
 
-  [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)

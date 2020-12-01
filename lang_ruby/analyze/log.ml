@@ -42,12 +42,12 @@ let rec append c1 c2 = match c1 with
 let kfsprintf f fmt =
   let b = Buffer.create 127 in
   let ppf = Format.formatter_of_buffer b in
-    Format.pp_set_margin ppf (*(Format.pp_get_margin std_formatter ())*) 80;
-    Format.kfprintf
-      (fun ppf ->
-     Format.pp_print_flush ppf ();
-     f (Buffer.contents b)
-      ) ppf fmt
+  Format.pp_set_margin ppf (*(Format.pp_get_margin std_formatter ())*) 80;
+  Format.kfprintf
+    (fun ppf ->
+       Format.pp_print_flush ppf ();
+       f (Buffer.contents b)
+    ) ppf fmt
 
 let in_ctx ctx ?pos fmt = match pos with
   | None -> kfsprintf (fun msg -> Ctx_Msg(msg,ctx)) fmt
@@ -85,9 +85,9 @@ let rec format_ctx ppf ctx =
         fprintf ppf "in %s@," msg; work ppf ctx
     | Ctx_Merge(ctx1,ctx2) ->
         fprintf ppf "@[<v 0>@[<v 0>in MERGING@,  %a@]@,@[<v 0>AND@,  %a@]@]"
-        format_ctx ctx2 format_ctx ctx1
+          format_ctx ctx2 format_ctx ctx1
   in
-    fprintf ppf "@[<v>%a@]" work ctx
+  fprintf ppf "@[<v>%a@]" work ctx
 
 let output_header cont code fmt =
   kfsprintf cont ("@[<v 2>[%s] " ^^ fmt ^^ "@]") code
@@ -99,18 +99,18 @@ let show b no_dup ctx code fmt =
   output_header
     (fun msg ->
        if b then begin
-     let buf = Buffer.create 127 in
-     let ppf = Format.formatter_of_buffer buf in
-     let () = output_msg_ctx ppf msg ctx in
-       if no_dup then
-         let full_msg = Buffer.contents buf in
+         let buf = Buffer.create 127 in
+         let ppf = Format.formatter_of_buffer buf in
+         let () = output_msg_ctx ppf msg ctx in
+         if no_dup then
+           let full_msg = Buffer.contents buf in
            if Hashtbl.mem dup_tbl full_msg
            then ()
            else begin
-         Hashtbl.add dup_tbl full_msg ();
-         pp_print_string stderr_ppf full_msg
+             Hashtbl.add dup_tbl full_msg ();
+             pp_print_string stderr_ppf full_msg
            end
-       else Buffer.output_buffer stderr buf
+         else Buffer.output_buffer stderr buf
        end
     ) code fmt
 
@@ -136,7 +136,7 @@ let show_raise ctx code fmt =
     Format.pp_print_flush stderr_ppf ();
     failwith m
   in
-    output_header fail code fmt
+  output_header fail code fmt
 
 let err ?(ctx=Ctx_Empty) fmt =
   if (*conf.error_raises_exc *)false

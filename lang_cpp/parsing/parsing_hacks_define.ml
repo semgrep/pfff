@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 open Parser_cpp
@@ -76,8 +76,8 @@ let mark_end_define ii =
     { Parse_info.
       token = Parse_info.OriginTok {
         (Parse_info.token_location_of_info ii) with
-          Parse_info.str = "";
-          Parse_info.charpos = PI.pos_of_info ii + 1
+        Parse_info.str = "";
+        Parse_info.charpos = PI.pos_of_info ii + 1
       };
       transfo = Parse_info.NoTransfo;
     }
@@ -92,11 +92,11 @@ let pos ii = Parse_info.string_of_info ii
 
 (* simple automata:
  * state1 --'#define'--> state2 --change_of_line--> state1
- *)
+*)
 
 (* put the TCommentNewline_DefineEndOfMacro at the good place
  * and replace \ with TCommentSpace
- *)
+*)
 let rec define_line_1 xs =
   match xs with
   | [] -> []
@@ -120,17 +120,17 @@ and define_line_2 line lastinfo xs =
       let info = TH.info_of_tok x in
 
       (match x with
-      | EOF ii ->
-          mark_end_define lastinfo::EOF ii::define_line_1 xs
-      | TCppEscapedNewline ii ->
-          if (line' <> line)
-          then pr2 "PB: WEIRD: not same line number";
-          (* fresh_tok*) TCommentSpace ii::define_line_2 (line+1) info xs
-      | x ->
-          if line' = line
-          then x::define_line_2 line info xs
-          else
-            mark_end_define lastinfo::define_line_1 (x::xs)
+       | EOF ii ->
+           mark_end_define lastinfo::EOF ii::define_line_1 xs
+       | TCppEscapedNewline ii ->
+           if (line' <> line)
+           then pr2 "PB: WEIRD: not same line number";
+           (* fresh_tok*) TCommentSpace ii::define_line_2 (line+1) info xs
+       | x ->
+           if line' = line
+           then x::define_line_2 line info xs
+           else
+             mark_end_define lastinfo::define_line_1 (x::xs)
       )
 
 (* put the TIdent_Define and TOPar_Define *)
@@ -140,23 +140,23 @@ let rec define_ident xs =
   | (TDefine ii as x)::xs ->
       x::
       (match xs with
-      | (TCommentSpace _ as x)::TIdent (s,i2)::(* no space *)TOPar (i3)::xs ->
-          (* if TOPar_Define is just next to the ident (no space), then
-           * it's a macro-function. We change the token to avoid
-           * ambiguity between '#define foo(x)'  and   '#define foo   (x)'
+       | (TCommentSpace _ as x)::TIdent (s,i2)::(* no space *)TOPar (i3)::xs ->
+           (* if TOPar_Define is just next to the ident (no space), then
+            * it's a macro-function. We change the token to avoid
+            * ambiguity between '#define foo(x)'  and   '#define foo   (x)'
            *)
-          x
-          ::Hack.fresh_tok (TIdent_Define (s,i2))
-          ::Hack.fresh_tok (TOPar_Define i3)
-          ::define_ident xs
+           x
+           ::Hack.fresh_tok (TIdent_Define (s,i2))
+           ::Hack.fresh_tok (TOPar_Define i3)
+           ::define_ident xs
 
-      | (TCommentSpace _ as x)::TIdent (s,i2)::xs ->
-          x
-          ::Hack.fresh_tok (TIdent_Define (s,i2))
-          ::define_ident xs
-      | _ ->
-          pr2 (spf "WEIRD #define body, at %s" (pos ii));
-          define_ident xs
+       | (TCommentSpace _ as x)::TIdent (s,i2)::xs ->
+           x
+           ::Hack.fresh_tok (TIdent_Define (s,i2))
+           ::define_ident xs
+       | _ ->
+           pr2 (spf "WEIRD #define body, at %s" (pos ii));
+           define_ident xs
       )
   | x::xs ->
       x::define_ident xs

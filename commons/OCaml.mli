@@ -26,7 +26,7 @@ type t =
   | List of t
 
   | TTODO of string
-(*e: type [[OCaml.t]] *)
+  (*e: type [[OCaml.t]] *)
 
 (*s: signature [[OCaml.add_new_type]] *)
 val add_new_type: string -> t -> unit
@@ -55,7 +55,7 @@ type v =
   | VRef of v
 
   | VTODO of string
-(*e: type [[OCaml.v]] *)
+  (*e: type [[OCaml.v]] *)
 
 (*s: signature [[OCaml.vof_xxx]] functions *)
 (* building blocks, used by code generated using ocamltarzan *)

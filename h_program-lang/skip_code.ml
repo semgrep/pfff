@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -51,13 +51,13 @@ let load file =
   |> List.map (fun s ->
     match s with
     | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" ->
-      Dir (Common.matched1 s)
+        Dir (Common.matched1 s)
     | _ when s =~ "^skip_errors_dir:[ ]*\\([^ ]+\\)" ->
-      SkipErrorsDir (Common.matched1 s)
+        SkipErrorsDir (Common.matched1 s)
     | _ when s =~ "^file:[ ]*\\([^ ]+\\)" ->
-      File (Common.matched1 s)
+        File (Common.matched1 s)
     | _ when s =~ "^dir_element:[ ]*\\([^ ]+\\)" ->
-      DirElement (Common.matched1 s)
+        DirElement (Common.matched1 s)
     | _ -> failwith ("wrong line format in skip file: " ^ s)
   )
 
@@ -69,20 +69,20 @@ let load file =
 let filter_files skip_list root xs =
   let skip_files =
     skip_list |> Common.map_filter (function
-    | File s -> Some s
-    | _ -> None
+      | File s -> Some s
+      | _ -> None
     ) |> Common.hashset_of_list
   in
   let skip_dirs =
     skip_list |> Common.map_filter (function
-    | Dir s -> Some s
-    | _ -> None
+      | Dir s -> Some s
+      | _ -> None
     )
   in
   let skip_dir_elements =
     skip_list |> Common.map_filter (function
-    | DirElement s -> Some s
-    | _ -> None
+      | DirElement s -> Some s
+      | _ -> None
     )
   in
   xs |> Common.exclude (fun file ->
@@ -129,19 +129,19 @@ let filter_files_if_skip_list ~root xs =
     match root with
     | [x] -> x
     | _ ->
-      (match xs with
-      | [] -> "/"
-      | x::_ ->
-        try
-          find_vcs_root_from_absolute_path x
-        with Not_found -> "/"
-      )
-   in
+        (match xs with
+         | [] -> "/"
+         | x::_ ->
+             try
+               find_vcs_root_from_absolute_path x
+             with Not_found -> "/"
+        )
+  in
   try
-   let skip_file = find_skip_file_from_root root in
-   let skip_list = load skip_file in
-   pr2 (spf "using skip list in %s" skip_file);
-   filter_files skip_list root xs
+    let skip_file = find_skip_file_from_root root in
+    let skip_list = load skip_file in
+    pr2 (spf "using skip list in %s" skip_file);
+    filter_files skip_list root xs
   with Not_found -> xs
 
 (*****************************************************************************)
@@ -150,12 +150,12 @@ let filter_files_if_skip_list ~root xs =
 let build_filter_errors_file skip_list =
   let skip_dirs =
     skip_list |> Common.map_filter (function
-    | SkipErrorsDir dir -> Some dir
-    | _ -> None
+      | SkipErrorsDir dir -> Some dir
+      | _ -> None
     )
   in
   (fun readable ->
-    skip_dirs |> List.exists (fun dir -> readable =~ ("^" ^ dir))
+     skip_dirs |> List.exists (fun dir -> readable =~ ("^" ^ dir))
   )
 
 let reorder_files_skip_errors_last skip_list root xs =

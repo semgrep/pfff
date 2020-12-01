@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*e: Facebook copyright *)
 open Common2
 
@@ -33,14 +33,14 @@ type ('dir, 'file) tree = ('dir, 'file) Common2.tree
 
 (*s: type treemap *)
 type ('dir, 'file) treemap =
- (treemap_data * 'dir, treemap_data * 'file) tree
-    and treemap_data = {
-      size : int;
-      color : Simple_color.color;
-      label: string;
-    }
+  (treemap_data * 'dir, treemap_data * 'file) tree
+and treemap_data = {
+  size : int;
+  color : Simple_color.color;
+  label: string;
+}
 (*e: type treemap *)
-  (* with tarzan *)
+(* with tarzan *)
 
 (*s: type algorithm *)
 type algorithm =
@@ -49,10 +49,10 @@ type algorithm =
   | SquarifiedNoSort
   | Ordered of pivot
 
-  and pivot =
-    | PivotBySize
-    | PivotByMiddle
-(*e: type algorithm *)
+and pivot =
+  | PivotBySize
+  | PivotByMiddle
+  (*e: type algorithm *)
 
 (*s: variable algos *)
 let algos = [Classic; Squarified; SquarifiedNoSort;
@@ -82,7 +82,7 @@ type screen_dim = {
  *
  * A rectangle is represented by 2 variables called P and Q in the seminal
  * algorithm.
- *)
+*)
 (*
 type rectangle1 =
   float array (* lower left  coord, P *) *
@@ -100,27 +100,27 @@ type rectangle1 =
  * I use 2510x1580 for the full codemap window, so it could be 1.58, but
  * then there is a menu up and a status bar down so it should be
  * higher than 1.58.
- *)
+*)
 let xy_ratio = ref 1.71
 
 (* The dimentions are in a  [0.0-1.0] range for y and [0.0-xyratio] for x,
  * where xyratio is used to cope with most 16/9 screens.
-  *)
+*)
 let rect_ortho () =
   { p = {x = 0.0; y = 0.0; }; q = { x = !xy_ratio; y = 1.0} }
 
 (* the dimentions are in a  [0.0-1.0] range
  * opti? have a quad tree instead of a list, can improve search time
- *)
+*)
 type treemap_rendering = treemap_rectangle list
- and treemap_rectangle = {
-   tr_rect: rectangle;
-   tr_color: int (* Simple_color.color *);
-   tr_label: string;
-   tr_depth: int;
-   tr_is_node: bool;
- }
- (* with tarzan *)
+and treemap_rectangle = {
+  tr_rect: rectangle;
+  tr_color: int (* Simple_color.color *);
+  tr_label: string;
+  tr_depth: int;
+  tr_is_node: bool;
+}
+(* with tarzan *)
 
 (*s: type layout_func *)
 type ('a, 'b) layout_func =
@@ -197,7 +197,7 @@ let treemap_of_tree2
          * let child = children +> List.map fst in
          * let sizes = children +> List.map snd in
          * let sizeme = Common.sum sizes in
-         *)
+        *)
         let sizeme = !sizeme in
         Node((
           {
@@ -205,7 +205,7 @@ let treemap_of_tree2
             color = Color.black; (* TODO ? nodes have colors ? *)
             label = label_of_dir nodeinfo;
           }, nodeinfo),
-            child), sizeme
+          child), sizeme
     | Leaf leaf ->
         let sizeme = size_of_leaf leaf in
         let nodeinfo = leaf in
@@ -223,9 +223,9 @@ let treemap_of_tree2
 
 let treemap_of_tree ~size_of_leaf  ~color_of_leaf
     ?label_of_file ?label_of_dir tree =
- Common.profile_code "Treemap.treemap_of_tree" (fun () ->
-   treemap_of_tree2 ~size_of_leaf  ~color_of_leaf
-     ?label_of_file ?label_of_dir tree)
+  Common.profile_code "Treemap.treemap_of_tree" (fun () ->
+    treemap_of_tree2 ~size_of_leaf  ~color_of_leaf
+      ?label_of_file ?label_of_dir tree)
 
 (*****************************************************************************)
 (* Treemap algorithms *)
@@ -237,7 +237,7 @@ let treemap_of_tree ~size_of_leaf  ~color_of_leaf
 
 (* display_treemap and display_treemap_generic are now in
  * in treemap_graphics.ml, because of Graphics dependency.
- *)
+*)
 
 (*---------------------------------------------------------------------------*)
 (* slice and dice algorithm layout *)
@@ -245,7 +245,7 @@ let treemap_of_tree ~size_of_leaf  ~color_of_leaf
 
 (*s: layout slice and dice *)
 let (slice_and_dicing_layout: ('a, 'b) layout_func) =
- fun children depth rect ->
+  fun children depth rect ->
 
   let p = [| rect.p.x; rect.p.y |] in
   let q = [| rect.q.x; rect.q.y |] in
@@ -281,7 +281,7 @@ let (slice_and_dicing_layout: ('a, 'b) layout_func) =
  *
  * In the following I use some of the examples in the paper so you'll need
  * the paper to follow what I say.
- *)
+*)
 
 
 (*
@@ -301,7 +301,7 @@ let squarified_list_area_ex =
  * of the aready. It should not matter that the total sum of area is
  * equal to the size of the rectangle. Indeed later we will always do
  * things in an ortho plan, that is with a rectangle 0x0 to 1x1.
- *)
+*)
 let squarified_list_area_ex2 =
   squarified_list_area_ex |> List.map (fun (x, info) -> x *. 2.0, info)
 let dim_rect_orig =
@@ -314,15 +314,15 @@ type split =
    * The split lines will be vertical, but the rectangles
    * would be spreaded horizontally. In the paper they call that horizontal
    * Split but I prefer Spread, because the split lines are actually verticals.
-   *)
+  *)
   | SpreadHorizontally
 
   (* Spread one on top of the other eg _
    *                                   _
    *                                   _
-   *)
+  *)
   | SpreadVertically
-(*e: type split *)
+  (*e: type split *)
 
 (*s: function ratio_rect_dim *)
 (* we want the ratio to be a close to 1 as possible (that is to be a square) *)
@@ -343,7 +343,7 @@ let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5)
  * which leads then to an aspect ratio of 4 vs 1.5 = 4 / 1.5 = 8/3.
  * If we add 2 rect of size 6, then their aspect ratio is 1.5 which is
  * better
- *)
+*)
 
 let worst elems_in_row  size_side_row =
   let s = Common2.sum_float elems_in_row in
@@ -352,7 +352,7 @@ let worst elems_in_row  size_side_row =
 
   (* cf formula in paper *)
   max ((Common2.square size_side_row *. rplus) /. Common2.square s)
-      (Common2.square s /.  (Common2.square size_side_row *. rminus))
+    (Common2.square s /.  (Common2.square size_side_row *. rminus))
 
 let _ = assert
   (worst [6.0] 4.0 = 8.0 /. 3.0) (* 2.66667 *)
@@ -365,7 +365,7 @@ let _ = assert
 (*s: function layout *)
 (* We are given a fixed row which contains a set of elems that we have
  * to spread unoformly, just like in the original algorithm.
- *)
+*)
 let layout row rect =
 
   let p = [| rect.p.x; rect.p.y |] in
@@ -413,14 +413,14 @@ let layout row rect =
 (* the main algorithmic part of squarifying *)
 (*s: function squarify_orig *)
 let rec (squarify_orig:
-   ?verbose:bool ->
-   (float * 'a) list -> (float * 'a) list -> rectangle ->
-   (float * 'a * rectangle) list
-   ) =
- fun ?(verbose=false) children current_row rect ->
+           ?verbose:bool ->
+         (float * 'a) list -> (float * 'a) list -> rectangle ->
+         (float * 'a * rectangle) list
+        ) =
+  fun ?(verbose=false) children current_row rect ->
   (* does not work well because of float approximation.
    * assert(Common.sum_float (children ++ current_row) = rect_area rect);
-   *)
+  *)
   let (p, q) = rect.p, rect.q in
 
   let floats xs = List.map fst xs in
@@ -438,7 +438,7 @@ let rec (squarify_orig:
    * In the paper they call this variable 'width' but it's misleading.
    * Note that because we are in Horizontal mode, inside this left row,
    * things will be spreaded this time vertically.
-   *)
+  *)
   let size_side_row =
     match spread with
     | SpreadHorizontally -> rect_height rect
@@ -448,8 +448,8 @@ let rec (squarify_orig:
   | c::cs ->
       if null current_row ||
          (worst (floats (current_row @ [c])) size_side_row)
-          <=
-          (worst (floats current_row)         size_side_row)
+         <=
+         (worst (floats current_row)         size_side_row)
       then
         (* not yet optimal row, let's recurse *)
         squarify_orig cs (current_row @ [c]) rect
@@ -464,7 +464,7 @@ let rec (squarify_orig:
           | SpreadHorizontally ->
               let middle_x =
                 (q.x -. p.x) *. portion_for_row
-                  +. p.x
+                +. p.x
               in
               {
                 p = p;
@@ -478,7 +478,7 @@ let rec (squarify_orig:
           | SpreadVertically ->
               let middle_y =
                 (q.y -. p.y) *. portion_for_row
-                  +. p.y in
+                +. p.y in
               {
                 p = p;
                 q = { x = q.x; y = middle_y;};
@@ -529,9 +529,9 @@ let squarify children rect =
 
 (*s: function test_squarify *)
 let test_squarify () =
-    pr2_gen (worst [6.0] 4.0);
-    pr2_gen (worst [6.0;6.0] 4.0);
-    pr2_gen (worst [6.0;6.0;4.0] 4.0);
+  pr2_gen (worst [6.0] 4.0);
+  pr2_gen (worst [6.0;6.0] 4.0);
+  pr2_gen (worst [6.0;6.0;4.0] 4.0);
   pr2_xxxxxxxxxxxxxxxxx ();
   squarify squarified_list_area_ex dim_rect_orig |> ignore;
   pr2_xxxxxxxxxxxxxxxxx ();
@@ -542,12 +542,12 @@ let test_squarify () =
 
 (*s: layout squarify *)
 let (squarify_layout: ('a, 'b) layout_func) =
- fun children _depth rect ->
+  fun children _depth rect ->
   let children' = children |> Common.sort_by_key_highfirst in
   squarify children' rect
 
 let (squarify_layout_no_sort_size: ('a, 'b) layout_func) =
- fun children _depth rect ->
+  fun children _depth rect ->
   squarify children rect
 (*e: layout squarify *)
 
@@ -561,11 +561,11 @@ let (squarify_layout_no_sort_size: ('a, 'b) layout_func) =
 *)
 
 let children_ex_ordered_2001 = [
-    1; 5; 3; 4; 5; 1;
-    10; 1; 1; 2; 7; 3;
-    5; 2; 10; 1; 2; 1;
-    1; 2;
-  ]
+  1; 5; 3; 4; 5; 1;
+  10; 1; 1; 2; 7; 3;
+  5; 2; 10; 1; 2; 1;
+  1; 2;
+]
 (*e: ordered examples *)
 
 (*s: type pivotized *)
@@ -601,7 +601,7 @@ let compute_rects_pivotized childs_pivotized rect spread =
 
   (* computing the rectangle of the left and right is easy as the
    * height is fixed (when we spread horizontally)
-   *)
+  *)
   match spread with
   | SpreadHorizontally ->
       (* TODO do something that adapt to rect ? lourd que rect
@@ -616,17 +616,17 @@ let compute_rects_pivotized childs_pivotized rect spread =
         p.y +. ((rect_height rect) *. portion_for_pivot_vs_above)
       in
       { left = {
-            p = p;
-            q = { x = middle_x1; y = q.y } };
+          p = p;
+          q = { x = middle_x1; y = q.y } };
         right = {
-            p = { x = middle_x2; y = p.y };
-            q = q; };
+          p = { x = middle_x2; y = p.y };
+          q = q; };
         pivot = {
-            p = { x = middle_x1; y = p.y};
-            q = { x = middle_x2; y = middle_y}; };
+          p = { x = middle_x1; y = p.y};
+          q = { x = middle_x2; y = middle_y}; };
         above_pivot = {
-            p = { x = middle_x1; y = middle_y };
-            q = { x = middle_x2; y = q.y; } };
+          p = { x = middle_x1; y = middle_y };
+          q = { x = middle_x2; y = q.y; } };
       }
 
   | SpreadVertically ->
@@ -681,13 +681,13 @@ let balayer_right xs =
   done;
   List.rev !res
 let _ = assert (balayer_right [1;2;3;2] =
-    [
-      [], [1;2;3;2];
-      [1], [2;3;2];
-      [1;2], [3;2];
-      [1;2;3], [2];
-      [1;2;3;2], [];
-    ])
+                [
+                  [], [1;2;3;2];
+                  [1], [2;3;2];
+                  [1;2], [3;2];
+                  [1;2;3], [2];
+                  [1;2;3;2], [];
+                ])
 (*e: function balayer_right_wrong *)
 
 (*s: function orderify_children *)
@@ -735,7 +735,7 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
             let rects = compute_rects_pivotized childs_pivotized rect spread in
             ratio_rect_dim (rect_width rects.pivot, rect_height rects.pivot),
             (rects,
-            childs_pivotized)
+             childs_pivotized)
           )
         in
         let best = Common.sort_by_key_lowfirst scores_and_rects |> List.hd in
@@ -766,7 +766,7 @@ let test_orderify () =
 
 (*s: layout ordered *)
 let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) =
- fun ?pivotf children _depthTODOMAYBE rect ->
+  fun ?pivotf children _depthTODOMAYBE rect ->
   orderify_children ?pivotf children rect
 (*e: layout ordered *)
 
@@ -800,82 +800,82 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     then () (* TODO ? warning ? *)
     else
 
-    (match root with
-    | Leaf (tnode, _fileinfo) ->
-        let color = color_of_treemap_node root in
+      (match root with
+       | Leaf (tnode, _fileinfo) ->
+           let color = color_of_treemap_node root in
 
-        Common.push {
-          tr_rect = rect;
-          tr_color = color;
-          tr_label = tnode.label;
-          tr_depth = depth;
-          tr_is_node = false;
-        } treemap_rects;
-
-
-    | Node (mode, children) ->
-
-       (* let's draw some borders. Far better to see the structure. *)
-        Common.push {
-          tr_rect = rect;
-          tr_color = Color.black;
-          tr_label = (fst mode).label;
-          tr_depth = depth;
-          tr_is_node = true;
-        } treemap_rects;
-
-        (* does not work, weird *)
-        let border =
-          if not big_borders then
-          match depth with
-          | 1 -> 0.0
-          | 2 -> 0.003
-          | 3 -> 0.001
-          | 4 -> 0.0005
-          | 5 -> 0.0002
-          | _ -> 0.0
-          else
-          match depth with
-          | 1 -> 0.0
-          | 2 -> 0.003
-          | 3 -> 0.0015
-          | 4 -> 0.0010
-          | 5 -> 0.0008
-          | 6 -> 0.0005
-          | _ -> 0.0002
-        in
-        let p = {
-          x = p.x +. border;
-          y = p.y +. border;
-        }
-        in
-        let q = {
-          x = q.x -. border;
-          y = q.y -. border;
-        }
-        in
-        (* todo? can overflow ... check still inside previous rect *)
-        let rect = { p = p; q = q } in
-
-        let children' =
-          children |> List.map (fun child ->
-            float_of_int (size_of_treemap_node child),
-            child
-          )
-        in
-
-        let rects_with_info =
-          (* generic call *)
-          flayout children' depth rect
-        in
-        (* less: assert rects_with_info are inside rect ? *)
-
-        rects_with_info |> List.iter (fun (_x, child, rect) ->
-          aux_treemap child rect ~depth:(depth + 1)
-        );
+           Common.push {
+             tr_rect = rect;
+             tr_color = color;
+             tr_label = tnode.label;
+             tr_depth = depth;
+             tr_is_node = false;
+           } treemap_rects;
 
 
-    )
+       | Node (mode, children) ->
+
+           (* let's draw some borders. Far better to see the structure. *)
+           Common.push {
+             tr_rect = rect;
+             tr_color = Color.black;
+             tr_label = (fst mode).label;
+             tr_depth = depth;
+             tr_is_node = true;
+           } treemap_rects;
+
+           (* does not work, weird *)
+           let border =
+             if not big_borders then
+               match depth with
+               | 1 -> 0.0
+               | 2 -> 0.003
+               | 3 -> 0.001
+               | 4 -> 0.0005
+               | 5 -> 0.0002
+               | _ -> 0.0
+             else
+               match depth with
+               | 1 -> 0.0
+               | 2 -> 0.003
+               | 3 -> 0.0015
+               | 4 -> 0.0010
+               | 5 -> 0.0008
+               | 6 -> 0.0005
+               | _ -> 0.0002
+           in
+           let p = {
+             x = p.x +. border;
+             y = p.y +. border;
+           }
+           in
+           let q = {
+             x = q.x -. border;
+             y = q.y -. border;
+           }
+           in
+           (* todo? can overflow ... check still inside previous rect *)
+           let rect = { p = p; q = q } in
+
+           let children' =
+             children |> List.map (fun child ->
+               float_of_int (size_of_treemap_node child),
+               child
+             )
+           in
+
+           let rects_with_info =
+             (* generic call *)
+             flayout children' depth rect
+           in
+           (* less: assert rects_with_info are inside rect ? *)
+
+           rects_with_info |> List.iter (fun (_x, child, rect) ->
+             aux_treemap child rect ~depth:(depth + 1)
+           );
+
+
+      )
   in
   aux_treemap treemap (rect_ortho()) ~depth:1;
 
@@ -959,12 +959,12 @@ let tree_of_dir2
 
 (* specialized version *)
 let tree_of_dir3
-  ?(filter_file=(fun _ -> true))
-  ?(filter_dir=(fun _ -> true))
-  ?(sort=SortDirAndFilesCaseInsensitive)
-  ~file_hook
-  dir
- =
+    ?(filter_file=(fun _ -> true))
+    ?(filter_dir=(fun _ -> true))
+    ?(sort=SortDirAndFilesCaseInsensitive)
+    ~file_hook
+    dir
+  =
   if sort <> SortDirAndFilesCaseInsensitive
   then failwith "Only SortDirAndFilesCaseInsensitive is handled";
 
@@ -991,19 +991,19 @@ let tree_of_dir3
           then Common.push (aux full) res
       | Unix.S_LNK ->
           if !follow_symlinks then
-          (try
-          (match (Unix.stat full).Unix.st_kind with
-          | Unix.S_REG ->
-              if filter_file full
-              then Common.push (Leaf (full, file_hook full)) res
-          | Unix.S_DIR ->
-              if filter_dir full
-              then Common.push (aux full) res
-          | _ -> ()
-          )
-          with Unix.Unix_error _ ->
-            pr2 (spf "PB stat link at %s" full);
-          )
+            (try
+               (match (Unix.stat full).Unix.st_kind with
+                | Unix.S_REG ->
+                    if filter_file full
+                    then Common.push (Leaf (full, file_hook full)) res
+                | Unix.S_DIR ->
+                    if filter_dir full
+                    then Common.push (aux full) res
+                | _ -> ()
+               )
+             with Unix.Unix_error _ ->
+               pr2 (spf "PB stat link at %s" full);
+            )
           else ()
       | _ -> ()
     );
@@ -1017,15 +1017,15 @@ let tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook a =
     tree_of_dir3 ?filter_file ?filter_dir ?sort ~file_hook a)
 
 let tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook path =
- if Common2.is_directory path
- then tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook path
- else Leaf (path, file_hook path)
+  if Common2.is_directory path
+  then tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook path
+  else Leaf (path, file_hook path)
 
 
 
 (* Some nodes may have stuff in common that we should factor.
  * todo: factorize code with Common.tree_of_files
- *)
+*)
 let add_intermediate_nodes root_path nodes =
   let root = chop_dirsymbol root_path in
   if not (Common2.is_absolute root)
@@ -1106,7 +1106,7 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
  * to overlapping labels and very small labels for the actual
  * childrens. This function removes those intermediate singleton
  * sub directories.
- *)
+*)
 let rec remove_singleton_subdirs tree =
   match tree with
   | Leaf _x -> tree
@@ -1123,31 +1123,31 @@ let rec remove_singleton_subdirs tree =
 (*s: concrete rectangles example *)
 (* src: python treemap.py
  * lower, upper, rgb
- *)
+*)
 let treemap_rectangles_ex = [
- [0.0, 0.0], [1.0, 1.0],                                                                 (0.17778372236496054, 0.75183542244426871, 0.77892130219255096);
- [0.0, 0.0], [0.27659574468085107, 1.0],                                                 (0.54757582213226441, 0.945582381819014, 0.26427761420055917);
- [0.0, 0.0], [0.27659574468085107, 0.38461538461538464],                                 (0.71931501307446211, 0.95905644995588246, 0.28633110533256656);
- [0.0, 0.38461538461538464], [0.27659574468085107, 1.0],                                 (0.29508972521695809, 0.35521829137775873, 0.46070336222733932);
- [0.0, 0.38461538461538464], [0.10372340425531915, 1.0],                                 (0.51529552034735771, 0.53725734991812635, 0.22430742368105949);
- [0.10372340425531915, 0.38461538461538464], [0.27659574468085107, 1.0],                 (0.43861905319415506, 0.16281118710897469, 0.60250203640050937);
- [0.27659574468085107, 0.0], [0.36170212765957449, 1.0],                                 (0.3743827201120038, 0.07170428778373239, 0.09006244270341246);
- [0.36170212765957449, 0.0], [0.8936170212765957, 1.0],                                  (0.39117531981521536, 0.16579633978705666, 0.63690597944460248);
- [0.36170212765957449, 0.0], [0.8936170212765957, 0.20000000000000001],                  (0.34982099039431447, 0.54618822154424429, 0.19282777912183513);
- [0.36170212765957449, 0.20000000000000001], [0.8936170212765957, 0.28000000000000003],  (0.14570785913376116, 0.88033416430670342, 0.51911403487550056);
- [0.36170212765957449, 0.28000000000000003], [0.8936170212765957, 0.76000000000000001],  (0.79691567717907263, 0.3307536109585284, 0.95607296382731199);
- [0.36170212765957449, 0.28000000000000003], [0.45035460992907805, 0.76000000000000001], (0.7038680786604008, 0.12714028216462059, 0.17131117338368551);
- [0.45035460992907805, 0.28000000000000003], [0.58333333333333337, 0.76000000000000001], (0.036414279679915174, 0.94100891978030599, 0.017007582879843386);
- [0.58333333333333337, 0.28000000000000003], [0.8936170212765957, 0.76000000000000001],  (0.63659306932350279, 0.25303150185397794, 0.81066700006123815);
- [0.58333333333333337, 0.28000000000000003], [0.8936170212765957, 0.48571428571428577],  (0.38368601825375115, 0.083946154840038423, 0.048274714595522017);
- [0.58333333333333337, 0.48571428571428577], [0.8936170212765957, 0.62285714285714289],  (0.70513207607633877, 0.95785105976069096, 0.87735329563400943);
- [0.58333333333333337, 0.62285714285714289], [0.8936170212765957, 0.76000000000000001],  (0.80565735169264896, 0.75578523763882166, 0.10757369310766951);
- [0.36170212765957449, 0.76000000000000001], [0.8936170212765957, 1.0],                  (0.57042872206220896, 0.9335301149492965, 0.86254084187238389);
- [0.36170212765957449, 0.76000000000000001], [0.62765957446808507, 1.0],                 (0.31530318311042171, 0.97066142447913661, 0.93180609525183578);
- [0.62765957446808507, 0.76000000000000001], [0.8936170212765957, 1.0],                  (0.18330061581424317, 0.82234170300788867, 0.38303955663618716);
- [0.8936170212765957, 0.0], [1.0, 1.0],                                                    (0.20641218447120302, 0.35715481613716149, 0.86620796882602547);
- [0.8936170212765957, 0.0], [1.0, 0.59999999999999998],                                    (0.7942020522649591, 0.27351921049542915, 0.86191731793444748);
- [0.8936170212765957, 0.59999999999999998], [1.0, 1.0],                                  (0.27214488578650742, 0.41635201268319189, 0.1301335726270938);
+  [0.0, 0.0], [1.0, 1.0],                                                                 (0.17778372236496054, 0.75183542244426871, 0.77892130219255096);
+  [0.0, 0.0], [0.27659574468085107, 1.0],                                                 (0.54757582213226441, 0.945582381819014, 0.26427761420055917);
+  [0.0, 0.0], [0.27659574468085107, 0.38461538461538464],                                 (0.71931501307446211, 0.95905644995588246, 0.28633110533256656);
+  [0.0, 0.38461538461538464], [0.27659574468085107, 1.0],                                 (0.29508972521695809, 0.35521829137775873, 0.46070336222733932);
+  [0.0, 0.38461538461538464], [0.10372340425531915, 1.0],                                 (0.51529552034735771, 0.53725734991812635, 0.22430742368105949);
+  [0.10372340425531915, 0.38461538461538464], [0.27659574468085107, 1.0],                 (0.43861905319415506, 0.16281118710897469, 0.60250203640050937);
+  [0.27659574468085107, 0.0], [0.36170212765957449, 1.0],                                 (0.3743827201120038, 0.07170428778373239, 0.09006244270341246);
+  [0.36170212765957449, 0.0], [0.8936170212765957, 1.0],                                  (0.39117531981521536, 0.16579633978705666, 0.63690597944460248);
+  [0.36170212765957449, 0.0], [0.8936170212765957, 0.20000000000000001],                  (0.34982099039431447, 0.54618822154424429, 0.19282777912183513);
+  [0.36170212765957449, 0.20000000000000001], [0.8936170212765957, 0.28000000000000003],  (0.14570785913376116, 0.88033416430670342, 0.51911403487550056);
+  [0.36170212765957449, 0.28000000000000003], [0.8936170212765957, 0.76000000000000001],  (0.79691567717907263, 0.3307536109585284, 0.95607296382731199);
+  [0.36170212765957449, 0.28000000000000003], [0.45035460992907805, 0.76000000000000001], (0.7038680786604008, 0.12714028216462059, 0.17131117338368551);
+  [0.45035460992907805, 0.28000000000000003], [0.58333333333333337, 0.76000000000000001], (0.036414279679915174, 0.94100891978030599, 0.017007582879843386);
+  [0.58333333333333337, 0.28000000000000003], [0.8936170212765957, 0.76000000000000001],  (0.63659306932350279, 0.25303150185397794, 0.81066700006123815);
+  [0.58333333333333337, 0.28000000000000003], [0.8936170212765957, 0.48571428571428577],  (0.38368601825375115, 0.083946154840038423, 0.048274714595522017);
+  [0.58333333333333337, 0.48571428571428577], [0.8936170212765957, 0.62285714285714289],  (0.70513207607633877, 0.95785105976069096, 0.87735329563400943);
+  [0.58333333333333337, 0.62285714285714289], [0.8936170212765957, 0.76000000000000001],  (0.80565735169264896, 0.75578523763882166, 0.10757369310766951);
+  [0.36170212765957449, 0.76000000000000001], [0.8936170212765957, 1.0],                  (0.57042872206220896, 0.9335301149492965, 0.86254084187238389);
+  [0.36170212765957449, 0.76000000000000001], [0.62765957446808507, 1.0],                 (0.31530318311042171, 0.97066142447913661, 0.93180609525183578);
+  [0.62765957446808507, 0.76000000000000001], [0.8936170212765957, 1.0],                  (0.18330061581424317, 0.82234170300788867, 0.38303955663618716);
+  [0.8936170212765957, 0.0], [1.0, 1.0],                                                    (0.20641218447120302, 0.35715481613716149, 0.86620796882602547);
+  [0.8936170212765957, 0.0], [1.0, 0.59999999999999998],                                    (0.7942020522649591, 0.27351921049542915, 0.86191731793444748);
+  [0.8936170212765957, 0.59999999999999998], [1.0, 1.0],                                  (0.27214488578650742, 0.41635201268319189, 0.1301335726270938);
 ]
 (*e: concrete rectangles example *)
 
@@ -1230,10 +1230,10 @@ let (treemap_ex_ordered_2001: (unit, unit) treemap) =
 
 let actions () = [
   (*s: treemap actions *)
-    "-test_squarify", "<>",
-    Common.mk_action_0_arg (test_squarify);
-    "-test_orderify", "<>",
-    Common.mk_action_0_arg (test_orderify);
+  "-test_squarify", "<>",
+  Common.mk_action_0_arg (test_squarify);
+  "-test_orderify", "<>",
+  Common.mk_action_0_arg (test_orderify);
   (*e: treemap actions *)
 ]
 (*e: treemap.ml *)

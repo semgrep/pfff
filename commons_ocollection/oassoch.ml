@@ -15,7 +15,7 @@ class ['a,'b] oassoch xs =
 
     (* redefine replkey to be more efficient than default. With hash, don't need
        to delkey before add, replace do both action directly.
-     *)
+    *)
     method replkey (k,v) = (Hashtbl.replace data k v; o)
     method iter f = Hashtbl.iter (Common2.curry f) data
     method view = raise Todo
@@ -36,5 +36,5 @@ class ['a,'b] oassoch xs =
     method keys =
       List.map fst (o#tolist)
 
-end
+  end
 

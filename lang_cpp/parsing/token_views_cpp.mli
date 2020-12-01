@@ -6,15 +6,15 @@ type token_extended = {
   line : int;
   col : int;
 }
- and context =
-    | InTopLevel
-    | InClassStruct of string
-    | InEnum
-    | InInitializer
-    | InAssign
-    | InParameter
-    | InArgument
-    | InFunction
+and context =
+  | InTopLevel
+  | InClassStruct of string
+  | InEnum
+  | InInitializer
+  | InAssign
+  | InParameter
+  | InArgument
+  | InFunction
 (*
     | InTemplateParam
 *)
@@ -28,7 +28,7 @@ type paren_grouped =
   | PToken of token_extended
 type brace_grouped =
   | Braceised of brace_grouped list list * token_extended *
-      token_extended option
+                 token_extended option
   | BToken of token_extended
 
 type ifdef_grouped =
@@ -37,7 +37,7 @@ type ifdef_grouped =
   | NotIfdefLine of token_extended list
 
 type 'a line_grouped =
-  Line of 'a list
+    Line of 'a list
 
 type body_function_grouped =
   | BodyFunction of token_extended list

@@ -2,8 +2,8 @@
 type visitor_in = {
   khtml_tree: Ast_html.html_tree vin;
   kinfo: Ast_html.info vin;
- }
-  and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
+}
+and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
 and visitor_out = Ast_html.any -> unit
 

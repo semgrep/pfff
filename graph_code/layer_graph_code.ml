@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = Graph_code
@@ -57,7 +57,7 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
         (* we want to make sure this node has a line, some
          * E.File could be there because file_of_node works for them
          * but they have no line, so let's filter them here
-         *)
+        *)
         let _line = G.nodeinfo node g in
         Some (file, (node, v))
       with Not_found -> None
@@ -68,35 +68,35 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
   let max_total = Common2.maximum xs in
 
   let layer = { Layer_code.
-    title = spf "Graph code rank (%s)" (Filename.basename output);
-    description = "Associate a rank to each entity according to its depth
+                title = spf "Graph code rank (%s)" (Filename.basename output);
+                description = "Associate a rank to each entity according to its depth
 in the Use graph";
-    files = group_by_file |> List.map (fun (file, nodes_and_rank) ->
-      let max_file =
-        nodes_and_rank |> List.map snd |> Common2.maximum
-      in
+                files = group_by_file |> List.map (fun (file, nodes_and_rank) ->
+                  let max_file =
+                    nodes_and_rank |> List.map snd |> Common2.maximum
+                  in
 
-      file,
-      { Layer_code.
-        micro_level = nodes_and_rank |> List.map (fun (n, v) ->
-          let info = G.nodeinfo n g in
-          let line = info.Graph_code.pos.Parse_info.line in
-          line, kind_of_rank v ~max_total
-        );
-        macro_level = [
-          kind_of_rank max_file ~max_total, 1.
-        ];
-      }
-    );
-    kinds = Layer_code.heat_map_properties;
-  }
+                  file,
+                  { Layer_code.
+                    micro_level = nodes_and_rank |> List.map (fun (n, v) ->
+                      let info = G.nodeinfo n g in
+                      let line = info.Graph_code.pos.Parse_info.line in
+                      line, kind_of_rank v ~max_total
+                    );
+                    macro_level = [
+                      kind_of_rank max_file ~max_total, 1.
+                    ];
+                  }
+                );
+                kinds = Layer_code.heat_map_properties;
+              }
   in
   Layer_code.save_layer layer output
 
 let gen_statistics_layer ~root stats ~output =
   (* there is a priority order here, see simple_layer_of_parse_infos
    * that leverage this order
-   *)
+  *)
   let kinds = [
     "lookup fail", "purple";
     "unresolved calls", "red3";
@@ -126,13 +126,13 @@ let gen_statistics_layer ~root stats ~output =
     (!(stats.G.lookup_fail)
      |> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) @
 
-      []
+    []
   in
   let layer = Layer_code.simple_layer_of_parse_infos ~root
-    ~title:"Graph code error statistics"
-    ~description:""
-    infos
-    kinds
+      ~title:"Graph code error statistics"
+      ~description:""
+      infos
+      kinds
   in
   Layer_code.save_layer layer output;
   ()

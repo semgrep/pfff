@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module Db = Database_code
@@ -32,7 +32,7 @@ module PI = Parse_info
 (* pre: the info corresponds to a originTok, otherwise
  * file_of_info could give the location of the macro file
  * and filename_without_leading_path will not like it
- *)
+*)
 let mk_entity ~root ~hcomplete_name_of_info info categ =
 
   let s = PI.str_of_info info in
@@ -73,7 +73,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* when we want to merge this database with the db of another language
    * like PHP, the other database may use realpath for the path of the files
    * so we want to behave the same.
-   *)
+  *)
   let files_or_dirs = files_or_dirs |> List.map Common.fullpath in
   let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
   pr2 (spf "generating C/C++ db_light with root = %s" root);
@@ -89,84 +89,84 @@ let compute_database ?(verbose=false) files_or_dirs =
   let (hdefs_pos: (Parse_info.t, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
   files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-    k ();
-    let (ast2, _stat) = Parse_cpp.parse file in
+    List.iter (fun file ->
+      k ();
+      let (ast2, _stat) = Parse_cpp.parse file in
 
-    let hcomplete_name_of_info =
-      (*Class_js.extract_complete_name_of_info ast *)
-      Hashtbl.create 101
-    in
+      let hcomplete_name_of_info =
+        (*Class_js.extract_complete_name_of_info ast *)
+        Hashtbl.create 101
+      in
 
-    ast2 |> List.iter (fun (ast, toks) ->
-      let prefs = Highlight_code.default_highlighter_preferences in
+      ast2 |> List.iter (fun (ast, toks) ->
+        let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
+        Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
 
-        (* todo? could look at the info of the origintok of the expanded? *)
-        if not (PI.is_origintok info) then ()
-        else
-          (* todo: use is_entity_def_category ? *)
-          match categ with
-          | HC.Entity (_, (HC.Def2 _)) ->
-              Hashtbl.add hdefs_pos info true;
-              let e = mk_entity ~root ~hcomplete_name_of_info
-                info categ
-              in
-              Hashtbl.add hdefs e.Db.e_name e;
-          | _ -> ()
+          (* todo? could look at the info of the origintok of the expanded? *)
+          if not (PI.is_origintok info) then ()
+          else
+            (* todo: use is_entity_def_category ? *)
+            match categ with
+            | HC.Entity (_, (HC.Def2 _)) ->
+                Hashtbl.add hdefs_pos info true;
+                let e = mk_entity ~root ~hcomplete_name_of_info
+                    info categ
+                in
+                Hashtbl.add hdefs e.Db.e_name e;
+            | _ -> ()
         )
-        prefs
-        (ast, toks)
-      ;
-    );
-  ));
+          prefs
+          (ast, toks)
+        ;
+      );
+    ));
 
   (* step2: collecting uses *)
   if verbose then pr2 "\nphase 2: collecting uses";
 
   files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-    k();
-    let (ast2, _stat) = Parse_cpp.parse file in
+    List.iter (fun file ->
+      k();
+      let (ast2, _stat) = Parse_cpp.parse file in
 
-    let ast = Parse_cpp.program_of_program2 ast2 in
-    (* work by side effect on ast2 too *)
-    Check_variables_cpp.check_and_annotate_program
-      ast;
+      let ast = Parse_cpp.program_of_program2 ast2 in
+      (* work by side effect on ast2 too *)
+      Check_variables_cpp.check_and_annotate_program
+        ast;
 
-    ast2 |> List.iter (fun (ast, toks) ->
-      let prefs = Highlight_code.default_highlighter_preferences in
+      ast2 |> List.iter (fun (ast, toks) ->
+        let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
-        if not (PI.is_origintok info) then ()
-        else
-          match categ with
-          | HC.Entity (_, (HC.Use2 _))
-          | HC.StructName (HC.Use)
-          (*| HC.Method (HC.Use2 _) *)
-            ->
-              let s = PI.str_of_info info in
-              Hashtbl.find_all hdefs s |> List.iter (fun entity ->
-                let file_entity = entity.Db.e_file in
+        Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
+          if not (PI.is_origintok info) then ()
+          else
+            match categ with
+            | HC.Entity (_, (HC.Use2 _))
+            | HC.StructName (HC.Use)
+              (*| HC.Method (HC.Use2 _) *)
+              ->
+                let s = PI.str_of_info info in
+                Hashtbl.find_all hdefs s |> List.iter (fun entity ->
+                  let file_entity = entity.Db.e_file in
 
-                (* todo: check corresponding entity_kind ? *)
-                if file_entity <> file &&
-                   Db.entity_and_highlight_category_correpondance entity categ
-                then begin
-                  entity.Db.e_number_external_users <-
-                    entity.Db.e_number_external_users + 1;
-                end
-              );
+                  (* todo: check corresponding entity_kind ? *)
+                  if file_entity <> file &&
+                     Db.entity_and_highlight_category_correpondance entity categ
+                  then begin
+                    entity.Db.e_number_external_users <-
+                      entity.Db.e_number_external_users + 1;
+                  end
+                );
 
-          | _ -> ()
+            | _ -> ()
         )
-        prefs
-        (ast, toks)
-      ;
-    );
-    ()
-  ));
+          prefs
+          (ast, toks)
+        ;
+      );
+      ()
+    ));
 
   (* step3: adding cross reference information *)
   if verbose then pr2 "\nphase 3: last fixes";

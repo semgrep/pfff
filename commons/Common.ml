@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 (*###########################################################################*)
 (* Prelude *)
 (*###########################################################################*)
@@ -21,14 +21,14 @@
  * helps in ocamldebug and also in getting better backtraces.
  * This is also useful to set in a js_of_ocaml (jsoo) context to
  * again get better backtraces.
- *)
+*)
 let debugger = ref false
 
 (* You should set this to true when you run code compiled by js_of_ocaml
  * so some functions here can change their implementation and rely
  * less on non-portable API like Unix which does not work well under
  * node or on the browser.
- *)
+*)
 let jsoo = ref false
 
 (*****************************************************************************)
@@ -42,7 +42,7 @@ let jsoo = ref false
  * dependency problem here. C is better than OCaml on this with the
  * ability to declare prototypes, enabling some form of forward
  * reference.
- *)
+*)
 
 let spf = Printf.sprintf
 
@@ -90,7 +90,7 @@ let finalize f cleanup =
    * quite a lot this changes too much the semantic.
    * TODO: maybe I should not use save_excursion so much ? maybe
    *  -debugger helps see code that I should refactor ?
-   *)
+  *)
   try
     let res = f () in
     cleanup ();
@@ -160,11 +160,11 @@ let disable_pr2_once = ref false
 let xxx_once f s =
   if !disable_pr2_once then pr2 s
   else
-    if not (Hashtbl.mem _already_printed s)
-    then begin
-      Hashtbl.add _already_printed s true;
-      f ("(ONCE) " ^ s);
-    end
+  if not (Hashtbl.mem _already_printed s)
+  then begin
+    Hashtbl.add _already_printed s true;
+    f ("(ONCE) " ^ s);
+  end
 
 let pr2_once s = xxx_once pr2 s
 
@@ -174,7 +174,7 @@ let pr2_once s = xxx_once pr2 s
 (* Dump an OCaml value into a printable string.
  * By Richard W.M. Jones (rich@annexia.org).
  * dumper.ml 1.2 2005/02/06 12:38:21 rich Exp
- *)
+*)
 open Obj
 
 let rec dump2 r =
@@ -202,7 +202,7 @@ let rec dump2 r =
     let opaque name =
       (* XXX In future, print the address of value 'r'.  Not possible in
        * pure OCaml at the moment.
-       *)
+      *)
       "<" ^ name ^ ">"
     in
 
@@ -229,9 +229,9 @@ let rec dump2 r =
         match fields with h::h'::t -> h, h', t | _ -> assert false in
       (* No information on decoding the class (first field).  So just print
        * out the ID and the slots.
-       *)
+      *)
       "Object #" ^ dump2 id ^
-        " (" ^ String.concat ", " (List.map dump2 slots) ^ ")"
+      " (" ^ String.concat ", " (List.map dump2 slots) ^ ")"
     )
     else if t = infix_tag then opaque "infix"
     else if t = forward_tag then opaque "forward"
@@ -239,7 +239,7 @@ let rec dump2 r =
     else if t < no_scan_tag then (	(* Constructed value. *)
       let fields = get_fields [] s in
       "Tag" ^ string_of_int t ^
-        " (" ^ String.concat ", " (List.map dump2 fields) ^ ")"
+      " (" ^ String.concat ", " (List.map dump2 fields) ^ ")"
     )
     else if t = string_tag then (
       "\"" ^ String.escaped (magic r : string) ^ "\""
@@ -282,11 +282,11 @@ let _profile_table = ref (Hashtbl.create 100)
 let adjust_profile_entry category difftime =
   let (xtime, xcount) =
     (try Hashtbl.find !_profile_table category
-    with Not_found ->
-      let xtime = ref 0.0 in
-      let xcount = ref 0 in
-      Hashtbl.add !_profile_table category (xtime, xcount);
-      (xtime, xcount)
+     with Not_found ->
+       let xtime = ref 0.0 in
+       let xcount = ref 0 in
+       Hashtbl.add !_profile_table category (xtime, xcount);
+       (xtime, xcount)
     ) in
   xtime := !xtime +. difftime;
   xcount := !xcount + 1;
@@ -297,27 +297,27 @@ let adjust_profile_entry category difftime =
  *
  * todo: try also detect when complexity augment each time, so can
  * detect the situation for a function gets worse and worse ?
- *)
+*)
 let profile_code category f =
   if not (check_profile category)
   then f ()
   else begin
-  if !show_trace_profile then pr2 (spf "> %s" category);
-  let t = Unix.gettimeofday () in
-  let res, prefix =
-    try Some (f ()), ""
-    with Timeout -> None, "*"
-  in
-  let category = prefix ^ category in (* add a '*' to indicate timeout func *)
-  let t' = Unix.gettimeofday () in
+    if !show_trace_profile then pr2 (spf "> %s" category);
+    let t = Unix.gettimeofday () in
+    let res, prefix =
+      try Some (f ()), ""
+      with Timeout -> None, "*"
+    in
+    let category = prefix ^ category in (* add a '*' to indicate timeout func *)
+    let t' = Unix.gettimeofday () in
 
-  if !show_trace_profile then pr2 (spf "< %s" category);
+    if !show_trace_profile then pr2 (spf "< %s" category);
 
-  adjust_profile_entry category (t' -. t);
-  (match res with
-  | Some res -> res
-  | None -> raise Timeout
-  );
+    adjust_profile_entry category (t' -. t);
+    (match res with
+     | Some res -> res
+     | None -> raise Timeout
+    );
   end
 
 
@@ -328,18 +328,18 @@ let profile_code_exclusif category f =
   then f ()
   else begin
 
-  match !_is_in_exclusif with
-  | Some s ->
-      failwith (spf "profile_code_exclusif: %s but already in %s " category s);
-  | None ->
-      _is_in_exclusif := (Some category);
-      finalize
-        (fun () ->
-          profile_code category f
-        )
-        (fun () ->
-          _is_in_exclusif := None
-        )
+    match !_is_in_exclusif with
+    | Some s ->
+        failwith (spf "profile_code_exclusif: %s but already in %s " category s);
+    | None ->
+        _is_in_exclusif := (Some category);
+        finalize
+          (fun () ->
+             profile_code category f
+          )
+          (fun () ->
+             _is_in_exclusif := None
+          )
 
   end
 
@@ -348,7 +348,7 @@ let profile_code_inside_exclusif_ok _category _f =
 
 
 let (with_open_stringbuf: (((string -> unit) * Buffer.t) -> unit) -> string) =
- fun f ->
+  fun f ->
   let buf = Buffer.create 1000 in
   let pr s = Buffer.add_string buf (s ^ "\n") in
   f (pr, buf);
@@ -358,8 +358,8 @@ let (with_open_stringbuf: (((string -> unit) * Buffer.t) -> unit) -> string) =
 (* todo: also put  % ? also add % to see if coherent numbers *)
 let profile_diagnostic () =
   if !profile = ProfNone then "" else
-  let xs =
-    Hashtbl.fold (fun k v acc -> (k,v)::acc) !_profile_table []
+    let xs =
+      Hashtbl.fold (fun k v acc -> (k,v)::acc) !_profile_table []
       |> List.sort (fun (_k1, (t1,_n1)) (_k2, (t2,_n2)) -> compare t2 t1)
     in
     with_open_stringbuf (fun (pr,_) ->
@@ -451,7 +451,7 @@ type cmdline_options = arg_spec_full list
 
 (* the format is a list of triples:
  *  (title of section * (optional) explanation of sections * options)
- *)
+*)
 type options_with_title = string * string * arg_spec_full list
 type cmdline_sections = options_with_title list
 
@@ -460,16 +460,16 @@ type cmdline_sections = options_with_title list
 
 (* now I use argv as I like at the call sites to show that
  * this function internally use argv.
- *)
+*)
 let parse_options options usage_msg argv =
   let args = ref [] in
   (try
-    Arg.parse_argv argv options (fun file -> args := file::!args) usage_msg;
-    args := List.rev !args;
-    !args
-  with
-  | Arg.Bad msg -> Printf.eprintf "%s" msg; exit 2
-  | Arg.Help msg -> Printf.printf "%s" msg; exit 0
+     Arg.parse_argv argv options (fun file -> args := file::!args) usage_msg;
+     args := List.rev !args;
+     !args
+   with
+   | Arg.Bad msg -> Printf.eprintf "%s" msg; exit 2
+   | Arg.Help msg -> Printf.printf "%s" msg; exit 0
   )
 
 
@@ -496,14 +496,14 @@ let long_usage  usage_msg  ~short_opt ~long_opt  =
     (("main options", "", short_opt)::long_opt) in
   all_options_with_title |> List.iter
     (fun (title, explanations, xs) ->
-      pr title;
-      pr_xxxxxxxxxxxxxxxxx();
-      if explanations <> ""
-      then begin pr explanations; pr "" end;
-      arg_align2 xs |> List.iter (fun (key,_action,s) ->
-        pr ("  " ^ key ^ s)
-      );
-      pr "";
+       pr title;
+       pr_xxxxxxxxxxxxxxxxx();
+       if explanations <> ""
+       then begin pr explanations; pr "" end;
+       arg_align2 xs |> List.iter (fun (key,_action,s) ->
+         pr ("  " ^ key ^ s)
+       );
+       pr "";
     );
   ()
 
@@ -514,19 +514,19 @@ let arg_parse2 l msg short_usage_fun =
   let f = (fun file -> args := file::!args) in
   let l = Arg.align l in
   (try begin
-    Arg.parse_argv Sys.argv l f msg;
-    args := List.rev !args;
-    !args
+     Arg.parse_argv Sys.argv l f msg;
+     args := List.rev !args;
+     !args
    end
-  with
-  | Arg.Bad msg -> (* eprintf "%s" msg; exit 2; *)
-      let xs = lines msg in
-      (* take only head, it's where the error msg is *)
-      pr2 (List.hd xs);
-      short_usage_fun();
-      raise (UnixExit 2)
-  | Arg.Help _msg -> (* printf "%s" msg; exit 0; *)
-      raise Impossible  (* -help is specified in speclist *)
+   with
+   | Arg.Bad msg -> (* eprintf "%s" msg; exit 2; *)
+       let xs = lines msg in
+       (* take only head, it's where the error msg is *)
+       pr2 (List.hd xs);
+       short_usage_fun();
+       raise (UnixExit 2)
+   | Arg.Help _msg -> (* printf "%s" msg; exit 0; *)
+       raise Impossible  (* -help is specified in speclist *)
   )
 
 
@@ -534,7 +534,7 @@ let arg_parse2 l msg short_usage_fun =
 
 type flag_spec   = Arg.key * Arg.spec * Arg.doc
 type action_spec = Arg.key * Arg.doc * action_func
-   and action_func = (string list -> unit)
+and action_func = (string list -> unit)
 
 type cmdline_actions = action_spec list
 exception WrongNumberOfArguments
@@ -549,43 +549,43 @@ let (action_list: cmdline_actions -> Arg.key list) = fun xs ->
 
 let (do_action: Arg.key -> string list (* args *) -> cmdline_actions -> unit) =
   fun key args xs ->
-    let assoc = xs |> List.map (fun (a,_b,c) -> (a,c)) in
-    let action_func = List.assoc key assoc in
-    action_func args
+  let assoc = xs |> List.map (fun (a,_b,c) -> (a,c)) in
+  let action_func = List.assoc key assoc in
+  action_func args
 
 
 (* todo? if have a function with default argument ? would like a
  *  mk_action_0_or_1_arg ?
- *)
+*)
 
 let mk_action_0_arg f =
   (function
-  | [] -> f ()
-  | _ -> raise WrongNumberOfArguments
+    | [] -> f ()
+    | _ -> raise WrongNumberOfArguments
   )
 
 let mk_action_1_arg f =
   (function
-  | [file] -> f file
-  | _ -> raise WrongNumberOfArguments
+    | [file] -> f file
+    | _ -> raise WrongNumberOfArguments
   )
 
 let mk_action_2_arg f =
   (function
-  | [file1;file2] -> f file1 file2
-  | _ -> raise WrongNumberOfArguments
+    | [file1;file2] -> f file1 file2
+    | _ -> raise WrongNumberOfArguments
   )
 
 let mk_action_3_arg f =
   (function
-  | [file1;file2;file3] -> f file1 file2 file3
-  | _ -> raise WrongNumberOfArguments
+    | [file1;file2;file3] -> f file1 file2 file3
+    | _ -> raise WrongNumberOfArguments
   )
 
 let mk_action_4_arg f =
   (function
-  | [file1;file2;file3;file4] -> f file1 file2 file3 file4
-  | _ -> raise WrongNumberOfArguments
+    | [file1;file2;file3;file4] -> f file1 file2 file3 file4
+    | _ -> raise WrongNumberOfArguments
   )
 
 let mk_action_n_arg f = f
@@ -657,58 +657,58 @@ let (|||) a b =
   | None -> b
 
 type ('a,'b) either = Left of 'a | Right of 'b
-  (* with sexp *)
+(* with sexp *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
-  (* with sexp *)
+(* with sexp *)
 
 (* for [@@deriving show] *)
 (* result of ocamlfind ocamlc -dsource ... on this code
-type ('a, 'b) either =
-  | Left of 'a
-  | Right of 'b
-[@@deriving show]
+   type ('a, 'b) either =
+   | Left of 'a
+   | Right of 'b
+   [@@deriving show]
 *)
 let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
   | Left a0 ->
-    (Format.fprintf fmt "(@[<2>Left@ ";
-     (poly_a fmt) a0;
-     Format.fprintf fmt "@])")
+      (Format.fprintf fmt "(@[<2>Left@ ";
+       (poly_a fmt) a0;
+       Format.fprintf fmt "@])")
   | Right a0 ->
-    (Format.fprintf fmt "(@[<2>Right@ ";
-     (poly_b fmt) a0;
-     Format.fprintf fmt "@])")
+      (Format.fprintf fmt "(@[<2>Right@ ";
+       (poly_b fmt) a0;
+       Format.fprintf fmt "@])")
 
 let pp_either3 = fun poly_a -> fun poly_b -> fun poly_c -> fun fmt -> function
   | Left3 a0 ->
-    (Format.fprintf fmt "(@[<2>Left3@ ";
-     (poly_a fmt) a0;
-     Format.fprintf fmt "@])")
+      (Format.fprintf fmt "(@[<2>Left3@ ";
+       (poly_a fmt) a0;
+       Format.fprintf fmt "@])")
   | Middle3 a0 ->
-    (Format.fprintf fmt "(@[<2>Middle3@ ";
-     (poly_b fmt) a0;
-     Format.fprintf fmt "@])")
+      (Format.fprintf fmt "(@[<2>Middle3@ ";
+       (poly_b fmt) a0;
+       Format.fprintf fmt "@])")
   | Right3 a0 ->
-    (Format.fprintf fmt "(@[<2>Right3@ ";
-     (poly_c fmt) a0;
-     Format.fprintf fmt "@])")
+      (Format.fprintf fmt "(@[<2>Right3@ ";
+       (poly_c fmt) a0;
+       Format.fprintf fmt "@])")
 
 let partition_either f l =
   let rec part_either left right = function
-  | [] -> (List.rev left, List.rev right)
-  | x :: l ->
-      (match f x with
-      | Left  e -> part_either (e :: left) right l
-      | Right e -> part_either left (e :: right) l) in
+    | [] -> (List.rev left, List.rev right)
+    | x :: l ->
+        (match f x with
+         | Left  e -> part_either (e :: left) right l
+         | Right e -> part_either left (e :: right) l) in
   part_either [] [] l
 
 let partition_either3 f l =
   let rec part_either left middle right = function
-  | [] -> (List.rev left, List.rev middle, List.rev right)
-  | x :: l ->
-      (match f x with
-      | Left3  e -> part_either (e :: left) middle right l
-      | Middle3  e -> part_either left (e :: middle) right l
-      | Right3 e -> part_either left middle (e :: right) l) in
+    | [] -> (List.rev left, List.rev middle, List.rev right)
+    | x :: l ->
+        (match f x with
+         | Left3  e -> part_either (e :: left) middle right l
+         | Middle3  e -> part_either left (e :: middle) right l
+         | Right3 e -> part_either left middle (e :: right) l) in
   part_either [] [] [] l
 
 let rec filter_some = function
@@ -783,9 +783,9 @@ let null_string s =
 (*****************************************************************************)
 
 type filename = string (* TODO could check that exist :) type sux *)
-  (* with sexp *)
+(* with sexp *)
 type dirname = string (* TODO could check that exist :) type sux *)
-  (* with sexp *)
+(* with sexp *)
 
 (* file or dir *)
 type path = string
@@ -800,9 +800,9 @@ let filename_without_leading_path prj_path s =
   if s =$= prj_path
   then "."
   else
-    if s =~ ("^" ^ prj_path ^ "/\\(.*\\)$")
-    then matched1 s
-    else
+  if s =~ ("^" ^ prj_path ^ "/\\(.*\\)$")
+  then matched1 s
+  else
     failwith
       (spf "cant find filename_without_project_path: %s  %s" prj_path s)
 
@@ -848,7 +848,7 @@ let cmd_to_list ?verbose command =
   match exit_status with
   | Unix.WEXITED 0 -> l
   | _ -> raise (CmdError (exit_status,
-                         (spf "CMD = %s, RESULT = %s"
+                          (spf "CMD = %s, RESULT = %s"
                              command (String.concat "\n" l))))
 
 let cmd_to_list_and_status = process_output_to_list2
@@ -858,7 +858,7 @@ let cmd_to_list_and_status = process_output_to_list2
 let cat file =
   let chan = open_in file in
   let rec cat_aux acc ()  =
-      (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
+    (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
     let (b, l) = try (true, input_line chan) with End_of_file -> (false, "") in
     if b
     then cat_aux (l::acc) ()
@@ -941,7 +941,7 @@ let fullpath file =
 (* Why a use_cache argument ? because sometimes want disable it but dont
  * want put the cache_computation funcall in comment, so just easier to
  * pass this extra option.
- *)
+*)
 let cache_computation2 ?(verbose=false) ?(use_cache=true) file ext_cache f =
   if not use_cache
   then f ()
@@ -954,7 +954,7 @@ let cache_computation2 ?(verbose=false) ?(use_cache=true) file ext_cache f =
     end else begin
       let file_cache = (file ^ ext_cache) in
       if Sys.file_exists file_cache &&
-        filemtime file_cache >= filemtime file
+         filemtime file_cache >= filemtime file
       then begin
         if verbose then pr2 ("using cache: " ^ file_cache);
         get_value file_cache
@@ -973,7 +973,7 @@ let cache_computation ?verbose ?use_cache a b c =
 
 (* emacs/lisp inspiration (eric cooper and yaron minsky use that too) *)
 let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) =
- fun file f ->
+  fun file f ->
   let chan = open_out file in
   let pr s = output_string chan s in
   unwind_protect (fun () ->
@@ -992,12 +992,12 @@ let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
 
 (* now in prelude:
  * exception Timeout
- *)
+*)
 
 (* it seems that the toplevel block such signals, even with this explicit
  *  command :(
  *  let _ = Unix.sigprocmask Unix.SIG_UNBLOCK [Sys.sigalrm]
- *)
+*)
 
 (* could be in Control section *)
 
@@ -1007,7 +1007,7 @@ let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
  * with Timeout -> raise Timeout | _ -> ...
  *
  * question: can we have a signal and so exn when in a exn handler ?
- *)
+*)
 let timeout_function ?(verbose=false) timeoutval = fun f ->
   try
     begin
@@ -1022,46 +1022,46 @@ let timeout_function ?(verbose=false) timeoutval = fun f ->
       if verbose then pr2 "timeout (we abort)";
       raise Timeout;
     end
-  | e ->
-     (* subtil: important to disable the alarm before relaunching the exn,
-      * otherwise the alarm is still running.
-      *
-      * robust?: and if alarm launched after the log (...) ?
-      * Maybe signals are disabled when process an exception handler ?
-      *)
-      begin
-        ignore(Unix.alarm 0);
-        (* log ("exn while in transaction (we abort too, even if ...) = " ^
-           Printexc.to_string e);
-        *)
-        if verbose then pr2 "exn while in timeout_function";
-        raise e
-      end
+     | e ->
+         (* subtil: important to disable the alarm before relaunching the exn,
+          * otherwise the alarm is still running.
+          *
+          * robust?: and if alarm launched after the log (...) ?
+          * Maybe signals are disabled when process an exception handler ?
+         *)
+         begin
+           ignore(Unix.alarm 0);
+           (* log ("exn while in transaction (we abort too, even if ...) = " ^
+              Printexc.to_string e);
+           *)
+           if verbose then pr2 "exn while in timeout_function";
+           raise e
+         end
 
 (* coupling: very similar to timeout_function above *)
 let timeout_function_float ?(verbose=false) timeoutval = fun f ->
   try
     Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
     Unix.setitimer Unix.ITIMER_REAL
-        { Unix.it_value = timeoutval; it_interval = 0. } |> ignore;
+      { Unix.it_value = timeoutval; it_interval = 0. } |> ignore;
     let x = f () in
     Unix.setitimer Unix.ITIMER_REAL { Unix.it_value = 0.; it_interval = 0. }
-        |> ignore;
+    |> ignore;
     x
   with Timeout ->
-      if verbose then pr2 "timeout (we abort)";
-      raise Timeout;
-  | e ->
-     (* subtil: important to disable the alarm before relaunching the exn,
-      * otherwise the alarm is still running.
-      *
-      * robust?: and if alarm launched after the log (...) ?
-      * Maybe signals are disabled when process an exception handler ?
-      *)
-      Unix.setitimer Unix.ITIMER_REAL { Unix.it_value = 0.; it_interval = 0. }
-          |> ignore;
-      if verbose then pr2 "exn while in timeout_function";
-      raise e
+    if verbose then pr2 "timeout (we abort)";
+    raise Timeout;
+     | e ->
+         (* subtil: important to disable the alarm before relaunching the exn,
+          * otherwise the alarm is still running.
+          *
+          * robust?: and if alarm launched after the log (...) ?
+          * Maybe signals are disabled when process an exception handler ?
+         *)
+         Unix.setitimer Unix.ITIMER_REAL { Unix.it_value = 0.; it_interval = 0. }
+         |> ignore;
+         if verbose then pr2 "exn while in timeout_function";
+         raise e
 
 (* creation of tmp files, a la gcc *)
 
@@ -1108,13 +1108,13 @@ let exclude p xs =
   List.filter (fun x -> not (p x)) xs
 
 let rec (span: ('a -> bool) -> 'a list -> 'a list * 'a list) =
- fun p -> function
-  | []    -> ([], [])
-  | x::xs ->
-      if p x then
-        let (l1, l2) = span p xs in
-        (x::l1, l2)
-      else ([], x::xs)
+  fun p -> function
+    | []    -> ([], [])
+    | x::xs ->
+        if p x then
+          let (l1, l2) = span p xs in
+          (x::l1, l2)
+        else ([], x::xs)
 
 let rec take_safe n xs =
   match (n,xs) with
@@ -1231,7 +1231,7 @@ let hash_of_list xs =
 (*****************************************************************************)
 
 type 'a hashset = ('a, bool) Hashtbl.t
-  (* with sexp *)
+(* with sexp *)
 
 let hashset_to_list h =
   hash_to_list h |> List.map fst
@@ -1265,7 +1265,7 @@ let group_assoc_bykey_eff xs =
 (*****************************************************************************)
 
 type 'a stack = 'a list
-  (* with sexp *)
+(* with sexp *)
 
 (*****************************************************************************)
 (* Tree *)
@@ -1323,7 +1323,7 @@ let main_boilerplate f =
          * syshandler, here, and then exit.
          * The current solution is to not do some wild  try ... with e
          * by having in the exn handler a case: UnixExit x -> raise ... | e ->
-         *)
+        *)
         Sys.set_signal Sys.sigint Sys.Signal_default;
         raise (UnixExit (-1))
       ));
@@ -1332,7 +1332,7 @@ let main_boilerplate f =
        * 'back' in the debugger. Hence this special case. But the
        * Common.debugger will be set in main(), so too late, so
        * have to be quicker
-       *)
+      *)
       if Sys.argv |> Array.to_list |> List.exists (fun x -> x =$= "-debugger")
       then debugger := true;
 
@@ -1342,17 +1342,17 @@ let main_boilerplate f =
             f (); (* <---- here it is *)
           with Unix.Unix_error (e, fm, argm) ->
             pr2 (spf "exn Unix_error: %s %s %s\n"
-                    (Unix.error_message e) fm argm);
+                   (Unix.error_message e) fm argm);
             raise (Unix.Unix_error (e, fm, argm))
         ))
-       (fun()->
-         if !profile <> ProfNone
-         then begin
-           pr2 (profile_diagnostic ());
-           Gc.print_stat stderr;
-         end;
-         erase_temp_files ();
-       )
+        (fun()->
+           if !profile <> ProfNone
+           then begin
+             pr2 (profile_diagnostic ());
+             Gc.print_stat stderr;
+           end;
+           erase_temp_files ();
+        )
     )
 (* let _ = if not !Sys.interactive then (main ()) *)
 
@@ -1364,8 +1364,8 @@ let arg_symlink () =
   else ""
 
 let grep_dash_v_str =
- "| grep -v /.hg/ |grep -v /CVS/ | grep -v /.git/ |grep -v /_darcs/" ^
- "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
+  "| grep -v /.hg/ |grep -v /CVS/ | grep -v /.git/ |grep -v /_darcs/" ^
+  "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
 
 let files_of_dir_or_files_no_vcs_nofilter xs =
   xs |> List.map (fun x ->
@@ -1373,16 +1373,16 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
     then
       (* todo: should escape x *)
       let cmd = (spf "find %s '%s' -type f %s" (* -noleaf *)
-            (arg_symlink()) x grep_dash_v_str) in
+                   (arg_symlink()) x grep_dash_v_str) in
       let (xs, status) =
         cmd_to_list_and_status cmd in
       (match status with
-      | Unix.WEXITED 0 -> xs
-      (* bugfix: 'find -type f' does not like empty directories, but it's ok *)
-      | Unix.WEXITED 1 when Array.length (Sys.readdir x) = 0 -> []
-      | _ -> raise (CmdError (status,
-                         (spf "CMD = %s, RESULT = %s"
-                             cmd (String.concat "\n" xs))))
+       | Unix.WEXITED 0 -> xs
+       (* bugfix: 'find -type f' does not like empty directories, but it's ok *)
+       | Unix.WEXITED 1 when Array.length (Sys.readdir x) = 0 -> []
+       | _ -> raise (CmdError (status,
+                               (spf "CMD = %s, RESULT = %s"
+                                  cmd (String.concat "\n" xs))))
       )
     else [x]
   ) |> List.concat

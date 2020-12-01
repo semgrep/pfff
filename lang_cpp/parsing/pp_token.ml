@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -72,11 +72,11 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 type define_body = (unit,string list) either * Parser_cpp.token list
 
 (* TODO:
-type define_def = string * define_param * define_body
- and define_param =
+   type define_def = string * define_param * define_body
+   and define_param =
    | NoParam
    | Params of string list
- and define_body =
+   and define_body =
    | DefineBody of Parser_c.token list
    | DefineHint of parsinghack_hint
 
@@ -97,16 +97,16 @@ type define_def = string * define_param * define_body
 
 (* Thanks to this function many stuff are not anymore hardcoded in
  * OCaml code (but are now hardcoded in standard.h ...)
- *)
+*)
 let (cpp_engine:
-  (string, Parser.token list) assoc -> Parser.token list -> Parser.token list)
+       (string, Parser.token list) assoc -> Parser.token list -> Parser.token list)
   = fun env xs ->
-  xs |> List.map (fun tok ->
-    match tok with
-    | TIdent (s,_i1) when List.mem_assoc s env -> Common2.assoc s env
-    | x -> [x]
-  )
-  |> List.flatten
+    xs |> List.map (fun tok ->
+      match tok with
+      | TIdent (s,_i1) when List.mem_assoc s env -> Common2.assoc s env
+      | x -> [x]
+    )
+    |> List.flatten
 
 (*
  * We apply a macro by generating new ExpandedToken and by
@@ -118,78 +118,78 @@ let (cpp_engine:
  *)
 let apply_macro_defs defs xs =
 
- let rec apply_macro_defs xs =
-  match xs with
-  | [] -> ()
+  let rec apply_macro_defs xs =
+    match xs with
+    | [] -> ()
 
-  (* recognized macro of standard.h (or other) *)
-  | PToken ({t=TIdent (s,_i1);_} as id)::Parenthised (xxs,info_parens)::xs
+    (* recognized macro of standard.h (or other) *)
+    | PToken ({t=TIdent (s,_i1);_} as id)::Parenthised (xxs,info_parens)::xs
       when Hashtbl.mem defs s ->
-      Hack.pr2_pp ("MACRO: found known macro = " ^ s);
-      (match Hashtbl.find defs s with
-      | Left (), bodymacro ->
-          pr2 ("macro without param used before parenthize, wierd: " ^ s);
-          (* ex: PRINTP("NCR53C400 card%s detected\n" ANDP(((struct ... *)
-          Hack.set_as_comment (Token_cpp.CppMacroExpanded) id;
-          id.new_tokens_before <- bodymacro;
-      | Right params, bodymacro ->
-          if List.length params = List.length xxs
-          then
-            let xxs' = xxs |> List.map (fun x ->
-              (tokens_of_paren_ordered x) |> List.map (fun x ->
-                TH.visitor_info_of_tok Ast.make_expanded x.t
-              )
-            ) in
-            id.new_tokens_before <-
-              cpp_engine (Common2.zip params xxs') bodymacro
+        Hack.pr2_pp ("MACRO: found known macro = " ^ s);
+        (match Hashtbl.find defs s with
+         | Left (), bodymacro ->
+             pr2 ("macro without param used before parenthize, wierd: " ^ s);
+             (* ex: PRINTP("NCR53C400 card%s detected\n" ANDP(((struct ... *)
+             Hack.set_as_comment (Token_cpp.CppMacroExpanded) id;
+             id.new_tokens_before <- bodymacro;
+         | Right params, bodymacro ->
+             if List.length params = List.length xxs
+             then
+               let xxs' = xxs |> List.map (fun x ->
+                 (tokens_of_paren_ordered x) |> List.map (fun x ->
+                   TH.visitor_info_of_tok Ast.make_expanded x.t
+                 )
+               ) in
+               id.new_tokens_before <-
+                 cpp_engine (Common2.zip params xxs') bodymacro
 
-          else begin
-            pr2 ("macro with wrong number of arguments, wierd: " ^ s);
-            id.new_tokens_before <- bodymacro;
-          end;
-          (* important to do that after have apply the macro, otherwise
-           * will pass as argument to the macro some tokens that
-           * are all TCommentCpp
-           *)
-          [Parenthised (xxs, info_parens)] |>
-            iter_token_paren (Hack.set_as_comment Token_cpp.CppMacroExpanded);
-          Hack.set_as_comment Token_cpp.CppMacroExpanded id;
+             else begin
+               pr2 ("macro with wrong number of arguments, wierd: " ^ s);
+               id.new_tokens_before <- bodymacro;
+             end;
+             (* important to do that after have apply the macro, otherwise
+              * will pass as argument to the macro some tokens that
+              * are all TCommentCpp
+             *)
+             [Parenthised (xxs, info_parens)] |>
+             iter_token_paren (Hack.set_as_comment Token_cpp.CppMacroExpanded);
+             Hack.set_as_comment Token_cpp.CppMacroExpanded id;
 
 
 
-      );
-      apply_macro_defs xs
+        );
+        apply_macro_defs xs
 
-  | PToken ({t=TIdent (s,_i1);_} as id)::xs
+    | PToken ({t=TIdent (s,_i1);_} as id)::xs
       when Hashtbl.mem defs s ->
-      Hack.pr2_pp ("MACRO: found known macro = " ^ s);
-      (match Hashtbl.find defs s with
-      | Right _params, _bodymacro ->
-          pr2 ("macro with params but no parens found, wierd: " ^ s);
-          (* dont apply the macro, perhaps a redefinition *)
-          ()
-      | Left (), bodymacro ->
-          (* special case when 1-1 substitution, we reuse the token *)
-          (match bodymacro with
-          | [newtok] ->
-              id.t <- (newtok |> TH.visitor_info_of_tok (fun _ ->
-                TH.info_of_tok id.t))
+        Hack.pr2_pp ("MACRO: found known macro = " ^ s);
+        (match Hashtbl.find defs s with
+         | Right _params, _bodymacro ->
+             pr2 ("macro with params but no parens found, wierd: " ^ s);
+             (* dont apply the macro, perhaps a redefinition *)
+             ()
+         | Left (), bodymacro ->
+             (* special case when 1-1 substitution, we reuse the token *)
+             (match bodymacro with
+              | [newtok] ->
+                  id.t <- (newtok |> TH.visitor_info_of_tok (fun _ ->
+                    TH.info_of_tok id.t))
 
-          | _ ->
-              Hack.set_as_comment Token_cpp.CppMacroExpanded id;
-              id.new_tokens_before <- bodymacro;
-          )
-      );
-      apply_macro_defs xs
+              | _ ->
+                  Hack.set_as_comment Token_cpp.CppMacroExpanded id;
+                  id.new_tokens_before <- bodymacro;
+             )
+        );
+        apply_macro_defs xs
 
-  (* recurse *)
-  | (PToken _x)::xs -> apply_macro_defs xs
-  | (Parenthised (xxs, _info_parens))::xs ->
-      xxs |> List.iter apply_macro_defs;
-      apply_macro_defs xs
+    (* recurse *)
+    | (PToken _x)::xs -> apply_macro_defs xs
+    | (Parenthised (xxs, _info_parens))::xs ->
+        xxs |> List.iter apply_macro_defs;
+        apply_macro_defs xs
 
- in
- apply_macro_defs xs
+  in
+  apply_macro_defs xs
 
 (*****************************************************************************)
 (* Extracting macros (from a standard.h) *)
@@ -207,12 +207,12 @@ let rec define_parse xs =
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let params =
         tokparams |> Common.map_filter (function
-        | TComma _ -> None
-        | TIdent (s, _) -> Some s
-        | x -> Common2.error_cant_have x
+          | TComma _ -> None
+          | TIdent (s, _) -> Some s
+          | x -> Common2.error_cant_have x
         ) in
       let body = body |> List.map
-        (TH.visitor_info_of_tok Ast.make_expanded) in
+                   (TH.visitor_info_of_tok Ast.make_expanded) in
       let def = (s, (Right params, body)) in
       def::define_parse xs
 
@@ -221,7 +221,7 @@ let rec define_parse xs =
         xs |> Common2.split_when
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let body = body |> List.map
-        (TH.visitor_info_of_tok Ast.make_expanded) in
+                   (TH.visitor_info_of_tok Ast.make_expanded) in
       let def = (s, (Left (), body)) in
       def::define_parse xs
 

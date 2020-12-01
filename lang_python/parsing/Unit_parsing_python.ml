@@ -21,6 +21,6 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
- ]
+  ]
 (*e: constant [[Unit_parsing_python.unittest]] *)
 (*e: pfff/lang_python/parsing/Unit_parsing_python.ml *)

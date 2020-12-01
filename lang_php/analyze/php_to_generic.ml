@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Cst_php
@@ -24,7 +24,7 @@ module G = AST_generic
 (* Ast_php to AST_generic.
  *
  * See AST_generic.ml for more information.
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -64,7 +64,7 @@ let name_of_qualified_ident xs =
   | [] -> raise Impossible
   | [x] -> x, { G.name_qualifier = None; name_typeargs = None }
   | x::y::xs -> x, { G.name_qualifier = Some (G.QDots (List.rev (y::xs)));
-                       name_typeargs = None }
+                     name_typeargs = None }
 
 let name v = qualified_ident v
 
@@ -129,10 +129,10 @@ let rec stmt_aux =
       and v4 = list stmt v4
       in
       [G.For (t, G.ForClassic (
-          for_var v1,
-          list_expr_to_opt v2,
-          list_expr_to_opt v3),
-        G.stmt1 v4)]
+         for_var v1,
+         list_expr_to_opt v2,
+         list_expr_to_opt v3),
+              G.stmt1 v4)]
 
   | Foreach (t, v1, t2, v2, v3) ->
       let v1 = expr v1
@@ -173,37 +173,37 @@ let rec stmt_aux =
 
   | StaticVars (t, v1) ->
       v1 |> list (fun (v1, v2) ->
-          let v1 = var v1 and v2 = option expr v2 in
-          let attr = [G.KeywordAttr (G.Static, t)] in
-          let ent = G.basic_entity v1 attr in
-          let def = { G.vinit = v2; vtype = None } in
-          G.DefStmt (ent, G.VarDef def)
+        let v1 = var v1 and v2 = option expr v2 in
+        let attr = [G.KeywordAttr (G.Static, t)] in
+        let ent = G.basic_entity v1 attr in
+        let def = { G.vinit = v2; vtype = None } in
+        G.DefStmt (ent, G.VarDef def)
       )
 
   | Global (t, v1) ->
       v1 |> List.map (fun e ->
-          match e with
-          | Id [id] ->
-              let ent = G.basic_entity id [] in
-              G.DefStmt (ent, G.UseOuterDecl t)
-          | _ ->
-              let e = expr e in
-              G.OtherStmt (G.OS_GlobalComplex, [G.E e])
-     )
+        match e with
+        | Id [id] ->
+            let ent = G.basic_entity id [] in
+            G.DefStmt (ent, G.UseOuterDecl t)
+        | _ ->
+            let e = expr e in
+            G.OtherStmt (G.OS_GlobalComplex, [G.E e])
+      )
 
 and stmt x =
   G.stmt1 (stmt_aux x)
 
 and opt_expr_to_label_ident = function
- | None -> G.LNone
- | Some e ->
+  | None -> G.LNone
+  | Some e ->
       (match e with
-      | Int (s, tok) when s =~ "^[0-9]+$" ->
-            G.LInt (int_of_string s, tok)
-      | Id [label] -> G.LId label
-      | _ ->
-            let e = expr e in
-            G.LDynamic e
+       | Int (s, tok) when s =~ "^[0-9]+$" ->
+           G.LInt (int_of_string s, tok)
+       | Id [label] -> G.LId label
+       | _ ->
+           let e = expr e in
+           G.LDynamic e
       )
 
 and case =
@@ -248,7 +248,7 @@ and expr =
   (* $var[] = ... used to be handled in the Assign caller, but there are still
    * other complex uses of $var[] in other contexts such as
    * $var[][] = ... where we must generate something.
-   *)
+  *)
   | Array_get ((v1, (t1, None, _))) ->
       let v1 = expr v1 in
       G.OtherExpr (G.OE_ArrayAppend, [G.Tk t1; G.E v1])
@@ -270,10 +270,10 @@ and expr =
       let args = list expr args in
       let anon_class = G.AnonClass cdef in
       G.Call (G.IdSpecial(G.New, t),
-        fb ((anon_class::args) |> List.map G.expr_to_arg))
+              fb ((anon_class::args) |> List.map G.expr_to_arg))
   | InstanceOf (t, v1, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(G.Instanceof, t),
-         fb([v1;v2] |> List.map G.expr_to_arg))
+              fb([v1;v2] |> List.map G.expr_to_arg))
   (* v[] = 1 --> v <append>= 1.
    * update: because we must generate an OE_ArrayAppend in other contexts,
    * this prevents the simple pattern '$x[]' to be matched in an Assign
@@ -284,7 +284,7 @@ and expr =
    *   and v3 = expr v3
    *   in
    *   G.AssignOp (v1, (G.Append, t), v3)
-   *)
+  *)
   | Assign (v1, t, v3) ->
       let v1 = expr v1
       and v3 = expr v3
@@ -296,11 +296,11 @@ and expr =
       and v3 = expr v3
       in
       (match v2 with
-      | Left (op, t) -> G.AssignOp (v1, (op, t), v3)
-      | Right (special, t) ->
-        (* todo: should introduce intermediate var *)
-        G.Assign (v1, t,
-                  G.Call (G.IdSpecial (special, t), fb[G.Arg v1; G.Arg v3]))
+       | Left (op, t) -> G.AssignOp (v1, (op, t), v3)
+       | Right (special, t) ->
+           (* todo: should introduce intermediate var *)
+           G.Assign (v1, t,
+                     G.Call (G.IdSpecial (special, t), fb[G.Arg v1; G.Arg v3]))
       )
   | List v1 -> let v1 = bracket (list expr) v1 in
       G.Container(G.List, v1)
@@ -324,16 +324,16 @@ and expr =
       and v3 = expr v3
       in
       (match v2 with
-      | Left (op, t) ->
-         G.Call (G.IdSpecial (G.Op op, t), fb[G.Arg v1; G.Arg v3])
-      | Right x ->
-         G.Call (G.IdSpecial x, fb[G.Arg v1; G.Arg v3])
+       | Left (op, t) ->
+           G.Call (G.IdSpecial (G.Op op, t), fb[G.Arg v1; G.Arg v3])
+       | Right x ->
+           G.Call (G.IdSpecial x, fb[G.Arg v1; G.Arg v3])
       )
   | Unop (((v1, t), v2)) -> let v1 = unaryOp v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.Op v1, t), fb[G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
       G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, t),
-        fb (v1 |> List.map G.expr_to_arg))
+              fb (v1 |> List.map G.expr_to_arg))
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)
   | CondExpr (v1, v2, v3) ->
@@ -344,22 +344,22 @@ and expr =
   | Lambda v1 ->
       let tok = snd v1.f_name in
       (match v1 with
-      | { f_kind = (AnonLambda, t); f_ref = false; m_modifiers = [];
-          f_name = _ignored;
-          l_uses = l_uses; f_attrs = [];
-          f_params = ps; f_return_type = rett;
-          f_body = body } ->
-            let _lusesTODO =
-              list (fun (v1, v2) -> let _v1 = bool v1 and _v2 = var v2 in ())
-              l_uses in
+       | { f_kind = (AnonLambda, t); f_ref = false; m_modifiers = [];
+           f_name = _ignored;
+           l_uses = l_uses; f_attrs = [];
+           f_params = ps; f_return_type = rett;
+           f_body = body } ->
+           let _lusesTODO =
+             list (fun (v1, v2) -> let _v1 = bool v1 and _v2 = var v2 in ())
+               l_uses in
 
-            let body = G.stmt1 (list stmt body) in
-            let ps = parameters ps in
-            let rett = option hint_type rett in
-            (* TODO: transform l_uses in UseOuterDecl preceding body *)
-            G.Lambda { G.fparams = ps; frettype = rett; fbody = body;
-                       fkind = G.LambdaKind, t }
-      | _ -> error tok "TODO: Lambda"
+           let body = G.stmt1 (list stmt body) in
+           let ps = parameters ps in
+           let rett = option hint_type rett in
+           (* TODO: transform l_uses in UseOuterDecl preceding body *)
+           G.Lambda { G.fparams = ps; frettype = rett; fbody = body;
+                      fkind = G.LambdaKind, t }
+       | _ -> error tok "TODO: Lambda"
       )
 
 and argument e = let e = expr e in G.expr_to_arg e
@@ -397,31 +397,31 @@ and hint_type =
 
   | HintTypeConst (_, tok,_) ->
       G.OtherType (G.OT_Todo,
-         [G.TodoK ("HintTypeConst not supported, facebook-ext", tok)])
+                   [G.TodoK ("HintTypeConst not supported, facebook-ext", tok)])
   | HintVariadic (tok, _) ->
       G.OtherType (G.OT_Todo,
-         [G.TodoK ("HintVariadic not supported", tok)])
+                   [G.TodoK ("HintVariadic not supported", tok)])
 
 and class_name v = hint_type v
 
 and func_def {
-               f_name = f_name;
-               f_kind = f_kind;
-               f_params = f_params;
-               f_return_type = f_return_type;
-               f_ref = f_ref;
-               m_modifiers = m_modifiers;
-               l_uses = l_uses;
-               f_attrs = f_attrs;
-               f_body = f_body
-             } =
+  f_name = f_name;
+  f_kind = f_kind;
+  f_params = f_params;
+  f_return_type = f_return_type;
+  f_ref = f_ref;
+  m_modifiers = m_modifiers;
+  l_uses = l_uses;
+  f_attrs = f_attrs;
+  f_body = f_body
+} =
   let id = ident f_name in
   let fkind = function_kind f_kind in
   let params = parameters f_params in
   let fret = option hint_type f_return_type in
   let _is_refTODO = bool f_ref in
   let modifiers = list modifier m_modifiers
-    |> List.map (fun m -> G.KeywordAttr m) in
+                  |> List.map (fun m -> G.KeywordAttr m) in
   (* todo: transform in UseOuterDecl before first body stmt *)
   let _lusesTODO =
     list (fun (v1, v2) -> let _v1 = bool v1 and _v2 = var v2 in ())
@@ -434,33 +434,33 @@ and func_def {
 
 and function_kind (kind, t) =
   (match kind with
-  | Function -> G.Function
-  | AnonLambda -> G.LambdaKind
-  | ShortLambda -> G.Arrow
-  | Method -> G.Method
+   | Function -> G.Function
+   | AnonLambda -> G.LambdaKind
+   | ShortLambda -> G.Arrow
+   | Method -> G.Method
   ), t
 
 and parameters x = list parameter x
 
 and parameter {
-                p_type = p_type;
-                p_ref = p_ref;
-                p_name = p_name;
-                p_default = p_default;
-                p_attrs = p_attrs;
-                p_variadic = p_variadic;
-              } =
+  p_type = p_type;
+  p_ref = p_ref;
+  p_name = p_name;
+  p_default = p_default;
+  p_attrs = p_attrs;
+  p_variadic = p_variadic;
+} =
   let p_type = option hint_type p_type in
   let p_name = var p_name in
   let p_default = option expr p_default in
   let p_attrs = list attribute p_attrs in
   let pclassic =
-  { G.pname = Some p_name; ptype = p_type; pdefault = p_default;
-    pattrs = p_attrs; pinfo = G.empty_id_info() } in
+    { G.pname = Some p_name; ptype = p_type; pdefault = p_default;
+      pattrs = p_attrs; pinfo = G.empty_id_info() } in
   (match p_variadic, p_ref with
-  | None, None -> G.ParamClassic pclassic
-  | _, Some _tok -> G.OtherParam (G.OPO_Ref, [G.Pa (G.ParamClassic pclassic)])
-  | Some tok, None -> G.ParamRest (tok, pclassic)
+   | None, None -> G.ParamClassic pclassic
+   | _, Some _tok -> G.OtherParam (G.OPO_Ref, [G.Pa (G.ParamClassic pclassic)])
+   | Some tok, None -> G.ParamRest (tok, pclassic)
 
   )
 
@@ -469,12 +469,12 @@ and modifier v = wrap modifierbis v
 and attribute v =
   match v with
   | Id [id] ->
-    let id = ident id in
-    G.NamedAttr (fake "@", [id], G.empty_id_info(), fb [])
+      let id = ident id in
+      G.NamedAttr (fake "@", [id], G.empty_id_info(), fb [])
   | Call (Id [id], args) ->
-    let id = ident id in
-    let args = bracket (list argument) args in
-    G.NamedAttr (fake "@", [id], G.empty_id_info(), args)
+      let id = ident id in
+      let args = bracket (list argument) args in
+      G.NamedAttr (fake "@", [id], G.empty_id_info(), args)
   | _ -> raise Impossible (* see ast_php_build.ml *)
 
 
@@ -490,19 +490,19 @@ and enum_type tok { e_base = e_base; e_constraint = e_constraint } =
   error tok "enum type not supported"
 
 and class_def {
-                c_name = c_name;
-                c_kind = c_kind;
-                c_modifiers = c_modifiers;
-                c_extends = c_extends;
-                c_implements = c_implements;
-                c_uses = c_uses;
-                c_enum_type = c_enum_type;
-                c_attrs = c_attrs;
-                c_constants = c_constants;
-                c_variables = c_variables;
-                c_methods = c_methods;
-                c_braces = (t1, (), t2);
-              } =
+  c_name = c_name;
+  c_kind = c_kind;
+  c_modifiers = c_modifiers;
+  c_extends = c_extends;
+  c_implements = c_implements;
+  c_uses = c_uses;
+  c_enum_type = c_enum_type;
+  c_attrs = c_attrs;
+  c_constants = c_constants;
+  c_variables = c_variables;
+  c_methods = c_methods;
+  c_braces = (t1, (), t2);
+} =
   let tok = snd c_name in
 
   let id = ident c_name in
@@ -514,7 +514,7 @@ and class_def {
   let _enum = option (enum_type tok) c_enum_type in
 
   let modifiers = list modifier c_modifiers
-    |> List.map (fun m -> G.KeywordAttr m) in
+                  |> List.map (fun m -> G.KeywordAttr m) in
   let attrs = list attribute c_attrs in
 
   let csts = list constant_def c_constants in
@@ -530,14 +530,14 @@ and class_def {
 
   let ent = G.basic_entity id (attrs @ modifiers) in
   let def = { G.
-    ckind = kind;
-    cextends = extends |> Common.opt_to_list;
-    cimplements = implements;
-    cmixins = uses;
-    cbody = t1,
-      fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def)),
-      t2;
-  } in
+              ckind = kind;
+              cextends = extends |> Common.opt_to_list;
+              cimplements = implements;
+              cmixins = uses;
+              cbody = t1,
+                      fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def)),
+                      t2;
+            } in
   ent, def
 
 and class_kind (x, t) =
@@ -548,16 +548,16 @@ and class_kind (x, t) =
   | Enum -> error t "Enum not supported"
 
 and class_var {
-                cv_name = cname;
-                cv_type = ctype;
-                cv_value = cvalue;
-                cv_modifiers = cmodifiers
-              } =
+  cv_name = cname;
+  cv_type = ctype;
+  cv_value = cvalue;
+  cv_modifiers = cmodifiers
+} =
   let id = var cname in
   let typ = option hint_type ctype in
   let value = option expr cvalue in
   let modifiers = list modifier cmodifiers
-    |> List.map (fun m -> G.KeywordAttr m) in
+                  |> List.map (fun m -> G.KeywordAttr m) in
   let ent = G.basic_entity id modifiers in
   let def = {G.vtype = typ; vinit = value } in
   ent, def

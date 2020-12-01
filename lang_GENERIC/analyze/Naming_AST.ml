@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 open AST_generic
 module Ast = AST_generic
@@ -122,7 +122,7 @@ module V = Visitor_AST
  *  - simple resolve_python.ml with variable and import resolution
  *  - separate resolve_go.ml  with import resolution
  *  - try to unify those resolvers in one file, naming_ast.ml
- *)
+*)
 
 (*****************************************************************************)
 (* Scope *)
@@ -152,7 +152,7 @@ type scopes = {
   (* useful for python, kind of global scope but for entities *)
   imported: scope ref;
   (* todo? class? function? (for 'var' in JS) *)
- }
+}
 (*e: type [[Naming_AST.scopes]] *)
 
 (*s: function [[Naming_AST.default_scopes]] *)
@@ -167,7 +167,7 @@ let default_scopes () = {
 (* because we use a Visitor instead of a clean recursive
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
- *)
+*)
 
 let with_new_function_scope params scopes f =
   Common.save_excursion scopes.blocks (params::!(scopes.blocks)) f
@@ -205,12 +205,12 @@ let untyped_ent name =
 
 (*s: function [[Naming_AST.lookup]] *)
 let rec lookup s xxs =
-   match xxs with
-   | [] -> None
-   | xs::xxs ->
+  match xxs with
+  | [] -> None
+  | xs::xxs ->
       (match List.assoc_opt s xs with
-      | None -> lookup s xxs
-      | Some res -> Some res
+       | None -> lookup s xxs
+       | Some res -> Some res
       )
 (*e: function [[Naming_AST.lookup]] *)
 
@@ -240,23 +240,23 @@ let make_type type_string tok =
 
 let get_resolved_type (vinit, vtype) =
   match vtype with
-    | Some(_) -> vtype
-    | None -> (
+  | Some(_) -> vtype
+  | None -> (
       (* Currently these are go-specific *)
       (* Alternative is to define a TyInt, TyBool, etc in the generic AST *)
       (* so this is more portable across langauges *)
       match vinit with
-         | Some(L (Bool (_, tok))) -> make_type "bool" tok
-         | Some(L (Int (_, tok))) -> make_type "int" tok
-         | Some(L (Float (_, tok))) -> make_type "float" tok
-         | Some(L (Char (_, tok))) -> make_type "char" tok
-         | Some(L (String (_, tok))) -> make_type "str" tok
-         | Some(L (Regexp (_, tok))) -> make_type "regexp" tok
-         | Some(L (Unit tok)) -> make_type "unit" tok
-         | Some(L (Null tok)) -> make_type "null" tok
-         | Some(L (Imag (_, tok))) -> make_type "imag" tok
-         | Some(Id (_, {id_type; _})) -> !id_type
-         | _ -> None
+      | Some(L (Bool (_, tok))) -> make_type "bool" tok
+      | Some(L (Int (_, tok))) -> make_type "int" tok
+      | Some(L (Float (_, tok))) -> make_type "float" tok
+      | Some(L (Char (_, tok))) -> make_type "char" tok
+      | Some(L (String (_, tok))) -> make_type "str" tok
+      | Some(L (Regexp (_, tok))) -> make_type "regexp" tok
+      | Some(L (Unit tok)) -> make_type "unit" tok
+      | Some(L (Null tok)) -> make_type "null" tok
+      | Some(L (Imag (_, tok))) -> make_type "imag" tok
+      | Some(Id (_, {id_type; _})) -> !id_type
+      | _ -> None
     )
 
 (*****************************************************************************)
@@ -268,7 +268,7 @@ type context =
   | InClass
   (* separate InMethod? InLambda? just look for InFunction::InClass::_ *)
   | InFunction
-(*e: type [[Naming_AST.context]] *)
+  (*e: type [[Naming_AST.context]] *)
 
 (*s: type [[Naming_AST.env]] *)
 type env = {
@@ -276,7 +276,7 @@ type env = {
 
   (* handle locals/params/globals, block vas, enclosed vars (closures).
    * handle also basic typing information now for Java/Go.
-   *)
+  *)
   names: scopes;
 
   in_lvalue: bool ref;
@@ -318,7 +318,7 @@ let top_context env =
 let set_resolved env id_info x =
   (* TODO? maybe do it only if we have something better than what the
    * lang-specific resolved found?
-   *)
+  *)
   id_info.id_resolved := Some x.entname;
   (* this is defensive programming against the possibility of introducing
    * cycles in the AST.
@@ -336,17 +336,17 @@ let lookup_scope_opt id env =
     match !(scopes.blocks) with
     | [] -> [!(scopes.global);!(scopes.imported)]
     | xs::xxs ->
-       match env.lang with
-       | Lang.Python ->
+        match env.lang with
+        | Lang.Python ->
             if !(env.in_lvalue)
             (* just look current scope! no access to nested scopes or global *)
             then [xs;                            !(scopes.imported)]
             else [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
-       (* | Lang.PHP ->
-            (* just look current scope! no access to nested scopes or global *)
-            [xs;                            !(scopes.imported)]
+        (* | Lang.PHP ->
+             (* just look current scope! no access to nested scopes or global *)
+             [xs;                            !(scopes.imported)]
         *)
-       | _ ->
+        | _ ->
             [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
   in
   lookup s actual_scopes
@@ -375,10 +375,10 @@ let is_local_or_global_ctx env lang =
   | AtToplevel | InFunction -> true
   | InClass -> (
       match lang with
-         (* true for Java so that we can type class fields *)
-        | Lang.Java -> true
-        | _ -> false
-  )
+      (* true for Java so that we can type class fields *)
+      | Lang.Java -> true
+      | _ -> false
+    )
 (*e: function [[Naming_AST.is_local_or_global_ctx]] *)
 
 (*s: function [[Naming_AST.resolved_name_kind]] *)
@@ -388,22 +388,22 @@ let resolved_name_kind env lang =
   | InFunction -> Local
   | InClass -> (
       match lang with
-         (* true for Java so that we can type class fields *)
-        | Lang.Java -> EnclosedVar
-        | _ -> raise Impossible
-  )
+      (* true for Java so that we can type class fields *)
+      | Lang.Java -> EnclosedVar
+      | _ -> raise Impossible
+    )
 (*e: function [[Naming_AST.resolved_name_kind]] *)
 
 (*s: function [[Naming_AST.params_of_parameters]] *)
 (* !also set the id_info of the parameter as a side effect! *)
 let params_of_parameters env xs =
- xs |> Common.map_filter (function
-  | ParamClassic { pname = Some id; pinfo = id_info; ptype = typ; _ } ->
+  xs |> Common.map_filter (function
+    | ParamClassic { pname = Some id; pinfo = id_info; ptype = typ; _ } ->
         let sid = Ast.gensym () in
         let resolved = { entname = Param, sid; enttype = typ } in
         set_resolved env id_info resolved;
         Some (Ast.str_of_ident id, resolved)
-   | _ -> None
+    | _ -> None
   )
 (*e: function [[Naming_AST.params_of_parameters]] *)
 
@@ -417,214 +417,214 @@ let resolve2 lang prog =
 
   (* would be better to use a classic recursive with environment visit *)
   let visitor = V.mk_visitor { V.default_visitor with
-    (* the defs *)
+                               (* the defs *)
 
-    V.kfunction_definition = (fun (k, _v) x ->
-      (* todo: add the function as a Global. In fact we should do a first
-       * pass for some languages to add all of them first, because
-       * Go for example allow the use of forward function reference
-       * (no need to declarare prototype and forward decls as in C).
-       *)
-      let new_params = params_of_parameters env x.fparams in
-      with_new_context InFunction env (fun () ->
-      with_new_function_scope new_params env.names (fun () ->
-        (* todo: actually we should first go inside x.fparams.ptype
-         * without the new_params (this would also prevent cycle if
-         * a parameter name is the same than type name used in ptype
-         * (see tests/python/naming/shadow_name_type.py) *)
-        k x
-      ))
-    );
-    V.kclass_definition = (fun (k, _v) x ->
-      with_new_context InClass env (fun () ->
-        k x
-      )
-    );
-    V.kdef = (fun (k, _v) x ->
-      match x with
-      | { name = EId id; info = id_info; _},
-        (* note that some languages such as Python do not have VarDef
-         * construct
-         * todo? should add those somewhere instead of in_lvalue detection? *)
-        VarDef ({ vinit; vtype }) when is_local_or_global_ctx env lang ->
-          (* Need to visit expressions first so that type is populated *)
-          (* If we do var a = 3, then var b = a, we want to propagate the type of a *)
-          k x;
+                               V.kfunction_definition = (fun (k, _v) x ->
+                                 (* todo: add the function as a Global. In fact we should do a first
+                                  * pass for some languages to add all of them first, because
+                                  * Go for example allow the use of forward function reference
+                                  * (no need to declarare prototype and forward decls as in C).
+                                 *)
+                                 let new_params = params_of_parameters env x.fparams in
+                                 with_new_context InFunction env (fun () ->
+                                   with_new_function_scope new_params env.names (fun () ->
+                                     (* todo: actually we should first go inside x.fparams.ptype
+                                      * without the new_params (this would also prevent cycle if
+                                      * a parameter name is the same than type name used in ptype
+                                      * (see tests/python/naming/shadow_name_type.py) *)
+                                     k x
+                                   ))
+                               );
+                               V.kclass_definition = (fun (k, _v) x ->
+                                 with_new_context InClass env (fun () ->
+                                   k x
+                                 )
+                               );
+                               V.kdef = (fun (k, _v) x ->
+                                 match x with
+                                 | { name = EId id; info = id_info; _},
+                                   (* note that some languages such as Python do not have VarDef
+                                    * construct
+                                    * todo? should add those somewhere instead of in_lvalue detection? *)
+                                   VarDef ({ vinit; vtype }) when is_local_or_global_ctx env lang ->
+                                     (* Need to visit expressions first so that type is populated *)
+                                     (* If we do var a = 3, then var b = a, we want to propagate the type of a *)
+                                     k x;
 
-          (* name resolution *)
-          let sid = Ast.gensym () in
-          (* for the type, we use the (optional) type in vtype, or, if we can infer  *)
-          (* the type of the expression vinit (literal or id), we use that as a type *)
-          (* useful for Go, where you can write var x = 2 without declaring the type *)
-          let resolved_type = get_resolved_type (vinit, vtype) in
-          let resolved = { entname = resolved_name_kind env lang, sid; enttype = resolved_type } in add_ident_current_scope id resolved env.names;
-          set_resolved env id_info resolved;
+                                     (* name resolution *)
+                                     let sid = Ast.gensym () in
+                                     (* for the type, we use the (optional) type in vtype, or, if we can infer  *)
+                                     (* the type of the expression vinit (literal or id), we use that as a type *)
+                                     (* useful for Go, where you can write var x = 2 without declaring the type *)
+                                     let resolved_type = get_resolved_type (vinit, vtype) in
+                                     let resolved = { entname = resolved_name_kind env lang, sid; enttype = resolved_type } in add_ident_current_scope id resolved env.names;
+                                     set_resolved env id_info resolved;
 
-      | { name = EId id; info = id_info; _}, UseOuterDecl tok ->
-          let s = Parse_info.str_of_info tok in
-          let flookup =
-             match s with
-             | "global" -> lookup_global_scope
-             | "nonlocal" -> lookup_nonlocal_scope
-             | _ ->
-                error tok (spf "unrecognized UseOuterDecl directive: %s" s);
-                lookup_global_scope
-          in
-          (match flookup id env.names with
-          | Some resolved ->
-             set_resolved env id_info resolved;
-             add_ident_current_scope id resolved env.names
-          | None ->
-             error tok (spf "could not find %s for directive %s"
-                              (Ast.str_of_ident id) s)
-          );
-          k x
-      | _ -> k x
-    );
+                                 | { name = EId id; info = id_info; _}, UseOuterDecl tok ->
+                                     let s = Parse_info.str_of_info tok in
+                                     let flookup =
+                                       match s with
+                                       | "global" -> lookup_global_scope
+                                       | "nonlocal" -> lookup_nonlocal_scope
+                                       | _ ->
+                                           error tok (spf "unrecognized UseOuterDecl directive: %s" s);
+                                           lookup_global_scope
+                                     in
+                                     (match flookup id env.names with
+                                      | Some resolved ->
+                                          set_resolved env id_info resolved;
+                                          add_ident_current_scope id resolved env.names
+                                      | None ->
+                                          error tok (spf "could not find %s for directive %s"
+                                                       (Ast.str_of_ident id) s)
+                                     );
+                                     k x
+                                 | _ -> k x
+                               );
 
-    (* sgrep: the import aliases *)
-    V.kdir = (fun (k, _v) x ->
-       (match x with
-       | ImportFrom (_, DottedName xs, id, Some alias) ->
-          (* for python *)
-          let sid = Ast.gensym () in
-          let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
-          add_ident_imported_scope alias resolved env.names;
-       | ImportFrom (_, DottedName xs, id, None) ->
-          (* for python *)
-          let sid = Ast.gensym () in
-          let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
-          add_ident_imported_scope id resolved env.names;
-       | ImportAs (_, DottedName xs, Some alias) ->
-          (* for python *)
-          let sid = Ast.gensym () in
-          let resolved = untyped_ent (ImportedModule (DottedName xs), sid) in
-          add_ident_imported_scope alias resolved env.names;
+                               (* sgrep: the import aliases *)
+                               V.kdir = (fun (k, _v) x ->
+                                 (match x with
+                                  | ImportFrom (_, DottedName xs, id, Some alias) ->
+                                      (* for python *)
+                                      let sid = Ast.gensym () in
+                                      let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
+                                      add_ident_imported_scope alias resolved env.names;
+                                  | ImportFrom (_, DottedName xs, id, None) ->
+                                      (* for python *)
+                                      let sid = Ast.gensym () in
+                                      let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
+                                      add_ident_imported_scope id resolved env.names;
+                                  | ImportAs (_, DottedName xs, Some alias) ->
+                                      (* for python *)
+                                      let sid = Ast.gensym () in
+                                      let resolved = untyped_ent (ImportedModule (DottedName xs), sid) in
+                                      add_ident_imported_scope alias resolved env.names;
 
-       | ImportAs (_, FileName (s, tok), Some alias) ->
-          (* for Go *)
-          let sid = Ast.gensym () in
-          let base = Filename.basename s, tok in
-          let resolved = untyped_ent (ImportedModule (DottedName [base]), sid) in
-          add_ident_imported_scope alias resolved env.names;
+                                  | ImportAs (_, FileName (s, tok), Some alias) ->
+                                      (* for Go *)
+                                      let sid = Ast.gensym () in
+                                      let base = Filename.basename s, tok in
+                                      let resolved = untyped_ent (ImportedModule (DottedName [base]), sid) in
+                                      add_ident_imported_scope alias resolved env.names;
 
-       | _ -> ()
-       );
-       k x
-    );
-    V.kpattern = (fun (k, _vout) x ->
-      match x with
-      | PatId (id, id_info) when is_local_or_global_ctx env lang ->
-          (* todo: in Python it does not necessarily introduce
-           * a newvar if the ID was already declared before.
-           * Also inside a PatAs(PatId x,b), the 'x' is actually
-           * the name of a class, not a newly introduced local.
-           *)
-          (* mostly copy-paste of VarDef code *)
-          let sid = Ast.gensym () in
-          let resolved = untyped_ent (resolved_name_kind env lang, sid) in
-          add_ident_current_scope id resolved env.names;
-          set_resolved env id_info resolved;
-          k x
-      | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env lang ->
-          (* mostly copy-paste of VarDef code *)
-          let sid = Ast.gensym () in
-          let resolved = untyped_ent (resolved_name_kind env lang, sid) in
-          add_ident_current_scope id resolved env.names;
-          set_resolved env id_info resolved;
-          k x
-      | OtherPat _ ->
-         Common.save_excursion env.in_lvalue true (fun () ->
-            k x
-         )
-      | _ -> k x
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
+                               V.kpattern = (fun (k, _vout) x ->
+                                 match x with
+                                 | PatId (id, id_info) when is_local_or_global_ctx env lang ->
+                                     (* todo: in Python it does not necessarily introduce
+                                      * a newvar if the ID was already declared before.
+                                      * Also inside a PatAs(PatId x,b), the 'x' is actually
+                                      * the name of a class, not a newly introduced local.
+                                     *)
+                                     (* mostly copy-paste of VarDef code *)
+                                     let sid = Ast.gensym () in
+                                     let resolved = untyped_ent (resolved_name_kind env lang, sid) in
+                                     add_ident_current_scope id resolved env.names;
+                                     set_resolved env id_info resolved;
+                                     k x
+                                 | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env lang ->
+                                     (* mostly copy-paste of VarDef code *)
+                                     let sid = Ast.gensym () in
+                                     let resolved = untyped_ent (resolved_name_kind env lang, sid) in
+                                     add_ident_current_scope id resolved env.names;
+                                     set_resolved env id_info resolved;
+                                     k x
+                                 | OtherPat _ ->
+                                     Common.save_excursion env.in_lvalue true (fun () ->
+                                       k x
+                                     )
+                                 | _ -> k x
 
-    );
+                               );
 
-    (* the uses *)
+                               (* the uses *)
 
-    V.kexpr = (fun (k, vout) x ->
-       let recurse = ref true in
-       (match x with
-       (* todo: see lrvalue.ml
-        * alternative? extra id_info tag?
-        *)
-       | Assign (e1, _, e2) | AssignOp (e1, _, e2) ->
-           Common.save_excursion env.in_lvalue true (fun () ->
-             vout (E e1);
-           );
-           vout (E e2);
-           recurse := false;
-       | ArrayAccess (e1, (_, e2, _)) ->
-           vout (E e1);
-           Common.save_excursion env.in_lvalue false (fun () ->
-             vout (E e2);
-           );
-           recurse := false;
+                               V.kexpr = (fun (k, vout) x ->
+                                 let recurse = ref true in
+                                 (match x with
+                                  (* todo: see lrvalue.ml
+                                   * alternative? extra id_info tag?
+                                  *)
+                                  | Assign (e1, _, e2) | AssignOp (e1, _, e2) ->
+                                      Common.save_excursion env.in_lvalue true (fun () ->
+                                        vout (E e1);
+                                      );
+                                      vout (E e2);
+                                      recurse := false;
+                                  | ArrayAccess (e1, (_, e2, _)) ->
+                                      vout (E e1);
+                                      Common.save_excursion env.in_lvalue false (fun () ->
+                                        vout (E e2);
+                                      );
+                                      recurse := false;
 
-       | Id (id, id_info) ->
-          (match lookup_scope_opt id env with
-          | Some resolved ->
-             (* name resolution *)
-             set_resolved env id_info resolved;
+                                  | Id (id, id_info) ->
+                                      (match lookup_scope_opt id env with
+                                       | Some resolved ->
+                                           (* name resolution *)
+                                           set_resolved env id_info resolved;
 
-          | None ->
-             (match !(env.in_lvalue), lang with
-             (* first use of a variable can be a VarDef in some languages *)
-             (* type propagation not necessary because this does not hold true for Java or Go *)
-             | true, (Lang.Python | Lang.Ruby) (* PHP? *)
-               when is_local_or_global_ctx env lang ->
-               (* mostly copy-paste of VarDef code *)
-               let sid = Ast.gensym () in
-               let resolved = untyped_ent(resolved_name_kind env lang, sid) in
-               add_ident_current_scope id resolved env.names;
-               set_resolved env id_info resolved;
+                                       | None ->
+                                           (match !(env.in_lvalue), lang with
+                                            (* first use of a variable can be a VarDef in some languages *)
+                                            (* type propagation not necessary because this does not hold true for Java or Go *)
+                                            | true, (Lang.Python | Lang.Ruby) (* PHP? *)
+                                              when is_local_or_global_ctx env lang ->
+                                                (* mostly copy-paste of VarDef code *)
+                                                let sid = Ast.gensym () in
+                                                let resolved = untyped_ent(resolved_name_kind env lang, sid) in
+                                                add_ident_current_scope id resolved env.names;
+                                                set_resolved env id_info resolved;
 
-             (* hopefully the lang-specific resolved may have resolved that *)
-             | _ ->
-                (* TODO: this can happen because of in_lvalue bug detection, or
-                 * for certain entities like functions or classes which are
-                 * currently tagged
-                 *)
-                let (s, tok) = id in
-                error tok (spf "could not find %s in environment" s)
-             )
-          )
-       | _ -> ()
-       );
-       if !recurse then k x
-    );
-    V.kattr = (fun (k, _v) x ->
-      (match x with
-      | NamedAttr (_, [id], id_info, _args)
-        ->
-          (match lookup_scope_opt id env with
-          | Some resolved ->
-             (* name resolution *)
-             set_resolved env id_info resolved;
-          | _ -> ()
-          )
-      | _ -> ()
-      );
-      k x
-     );
+                                                (* hopefully the lang-specific resolved may have resolved that *)
+                                            | _ ->
+                                                (* TODO: this can happen because of in_lvalue bug detection, or
+                                                 * for certain entities like functions or classes which are
+                                                 * currently tagged
+                                                *)
+                                                let (s, tok) = id in
+                                                error tok (spf "could not find %s in environment" s)
+                                           )
+                                      )
+                                  | _ -> ()
+                                 );
+                                 if !recurse then k x
+                               );
+                               V.kattr = (fun (k, _v) x ->
+                                 (match x with
+                                  | NamedAttr (_, [id], id_info, _args)
+                                    ->
+                                      (match lookup_scope_opt id env with
+                                       | Some resolved ->
+                                           (* name resolution *)
+                                           set_resolved env id_info resolved;
+                                       | _ -> ()
+                                      )
+                                  | _ -> ()
+                                 );
+                                 k x
+                               );
 
-     V.ktype_ = (fun (k, _v) x ->
-      (* when we are inside a type, especially in  (OtherType (OT_Expr)),
-       * we don't want set_resolved to set the type on some Id because
-       * this could lead to cycle in the AST because of id_type
-       * that will reference a type, that could containi an OT_Expr, containing
-       * an Id, that could contain the same id_type, and so on.
-       * See tests/python/naming/shadow_name_type.py for a patological example
-       *)
-       Common.save_excursion env.in_type true (fun () -> k x)
-     );
+                               V.ktype_ = (fun (k, _v) x ->
+                                 (* when we are inside a type, especially in  (OtherType (OT_Expr)),
+                                  * we don't want set_resolved to set the type on some Id because
+                                  * this could lead to cycle in the AST because of id_type
+                                  * that will reference a type, that could containi an OT_Expr, containing
+                                  * an Id, that could contain the same id_type, and so on.
+                                  * See tests/python/naming/shadow_name_type.py for a patological example
+                                 *)
+                                 Common.save_excursion env.in_type true (fun () -> k x)
+                               );
 
-  }
+                             }
   in
   visitor (Pr prog);
   ()
 (*e: function [[Naming_AST.resolve]] *)
 let resolve a b = Common.profile_code "Naming_ast.resolve" (fun () ->
-      resolve2 a b)
+  resolve2 a b)
 (*e: pfff/lang_GENERIC/analyze/Naming_AST.ml *)

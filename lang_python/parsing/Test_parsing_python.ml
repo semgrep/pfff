@@ -18,7 +18,7 @@ let test_tokens_python file =
   let parsing_mode = Parse_python.Python in
 
   let toks = Parse_python.tokens parsing_mode file
-      |> Parsing_hacks_python.fix_tokens in
+             |> Parsing_hacks_python.fix_tokens in
   toks |> List.iter (fun x -> pr2_gen x);
   ()
 (*e: function [[Test_parsing_python.test_tokens_python]] *)
@@ -40,10 +40,10 @@ let test_parse_python_common parsing_mode xs =
     k();
 
     let (_xs, stat) =
-     Common.save_excursion Flag.error_recovery true (fun () ->
-     Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-       Parse_python.parse ~parsing_mode file
-    )) in
+      Common.save_excursion Flag.error_recovery true (fun () ->
+        Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+          Parse_python.parse ~parsing_mode file
+        )) in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.Parse_info.bad in
     if stat.Parse_info.bad = 0
@@ -56,17 +56,17 @@ let test_parse_python_common parsing_mode xs =
     | [x] when Common2.is_directory x -> Some (Common.fullpath x)
     | _ -> None
   in
-    let score_path = Config_pfff.regression_data_dir in
-    dirname_opt |> Common.do_option (fun dirname ->
-      let dirname = Common.fullpath dirname in
-      pr2 "--------------------------------";
-      pr2 "regression testing  information";
-      pr2 "--------------------------------";
-      let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common2.regression_testing newscore
-        (Filename.concat score_path
+  let score_path = Config_pfff.regression_data_dir in
+  dirname_opt |> Common.do_option (fun dirname ->
+    let dirname = Common.fullpath dirname in
+    pr2 "--------------------------------";
+    pr2 "regression testing  information";
+    pr2 "--------------------------------";
+    let str = Str.global_replace (Str.regexp "/") "__" dirname in
+    Common2.regression_testing newscore
+      (Filename.concat score_path
          (spf "score_parsing__%s%s.marshalled" str ext))
-    );
+  );
   ()
 (*e: function [[Test_parsing_python.test_parse_python_common]] *)
 
@@ -74,11 +74,11 @@ let test_parse_python_common parsing_mode xs =
 (*s: function [[Test_parsing_python.test_dump_python]] *)
 let test_dump_python file =
   Common.save_excursion Flag.error_recovery true (fun () ->
-  Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-   let ast = Parse_python.parse_program file in
-   let s = AST_python.show_program ast in
-   pr s
-  ))
+    Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+      let ast = Parse_python.parse_program file in
+      let s = AST_python.show_program ast in
+      pr s
+    ))
 (*e: function [[Test_parsing_python.test_dump_python]] *)
 
 (*****************************************************************************)

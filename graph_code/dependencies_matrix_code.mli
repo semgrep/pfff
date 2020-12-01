@@ -6,9 +6,9 @@ type dm = {
   name_to_i: (Graph_code.node, int) Hashtbl.t;
   config: config;
 }
-  and config = tree
-  and tree =
-    | Node of Graph_code.node * tree list
+and config = tree
+and tree =
+  | Node of Graph_code.node * tree list
 
 type partition_constraints =
   (string, string list) Hashtbl.t
@@ -28,7 +28,7 @@ val basic_config_opti: Graph_code_opti.graph -> config
 type config_path_elem =
   | Expand of Graph_code.node
   | Focus of Graph_code.node * deps_style
- and deps_style =
+and deps_style =
   | DepsIn
   | DepsOut
   | DepsInOut

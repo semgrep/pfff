@@ -23,19 +23,19 @@ let test_parse xs =
     k();
 
     let (stat) =
-     let stat = Parse_info.default_stat file in
-     let n = Common2.nblines_file file in
-     Common.save_excursion Flag.error_recovery true (fun () ->
-     Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-      try
-       let ast =  Parse_ruby.parse_program file in
-       let _cfg = Il_ruby_build.refactor_ast ast in
-       { stat with PI.correct = n }
-      with exn ->
-        pr2 (Common.exn_to_s exn);
-        let stat = Parse_info.default_stat file in
-        { stat with PI.bad = n }
-    )) in
+      let stat = Parse_info.default_stat file in
+      let n = Common2.nblines_file file in
+      Common.save_excursion Flag.error_recovery true (fun () ->
+        Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
+          try
+            let ast =  Parse_ruby.parse_program file in
+            let _cfg = Il_ruby_build.refactor_ast ast in
+            { stat with PI.correct = n }
+          with exn ->
+            pr2 (Common.exn_to_s exn);
+            let stat = Parse_info.default_stat file in
+            { stat with PI.bad = n }
+        )) in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
     if stat.PI.bad = 0
@@ -60,7 +60,7 @@ let test_parse xs =
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
     Common2.regression_testing newscore
       (Filename.concat score_path
-       ("score_il__" ^str ^ ext ^ ".marshalled"))
+         ("score_il__" ^str ^ ext ^ ".marshalled"))
   );
 
   ()

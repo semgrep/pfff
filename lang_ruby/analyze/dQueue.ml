@@ -38,15 +38,15 @@ let pop_back = function
   | hd::[], [] -> empty, hd
   | f::fs, [] ->
       match List.rev fs with
-    | [] -> assert false
-    | r::rs -> (queue [f] rs), r
+      | [] -> assert false
+      | r::rs -> (queue [f] rs), r
 
 let length (f,r) = (List.length f) + (List.length r)
 
 let append (f1,r1) (f2,r2) =
   let r = List.rev_append f2 r1 in
   let r = List.append r2 r in
-    queue f1 r
+  queue f1 r
 
 let rev (f,r) = queue r f
 
@@ -73,7 +73,7 @@ let rec flatten t =
   if is_empty t then empty
   else
     let x,xs = pop t in
-      append x (flatten xs)
+    append x (flatten xs)
 (*
 let flatten (f,r) =
   let f'= List.fold_left
@@ -92,8 +92,8 @@ let rec compare_list cmp x y = match x,y with
   | _::_, [] ->  1
   | [], _::_ -> -1
   | hx::xs, hy::ys -> match cmp hx hy with
-      | 0 -> compare_list cmp xs ys
-      | c -> c
+    | 0 -> compare_list cmp xs ys
+    | c -> c
 
 let cmp c ((f1,r1) as l1) ((f2,r2) as l2) = match r1,r2 with
   | [],[] -> compare_list c f1 f2
@@ -105,19 +105,19 @@ let list_to_string to_s = function
   | [] -> "[]"
   | hd::tl ->
       Printf.sprintf "[%s%s]"
-    (to_s hd)
-    (List.fold_left (fun acc t -> acc ^ ", " ^ (to_s t)) "" tl)
+        (to_s hd)
+        (List.fold_left (fun acc t -> acc ^ ", " ^ (to_s t)) "" tl)
 
 let to_string to_s (f,r) =
   "Q" ^ (list_to_string to_s f) ^
-    (list_to_string to_s (List.rev r))
+  (list_to_string to_s (List.rev r))
 
 let rec gen_list (gen : ?size:int -> Random.State.t -> 'a)
     ?(size=50) (r : Random.State.t) : 'a list =
   let size = abs size in
-    if (Random.State.int r size) = 0
-    then []
-    else (gen r) :: (gen_list ~size:(size-1) gen r)
+  if (Random.State.int r size) = 0
+  then []
+  else (gen r) :: (gen_list ~size:(size-1) gen r)
 
 let gen (gena: ?size:int -> Random.State.t -> 'a) ?size rs : 'a t =
   (gen_list ?size gena rs), (gen_list ?size gena rs)

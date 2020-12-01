@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 type name = string
@@ -28,4 +28,4 @@ let top_module_of_node (s, kind) =
   if s =~ "^\\([A-Z][A-Za-z0-9_]*\\)"
   then Common.matched1 s
   else failwith (spf "could not find top module of %s"
-    (Graph_code.string_of_node (s, kind)))
+                   (Graph_code.string_of_node (s, kind)))

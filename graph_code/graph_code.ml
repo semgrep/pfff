@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -97,7 +97,7 @@ type edge =
    * But it could be useful for instance for field access to know
    * weather it's a read or write access! Instead of having a variant
    * here one could also have an edgeinfo.
-   *)
+  *)
   | Use
 
 type nodeinfo = {
@@ -127,13 +127,13 @@ type graph = {
   (* Actually the Has graph should really be a tree, but we need convenient
    * access to the children or parent of a node, which are provided
    * by the graph API so let's reuse that.
-   *)
+  *)
   has: node G.graph;
   (* The source and target should be enough information to understand
    * the kind of Use. For instance a class referencing another class
    * has to be an 'extends'. A class referencing an Interface has to
    * be an 'implements'.
-   *)
+  *)
   use: node G.graph;
 
   nodeinfo: (node, nodeinfo) Hashtbl.t;
@@ -141,21 +141,21 @@ type graph = {
 }
 
 type error =
- | NodeAlreadyPresent of node
+  | NodeAlreadyPresent of node
 
 exception Error of error
 
 (* coupling: see print_statistics below *)
 type statistics = {
   parse_errors: Common.filename list ref;
- (* could be Parse_info.token_location*)
+  (* could be Parse_info.token_location*)
   lookup_fail: (Parse_info.t * node) list ref;
   method_calls: (Parse_info.t * resolved) list ref;
   field_access: (Parse_info.t * resolved) list ref;
   unresolved_class_access: Parse_info.t list ref;
   unresolved_calls: Parse_info.t list ref;
 }
- and resolved = bool
+and resolved = bool
 
 let empty_statistics () = {
   parse_errors = ref [];
@@ -172,7 +172,7 @@ let empty_statistics () = {
  *   api -> extra/
  * and we will delete the current parent of 'api' and relink it to the
  * extra/ entity (possibly newly created)
- *)
+*)
 type adjust = (string * string)
 
 (* skip certain edges that are marked as ok regarding backward dependencies *)
@@ -184,8 +184,8 @@ type whitelist = dependency list
 (*****************************************************************************)
 let root = ".", E.Dir
 let pb = "PB", E.Dir
- let not_found = "NOT_FOUND", E.Dir
- let dupe = "DUPE", E.Dir
+let not_found = "NOT_FOUND", E.Dir
+let dupe = "DUPE", E.Dir
 let _stdlib = "STDLIB", E.Dir
 
 (*****************************************************************************)
@@ -223,27 +223,27 @@ let create () =
 
 let add_node n g =
   Common.profile_code "Graph_code.add_node" (fun () ->
-  if G.has_node n g.has
-  then begin
-    pr2_gen n;
-    raise (Error (NodeAlreadyPresent n))
-  end;
-  if G.has_node n g.use
-  then begin
-    pr2_gen n;
-    raise (Error (NodeAlreadyPresent n))
-  end;
+    if G.has_node n g.has
+    then begin
+      pr2_gen n;
+      raise (Error (NodeAlreadyPresent n))
+    end;
+    if G.has_node n g.use
+    then begin
+      pr2_gen n;
+      raise (Error (NodeAlreadyPresent n))
+    end;
 
-  G.add_vertex_if_not_present n g.has;
-  G.add_vertex_if_not_present n g.use;
-  ()
+    G.add_vertex_if_not_present n g.has;
+    G.add_vertex_if_not_present n g.use;
+    ()
   )
 
 let add_edge (n1, n2) e g =
   Common.profile_code "Graph_code.add_edge" (fun () ->
-  match e with
-  | Has -> G.add_edge n1 n2 g.has
-  | Use -> G.add_edge n1 n2 g.use
+    match e with
+    | Has -> G.add_edge n1 n2 g.has
+    | Use -> G.add_edge n1 n2 g.use
   )
 let remove_edge (n1, n2) e g =
   match e with
@@ -316,9 +316,9 @@ let has_node n g =
 
 let pred n e g =
   Common.profile_code "Graph_code.pred" (fun () ->
-  match e with
-  | Has -> G.pred n g.has
-  | Use -> G.pred n g.use
+    match e with
+    | Has -> G.pred n g.has
+    | Use -> G.pred n g.use
   )
 
 let succ n e g =
@@ -330,7 +330,7 @@ let succ n e g =
  * get the successor but not good at all for the predecessors
  * so if you need to use pred many times, use this precomputation
  * function.
- *)
+*)
 let mk_eff_use_pred g =
   (* we use its find_all property *)
   let h = Hashtbl.create 101 in
@@ -342,19 +342,19 @@ let mk_eff_use_pred g =
     )
   );
   (fun n ->
-    Hashtbl.find_all h n
+     Hashtbl.find_all h n
   )
 
 
 let parent n g =
   Common.profile_code "Graph_code.parent" (fun () ->
-  let xs = G.pred n g.has in
-  Common2.list_to_single_or_exn xs
+    let xs = G.pred n g.has in
+    Common2.list_to_single_or_exn xs
   )
 
 let parents n g =
   Common.profile_code "Graph_code.parents" (fun () ->
-  G.pred n g.has
+    G.pred n g.has
   )
 let children n g =
   G.succ n g.has
@@ -387,26 +387,26 @@ let edgeinfo_opt (n1, n2) e g =
 (* todo? assert it's a readable path? graph_code_php.ml is using readable
  * path now but the other might not yet or it can be sometimes convenient
  * also to have absolute path here, so not sure if can assert anything.
- *)
+*)
 let file_of_node n g =
   try
     let info = nodeinfo n g in
     info.pos.Parse_info.file
   with Not_found ->
     (match n with
-    | str, E.File -> str
-    | _ ->
-      raise Not_found
-      (* todo: BAD no? *)
-      (* spf "NOT_FOUND_FILE (for node %s)" (string_of_node n) *)
+     | str, E.File -> str
+     | _ ->
+         raise Not_found
+         (* todo: BAD no? *)
+         (* spf "NOT_FOUND_FILE (for node %s)" (string_of_node n) *)
     )
 
 let privacy_of_node n g =
   let info = nodeinfo n g in
   let props = info.props in
   props |> Common.find_some (function
-  | E.Privacy x -> Some x
-  | _ -> None
+    | E.Privacy x -> Some x
+    | _ -> None
   )
 
 (* see also Graph_code_class_analysis.class_method_of_string *)
@@ -434,7 +434,7 @@ let shortname_of_node (s, _kind) =
 let cnt = ref 0
 (* when we have static entities, or main(), we rename them locally
  * and add a unique __xxx suffix, to avoid DUPES.
- *)
+*)
 let gensym s =
   incr cnt;
   spf "%s__%d" s !cnt
@@ -467,11 +467,11 @@ let create_initial_hierarchy g =
   g |> add_node pb;
   g |> add_node not_found;
   g |> add_node dupe;
-(*  g +> add_node stdlib;*)
+  (*  g +> add_node stdlib;*)
   g |> add_edge (root, pb) Has;
   g |> add_edge (pb, dupe) Has;
   g |> add_edge (pb, not_found) Has;
-(*  g +> add_edge (root, stdlib) Has;*)
+  (*  g +> add_edge (root, stdlib) Has;*)
   ()
 
 let remove_empty_nodes g xs =
@@ -480,8 +480,8 @@ let remove_empty_nodes g xs =
     if succ n Use g = [] &&
        use_pred n = []
     then begin
-     (* less: could also remove the node? but slow? removing the edge
-      * should be enough for what we want (avoid clutter in codegraph)
+      (* less: could also remove the node? but slow? removing the edge
+       * should be enough for what we want (avoid clutter in codegraph)
       *)
       remove_edge (parent n g, n) Has g;
     end
@@ -495,7 +495,7 @@ let basename_to_readable_disambiguator xs ~root =
     Hashtbl.add h (Filename.basename file) file
   );
   (fun file ->
-    Hashtbl.find_all h file
+     Hashtbl.find_all h file
   )
 
 (*****************************************************************************)
@@ -506,8 +506,8 @@ let group_edges_by_files_edges xs g =
   xs |> Common2.group_by_mapped_key (fun (n1, n2) ->
     (file_of_node n1 g, file_of_node n2 g)
   ) |> List.map (fun (x, deps) -> List.length deps, (x, deps))
-    |> Common.sort_by_key_highfirst
-    |> List.map snd
+  |> Common.sort_by_key_highfirst
+  |> List.map snd
 
 (*****************************************************************************)
 (* Graph algorithms *)
@@ -559,7 +559,7 @@ let load_adjust file =
   |> List.map (fun s ->
     match s with
     | _ when s =~ "\\([^ ]+\\)[ ]+->[ ]*\\([^ ]+\\)" ->
-      Common.matched2 s
+        Common.matched2 s
     | _ -> failwith ("wrong line format in adjust file: " ^ s)
   )
 
@@ -586,7 +586,7 @@ let save_whitelist xs file g =
 (* Used mainly to collapse many entries under a "..." intermediate fake
  * parent. Maybe this could be done automatically in codegraph at some point,
  * like ndepend does I think.
- *)
+*)
 let adjust_graph g xs whitelist =
   let mapping = Hashtbl.create 101 in
   g |> iter_nodes (fun (s, kind) ->
@@ -598,12 +598,12 @@ let adjust_graph g xs whitelist =
     let new_parent = (s2, E.Dir) in
     create_intermediate_directories_if_not_present g s2;
     (match nodes with
-    | [n] ->
-      let old_parent = parent n g in
-      remove_edge (old_parent, n) Has g;
-      add_edge (new_parent, n) Has g;
-    | [] -> failwith (spf "could not find entity %s" s1)
-    | _ -> failwith (spf "multiple entities with %s as a name" s1)
+     | [n] ->
+         let old_parent = parent n g in
+         remove_edge (old_parent, n) Has g;
+         add_edge (new_parent, n) Has g;
+     | [] -> failwith (spf "could not find entity %s" s1)
+     | _ -> failwith (spf "multiple entities with %s as a name" s1)
     )
   );
   whitelist |> Console.progress ~show:true (fun k ->
@@ -671,14 +671,14 @@ let print_statistics stats g =
   pr (spf "lookup fail = %d" (!(stats.lookup_fail) |> List.length));
 
   pr (spf "unresolved method calls = %d"
-   (!(stats.method_calls) |> List.filter (fun (_, x) -> not x) |> List.length));
+        (!(stats.method_calls) |> List.filter (fun (_, x) -> not x) |> List.length));
   pr (spf "(resolved method calls = %d)"
-   (!(stats.method_calls) |> List.filter (fun (_, x) -> x ) |> List.length));
+        (!(stats.method_calls) |> List.filter (fun (_, x) -> x ) |> List.length));
 
   pr (spf "unresolved field access = %d"
-   (!(stats.field_access) |> List.filter (fun (_, x) -> not x) |> List.length));
+        (!(stats.field_access) |> List.filter (fun (_, x) -> not x) |> List.length));
   pr (spf "(resolved field access) = %d)"
-   (!(stats.field_access) |> List.filter (fun (_, x) -> x ) |> List.length));
+        (!(stats.field_access) |> List.filter (fun (_, x) -> x ) |> List.length));
 
   pr (spf "unresolved class access = %d"
         (!(stats.unresolved_class_access) |> List.length));

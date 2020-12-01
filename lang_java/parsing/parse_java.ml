@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -24,7 +24,7 @@ module TH = Token_helpers_java
 (*****************************************************************************)
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -74,8 +74,8 @@ let parse2 filename =
       (* -------------------------------------------------- *)
       Left
         (Common.profile_code "Parser_java.main" (fun () ->
-          Parser_java.goal lexer lexbuf_fake
-        ))
+           Parser_java.goal lexer lexbuf_fake
+         ))
     ) with Parsing.Parse_error ->
 
       let line_error = TH.line_of_tok tr.PI.current in
@@ -117,7 +117,7 @@ let parse_program file =
   Common2.some ast
 
 let parse_string (w : string)
-    : (Ast_java.program option * Parser_java.token list) * Parse_info.parsing_stat =
+  : (Ast_java.program option * Parser_java.token list) * Parse_info.parsing_stat =
   Common2.with_tmp_file ~str:w ~ext:"java" parse
 
 (*****************************************************************************)

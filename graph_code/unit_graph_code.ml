@@ -71,9 +71,9 @@ let build_g_and_dm () =
 let unittest ~graph_of_string =
   "graph_code" >::: [
 
-(*---------------------------------------------------------------------------*)
-(* The graph *)
-(*---------------------------------------------------------------------------*)
+    (*---------------------------------------------------------------------------*)
+    (* The graph *)
+    (*---------------------------------------------------------------------------*)
     "graph" >::: [
 
       "scc" >:: (fun () ->
@@ -90,7 +90,7 @@ let unittest ~graph_of_string =
         (* foo -> bar <-> bar_mutual
          *          \
          *           -> bar_bis
-         *)
+        *)
         "foo" --> "bar";
         "bar" --> "bar_mutual";
         "bar_mutual" --> "bar";
@@ -233,20 +233,20 @@ public function foo() { }
         let hmethods = Graph_code_class_analysis.toplevel_methods g dag in
         let xs = Hashtbl.find_all hmethods "foo" in
         assert_equal ~msg:"it should find the toplevel methods"
-            ["C.foo";"A.foo"]
-            (xs |> List.map fst);
+          ["C.foo";"A.foo"]
+          (xs |> List.map fst);
 
         let node = ("A.foo", E.Method) in
         let methods = Graph_code_class_analysis.dispatched_methods g dag node in
         assert_equal ~msg:"it should find the dispatched methods"
-            ["B.foo"]
-            (methods |> List.map fst);
+          ["B.foo"]
+          (methods |> List.map fst);
       );
     ];
 
-(*---------------------------------------------------------------------------*)
-(* The matrix *)
-(*---------------------------------------------------------------------------*)
+    (*---------------------------------------------------------------------------*)
+    (* The matrix *)
+    (*---------------------------------------------------------------------------*)
 
     "dm" >::: [
 

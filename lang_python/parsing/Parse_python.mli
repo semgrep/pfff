@@ -12,7 +12,7 @@ type parsing_mode =
   | Python3
   (* will start with Python3 and fallback to Python2 in case of an error *)
   | Python
-(*e: type [[Parse_python.parsing_mode]] *)
+  (*e: type [[Parse_python.parsing_mode]] *)
 
 (*s: signature [[Parse_python.parse]] *)
 (* This is the main function.

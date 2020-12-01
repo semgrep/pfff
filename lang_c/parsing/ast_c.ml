@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common2.Infix
 
 (*****************************************************************************)
@@ -71,28 +71,28 @@ open Common2.Infix
  *
  * See also lang_cpp/parsing/cst_cpp.ml.
  *
- *)
+*)
 
 (*****************************************************************************)
 (* Tokens *)
 (*****************************************************************************)
 
 type tok = Parse_info.t
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 type 'a wrap = 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Name *)
 (*****************************************************************************)
 
 type name = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Types *)
@@ -107,26 +107,26 @@ type type_ =
   | TStructName of struct_kind * name
   (* hmmm but in C it's really like an int no? but scheck could be
    * extended at some point to do more strict type checking!
-   *)
+  *)
   | TEnumName of name
   | TTypeName of name
   (* tree-sitter-c: kind of poor's man generic via cpp *)
   | TMacroApply of name * type_ bracket
 
- and function_type = (type_ * parameter list)
+and function_type = (type_ * parameter list)
 
-  and parameter =
-   | ParamClassic of parameter_classic
-   (* varargs of c or semgrep ellipsis *)
-   | ParamDots of tok
+and parameter =
+  | ParamClassic of parameter_classic
+  (* varargs of c or semgrep ellipsis *)
+  | ParamDots of tok
 
-  and parameter_classic = {
-    p_type: type_;
-    (* when part of a prototype, the name is not always mentionned *)
-    p_name: name option;
-  }
+and parameter_classic = {
+  p_type: type_;
+  (* when part of a prototype, the name is not always mentionned *)
+  p_name: name option;
+}
 
- and struct_kind = Struct | Union
+and struct_kind = Struct | Union
 
 (*****************************************************************************)
 (* Expression *)
@@ -143,7 +143,7 @@ and expr =
 
   (* can be a cpp or enum constant (e.g. FOO), or a local/global/parameter
    * variable, or a function name.
-   *)
+  *)
   | Id of name
 
   | Call of expr * argument list bracket
@@ -155,7 +155,7 @@ and expr =
   (* Why x->y instead of x.y choice? it's easier then with datalog
    * and it's more consistent with ArrayAccess where expr has to be
    * a kind of pointer too. That means x.y is actually unsugared in (&x)->y
-   *)
+  *)
   | RecordPtAccess of expr * tok * name (* x->y,  and not x.y!! *)
 
   | Cast of type_ * expr
@@ -183,7 +183,7 @@ and expr =
   (* tree-sitter-c:
    * only valid in cpp boolean expression context (e.g., #if argument).
    * This is actually not used because we skip ifdef directives anyway.
-   *)
+  *)
   | Defined of tok * name
 
   (* sgrep-ext: *)
@@ -196,7 +196,7 @@ and argument =
 (* really should just contain constants and Id that are #define *)
 and const_expr = expr
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Statement *)
@@ -212,10 +212,10 @@ type stmt =
   | While of tok * expr * stmt
   | DoWhile of tok * stmt * expr
   | For of tok *
-          (var_decl list, expr) Common.either *
-          expr option *
-          expr option *
-          stmt
+           (var_decl list, expr) Common.either *
+           expr option *
+           expr option *
+           stmt
 
   | Return of tok * expr option
   | Continue of tok | Break of tok
@@ -235,9 +235,9 @@ type stmt =
   (* this should never appear! this should be only inside Switch *)
   | CaseStmt of case
 
-  and case =
-    | Case of tok * expr * stmt list
-    | Default of tok * stmt list
+and case =
+  | Case of tok * expr * stmt list
+  | Default of tok * stmt list
 
 (*****************************************************************************)
 (* Variables *)
@@ -250,9 +250,9 @@ and var_decl = {
   v_storage: storage;
   v_init: initialiser option;
 }
- (* can have ArrayInit and RecordInit here in addition to other expr *)
- and initialiser = expr
- and storage = Extern | Static | DefaultStorage
+(* can have ArrayInit and RecordInit here in addition to other expr *)
+and initialiser = expr
+and storage = Extern | Static | DefaultStorage
 
 (*****************************************************************************)
 (* Definitions *)
@@ -261,12 +261,12 @@ and var_decl = {
 (* This used to not be mutually recursive with stmt, but tree-sitter-c
  * allows nested directives and defs so simpler to allow this too.
  * Anyway, AST_generic allows this too.
- *)
+*)
 
 and definition =
   (* less: what about ForwardStructDecl? for mutually recursive structures?
    * probably can deal with it by using typedefs as intermediates.
-   *)
+  *)
   | StructDef of struct_def
   | TypeDef of type_def
   | EnumDef of enum_def
@@ -279,7 +279,7 @@ and func_def = {
   (* less: in theory in C you can define 'typedef int F();' and then define a
    * function like 'F foo { return 1; }' which does not use parenthesis, so we
    * should not force function_type here and also allow typedefs.
-   *)
+  *)
   f_type: function_type;
   f_body: stmt list bracket;
   (* important for codegraph global name resolution to avoid conflicts *)
@@ -293,15 +293,15 @@ and struct_def = {
   s_name: name;
   s_flds: field_def list bracket;
 }
-  (* less: could merge with var_decl, but field have no storage normally *)
-  and field_def = {
-   (* less: bitfield annotation
-    * kenccext: the option on fld_name is for inlined anonymous structure.
-    * less: nested include/macros
-    *)
-    fld_name: name option;
-    fld_type: type_;
-  }
+(* less: could merge with var_decl, but field have no storage normally *)
+and field_def = {
+  (* less: bitfield annotation
+   * kenccext: the option on fld_name is for inlined anonymous structure.
+   * less: nested include/macros
+  *)
+  fld_name: name option;
+  fld_type: type_;
+}
 
 and enum_def = {
   (*e_tok: tok;*)
@@ -326,13 +326,13 @@ and directive =
   | Macro of tok * name * (name list) * define_body option
   | OtherDirective of string wrap * string wrap option
 
-  and define_body =
-    | CppExpr of expr (* actually const_expr when in Define context *)
-    (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
-     * We have no way to reference a CppStmt in 'stmt' since MacroStmt
-     * is not here? So we can probably remove this constructor no?
-     *)
-    | CppStmt of stmt
+and define_body =
+  | CppExpr of expr (* actually const_expr when in Define context *)
+  (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
+   * We have no way to reference a CppStmt in 'stmt' since MacroStmt
+   * is not here? So we can probably remove this constructor no?
+  *)
+  | CppStmt of stmt
 
 (*****************************************************************************)
 (* Program *)
@@ -340,10 +340,10 @@ and directive =
 (* tree-sitter-c: used to be just DefStmt or DirStmt *)
 and toplevel = stmt
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 type program = toplevel list
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -357,7 +357,7 @@ type any =
   | Type of type_
   | Program of program
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

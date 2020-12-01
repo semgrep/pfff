@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -84,7 +84,7 @@ let build_with_tree2 tree gopti =
    * the difference with the children so for all edges that link
    * directly to this one?
    *
-   *)
+  *)
   let nodes = final_nodes_of_tree tree in
   let n = List.length nodes in
   let n_nodes = G2.nb_nodes gopti in
@@ -131,7 +131,7 @@ let build_with_tree2 tree gopti =
        * for instance when we focus on a node, in which case
        * the projection of an edge can not project on anything
        * in the current matrix.
-       *)
+      *)
       if parent_i <> -1 && parent_j <> -1
       then
         dm.matrix.(parent_i).(parent_j) <-
@@ -272,8 +272,8 @@ let hill_climbing nodes dm =
 
 let sort_by_count_rows_low_first xs m dm =
   xs |> List.map (fun n -> n, count_row (hashtbl_find_node dm.name_to_i n) m)
-     |> Common.sort_by_val_lowfirst
-     |> List.map fst
+  |> Common.sort_by_val_lowfirst
+  |> List.map fst
 
 (*
 let sort_by_count_columns_high_first xs m dm =
@@ -288,18 +288,18 @@ let sort_by_count_columns_high_first xs m dm =
  *   remove then this line, and iterate
  * - find the first row by doing the sum of (cell line / sum cell column)
  *   which is a bit equivalent to normalize, to do sum of percentage.
- *)
+*)
 let sort_by_count_rows_low_columns_high_first xs m dm =
   xs |> List.map (fun n ->
     let idx = hashtbl_find_node dm.name_to_i n in
     let h =
       float_of_int (count_row idx m)
       /.
-        (1. +. float_of_int (count_column idx m))
+      (1. +. float_of_int (count_column idx m))
     in
     n, h
   ) |> Common.sort_by_val_lowfirst
-    |> List.map fst
+  |> List.map fst
 
 (*
  * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
@@ -332,7 +332,7 @@ let partition_matrix nodes dm =
      * element is rearranged, it is removed from the DSM (with all its
      * corresponding marks) and step 1 is repeated on the remaining
      * elements."
-     *)
+    *)
     let elts_with_empty_columns, rest =
       nodes |> List.partition (fun node -> is_empty_column node m dm) in
     let xs =
@@ -351,14 +351,14 @@ let partition_matrix nodes dm =
      * those elements to the right of the DSM. Once an element is
      * rearranged, it is removed from the DSM (with all its corresponding
      * marks) and step 2 is repeated on the remaining elements."
-     *)
+    *)
     let elts_with_empty_lines, rest =
       nodes |> List.partition (fun node -> is_empty_row node m dm) in
     (* I use dm.matrix here and not the current matrix m because I want
      * to sort by looking globally at whether this item uses very few things.
      * todo: maybe don't need this 'm dm' to pass around to all those sort_xxx
      * functions. Just pass dm.
-     *)
+    *)
     let xs = sort_by_count_rows_low_first elts_with_empty_lines dm.matrix dm in
     xs|> List.iter (empty_all_cells_relevant_to_node m dm);
     (* pr2 (spf "step2: %s" (Common2.dump xs)); *)
@@ -389,15 +389,15 @@ let info_orders dm =
     let h = float_of_int nrow /. (1. +. float_of_int ncol) in
     h,
     (spf "%-20s: count lines = %d, count columns = %d, H = %.2f"
-      (fst (dm.i_to_name.(i)))
-      nrow
-      ncol
-      h)
+       (fst (dm.i_to_name.(i)))
+       nrow
+       ncol
+       h)
   ) |> Array.to_list
-    |> Common.sort_by_key_lowfirst
-    |> List.iter (fun (_, s) ->
-       pr2 s
-    )
+  |> Common.sort_by_key_lowfirst
+  |> List.iter (fun (_, s) ->
+    pr2 s
+  )
 
 (*****************************************************************************)
 (* Manual ordering *)
@@ -454,7 +454,7 @@ let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
  * There are some issues also on how packing and layering impact each other.
  * We may not want to pack things that affect a lot the number of
  * backward references once packed.
- *)
+*)
 
 let threshold_pack = ref 30
 
@@ -479,19 +479,19 @@ let threshold_pack = ref 30
  * are actually not the full set of children, and so we could pack
  * things under a "..." that are incomplete? Hmmm at the same time
  * it can be good to do some specialized packing based on a Focus.
- *)
+*)
 let adjust_gopti_if_needed_lazily tree gopti =
   let gopti = ref gopti in
 
   let rec aux (tree: tree) (brothers: Graph_code.node list) =
     match tree with
     | Node (n, xs) ->
-      if null xs
-      then Node (n, [])
-      else
-        (* less: use the full list of children of n? xs can be a subset
-         * because in a focused generated config
-         *)
+        if null xs
+        then Node (n, [])
+        else
+          (* less: use the full list of children of n? xs can be a subset
+           * because in a focused generated config
+          *)
         if List.length xs <= !threshold_pack
         then
           Node (n, xs |> List.map (fun (Node (n1, xs1)) ->
@@ -505,8 +505,8 @@ let adjust_gopti_if_needed_lazily tree gopti =
         else begin
           let children_nodes = xs |> List.map (fun (Node (n,_)) -> n) in
           let config = (Node (n,
-             (xs |> List.map (fun (Node (n, _)) -> Node (n, []))) @
-             (brothers |> List.map (fun n -> Node (n, [])))))
+                              (xs |> List.map (fun (Node (n, _)) -> Node (n, []))) @
+                              (brothers |> List.map (fun n -> Node (n, [])))))
           in
           let dm = build_with_tree config !gopti in
 
@@ -516,12 +516,12 @@ let adjust_gopti_if_needed_lazily tree gopti =
             n, count_column idx m + count_row idx m
             (* + m.(idx).(idx) / 3 *)
           ) |> Common.sort_by_val_highfirst
-            |> List.map fst
+                      |> List.map fst
           in
           (* minus one because after the packing we will have
            * threshold_pack - 1 + the new entry = threshold_pack
            * and so we will not loop again and again.
-           *)
+          *)
           let (ok, to_pack) = Common2.splitAt (!threshold_pack - 1) score in
           (* pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s"
                  (Common.dump to_pack) (Common.dump ok)); *)
@@ -530,11 +530,11 @@ let adjust_gopti_if_needed_lazily tree gopti =
               n to_pack !gopti in
           gopti := new_gopti;
           Node (n,
-             (ok @ [dotdotdot_entry]) |> List.map (fun n ->
-               (* todo: grab the children of n in the original config? *)
-               Node (n, [])
-              )
-          )
+                (ok @ [dotdotdot_entry]) |> List.map (fun n ->
+                  (* todo: grab the children of n in the original config? *)
+                  Node (n, [])
+                )
+               )
         end
   in
   let adjusted_tree = aux tree [] in
@@ -548,7 +548,7 @@ let adjust_gopti_if_needed_lazily tree gopti =
 (* The tree passed is a configuration one would like to explore. Note
  * that after a focus, the children of a node in this tree may not contain
  * all the original children of this node.
- *)
+*)
 let build tree constraints_opt gopti =
 
   let gopti, tree = adjust_gopti_if_needed_lazily tree gopti in
@@ -567,7 +567,7 @@ let build tree constraints_opt gopti =
             xs |> List.map (function (Node (n2, _)) -> n2) in
           let h_children_of_children_nodes =
             xs |> List.map (function (Node (n2, xs)) -> n2, xs) |>
-              Common.hash_of_list
+            Common.hash_of_list
           in
 
           (* first draft *)
@@ -575,22 +575,22 @@ let build tree constraints_opt gopti =
 
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix (of the submatrix actually)
-           *)
+          *)
           let nodes_reordered =
             partition_matrix children_nodes dm in
           let nodes_reordered =
             optional_manual_reordering n nodes_reordered constraints_opt in
 
           Node (n,
-               nodes_reordered |> List.map (fun n2 ->
-                 let xs =
-                   try Hashtbl.find h_children_of_children_nodes n2
-                   (* probably one of the newly created "..." child *)
-                   with Not_found -> []
-                 in
-                 (* recurse *)
-                 aux (Node (n2, xs))
-               ))
+                nodes_reordered |> List.map (fun n2 ->
+                  let xs =
+                    try Hashtbl.find h_children_of_children_nodes n2
+                    (* probably one of the newly created "..." child *)
+                    with Not_found -> []
+                  in
+                  (* recurse *)
+                  aux (Node (n2, xs))
+                ))
         end
   in
   let ordered_config = aux tree in
@@ -607,12 +607,12 @@ let put_expand_just_before_last_focus_if_not_children n xs g =
     | [] -> [Expand n]
     | x::xs ->
         (match x with
-        | Expand _ -> x::aux xs
-        | Focus (n2, _style) ->
-            let children = Graph_code_opti.all_children n2 g in
-            if not (List.mem n children)
-            then (Expand n)::x::xs
-            else x::aux xs
+         | Expand _ -> x::aux xs
+         | Focus (n2, _style) ->
+             let children = Graph_code_opti.all_children n2 g in
+             if not (List.mem n children)
+             then (Expand n)::x::xs
+             else x::aux xs
         )
   in
   aux xs
@@ -623,10 +623,10 @@ let fix_path path g =
     | [] -> acc
     | x::xs ->
         (match x with
-        | Focus _ ->
-            aux (acc @ [x]) xs
-        | Expand n ->
-            aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
+         | Focus _ ->
+             aux (acc @ [x]) xs
+         | Expand n ->
+             aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
         )
   in
   aux [] path

@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -127,15 +127,15 @@ let fix_tokens_for_language lang xs =
 (*****************************************************************************)
 
 let fix_tokens_fuzzy toks =
- try
-  let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
-     tokf = TH.info_of_tok;
-     kind = TH.token_kind_of_tok;
-  } toks
-  in
-  let retag_lambda = Hashtbl.create 101 in
+  try
+    let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
+                                         tokf = TH.info_of_tok;
+                                         kind = TH.token_kind_of_tok;
+                                       } toks
+    in
+    let retag_lambda = Hashtbl.create 101 in
 
-  let rec aux env trees =
+    let rec aux env trees =
       match trees with
       | [] -> ()
       (* [...] { } *)
@@ -146,31 +146,31 @@ let fix_tokens_fuzzy toks =
 
       | x::xs ->
           (match x with
-          | F.Parens (_, xs, _) -> iter_parens env xs
-          | F.Braces (_, xs, _) -> aux env xs
-          | F.Angle _ | F.Bracket _
-          | F.Metavar _ | F.Dots _ | F.Tok _ -> ()
+           | F.Parens (_, xs, _) -> iter_parens env xs
+           | F.Braces (_, xs, _) -> aux env xs
+           | F.Angle _ | F.Bracket _
+           | F.Metavar _ | F.Dots _ | F.Tok _ -> ()
           );
           aux env xs
-  and iter_parens env xs =
+    and iter_parens env xs =
       xs |> List.iter (function
         | Left trees -> aux env trees
         | Right _comma -> ()
       )
-  in
-  aux () trees;
+    in
+    aux () trees;
 
-  (* use the tagged information and transform tokens *)
-  toks |> List.map (function
-    | T.TOCro info when Hashtbl.mem retag_lambda info ->
-      T.TOCro_Lambda info
-    | x -> x
-  )
+    (* use the tagged information and transform tokens *)
+    toks |> List.map (function
+      | T.TOCro info when Hashtbl.mem retag_lambda info ->
+          T.TOCro_Lambda info
+      | x -> x
+    )
 
   with Lib_ast_fuzzy.Unclosed (msg, info) ->
-   if !Flag.error_recovery
-   then toks
-   else raise (Parse_info.Lexical_error (msg, info))
+    if !Flag.error_recovery
+    then toks
+    else raise (Parse_info.Lexical_error (msg, info))
 
 (*****************************************************************************)
 (* Fix tokens *)
@@ -198,7 +198,7 @@ let fix_tokens_fuzzy toks =
  * might be good to have two different functions and do far less in
  * fix_tokens_c (even though the extra steps in fix_tokens_cpp should
  * have no effect on regular C code).
- *)
+*)
 let fix_tokens_c ~macro_defs tokens =
 
   let tokens = Parsing_hacks_define.fix_tokens_define tokens in
@@ -264,7 +264,7 @@ let fix_tokens_cpp ~macro_defs tokens =
    *
    * todo? expand macro first? some expand to lexical_cast ...
    * but need correct parenthized view to expand macros => mutually recursive :(
-   *)
+  *)
   Parsing_hacks_cpp.find_template_inf_sup cleaner;
 
   let paren_grouped = TV.mk_parenthised  cleaner in
@@ -278,7 +278,7 @@ let fix_tokens_cpp ~macro_defs tokens =
 
   (* tagging contextual info (InFunc, InStruct, etc). Better to do
    * that after the "ifdef-simplification" phase.
-   *)
+  *)
   let multi_grouped = TV.mk_multi cleaner in
   Token_views_context.set_context_tag_multi multi_grouped;
 
@@ -295,7 +295,7 @@ let fix_tokens_cpp ~macro_defs tokens =
   (* todo: at some point we need to remove that and use
    * a better filter_for_typedef that also
    * works on the nested template arguments.
-   *)
+  *)
   Parsing_hacks_cpp.find_template_commentize multi_grouped;
   let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 

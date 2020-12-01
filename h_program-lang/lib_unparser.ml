@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module PI = Parse_info
@@ -45,13 +45,13 @@ open Parse_info
 (* Intermediate representations easier to work on; more convenient to
  * program heuristics which try to maintain some good indentation
  * and style.
- *)
+*)
 type elt =
- | OrigElt of string
- | Removed of string
- | Added of string
- | Esthet2 of (Parse_info.esthet * string)
- (* with tarzan *)
+  | OrigElt of string
+  | Removed of string
+  | Added of string
+  | Esthet2 of (Parse_info.esthet * string)
+  (* with tarzan *)
 
 (*****************************************************************************)
 (* Globals *)
@@ -103,15 +103,15 @@ let rec add_if_need_comma add_str rh tl =
      something before*)
   | [] -> failwith "Error with need_comma"
   | (OrigElt str)::_t when ((str = ",") || (str = "(")) ->
-    List.rev_append rh tl
+      List.rev_append rh tl
   | ((OrigElt _str) as h)::t ->
-    List.rev_append rh ((Added add_str)::h::t)
+      List.rev_append rh ((Added add_str)::h::t)
   | ((Removed _str) as h)::t -> add_if_need_comma add_str (h::rh) t
   (* Added is very arbitrary, I'd rather not handle them.
    * This can be avoided by using AddArgsBefore only
-   *)
+  *)
   | (Added _str)::_t ->
-    failwith "need comma: cannot handle this case!"
+      failwith "need comma: cannot handle this case!"
   | ((Esthet2 _) as h)::t -> add_if_need_comma add_str (h::rh) t
 
 let rec search_prev_elt ?(ws=0) acc =
@@ -122,11 +122,11 @@ let rec search_prev_elt ?(ws=0) acc =
   | (OrigElt str)::_t -> (OrigElt str, ws)
   | (Removed _str)::t -> search_prev_elt ~ws t
   | (Added _str)::_t ->
-    failwith "search_prev_real_elt: cannot handle this case"
+      failwith "search_prev_real_elt: cannot handle this case"
   | (Esthet2(Comment, _str))::t -> search_prev_elt ~ws t
   | (Esthet2(Newline, str))::_t -> (Esthet2 (Newline,str), ws)
   | (Esthet2(Space,str))::t ->
-    search_prev_elt ~ws:(ws + String.length str) t
+      search_prev_elt ~ws:(ws + String.length str) t
 
 
 (* This function decides how to add arguments.
@@ -141,14 +141,14 @@ let rec search_prev_elt ?(ws=0) acc =
 let elts_of_add_args_before acc xs =
   let (elt, ws) = search_prev_elt acc in
   (* search_prev_elt will fail if meet Added, which may be inserted
-  during add_if_need_comma.
+     during add_if_need_comma.
   *)
   match elt with
   | Esthet2 (Newline, _) ->
-  (* new line for each argument *)
+      (* new line for each argument *)
       let acc = add_if_need_comma "," [] acc in
       let sep = xs |> List.map (fun s ->
-          "  " ^ s ^ ",\n" ^ String.make ws ' ') in
+        "  " ^ s ^ ",\n" ^ String.make ws ' ') in
       let add_str = join "" sep in
       (Added add_str)::acc
   | _ ->
@@ -164,8 +164,8 @@ let elt_and_info_of_tok tok =
   let str = PI.str_of_info info in
   let elt =
     match kind with
-      | PI.Esthet x -> Esthet2 (x, str)
-      | _ -> OrigElt str
+    | PI.Esthet x -> Esthet2 (x, str)
+    | _ -> OrigElt str
   in
   elt, info
 
@@ -176,32 +176,32 @@ let elts_of_any toks =
     | tok::t ->
         let elt, info = elt_and_info_of_tok tok in
         (match info.token with
-        | Ab | FakeTokStr _ | ExpandedTok _ ->
-            raise Impossible
-        | OriginTok _ ->
-            (match info.transfo with
-            (* acc is reversed! *)
-            | NoTransfo ->
-                aux (elt::acc) t
-            | Remove ->
-                aux (Removed (PI.str_of_info info)::acc) t
-            | Replace toadd ->
-              (* could also be Removed::Added::_, now that we have
-               * drop_useless_space(), this should not matter anymore
-               *)
-                aux (Added (s_of_add toadd)::Removed (PI.str_of_info info)::acc)
-                  t
-            | AddAfter toadd ->
-                aux (Added (s_of_add toadd)::elt::acc) t
-            | AddBefore toadd ->
-                aux (elt::Added (s_of_add toadd)::acc) t
+         | Ab | FakeTokStr _ | ExpandedTok _ ->
+             raise Impossible
+         | OriginTok _ ->
+             (match info.transfo with
+              (* acc is reversed! *)
+              | NoTransfo ->
+                  aux (elt::acc) t
+              | Remove ->
+                  aux (Removed (PI.str_of_info info)::acc) t
+              | Replace toadd ->
+                  (* could also be Removed::Added::_, now that we have
+                   * drop_useless_space(), this should not matter anymore
+                  *)
+                  aux (Added (s_of_add toadd)::Removed (PI.str_of_info info)::acc)
+                    t
+              | AddAfter toadd ->
+                  aux (Added (s_of_add toadd)::elt::acc) t
+              | AddBefore toadd ->
+                  aux (elt::Added (s_of_add toadd)::acc) t
 
-            | AddArgsBefore xs ->
-                let elt_list = elts_of_add_args_before acc xs in
-                let acc = elt::elt_list in
-                aux acc t
-          )
-      )
+              | AddArgsBefore xs ->
+                  let elt_list = elts_of_add_args_before acc xs in
+                  let acc = elt::elt_list in
+                  aux acc t
+             )
+        )
   in
   aux [] toks
 
@@ -211,7 +211,7 @@ let elts_of_any toks =
 
 (* but needs to keep the Removed, otherwise drop_whole_line_if_only_removed()
  * can not know which new empty lines it has to remove
- *)
+*)
 let drop_esthet_between_removed xs =
   let rec outside_remove = function
     | [] -> []
@@ -228,7 +228,7 @@ let drop_esthet_between_removed xs =
 
 (* note that it will also remove comments in the line if everthing else
  * was removed, which is what we want most of the time
- *)
+*)
 let drop_whole_line_if_only_removed xs =
   let (before_first_newline, xxs) = xs |> Common2.group_by_pre (function
     | Esthet2 (Newline, _) -> true | _ -> false)
@@ -236,27 +236,27 @@ let drop_whole_line_if_only_removed xs =
   let xxs = xxs |> Common.exclude (fun (_newline, elts_after_newline) ->
     let has_a_remove =
       elts_after_newline |> List.exists (function
-      | Removed _ -> true | _ -> false) in
+        | Removed _ -> true | _ -> false) in
     let only_remove_or_esthet =
       elts_after_newline |> List.for_all (function
-      | Esthet2 _ | Removed _ -> true
-      | Added _ | OrigElt _ -> false
+        | Esthet2 _ | Removed _ -> true
+        | Added _ | OrigElt _ -> false
       )
     in
     has_a_remove && only_remove_or_esthet
   )
   in
   before_first_newline @
-    (xxs |> List.map (fun (elt, elts) -> elt::elts) |> List.flatten)
+  (xxs |> List.map (fun (elt, elts) -> elt::elts) |> List.flatten)
 
 (* people often write s/foo(X,Y)/.../ but some calls to foo may have
  * a trailing comma that we also want to remove automatically
- *)
+*)
 let drop_trailing_comma_between_removed xs =
   let rec aux xs =
     match xs with
     | Removed s1::OrigElt ","::Removed ")"::rest ->
-      Removed s1::Removed ","::Removed ")"::aux rest
+        Removed s1::Removed ","::Removed ")"::aux rest
     | x::xs -> x::aux xs
     | [] -> []
   in
@@ -265,8 +265,8 @@ let drop_trailing_comma_between_removed xs =
 
 let drop_removed xs =
   xs |> Common.exclude (function
-  | Removed _ -> true
-  | _ -> false
+    | Removed _ -> true
+    | _ -> false
   )
 
 (* When removing code, it's quite common as a result to have double
@@ -277,18 +277,18 @@ let drop_removed xs =
  * We can have double space only as a result of a transformation on that line.
  * Otherwise the spacing will have been agglomerated by the parser. So we
  * don't risk to remove too much spaces here.
- *)
+*)
 let rec drop_useless_space xs  =
   match xs with
   | [] -> []
   | Esthet2 (Space,s)::Esthet2 (Space,_s2)::rest ->
-    drop_useless_space ((Esthet2 (Space, s))::rest)
+      drop_useless_space ((Esthet2 (Space, s))::rest)
   (* see tests/php/spatch/distr_plus.spatch, just like we can have
    * double spaces, we can also have space before comma that are
    * useless
-   *)
+  *)
   | Esthet2 (Space, _s)::OrigElt ","::rest ->
-    drop_useless_space (OrigElt ","::rest)
+      drop_useless_space (OrigElt ","::rest)
   | x::xs -> x::drop_useless_space xs
 
 (*****************************************************************************)
@@ -321,8 +321,8 @@ let string_of_toks_using_transfo toks =
     let xs = drop_useless_space xs in
 
     xs |> List.iter (function
-    | OrigElt s | Added s | Esthet2 ((Comment | Space), s) -> pp s
-    | Removed _ -> raise Impossible (* see drop_removed *)
-    | Esthet2 (Newline, _) -> pp "\n"
+      | OrigElt s | Added s | Esthet2 ((Comment | Space), s) -> pp s
+      | Removed _ -> raise Impossible (* see drop_removed *)
+      | Esthet2 (Newline, _) -> pp "\n"
     )
   )

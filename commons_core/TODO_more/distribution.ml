@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 (*e: copyright header *)
 open Common
 
@@ -24,7 +24,7 @@ open Common
 
 (* related work:
  * - https://github.com/cryptosense/procord/blob/master/examples/minimal.ml
- *)
+*)
 
 (*****************************************************************************)
 (* Globals *)
@@ -64,33 +64,33 @@ let worker ~fmap:map_ex =
   (*e: debug worker *)
 
   Common.unwind_protect (fun () ->
-   (*s: enter worker loop *)
-   while true do
-     let req = Mpi.receive rank_master notag Mpi.comm_world in
-     match req with
-     | DataIn req ->
-         (* big work *)
-         let res = map_ex req in
-         Mpi.send (DataRes (req, res)) rank_master notag Mpi.comm_world
-     | StopWorker ->
-         (*s: debug worker exit *)
-         if !debug_mpi
-         then pr2 ("DEBUG: worker exiting");
-         flush stderr; flush stdout;
-         (*e: debug worker exit *)
-         raise (UnixExit 0)
-     | DataRes _ -> raise ProtocolError
-   done
-   (*e: enter worker loop *)
+    (*s: enter worker loop *)
+    while true do
+      let req = Mpi.receive rank_master notag Mpi.comm_world in
+      match req with
+      | DataIn req ->
+          (* big work *)
+          let res = map_ex req in
+          Mpi.send (DataRes (req, res)) rank_master notag Mpi.comm_world
+      | StopWorker ->
+          (*s: debug worker exit *)
+          if !debug_mpi
+          then pr2 ("DEBUG: worker exiting");
+          flush stderr; flush stdout;
+          (*e: debug worker exit *)
+          raise (UnixExit 0)
+      | DataRes _ -> raise ProtocolError
+    done
+    (*e: enter worker loop *)
   )
-  (fun e ->
-    (*s: exit worker *)
-    match e with
-    | UnixExit(0) -> exit 0
-    | _ ->
-        pr2 (spf "PB: mpi worker dying: %s" (Common.exn_to_s e));
-    (*e: exit worker *)
-  )
+    (fun e ->
+       (*s: exit worker *)
+       match e with
+       | UnixExit(0) -> exit 0
+       | _ ->
+           pr2 (spf "PB: mpi worker dying: %s" (Common.exn_to_s e));
+           (*e: exit worker *)
+    )
 
 (*e: worker *)
 
@@ -108,7 +108,7 @@ let master ?(timeout=60) ~freduce:reduce_ex acc xs =
   (*s: killing_workers helper *)
   let killing_workers xs =
     xs |> List.iter (fun i -> Mpi.send StopWorker i notag Mpi.comm_world)
-  (*e: killing_workers helper *)
+    (*e: killing_workers helper *)
   in
 
 
@@ -140,30 +140,30 @@ let master ?(timeout=60) ~freduce:reduce_ex acc xs =
     (*s: enter server loop, [[in_list]] shrinks and [[out_list]] grows *)
     while !working > 0 do
       try (
-      let (res, src, _) = Mpi.receive_status Mpi.any_source notag Mpi.comm_world in
-      (* received something, can reset the "watchdog" *)
-      ignore(Unix.alarm timeout);
-      (match res with
-      | DataRes (arg, res) ->
-          if !debug_mpi
-          then pr2 (spf "DEBUG: mpi master, remaining jobs = %d"
-                       (List.length !in_list));
-          (* Start reducing. We could wait until all has been received,
-           * but 'x' can be huge and so it can accumulate and leads to
-           * big memory usage. Can this solve the problem of
-           * MPI_ERR_TRUNCATE and instability of MPI when processing
-           * big data sets ?
-           *)
-          acc:= reduce_ex !acc res;
-          Hashtbl.add in_done arg true;
-      | DataIn _ | StopWorker -> raise ProtocolError
-      );
+        let (res, src, _) = Mpi.receive_status Mpi.any_source notag Mpi.comm_world in
+        (* received something, can reset the "watchdog" *)
+        ignore(Unix.alarm timeout);
+        (match res with
+         | DataRes (arg, res) ->
+             if !debug_mpi
+             then pr2 (spf "DEBUG: mpi master, remaining jobs = %d"
+                         (List.length !in_list));
+             (* Start reducing. We could wait until all has been received,
+              * but 'x' can be huge and so it can accumulate and leads to
+              * big memory usage. Can this solve the problem of
+              * MPI_ERR_TRUNCATE and instability of MPI when processing
+              * big data sets ?
+             *)
+             acc:= reduce_ex !acc res;
+             Hashtbl.add in_done arg true;
+         | DataIn _ | StopWorker -> raise ProtocolError
+        );
 
-      if not (null !in_list) then begin
-        let arg = Common.pop2 in_list in
-        Mpi.send (DataIn arg) src notag Mpi.comm_world;
-      end
-      else decr working;
+        if not (null !in_list) then begin
+          let arg = Common.pop2 in_list in
+          Mpi.send (DataIn arg) src notag Mpi.comm_world;
+        end
+        else decr working;
       ) with Mpi.Error s ->
         pr2 (spf "!!!!!!mpi master received an error but continue: %s!!!!!" s);
     done;
@@ -182,33 +182,33 @@ let master ?(timeout=60) ~freduce:reduce_ex acc xs =
     (*s: kill workers because problem *)
     ignore(Unix.alarm 0);
     (match e with
-    | Timeout ->
-        let total = List.length xs in
-        let total_done = Hashtbl.length in_done in
+     | Timeout ->
+         let total = List.length xs in
+         let total_done = Hashtbl.length in_done in
 
-        pr2 (spf "!!!!PB: mpi master timeout. Done %d/%d!!!!"
+         pr2 (spf "!!!!PB: mpi master timeout. Done %d/%d!!!!"
                 total_done total);
-        killing_workers (Common.enum 1 available_workers);
+         killing_workers (Common.enum 1 available_workers);
 
-        let not_done =
-          xs |> List.filter (fun x -> not (Hashtbl.mem in_done x))
-        in
+         let not_done =
+           xs |> List.filter (fun x -> not (Hashtbl.mem in_done x))
+         in
 
-        if Common.pourcent total_done total > 95
-        then !acc, not_done
-        else begin
-          (* this will tell mpirun that everything should be stopped *)
-          Unix.kill (Unix.getpid ()) Sys.sigterm ;
+         if Common.pourcent total_done total > 95
+         then !acc, not_done
+         else begin
+           (* this will tell mpirun that everything should be stopped *)
+           Unix.kill (Unix.getpid ()) Sys.sigterm ;
 
-          failwith "Some clients failed, job could not be completed"
-        end
-    | e ->
-        pr2 (spf "!!!!PB: mpi master dying: %s!!!!" (Common.exn_to_s e));
-        killing_workers (Common.enum 1 available_workers);
-        Unix.kill (Unix.getpid ()) Sys.sigterm;
-        failwith "Some clients failed, job could not be completed"
+           failwith "Some clients failed, job could not be completed"
+         end
+     | e ->
+         pr2 (spf "!!!!PB: mpi master dying: %s!!!!" (Common.exn_to_s e));
+         killing_workers (Common.enum 1 available_workers);
+         Unix.kill (Unix.getpid ()) Sys.sigterm;
+         failwith "Some clients failed, job could not be completed"
     )
-    (*e: kill workers because problem *)
+(*e: kill workers because problem *)
 
 (*e: master *)
 
@@ -297,7 +297,7 @@ let mpi_adjust_argv argvold =
         Mpi.receive_status Mpi.any_source notag Mpi.comm_world in
       Array.of_list res
     end
-    (*e: adjust argv for worker *)
+(*e: adjust argv for worker *)
 (*e: mpi_adjust_argv *)
 
 (*e: distribution.ml *)

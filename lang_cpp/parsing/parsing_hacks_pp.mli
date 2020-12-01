@@ -12,7 +12,7 @@ val find_define_init_brace_paren:
 val find_string_macro_paren:
   Token_views_cpp.paren_grouped list -> unit
 val find_macro_lineparen:
-Token_views_cpp.paren_grouped Token_views_cpp.line_grouped list -> unit
+  Token_views_cpp.paren_grouped Token_views_cpp.line_grouped list -> unit
 val find_macro_paren:
   Token_views_cpp.paren_grouped list -> unit
 

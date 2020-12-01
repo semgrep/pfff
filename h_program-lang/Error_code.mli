@@ -10,11 +10,11 @@ type error = {
 }
 (*e: type [[Error_code.error]] *)
 (*s: type [[Error_code.severity]] *)
- and severity = Error | Warning | Info
+and severity = Error | Warning | Info
 (*e: type [[Error_code.severity]] *)
 
 (*s: type [[Error_code.error_kind]] *)
- and error_kind =
+and error_kind =
   (* parsing related *)
   | LexicalError of string
   | ParseError (* a.k.a SyntaxError *)
@@ -43,10 +43,10 @@ type error = {
   | FatalError of string
   | Timeout of string option
   | OutOfMemory of string option
-(*e: type [[Error_code.error_kind]] *)
+  (*e: type [[Error_code.error_kind]] *)
 
 (*s: type [[Error_code.entity]] *)
- and entity = (string * Entity_code.entity_kind)
+and entity = (string * Entity_code.entity_kind)
 (*e: type [[Error_code.entity]] *)
 
 (* internal: you should prefer to use the error function below *)
@@ -56,7 +56,7 @@ val mk_error_loc: Parse_info.token_location -> error_kind -> error
 (* @xxx to acknowledge or explain false positives *)
 type annotation =
   | AtScheck of string
-(*e: type [[Error_code.annotation]] *)
+  (*e: type [[Error_code.annotation]] *)
 
 (* main API *)
 
@@ -102,13 +102,13 @@ val check_id_of_error_kind: error_kind -> string
 
 (*s: type [[Error_code.rank]] *)
 type rank =
- | Never
- | OnlyStrict
- | Less
- | Ok
- | Important
- | ReallyImportant
-(*e: type [[Error_code.rank]] *)
+  | Never
+  | OnlyStrict
+  | Less
+  | Ok
+  | Important
+  | ReallyImportant
+  (*e: type [[Error_code.rank]] *)
 
 (*s: signature [[Error_code.score_of_rank]] *)
 val score_of_rank:  rank -> int
@@ -143,12 +143,12 @@ val report_fatal_errors: bool ref
 val filter_maybe_parse_and_fatal_errors: error list -> error list
 (* convert parsing and other fatal exceptions in regular 'error'
  * added to g_errors
- *)
+*)
 (*e: signature [[Error_code.filter_maybe_parse_and_fatal_errors]] *)
 (*s: signature [[Error_code.adjust_paths_relative_to_root]] *)
 (* convert parsing and other fatal exceptions in regular 'error'
  * added to g_errors
- *)
+*)
 
 val adjust_paths_relative_to_root:
   Common.path -> error list -> error list

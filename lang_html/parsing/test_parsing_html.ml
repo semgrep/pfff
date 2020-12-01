@@ -29,7 +29,7 @@ let test_parse_html xs =
      *
      * let (xs, stat) = Parse_erlang.parse file in
      * Common.push2 stat stat_list;
-     *)
+    *)
     try
       let _tree = Parse_html.parse file in
       ()

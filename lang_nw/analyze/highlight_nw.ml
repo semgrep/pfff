@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module T = Lexer_nw
@@ -50,7 +50,7 @@ let tag_all_tok_trees_with ~tag categ trees =
 (* The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The AST is better for other things.
- *)
+*)
 let visit_program ~tag_hook _prefs (trees, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -69,25 +69,25 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
     (* pad-specific: *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline _ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline _ii4
+        ::T.TComment(ii5)
+        ::xs ->
         let s = Parse_info.str_of_info ii in
         let s5 =  Parse_info.str_of_info ii5 in
         (match () with
-        | _ when s =~ "^%\\*\\*\\*\\*" && s5 =~ "^%\\*\\*\\*\\*" ->
-          tag ii CommentEstet; tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ when s =~ "^%------" && s5 =~ "^%------" ->
-          tag ii CommentEstet; tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ "^%####" && s5 =~ "^%####" ->
-          tag ii CommentEstet; tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ ->
-            ()
+         | _ when s =~ "^%\\*\\*\\*\\*" && s5 =~ "^%\\*\\*\\*\\*" ->
+             tag ii CommentEstet; tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ when s =~ "^%------" && s5 =~ "^%------" ->
+             tag ii CommentEstet; tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ "^%####" && s5 =~ "^%####" ->
+             tag ii CommentEstet; tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ ->
+             ()
         );
         aux_toks xs
 
@@ -98,47 +98,47 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
     (* specific to texinfo *)
     | T.TSymbol("@", _)::T.TWord(s, ii)::xs ->
-           let categ_opt =
-             (match s with
-             | "title" -> Some CommentSection0
-             | "chapter" -> Some CommentSection0
-             | "section" -> Some CommentSection1
-             | "subsection" -> Some CommentSection2
-             | "subsubsection" -> Some CommentSection3
-             | "c" -> Some Comment
-             (* don't want to polluate my view with indexing "aspect" *)
-             | "cindex" ->
-                 tag ii Comment;
-                 Some Comment
-             | _ -> None
-             )
-           in
-           (match categ_opt with
-           | None ->
-               tag ii Keyword;
-               aux_toks xs
-           | Some categ ->
-               let (before, _, _) = span_newline xs in
-               tag_all_tok_with ~tag categ before;
-               (* repass on tokens, in case there are nested tex commands *)
-               aux_toks xs
-           )
+        let categ_opt =
+          (match s with
+           | "title" -> Some CommentSection0
+           | "chapter" -> Some CommentSection0
+           | "section" -> Some CommentSection1
+           | "subsection" -> Some CommentSection2
+           | "subsubsection" -> Some CommentSection3
+           | "c" -> Some Comment
+           (* don't want to polluate my view with indexing "aspect" *)
+           | "cindex" ->
+               tag ii Comment;
+               Some Comment
+           | _ -> None
+          )
+        in
+        (match categ_opt with
+         | None ->
+             tag ii Keyword;
+             aux_toks xs
+         | Some categ ->
+             let (before, _, _) = span_newline xs in
+             tag_all_tok_with ~tag categ before;
+             (* repass on tokens, in case there are nested tex commands *)
+             aux_toks xs
+        )
 
     (* specific to web TeX source: ex: @* \[24] Getting the next token. *)
     |    T.TSymbol("@*", _)
-      :: T.TCommentSpace _
-      :: T.TSymbol("\\", _)
-      :: T.TSymbol("[", ii1)
-      :: T.TNumber(_, iinum)
-      :: T.TSymbol("]", ii2)
-      :: T.TCommentSpace _
-      :: xs
+         :: T.TCommentSpace _
+         :: T.TSymbol("\\", _)
+         :: T.TSymbol("[", ii1)
+         :: T.TNumber(_, iinum)
+         :: T.TSymbol("]", ii2)
+         :: T.TCommentSpace _
+         :: xs
       ->
-       let (before, _, _) = span_newline xs in
-       [ii1;iinum;ii2] |> List.iter (fun ii -> tag ii CommentSection0);
-       tag_all_tok_with ~tag CommentSection0 before;
-       (* repass on tokens, in case there are nested tex commands *)
-       aux_toks xs
+        let (before, _, _) = span_newline xs in
+        [ii1;iinum;ii2] |> List.iter (fun ii -> tag ii CommentSection0);
+        tag_all_tok_with ~tag CommentSection0 before;
+        (* repass on tokens, in case there are nested tex commands *)
+        aux_toks xs
     (* less: \item TWord => purple? or maybe purple until end of line *)
 
     | _x::xs ->
@@ -156,65 +156,65 @@ let visit_program ~tag_hook _prefs (trees, toks) =
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
   trees |> LF.mk_visitor { LF.default_visitor with
-    LF.ktrees = (fun (k, _v) trees ->
-      match trees with
-      (* \xxx{...} *)
-      | F.Tok (s, _)::F.Braces (_, brace_trees, _)::_ ->
-        let categ_opt =
-          match s with
+                           LF.ktrees = (fun (k, _v) trees ->
+                             match trees with
+                             (* \xxx{...} *)
+                             | F.Tok (s, _)::F.Braces (_, brace_trees, _)::_ ->
+                                 let categ_opt =
+                                   match s with
 
-          | ("\\chapter" | "\\chapter*") -> Some CommentSection0
-          | "\\section" -> Some CommentSection1
-          | "\\subsection" -> Some CommentSection2
-          | "\\subsubsection" -> Some CommentSection3
+                                   | ("\\chapter" | "\\chapter*") -> Some CommentSection0
+                                   | "\\section" -> Some CommentSection1
+                                   | "\\subsection" -> Some CommentSection2
+                                   | "\\subsubsection" -> Some CommentSection3
 
-          | "\\label" -> Some (Label Def)
-          | "\\ref" -> Some (Label Def)
-          | "\\cite" -> Some (Label Def)
-          (* principia-specific: *)
-          | "\\book" -> Some (Label Def)
+                                   | "\\label" -> Some (Label Def)
+                                   | "\\ref" -> Some (Label Def)
+                                   | "\\cite" -> Some (Label Def)
+                                   (* principia-specific: *)
+                                   | "\\book" -> Some (Label Def)
 
-          | "\\begin" | "\\end" -> Some KeywordExn (* TODO *)
-          | "\\input" | "\\usepackage" | "\\bibliography" ->
-            Some IncludeFilePath
-          | "\\url" | "\\furl" -> Some EmbededUrl
+                                   | "\\begin" | "\\end" -> Some KeywordExn (* TODO *)
+                                   | "\\input" | "\\usepackage" | "\\bibliography" ->
+                                       Some IncludeFilePath
+                                   | "\\url" | "\\furl" -> Some EmbededUrl
 
-          | _ when s =~ "^\\" -> Some (Parameter Use)
-          | _ -> None
-        in
-       categ_opt |> Common.do_option (fun categ ->
-         tag_all_tok_trees_with ~tag categ brace_trees;
-       );
-       k trees
+                                   | _ when s =~ "^\\" -> Some (Parameter Use)
+                                   | _ -> None
+                                 in
+                                 categ_opt |> Common.do_option (fun categ ->
+                                   tag_all_tok_trees_with ~tag categ brace_trees;
+                                 );
+                                 k trees
 
-      (* \xxx[...]{...} *)
-      | F.Tok (s, _)::F.Bracket(_,params,_)::F.Braces (_,body, _)::_ ->
-         if s =~ "^\\" then begin
-           tag_all_tok_trees_with ~tag (Parameter Use) params;
-           tag_all_tok_trees_with ~tag (Parameter Use) body;
-         end;
-         k trees
-      (* {...}{...} *)
-      | F.Braces (_, brace_trees1,_)::F.Braces (_, brace_trees2,_)::_ ->
-         tag_all_tok_trees_with ~tag (Parameter Use) brace_trees1;
-         tag_all_tok_trees_with ~tag (Parameter Use) brace_trees2;
-         k trees
+                             (* \xxx[...]{...} *)
+                             | F.Tok (s, _)::F.Bracket(_,params,_)::F.Braces (_,body, _)::_ ->
+                                 if s =~ "^\\" then begin
+                                   tag_all_tok_trees_with ~tag (Parameter Use) params;
+                                   tag_all_tok_trees_with ~tag (Parameter Use) body;
+                                 end;
+                                 k trees
+                             (* {...}{...} *)
+                             | F.Braces (_, brace_trees1,_)::F.Braces (_, brace_trees2,_)::_ ->
+                                 tag_all_tok_trees_with ~tag (Parameter Use) brace_trees1;
+                                 tag_all_tok_trees_with ~tag (Parameter Use) brace_trees2;
+                                 k trees
 
-      (* {\xxx ... } *)
-      | F.Braces (_, (F.Tok (s, _)::brace_trees),_)::_ ->
-        let categ_opt =
-          match s with
-          | "\\em" -> Some CommentWordImportantNotion
-          | _ -> None
-        in
-        categ_opt |> Common.do_option (fun categ ->
-          tag_all_tok_trees_with ~tag categ brace_trees;
-        );
-        k trees
+                             (* {\xxx ... } *)
+                             | F.Braces (_, (F.Tok (s, _)::brace_trees),_)::_ ->
+                                 let categ_opt =
+                                   match s with
+                                   | "\\em" -> Some CommentWordImportantNotion
+                                   | _ -> None
+                                 in
+                                 categ_opt |> Common.do_option (fun categ ->
+                                   tag_all_tok_trees_with ~tag categ brace_trees;
+                                 );
+                                 k trees
 
-      | _ -> k trees
-    );
-  };
+                             | _ -> k trees
+                           );
+                         };
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 (individual tokens) *)
@@ -225,34 +225,34 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
         then
-         let s = Parse_info.str_of_info ii |> String.lowercase_ascii in
-         (match s with
-         | _ when s =~ "^%todo:" -> tag ii BadSmell
-         | _ -> tag ii CommentImportance0
-         )
+          let s = Parse_info.str_of_info ii |> String.lowercase_ascii in
+          (match s with
+           | _ when s =~ "^%todo:" -> tag ii BadSmell
+           | _ -> tag ii CommentImportance0
+          )
     | T.TCommentSpace _ii -> ()
     | T.TCommentNewline _ii -> ()
 
     | T.TCommand (s, ii) ->
         let categ =
           (match s with
-          | s when s =~ "^if" -> KeywordConditional
-          | s when s =~ ".*true$" -> Boolean
-          | s when s =~ ".*false$" -> Boolean
+           | s when s =~ "^if" -> KeywordConditional
+           | s when s =~ ".*true$" -> Boolean
+           | s when s =~ ".*false$" -> Boolean
 
-          | "fi" -> KeywordConditional
-          | "input" | "usepackage" -> Include
-          | "appendix" -> CommentSection0
+           | "fi" -> KeywordConditional
+           | "input" | "usepackage" -> Include
+           | "appendix" -> CommentSection0
 
-          | _ -> Keyword
+           | _ -> Keyword
           )
         in
         tag ii categ
 
     | T.TWord (s, ii) ->
         (match s with
-        | "TODO" -> tag ii BadSmell
-        | _ -> ()
+         | "TODO" -> tag ii BadSmell
+         | _ -> ()
         )
 
     (* noweb-specific: (obviously) *)
@@ -279,10 +279,10 @@ let visit_program ~tag_hook _prefs (trees, toks) =
     (* syncweb-specific: *)
     | T.TFootnote (c, ii) ->
         (match c with
-        | 't' -> tag ii BadSmell
-        | 'n' -> tag ii Comment
-        | 'l' -> tag ii CommentImportance1
-        | _ -> failwith (spf "syncweb \\x special macro not recognized:%c" c)
+         | 't' -> tag ii BadSmell
+         | 'n' -> tag ii Comment
+         | 'l' -> tag ii CommentImportance1
+         | _ -> failwith (spf "syncweb \\x special macro not recognized:%c" c)
         )
 
     | T.TNumber (_, ii) | T.TUnit (_, ii) ->
@@ -291,11 +291,11 @@ let visit_program ~tag_hook _prefs (trees, toks) =
 
 
     | T.TSymbol (s, ii) ->
-      (match s with
-      | "&" | "\\\\" ->
-        tag ii Punctuation
-      | _ -> ()
-      )
+        (match s with
+         | "&" | "\\\\" ->
+             tag ii Punctuation
+         | _ -> ()
+        )
 
     | T.TOBrace ii | T.TCBrace ii
     | T.TOBracket ii | T.TCBracket ii

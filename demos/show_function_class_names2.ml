@@ -19,18 +19,18 @@ let show_function_calls file =
   let ast = Parse_php.parse_program file in
 
   (*s: create visitor *)
-    let visitor = V.mk_visitor { V.default_visitor with
-       V.kfunc_def = (fun (k, _) e ->
-         pr_func_def e; k e
-      );
-       (*V.kmethod_def = (fun (k, _) e ->
-         pr_func_def e; k e
-      );*)
-       V.kclass_def = (fun (k, _) e ->
-         pr_class_def e; k e
-      );
-    }
-    in
+  let visitor = V.mk_visitor { V.default_visitor with
+                               V.kfunc_def = (fun (k, _) e ->
+                                 pr_func_def e; k e
+                               );
+                               (*V.kmethod_def = (fun (k, _) e ->
+                                 pr_func_def e; k e
+                                 );*)
+                               V.kclass_def = (fun (k, _) e ->
+                                 pr_class_def e; k e
+                               );
+                             }
+  in
   visitor (Program  ast)
 
 let main =

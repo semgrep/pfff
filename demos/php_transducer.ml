@@ -34,15 +34,15 @@ let visit asts =
   let props = ref [] in
 
   let visitor = V.mk_visitor { V.default_visitor with
-    V.ktop = (fun (k, bigf) top ->
-      match top with
-      | FuncDef def ->
-          let name = Ast.str_of_ident def.f_name in
-          Common.push ("function:" ^name) props;
-      | _ ->
-          ()
-    );
-  } in
+                               V.ktop = (fun (k, bigf) top ->
+                                 match top with
+                                 | FuncDef def ->
+                                     let name = Ast.str_of_ident def.f_name in
+                                     Common.push ("function:" ^name) props;
+                                 | _ ->
+                                     ()
+                               );
+                             } in
   visitor (Program asts);
   List.rev !props
 
@@ -74,7 +74,7 @@ let options () = [
 let main () =
   let usage_msg =
     "Usage: " ^ Filename.basename Sys.argv.(0) ^
-      " [options] <file> " ^ "\n" ^ "Options are:"
+    " [options] <file> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -84,18 +84,18 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | [x] ->
-        transduce x
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | [x] ->
+         transduce x
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | _  ->
-        Common.usage usage_msg (options());
-        failwith "too few or too many arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | _  ->
+         Common.usage usage_msg (options());
+         failwith "too few or too many arguments"
 
     )
   )

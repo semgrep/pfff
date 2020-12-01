@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module G = Graph
@@ -73,7 +73,7 @@ let to_gdf g ~str_of_node ~output =
       let (dir1, dir2, dir) = dirs_of_n n in
       (* don't add extra space for attributes, otherwise no match when
        * use ==
-       *)
+      *)
       pr (spf "%s,%s,%s,%s" (node_name_of_n n) dir1 dir2 dir);
     );
     pr (spf "edgedef> node1,node2,directed");

@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module O = OCaml
@@ -87,7 +87,7 @@ let (gen_matcher: string * OCaml.t -> unit) = fun (s, t) ->
               (* ... *)
               Common2.zip aa bb |> List.iter (fun ((aa1, t), (aa2, _t2)) ->
                 e.p (spf "%s %s %s >>= (fun (%s, %s) -> "
-                        (call_to_matcher t) aa1 aa2 aa1 aa2);
+                       (call_to_matcher t) aa1 aa2 aa1 aa2);
               );
 
               e+= "return (";
@@ -110,32 +110,32 @@ let (gen_matcher: string * OCaml.t -> unit) = fun (s, t) ->
 
       (* TODO factorize code ? a tuple is a kind of anon single constructor *)
       | O.Tuple args ->
-            let aa = Common.index_list_1 args |> List.map (fun (t, i) ->
-              spf "a%d" i, t
-            ) in
-            let bb = Common.index_list_1 args |> List.map (fun (t, i) ->
-              spf "b%d" i, t
-            ) in
+          let aa = Common.index_list_1 args |> List.map (fun (t, i) ->
+            spf "a%d" i, t
+          ) in
+          let bb = Common.index_list_1 args |> List.map (fun (t, i) ->
+            spf "b%d" i, t
+          ) in
 
-            let aas = aa |> List.map fst |> parenize_and_comma in
-            let bbs = bb |> List.map fst |> parenize_and_comma in
-            e+= "| %s, %s ->" $ aas $ bbs;
+          let aas = aa |> List.map fst |> parenize_and_comma in
+          let bbs = bb |> List.map fst |> parenize_and_comma in
+          e+= "| %s, %s ->" $ aas $ bbs;
+          e --> (fun e ->
+            (* ... *)
+            Common2.zip aa bb |> List.iter (fun ((aa1, t), (aa2, _t2)) ->
+              e.p (spf "%s %s %s >>= (fun (%s, %s) -> "
+                     (call_to_matcher t) aa1 aa2 aa1 aa2);
+            );
+
+            e+= "return (";
             e --> (fun e ->
-              (* ... *)
-              Common2.zip aa bb |> List.iter (fun ((aa1, t), (aa2, _t2)) ->
-                e.p (spf "%s %s %s >>= (fun (%s, %s) -> "
-                        (call_to_matcher t) aa1 aa2 aa1 aa2);
-              );
-
-              e+= "return (";
-              e --> (fun e ->
-                e+= " %s," $ aas;
-                e+= " %s" $ bbs;
-              );
-              e+= (")");
-              if not (null args)
-              then e.p (Common2.repeat ")" (List.length args) |> Common.join "");
-            )
+              e+= " %s," $ aas;
+              e+= " %s" $ bbs;
+            );
+            e+= (")");
+            if not (null args)
+            then e.p (Common2.repeat ")" (List.length args) |> Common.join "");
+          )
       | O.Var s ->
           e += "(a, b) -> %s a b" $ (call_to_matcher (O.Var s))
 
@@ -168,30 +168,30 @@ let (gen_matcher: string * OCaml.t -> unit) = fun (s, t) ->
             (* ... *)
             Common2.zip aa bb |> List.iter (fun ((aa1, (_fld, _, t)), (aa2, _)) ->
               e.p (spf "%s %s %s >>= (fun (%s, %s) -> "
-                      (call_to_matcher t) aa1 aa2 aa1 aa2);
-              );
-              e+= "return (";
-              e --> (fun e ->
+                     (call_to_matcher t) aa1 aa2 aa1 aa2);
+            );
+            e+= "return (";
+            e --> (fun e ->
 
-                e+= "{ A. ";
-                aa |> List.iter (fun (aa1, (fld, _, _t)) ->
-                  e += "%s = %s;" $ fld $ aa1
-                );
-                e+= "},";
-                e+= "{ B.";
-                bb |> List.iter (fun (bb1, (fld, _, _t)) ->
-                  e += "%s = %s;" $ fld $ bb1
-                );
-                e+= "} ";
+              e+= "{ A. ";
+              aa |> List.iter (fun (aa1, (fld, _, _t)) ->
+                e += "%s = %s;" $ fld $ aa1
               );
-              e+= (")");
+              e+= "},";
+              e+= "{ B.";
+              bb |> List.iter (fun (bb1, (fld, _, _t)) ->
+                e += "%s = %s;" $ fld $ bb1
+              );
+              e+= "} ";
+            );
+            e+= (")");
           );
           e.p (Common2.repeat ")" (List.length xs) |> Common.join "")
 
 
 
       | (O.TTODO _|O.Option _|O.Arrow (_, _)|O.Poly _
-         |O.Int|O.String|O.Char|O.Float|O.Bool|O.Unit) ->
+        |O.Int|O.String|O.Char|O.Float|O.Bool|O.Unit) ->
           raise Todo
 
     in

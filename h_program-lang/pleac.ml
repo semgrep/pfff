@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -47,7 +47,7 @@ type sections = (section, code_excerpt) Common.assoc
 
 type skeleton =
   (string (* section1 *) *
-      ((string (* section2 title *) * section) list))
+   ((string (* section2 title *) * section) list))
     list
 
 
@@ -104,7 +104,7 @@ let regexp_skeleton_section_number = "PLEAC:\\(.*\\):"
 
 (* It's a sgml file so we could parse it using pxp and then visiting it
  * but using regexps is probably ok.
- *)
+*)
 let parse_skeleton_file file =
   file
   |> Common.cat
@@ -115,20 +115,20 @@ let parse_skeleton_file file =
       let section1 = Common.matched1 s in
       section1,
       group
-        |> Common2.split_list_regexp regexp_skeleton_section2 |> skip_no_heading
-        |> List.map (fun (s2, group) ->
-          if s2 =~ regexp_skeleton_section2
-          then
-            let section2 = Common.matched1 s2 in
-            section2,
-            group |> Common2.return_when (fun s3 ->
-              if s3 =~ regexp_skeleton_section_number
-              then Some (Common.matched1 s3)
-              else None
-            )
-          else
-            failwith ("Pleac.parse_data_file: impossible: " ^ s)
-        )
+      |> Common2.split_list_regexp regexp_skeleton_section2 |> skip_no_heading
+      |> List.map (fun (s2, group) ->
+        if s2 =~ regexp_skeleton_section2
+        then
+          let section2 = Common.matched1 s2 in
+          section2,
+          group |> Common2.return_when (fun s3 ->
+            if s3 =~ regexp_skeleton_section_number
+            then Some (Common.matched1 s3)
+            else None
+          )
+        else
+          failwith ("Pleac.parse_data_file: impossible: " ^ s)
+      )
     else
       failwith ("Pleac.parse_data_file: impossible: " ^ s)
   )
@@ -139,7 +139,7 @@ let parse_skeleton_file file =
 
 (* todo? could also split using class with sections and static methods with
  * subsections. So could use M-x Pleac_Strings::TAB :)
- *)
+*)
 
 type gen_mode =
   | OneFilePerSection
@@ -153,7 +153,7 @@ let gen_source_files
     ~hook_start_section2
     ~hook_line_body
     ~hook_end_section2
-    =
+  =
 
   if not (Common2.command2_y_or_no("rm -rf " ^ output_dir))
   then failwith "ok we stop";
@@ -166,67 +166,67 @@ let gen_source_files
   let estet_sect2 = (Common2.repeat "-" 70) |> Common.join "" in
 
   (match gen_mode with
-  | OneFilePerSection ->
-    skeleton |> List.iter (fun (section1, xs) ->
-    let file =
-      Filename.concat output_dir
-        (mangle_to_generate_filename section1) ^ "." ^ ext_file
-    in
-    Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
-      let pr s = pr_no_nl (s ^ "\n") in
-
-      pr (spf "%s %s %s" comment_start estet_sect1  comment_end);
-      pr (spf "%s %s %s" comment_start section1 comment_end);
-      pr (spf "%s %s %s" comment_start estet_sect1  comment_end);
-      xs |> List.iter (fun (section2, secnumber) ->
-          let code_opt =
-            try
-              Some (Hashtbl.find hsections secnumber)
-            with Not_found ->
-              pr2 (spf "Section %s was not found in data file" secnumber);
-              None
-          in
-          pr (spf "%s %s %s" comment_start estet_sect2  comment_end);
-          pr (spf "%s %s %s" comment_start section2 comment_end);
-          pr (spf "%s %s %s" comment_start estet_sect2  comment_end);
-          code_opt |> Common.do_option (fun code -> code |> List.iter pr)
-      )
-    )
-    )
-  | OneDirPerSection ->
-    skeleton |> List.iter (fun (section1, xs) ->
-    let dir =
-      Filename.concat output_dir
-        (mangle_to_generate_filename section1) in
-
-    Common.command2("mkdir -p " ^ dir);
-
-    xs |> List.iter (fun (section2, secnumber) ->
-      let file =
-        Filename.concat dir
-          (mangle_to_generate_filename section2) ^ "." ^ ext_file in
-
-       let code_opt =
-        try
-          Some (Hashtbl.find hsections secnumber)
-        with Not_found ->
-          pr2 (spf "Section %s was not found in data file" secnumber);
-          None
-       in
-       code_opt |> Common.do_option (fun code ->
+   | OneFilePerSection ->
+       skeleton |> List.iter (fun (section1, xs) ->
+         let file =
+           Filename.concat output_dir
+             (mangle_to_generate_filename section1) ^ "." ^ ext_file
+         in
          Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
            let pr s = pr_no_nl (s ^ "\n") in
+
            pr (spf "%s %s %s" comment_start estet_sect1  comment_end);
-           pr (spf "%s %s %s" comment_start section2 comment_end);
+           pr (spf "%s %s %s" comment_start section1 comment_end);
            pr (spf "%s %s %s" comment_start estet_sect1  comment_end);
-           pr (hook_start_section2 (mangle_to_generate_filename section2));
-           code |> List.iter (fun s ->
-             pr (hook_line_body s)
-           );
-           pr (hook_end_section2 (mangle_to_generate_filename section2));
+           xs |> List.iter (fun (section2, secnumber) ->
+             let code_opt =
+               try
+                 Some (Hashtbl.find hsections secnumber)
+               with Not_found ->
+                 pr2 (spf "Section %s was not found in data file" secnumber);
+                 None
+             in
+             pr (spf "%s %s %s" comment_start estet_sect2  comment_end);
+             pr (spf "%s %s %s" comment_start section2 comment_end);
+             pr (spf "%s %s %s" comment_start estet_sect2  comment_end);
+             code_opt |> Common.do_option (fun code -> code |> List.iter pr)
+           )
          )
        )
-    )
-    )
+   | OneDirPerSection ->
+       skeleton |> List.iter (fun (section1, xs) ->
+         let dir =
+           Filename.concat output_dir
+             (mangle_to_generate_filename section1) in
+
+         Common.command2("mkdir -p " ^ dir);
+
+         xs |> List.iter (fun (section2, secnumber) ->
+           let file =
+             Filename.concat dir
+               (mangle_to_generate_filename section2) ^ "." ^ ext_file in
+
+           let code_opt =
+             try
+               Some (Hashtbl.find hsections secnumber)
+             with Not_found ->
+               pr2 (spf "Section %s was not found in data file" secnumber);
+               None
+           in
+           code_opt |> Common.do_option (fun code ->
+             Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+               let pr s = pr_no_nl (s ^ "\n") in
+               pr (spf "%s %s %s" comment_start estet_sect1  comment_end);
+               pr (spf "%s %s %s" comment_start section2 comment_end);
+               pr (spf "%s %s %s" comment_start estet_sect1  comment_end);
+               pr (hook_start_section2 (mangle_to_generate_filename section2));
+               code |> List.iter (fun s ->
+                 pr (hook_line_body s)
+               );
+               pr (hook_end_section2 (mangle_to_generate_filename section2));
+             )
+           )
+         )
+       )
   )
 

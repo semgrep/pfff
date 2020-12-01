@@ -8,8 +8,8 @@ module Flag = Flag_parsing
 
 let test_tokens_lisp file =
   (match File_type.file_type_of_file file with
-  | File_type.PL (File_type.Lisp _) -> ()
-  | _ -> pr2 "warning: seems not a lisp file";
+   | File_type.PL (File_type.Lisp _) -> ()
+   | _ -> pr2 "warning: seems not a lisp file";
   );
 
   Flag.verbose_lexing := true;

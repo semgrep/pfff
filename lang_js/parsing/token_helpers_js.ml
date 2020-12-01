@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Parser_js
 module PI = Parse_info
@@ -40,7 +40,7 @@ let token_kind_of_tok t =
 
   (* note: if at some point you want to add < > do not forget to also
    * handle T_XHP_OPEN_TAG
-   *)
+  *)
 
   | TComment _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space

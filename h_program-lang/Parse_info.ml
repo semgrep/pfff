@@ -12,7 +12,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 (*****************************************************************************)
@@ -22,19 +22,19 @@ open Common
  *
  * The main types are:
  * ('token_location' < 'token_origin' < 'token_mutable') * token_kind
- *)
+*)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
 type token_location = {
-    str: string;
-    charpos: int;
-    line: int; column: int;
-    file: string;
-  }
- [@@deriving show { with_path = false} ] (* with tarzan *)
+  str: string;
+  charpos: int;
+  line: int; column: int;
+  file: string;
+}
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN LOCATION";
@@ -44,57 +44,57 @@ let first_loc_of_file file = {
 }
 
 type token_origin =
-    (* Present both in the AST and list of tokens *)
-    | OriginTok  of token_location
+  (* Present both in the AST and list of tokens *)
+  | OriginTok  of token_location
 
-    (* Present only in the AST and generated after parsing. Can be used
-     * when building some extra AST elements. *)
-    | FakeTokStr of string (* to help the generic pretty printer *) *
-        (* Sometimes we generate fake tokens close to existing
-         * origin tokens. This can be useful when have to give an error
-         * message that involves a fakeToken. The int is a kind of
-         * virtual position, an offset. See compare_pos below.
-         *)
-        (token_location * int) option
+  (* Present only in the AST and generated after parsing. Can be used
+   * when building some extra AST elements. *)
+  | FakeTokStr of string (* to help the generic pretty printer *) *
+                  (* Sometimes we generate fake tokens close to existing
+                   * origin tokens. This can be useful when have to give an error
+                   * message that involves a fakeToken. The int is a kind of
+                   * virtual position, an offset. See compare_pos below.
+                  *)
+                  (token_location * int) option
 
-    (* In the case of a XHP file, we could preprocess it and incorporate
-     * the tokens of the preprocessed code with the tokens from
-     * the original file. We want to mark those "expanded" tokens
-     * with a special tag so that if someone do some transformation on
-     * those expanded tokens they will get a warning (because we may have
-     * trouble back-propagating the transformation back to the original file).
-     *)
-    | ExpandedTok of
-        (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
-        token_location  *
-       (* kind of virtual position. This info refers to the last token
-        * before a serie of expanded tokens and the int is an offset.
-        * The goal is to be able to compare the position of tokens
-        * between then, even for expanded tokens. See compare_pos
-        * below.
-        *)
-        token_location * int
+  (* In the case of a XHP file, we could preprocess it and incorporate
+   * the tokens of the preprocessed code with the tokens from
+   * the original file. We want to mark those "expanded" tokens
+   * with a special tag so that if someone do some transformation on
+   * those expanded tokens they will get a warning (because we may have
+   * trouble back-propagating the transformation back to the original file).
+  *)
+  | ExpandedTok of
+      (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
+      token_location  *
+      (* kind of virtual position. This info refers to the last token
+       * before a serie of expanded tokens and the int is an offset.
+       * The goal is to be able to compare the position of tokens
+       * between then, even for expanded tokens. See compare_pos
+       * below.
+      *)
+      token_location * int
 
-    (* The Ab constructor is (ab)used to call '=' to compare
-     * big AST portions. Indeed as we keep the token information in the AST,
-     * if we have an expression in the code like "1+1" and want to test if
-     * it's equal to another code like "1+1" located elsewhere, then
-     * the Pervasives.'=' of OCaml will not return true because
-     * when it recursively goes down to compare the leaf of the AST, that is
-     * the token_location, there will be some differences of positions. If instead
-     * all leaves use Ab, then there is no position information and we can
-     * use '='. See also the 'al_info' function below.
-     *
-     * Ab means AbstractLineTok. I Use a short name to not
-     * polluate in debug mode.
-     *)
-    | Ab
- [@@deriving show { with_path = false} ] (* with tarzan *)
+  (* The Ab constructor is (ab)used to call '=' to compare
+   * big AST portions. Indeed as we keep the token information in the AST,
+   * if we have an expression in the code like "1+1" and want to test if
+   * it's equal to another code like "1+1" located elsewhere, then
+   * the Pervasives.'=' of OCaml will not return true because
+   * when it recursively goes down to compare the leaf of the AST, that is
+   * the token_location, there will be some differences of positions. If instead
+   * all leaves use Ab, then there is no position information and we can
+   * use '='. See also the 'al_info' function below.
+   *
+   * Ab means AbstractLineTok. I Use a short name to not
+   * polluate in debug mode.
+  *)
+  | Ab
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 type token_mutable = {
   (* contains among other things the position of the token through
    * the token_location embedded inside the token_origin type.
-   *)
+  *)
   token : token_origin;
   mutable transfo: transformation;
   (* less: mutable comments: ...; *)
@@ -109,17 +109,17 @@ and transformation =
   | Replace of add
   | AddArgsBefore of string list
 
-  and add =
-    | AddStr of string
-    | AddNewlineAndIdent
+and add =
+  | AddStr of string
+  | AddNewlineAndIdent
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* Synthesize a token. *)
 let fake_info str : token_mutable = {
   token = FakeTokStr (str, None);
   transfo = NoTransfo;
-  }
+}
 
 let is_fake tok =
   match tok.token with
@@ -134,7 +134,7 @@ type token_kind =
   | LAngle | RAngle
   (* for the unparser helpers in spatch, and to filter
    * irrelevant tokens in the fuzzy parser
-   *)
+  *)
   | Esthet of esthet
   (* mostly for the lexer helpers, and for fuzzy parser *)
   (* less: want to factorize all those TH.is_eof to use that?
@@ -142,15 +142,15 @@ type token_kind =
    * todo: could maybe get rid of that now that we don't really use
    * berkeley DB and prefer Prolog, and so we don't need a sentinel
    * ast elements to associate the comments with it
-   *)
+  *)
   | Eof
 
   | Other
 
-  and esthet =
-   | Comment
-   | Newline
-   | Space
+and esthet =
+  | Comment
+  | Newline
+  | Space
 
 (* shortcut *)
 type t = token_mutable
@@ -172,7 +172,7 @@ type parsing_stat = {
   mutable bad: int;
   (* used only for cpp for now *)
   mutable have_timeout: bool;
- (* by our cpp commentizer *)
+  (* by our cpp commentizer *)
   mutable commentized: int;
   (* if want to know exactly what was passed through, uncomment:
    *
@@ -181,7 +181,7 @@ type parsing_stat = {
    * it differs from bad by starting from the error to
    * the synchro point instead of starting from start of
    * function to end of function.
-   *)
+  *)
 
   (* for instance to report most problematic macros when parse c/c++ *)
   mutable problematic_lines:
@@ -209,7 +209,7 @@ let correct_stat file =
  * pass certain tokens (like the comments token) which requires
  * to have access to this stream of remaining tokens.
  * The token_state type helps.
- *)
+*)
 type 'tok tokens_state = {
   mutable rest:         'tok list;
   mutable current:      'tok;
@@ -218,16 +218,16 @@ type 'tok tokens_state = {
   (* if want to do some lalr(k) hacking ... cf yacfe.
    * mutable passed_clean : 'tok list;
    * mutable rest_clean :   'tok list;
-   *)
+  *)
 }
 let mk_tokens_state toks = {
-    rest       = toks;
-    current    = (List.hd toks);
-    passed = [];
-    (* passed_clean = [];
-     * rest_clean = (toks +> List.filter TH.is_not_comment);
-     *)
-  }
+  rest       = toks;
+  current    = (List.hd toks);
+  passed = [];
+  (* passed_clean = [];
+   * rest_clean = (toks +> List.filter TH.is_not_comment);
+  *)
+}
 
 (*****************************************************************************)
 (* Lexer helpers *)
@@ -250,13 +250,13 @@ let tokinfo_str_pos str pos =
 (* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
  * is not exactly the same than yyless(), so I use yyback() instead.
  * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
- *)
+*)
 let yyback n lexbuf =
   lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
   let currp = lexbuf.Lexing.lex_curr_p in
   lexbuf.Lexing.lex_curr_p <- { currp with
-    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
-  }
+                                Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
+                              }
 
 (*****************************************************************************)
 (* Errors *)
@@ -278,9 +278,9 @@ let lexical_error s lexbuf =
   if !Flag_parsing.exn_when_lexical_error
   then raise (Lexical_error (s, info))
   else
-    if !Flag_parsing.verbose_lexing
-    then pr2_once ("LEXER: " ^ s)
-    else ()
+  if !Flag_parsing.verbose_lexing
+  then pr2_once ("LEXER: " ^ s)
+  else ()
 
 (*****************************************************************************)
 (* Accessors *)
@@ -343,10 +343,10 @@ type posrv =
 let compare_pos ii1 ii2 =
   let get_pos = function
     | OriginTok pi -> Real pi
-(* todo? I have this for lang_php/
-    | FakeTokStr (s, Some (pi_orig, offset)) ->
-        Virt (pi_orig, offset)
-*)
+    (* todo? I have this for lang_php/
+        | FakeTokStr (s, Some (pi_orig, offset)) ->
+            Virt (pi_orig, offset)
+    *)
     | FakeTokStr _ -> raise (NoTokenLocation "compare_pos: FakeTokStr")
     | Ab -> raise (NoTokenLocation "compare_pos: Ab")
     | ExpandedTok (_pi_pp, pi_orig, offset) ->
@@ -452,14 +452,14 @@ let distribute_info_items_toplevel a b c =
 
 let rewrap_str s ii =
   {ii with token =
-    (match ii.token with
-    | OriginTok pi -> OriginTok { pi with str = s;}
-    | FakeTokStr (s, info) -> FakeTokStr (s, info)
-    | Ab -> Ab
-    | ExpandedTok _ ->
-        (* ExpandedTok ({ pi with Common.str = s;},vpi) *)
-        failwith "rewrap_str: ExpandedTok not allowed here"
-    )
+             (match ii.token with
+              | OriginTok pi -> OriginTok { pi with str = s;}
+              | FakeTokStr (s, info) -> FakeTokStr (s, info)
+              | Ab -> Ab
+              | ExpandedTok _ ->
+                  (* ExpandedTok ({ pi with Common.str = s;},vpi) *)
+                  failwith "rewrap_str: ExpandedTok not allowed here"
+             )
   }
 
 (* less: should use Buffer and not ^ so we should not need that *)
@@ -484,62 +484,62 @@ let combine_infos x xs =
 
 let full_charpos_to_pos_large2 = fun file ->
 
-    let chan = open_in file in
-    let size = Common2.filesize file + 2 in
+  let chan = open_in file in
+  let size = Common2.filesize file + 2 in
 
-    (* old: let arr = Array.create size  (0,0) in *)
-    let arr1 = Bigarray.Array1.create
+  (* old: let arr = Array.create size  (0,0) in *)
+  let arr1 = Bigarray.Array1.create
       Bigarray.int Bigarray.c_layout size in
-    let arr2 = Bigarray.Array1.create
+  let arr2 = Bigarray.Array1.create
       Bigarray.int Bigarray.c_layout size in
-    Bigarray.Array1.fill arr1 0;
-    Bigarray.Array1.fill arr2 0;
+  Bigarray.Array1.fill arr1 0;
+  Bigarray.Array1.fill arr2 0;
 
-    let charpos   = ref 0 in
-    let line  = ref 0 in
+  let charpos   = ref 0 in
+  let line  = ref 0 in
 
-    let full_charpos_to_pos_aux () =
-      try
-        while true do begin
-          let s = (input_line chan) in
-          incr line;
-          let len = String.length s in
+  let full_charpos_to_pos_aux () =
+    try
+      while true do begin
+        let s = (input_line chan) in
+        incr line;
+        let len = String.length s in
 
-          (* '... +1 do'  cos input_line does not return the trailing \n *)
-          let col = ref 0 in
-          for i = 0 to (len - 1) + 1 do
+        (* '... +1 do'  cos input_line does not return the trailing \n *)
+        let col = ref 0 in
+        for i = 0 to (len - 1) + 1 do
 
-            (* old: arr.(!charpos + i) <- (!line, i); *)
-            arr1.{!charpos + i} <- (!line);
-            arr2.{!charpos + i} <- !col;
-            (* ugly: hack for weird windows files containing a single
-             * carriage return (\r) instead of a carriage return + newline
-             * (\r\n) to delimit newlines. Not recognizing those single
-             * \r as a newline marker prevents Javascript ASI to correctly
-             * insert semicolons.
-             * note: we could fix info_from_charpos() too, but it's not
-             * used for ASI so simpler to leave it as is.
-             *)
-             if i < len - 1 && String.get s i = '\r'
-             then begin incr line; col := -1 end;
-             incr col
-          done;
-          charpos := !charpos + len + 1;
-        end done
-     with End_of_file ->
-       for i = !charpos to (* old: Array.length arr *)
-         Bigarray.Array1.dim arr1 - 1 do
-         (* old: arr.(i) <- (!line, 0); *)
-         arr1.{i} <- !line;
-         arr2.{i} <- 0;
-       done;
-       ();
-    in
-    begin
-      full_charpos_to_pos_aux ();
-      close_in chan;
-      (fun i -> arr1.{i}, arr2.{i})
-    end
+          (* old: arr.(!charpos + i) <- (!line, i); *)
+          arr1.{!charpos + i} <- (!line);
+          arr2.{!charpos + i} <- !col;
+          (* ugly: hack for weird windows files containing a single
+           * carriage return (\r) instead of a carriage return + newline
+           * (\r\n) to delimit newlines. Not recognizing those single
+           * \r as a newline marker prevents Javascript ASI to correctly
+           * insert semicolons.
+           * note: we could fix info_from_charpos() too, but it's not
+           * used for ASI so simpler to leave it as is.
+          *)
+          if i < len - 1 && String.get s i = '\r'
+          then begin incr line; col := -1 end;
+          incr col
+        done;
+        charpos := !charpos + len + 1;
+      end done
+    with End_of_file ->
+      for i = !charpos to (* old: Array.length arr *)
+          Bigarray.Array1.dim arr1 - 1 do
+        (* old: arr.(i) <- (!line, 0); *)
+        arr1.{i} <- !line;
+        arr2.{i} <- 0;
+      done;
+      ();
+  in
+  begin
+    full_charpos_to_pos_aux ();
+    close_in chan;
+    (fun i -> arr1.{i}, arr2.{i})
+  end
 
 let full_charpos_to_pos_large a =
   profile_code "Common.full_charpos_to_pos_large"
@@ -559,7 +559,7 @@ let full_charpos_to_pos_large a =
  * alt:
  *   - in each lexer you need to take care of newlines and update manually
  *     the field.
- *)
+*)
 let complete_token_location_large filename table x =
   { x with
     file = filename;
@@ -575,14 +575,14 @@ let complete_token_location_large filename table x =
  *  - we do not need to care about line/col in the lexer and do that here
  *  - we can have comments as tokens (useful for codemap/efuns) and
  *    skip them easily with one Common.exclude
- *)
+*)
 let tokenize_all_and_adjust_pos ?(unicode_hack=false)
- file tokenizer visitor_tok is_eof =
- Common.with_open_infile file (fun chan ->
-  let lexbuf =
-    if unicode_hack then
-      let string =
-        Common.profile_code "Unicode.input_and_replace_non_ascii" (fun () ->
+    file tokenizer visitor_tok is_eof =
+  Common.with_open_infile file (fun chan ->
+    let lexbuf =
+      if unicode_hack then
+        let string =
+          Common.profile_code "Unicode.input_and_replace_non_ascii" (fun () ->
           (*
              This breaks java (and perhaps other) characters constants.
              UTF-8 characters become something invalid like this:
@@ -590,42 +590,42 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
              There's a hack in the java lexer to support such invalid
              character literals.
           *)
-          Unicode.input_and_replace_non_ascii ~replacement_byte:'Z' chan
-        ) in
-      Lexing.from_string string
-    else
-      Lexing.from_channel chan
-  in
-  let table     = full_charpos_to_pos_large file in
-  let adjust_info ii =
-    { ii with token =
-      (* could assert pinfo.filename = file ? *)
-       match ii.token with
-       | OriginTok pi ->
-         OriginTok(complete_token_location_large file table pi)
-       | ExpandedTok (pi,vpi, off) ->
-         ExpandedTok(complete_token_location_large file table pi,vpi,  off)
-       | FakeTokStr (s,vpi_opt) ->
-         FakeTokStr (s,vpi_opt)
-       | Ab -> raise Impossible
-    }
-  in
-  let rec tokens_aux acc =
-    let tok =
-      try
-        tokenizer lexbuf
-      with Lexical_error (s, info) ->
-        raise (Lexical_error (s, adjust_info info))
+            Unicode.input_and_replace_non_ascii ~replacement_byte:'Z' chan
+          ) in
+        Lexing.from_string string
+      else
+        Lexing.from_channel chan
     in
-    if !Flag_parsing.debug_lexer
-    then Common.pr2_gen tok;
-    let tok = tok |> visitor_tok adjust_info in
-    if is_eof tok
-    then List.rev (tok::acc)
-    else tokens_aux (tok::acc)
-  in
-  tokens_aux []
- )
+    let table     = full_charpos_to_pos_large file in
+    let adjust_info ii =
+      { ii with token =
+                  (* could assert pinfo.filename = file ? *)
+                  match ii.token with
+                  | OriginTok pi ->
+                      OriginTok(complete_token_location_large file table pi)
+                  | ExpandedTok (pi,vpi, off) ->
+                      ExpandedTok(complete_token_location_large file table pi,vpi,  off)
+                  | FakeTokStr (s,vpi_opt) ->
+                      FakeTokStr (s,vpi_opt)
+                  | Ab -> raise Impossible
+      }
+    in
+    let rec tokens_aux acc =
+      let tok =
+        try
+          tokenizer lexbuf
+        with Lexical_error (s, info) ->
+          raise (Lexical_error (s, adjust_info info))
+      in
+      if !Flag_parsing.debug_lexer
+      then Common.pr2_gen tok;
+      let tok = tok |> visitor_tok adjust_info in
+      if is_eof tok
+      then List.rev (tok::acc)
+      else tokens_aux (tok::acc)
+    in
+    tokens_aux []
+  )
 
 (* Hacked lex. Ocamlyacc expects a function returning one token at a time
  * but we actually lex all the file so we need a wrapper to turn that
@@ -635,23 +635,23 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
  * Why pass is_comment? Why not skip comments before?
  *  - for error recovery to still return comments for separate entities?
  *  - TODO?
- *)
+*)
 let mk_lexer_for_yacc toks is_comment =
   let tr = mk_tokens_state toks in
   let rec lexer =
-   fun lexbuf ->
-     match tr.rest with
-     | [] -> (pr2 "LEXER: ALREADY AT END"; tr.current)
-     | v::xs ->
-         tr.rest <- xs;
-         tr.current <- v;
-         tr.passed <- v::tr.passed;
-         if is_comment v
-         then lexer lexbuf
-         else v
-   in
-   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
-   tr, lexer, lexbuf_fake
+    fun lexbuf ->
+      match tr.rest with
+      | [] -> (pr2 "LEXER: ALREADY AT END"; tr.current)
+      | v::xs ->
+          tr.rest <- xs;
+          tr.current <- v;
+          tr.passed <- v::tr.passed;
+          if is_comment v
+          then lexer lexbuf
+          else v
+  in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+  tr, lexer, lexbuf_fake
 
 
 (*****************************************************************************)
@@ -662,7 +662,7 @@ let mk_lexer_for_yacc toks is_comment =
 (* return line x col x str_line  from a charpos. This function is quite
  * expensive so don't use it to get the line x col from every token in
  * a file. Instead use full_charpos_to_pos.
- *)
+*)
 let (info_from_charpos2: int -> filename -> (int * int * string)) =
   fun charpos filename ->
 
@@ -673,7 +673,7 @@ let (info_from_charpos2: int -> filename -> (int * int * string)) =
    *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
    *      (pos.pos_cnum - pos.pos_bol) in
    * Hence this function to overcome the previous limitation.
-   *)
+  *)
   let chan = open_in filename in
   let linen  = ref 0 in
   let posl   = ref 0 in
@@ -706,19 +706,19 @@ let info_from_charpos a b =
 
 (* Decalage is here to handle stuff such as cpp which include file and who
  * can make shift.
- *)
+*)
 let (error_messagebis: filename -> (string * int) -> int -> string)=
- fun filename (lexeme, lexstart) decalage ->
+  fun filename (lexeme, lexstart) decalage ->
 
   let charpos = lexstart      + decalage in
   let tok = lexeme in
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
   let s = Common2.chop linecontent in
   let s =
-     (* this happens in Javascript for minified files *)
-     if String.length s > 200
-     then (String.sub s 0 100)  ^ " (TOO LONG, SHORTEN!)..."
-     else s
+    (* this happens in Javascript for minified files *)
+    if String.length s > 200
+    then (String.sub s 0 100)  ^ " (TOO LONG, SHORTEN!)..."
+    else s
   in
   spf "File \"%s\", line %d, column %d,  charpos = %d
     around = '%s', whole content = %s"
@@ -777,21 +777,21 @@ let print_bad line_error (start_line, end_line) filelines  =
  * valeurs alors on parsera correctement tout le fichier et pourtant y'aura
  * aucune def  et donc aucune couverture en fait.
  * ==> TODO evaluer les parties non parsé ?
- *)
+*)
 
 let print_parsing_stat_list ?(verbose=false)statxs =
   let total = (List.length statxs) in
   let perfect =
     statxs
-      |> List.filter (function
-          {have_timeout = false; bad = 0; _} -> true | _ -> false)
-      |> List.length
+    |> List.filter (function
+        {have_timeout = false; bad = 0; _} -> true | _ -> false)
+    |> List.length
   in
 
   if verbose then begin
-  pr "\n\n\n---------------------------------------------------------------";
-  pr "pbs with files:";
-  statxs
+    pr "\n\n\n---------------------------------------------------------------";
+    pr "pbs with files:";
+    statxs
     |> List.filter (function
       | {have_timeout = true; _} -> true
       | {bad = n; _} when n > 0 -> true
@@ -799,21 +799,21 @@ let print_parsing_stat_list ?(verbose=false)statxs =
     |> List.iter (function
         {filename = file; have_timeout = timeout; bad = n; _} ->
           pr (file ^ "  " ^ (if timeout then "TIMEOUT" else i_to_s n));
-        );
+    );
 
-  pr "\n\n\n";
-  pr "files with lots of tokens passed/commentized:";
-  let threshold_passed = 100 in
-  statxs
+    pr "\n\n\n";
+    pr "files with lots of tokens passed/commentized:";
+    let threshold_passed = 100 in
+    statxs
     |> List.filter (function
       | {commentized = n; _} when n > threshold_passed -> true
       | _ -> false)
     |> List.iter (function
         {filename = file; commentized = n; _} ->
           pr (file ^ "  " ^ (i_to_s n));
-        );
+    );
 
-  pr "\n\n\n";
+    pr "\n\n\n";
   end;
 
   let good = statxs |> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
@@ -824,28 +824,28 @@ let print_parsing_stat_list ?(verbose=false)statxs =
 
   pr "---------------------------------------------------------------";
   pr (
-  (spf "NB total files = %d; " total) ^
-  (spf "NB total lines = %d; " total_lines) ^
-  (spf "perfect = %d; " perfect) ^
-  (spf "pbs = %d; "     (statxs |> List.filter (function
-      {bad = n; _} when n > 0 -> true | _ -> false)
-                               |> List.length)) ^
-  (spf "timeout = %d; " (statxs |> List.filter (function
-      {have_timeout = true; _} -> true | _ -> false)
-                               |> List.length)) ^
-  (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
+    (spf "NB total files = %d; " total) ^
+    (spf "NB total lines = %d; " total_lines) ^
+    (spf "perfect = %d; " perfect) ^
+    (spf "pbs = %d; "     (statxs |> List.filter (function
+         {bad = n; _} when n > 0 -> true | _ -> false)
+                           |> List.length)) ^
+    (spf "timeout = %d; " (statxs |> List.filter (function
+         {have_timeout = true; _} -> true | _ -> false)
+                           |> List.length)) ^
+    (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
 
- );
+  );
   let gf, badf = float_of_int good, float_of_int bad in
   let passedf = float_of_int passed in
   pr (
-  (spf "nb good = %d,  nb passed = %d " good passed) ^
-  (spf "=========> %f"  (100.0 *. (passedf /. gf)) ^ "%")
-   );
+    (spf "nb good = %d,  nb passed = %d " good passed) ^
+    (spf "=========> %f"  (100.0 *. (passedf /. gf)) ^ "%")
+  );
   pr (
-  (spf "nb good = %d,  nb bad = %d " good bad) ^
-  (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
-   )
+    (spf "nb good = %d,  nb bad = %d " good bad) ^
+    (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
+    )
   )
 
 (*****************************************************************************)

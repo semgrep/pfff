@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module PI = Parse_info
@@ -52,7 +52,7 @@ let comment_before hooks tok all_toks =
       let kind = hooks.kind t in
       match kind with
       | PI.Esthet PI.Newline | PI.Esthet PI.Space -> true
-    | _ -> false
+      | _ -> false
     )
   in
   match first_non_space with
@@ -79,7 +79,7 @@ let comment_after hooks tok all_toks =
       let kind = hooks.kind t in
       match kind with
       | PI.Esthet PI.Newline | PI.Esthet PI.Space -> true
-    | _ -> false
+      | _ -> false
     )
   in
   match first_non_space with
@@ -87,9 +87,9 @@ let comment_after hooks tok all_toks =
       let info = hooks.tokf x in
       (* for ocaml comments they are not necessarily in
        * column 0, but they must be just after
-       *)
+      *)
       if PI.line_of_info info = line || PI.line_of_info info = line + 1
-         (* && PI.col_of_info info > 0 *)
+      (* && PI.col_of_info info > 0 *)
       then Some info
       else None
   | _ -> None

@@ -85,14 +85,14 @@ and usedef = Use | Def
 
 and usedef2 = Use2 of use_info | Def2 of def_info
 
- (* semantic visual feedback! *)
- and def_info = use_arity
-  and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
+(* semantic visual feedback! *)
+and def_info = use_arity
+and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
 
- (* semantic visual feedback! *)
- and use_info = place * def_arity * use_arity
-  and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
-  and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
+(* semantic visual feedback! *)
+and use_info = place * def_arity * use_arity
+and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
+and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
 
 type highlighter_preferences = {
   mutable show_type_error : bool;
@@ -105,13 +105,13 @@ val legend_color_codes : string
 val info_of_category :
   category ->
   [> `BACKGROUND of string
-   | `FOREGROUND of string
-   | `SCALE of [> `LARGE | `MEDIUM | `XX_LARGE | `X_LARGE ]
-   | `STRIKETHROUGH of bool
-   | `STYLE of [> `ITALIC ]
-   | `UNDERLINE of [> `DOUBLE | `SINGLE ]
-   | `WEIGHT of [> `BOLD ] ]
-  list
+  | `FOREGROUND of string
+  | `SCALE of [> `LARGE | `MEDIUM | `XX_LARGE | `X_LARGE ]
+  | `STRIKETHROUGH of bool
+  | `STYLE of [> `ITALIC ]
+  | `UNDERLINE of [> `DOUBLE | `SINGLE ]
+  | `WEIGHT of [> `BOLD ] ]
+    list
 
 (* use the same polymorphic variants than in ocamlgtk *)
 val info_of_usedef :
@@ -126,12 +126,12 @@ val info_of_entity_kind_and_usedef2:
   Entity_code.entity_kind ->
   usedef2 ->
   [> `FOREGROUND of string
-   | `SCALE of [> `MEDIUM | `X_LARGE ]
-   | `STRIKETHROUGH of bool
-   | `STYLE of [> `ITALIC ]
-   | `UNDERLINE of [> `DOUBLE | `SINGLE ]
-   | `WEIGHT of [> `BOLD ] ]
-  list
+  | `SCALE of [> `MEDIUM | `X_LARGE ]
+  | `STRIKETHROUGH of bool
+  | `STYLE of [> `ITALIC ]
+  | `UNDERLINE of [> `DOUBLE | `SINGLE ]
+  | `WEIGHT of [> `BOLD ] ]
+    list
 
 
 val arity_ids : 'a list -> def_arity

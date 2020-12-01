@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 open Cst_cpp
 
@@ -29,7 +29,7 @@ module S = Scope_code
  * from typing! Those are 2 orthogonal programming language notions.
  *
  * TODO: could move generic code in scope_code.ml
- *)
+*)
 
 (*****************************************************************************)
 (* Types, constants *)
@@ -68,10 +68,10 @@ let is_top_env env =
 
 (* use a ref because we may want to modify it *)
 let (initial_env: environment ref) =
-(* less:  Env_php.globals_builtins +> List.map (fun s ->
- * fake_dname s, (S.Global, ref 1)
- * )
- *)
+  (* less:  Env_php.globals_builtins +> List.map (fun s ->
+   * fake_dname s, (S.Global, ref 1)
+   * )
+  *)
   ref [[]]
 
 (* opti: cache ? use hash ? *)
@@ -136,80 +136,80 @@ let do_in_new_scope_and_check f =
 (* For each introduced binding (param, exception, foreach, etc),
  * we add the binding in the environment with a counter, a la checkModule.
  * todo: ?(find_entity = None)
- *)
+*)
 let visit_prog prog =
 
   let hooks = { V.default_visitor with
 
-    (* 1: scoping management *)
-    V.kcompound =  (fun (k, _) x ->
-      do_in_new_scope_and_check (fun () -> k x)
-    );
+                (* 1: scoping management *)
+                V.kcompound =  (fun (k, _) x ->
+                  do_in_new_scope_and_check (fun () -> k x)
+                );
 
-    V.kcpp = (fun (k, _) x ->
-      do_in_new_scope_and_check (fun () ->
-        (match x with
-        | Define (_, _id, DefineFunc params, _body) ->
-            params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (s, ii) ->
-                add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
-            );
-        | _ -> ()
-        );
-        k x
-      )
-    );
+                V.kcpp = (fun (k, _) x ->
+                  do_in_new_scope_and_check (fun () ->
+                    (match x with
+                     | Define (_, _id, DefineFunc params, _body) ->
+                         params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (s, ii) ->
+                           add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
+                         );
+                     | _ -> ()
+                    );
+                    k x
+                  )
+                );
 
-    (* 2: adding defs of name in environment *)
-    V.kparameter = (fun (k, _) param ->
-      param.p_name  |> Common.do_option (fun ident ->
-        add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
-      );
-      k param
-    );
+                (* 2: adding defs of name in environment *)
+                V.kparameter = (fun (k, _) param ->
+                  param.p_name  |> Common.do_option (fun ident ->
+                    add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
+                  );
+                  k param
+                );
 
-    V.kblock_decl = (fun (k, _) x ->
-      match x with
-      | DeclList (xs_comma, _) ->
-          xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
-            onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
-              let scope =
-                if is_top_env !_scoped_env ||
-                   (match onedecl.v_storage with
-                   | Sto (Extern,_) -> true
-                   | _ -> false
-                   )
-                then S.Global
-                else S.Local
-              in
-              add_binding name (scope, ref 0);
-            );
-          );
-          k x
-      | MacroDecl _ ->
-          k x
-      | (Asm (_, _, _, _)
-        |NameSpaceAlias (_, _, _, _, _)|UsingDirective (_, _, _, _)
-        | UsingDecl _) -> ()
-    );
+                V.kblock_decl = (fun (k, _) x ->
+                  match x with
+                  | DeclList (xs_comma, _) ->
+                      xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
+                        onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
+                          let scope =
+                            if is_top_env !_scoped_env ||
+                               (match onedecl.v_storage with
+                                | Sto (Extern,_) -> true
+                                | _ -> false
+                               )
+                            then S.Global
+                            else S.Local
+                          in
+                          add_binding name (scope, ref 0);
+                        );
+                      );
+                      k x
+                  | MacroDecl _ ->
+                      k x
+                  | (Asm (_, _, _, _)
+                    |NameSpaceAlias (_, _, _, _, _)|UsingDirective (_, _, _, _)
+                    | UsingDecl _) -> ()
+                );
 
 
-    (* 3: checking uses *)
+                (* 3: checking uses *)
 
-    V.kexpr = (fun (k, _) x ->
-      match x with
-      | Id (name, idinfo) ->
-          (* assert scope_ref = S.Unknown ? *)
-          let s = Ast.string_of_name_tmp name in
-          (match lookup_env_opt s !_scoped_env with
-          | None ->
-              idinfo.i_scope <- S.Global;
-          | Some (scope, _) ->
-              idinfo.i_scope <- scope;
-          );
-          k x
-      | _ -> k x
-    );
-  }
+                V.kexpr = (fun (k, _) x ->
+                  match x with
+                  | Id (name, idinfo) ->
+                      (* assert scope_ref = S.Unknown ? *)
+                      let s = Ast.string_of_name_tmp name in
+                      (match lookup_env_opt s !_scoped_env with
+                       | None ->
+                           idinfo.i_scope <- S.Global;
+                       | Some (scope, _) ->
+                           idinfo.i_scope <- scope;
+                      );
+                      k x
+                  | _ -> k x
+                );
+              }
   in
 
   let visitor = V.mk_visitor hooks in

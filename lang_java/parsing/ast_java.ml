@@ -5,7 +5,7 @@
  * Extended by Yoann Padioleau to support more recent versions of Java.
  * Copyright (C) 2011 Facebook
  * Copyright (C) 2020 r2c
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -26,7 +26,7 @@
  * - 2010 port to the pfff infrastructure.
  * - 2012 heavily modified to support annotations, generics, enum, foreach, etc
  * - 2020 support lambdas
- *)
+*)
 
 (*****************************************************************************)
 (* Names *)
@@ -36,27 +36,27 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 type 'a wrap  = 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 type 'a list1 = 'a list (* really should be 'a * 'a list *)
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
 (* for class/interface/enum names, method/field names, type parameter, ... *)
 type ident = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* for package/import/attributes *)
 type qualified_ident = ident list
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Type *)
@@ -67,28 +67,28 @@ type typ =
   | TClass of class_type
   | TArray of typ bracket
 
-  (* class or interface or enum type actually *)
- and class_type =
-   (ident * type_arguments) list1
+(* class or interface or enum type actually *)
+and class_type =
+  (ident * type_arguments) list1
 
-  and type_argument =
-    | TArgument of ref_type
-    | TWildCard of tok (* '?' *) *
-            (bool wrap (* extends|super, true = super *) * ref_type) option
+and type_argument =
+  | TArgument of ref_type
+  | TWildCard of tok (* '?' *) *
+                 (bool wrap (* extends|super, true = super *) * ref_type) option
 
-  and type_arguments = type_argument list (* TODO bracket *)
-   (* A ref type should be a class type or an array of whatever, but not a
-    * primitive type. We don't enforce this invariant in the AST to simplify
-    * things.
-    *)
-    and ref_type = typ
+and type_arguments = type_argument list (* TODO bracket *)
+(* A ref type should be a class type or an array of whatever, but not a
+ * primitive type. We don't enforce this invariant in the AST to simplify
+ * things.
+*)
+and ref_type = typ
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 type type_parameter =
   | TParam of ident * ref_type list (* extends *)
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Modifier *)
@@ -106,34 +106,34 @@ type modifier =
 
   | Annotation of annotation
 
- (* the wrap for Annotation is a copy of the @ tok already in annotation *)
- and modifiers = modifier wrap list
+(* the wrap for Annotation is a copy of the @ tok already in annotation *)
+and modifiers = modifier wrap list
 
 (* ------------------------------------------------------------------------- *)
 (* Annotation *)
 (* ------------------------------------------------------------------------- *)
- and annotation =
-     tok (* @ *) * qualified_ident * (annotation_element bracket option)
+and annotation =
+  tok (* @ *) * qualified_ident * (annotation_element bracket option)
 
- and annotation_element =
-   | AnnotArgValue of element_value
-   | AnnotArgPairInit of annotation_pair list
-   | EmptyAnnotArg
+and annotation_element =
+  | AnnotArgValue of element_value
+  | AnnotArgPairInit of annotation_pair list
+  | EmptyAnnotArg
 
 and element_value =
-   | AnnotExprInit of expr
-   | AnnotNestedAnnot of annotation
-   | AnnotArrayInit of element_value list (* TODO bracket *)
+  | AnnotExprInit of expr
+  | AnnotNestedAnnot of annotation
+  | AnnotArrayInit of element_value list (* TODO bracket *)
 
- and annotation_pair =
-   | AnnotPair of (ident * element_value)
-   | AnnotPairEllipsis of tok
+and annotation_pair =
+  | AnnotPair of (ident * element_value)
+  | AnnotPairEllipsis of tok
 
- and name_or_class_type = identifier_ list
- and identifier_ =
-   | Id of ident
-   | Id_then_TypeArgs of ident * type_arguments
-   | TypeArgs_then_Id of type_arguments * identifier_
+and name_or_class_type = identifier_ list
+and identifier_ =
+  | Id of ident
+  | Id_then_TypeArgs of ident * type_arguments
+  | TypeArgs_then_Id of type_arguments * identifier_
 
 (*****************************************************************************)
 (* Expression *)
@@ -143,12 +143,12 @@ and element_value =
  * For certain calls like List.<Int>of(), which are rare.
  * less: do a NameGeneric instead? the type_argument could then be
  *  only at the end?
- *)
+*)
 and name = (type_arguments * ident) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
- *)
+*)
 and expr =
   (* Name is used for local variable, 'this' and 'super' special names,
    * and statically computable entities such as Package1.subpackage.Class.
@@ -157,10 +157,10 @@ and expr =
    * there is no way to know whether x.y.z is an access to the field z
    * of field y of local variable x or the static field z of class y
    * in package x. See the note on Dot below.
-   *)
+  *)
   | Name of name
 
- (* This is used only in the context of annotations *)
+  (* This is used only in the context of annotations *)
   | NameOrClassType of name_or_class_type
 
   | Literal of literal
@@ -174,7 +174,7 @@ and expr =
   | NewClass of tok (* new *) * typ * arguments * decls bracket option
   (* see tests/java/parsing/NewQualified.java *)
   | NewQualifiedClass of expr * tok (* . *) *
-                tok (* new *) * typ * arguments * decls bracket option
+                         tok (* new *) * typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
   | NewArray of tok * typ * expr list * int * init option
   (* TODO: QualifiedNew *)
@@ -197,7 +197,7 @@ and expr =
    * a Name at parsing time in a Dot.
    * The problem is that more things in x.y.z can be a Dot, but to know
    * that requires semantic information about the type of x and y.
-   *)
+  *)
   | Dot of expr * tok * ident
 
   | ArrayAccess of expr * expr bracket
@@ -225,7 +225,7 @@ and expr =
   | DeepEllipsis of expr bracket
   | TypedMetavar of ident * typ
 
-  and literal =
+and literal =
   | Int of string wrap
   | Float of string wrap
   | String of string wrap
@@ -282,30 +282,30 @@ and cases = case list
 and for_control =
   | ForClassic of for_init * expr list (* TODO: expr option? *) * expr list
   | Foreach of var_definition * expr
-  and for_init =
-    | ForInitVars of var_with_init list
-    | ForInitExprs of expr list
+and for_init =
+  | ForInitVars of var_with_init list
+  | ForInitExprs of expr list
 
 and catch = tok * var_with_union_type * stmt
 and catches = catch list
 
 (* javaext: java 8 *)
 and resources = resource list bracket
-  (* the expr is a an id or a field access *)
-  and resource = (var_with_init, expr) Common.either
+(* the expr is a an id or a field access *)
+and resource = (var_with_init, expr) Common.either
 
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
 (* TODO: use entity to factorize fields in method_decl, class_decl like
  * we do in AST_generic.ml
- *)
+*)
 and entity = {
-    name: ident;
-    mods: modifiers;
-    (* None for inferred lambda parameters *)
-    type_: typ option;
-    (* todo? tparams: type_parameter list; *)
+  name: ident;
+  mods: modifiers;
+  (* None for inferred lambda parameters *)
+  type_: typ option;
+  (* todo? tparams: type_parameter list; *)
 }
 
 (* ------------------------------------------------------------------------- *)
@@ -321,10 +321,10 @@ and var_with_init = {
   f_init: init option
 }
 
-  (* less: could merge with expr *)
-  and init =
-    | ExprInit of expr
-    | ArrayInit of init list bracket
+(* less: could merge with expr *)
+and init =
+  | ExprInit of expr
+  | ArrayInit of init list bracket
 
 and var_with_union_type = (var_definition * typ list)
 
@@ -345,22 +345,22 @@ and method_decl = {
   (* Empty for methods in interfaces.
    * For constructor the first stmts can contain
    * explicit_constructor_invocations.
-   *)
+  *)
   m_body: stmt
 }
 
-  and constructor_decl = method_decl
+and constructor_decl = method_decl
 
-  and parameters = parameter_binding list (* TODO bracket *)
-    and parameter_binding =
-     | ParamClassic of parameter
-     (* java-ext: ?? *)
-     | ParamSpread of tok (* ... *) * parameter
-     (* java-ext: 8, name is always 'this' in parameter *)
-     | ParamReceiver of parameter
-     (* sgrep-ext: *)
-     | ParamEllipsis of tok
-    and parameter = var_definition
+and parameters = parameter_binding list (* TODO bracket *)
+and parameter_binding =
+  | ParamClassic of parameter
+  (* java-ext: ?? *)
+  | ParamSpread of tok (* ... *) * parameter
+  (* java-ext: 8, name is always 'this' in parameter *)
+  | ParamReceiver of parameter
+  (* sgrep-ext: *)
+  | ParamEllipsis of tok
+and parameter = var_definition
 
 and field = var_with_init
 
@@ -375,13 +375,13 @@ and enum_decl = {
   en_impls: ref_type list;
   en_body: enum_body;
 }
- and enum_body = (enum_constant list * enum_body_decls) (* TODO bracket *)
+and enum_body = (enum_constant list * enum_body_decls) (* TODO bracket *)
 
-   (* http://docs.oracle.com/javase/1.5.0/docs/guide/language/enums.html *)
-   and enum_constant = ident * arguments option * class_body option
+(* http://docs.oracle.com/javase/1.5.0/docs/guide/language/enums.html *)
+and enum_constant = ident * arguments option * class_body option
 
-   (* Not all kind of decls. Restrictions are ?? *)
-   and enum_body_decls = decls
+(* Not all kind of decls. Restrictions are ?? *)
+and enum_body_decls = decls
 
 (* ------------------------------------------------------------------------- *)
 (* Class/Interface *)
@@ -403,15 +403,15 @@ and class_decl = {
   (* javaext: the methods body used to be always empty for interface *)
   cl_body: class_body;
 }
-  and class_kind =
+and class_kind =
   | ClassRegular
   | Interface
   (* @interface, a.k.a annotation type declaration *)
   (* java-ext: tree-sitter-only: *)
   | AtInterface
 
-  (* Not all kind of decls. Restrictions are ?? *)
-  and class_body = decls bracket
+(* Not all kind of decls. Restrictions are ?? *)
+and class_body = decls bracket
 
 (*****************************************************************************)
 (* Declaration *)
@@ -449,7 +449,7 @@ and import =
 (* old: the Package and Import used to be allowed only at the toplevel and
  * followed by a unique class/interface first in a 'compilation_unit' record
  * type.
- *)
+*)
 and directive =
   (* The qualified ident can also contain "*" at the very end. *)
   | Package of tok * qualified_ident * tok (* ; *)
@@ -457,7 +457,7 @@ and directive =
   | Import of tok option (* static *) * import
   | ModuleTodo of tok
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Program *)
@@ -466,16 +466,16 @@ and directive =
 (* old: was compilation_unit with record of package/imports/decls but
  * tree-sitter-java (and probably recent Java) is more flexible *)
 type program = stmts
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
 
 type partial =
- (* the body will be empty in m_body or cl_body *)
- | PartialDecl of decl
- [@@deriving show { with_path = false }] (* with tarzan *)
+  (* the body will be empty in m_body or cl_body *)
+  | PartialDecl of decl
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 type any =
   (* useful one for semgrep *)
@@ -495,7 +495,7 @@ type any =
   | AClass of class_decl
   | AProgram of program
 
- [@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -503,9 +503,9 @@ type any =
 let unwrap = fst
 
 let fakeInfo ?(next_to=None) str = { Parse_info.
-  token = Parse_info.FakeTokStr (str, next_to);
-  transfo = Parse_info.NoTransfo;
-}
+                                     token = Parse_info.FakeTokStr (str, next_to);
+                                     transfo = Parse_info.NoTransfo;
+                                   }
 
 let info_of_ident ident =
   snd ident
@@ -533,7 +533,7 @@ let entity_of_id id =
 (*****************************************************************************)
 (* those types and functions are used in parser_java.mly but also now in
  * semgrep/.../Parse_java_tree_sitter.ml
- *)
+*)
 
 type var_decl_id =
   | IdentDecl of ident
@@ -548,8 +548,8 @@ let rec canon_var mods t_opt v =
   | IdentDecl str -> { mods = mods; type_ = t_opt; name = str }
   | ArrayDecl v' ->
       (match t_opt with
-      | None -> raise Common.Impossible
-      | Some t -> canon_var mods (Some (TArray (AST_generic.fake_bracket t))) v'
+       | None -> raise Common.Impossible
+       | Some t -> canon_var mods (Some (TArray (AST_generic.fake_bracket t))) v'
       )
 
 let method_header mods mtype (v, formals) throws =

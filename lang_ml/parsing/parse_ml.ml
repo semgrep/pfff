@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 open Common
 
 module Flag = Flag_parsing
@@ -106,7 +106,7 @@ let type_of_string s =
     if TH.is_comment res
     then lexer lexbuf
     else res
-    in
+  in
   let ty = Parser_ml.type_for_lsp lexer lexbuf in
   ty
 

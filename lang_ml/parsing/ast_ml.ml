@@ -11,14 +11,14 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* An Abstract Syntax Tree for OCaml.
  * (for a Concrete Syntax Tree see old/cst_ml_ml or ocaml-tree-sitter-lang).
- *)
+*)
 
 (*****************************************************************************)
 (* Names *)
@@ -28,29 +28,29 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.t
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
 
 type ident = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 type name = qualifier * ident
- and qualifier = ident list (* TODO: functor? *)
- [@@deriving show] (* with tarzan *)
+and qualifier = ident list (* TODO: functor? *)
+[@@deriving show] (* with tarzan *)
 
 type todo_category = string wrap
- [@@deriving show] (* with tarzan *)
+[@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
 (* Types *)
@@ -70,7 +70,7 @@ type type_ =
 
   | TyTodo of todo_category * type_ list
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Expressions *)
@@ -131,30 +131,30 @@ type expr =
 
   | ExprTodo of todo_category * expr list
 
- (* note that '()' is represented as a Constructor ("()"), and
-  * 'true' (and 'false') as Constructor ("true").
-  *)
- and literal =
-   | Int    of string wrap
-   | Float  of string wrap
-   | Char   of string wrap
-   | String of string wrap
+(* note that '()' is represented as a Constructor ("()"), and
+ * 'true' (and 'false') as Constructor ("true").
+*)
+and literal =
+  | Int    of string wrap
+  | Float  of string wrap
+  | Char   of string wrap
+  | String of string wrap
 
- and argument =
-   | Arg of expr
-   | ArgKwd of ident * expr
-   | ArgQuestion of ident  * expr
+and argument =
+  | Arg of expr
+  | ArgKwd of ident * expr
+  | ArgQuestion of ident  * expr
 
- and match_case =
+and match_case =
   pattern * match_action
 
-  and match_action = expr option (* when *) * tok (* -> *) * expr
+and match_action = expr option (* when *) * tok (* -> *) * expr
 
- and for_direction =
+and for_direction =
   | To of tok
   | Downto of tok
 
- and rec_opt = tok option
+and rec_opt = tok option
 
 (*****************************************************************************)
 (* Patterns *)
@@ -195,20 +195,20 @@ and let_binding =
   | LetClassic of let_def
   | LetPattern of pattern * expr
 
- (* was called fun_binding in the grammar *)
- and let_def = {
-   lname: ident;
-   lparams: parameter list; (* can be empty *)
-   lrettype: type_ option;
-   lbody: expr;
- }
+(* was called fun_binding in the grammar *)
+and let_def = {
+  lname: ident;
+  lparams: parameter list; (* can be empty *)
+  lrettype: type_ option;
+  lbody: expr;
+}
 
- and parameter =
-   | Param of pattern
-   (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
-   | ParamTodo of tok
+and parameter =
+  | Param of pattern
+  (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
+  | ParamTodo of tok
 
- [@@deriving show { with_path = false} ]  (* with tarzan *)
+[@@deriving show { with_path = false} ]  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Type declaration *)
@@ -220,17 +220,17 @@ type type_declaration = {
   tbody: type_def_kind;
 }
 
- and type_parameter = ident (* a TyVar, e.g., 'a *)
+and type_parameter = ident (* a TyVar, e.g., 'a *)
 
- and type_def_kind =
-   | AbstractType
-   | CoreType of type_
-   (* or type *)
-   | AlgebraicType of (ident * type_ list) list
-   (* and type *)
-   | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
+and type_def_kind =
+  | AbstractType
+  | CoreType of type_
+  (* or type *)
+  | AlgebraicType of (ident * type_ list) list
+  (* and type *)
+  | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class *)
@@ -245,8 +245,8 @@ type module_declaration = {
   mbody: module_expr;
 }
 
-  (* mutually recursive with item *)
-  and module_expr =
+(* mutually recursive with item *)
+and module_expr =
   | ModuleName of name (* alias *)
   | ModuleStruct of item list
 
@@ -256,8 +256,8 @@ type module_declaration = {
 (* Attributes *)
 (*****************************************************************************)
 and attribute = (dotted_ident * item list) bracket
-  and attributes = attribute list
-  and dotted_ident = ident list
+and attributes = attribute list
+and dotted_ident = ident list
 
 (*****************************************************************************)
 (* Toplevel *)
@@ -267,11 +267,11 @@ and attribute = (dotted_ident * item list) bracket
 and item = {
   i: item_kind;
   iattrs: attributes;
- }
+}
 
 (* could split in sig_item and struct_item but many constructions are
  * valid in both contexts.
- *)
+*)
 and item_kind =
   | Type of tok * type_declaration list (* mutually recursive *)
 
@@ -291,10 +291,10 @@ and item_kind =
 
   | ItemTodo of todo_category * item list
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 type program = item list
- [@@deriving show ] (* with tarzan *)
+[@@deriving show ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Any *)
@@ -308,7 +308,7 @@ type any =
   | I of item
   | Pr of program
 
- [@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 (*****************************************************************************)
 (* Wrappers *)

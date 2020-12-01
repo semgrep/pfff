@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 open Highlight_code
@@ -24,7 +24,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Syntax highlighting for Skip code for codemap (and now also for efuns).
  *
- *)
+*)
 
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
@@ -41,7 +41,7 @@ let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The AST is better for tagging idents
  * to figure out what kind of ident it is.
- *)
+*)
 let visit_program ~tag_hook _prefs  (_astopt, toks) =
 
   let already_tagged = Hashtbl.create 101 in
@@ -51,15 +51,15 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   )
   in
   let tag_if_not_tagged ii categ =
-   if not (Hashtbl.mem already_tagged ii)
-   then tag ii categ
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
   in
 
   let lexer_based_tagger = true in
   let tag_if_lexer ii categ =
     if not (Hashtbl.mem already_tagged ii) && lexer_based_tagger
-     then tag ii categ
-   in
+    then tag ii categ
+  in
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
@@ -70,36 +70,36 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   (* -------------------------------------------------------------------- *)
   (* note: all TCommentSpace are filtered in xs so it should be easier to
    * write rules (but regular comments are kept as well as newlines).
-   *)
+  *)
   let rec aux_toks xs =
     match xs with
     | [] -> ()
 
     (* pad-specific: *)
     |   T.TComment(ii)
-      ::T.TCommentNewline _ii2
-      ::T.TComment(ii3)
-      ::T.TCommentNewline ii4
-      ::T.TComment(ii5)
-      ::xs ->
+        ::T.TCommentNewline _ii2
+        ::T.TComment(ii3)
+        ::T.TCommentNewline ii4
+        ::T.TComment(ii5)
+        ::xs ->
 
         let s = PI.str_of_info ii in
         let s5 =  PI.str_of_info ii5 in
         (match () with
-        | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection1
-        | _ when s =~ ".*------" && s5 =~ ".*------" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection2
-        | _ when s =~ ".*####" && s5 =~ ".*####" ->
-          tag ii CommentEstet;
-          tag ii5 CommentEstet;
-          tag ii3 CommentSection0
-        | _ ->
-            ()
+         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection1
+         | _ when s =~ ".*------" && s5 =~ ".*------" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection2
+         | _ when s =~ ".*####" && s5 =~ ".*####" ->
+             tag ii CommentEstet;
+             tag ii5 CommentEstet;
+             tag ii3 CommentSection0
+         | _ ->
+             ()
         );
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
@@ -117,7 +117,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
      * instead of the full AST but sometimes Skip files could not parse with
      * the default parser because of ??? so having
      * a solid token-based tagger is still useful as a last resort.
-     *)
+    *)
 
     (* Entity definitions *)
 
@@ -146,7 +146,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
         tag_if_lexer ii3 (Entity (E.Module, def2));
         aux_toks xs;
 
-    (* module use, and function call! *)
+        (* module use, and function call! *)
     | T.TUpperIdent(_, ii)::T.TDot _::T.TLowerIdent(_, ii2)::T.TOParen _::xs ->
         tag_if_lexer ii (Entity (E.Module, use2));
         tag_if_lexer ii2 (Entity (E.Function, use2));
@@ -183,7 +183,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
         tag_if_lexer ii (Entity (E.Field, use2));
         aux_toks xs;
 
-    (* recurse *)
+        (* recurse *)
     | _x::xs ->
         aux_toks xs
   in
@@ -198,7 +198,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
   (* Tokens phase 2 (individual tokens) *)
   (* -------------------------------------------------------------------- *)
 
-   toks |> List.iter (fun tok ->
+  toks |> List.iter (fun tok ->
     match tok with
     (* specials *)
 
@@ -206,17 +206,17 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
         (* a little bit syncweb specific *)
         let s = PI.str_of_info ii in
         (match s with
-        (* yep, s e x are the syncweb markers *)
-        | _ when s =~ "(\\*[sex]:"  -> tag ii CommentSyncweb
-        (* normally then use of *** or ### or --- should be enough,
-         * but in some files like ocamlyacc files the preceding
-         * heuristic fail in which case it's useful to have those
-         * rules. Moreover ocamldoc use something similar
+         (* yep, s e x are the syncweb markers *)
+         | _ when s =~ "(\\*[sex]:"  -> tag ii CommentSyncweb
+         (* normally then use of *** or ### or --- should be enough,
+          * but in some files like ocamlyacc files the preceding
+          * heuristic fail in which case it's useful to have those
+          * rules. Moreover ocamldoc use something similar
          *)
-        | _ when s =~ "(\\*1 "  -> tag ii CommentSection1
-        | _ when s =~ "(\\*2 "  -> tag ii CommentSection2
-        | _ when s =~ "(\\*3 "  -> tag ii CommentSection3
-        | _ -> tag_if_not_tagged ii Comment
+         | _ when s =~ "(\\*1 "  -> tag ii CommentSection1
+         | _ when s =~ "(\\*2 "  -> tag ii CommentSection2
+         | _ when s =~ "(\\*3 "  -> tag ii CommentSection3
+         | _ -> tag_if_not_tagged ii Comment
         )
     | T.TCommentNewline _ii | T.TCommentSpace _ii -> ()
     | T.TUnknown ii -> tag ii Error
@@ -232,29 +232,29 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     (* keywords *)
 
     | T.Tif ii | T.Telse ii | T.Tmatch ii
-       -> tag ii KeywordConditional
+      -> tag ii KeywordConditional
     | T.Ttry ii | T.Tcatch ii | T.Tthrow ii
-       -> tag ii KeywordExn
+      -> tag ii KeywordExn
     | T.Tfor ii | T.Tin ii | T.Twhile ii | T.Tloop ii | T.Tdo ii
-       -> tag ii KeywordLoop
+      -> tag ii KeywordLoop
     | T.Tfrom ii
-       -> tag ii Keyword
+      -> tag ii Keyword
     | T.Tmodule ii | T.Talias ii
-       -> tag ii KeywordModule
+      -> tag ii KeywordModule
     | T.Tclass ii | T.Textends ii | T.Tuses ii
 
     | T.Ttrait ii
     | T.Tthis ii
     | T.Tchildren ii
     | T.Textension ii
-       -> tag ii KeywordObject
+      -> tag ii KeywordObject
     | T.Tfun ii | T.Ttype ii | T.Tconst ii
     | T.Tasync ii | T.Tawait ii
     | T.Tyield ii
     | T.Tbreak ii | T.Tcontinue ii
-       -> tag ii Keyword
+      -> tag ii Keyword
     | T.Tvoid ii
-       -> tag ii TypeVoid
+      -> tag ii TypeVoid
 
     | T.Tfinal ii
     | T.Tmutable ii
@@ -263,7 +263,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.Tprivate ii | T.Tprotected ii
     | T.Toverridable ii
     | T.Treadonly ii
-       -> tag ii Attribute
+      -> tag ii Attribute
 
     | T.Tmacro ii -> tag ii CppOther
 
@@ -271,7 +271,7 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.Twatch ii
     | T.Twhen ii
     | T.Twith ii
-     -> tag ii Keyword
+      -> tag ii Keyword
 
     (* conditional keywords *)
     | T.Tbase ii -> tag ii KeywordObject
@@ -281,15 +281,15 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
     | T.Tdeferred ii
     | T.TnonNullable ii
     | T.Tuntracked ii
-     -> tag ii Keyword
+      -> tag ii Keyword
 
     | T.Tvalue _ ->
-      ()
+        ()
 
     (* not in original spec *)
     | T.Tmemoized ii
     | T.Tfrozen ii
-     -> tag ii Attribute
+      -> tag ii Attribute
 
     (* Punctuation *)
 
@@ -349,8 +349,8 @@ let visit_program ~tag_hook _prefs  (_astopt, toks) =
         | "failwith" | "raise" ->
             tag ii KeywordExn
 *)
-        | _ ->
-            ()
+         | _ ->
+             ()
         )
 
     | T.TUpperIdent (_s, ii) ->

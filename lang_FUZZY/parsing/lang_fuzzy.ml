@@ -22,13 +22,13 @@ let lang_of_string_opt = function
   | _ -> None
 
 let lang_of_filename_opt filename =
- let typ = File_type.file_type_of_file filename in
- match typ with
- | FT.PL (FT.Web (FT.Js)) -> Some Javascript
- | FT.PL (FT.Web (FT.Php _)) -> Some PHP
- | FT.PL (FT.C ("c" | "h" )) -> Some Cpp
- | FT.PL (FT.ML _) -> Some ML
- | FT.PL (FT.Java) -> Some Java
- | FT.PL (FT.Skip) -> Some Skip
- | FT.PL (FT.Go) -> Some Go
- | _ -> None
+  let typ = File_type.file_type_of_file filename in
+  match typ with
+  | FT.PL (FT.Web (FT.Js)) -> Some Javascript
+  | FT.PL (FT.Web (FT.Php _)) -> Some PHP
+  | FT.PL (FT.C ("c" | "h" )) -> Some Cpp
+  | FT.PL (FT.ML _) -> Some ML
+  | FT.PL (FT.Java) -> Some Java
+  | FT.PL (FT.Skip) -> Some Skip
+  | FT.PL (FT.Go) -> Some Go
+  | _ -> None

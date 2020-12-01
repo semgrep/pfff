@@ -3,13 +3,13 @@ module Y = Yojson.Basic
 (* compatibility mode with json-wheel *)
 
 type t =
- | Object of (string * t) list
- | Array of t list
- | String of string
- | Int of int
- | Float of float
- | Bool of bool
- | Null
+  | Object of (string * t) list
+  | Array of t list
+  | String of string
+  | Int of int
+  | Float of float
+  | Bool of bool
+  | Null
 
 let rec (to_yojson: t -> Y.t) = function
   | Object xs -> `Assoc (xs |> List.map (fun (s, t) -> s, to_yojson t))

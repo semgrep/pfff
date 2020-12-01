@@ -28,14 +28,14 @@ open Common
  * notes: pieter started to implement something similar using neo4j/cypher
  * instead of prolog for the query engine. Example of query:
  *   MATCH (n {vmname: "com/facebook/inject/AbstractProvider"})<-[:EXTENDS]-(m)
- *   RETURN m.vmname
- *   LIMIT 500
- * The main advantage is that if you have your linter already written in
- * Java, then neo4j APIs are easily accessible from the linter to get
- * access to global information. The equivalent in pfff would be to use
- * the graph_code OCaml API from your ocaml linter.
- *
- *)
+               *   RETURN m.vmname
+               *   LIMIT 500
+               * The main advantage is that if you have your linter already written in
+               * Java, then neo4j APIs are easily accessible from the linter to get
+               * access to global information. The equivalent in pfff would be to use
+               * the graph_code OCaml API from your ocaml linter.
+               *
+              *)
 
 (*****************************************************************************)
 (* Flags *)
@@ -80,7 +80,7 @@ let exec cmd =
   Common.command2 cmd
 
 (* from hw6/run_bddbddb.py
-  -mx600m -Dlearnbestorder=n -Dsingleignore=yes -Dbasedir=./results/ -Dbddcache=1500000 -Dbddnodes=40000000 -Dnumberingtype=%s -Dpa.clinit=no -Dpa.filternull=yes -Dpa.unknowntypes=no net.sf.bddbddb.Solver
+   -mx600m -Dlearnbestorder=n -Dsingleignore=yes -Dbasedir=./results/ -Dbddcache=1500000 -Dbddnodes=40000000 -Dnumberingtype=%s -Dpa.clinit=no -Dpa.filternull=yes -Dpa.unknowntypes=no net.sf.bddbddb.Solver
 *)
 let java_options = [
   "-mx2000m";
@@ -90,7 +90,7 @@ let java_options = [
   "-Dbddcache=1500000";
   "-Dbddnodes=40000000";
 *)
-  ] |> Common.join " "
+] |> Common.join " "
 
 let run_datalog root facts =
   (* facts +> List.iter pr2; *)
@@ -123,8 +123,8 @@ let run_datalog root facts =
     exec (spf "cp %s %s" logicrules_file dir);
     Datalog_code.bddbddb_of_facts facts datadir;
     let cmd = spf "cd %s; java %s -jar %s %s > %s/X.log"
-      dir java_options bddbddb_jar_file
-      (Filename.basename logicrules_file) dir in
+        dir java_options bddbddb_jar_file
+        (Filename.basename logicrules_file) dir in
     exec cmd;
     pr2 ("Done with bddbddb, generating .explain files now");
     let pointing_file =
@@ -159,54 +159,54 @@ let build_prolog_db lang root xs =
        * prolog facts. It currently takes 41min on www and I hope
        * we can reduce that to a few minutes.
        *)
-       (* so many errors that is better to hide them for now *)
-       Flag_analyze_php.show_errors := false;
+      (* so many errors that is better to hide them for now *)
+      Flag_analyze_php.show_errors := false;
 
-       let facts_pl_file = "facts.pl" in
-       let prolog_compiled_db = "facts.db" in
+      let facts_pl_file = "facts.pl" in
+      let prolog_compiled_db = "facts.db" in
 
-       let file = Filename.concat root facts_pl_file in
-       pr2 (spf "generating prolog facts in %s" file);
-       let facts =
-         Database_prolog_php.build ~show_progress:!verbose root files in
-       Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
-         let pr s = pr_no_nl (s ^ "\n") in
-         facts |> List.iter (fun fact ->
-           pr (Prolog_code.string_of_fact fact);
-         )
-       );
+      let file = Filename.concat root facts_pl_file in
+      pr2 (spf "generating prolog facts in %s" file);
+      let facts =
+        Database_prolog_php.build ~show_progress:!verbose root files in
+      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+        let pr s = pr_no_nl (s ^ "\n") in
+        facts |> List.iter (fun fact ->
+          pr (Prolog_code.string_of_fact fact);
+        )
+      );
 
-       pr2 (spf "compiling prolog facts with swipl in %s/%s"
-              root prolog_compiled_db);
-       Common.command2 (spf "%s -c %s/%s %s"
-                           swipl root facts_pl_file predicates_file);
-       Common.command2 (spf "mv a.out %s/%s" root prolog_compiled_db);
+      pr2 (spf "compiling prolog facts with swipl in %s/%s"
+             root prolog_compiled_db);
+      Common.command2 (spf "%s -c %s/%s %s"
+                         swipl root facts_pl_file predicates_file);
+      Common.command2 (spf "mv a.out %s/%s" root prolog_compiled_db);
 
-       Filename.concat root prolog_compiled_db
+      Filename.concat root prolog_compiled_db
 
   | "cmt" | "bytecode" | "clang2" | "c" ->
 
       let g =
         match lang with
 
-#if FEATURE_CMT
+        #if FEATURE_CMT
         | "cmt" ->
-          let ml_files = Find_source.files_of_root ~lang:"ml" root in
-          let cmt_files = files in
-          Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files
-#endif
+            let ml_files = Find_source.files_of_root ~lang:"ml" root in
+            let cmt_files = files in
+            Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files
+                                                                     #endif
 
-#if FEATURE_BYTECODE
+                                                                     #if FEATURE_BYTECODE
         | "bytecode" ->
-          let graph_code_java =
-(*           Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true
-                    root skip_list)
-*)
-            None
-          in
-          Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
-            root files
-#endif
+            let graph_code_java =
+              (*           Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true
+                                  root skip_list)
+              *)
+              None
+            in
+            Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
+              root files
+                   #endif
 (*
         | "clang2" ->
           Graph_code_clang.hook_use_edge :=
@@ -214,20 +214,20 @@ let build_prolog_db lang root xs =
           Graph_code_clang.build ~verbose:!verbose root files
 *)
         | "c" ->
-          Graph_code_c.hook_use_edge :=
-            Graph_code_prolog.hook_use_edge_for_prolog;
+            Graph_code_c.hook_use_edge :=
+              Graph_code_prolog.hook_use_edge_for_prolog;
 
-          if !datalog
-          then Graph_code_c.facts := Some (ref []);
+            if !datalog
+            then Graph_code_c.facts := Some (ref []);
 
-          let g = Graph_code_c.build ~verbose:!verbose root files in
+            let g = Graph_code_c.build ~verbose:!verbose root files in
 
-          if !datalog
-          then begin
-            let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
-            run_datalog root facts
-          end;
-          g
+            if !datalog
+            then begin
+              let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
+              run_datalog root facts
+            end;
+            g
         | _ -> raise Impossible
       in
       let facts = Graph_code_prolog.build g in
@@ -307,7 +307,7 @@ let options () = [
     verbose := true;
     Flag_analyze_php.verbose_database := true;
   ), " ";
-  ] @
+] @
   Common.options_of_actions action (all_actions()) @
   Common2.cmdline_flags_devel () @
   [
@@ -337,27 +337,27 @@ let main () =
   (* must be done after Arg.parse, because Common.profile is set by it *)
   Common.profile_code "Main total" (fun () ->
     (match args with
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | (x::xs) ->
-        main_action (x::xs)
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | (x::xs) ->
+         main_action (x::xs)
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | _ ->
-        Common.usage usage_msg (options());
-        failwith "too few or too many arguments"
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | _ ->
+         Common.usage usage_msg (options());
+         failwith "too few or too many arguments"
     )
   )
 

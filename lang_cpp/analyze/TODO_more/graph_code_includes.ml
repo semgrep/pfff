@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -55,24 +55,24 @@ let parse ~show_parse_error file =
   with
   | Timeout -> raise Timeout
   | exn ->
-    pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-    raise exn
+      pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
+      raise exn
 
 let add_use_edge env (name, kind) =
   let src = env.current in
   let dst = (name, kind) in
   (match () with
-  | _ when G.has_node dst env.g ->
-      G.add_edge (src, dst) G.Use env.g
+   | _ when G.has_node dst env.g ->
+       G.add_edge (src, dst) G.Use env.g
 
-  | _ ->
-    G.add_node dst env.g;
-    let parent_target = G.not_found in
-    pr2 (spf "PB: lookup fail on %s (in %s)"
-           (G.string_of_node dst) (G.string_of_node src));
-    env.g |> G.add_edge (parent_target, dst) G.Has;
-    env.g |> G.add_edge (src, dst) G.Use;
-    ()
+   | _ ->
+       G.add_node dst env.g;
+       let parent_target = G.not_found in
+       pr2 (spf "PB: lookup fail on %s (in %s)"
+              (G.string_of_node dst) (G.string_of_node src));
+       env.g |> G.add_edge (parent_target, dst) G.Has;
+       env.g |> G.add_edge (src, dst) G.Use;
+       ()
   )
 
 (*****************************************************************************)
@@ -99,17 +99,17 @@ let extract_uses ~g ~ast ~readable =
   in
   let dir = Common2.dirname readable in
   ast |> List.iter (function
-  | T.TInclude (_, file, _) ->
-    (match file with
-    | s when s =~ "\"\\(.*\\)\"" ->
-      let s = Common.matched1 file in
-      let final = Filename.concat dir s in
-      add_use_edge env (final, E.File)
-    | s when s =~ "<\\(.*\\)>" ->
-      ()
-    | _ -> failwith ("weird include: " ^ file)
-    )
-  | _ -> ()
+    | T.TInclude (_, file, _) ->
+        (match file with
+         | s when s =~ "\"\\(.*\\)\"" ->
+             let s = Common.matched1 file in
+             let final = Filename.concat dir s in
+             add_use_edge env (final, E.File)
+         | s when s =~ "<\\(.*\\)>" ->
+             ()
+         | _ -> failwith ("weird include: " ^ file)
+        )
+    | _ -> ()
   )
 
 (*****************************************************************************)
@@ -133,11 +133,11 @@ let build ?(verbose=true) root files =
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
   files |> Console.progress ~show:verbose (fun k ->
-   List.iter (fun file ->
-     k();
-     let readable = Common.readable root file in
-     let ast = parse ~show_parse_error:false file in
-     extract_uses ~g ~ast ~readable;
-   ));
+    List.iter (fun file ->
+      k();
+      let readable = Common.readable root file in
+      let ast = parse ~show_parse_error:false file in
+      extract_uses ~g ~ast ~readable;
+    ));
 
   g

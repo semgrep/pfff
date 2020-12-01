@@ -1,10 +1,10 @@
 
 (* many refactorings can be done by spatch! used this code only as
  * last resort
- *)
+*)
 type refactoring_kind =
   | AddInterface of string option (* specific class *)
-                  * string (* the interface to add *)
+                    * string (* the interface to add *)
   | RemoveInterface of string option * string
 
   | SplitMembers

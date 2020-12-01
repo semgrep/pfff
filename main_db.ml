@@ -37,7 +37,7 @@ open Common
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below), this
  * program also depends on external files ?
- *)
+*)
 
 let verbose = ref false
 
@@ -70,8 +70,8 @@ let rec light_db_of_files_or_dirs lang xs =
         Database_light_ml.compute_database ~verbose xs
 
     | "php" ->
-      failwith
-        "pfff_db is obsolete, use 'codegraph -lang php -derived_data -build <dir>'"
+        failwith
+          "pfff_db is obsolete, use 'codegraph -lang php -derived_data -build <dir>'"
 (*
         (match xs with
         | [_x] ->
@@ -162,9 +162,9 @@ let db_of_graph_code file =
     match !db_file with
     | Some file -> file
     | None ->
-      let (d,_b,_e) = Common2.dbe_of_filename file in
-      (* Common2.filename_of_dbe (d,Database_code.default_db_name, "json")  *)
-      Filename.concat d (Database_code.default_db_name)
+        let (d,_b,_e) = Common2.dbe_of_filename file in
+        (* Common2.filename_of_dbe (d,Database_code.default_db_name, "json")  *)
+        Filename.concat d (Database_code.default_db_name)
   in
 
   let res = Common2.y_or_no (spf "writing data in %s" target) in
@@ -188,7 +188,7 @@ let db_of_graph_code file =
  *       ~/software-src/pleac/
  * ex: ./pfff_db_light -lang php -output_dir ~/www/flib/pleac/
  *       -gen_pleac ~/software-src/pleac/
- *)
+*)
 let gen_pleac pleac_src =
   let skeleton_file = Filename.concat pleac_src "skeleton.sgml" in
 
@@ -197,19 +197,19 @@ let gen_pleac pleac_src =
     Pleac.parse_skeleton_file skeleton_file in
 
   let pleac_data_file, ext_file,
-    hook_start_section2, hook_line_body, hook_end_section2 =
+      hook_start_section2, hook_line_body, hook_end_section2 =
     match !lang with
     | "ml" ->
         "ocaml", "ml",
         (* TODO if at some point we use a real parser for ML,
          * this will not work ...
-         *)
+        *)
         (fun s -> spf "let pleac_%s () = " s),
 
         (* ugly: for now my ocaml tagger does not index functions
          * when they are not at the toplevel so add this extra
          * space
-         *)
+        *)
         (fun s -> " " ^ s),
         (fun _s -> "")
 
@@ -217,7 +217,7 @@ let gen_pleac pleac_src =
         "php", "php",
         (* TODO if at some point we use a real parser for ML,
          * this will not work ...
-         *)
+        *)
         (fun s -> spf "<?php\nfunction pleac_%s() {" s),
         (fun s -> s),
         (fun _s -> "}\n?>\n")
@@ -297,7 +297,7 @@ let main () =
 
   let usage_msg =
     "Usage: " ^ Common2.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -307,26 +307,26 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | x::xs ->
-        main_action (x::xs)
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | x::xs ->
+         main_action (x::xs)
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] ->
-        Common.usage usage_msg (options())
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] ->
+         Common.usage usage_msg (options())
     )
   )
 

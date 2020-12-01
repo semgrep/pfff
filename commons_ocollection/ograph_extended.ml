@@ -49,7 +49,7 @@ class ['a,'b] ograph_extended =
         pred = pred#add (i, build_set() );
         succ = succ#add (i, build_set() );
         free_index = i + 1;
-       >}, i)
+      >}, i)
 
     method add_nodei i (e: 'a) =
       ({<
@@ -57,7 +57,7 @@ class ['a,'b] ograph_extended =
         pred = pred#add (i, build_set() );
         succ = succ#add (i, build_set() );
         free_index = (max free_index i) + 1;
-       >}, i)
+      >}, i)
 
 
     method del_node (i) =
@@ -67,28 +67,28 @@ class ['a,'b] ograph_extended =
 
         (* todo: assert that have no pred and succ, otherwise
          * will have some dangling pointers
-         *)
+        *)
         nods = nods#delkey i;
         pred = pred#delkey i;
         succ = succ#delkey i;
-        >}
+      >}
 
     method replace_node (i, (e: 'a)) =
       assert (nods#haskey i);
       {<
         nods = nods#replkey (i, e);
-       >}
+      >}
 
     method add_arc ((a,b),(v: 'b)) =
       {<
         succ = succ#replkey (a, (succ#find a)#add (b, v));
         pred = pred#replkey (b, (pred#find b)#add (a, v));
-        >}
+      >}
     method del_arc ((a,b),v) =
       {<
         succ = succ#replkey (a, (succ#find a)#del (b,v));
         pred = pred#replkey (b, (pred#find b)#del (a,v));
-        >}
+      >}
 
     method successors   e = succ#find e
     method predecessors e = pred#find e
@@ -155,15 +155,15 @@ class ['a,'b] ograph_mutable =
 
 
     method del_node (i) =
-        (* check: e is effectively the index associated with e,
-           and check that already in *)
+      (* check: e is effectively the index associated with e,
+         and check that already in *)
 
-        (* todo: assert that have no pred and succ, otherwise
-         * will have some dangling pointers
-         *)
-        nods <- nods#delkey i;
-        pred <- pred#delkey i;
-        succ <- succ#delkey i;
+      (* todo: assert that have no pred and succ, otherwise
+       * will have some dangling pointers
+      *)
+      nods <- nods#delkey i;
+      pred <- pred#delkey i;
+      succ <- succ#delkey i;
 
     method replace_node (i, (e: 'a)) =
       assert (nods#haskey i);
@@ -223,9 +223,9 @@ let dfs_iter_with_path xi f g =
       let succ = g#successors xi in
       let succ' = succ#tolist |> List.map fst in
       succ' |> List.iter (fun yi ->
-          aux_dfs (xi::path) yi
+        aux_dfs (xi::path) yi
       );
-      end
+    end
   in
   aux_dfs [] xi
 
@@ -236,23 +236,23 @@ let generate_ograph_generic g label fnode filename =
     pr "digraph misc {\n" ;
     pr "size = \"10,10\";\n" ;
     (match label with
-      None -> ()
-    | Some x -> pr (Printf.sprintf "label = \"%s\";\n" x));
+       None -> ()
+     | Some x -> pr (Printf.sprintf "label = \"%s\";\n" x));
 
     let nodes = g#nodes in
     nodes#iter (fun (k,node) ->
       let (str,border_color,inner_color) = fnode (k, node) in
       let color =
-	match inner_color with
-	  None ->
-	    (match border_color with
-	      None -> ""
-	    | Some x -> Printf.sprintf ", style=\"setlinewidth(3)\", color = %s" x)
-	| Some x ->
-	    (match border_color with
-	      None -> Printf.sprintf ", style=\"setlinewidth(3),filled\", fillcolor = %s" x
-	    | Some x' -> Printf.sprintf ", style=\"setlinewidth(3),filled\", fillcolor = %s, color = %s" x x') in
-     (* so can see if nodes without arcs were created *)
+        match inner_color with
+          None ->
+            (match border_color with
+               None -> ""
+             | Some x -> Printf.sprintf ", style=\"setlinewidth(3)\", color = %s" x)
+        | Some x ->
+            (match border_color with
+               None -> Printf.sprintf ", style=\"setlinewidth(3),filled\", fillcolor = %s" x
+             | Some x' -> Printf.sprintf ", style=\"setlinewidth(3),filled\", fillcolor = %s, color = %s" x x') in
+      (* so can see if nodes without arcs were created *)
       pr (spf "%d [label=\"%s   [%d]\"%s];\n" k str k color)
     );
 
@@ -263,7 +263,7 @@ let generate_ograph_generic g label fnode filename =
       );
     );
     pr "}\n" ;
-    );
+  );
   ()
 
 
@@ -274,7 +274,7 @@ let generate_ograph_xxx g filename =
 
     let nodes = g#nodes in
     nodes#iter (fun (k,(_node, s)) ->
-     (* so can see if nodes without arcs were created *)
+      (* so can see if nodes without arcs were created *)
       pr (spf "%d [label=\"%s   [%d]\"];\n" k s k)
     );
 
@@ -285,7 +285,7 @@ let generate_ograph_xxx g filename =
       );
     );
     pr "}\n" ;
-    );
+  );
   ()
 
 
@@ -298,7 +298,7 @@ let launch_gv_cmd filename =
   (* zarb: I needed this when I launch the program with '&' via eshell,
    * otherwise gv did not get the chance to be launched
    * Unix.sleep 1;
-   *)
+  *)
   ()
 
 let print_ograph_extended g filename launchgv =

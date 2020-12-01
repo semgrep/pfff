@@ -3,5 +3,5 @@ class ['a] oassoc_id xs =
     inherit ['a,'a] oassoc
 
     method empty = {< >}
-   end
+  end
 

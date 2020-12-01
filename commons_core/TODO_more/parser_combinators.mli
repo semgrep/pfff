@@ -13,7 +13,7 @@
  *
  * pad: a few bugfixes. I also put more restrictive and descriptive types.
  *
- *)
+*)
 
 (*****************************************************************************)
 
@@ -53,8 +53,8 @@ val several : ('a -> bool) -> ('a, 'a list) genp
 
 
 module Abstr : sig
-    type t
-    val x : t
+  type t
+  val x : t
 end
 
 val fin : ('a, Abstr.t) genp
@@ -125,10 +125,10 @@ val int :  string pparser
 val string : string pparser
 
 type expr =
-    | Int of int
-    | Var of string
-    | Add of expr * expr
-    | Mul of expr * expr
+  | Int of int
+  | Var of string
+  | Add of expr * expr
+  | Mul of expr * expr
 
 val atom : expr pparser
 (* token list -> expr * token list *)
@@ -147,11 +147,11 @@ val parse : 'a pparser -> string -> 'a
 
 module Infix : sig
   val ( ||| ) : ('a, 'b) genp -> ('a, 'b) genp -> ('a, 'b) genp
-    (* ('a -> 'b) -> ('a -> 'b) -> 'a -> 'b *)
+  (* ('a -> 'b) -> ('a -> 'b) -> 'a -> 'b *)
   val ( +++ ) : ('a, 'b) genp -> ('a, 'c) genp -> ('a,   'b * 'c) genp
-    (* ('a -> 'b * 'c) -> ('c -> 'd * 'e) -> 'a -> ('b * 'd) * 'e *)
+  (* ('a -> 'b * 'c) -> ('c -> 'd * 'e) -> 'a -> ('b * 'd) * 'e *)
   val ( >| ) : ('a, 'b) genp -> ('b -> 'c) -> ('a, 'c) genp
-    (* ('a -> 'b * 'c) -> ('b -> 'd) -> 'a -> 'd * 'c *)
+  (* ('a -> 'b * 'c) -> ('b -> 'd) -> 'a -> 'd * 'c *)
 end
 
 (*e: parser_combinators.mli *)

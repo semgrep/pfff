@@ -19,4 +19,4 @@ let unittest =
           assert_failure (spf "it should correctly parse %s" file)
       )
     );
- ]
+  ]

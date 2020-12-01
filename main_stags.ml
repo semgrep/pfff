@@ -39,7 +39,7 @@ open Common
 
 (* In addition to flags that can be tweaked via -xxx options (cf the
  * full list of options in the "the options" section below).
- *)
+*)
 let verbose = ref false
 
 (* action mode *)
@@ -87,24 +87,24 @@ let rec defs_of_files_or_dirs lang xs =
       tag1 @ tag2
   | ("cmt" | "java" | "php2") ->
       (match xs with
-      | [root] ->
-          let files = Find_source.files_of_root ~lang root in
-          let only_defs = true in
-          let g =
-            match lang with
-#if FEATURE_CMT
-            | "cmt" ->
-              let cmt_files = files in
-              let ml_files = Find_source.files_of_root ~lang:"ml" root in
-              Graph_code_cmt.build ~verbose ~root ~cmt_files ~ml_files
-#endif
-            | "java" -> Graph_code_java.build ~verbose ~only_defs root files
-            | "php2" -> Graph_code_php.build ~verbose ~only_defs root files|>fst
-            | _ -> raise Impossible
-          in
-          Graph_code_tags.defs_of_graph_code ~verbose g
+       | [root] ->
+           let files = Find_source.files_of_root ~lang root in
+           let only_defs = true in
+           let g =
+             match lang with
+             #if FEATURE_CMT
+             | "cmt" ->
+                 let cmt_files = files in
+                 let ml_files = Find_source.files_of_root ~lang:"ml" root in
+                 Graph_code_cmt.build ~verbose ~root ~cmt_files ~ml_files
+                                                                 #endif
+             | "java" -> Graph_code_java.build ~verbose ~only_defs root files
+             | "php2" -> Graph_code_php.build ~verbose ~only_defs root files|>fst
+             | _ -> raise Impossible
+           in
+           Graph_code_tags.defs_of_graph_code ~verbose g
 
-      | _ -> failwith "the cmt|java options accept only a single dir or file"
+       | _ -> failwith "the cmt|java options accept only a single dir or file"
       )
 
   | _ -> failwith ("language not supported: " ^ lang)
@@ -133,8 +133,8 @@ let main_action xs =
 
 
   (match !format with
-  | Emacs -> Tags_file.generate_TAGS_file tags_file files_and_defs;
-  | Vim -> Tags_file.generate_vi_tags_file tags_file files_and_defs;
+   | Emacs -> Tags_file.generate_TAGS_file tags_file files_and_defs;
+   | Vim -> Tags_file.generate_vi_tags_file tags_file files_and_defs;
   );
   ()
 
@@ -184,7 +184,7 @@ let main () =
 
   let usage_msg =
     "Usage: " ^ Common2.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:"
+    " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
@@ -194,26 +194,26 @@ let main () =
 
     (match args with
 
-    (* --------------------------------------------------------- *)
-    (* actions, useful to debug subpart *)
-    (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) ->
-        Common.do_action !action xs (all_actions())
+     (* --------------------------------------------------------- *)
+     (* actions, useful to debug subpart *)
+     (* --------------------------------------------------------- *)
+     | xs when List.mem !action (Common.action_list (all_actions())) ->
+         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) ->
-        failwith ("unrecognized action or wrong params: " ^ !action)
+     | _ when not (Common.null_string !action) ->
+         failwith ("unrecognized action or wrong params: " ^ !action)
 
-    (* --------------------------------------------------------- *)
-    (* main entry *)
-    (* --------------------------------------------------------- *)
-    | x::xs ->
-        main_action (x::xs)
+     (* --------------------------------------------------------- *)
+     (* main entry *)
+     (* --------------------------------------------------------- *)
+     | x::xs ->
+         main_action (x::xs)
 
-    (* --------------------------------------------------------- *)
-    (* empty entry *)
-    (* --------------------------------------------------------- *)
-    | [] ->
-        Common.usage usage_msg (options())
+     (* --------------------------------------------------------- *)
+     (* empty entry *)
+     (* --------------------------------------------------------- *)
+     | [] ->
+         Common.usage usage_msg (options())
     )
   )
 

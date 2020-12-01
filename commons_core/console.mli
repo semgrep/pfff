@@ -1,6 +1,6 @@
 (* to be used as in
  *  xs +> Common_extra.progress (fun k -> List.iter (fun x -> k(); ...))
- *)
+*)
 val progress:
   ?show:bool -> ((unit -> unit) -> 'a list -> 'b) -> 'a list -> 'b
 

@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
- *)
+*)
 
 open Common
 
@@ -64,24 +64,24 @@ let highlight org =
     | Other s ->
         let categ =
           (match s with
-          | _ when s =~ "http://"  ->
-              HC.EmbededUrl
-          | _ when s =~ "https://"  ->
-              HC.EmbededStyle
-          | _ -> HC.Normal
+           | _ when s =~ "http://"  ->
+               HC.EmbededUrl
+           | _ when s =~ "https://"  ->
+               HC.EmbededStyle
+           | _ -> HC.Normal
           )
         in
         s, Some categ, filepos
     | Header (int, s) ->
         let categ =
           (match int with
-          | 0 -> raise Impossible
-          | 1 -> Some HC.CommentSection0
-          | 2 -> Some HC.CommentSection1
-          | 3 -> Some HC.CommentSection2
-          | 4 -> Some HC.CommentSection3
-          | 5 -> Some HC.CommentSection4
-          | _ -> None
+           | 0 -> raise Impossible
+           | 1 -> Some HC.CommentSection0
+           | 2 -> Some HC.CommentSection1
+           | 3 -> Some HC.CommentSection2
+           | 4 -> Some HC.CommentSection3
+           | 5 -> Some HC.CommentSection4
+           | _ -> None
           )
         in
         s, categ, filepos

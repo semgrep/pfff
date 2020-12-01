@@ -11,7 +11,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
- *)
+*)
 open Common
 
 module E = Entity_code
@@ -98,7 +98,7 @@ type place =
   (* will be in a lighter color, almost like wheat, so know we don't have
    * information on it. Could highlight in Red because it's
    * quite similar to an error.
-   *)
+  *)
   | NoInfoPlace
 
 
@@ -147,7 +147,7 @@ type usedef2 =
  *  - field
  *  - tag (struct, union, enum)
  *  - typedef
- *)
+*)
 
 (* color, foreground or background will be changed *)
 type category =
@@ -180,7 +180,7 @@ type category =
    * but not that used), so no need to like for variables and have a
    * global/local dichotomy of scope. (But even if functions are globals,
    * still can have some global/local dichotomy but at the module level.
-   *)
+  *)
   | Entity of Entity_code.entity_kind * usedef2
 
   (* kind of specific case of Global of Local which we know are really
@@ -216,7 +216,7 @@ type category =
   (* could reuse Global (Use2 ...) but the use of refs is not always
    * the use of a global. Moreover using a ref in OCaml is really bad
    * which is why I want to highlight it specially.
-   *)
+  *)
   | UseOfRef
 
   | PointerCall (* a.k.a dynamic call *)
@@ -468,123 +468,123 @@ let info_of_place _defplace =
   raise Todo
 
 let info_of_entity_kind_and_usedef2 kind defkind =
-    match kind, defkind with
+  match kind, defkind with
 
-    | E.Type, (Def2 _) -> [`FOREGROUND "chartreuse";]
-    | E.Type, (Use2 _) -> [`FOREGROUND "chartreuse";]
+  | E.Type, (Def2 _) -> [`FOREGROUND "chartreuse";]
+  | E.Type, (Use2 _) -> [`FOREGROUND "chartreuse";]
 
-    | E.Constructor, (Def2 _ ) -> [`FOREGROUND "tomato1";]
-    | E.Constructor, (Use2 _) -> [`FOREGROUND "pink3";]
+  | E.Constructor, (Def2 _ ) -> [`FOREGROUND "tomato1";]
+  | E.Constructor, (Use2 _) -> [`FOREGROUND "pink3";]
 
-    | E.Module, (Def2 _) -> [`FOREGROUND "chocolate";]
-    | E.Module, (Use2 _) -> [`FOREGROUND "DarkSlateGray4";]
+  | E.Module, (Def2 _) -> [`FOREGROUND "chocolate";]
+  | E.Module, (Use2 _) -> [`FOREGROUND "DarkSlateGray4";]
 
-    | E.Field, (Def2 _) -> [`FOREGROUND "MediumPurple1"] @ info_of_usedef (Def)
-    | E.Field, (Use2 _) -> [`FOREGROUND "MediumPurple2"] @ info_of_usedef (Use)
+  | E.Field, (Def2 _) -> [`FOREGROUND "MediumPurple1"] @ info_of_usedef (Def)
+  | E.Field, (Use2 _) -> [`FOREGROUND "MediumPurple2"] @ info_of_usedef (Use)
 
-    | E.Exception, (Def2 _) -> [`FOREGROUND "Orchid1"] @ info_of_usedef (Def)
-    | E.Exception, (Use2 _) -> [`FOREGROUND "Orchid2"] @ info_of_usedef (Use)
+  | E.Exception, (Def2 _) -> [`FOREGROUND "Orchid1"] @ info_of_usedef (Def)
+  | E.Exception, (Use2 _) -> [`FOREGROUND "Orchid2"] @ info_of_usedef (Use)
 
-    (* defs *)
-    | E.Function, (Def2 _) -> [`FOREGROUND "gold";
-                               `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
-                              ]
-    | E.Macro, (Def2 _) -> [`FOREGROUND "gold";
-                            `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
-                           ]
-    | E.Global, (Def2 _) -> [`FOREGROUND "cyan";
+  (* defs *)
+  | E.Function, (Def2 _) -> [`FOREGROUND "gold";
+                             `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
+                            ]
+  | E.Macro, (Def2 _) -> [`FOREGROUND "gold";
+                          `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
+                         ]
+  | E.Global, (Def2 _) -> [`FOREGROUND "cyan";
+                           `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
+                          ]
+  | E.Constant, (Def2 _) -> [`FOREGROUND "pink";
                              `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
                             ]
-    | E.Constant, (Def2 _) -> [`FOREGROUND "pink";
-                               `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
-                              ]
-    | E.Method, (Def2 _) -> [`FOREGROUND "gold3";
-                             `WEIGHT `BOLD; `SCALE `MEDIUM;
-                            ]
-    | E.Class, (Def2 _) ->  [`FOREGROUND "coral"] @ info_of_usedef (Def)
+  | E.Method, (Def2 _) -> [`FOREGROUND "gold3";
+                           `WEIGHT `BOLD; `SCALE `MEDIUM;
+                          ]
+  | E.Class, (Def2 _) ->  [`FOREGROUND "coral"] @ info_of_usedef (Def)
 
-    (* uses *)
-    | E.Function, (Use2 (defplace,def_arity,use_arity)) ->
+  (* uses *)
+  | E.Function, (Use2 (defplace,def_arity,use_arity)) ->
       (match defplace with
-      | PlaceLocal -> [`FOREGROUND "gold";]
-      | PlaceSameDir -> [`FOREGROUND "goldenrod";]
-      | PlaceExternal ->
-          (match use_arity with
-          | MultiUse -> [`FOREGROUND "DarkGoldenrod"]
+       | PlaceLocal -> [`FOREGROUND "gold";]
+       | PlaceSameDir -> [`FOREGROUND "goldenrod";]
+       | PlaceExternal ->
+           (match use_arity with
+            | MultiUse -> [`FOREGROUND "DarkGoldenrod"]
 
-          | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
+            | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
 
-          | UniqueUse -> [`FOREGROUND "yellow"]
-          | NoUse -> [`FOREGROUND "IndianRed";]
-          )
-      | NoInfoPlace -> [`FOREGROUND "LightGoldenrod";]
+            | UniqueUse -> [`FOREGROUND "yellow"]
+            | NoUse -> [`FOREGROUND "IndianRed";]
+           )
+       | NoInfoPlace -> [`FOREGROUND "LightGoldenrod";]
       ) @ info_of_def_arity def_arity
 
-    | E.Global, (Use2 (defplace, def_arity, use_arity)) ->
+  | E.Global, (Use2 (defplace, def_arity, use_arity)) ->
       [`SCALE `X_LARGE] @
       (match defplace with
-      | PlaceLocal -> [`FOREGROUND "cyan";]
-      | PlaceSameDir -> [`FOREGROUND "turquoise3";]
-      | PlaceExternal ->
-          (match use_arity with
-          | MultiUse -> [`FOREGROUND "turquoise4"]
-          | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
+       | PlaceLocal -> [`FOREGROUND "cyan";]
+       | PlaceSameDir -> [`FOREGROUND "turquoise3";]
+       | PlaceExternal ->
+           (match use_arity with
+            | MultiUse -> [`FOREGROUND "turquoise4"]
+            | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
 
-          | UniqueUse -> [`FOREGROUND "yellow"]
-          | NoUse -> [`FOREGROUND "IndianRed";]
-          )
-      | NoInfoPlace -> [`FOREGROUND "LightCyan";]
+            | UniqueUse -> [`FOREGROUND "yellow"]
+            | NoUse -> [`FOREGROUND "IndianRed";]
+           )
+       | NoInfoPlace -> [`FOREGROUND "LightCyan";]
 
       ) @ info_of_def_arity def_arity
 
-    | E.Constant, (Use2 (defplace, def_arity, use_arity)) ->
+  | E.Constant, (Use2 (defplace, def_arity, use_arity)) ->
       (match defplace with
-      | PlaceLocal -> [`FOREGROUND "pink";]
-      | PlaceSameDir -> [`FOREGROUND "LightPink";]
-      | PlaceExternal ->
-          (match use_arity with
-          | MultiUse -> [`FOREGROUND "PaleVioletRed"]
+       | PlaceLocal -> [`FOREGROUND "pink";]
+       | PlaceSameDir -> [`FOREGROUND "LightPink";]
+       | PlaceExternal ->
+           (match use_arity with
+            | MultiUse -> [`FOREGROUND "PaleVioletRed"]
 
-          | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
+            | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
 
-          | UniqueUse -> [`FOREGROUND "yellow"]
+            | UniqueUse -> [`FOREGROUND "yellow"]
 
-          | NoUse -> [`FOREGROUND "IndianRed";]
-          )
-      | NoInfoPlace -> [`FOREGROUND "pink1";]
+            | NoUse -> [`FOREGROUND "IndianRed";]
+           )
+       | NoInfoPlace -> [`FOREGROUND "pink1";]
 
       ) @ info_of_def_arity def_arity
 
-    (* copy paste of MacroVarUse for now *)
-    | E.Macro, (Use2 (defplace, def_arity, use_arity)) ->
+  (* copy paste of MacroVarUse for now *)
+  | E.Macro, (Use2 (defplace, def_arity, use_arity)) ->
       (match defplace with
-      | PlaceLocal -> [`FOREGROUND "pink";]
-      | PlaceSameDir -> [`FOREGROUND "LightPink";]
-      | PlaceExternal ->
-          (match use_arity with
-          | MultiUse -> [`FOREGROUND "PaleVioletRed"]
+       | PlaceLocal -> [`FOREGROUND "pink";]
+       | PlaceSameDir -> [`FOREGROUND "LightPink";]
+       | PlaceExternal ->
+           (match use_arity with
+            | MultiUse -> [`FOREGROUND "PaleVioletRed"]
 
-          | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
+            | LotsOfUse | HugeUse | SomeUse -> [`FOREGROUND "salmon";]
 
-          | UniqueUse -> [`FOREGROUND "yellow"]
-          | NoUse -> [`FOREGROUND "IndianRed";]
-          )
-      | NoInfoPlace -> [`FOREGROUND "pink1";]
+            | UniqueUse -> [`FOREGROUND "yellow"]
+            | NoUse -> [`FOREGROUND "IndianRed";]
+           )
+       | NoInfoPlace -> [`FOREGROUND "pink1";]
 
       ) @ info_of_def_arity def_arity
 
-    | E.Method, (Use2 _) -> [`FOREGROUND "gold3";]
+  | E.Method, (Use2 _) -> [`FOREGROUND "gold3";]
 
-    | E.Class, (Use2 _) -> [`FOREGROUND "coral"] @ info_of_usedef (Use)
+  | E.Class, (Use2 _) -> [`FOREGROUND "coral"] @ info_of_usedef (Use)
 
-    (* this is for codemap completion search box *)
-    | E.Package, _ -> [`FOREGROUND "IndianRed"]
-    | E.File, _ -> [`FOREGROUND "black"]
-    (* see dircolors.ml *)
-    | E.Dir, _ -> [`FOREGROUND "CornFlowerBlue"]
-    | E.MultiDirs, _ -> [`FOREGROUND "DarkSlateBlue"]
+  (* this is for codemap completion search box *)
+  | E.Package, _ -> [`FOREGROUND "IndianRed"]
+  | E.File, _ -> [`FOREGROUND "black"]
+  (* see dircolors.ml *)
+  | E.Dir, _ -> [`FOREGROUND "CornFlowerBlue"]
+  | E.MultiDirs, _ -> [`FOREGROUND "DarkSlateBlue"]
 
-    | _ ->
+  | _ ->
       failwith (spf "info_of_entity_kind_and_usedef2: missing case for '%s'"
                   (Entity_code.string_of_entity_kind kind))
 
@@ -659,11 +659,11 @@ let info_of_category = function
 
   (* entities *)
   | Entity (kind, defkind) ->
-   info_of_entity_kind_and_usedef2 kind defkind
+      info_of_entity_kind_and_usedef2 kind defkind
 
   | FunctionDecl _ -> [`FOREGROUND "gold2";
-                         `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
-                        ]
+                       `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
+                      ]
 
   | Parameter usedef -> [`FOREGROUND "SteelBlue2";] @ info_of_usedef usedef
   | Local usedef  ->    [`FOREGROUND "SkyBlue1";] @ info_of_usedef usedef
@@ -739,7 +739,7 @@ let info_of_category = function
   | EmbededUrl ->
       (* yellow-like color, like function, because it's often
        * used as a method call in method programming
-       *)
+      *)
       [`FOREGROUND "DarkGoldenrod2"]
 
   | EmbededCode ->   [`FOREGROUND "yellow3"]

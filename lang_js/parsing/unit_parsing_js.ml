@@ -44,8 +44,8 @@ let unittest =
     "rejecting bad code" >:: (fun () ->
       try
         Common.save_excursion Flag_parsing.show_parsing_error false (fun()->
-         let _ = Parse_js.program_of_string "echo 1+" in
-         assert_failure "it should have thrown a Parse_error exception"
+          let _ = Parse_js.program_of_string "echo 1+" in
+          assert_failure "it should have thrown a Parse_error exception"
         )
       with Parse_info.Parsing_error _ -> ()
     );
