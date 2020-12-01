@@ -478,7 +478,7 @@ and expr =
 (*s: type [[AST_generic.special]] *)
   and special =
    (* special vars *)
-   | This | Super
+   | This | Super (* called 'base' in C# *)
    | Self | Parent (* different from This/Super? *)
 
    (* special calls *)
@@ -813,6 +813,7 @@ and stmt =
 (*s: type [[AST_generic.other_stmt_with_stmt_operator]] *)
   and other_stmt_with_stmt_operator =
     (* Python/Javascript *)
+    (* TODO: used in C# with 'Using', make new stmt TryWithResource? do Java?*)
     | OSWS_With (* newscope: newvar: in OtherStmtWithStmt with LetPattern *)
     (* Ruby *)
     | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
