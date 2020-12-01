@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,9 +22,9 @@ module E = Entity_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * (ab)Using the code highlighter to extract tags.
- * 
+ *
  * Alternatives:
  *  - use graph_code_tags.ml now that .cmt contains more precise information
  *  - otags, but does not work very well cos it stops everything
@@ -36,7 +36,7 @@ module E = Entity_code
 (*****************************************************************************)
 
 (*
-let tag_of_name filelines name = 
+let tag_of_name filelines name =
   let info = Ast.info_of_name name in
   tag_of_info filelines info
 *)
@@ -54,11 +54,11 @@ let entity_of_highlight_category_opt x =
 let defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_ml.find_source_files_of_dir_or_files xs in
 
-  files |> Console.progress ~show:verbose (fun k -> 
+  files |> Console.progress ~show:verbose (fun k ->
    List.map (fun file ->
     k();
-     let (ast, toks) = 
-       try 
+     let (ast, toks) =
+       try
          Common.save_excursion Flag.show_parsing_error false(fun()->
            Parse_ml.parse file |> fst
          )
@@ -72,7 +72,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
 
     (* computing the token attributes *)
     let prefs = Highlight_code.default_highlighter_preferences in
-    
+
     Highlight_ml.visit_program
       ~lexer_based_tagger:true (* !! *)
       ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
@@ -81,13 +81,13 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
     ;
 
     (* processing the tokens in order *)
-    toks |> List.iter (fun tok -> 
+    toks |> List.iter (fun tok ->
 
         let info = Token_helpers_ml.info_of_tok tok in
         let s = Parse_info.str_of_info info in
 
         let categ = Common2.hfind_option info h in
-        
+
         categ |> Common.do_option (fun x ->
           entity_of_highlight_category_opt x |> Common.do_option (fun kind ->
 

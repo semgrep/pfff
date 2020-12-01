@@ -18,14 +18,14 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (* An Abstract Syntax Tree for Javascript and (partially) Typescript.
- * (for a Concrete Syntax Tree see old/cst_js_ml or 
+ * (for a Concrete Syntax Tree see old/cst_js_ml or
  *  ocaml-tree-sitter-lang:javascript/lib/CST.ml).
- * 
+ *
  * This file contains a simplified Javascript AST. The original
  * Javascript syntax tree (cst_js.ml) was good for code refactoring or
  * code visualization; the types used matches exactly the source. However,
  * for other algorithms, the nature of the CST made the code a bit
- * redundant. Hence the idea of a real and simplified AST 
+ * redundant. Hence the idea of a real and simplified AST
  * where certain constructions have been factorized or even removed.
  *
  * Here is a list of the simplications/factorizations:
@@ -34,7 +34,7 @@ open Common
  *    The only token information kept is for identifiers for error reporting.
  *    See 'wrap' below.
  *    update: we actually keep the different kinds of brackets for sgrep, but
- *    they are all agglomerated in a general 'bracket' type. 
+ *    they are all agglomerated in a general 'bracket' type.
  *  - no U, B, Yield, Await, Seq, ... just Apply (and Special Id)
  *  - no field vs method. A method is just sugar to define
  *    a field with a lambda (some people even uses directly that forms
@@ -53,7 +53,7 @@ open Common
  *  - no ExportDefaultDecl, ExportDefaultExpr, just unsugared in
  *    separate variable declarations and an Export name
  *    (using 'default_entity' special name)
- * 
+ *
  * todo:
  *  - typescript module
  *  - typescript enum
@@ -104,7 +104,7 @@ type ident = string wrap
  * the name resolution is now done on the generic AST instead.
  *)
 
-type special = 
+type special =
   (* Special values *)
   | Null | Undefined (* builtins not in the grammar *)
 
@@ -120,13 +120,13 @@ type special =
   (* Special apply *)
   | New | NewTarget
   | Eval (* builtin not in the grammar *)
-  | Seq 
-  (* a kind of cast operator: 
+  | Seq
+  (* a kind of cast operator:
    * See https://stackoverflow.com/questions/7452341/what-does-void-0-mean
    *)
   | Void
   | Typeof | Instanceof
-  | In | Delete 
+  | In | Delete
   | Spread
   | Yield | YieldStar | Await
   | Encaps of bool (* if true, first arg of apply is the "tag" *)
@@ -158,7 +158,7 @@ type dotted_ident = ident list
 (* when doing export default Foo and import Bar, ... *)
 let default_entity = "!default!"
 
-type property_name = 
+type property_name =
   (* this can even be a string or number *)
   | PN of ident
   (* especially useful for array objects, but also used for dynamic fields *)
@@ -180,7 +180,7 @@ and expr =
   (* old: we used to have a Nop, without any token attached, which allowed
    * to simplify a bit the AST by replacing some 'expr option' into simply
    * 'expr' (for v_init, ForClassic, Return) but this bited us in the long term
-   * in semgrep where we don't want metavariables to match code that does 
+   * in semgrep where we don't want metavariables to match code that does
    * not exist.
    *)
 
@@ -188,8 +188,8 @@ and expr =
   | Assign of pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
-  | Obj of obj_ 
-  (* we could transform it in an Obj but it can be useful to remember 
+  | Obj of obj_
+  (* we could transform it in an Obj but it can be useful to remember
    * the difference in further analysis (e.g., in the abstract interpreter).
    * This can also contain "holes" when the array is used in lhs of an assign
    * called "elision" which currently are skipped
@@ -204,7 +204,7 @@ and expr =
   | ArrAccess of expr * expr bracket
 
   (* ident is a Some when recursive lambda or assigned in module.exports *)
-  | Fun of function_definition * ident option 
+  | Fun of function_definition * ident option
   | Apply of expr * arguments
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
@@ -213,7 +213,7 @@ and expr =
   (* could unify with Apply, but need Lazy special then *)
   | Conditional of expr * expr * expr
 
-  (* typescript: *) 
+  (* typescript: *)
   | Cast of expr * tok (* ':' *) * type_
   | TypeAssert of expr * tok (* 'as' or '<' *) * type_ (* X as T or <T> X *)
 
@@ -233,7 +233,7 @@ and expr =
       xml_attrs: xml_attribute list;
       xml_body: xml_body list;
     }
-     and xml_attribute = 
+     and xml_attribute =
        | XmlAttr of ident * xml_attr_value
        (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
        | XmlAttrExpr of expr bracket
@@ -249,7 +249,7 @@ and expr =
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-and stmt = 
+and stmt =
   (* covers VarDecl, method definitions, class defs, etc *)
   | DefStmt of definition
 
@@ -266,14 +266,14 @@ and stmt =
   | Return of tok * expr option * sc
 
   | Label of label * stmt
- 
+
   | Throw of tok * expr * sc
   | Try of tok * stmt * catch option * (tok * stmt) option
   (* javascript special features, not in other imperative languages *)
   | With of tok * expr * stmt
 
   (* ES6 modules can appear only at the toplevel,
-   * but CommonJS require() can be inside ifs 
+   * but CommonJS require() can be inside ifs
    * and tree-sitter-javascript accepts directives there too, so we allow
    * them at the stmt level too.
    * update: now toplevel = stmt, so definitely stmt-level material.
@@ -284,7 +284,7 @@ and stmt =
   | StmtTodo of todo_category * any list
 
   (* less: could use some Special instead? *)
-  and for_header = 
+  and for_header =
    | ForClassic of vars_or_expr * expr option * expr option
    (* TODO: tok option (* await *) *)
    | ForIn of var_or_expr * tok (* in *) * expr
@@ -297,7 +297,7 @@ and stmt =
     and vars_or_expr = (var list, expr) Common.either
     and var_or_expr = (var, expr) Common.either
 
-  and case = 
+  and case =
    | Case of tok * expr * stmt
    | Default of tok * stmt
 
@@ -310,7 +310,7 @@ and stmt =
 (* Pattern (destructuring binding) *)
 (*****************************************************************************)
 (* 'pattern' used to be a different type than 'expr' in cst_js.ml with
- * restrictions on what can be a pattern. But to simplify we now 
+ * restrictions on what can be a pattern. But to simplify we now
  * reuse Obj, Arr, etc and so 'expr' to represent a pattern,
  * transpiled: to regular assignments when Ast_js_build.transpile_pattern.
  * sgrep: this is useful for sgrep to keep the ability to match over
@@ -329,7 +329,7 @@ and type_ = AST_generic.type_
 (*****************************************************************************)
 
 (* quite similar to AST_generic.attribute but the 'argument' is different *)
-and attribute = 
+and attribute =
   | KeywordAttr of keyword_attribute wrap
   (* a.k.a decorators *)
   | NamedAttr of tok (* @ *) * dotted_ident * arguments option
@@ -340,13 +340,13 @@ and attribute =
     (* todo? not in tree-sitter-js *)
     | Public | Private | Protected
     (* typescript-ext: for fields *)
-    | Readonly | Optional (* '?' *) | NotNull (* '!' *) 
+    | Readonly | Optional (* '?' *) | NotNull (* '!' *)
     | Abstract (* also valid for class *)
 
    (* method properties *)
     | Generator (* '*' *) | Async
     (* only inside classes *)
-    | Get | Set 
+    | Get | Set
 
 (*****************************************************************************)
 (* Definitions *)
@@ -365,14 +365,14 @@ and definition = entity * definition_kind
     attrs: attribute list;
   }
 
-  and definition_kind = 
+  and definition_kind =
   | FuncDef of function_definition
   | VarDef of variable_definition
   | ClassDef of class_definition
 
   | DefTodo of todo_category * any list
 
-and variable_definition = { 
+and variable_definition = {
   v_kind: var_kind wrap;
   (* actually a pattern when inside a ForIn/ForOf *)
   v_init: expr option;
@@ -394,8 +394,8 @@ and function_definition = {
 }
   and parameter =
    | ParamClassic of parameter_classic
-   (* transpiled: when Ast_js_build.transpile_pattern 
-    * TODO: can also have types and default, so factorize with 
+   (* transpiled: when Ast_js_build.transpile_pattern
+    * TODO: can also have types and default, so factorize with
     * parameter_classic?
     *)
    | ParamPattern of pattern
@@ -415,7 +415,7 @@ and function_definition = {
  *)
 and parent = (expr, type_) Common.either
 
-and class_definition = { 
+and class_definition = {
   (* typescript-ext: Interface is now possible *)
   c_kind: AST_generic.class_kind wrap;
   (* typescript-ext: can have multiple parents *)
@@ -429,7 +429,7 @@ and class_definition = {
 
   and obj_ = property list bracket
 
-  and property = 
+  and property =
     (* field_classic.fld_body is a (Some Fun) for methods.
      * None is possible only for class fields. For objects there is
      * always a value and it's using FieldColon instead of Field.
@@ -459,7 +459,7 @@ and class_definition = {
 (*****************************************************************************)
 (* Directives *)
 (*****************************************************************************)
-(* ES6 module directives appear only at the toplevel. However, for 
+(* ES6 module directives appear only at the toplevel. However, for
  * CommomJS directives, some packages like react have dynamic imports
  * (to select dynamically which code to load depending on whether you run
  * in production or development environment) which means those directives
@@ -467,7 +467,7 @@ and class_definition = {
  * update: for tree-sitter we allow them at the stmt level, hence the
  * recursive 'and' below.
  *)
-and module_directive = 
+and module_directive =
   (* 'ident' can be the special Ast_js.default_entity.
    * 'filename' is not "resolved"
    * (you may need for example to add node_modules/xxx/index.js
@@ -512,12 +512,12 @@ and program = toplevel list
 (* Any *)
 (*****************************************************************************)
 
-and partial = 
+and partial =
  (* the stmt will be empty in f_body and c_body *)
  | PartialDef of definition
 
 (* this is now mutually recursive with the previous types because of StmtTodo*)
-and any = 
+and any =
   | Expr of expr
   | Stmt of stmt
   | Stmts of stmt list
@@ -535,10 +535,10 @@ and any =
 (*****************************************************************************)
 (* TODO: move in separate file? ast_js_parsing_helper.ml? *)
 
-let mk_field name body = 
+let mk_field name body =
   { fld_name = name; fld_body = body; fld_attrs = []; fld_type = None }
 
-let mk_param id = 
+let mk_param id =
   { p_name = id; p_default = None; p_type = None; p_dots = None; p_attrs = [] }
 
 let special_of_id_opt s =
@@ -555,7 +555,7 @@ let special_of_id_opt s =
   | "arguments"   -> Some Arguments
   | _ -> None
 
-let idexp id = Id (id)
+let idexp id = Id id
 
 let idexp_or_special id =
   match special_of_id_opt (fst id) with
@@ -566,19 +566,19 @@ let idexp_or_special id =
  * what was before a simple sequence of stmts in the same block can suddently
  * be in different blocks.
  *)
-and stmt1 xs = 
+and stmt1 xs =
   match xs with
   | [] -> Block (AST_generic.fake_bracket [])
   | [x] -> x
   | xs -> Block (AST_generic.fake_bracket xs)
 
-let basic_entity id = 
+let basic_entity id =
   { name = id; attrs = [] }
 
-let mk_default_entity_def tok exp = 
+let mk_default_entity_def tok exp =
   let n = default_entity, tok in
   (* TODO: look at exp and transform in FuncDef/ClassDef? *)
-  let def = basic_entity n, 
+  let def = basic_entity n,
              VarDef { v_kind = Const, tok; v_init = Some exp; v_type = None}
   in
   def, n
@@ -588,7 +588,7 @@ let attr x = KeywordAttr x
 
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
-let var_pattern_to_var v_kind pat tok init_opt = 
+let var_pattern_to_var v_kind pat tok init_opt =
   match pat, init_opt with
   (* no need special_multivardef_pattern trick here *)
   | Id id, None ->
@@ -596,15 +596,15 @@ let var_pattern_to_var v_kind pat tok init_opt =
   | _ ->
   let s = AST_generic.special_multivardef_pattern in
   let id = s, tok in
-  let init = 
+  let init =
     match init_opt with
-    | Some init -> Assign (pat, tok, init) 
+    | Some init -> Assign (pat, tok, init)
     | None -> pat
   in
   (* less: use x.vpat_type *)
   (basic_entity id, {v_kind; v_init = Some init; v_type = None; })
 
-let build_var kwd (id_or_pat, ty_opt, initopt) = 
+let build_var kwd (id_or_pat, ty_opt, initopt) =
   match id_or_pat with
   | Left id ->
       basic_entity id, { v_kind = (kwd); v_init = initopt; v_type = ty_opt;}
@@ -618,8 +618,8 @@ let vars_to_defs xs =
 let vars_to_stmts xs =
   xs |> vars_to_defs |> List.map (fun x -> DefStmt x)
 
-let mk_const_var id e = 
-  (basic_entity id, 
+let mk_const_var id e =
+  (basic_entity id,
    VarDef { v_kind = Const, (snd id); v_init = Some e; v_type = None; }
   )
 

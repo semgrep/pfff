@@ -61,8 +61,8 @@ let token_kind_of_tok t =
  *)
 
 let visitor_info_of_tok f = function
-  | LDots (ii) -> LDots (f ii)
-  | RDots (ii) -> RDots (f ii)
+  | LDots ii -> LDots (f ii)
+  | RDots ii -> RDots (f ii)
 
   | TUnknown ii -> TUnknown(f ii)
   | TSpaces ii -> TSpaces(f ii)
@@ -223,12 +223,12 @@ let visitor_info_of_tok f = function
   | TDOLLARDOLLAR ii -> TDOLLARDOLLAR(f ii)
   | TGUIL ii -> TGUIL(f ii)
 
-  | T_ELLIPSIS (ii) -> T_ELLIPSIS (f ii)
+  | T_ELLIPSIS ii -> T_ELLIPSIS (f ii)
 
-  | T_YIELD (ii) -> T_YIELD (f ii)
-  | T_AWAIT (ii) -> T_AWAIT (f ii)
-  | T_SELF (ii) -> T_SELF (f ii)
-  | T_PARENT (ii) -> T_PARENT (f ii)
+  | T_YIELD ii -> T_YIELD (f ii)
+  | T_AWAIT ii -> T_AWAIT (f ii)
+  | T_SELF ii -> T_SELF (f ii)
+  | T_PARENT ii -> T_PARENT (f ii)
 
   | T_TRAIT(ii) -> T_TRAIT(f ii)
   | T_INSTEADOF(ii) -> T_INSTEADOF(f ii)
@@ -243,7 +243,7 @@ let visitor_info_of_tok f = function
   | EOF ii -> EOF(f ii)
   | T_ROCKET ii -> T_ROCKET(f ii)
 
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with

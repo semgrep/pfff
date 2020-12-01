@@ -1,13 +1,13 @@
 {
 (* Joust: a Java lexer, parser, and pretty-printer written in OCaml
  *  Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
- *  Released under the GNU General Public License 
- * 
+ *  Released under the GNU General Public License
+ *
  * ocamllex lexer for Java
- * 
+ *
  * Attempts to conform to:
  * The Java Language Specification Second Edition
- * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha 
+ * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha
  *
  * Extended by Yoann Padioleau to support more recent versions of Java.
  * Copyright (C) 2011 Facebook
@@ -156,7 +156,7 @@ let DigitOrUnderscore = Digit | '_'
 let DigitsAndUnderscores = DigitOrUnderscore DigitOrUnderscore*
 let Digits = Digit | Digit DigitsAndUnderscores? Digit
 
-let DecimalNumeral = 
+let DecimalNumeral =
   "0"
 | NonZeroDigit Digits?
 | NonZeroDigit Underscores Digits
@@ -258,13 +258,13 @@ rule token = parse
   | newline { TCommentNewline (tokinfo lexbuf) }
 
   | "/*"
-    { 
-      let info = tokinfo lexbuf in 
+    {
+      let info = tokinfo lexbuf in
       let com = comment lexbuf in
-      TComment(info |> Parse_info.tok_add_s com) 
+      TComment(info |> Parse_info.tok_add_s com)
     }
   (* don't keep the trailing \n; it will be in another token *)
-  | "//" InputCharacter* 
+  | "//" InputCharacter*
    { TComment(tokinfo lexbuf) }
 
 
@@ -286,17 +286,17 @@ rule token = parse
   (* Keywords and ident (must be after "true"|"false" above) *)
   (* ----------------------------------------------------------------------- *)
   | Identifier
-    { 
+    {
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
-   
+
       match Common2.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> f info
       | None -> IDENTIFIER (s, info)
     }
 
   (* sgrep-ext: *)
-  | '$' Identifier 
+  | '$' Identifier
     { let s = tok lexbuf in
       if not !Flag_parsing.sgrep_mode
       then error ("identifier with dollar: "  ^ s) lexbuf;
@@ -313,10 +313,10 @@ rule token = parse
   | ';'  { SM(tokinfo lexbuf) }
   | ','  { CM(tokinfo lexbuf) }
   | '.'  { DOT(tokinfo lexbuf) }
-  
+
   (* pad: to avoid some conflicts *)
   | "[]"  { LB_RB(tokinfo lexbuf) }
-  
+
   | "="  { EQ(tokinfo lexbuf) }
   (* relational operator also now used for generics, can be transformed in LT2 *)
   | "<"  { LT(tokinfo lexbuf) } | ">"  { GT(tokinfo lexbuf) }
@@ -331,12 +331,12 @@ rule token = parse
   | "++"  { INCR(tokinfo lexbuf) } | "--"  { DECR(tokinfo lexbuf) }
   | "+"  { PLUS(tokinfo lexbuf) } | "-"  { MINUS(tokinfo lexbuf) }
   | "*"  { TIMES(tokinfo lexbuf) } | "/"  { DIV(tokinfo lexbuf) }
-  | "&"  { AND(tokinfo lexbuf) } 
+  | "&"  { AND(tokinfo lexbuf) }
   (* javaext: also used inside catch for list of possible exn *)
   | "|"  { OR(tokinfo lexbuf) }
   | "^"  { XOR(tokinfo lexbuf) }
   | "%"  { MOD(tokinfo lexbuf) }
-  | "<<"  { LS(tokinfo lexbuf) } 
+  | "<<"  { LS(tokinfo lexbuf) }
   (* this may be split in two tokens in fix_tokens_java.ml *)
   | ">>"  { SRS(tokinfo lexbuf) }
   | ">>>"  { URS(tokinfo lexbuf) }
@@ -344,7 +344,7 @@ rule token = parse
   | "->" { ARROW (tokinfo lexbuf) }
   (* javaext: qualified method *)
   | "::" { COLONCOLON (tokinfo lexbuf) }
-  
+
   (* ext: annotations *)
   | "@" { AT(tokinfo lexbuf) }
   (* regular feature of Java for params and sgrep-ext: *)
@@ -352,7 +352,7 @@ rule token = parse
   (* sgrep-ext: *)
   | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
   | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
-  
+
   | "+="  { OPERATOR_EQ (Plus, tokinfo lexbuf) }
   | "-="  { OPERATOR_EQ (Minus, tokinfo lexbuf) }
   | "*="  { OPERATOR_EQ (Mult, tokinfo lexbuf) }
@@ -364,10 +364,10 @@ rule token = parse
   | "<<=" { OPERATOR_EQ (LSL, tokinfo lexbuf) }
   | ">>=" { OPERATOR_EQ (LSR, tokinfo lexbuf) }
   | ">>>="{ OPERATOR_EQ (ASR, tokinfo lexbuf) }
-  
+
   | SUB? eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
-  
-  | _ { 
+
+  | _ {
   error ("unrecognised symbol, in token rule:"^tok lexbuf) lexbuf;
   TUnknown (tokinfo lexbuf)
   }

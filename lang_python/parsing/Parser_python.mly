@@ -10,22 +10,22 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 
-(* This file contains a grammar for Python 3 
+(* This file contains a grammar for Python 3
  * (which is mostly a superset of Python 2).
  *
- * original src: 
+ * original src:
  *  https://github.com/m2ym/ocaml-pythonlib/blob/master/src/python2_parser.mly
  * reference:
  *  - https://docs.python.org/3/reference/grammar.html
  *  - http://docs.python.org/release/2.5.2/ref/grammar.txt
- * old src: 
+ * old src:
  *  - http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  *)
 open Common
@@ -48,7 +48,7 @@ let to_list = function
   | Single e -> [e]
   | Tup l -> l
 
-(* TODO: TypedExpr? ExprStar? then can appear as lvalue 
+(* TODO: TypedExpr? ExprStar? then can appear as lvalue
  * CompForIf though is not an lvalue.
 *)
 let rec set_expr_ctx ctx = function
@@ -108,8 +108,8 @@ let mk_str ii =
 (*-----------------------------------------*)
 (* Keyword tokens *)
 (*-----------------------------------------*)
-%token <AST_python.tok> 
- IF ELSE ELIF 
+%token <AST_python.tok>
+ IF ELSE ELIF
  WHILE FOR
  RETURN CONTINUE BREAK PASS
  DEF LAMBDA CLASS GLOBAL
@@ -127,9 +127,9 @@ let mk_str ii =
 (*-----------------------------------------*)
 (* Punctuation tokens *)
 (*-----------------------------------------*)
- 
+
 (* syntax *)
-%token <AST_python.tok> 
+%token <AST_python.tok>
  LPAREN "("     RPAREN ")"
  LBRACK "["     RBRACK "]"
  LBRACE "{"     RBRACE "}"
@@ -143,7 +143,7 @@ let mk_str ii =
  LDots "<..." RDots "...>"
 
 (* operators *)
-%token <AST_python.tok> 
+%token <AST_python.tok>
   ADD            (* + *)  SUB            (* - *)
   MULT "*"       (* * *)  DIV "/"        (* / *)
   MOD            (* % *)
@@ -151,7 +151,7 @@ let mk_str ii =
   BITOR          (* | *)  BITAND         (* & *)  BITXOR         (* ^ *)
   BITNOT         (* ~ *)  LSHIFT         (* << *)  RSHIFT         (* >> *)
 
-%token <AST_python.tok> 
+%token <AST_python.tok>
   EQ "="             (* = *)
   COLONEQ ":="   (* := *)
   ADDEQ          (* += *) SUBEQ          (* -= *)
@@ -170,12 +170,12 @@ let mk_str ii =
 (*-----------------------------------------*)
 (* fstrings *)
 %token <AST_python.tok> FSTRING_START FSTRING_END
-%token <AST_python.tok> FSTRING_LBRACE 
+%token <AST_python.tok> FSTRING_LBRACE
 %token <string * AST_python.tok> FSTRING_STRING
 %token <AST_python.tok> BANG
 
 (* layout *)
-%token <AST_python.tok> INDENT DEDENT 
+%token <AST_python.tok> INDENT DEDENT
 %token <AST_python.tok> NEWLINE
 
 (*************************************************************************)
@@ -246,7 +246,7 @@ import_stmt:
 
 
 import_name: IMPORT list_sep(dotted_as_name, ",")
-  { $2 |> List.map (fun (v1, v2) -> let dots = None in 
+  { $2 |> List.map (fun (v1, v2) -> let dots = None in
          ImportAs ($1, (v1, dots), v2))   }
 
 dotted_as_name:
@@ -292,8 +292,8 @@ namedexpr_test:
   | test { $1 }
   | test COLONEQ test { NamedExpr ($1, $2, $3) }
 
-expr_stmt: 
-  | tuple(test_or_star_expr)                       
+expr_stmt:
+  | tuple(test_or_star_expr)
       { ExprStmt (tuple_expr $1) }
   (* typing-ext: *)
   | tuple(test_or_star_expr) ":" test
@@ -301,11 +301,11 @@ expr_stmt:
   | tuple(test_or_star_expr) ":" test "=" test
       { Assign ([TypedExpr (tuple_expr_store $1, $3)], $4, $5) }
 
-  | tuple(test_or_star_expr) augassign yield_expr  
+  | tuple(test_or_star_expr) augassign yield_expr
       { AugAssign (tuple_expr_store $1, $2, $3) }
   | tuple(test_or_star_expr) augassign tuple(test)
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
-  | tuple(test_or_star_expr) "=" expr_stmt_rhs_list 
+  | tuple(test_or_star_expr) "=" expr_stmt_rhs_list
       { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
 
 namedexpr_or_star_expr:
@@ -355,7 +355,7 @@ async_funcdef: ASYNC DEF NAME parameters return_type? ":" suite
     { FunctionDef ($2, $3, $4, $5, $7, [] (* TODO $1 *)) }
 
 (* typing-ext: *)
-return_type: 
+return_type:
   | SUB GT test     { $3 }
 
 (*----------------------------*)
@@ -425,10 +425,10 @@ fplist:
 (* Class definition *)
 (*************************************************************************)
 
-classdef: CLASS NAME arglist_paren_opt ":" suite 
+classdef: CLASS NAME arglist_paren_opt ":" suite
   { ClassDef ($1, $2, $3, $5, []) }
 
-arglist_paren_opt: 
+arglist_paren_opt:
  | (* empty *) { [] }
  | "(" ")"     { [] }
  (* python3-ext: was expr_list before *)
@@ -438,14 +438,14 @@ arglist_paren_opt:
 (* Annotations *)
 (*************************************************************************)
 
-decorator: "@" decorator_name arglist_paren2_opt NEWLINE 
+decorator: "@" decorator_name arglist_paren2_opt NEWLINE
     { $1, $2, $3 }
 
 decorator_name:
   | NAME                    { [$1] }
   | decorator_name "." NAME { $1 @ [$3] }
 
-arglist_paren2_opt: 
+arglist_paren2_opt:
  | (* empty *) { None }
  | "(" ")"     { Some ($1, [], $2) }
  (* python3-ext: was expr_list before *)
@@ -484,7 +484,7 @@ print_stmt:
   | PRINT                     { Print ($1, None, [], true) }
   | PRINT test print_testlist { Print ($1, None, $2::(fst $3), snd $3) }
   | PRINT RSHIFT test { Print ($1, Some $3, [], true) }
-  | PRINT RSHIFT test "," test print_testlist 
+  | PRINT RSHIFT test "," test print_testlist
       { Print ($1, Some $3, $5::(fst $6), snd $6) }
 
 print_testlist:
@@ -556,18 +556,18 @@ compound_stmt:
   | async_stmt  { $1 }
 
 decorated:
-  | decorator+ classdef { 
-     match $2 with 
+  | decorator+ classdef {
+     match $2 with
      | ClassDef (t, a, b, c, d) -> ClassDef (t, a, b, c, $1 @ d)
      | _ -> raise Impossible
    }
-  | decorator+ funcdef { 
-     match $2 with 
+  | decorator+ funcdef {
+     match $2 with
      | FunctionDef (t, a, b, c, d, e) -> FunctionDef (t, a, b, c, d, $1 @ e)
      | _ -> raise Impossible
    }
   | decorator+ async_funcdef {
-     match $2 with 
+     match $2 with
      | FunctionDef (t, a, b, c, d, e) -> FunctionDef (t, a, b, c, d, $1 @ e)
      | _ -> raise Impossible
   }
@@ -626,9 +626,9 @@ with_inner:
   | test AS expr "," with_inner { fun t -> With (t, $1, Some $3, [$5 t]) }
 
 (* python3-ext: *)
-async_stmt: 
+async_stmt:
   | ASYNC funcdef   { Async ($1, $2) }
-  | ASYNC with_stmt { Async ($1, $2) } 
+  | ASYNC with_stmt { Async ($1, $2) }
   | ASYNC for_stmt  { Async ($1, $2) }
 
 (*************************************************************************)
@@ -685,7 +685,7 @@ power:
 (* Atom expr *)
 (*----------------------------*)
 
-atom_expr: 
+atom_expr:
   | atom_and_trailers        { $1 }
   | AWAIT atom_and_trailers  { Await ($1, $2) }
 
@@ -714,14 +714,14 @@ atom:
   | LONGINT     { Num (LongInt ($1)) }
   | FLOAT       { Num (Float ($1)) }
   | IMAG        { Num (Imag ($1)) }
-  
+
   | TRUE        { Bool (true, $1) }
   | FALSE       { Bool (false, $1) }
 
   | NONE        { None_ $1 }
 
-  | string+ { 
-     match $1 with 
+  | string+ {
+     match $1 with
      | [] ->  raise Common.Impossible
      | [x] -> x
      | xs -> ConcatenatedString xs
@@ -748,7 +748,7 @@ testlist1:
 (*----------------------------*)
 
 string:
-  | STR { let (s, pre, tok) = $1 in 
+  | STR { let (s, pre, tok) = $1 in
           if pre = "" then Str (s, tok) else EncodedStr ((s, tok), pre) }
   | FSTRING_START interpolated* FSTRING_END { InterpolatedString $2 }
 
@@ -788,19 +788,19 @@ interpolant:
 (* todo: maybe need another lexing state when ":" inside FSTRING_LBRACE*)
 format_specifier: format_token+ { $1 }
 
-(* see "Format Specification Mini-Language" at 
+(* see "Format Specification Mini-Language" at
  * https://docs.python.org/3/library/string.html#format-string-syntax
  *)
 format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
   | NAME  { mk_str (snd $1) }
-  | LT { mk_str $1 } | GT { mk_str $1 } 
+  | LT { mk_str $1 } | GT { mk_str $1 }
   | BITXOR { mk_str $1 }
   | ADD  { mk_str $1 } | SUB { mk_str $1 }
   | MOD { mk_str $1 } | DIV { mk_str $1 }
   | "."   { mk_str $1 }
-  | "=" { mk_str $1 } 
+  | "=" { mk_str $1 }
   | "," { mk_str $1 }
 
   | "{" test "}" { $2 }
@@ -823,7 +823,7 @@ atom_dict:
   | "{"                "}" { DictOrSet (CompList ($1, [], $2)) }
   | "{" dictorsetmaker "}" { DictOrSet ($2 ($1, $3)) }
 
-dictorsetmaker: 
+dictorsetmaker:
   | dictorset_elem comp_for { fun _ -> CompForIf ($1, $2) }
   | list_comma(dictorset_elem)     { fun (t1, t2) -> CompList (t1, $1, t2) }
 
@@ -907,14 +907,14 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($1, $2, $3, $4) }
 
 testlist_comp:
   | namedexpr_or_star_expr listcomp_for  { fun _ -> CompForIf ($1, $2) }
-  | tuple(namedexpr_or_star_expr)    
+  | tuple(namedexpr_or_star_expr)
       { fun (t1, t2) -> CompList (t1, to_list $1, t2) }
 
 (* mostly equivalent to testlist_comp, but transform a single expression
  * in parenthesis, e.g., (1) in a regular expr, not a tuple *)
 testlist_comp_or_expr:
   | namedexpr_or_star_expr comp_for  { Tuple (CompForIf ($1, $2), Load) }
-  | tuple(namedexpr_or_star_expr)    { 
+  | tuple(namedexpr_or_star_expr)    {
     match $1 with
     | Single e -> e
     | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
@@ -927,14 +927,14 @@ testlist_comp_or_expr:
  *   foo = [x for x in 1, 2]
  * in Python 2
  *)
-comp_for: 
+comp_for:
  | sync_comp_for       { $1 }
  | ASYNC sync_comp_for { (* TODO *) $2 }
 
 sync_comp_for:
-  | FOR exprlist IN or_test           
+  | FOR exprlist IN or_test
     { [CompFor (tuple_expr_store $2, $4)] }
-  | FOR exprlist IN or_test comp_iter 
+  | FOR exprlist IN or_test comp_iter
     { [CompFor (tuple_expr_store $2, $4)] @ $5 }
 
 
@@ -960,7 +960,7 @@ listsync_comp_for:
 (* /comp_for *)
 
 comp_iter:
-  | comp_for { $1 } 
+  | comp_for { $1 }
   | comp_if  { $1 }
 
 comp_if:
@@ -971,7 +971,7 @@ test_nocond:
   | or_test          { $1 }
   | lambdadef_nocond { $1 }
 
-lambdadef_nocond: LAMBDA varargslist ":" test_nocond 
+lambdadef_nocond: LAMBDA varargslist ":" test_nocond
     { Lambda ($1, $2, $3, $4) }
 
 
@@ -991,12 +991,12 @@ argument:
 
   (* sgrep-ext: difficult to move in atom without s/r conflict so restricted
      * to argument for now *)
-  | NAME ":" test 
+  | NAME ":" test
     { Flag_parsing.sgrep_guard (Arg (TypedMetavar ($1, $2, $3))) }
 
   | test "=" test
       { match $1 with
         | Name (id, _, _) -> ArgKwd (id, $3)
-        | _ -> raise Parsing.Parse_error 
+        | _ -> raise Parsing.Parse_error
       }
 (*e: pfff/lang_python/parsing/Parser_python.mly *)

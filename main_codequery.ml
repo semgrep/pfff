@@ -10,21 +10,21 @@ open Common
 (*
  * An interactive tool a la SQL to query information about the structure
  * of a codebase (the inheritance tree, the call graph, the data graph),
- * for instance "What are all the children of class Foo?". 
+ * for instance "What are all the children of class Foo?".
  * The data is the code. The query language is
  * Prolog (http://en.wikipedia.org/wiki/Prolog), a logic-based
  * programming language used mainly in AI but also popular in database
  * (http://en.wikipedia.org/wiki/Datalog).
- * 
+ *
  * See h_program-lang/prolog_code.pl for more information
- * 
+ *
  * related work:
  *  - http://jquery.cs.ubc.ca/, the original inspiration for codequery
  *  - QL by semmle
  *  - http://www.ndepend.com/Features.aspx#CQL
  *  - http://golang.org/s/oracle-design
  *  - http://llvm.org/devmtg/2014-10/Slides/Hawes-Frappe.pdf
- * 
+ *
  * notes: pieter started to implement something similar using neo4j/cypher
  * instead of prolog for the query engine. Example of query:
  *   MATCH (n {vmname: "com/facebook/inject/AbstractProvider"})<-[:EXTENDS]-(m)
@@ -34,7 +34,7 @@ open Common
  * Java, then neo4j APIs are easily accessible from the linter to get
  * access to global information. The equivalent in pfff would be to use
  * the graph_code OCaml API from your ocaml linter.
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -55,11 +55,11 @@ let swipl =
   then swipl_fb
   else "swipl"
 
-let predicates_file = 
+let predicates_file =
   Filename.concat Config_pfff.path_pfff_home "h_program-lang/prolog_code.pl"
-let logicrules_file = 
+let logicrules_file =
   Filename.concat Config_pfff.path_pfff_home "h_program-lang/datalog_code.dtl"
-let bddbddb_jar_file = 
+let bddbddb_jar_file =
   Filename.concat Config_pfff.path_pfff_home "external/bddbddb/bddbddb-full.jar"
 
 (* action mode *)
@@ -68,7 +68,7 @@ let action = ref ""
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let pr2_dbg s = 
+let pr2_dbg s =
   if !verbose then pr2 s
 
 (*****************************************************************************)
@@ -97,14 +97,14 @@ let run_datalog root facts =
   let datalog_file = Filename.concat root "facts.dl" in
   Common.with_open_outfile datalog_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ ".\n") in
-    facts |> List.iter (fun fact -> 
+    facts |> List.iter (fun fact ->
       pr (Datalog_code.string_of_fact fact));
   );
   pr2 (spf "Your datalog facts are in %s" datalog_file);
   (*
     when using lua-datalog
     let final_file = "/tmp/datalog.dl" in
-  let cmd = spf "cat %s %s > %s" 
+  let cmd = spf "cat %s %s > %s"
     datalog_file logicrules_file final_file in
   Common.command2 cmd;
   let cmd = spf "datalog %s | sort" final_file in
@@ -113,24 +113,24 @@ let run_datalog root facts =
   *)
   (* bddbddb special stuff *)
   (* old: *)
-  let datadir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in 
+  let datadir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in
   Datalog_code.bddbddb_of_facts facts datadir;
-  
+
 
   Common2.with_tmp_dir (fun dir ->
     let datadir = Filename.concat dir "/data" in
     exec (spf "mkdir %s" datadir);
     exec (spf "cp %s %s" logicrules_file dir);
     Datalog_code.bddbddb_of_facts facts datadir;
-    let cmd = spf "cd %s; java %s -jar %s %s > %s/X.log" 
-      dir java_options bddbddb_jar_file 
+    let cmd = spf "cd %s; java %s -jar %s %s > %s/X.log"
+      dir java_options bddbddb_jar_file
       (Filename.basename logicrules_file) dir in
     exec cmd;
     pr2 ("Done with bddbddb, generating .explain files now");
-    let pointing_file = 
+    let pointing_file =
       Datalog_code.bddbddb_explain_tuples
         (Filename.concat datadir "/PointingData.tuples") in
-    let calling_file = 
+    let calling_file =
       Datalog_code.bddbddb_explain_tuples
         (Filename.concat datadir "/CallingData.tuples") in
     exec (spf "cp %s %s" pointing_file root);
@@ -152,8 +152,8 @@ let build_prolog_db lang root xs =
   let files = Find_source.files_of_dir_or_files ~lang xs in
   match lang with
   | "php" ->
-      (* 
-       * todo: 
+      (*
+       * todo:
        * - do things in parallel, pack things.
        * => should significantly reduce the time to produce the
        * prolog facts. It currently takes 41min on www and I hope
@@ -176,39 +176,39 @@ let build_prolog_db lang root xs =
          )
        );
 
-       pr2 (spf "compiling prolog facts with swipl in %s/%s" 
+       pr2 (spf "compiling prolog facts with swipl in %s/%s"
               root prolog_compiled_db);
-       Common.command2 (spf "%s -c %s/%s %s" 
+       Common.command2 (spf "%s -c %s/%s %s"
                            swipl root facts_pl_file predicates_file);
        Common.command2 (spf "mv a.out %s/%s" root prolog_compiled_db);
 
        Filename.concat root prolog_compiled_db
 
   | "cmt" | "bytecode" | "clang2" | "c" ->
-      
-      let g = 
+
+      let g =
         match lang with
 
 #if FEATURE_CMT
-        | "cmt" -> 
+        | "cmt" ->
           let ml_files = Find_source.files_of_root ~lang:"ml" root in
           let cmt_files = files in
           Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files
 #endif
 
 #if FEATURE_BYTECODE
-        | "bytecode" -> 
-          let graph_code_java =  
+        | "bytecode" ->
+          let graph_code_java =
 (*           Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true
-                    root skip_list) 
+                    root skip_list)
 *)
             None
           in
-          Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java 
-            root files 
+          Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
+            root files
 #endif
 (*
-        | "clang2" -> 
+        | "clang2" ->
           Graph_code_clang.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
           Graph_code_clang.build ~verbose:!verbose root files
@@ -276,7 +276,7 @@ let test () =
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
   "-build", " <dirs> source code to analyze",
-  Common.mk_action_n_arg (fun xs -> 
+  Common.mk_action_n_arg (fun xs ->
     let root = Common2.common_prefix_of_files_or_dirs xs in
     let file = build_prolog_db !lang root xs in
     pr2 "";
@@ -294,12 +294,12 @@ let extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
   extra_actions () @
   []
 
 let options () = [
-  "-lang", Arg.Set_string lang, 
+  "-lang", Arg.Set_string lang,
   (spf " <str> choose language (default = %s)" !lang);
   "-datalog", Arg.Set datalog,
   " experimental datalog generation";
@@ -311,10 +311,10 @@ let options () = [
   Common.options_of_actions action (all_actions()) @
   Common2.cmdline_flags_devel () @
   [
-    "-version",   Arg.Unit (fun () -> 
+    "-version",   Arg.Unit (fun () ->
       pr2 (spf "CodeQuery version: %s" Config_pfff.version);
       exit 0;
-    ), 
+    ),
     "  guess what";
   ]
 
@@ -322,11 +322,11 @@ let options () = [
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
+let main () =
   Gc.set {(Gc.get ()) with Gc.stack_limit = 200 * 1024 * 1024};
   Flag_analyze_php.verbose_database := false;
 
-  let usage_msg = 
+  let usage_msg =
     spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
       (Filename.basename Sys.argv.(0))
       "https://github.com/returntocorp/pfff/wiki/Codequery"
@@ -335,34 +335,34 @@ let main () =
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
     (match args with
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | (x::xs) -> 
+    | (x::xs) ->
         main_action (x::xs)
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | _ -> 
-        Common.usage usage_msg (options()); 
+    | _ ->
+        Common.usage usage_msg (options());
         failwith "too few or too many arguments"
     )
   )
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
     main ();
   )

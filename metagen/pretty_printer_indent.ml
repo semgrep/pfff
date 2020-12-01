@@ -12,7 +12,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * 
+ *
  * Aesthetic modifications by Yoann Padioleau and split the file
  * in two, with ML generation specific code in pretty_printer_ocaml.ml
  *)
@@ -82,7 +82,7 @@ let dbg e fmt =
   kprintf xfn fmt
 
 let (-->) e fn = indent_fn e fn
-let (+=) = pfn 
+let (+=) = pfn
 let (-=) = dbg
 let ($) f x = f x
 

@@ -67,7 +67,7 @@ val cyanf : rgbf
 val magentaf : rgbf
 
 
-type degrade = 
+type degrade =
   | Degrade1
   | Degrade2
   | Degrade3
@@ -78,5 +78,5 @@ val degrade: string -> degrade -> color
 val degrade_random: string -> color
 
 (* when 100 it will be black, when 0 it will be white *)
-val degrade_grey: 
+val degrade_grey:
   float (* 0 .. 100 *) -> color

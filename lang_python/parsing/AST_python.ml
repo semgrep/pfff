@@ -9,7 +9,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,11 +21,11 @@
 (*****************************************************************************)
 (* Abstract Syntax Tree for Python3.
  *
- * Most of the code in this file derives from code from 
+ * Most of the code in this file derives from code from
  * Tomohiro Matsuyama in ocaml-pythonlib, which itself derives from
  * the official grammar definition of Python.
  *
- * reference: http://docs.python.org/3/library/AST.html 
+ * reference: http://docs.python.org/3/library/AST.html
  *
  * See also:
  *  - http://trevorjim.com/python-is-not-context-free/
@@ -35,7 +35,7 @@
  * Note that this AST supports partly Python2 syntax with the special
  * print and exec statements. It does not support the special tuple
  * parameters syntax though.
- * 
+ *
  * related work:
  *  - https://github.com/m2ym/ocaml-pythonlib
  *    The original code. The repo was also forked by jeremy buisson
@@ -46,7 +46,7 @@
  *    Python3 interpreter written in Haskell
  *  - libCST (a concrete syntax tree, better for program transformation)
  *    by Instagram
- * 
+ *
  * history:
  *  - 2019 port to the pfff infrastructure.
  *  - 2019 modified to support types, and many other Python 3 features
@@ -54,7 +54,7 @@
  *  - 2020 backport print and exec statements, to parse some python2 code.
  *
  * todo:
- *  - could use records for all the XxxDef, but what matters now is 
+ *  - could use records for all the XxxDef, but what matters now is
  *    AST_generic.ml, which uses records at least.
  *)
 
@@ -98,8 +98,8 @@ type dotted_name = name list
  [@@deriving show] (* with tarzan *)
 
 (*s: type [[AST_python.module_name]] *)
-type module_name = 
- dotted_name * 
+type module_name =
+ dotted_name *
  (* https://realpython.com/absolute-vs-relative-python-imports/ *)
  (tok (* . or ... toks *) list) option (* levels, for relative imports *)
 (*e: type [[AST_python.module_name]] *)
@@ -167,11 +167,11 @@ type expr =
    * of a class is a New *)
   | Call of expr (* func *) * argument list bracket (* args *)
 
-  | Subscript of expr (* value *) * slice list bracket (* slice *) * 
+  | Subscript of expr (* value *) * slice list bracket (* slice *) *
                  expr_context
 
   (* the parameters do not have types here *)
-  | Lambda of tok (* lambda *) * parameters (* args *) * tok (* : *) * 
+  | Lambda of tok (* lambda *) * parameters (* args *) * tok (* : *) *
               expr (* body *)
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
@@ -184,7 +184,7 @@ type expr =
   | NamedExpr of expr * tok * expr
   | Repr of expr bracket (* `` *)
   (* =~ ObjAccess *)
-  | Attribute of expr (* value *) * tok (* . *) * name (* attr *) * 
+  | Attribute of expr (* value *) * tok (* . *) * name (* attr *) *
        expr_context (* ctx *)
 (*e: type [[AST_python.expr]] *)
 
@@ -201,28 +201,28 @@ type expr =
   and boolop = And | Or
 (*e: type [[AST_python.boolop]] *)
 
-  (* the % operator can also be used for strings! "foo %s" % name *)  
+  (* the % operator can also be used for strings! "foo %s" % name *)
 (*s: type [[AST_python.operator]] *)
-  and operator = 
-    | Add | Sub | Mult | Div 
+  and operator =
+    | Add | Sub | Mult | Div
     | Mod | Pow | FloorDiv
-    | LShift | RShift 
-    | BitOr | BitXor | BitAnd 
+    | LShift | RShift
+    | BitOr | BitXor | BitAnd
     | MatMult (* Matrix Multiplication *)
 (*e: type [[AST_python.operator]] *)
-  
+
 (*s: type [[AST_python.unaryop]] *)
   and unaryop = Invert | Not | UAdd | USub
 (*e: type [[AST_python.unaryop]] *)
-  
+
 (*s: type [[AST_python.cmpop]] *)
-  and cmpop = 
-    | Eq | NotEq 
-    | Lt | LtE | Gt | GtE 
-    | Is | IsNot 
+  and cmpop =
+    | Eq | NotEq
+    | Lt | LtE | Gt | GtE
+    | Is | IsNot
     | In | NotIn
 (*e: type [[AST_python.cmpop]] *)
-  
+
  (* usually a Str or a simple expr.
   * TODO: should also handle format specifier, they are skipped for now
   * during parsing
@@ -232,7 +232,7 @@ type expr =
 (*e: type [[AST_python.interpolated]] *)
 
 (*s: type [[AST_python.list_or_comprehension]] *)
-  and 'a list_or_comprehension = 
+  and 'a list_or_comprehension =
     | CompList of 'a list bracket
     | CompForIf of 'a comprehension
 (*e: type [[AST_python.list_or_comprehension]] *)
@@ -245,30 +245,30 @@ type expr =
       | CompFor of expr (* introduce new vars *) * (* in *) expr
       | CompIf of expr
 (*e: type [[AST_python.for_if]] *)
-  
+
 (*s: type [[AST_python.dictorset_elt]] *)
-  and dictorset_elt = 
+  and dictorset_elt =
     | KeyVal of expr * expr
     | Key of expr
     (* python3: *)
     | PowInline of expr
 (*e: type [[AST_python.dictorset_elt]] *)
-  
+
   (* AugLoad and AugStore are not used *)
 (*s: type [[AST_python.expr_context]] *)
-  and expr_context = 
-    | Load | Store 
-    | Del 
+  and expr_context =
+    | Load | Store
+    | Del
     | AugLoad | AugStore
     | Param
 (*e: type [[AST_python.expr_context]] *)
-  
+
 (*s: type [[AST_python.slice]] *)
   and slice =
     | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
     | Index of expr (* value *)
 (*e: type [[AST_python.slice]] *)
-  
+
 (*s: type [[AST_python.parameters]] *)
   and parameters = parameter list
 (*e: type [[AST_python.parameters]] *)
@@ -290,9 +290,9 @@ type expr =
      (* sgrep-ext: *)
      | ParamEllipsis of tok
 (*e: type [[AST_python.parameter]] *)
-  
+
 (*s: type [[AST_python.argument]] *)
-  and argument = 
+  and argument =
     | Arg of expr (* this can be Ellipsis for sgrep *)
     | ArgKwd of name (* arg *) * expr (* value *)
     | ArgStar of (* '*' *)  tok * expr
@@ -348,15 +348,15 @@ type stmt =
   | Assign of expr list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
-  | For of tok * pattern (* (pattern) introduce new vars *) * 
-           tok * expr (* 'in' iter *) * 
+  | For of tok * pattern (* (pattern) introduce new vars *) *
+           tok * expr (* 'in' iter *) *
            stmt list (* body *) * stmt list (* orelse *)
-  | While of tok * expr (* test *) * stmt list (* body *) * 
+  | While of tok * expr (* test *) * stmt list (* body *) *
              stmt list (* orelse *)
-  | If of tok * expr (* test *) * stmt list (* body *) * 
+  | If of tok * expr (* test *) * stmt list (* body *) *
              stmt list option (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
-  | With of tok * expr (* context_expr *) * expr option (* optional_vars *) * 
+  | With of tok * expr (* context_expr *) * expr option (* optional_vars *) *
       stmt list (* body *)
 
   | Return of tok * expr option (* value *)
@@ -387,29 +387,29 @@ type stmt =
   | ImportFrom of tok * module_name (* module *) * alias list (* names *)
 
   (* should be allowed just at the toplevel *)
-  | FunctionDef of 
-       tok (* 'def' *) * 
-       name (* name *) * 
-       parameters (* args *) * 
+  | FunctionDef of
+       tok (* 'def' *) *
+       name (* name *) *
+       parameters (* args *) *
        type_ option * (* return type *)
-       stmt list (* body *) * 
+       stmt list (* body *) *
        decorator list (* decorator_list *)
 
-  | ClassDef of 
+  | ClassDef of
         tok (* 'class' *) *
-        name (* name *) * 
-        type_parent list (* bases *) * 
-        stmt list (* body *) * 
+        name (* name *) *
+        type_parent list (* bases *) *
+        stmt list (* body *) *
         decorator list (* decorator_list *)
 (*e: type [[AST_python.stmt]] *)
 
 
 (*s: type [[AST_python.excepthandler]] *)
-and excepthandler = 
-  ExceptHandler of 
+and excepthandler =
+  ExceptHandler of
     tok *
-    expr option (* type, possibly a list of types as in (Error,Fatal) *) * 
-    name option (* name, introduce new var, todo: only if pattern is Some *) * 
+    expr option (* type, possibly a list of types as in (Error,Fatal) *) *
+    name option (* name, introduce new var, todo: only if pattern is Some *) *
     stmt list (* body *)
 (*e: type [[AST_python.excepthandler]] *)
 

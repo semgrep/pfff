@@ -36,7 +36,7 @@ type ifdef_grouped =
   | Ifdefbool of bool * ifdef_grouped list list * token_extended list
   | NotIfdefLine of token_extended list
 
-type 'a line_grouped = 
+type 'a line_grouped =
   Line of 'a list
 
 type body_function_grouped =

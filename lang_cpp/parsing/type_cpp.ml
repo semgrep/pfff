@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -25,18 +25,18 @@ module Ast = Cst_cpp
 (* Accessors *)
 (*****************************************************************************)
 
-let is_function_type x = 
+let is_function_type x =
   match Ast.unwrap_typeC x with
   | FunctionType _ -> true
   | _ -> false
 
-let rec is_method_type x = 
+let rec is_method_type x =
   match Ast.unwrap_typeC x with
-  | Pointer (_, y) -> 
+  | Pointer (_, y) ->
       is_method_type y
-  | ParenType paren_ft -> 
+  | ParenType paren_ft ->
       is_method_type (Ast.unparen paren_ft)
-  | FunctionType _ -> 
+  | FunctionType _ ->
       true
   | _ -> false
 

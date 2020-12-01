@@ -1,6 +1,6 @@
 
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = 
+type program_and_tokens =
   Ast_ml.program option * Parser_ml.token list
 
 (* This is the main function. See flag_parsing_ml for settings. *)
@@ -16,7 +16,7 @@ val any_of_string:
 (* for semgrep and LSP *)
 val type_of_string:
   string -> Ast_ml.type_
-  
+
 
 (* internal *)
 val tokens: Common.filename -> Parser_ml.token list

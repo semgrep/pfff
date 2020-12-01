@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,8 +22,8 @@ open Parser_skip
 (*****************************************************************************)
 (* A lexer for Skip.
  *
- * reference: 
- *  - https://github.com/skiplang/skip/blob/master/docs/specification/Lexical-Structure.md 
+ * reference:
+ *  - https://github.com/skiplang/skip/blob/master/docs/specification/Lexical-Structure.md
  *    but not up to date
  *  - skip/src/frontend/keywords.sk
  *)
@@ -70,8 +70,8 @@ rule token = parse
 
   (* don't keep the trailing \n; it will be in another token *)
   | "//" [^'\n']* { TComment (tokinfo lexbuf) }
-  | "/*" { 
-      let info = tokinfo lexbuf in 
+  | "/*" {
+      let info = tokinfo lexbuf in
       let com = comment lexbuf in
       TComment(info |> Parse_info.tok_add_s com)
     }
@@ -101,7 +101,7 @@ rule token = parse
   | "(" { TOParen(tokinfo lexbuf) }  | ")" { TCParen(tokinfo lexbuf) }
   | "[" { TOBracket(tokinfo lexbuf) }  | "]" { TCBracket(tokinfo lexbuf) }
 
-  | ";" { TSemiColon(tokinfo lexbuf) }  
+  | ";" { TSemiColon(tokinfo lexbuf) }
   | ":" { TColon(tokinfo lexbuf) }
   | "::" { TColonColon(tokinfo lexbuf) }
   | "," { TComma(tokinfo lexbuf) }
@@ -134,26 +134,26 @@ rule token = parse
   | ident as id {
       let ii = tokinfo lexbuf in
       match id with
-      | "alias" -> Talias ii  
-      | "as" -> Tas ii  
-      | "async" -> Tasync ii  
-      | "await" -> Tawait ii  
-      | "catch" -> Tcatch ii  
-      | "children" -> Tchildren ii  
-      | "class" -> Tclass ii  
-      | "const" -> Tconst ii  
-      | "else" -> Telse ii  
+      | "alias" -> Talias ii
+      | "as" -> Tas ii
+      | "async" -> Tasync ii
+      | "await" -> Tawait ii
+      | "catch" -> Tcatch ii
+      | "children" -> Tchildren ii
+      | "class" -> Tclass ii
+      | "const" -> Tconst ii
+      | "else" -> Telse ii
       | "extends" -> Textends ii
-      | "final" -> Tfinal ii  
-      | "from" -> Tfrom ii  
-      | "fun" -> Tfun ii  
-      | "if" -> Tif ii  
-      | "match" -> Tmatch ii  
-      | "module" -> Tmodule ii  
-      | "mutable" -> Tmutable ii  
-      | "native" -> Tnative ii  
+      | "final" -> Tfinal ii
+      | "from" -> Tfrom ii
+      | "fun" -> Tfun ii
+      | "if" -> Tif ii
+      | "match" -> Tmatch ii
+      | "module" -> Tmodule ii
+      | "mutable" -> Tmutable ii
+      | "native" -> Tnative ii
       | "private" -> Tprivate ii
-      | "protected" -> Tprotected ii  
+      | "protected" -> Tprotected ii
       | "uses" -> Tuses ii
       | "static" -> Tstatic ii
       | "this" -> Tthis ii (* conditional? *)
@@ -194,7 +194,7 @@ rule token = parse
       | "yield" -> Tyield ii
       | "break" -> Tbreak ii
       | "continue" -> Tcontinue ii
-     
+
 
       | _ -> TLowerIdent (id, ii)
     }
@@ -207,14 +207,14 @@ rule token = parse
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
 
-  | '-'? digit 
+  | '-'? digit
         (digit | '_')*
   | '-'? ("0x" | "0X") (digit | ['A' 'F' 'a' 'f'])
                        (digit | ['A' 'F' 'a' 'f'] | '_')*
   | '-'? ("0o" | "0O")   ['0'-'7']
                        ( ['0'-'7'] | '_')*
   | '-'? ("0b" | "0B")   ['0'-'1']
-                       ( ['0'-'1'] | '_')* 
+                       ( ['0'-'1'] | '_')*
    {
      let s = tok lexbuf in
      TInt (s, tokinfo lexbuf)
@@ -223,7 +223,7 @@ rule token = parse
   | '-'?
     digit (digit | '_')*
     ('.' (digit | '_')*)?
-    ( ('e' |'E') ['+' '-']? digit (digit | '_')* )? 
+    ( ('e' |'E') ['+' '-']? digit (digit | '_')* )?
      {
      let s = tok lexbuf in
      TFloat (s, tokinfo lexbuf)
@@ -250,14 +250,14 @@ rule token = parse
       TChar (String.make 1 c, tokinfo lexbuf)
     }
 
-  | "'" 
+  | "'"
     (
         '\\' ( '\\' | '"' | "'" | 'n' | 't' | 'b' | 'r')
       | '\\' digit+
       | '\\' 'x' hexa+
       | '\\' 'u' hexa+
     )
-    "'" 
+    "'"
    {
       let s = tok lexbuf in
       TChar (s, tokinfo lexbuf)
@@ -293,12 +293,12 @@ rule token = parse
 and string buf = parse
   | '"'           { () }
   (* opti: *)
-  | [^ '"' '\\']+ { 
+  | [^ '"' '\\']+ {
       Buffer.add_string buf (tok lexbuf);
-      string buf lexbuf 
+      string buf lexbuf
     }
 
-  | ("\\" (_ as v)) as x { 
+  | ("\\" (_ as v)) as x {
       (* todo: check char ? *)
       (match v with
       | _ -> ()
@@ -315,14 +315,14 @@ and string buf = parse
 and comment = parse
   | "*/" { tok lexbuf }
 
-  | [^'*''/']+ { let s = tok lexbuf in s ^ comment lexbuf } 
+  | [^'*''/']+ { let s = tok lexbuf in s ^ comment lexbuf }
   | "*"     { let s = tok lexbuf in s ^ comment lexbuf }
   | "/"     { let s = tok lexbuf in s ^ comment lexbuf }
-  | eof { 
+  | eof {
       error "end of file in comment" lexbuf;
       "*/"
     }
-  | _  { 
+  | _  {
       let s = tok lexbuf in
       error ("unrecognised symbol in comment:"^s) lexbuf;
       s ^ comment lexbuf

@@ -8,7 +8,7 @@ exception MacroInCase
 (* take care! this use Common.gensym to generate fresh unique anon structures
  * so this function may return a different program given the same input
  *)
-val program: 
+val program:
   Cst_cpp.program -> Ast_c.program
 
 val any:

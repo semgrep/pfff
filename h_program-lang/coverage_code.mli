@@ -1,5 +1,5 @@
 
-(* relevant test files exercising source, with term-frequency of 
+(* relevant test files exercising source, with term-frequency of
  * file in the test *)
 type tests_coverage = (Common.filename (* source *), tests_score) Common.assoc
  and tests_score = (Common.filename (* a test *) * float) list

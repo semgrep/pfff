@@ -32,25 +32,25 @@ end
 (*
  * Another related trick, found via Jon Harrop to have an extended standard
  * lib is to do something like
- * 
+ *
  * module List = struct
  *  include List
  *  val map2 : ...
  * end
- * 
+ *
  * And then can put this "module extension" somewhere to open it.
  *)
 
 
 
-(* This module defines the Timeout and UnixExit exceptions.  
- * You  have to make sure that those exn are not intercepted. So 
+(* This module defines the Timeout and UnixExit exceptions.
+ * You  have to make sure that those exn are not intercepted. So
  * avoid exn handler such as try (...) with _ -> cos Timeout will not bubble up
- * enough. In such case, add a case before such as  
- * with Timeout -> raise Timeout | _ -> ... 
+ * enough. In such case, add a case before such as
+ * with Timeout -> raise Timeout | _ -> ...
  * The same is true for UnixExit (see below).
  *)
-@ 
+@
 
 \section{Debugging, logging}
 
@@ -67,9 +67,9 @@ val reset_pr_indent : unit -> unit
  * They also add the _prefix_pr, for instance used in MPI to show which
  * worker is talking.
  * update: for pr2, it can also print into a log file.
- * 
+ *
  * The use of 2 in pr2 is because 2 is under UNIX the second descriptor
- * which corresponds to stderr. 
+ * which corresponds to stderr.
  *)
 val _prefix_pr : string ref
 
@@ -110,9 +110,9 @@ val sprintf : ('a, unit, string) format -> 'a
 val spf : ('a, unit, string) format -> 'a
 
 (* default = stderr *)
-val _chan : out_channel ref 
+val _chan : out_channel ref
 (* generate & use a /tmp/debugml-xxx file *)
-val start_log_file : unit -> unit 
+val start_log_file : unit -> unit
 
 (* see flag: val verbose_level : int ref *)
 val log : string -> unit
@@ -142,7 +142,7 @@ val debugoff : unit -> unit
 val debug : (unit -> unit) -> unit
 
 (* see flag: val debugger : bool ref *)
-@ 
+@
 
 \section{Profiling}
 
@@ -189,9 +189,9 @@ val report_if_take_time : int -> string -> (unit -> 'a) -> 'a
 
 (* similar to profile_code but print some information during execution too *)
 val profile_code2 : string -> (unit -> 'a) -> 'a
-@ 
+@
 
-\section{Testing} 
+\section{Testing}
 
 \todo{
 unit test, no in ocaml, not needed, just use equal
@@ -200,24 +200,24 @@ unit test, no in ocaml, not needed, just use equal
 \begin{verbatim}
 (* Better than quickcheck, cos cant do a test_all_prop in haskell cos
  * prop were functions, whereas here we have not prop_Unix x = ... but
- * laws "unit" ... 
+ * laws "unit" ...
  *
  * How to do without overloading ? objet ? can pass a generator as a
  * parameter, mais lourd, prefer automatic inferring of the
  * generator? But at the same time quickcheck does not do better cos
- * we must explictly type the property. So between a 
- *    prop_unit:: [Int] -> [Int] -> bool ... 
- *    prop_unit x = reverse [x] == [x] 
- * and 
- *    let _ = laws "unit" (fun x -> reverse [x] = [x]) (listg intg) 
- * there is no real differences.  
+ * we must explictly type the property. So between a
+ *    prop_unit:: [Int] -> [Int] -> bool ...
+ *    prop_unit x = reverse [x] == [x]
+ * and
+ *    let _ = laws "unit" (fun x -> reverse [x] = [x]) (listg intg)
+ * there is no real differences.
  *
  * Yes I define typeg generator but quickcheck too, he must define
  * class instance. I emulate the context Gen a => Gen [a] by making
  * listg take as a param a type generator. Moreover I have not the pb of
- * monad. I can do random independently, so my code is more simple 
+ * monad. I can do random independently, so my code is more simple
  * I think than the haskell code of quickcheck.
- * 
+ *
  * update: apparently Jane Street have copied some of my code for their
  * Ounit_util.ml and quichcheck.ml in their Core library :)
  *)
@@ -230,7 +230,7 @@ let b = laws "rev " (fun xs      -> reverse (reverse xs) = xs                   
 let b = laws "appb" (fun (xs,ys) -> reverse (xs++ys)     = reverse xs++reverse ys)(pg (lg ig)(lg ig))
 let b = laws "max"  (fun (x,y)   -> x <= y ==> (max x y  = y)                       )(pg ig ig)
 
-let b = laws2 "max"  (fun (x,y)   -> ((x <= y ==> (max x y  = y)), x <= y))(pg ig ig) 
+let b = laws2 "max"  (fun (x,y)   -> ((x <= y ==> (max x y  = y)), x <= y))(pg ig ig)
 *)
 
 
@@ -243,9 +243,9 @@ let b = laws2 "max"  (fun (x,y)   -> ((x <= y ==> (max x y  = y)), x <= y))(pg i
 
 val example : bool -> unit
 (* generate failwith <string> when pb *)
-val example2 : string -> bool -> unit 
+val example2 : string -> bool -> unit
 (* use Dumper to report when pb *)
-val assert_equal : 'a -> 'a -> unit 
+val assert_equal : 'a -> 'a -> unit
 
 val _list_bool : (string * bool) list ref
 val example3 : string -> bool -> unit
@@ -253,11 +253,11 @@ val test_all : unit -> unit
 
 
 (* regression testing *)
-type score_result = Ok | Pb of string 
+type score_result = Ok | Pb of string
 type score =      (string (* usually a filename *), score_result) Hashtbl.t
 type score_list = (string (* usually a filename *) * score_result) list
 val empty_score : unit -> score
-val regression_testing : 
+val regression_testing :
   score -> filename (* old score file on disk (usually in /tmp) *) -> unit
 val regression_testing_vs: score -> score -> score
 val total_scores : score -> int (* good *) * int (* total *)
@@ -283,7 +283,7 @@ val frequencyl : (int * 'a) list -> 'a gen
 
 val laws : string -> ('a -> bool) -> 'a gen -> 'a option
 
-(* example of use: 
+(* example of use:
  * let b = laws "unit" (fun x -> reverse [x] = [x])    ig
  *)
 
@@ -292,7 +292,7 @@ val statistic : 'a list -> (int * 'a) list
 
 val laws2 :
   string -> ('a -> bool * 'b) -> 'a gen -> 'a option * (int * 'b) list
-@ 
+@
 
 \section{Persitence}
 
@@ -310,7 +310,7 @@ val write_back : ('a -> 'b) -> filename -> unit
 (* wrappers that also use profile_code *)
 val marshal__to_string:   'a -> Marshal.extern_flags list -> string
 val marshal__from_string:   string -> int -> 'a
-@ 
+@
 
 \section{Counter}
 <<common.mli basic features>>=
@@ -326,7 +326,7 @@ val counter2 : unit -> int
 val counter3 : unit -> int
 
 type timestamp = int
-@ 
+@
 
 \section{Stringof}
 
@@ -363,9 +363,9 @@ val adjust_pp_with_indent : (unit -> unit) -> unit
 val adjust_pp_with_indent_and_header : string -> (unit -> unit) -> unit
 
 
-val mk_str_func_of_assoc_conv: 
+val mk_str_func_of_assoc_conv:
   ('a * string) list -> (string -> 'a) * ('a -> string)
-@ 
+@
 
 \section{Macro}
 
@@ -376,12 +376,12 @@ val mk_str_func_of_assoc_conv:
 
 (* was working with my macro.ml4 *)
 val macro_expand : string -> unit
-@ 
+@
 
 
 \begin{verbatim}
 (* I like the obj.func object notation. In OCaml cant use '.' so I use +>
- * 
+ *
  * update: it seems that F# agrees with me :) but they use |>
  *)
 \end{verbatim}
@@ -450,24 +450,24 @@ val cache_in_ref : 'a option ref -> (unit -> 'a) -> 'a
 
 
 (* take file from which computation is done, an extension, and the function
- * and will compute the function only once and then save result in 
+ * and will compute the function only once and then save result in
  * file ^ extension
  *)
-val cache_computation : 
-  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) -> 
+val cache_computation :
+  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) ->
   (unit -> 'a) -> 'a
 
-(* a more robust version where the client describes the dependencies of the 
- * computation so it will relaunch the computation in 'f' if needed. 
+(* a more robust version where the client describes the dependencies of the
+ * computation so it will relaunch the computation in 'f' if needed.
  *)
 val cache_computation_robust :
-  filename -> 
-  string (* extension for marshalled object *) -> 
-  (filename list * 'x) -> 
-  string (* extension for marshalled dependencies *) -> 
-  (unit -> 'a) -> 
+  filename ->
+  string (* extension for marshalled object *) ->
+  (filename list * 'x) ->
+  string (* extension for marshalled dependencies *) ->
+  (unit -> 'a) ->
   'a
-  
+
 
 
 val once : ('a -> unit) -> ('a -> unit)
@@ -479,7 +479,7 @@ val main_boilerplate : (unit -> unit) -> unit
 
 
 (* cf also the timeout function below that are control related too *)
-@ 
+@
 
 \section{Concurrency}
 
@@ -489,10 +489,10 @@ val main_boilerplate : (unit -> unit) -> unit
 (*****************************************************************************)
 
 (* how ensure really atomic file creation ? hehe :) *)
-exception FileAlreadyLocked 
+exception FileAlreadyLocked
 val acquire_file_lock : filename -> unit
 val release_file_lock : filename -> unit
-@ 
+@
 
 \section{Error management}
 
@@ -521,11 +521,11 @@ val string_of_exn : exn -> string
 
 val exn_to_s_with_backtrace : exn -> string
 
-type error = Error of string 
+type error = Error of string
 
 type evotype = unit
 val evoval : evotype
-@ 
+@
 
 \section{Environment}
 
@@ -538,108 +538,108 @@ val _check_stack: bool ref
 
 val check_stack_size: int -> unit
 val check_stack_nbfiles: int -> unit
- 
+
 (* internally common.ml set Gc. parameters *)
 val _init_gc_stack : unit
-@ 
+@
 
 \begin{verbatim}
  * Why define wrappers ? Arg not good enough ? Well the Arg.Rest is not that
  * good and I need a way sometimes to get a list of argument.
- * 
+ *
  * I could define maybe a new Arg.spec such as
- * | String_list of (string list -> unit), but the action may require 
+ * | String_list of (string list -> unit), but the action may require
  * some flags to be set, so better to process this after all flags have
  * been set by parse_options. So have to split. Otherwise it would impose
- * an order of the options such as 
+ * an order of the options such as
  * -verbose_parsing -parse_c file1 file2. and I really like to use bash
  * history and add just at the end of my command a -profile for instance.
- * 
- * 
+ *
+ *
  * Why want a -action arg1 arg2 arg3 ? (which in turn requires this
- * convulated scheme ...) Why not use Arg.String action such as 
- * "-parse_c", Arg.String (fun file -> ...) ? 
- * I want something that looks like ocaml function but at the UNIX 
- * command line level. So natural to have this scheme instead of 
+ * convulated scheme ...) Why not use Arg.String action such as
+ * "-parse_c", Arg.String (fun file -> ...) ?
+ * I want something that looks like ocaml function but at the UNIX
+ * command line level. So natural to have this scheme instead of
  * -taxo_file arg2 -sample_file arg3 -parse_c arg1.
- * 
- * 
- * Why not use the toplevel ? 
+ *
+ *
+ * Why not use the toplevel ?
  * - because to debug, ocamldebug is far superior to the toplevel
  *   (can go back, can go directly to a specific point, etc).
- *   I want a kind of testing at cmdline level. 
- * - Also I don't have file completion when in the ocaml toplevel. 
+ *   I want a kind of testing at cmdline level.
+ * - Also I don't have file completion when in the ocaml toplevel.
  *   I have to type "/path/to/xxx" without help.
- * 
- * 
- * Why having variable flags ? Why use 'if !verbose_parsing then ...' ? 
+ *
+ *
+ * Why having variable flags ? Why use 'if !verbose_parsing then ...' ?
  * why not use strings and do stuff like the following
  * 'if (get_config "verbose_parsing") then ...'
  * Because I want to make the interface for flags easier for the code
  * that use it. The programmer should not be bothered wether this
- * flag is set via args cmd line or a config file, so I want to make it 
+ * flag is set via args cmd line or a config file, so I want to make it
  * as simple as possible, just use a global plain caml ref variable.
- * 
+ *
  * Same spirit a little for the action. Instead of having function such as
  * test_parsing_c, I could do it only via string. But I still prefer
  * to have plain caml test functions. Also it makes it easier to call
  * those functions from a toplevel for people who prefer the toplevel.
- * 
- * 
- * So have flag_spec and action_spec. And in flag have debug_xxx flags, 
+ *
+ *
+ * So have flag_spec and action_spec. And in flag have debug_xxx flags,
  * verbose_xxx flags and other flags.
- * 
+ *
  * I would like to not have to separate the -xxx actions spec from the
  * corresponding actions, but those actions may need more than one argument
  * and so have to wait for parse_options, which in turn need the options
- * spec, so circle. 
- * 
+ * spec, so circle.
+ *
  * Also I dont want to mix code with data structures, so it's better that the
  * options variable contain just a few stuff and have no side effects except
  * setting global variables.
- * 
+ *
  * Why not have a global variable such as Common.actions that
  * other modules modify ? No, I prefer to do less stuff behind programmer's
  * back so better to let the user merge the different options at call
  * site, but at least make it easier by providing shortcut for set of options.
- * 
- * 
- * 
+ *
+ *
+ *
 
-(* kind of unit testing framework, or toplevel like functionnality 
+(* kind of unit testing framework, or toplevel like functionnality
  * at shell command line. I realize than in fact It follows a current trend
- * to have a main cmdline program where can then select different actions, 
+ * to have a main cmdline program where can then select different actions,
  * as in cvs/hg/git where do  hg <action> <arguments>, and the shell even
  * use a curried syntax :)
- * 
- * 
+ *
+ *
  * Not-perfect-but-basic-feels-right: an action
  * spec looks like this:
- * 
+ *
  *    let actions () = [
- *      "-parse_taxo", "   <file>", 
+ *      "-parse_taxo", "   <file>",
  *      Common.mk_action_1_arg test_parse_taxo;
  *      ...
  *     ]
- * 
+ *
  * Not-perfect-but-basic-feels-right because for such functionality we
  * need a way to transform a string into a caml function and pass arguments
  * and the preceding design does exactly that, even if then the
  * functions that use this design are not so convenient to use (there
  * are 2 places where we need to pass those data, in the options and in the
- * main dispatcher). 
- * 
+ * main dispatcher).
+ *
  * Also it's not too much intrusive. Still have an
- * action ref variable in the main.ml and can still use the previous 
+ * action ref variable in the main.ml and can still use the previous
  * simpler way to do where the match args with in main.ml do the
  * dispatch.
- * 
- * Use like this at option place: 
+ *
+ * Use like this at option place:
  *   (Common.options_of_actions actionref (Test_parsing_c.actions())) ++
- * Use like this at dispatch action place: 
- *   | xs when List.mem !action (Common.action_list all_actions) -> 
+ * Use like this at dispatch action place:
+ *   | xs when List.mem !action (Common.action_list all_actions) ->
  *        Common.do_action !action xs all_actions
- * 
+ *
  *)
 
 
@@ -660,10 +660,10 @@ type options_with_title = string * string * arg_spec_full list
 type cmdline_sections = options_with_title list
 
 
-(* A wrapper around Arg modules that have more logical argument order, 
+(* A wrapper around Arg modules that have more logical argument order,
  * and returns the remaining args.
  *)
-val parse_options : 
+val parse_options :
   cmdline_options -> Arg.usage_msg -> string array -> string list
 
 (* Another wrapper that does Arg.align automatically *)
@@ -674,18 +674,18 @@ val usage : Arg.usage_msg -> cmdline_options -> unit
 (* Work with the options_with_title type way to organize a long
  * list of command line switches.
  *)
-val short_usage : 
+val short_usage :
   Arg.usage_msg -> short_opt:cmdline_options -> unit
-val long_usage : 
-  Arg.usage_msg -> short_opt:cmdline_options -> long_opt:cmdline_sections -> 
+val long_usage :
+  Arg.usage_msg -> short_opt:cmdline_options -> long_opt:cmdline_sections ->
   unit
 
 (* With the options_with_title way, we don't want the default -help and --help
  * so need adapter of Arg module, not just wrapper.
  *)
 val arg_align2 : cmdline_options -> cmdline_options
-val arg_parse2 : 
-  cmdline_options -> Arg.usage_msg -> (unit -> unit) (* short_usage func *) -> 
+val arg_parse2 :
+  cmdline_options -> Arg.usage_msg -> (unit -> unit) (* short_usage func *) ->
   string list
 
 
@@ -695,7 +695,7 @@ val arg_parse2 :
 (* The action lib. Useful to debug supart of your system. cf some of
  * my main.ml for example of use. *)
 type flag_spec   = Arg.key * Arg.spec * Arg.doc
-type action_spec = Arg.key * Arg.doc * action_func 
+type action_spec = Arg.key * Arg.doc * action_func
    and action_func = (string list -> unit)
 
 type cmdline_actions = action_spec list
@@ -708,13 +708,13 @@ val mk_action_3_arg : (string -> string -> string -> unit) -> action_func
 
 val mk_action_n_arg : (string list -> unit) -> action_func
 
-val options_of_actions: 
+val options_of_actions:
   string ref (* the action ref *) -> cmdline_actions -> cmdline_options
-val action_list: 
+val action_list:
   cmdline_actions -> Arg.key list
-val do_action: 
+val do_action:
   Arg.key -> string list (* args *) -> cmdline_actions -> unit
-@ 
+@
 
 \section{Equality}
 
@@ -742,16 +742,16 @@ val (=:=) : bool   -> bool   -> bool
 
 (* the evil generic (=). I define another symbol to more easily detect
  * it, cos the '=' sign is syntaxically overloaded in caml. It is also
- * used to define function. 
+ * used to define function.
  *)
 val (=*=): 'a -> 'a -> bool
 
 (* if want to restrict the use of '=', uncomment this:
  *
  * val (=): unit -> unit -> bool
- * 
+ *
  * But it will not forbid you to use caml functions like List.find, List.mem
  * which internaly use this convenient but evolution-unfriendly (=)
 *)
-@ 
+@
 

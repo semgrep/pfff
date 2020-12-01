@@ -3,19 +3,19 @@
 type 'a graph
 
 (* graph construction *)
-val create : 
+val create :
   unit -> 'a graph
-val add_vertex_if_not_present : 
+val add_vertex_if_not_present :
   'a -> 'a graph -> unit
-val add_edge : 
+val add_edge :
   'a -> 'a -> 'a graph -> unit
 (* this will also remove its associated edges *)
 val remove_vertex:
   'a -> 'a graph -> unit
-val remove_edge : 
+val remove_edge :
   'a -> 'a -> 'a graph -> unit
 (* many algorithms works by side effect on the graph so need a copy function *)
-val copy: 
+val copy:
   'a graph -> 'a graph
 
 
@@ -39,7 +39,7 @@ val entry_nodes: 'a graph -> 'a list
 val ivertex: 'a -> 'a graph -> int
 
 (* algorithms *)
-val shortest_path: 
+val shortest_path:
   'a -> 'a -> 'a graph -> 'a list
 val transitive_closure:
   'a graph -> 'a graph
@@ -59,8 +59,8 @@ val depth_nodes:
 val print_graph_generic :
   ?launch_gv:bool ->
   ?extra_string:string ->
-  str_of_key:('a -> string) -> 
-  Common.filename (* dot file *) -> 
+  str_of_key:('a -> string) ->
+  Common.filename (* dot file *) ->
   'a graph -> unit
 
 val display_with_gv:
@@ -69,5 +69,5 @@ val display_strongly_connected_components :
   str_of_key:('a -> string) -> ('a, int) Hashtbl.t -> 'a graph -> unit
 
 (* internals *)
-val stat: 
+val stat:
   'a graph -> unit

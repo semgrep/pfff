@@ -8,7 +8,7 @@ let load db gen =
 		let data = Marshal.from_channel in_channel in
 		close_in in_channel;
 		data
-	with _ -> 
+	with _ ->
 		let data = gen() in
 		let out_channel = open_out db in
 		Marshal.to_channel out_channel data [];

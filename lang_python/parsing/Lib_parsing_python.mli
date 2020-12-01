@@ -1,6 +1,6 @@
 (*s: pfff/lang_python/parsing/Lib_parsing_python.mli *)
 (*s: signature [[Lib_parsing_python.find_source_files_of_dir_or_files]] *)
-val find_source_files_of_dir_or_files: 
+val find_source_files_of_dir_or_files:
   Common.path list -> Common.filename list
 (*e: signature [[Lib_parsing_python.find_source_files_of_dir_or_files]] *)
 

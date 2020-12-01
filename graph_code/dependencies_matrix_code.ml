@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -29,12 +29,12 @@ module G2 = Graph_code_opti
 (*****************************************************************************)
 
 (* Dependency Structure Matrix.
- *  
+ *
  * If A depends on B, e.g. visual/ depends on commons/,
  * then we will increment 'row of visual' x 'column of commons',
  * that way one can easily see all the modules that visual/ depends
  * on by looking at the 'row of visual'.
- * 
+ *
  * todo: I think Ndepend does the reverse. Also I think Ndepends uses
  * a symetric matrix model where one can get more information by looking
  * at both directions. In one direction one can know how many entities A is
@@ -45,7 +45,7 @@ module G2 = Graph_code_opti
  * should be moved in B. This is done I think only when there is a clean
  * layered archi. When there are cycles then NDepend uses another color
  * for the cell.
- * 
+ *
  * todo: coupling/cohesion metrics! the dsm can be helpful to visualize
  * this? see patterns? use more colors?
  *)
@@ -56,29 +56,29 @@ type dm = {
   (* which nodes are currently expanded *)
   config: config;
 }
-  (* It's actually more a 'tree set' than a 'tree list' below 
+  (* It's actually more a 'tree set' than a 'tree list' below
    * when we pass the config to build(). Indeed it's build() which
    * will order this set according to some partitionning algorithm
    * that tries to "layer" the code.
-   * less: could reuse Common.tree2. 
+   * less: could reuse Common.tree2.
    *)
   and tree =
     | Node of Graph_code.node * tree list
   and config = tree
 
 
-let basic_config g = 
-  Node (G.root, Graph_code.children G.root g 
+let basic_config g =
+  Node (G.root, Graph_code.children G.root g
     |> List.map (fun n -> Node (n, [])))
-let basic_config_opti gopti = 
+let basic_config_opti gopti =
   Node (G.root, Graph_code_opti.children G.root gopti
     |> List.map (fun n -> Node (n, [])))
 
-type config_path_elem = 
+type config_path_elem =
   | Expand of Graph_code.node
   | Focus of Graph_code.node * deps_style
 
-  and deps_style = 
+  and deps_style =
    | DepsIn
    | DepsOut
    | DepsInOut
@@ -94,7 +94,7 @@ type config_path = config_path_elem list
  * nested directories in which case we will do a find -name "info.txt"
  * to build all the partial constraints.
  *)
-type partition_constraints = 
+type partition_constraints =
   (string, string list) Hashtbl.t
 
 (* let tasks = ref 16 *)
@@ -121,7 +121,7 @@ let verbose = ref false
 let rec final_nodes_of_tree tree =
   match tree with
   | Node (n, xs) ->
-      if null xs 
+      if null xs
       then [n]
       else List.map final_nodes_of_tree xs |> List.flatten
 
@@ -145,7 +145,7 @@ let display dm =
 (* Explain the matrix *)
 (*****************************************************************************)
 
-(* history: 
+(* history:
  * - iterate over all edges
  * - iterate only on the children of i
  * - use graph_opti instead of the memoized projection index
@@ -163,8 +163,8 @@ let explain_cell_list_use_edges (i, j) dm gopti =
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
     let idm = igopti_to_idm.(igopti) in
-    let project = 
-      if idm = -1 
+    let project =
+      if idm = -1
       then parent
       else idm
     in
@@ -178,9 +178,9 @@ let explain_cell_list_use_edges (i, j) dm gopti =
     xs |> List.iter (fun j2 ->
       let parent_j2 = projected_parent_of_igopti.(j2) in
       if parent_i2 = i && parent_j2 = j
-      then 
+      then
        Common.push (
-         gopti.G2.i_to_name.(i2), 
+         gopti.G2.i_to_name.(i2),
          gopti.G2.i_to_name.(j2)
        ) res;
     )
@@ -188,7 +188,7 @@ let explain_cell_list_use_edges (i, j) dm gopti =
 (*
   let (src: igopti idx) = hashtbl_find gopti.G2.name_to_i dm.i_to_name.(i) in
   let (dst: idm idx) = j in
-  
+
   let rec aux n1 =
     let uses = gopti.G2.use.(n1) in
     uses +> List.iter (fun n2 ->
@@ -202,11 +202,11 @@ let explain_cell_list_use_edges (i, j) dm gopti =
   aux src;
 *)
   !res
-                     
 
-(*   
+
+(*
 let explain_cell_list_use_edges a b c =
-  Common.profile_code "DM.explain_cell" (fun () -> 
+  Common.profile_code "DM.explain_cell" (fun () ->
     explain_cell_list_use_edges2 a b c)
 *)
 
@@ -218,7 +218,7 @@ let expand_node n tree g =
     match tree with
     | Node (n2, xs) ->
         if n =*= n2
-        then 
+        then
           (* less: assert null xs? *)
           let succ = G.succ n G.Has g in
           Node (n2, succ |> List.map (fun n -> Node (n, [])))
@@ -231,7 +231,7 @@ let expand_node_opti n tree g =
     match tree with
     | Node (n2, xs) ->
         if n =*= n2
-        then 
+        then
           (* less: assert null xs? *)
           let succ = Graph_code_opti.children n g in
           Node (n2, succ |> List.map (fun n -> Node (n, [])))
@@ -258,7 +258,7 @@ let focus_on_node n deps_style tree dm =
       | DepsIn -> dm.matrix.(j).(i) > 0
       | DepsInOut -> dm.matrix.(i).(j) > 0 || dm.matrix.(j).(i) > 0
     in
-   (* we do || i = j because we want the node under focus in too, in the 
+   (* we do || i = j because we want the node under focus in too, in the
     * right order
     *)
     if to_include || i = j
@@ -269,7 +269,7 @@ let focus_on_node n deps_style tree dm =
    *    Node (hashtbl_find_node dm.i_to_name i, []))
    *  )
    *)
-  let rec aux tree = 
+  let rec aux tree =
     match tree with
     | Node (n2, []) ->
         let j = hashtbl_find_node dm.name_to_i n2 in
@@ -278,7 +278,7 @@ let focus_on_node n deps_style tree dm =
         else None
     | Node (n2, xs) ->
         let xs = xs |> Common.map_filter aux in
-        if null xs 
+        if null xs
         then None
         else Some (Node (n2, xs))
   in
@@ -290,10 +290,10 @@ let focus_on_node n deps_style tree dm =
 (*****************************************************************************)
 
 let string_of_config_path_elem = function
-  | Expand n -> 
+  | Expand n ->
       spf "Expand(%s)" (G.string_of_node n)
-  | Focus (n, style) -> 
-      spf "Focus%s(%s)" 
+  | Focus (n, style) ->
+      spf "Focus%s(%s)"
         (match style with
         | DepsIn -> "<-"
         | DepsOut -> "->"
@@ -301,7 +301,7 @@ let string_of_config_path_elem = function
         )
         (G.string_of_node n)
 
-let string_of_config_path xs = 
+let string_of_config_path xs =
   xs |> List.map string_of_config_path_elem |> Common.join "/"
 
 (*****************************************************************************)
@@ -374,13 +374,13 @@ let is_internal_helper j dm =
       if mat.(i).(j) > 0 && i <> j && distance_entity (j, i) arr > 0
       then has_users_outside_parent := true
   done;
-  not !has_users_outside_parent && 
+  not !has_users_outside_parent &&
   (* the elements at the root can't have dependencies outside parents *)
   List.length parents > 1
-  
+
 let score_upper_triangle dm exclude_nodes =
   let score = ref 0 in
-  let exclude_idx = exclude_nodes |> List.map (fun n -> 
+  let exclude_idx = exclude_nodes |> List.map (fun n ->
     hashtbl_find_node dm.name_to_i n) in
 
   for i = 0 to Array.length dm.matrix -1 do
@@ -394,7 +394,7 @@ let score_upper_triangle dm exclude_nodes =
 
 let score_downer_triangle dm exclude_nodes =
   let score = ref 0 in
-  let exclude_idx = exclude_nodes |> List.map (fun n -> 
+  let exclude_idx = exclude_nodes |> List.map (fun n ->
     hashtbl_find_node dm.name_to_i n) in
 
   for i = 0 to Array.length dm.matrix -1 do

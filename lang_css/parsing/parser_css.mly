@@ -17,7 +17,7 @@ open Ast_css
  * The official grammar contains a space token ... hmmm
  * old spec: http://www.w3.org/TR/REC-CSS1/#appendix-b
  * see also: http://www.w3.org/TR/CSS2/syndata.html
- * 
+ *
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
  * I've mostly convereted it from menhir to ocamlyacc.
@@ -124,10 +124,10 @@ combinator:
 simple_selector:
  | element qualifier_star
      { Explicit ($1, $2) }
- | qualifier_plus  
-     { let hd, tl = 
-       match $1 with 
-       | hd::tl -> hd, tl 
+ | qualifier_plus
+     { let hd, tl =
+       match $1 with
+       | hd::tl -> hd, tl
        | _ -> failwith "Generic"
        in
        Generic (hd, tl)
@@ -201,9 +201,9 @@ calc:
 /*(* maybe one day, was in dario original grammar *)*/
 /*(*************************************************************************)*/
 
-/*(* 
-stylesheet: 
-| s_star charset_opt statement_star EOF { [] (* ($2, $3) *)} 
+/*(*
+stylesheet:
+| s_star charset_opt statement_star EOF { [] (* ($2, $3) *)}
 
 charset:
  | CHARSET TString SEMICOLON                                      {$2}
@@ -217,7 +217,7 @@ statement:
      {`Page ($2, $3)}
  | FONTFACE declaration_block
      {`Fontface $2}
- | VAR COLON expr SEMICOLON  
+ | VAR COLON expr SEMICOLON
      { raise Todo (* `Vardecl ($startpos($1), $1, $3) *)}
 
 source:
@@ -270,7 +270,7 @@ sentence_separated_nonempty_list_COMMA:
  | sentence { [$1] }
  | sentence_separated_nonempty_list_COMMA COMMA sentence { $1 @ [$3] }
 
-term_separated_nonempty_list_sopt: 
+term_separated_nonempty_list_sopt:
  | term { [$1] }
  | term_separated_nonempty_list_sopt S term { $1 @ [$3] }
 
@@ -282,25 +282,25 @@ statement_star:
 combination_star:
  | combination_star combination { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
- 
-qualifier_star: 
+
+qualifier_star:
  | qualifier_star qualifier { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
-s_star: 
+s_star:
  | s_star S { [] }
  | /*(*empty*)*/ { [] }
 
 
-qualifier_plus: 
+qualifier_plus:
  | qualifier { [$1] }
  | qualifier_plus qualifier { $1 @ [$2] }
 
-declaration_plus: 
+declaration_plus:
  | declaration { [$1] }
  | declaration_plus declaration { $1 @ [$2] }
 
 
-boption_IMPORTANT: 
+boption_IMPORTANT:
  | /*(*empty*)*/ { false }
  | IMPORTANT { true }

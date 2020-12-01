@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -23,32 +23,32 @@ module V = Visitor_AST
 (*****************************************************************************)
 (* The goal of this module is to resolve names, a.k.a naming or
  * scope resolution, and to do it in a generic way on the generic AST.
- * 
+ *
  * In a compiler frontend you often have those phases:
  *  - lexing
  *  - parsing
  *  - naming (the goal of this file)
  *  - typing
- *  
+ *
  * The goal of naming is to simplify further phases by having each
  * use of an entity clearly linked to its definition. For example,
  * when you see in the AST the use of the identifier 'a', this 'a'
- * could reference a local variable, or a parameter, or a global, 
+ * could reference a local variable, or a parameter, or a global,
  * or a global defined in another module but imported in the current
  * namespace, or a variable defined in a nested block that "shadows" an
  * enclosing variable with the same name.
  * By resolving once and for all all uses of an entity to its definition,
  * for example by renaming some shadow variables (see AST_generic.gensym),
- * we simpify further phases that don't have to maintain a complex environment 
- * to deal with scoping issues (see the essence Of Python paper 
+ * we simpify further phases that don't have to maintain a complex environment
+ * to deal with scoping issues (see the essence Of Python paper
  * "Python: The Full Monty" where they show that even complex IDEs still
  * don't correctly handle Python scoping rules and perform wrong renaming
  * refactorings).
  *
- * Resolving names by tagging identifiers is also useful for 
+ * Resolving names by tagging identifiers is also useful for
  * codemap/efuns to colorize identifiers (locals, params, globals, unknowns)
  * differently.
- * 
+ *
  * alternatives:
  *  - CURRENT: generic naming and use of a 'ref resolved_name' to annotate
  *    the generic AST. Note that the use of a ref that can be shared with
@@ -56,12 +56,12 @@ module V = Visitor_AST
  *    to benefit from the generic naming analysis while still caring only
  *    about the lang-specific AST (even though we may want at some point
  *    to have a generic highlighter).
- *  - define a separate type for a named ast, e.g., nast.ml (as done in 
+ *  - define a separate type for a named ast, e.g., nast.ml (as done in
  *    hack/skip) instead of modifying refs, with a unique identifier
  *    for each entity. However, this is tedious to
  *    write as both types are almost identical (maybe a functor could help,
  *    or a generic aast type as in recent hack code). Moreover, this is really
- *    useful for complex global analysis (or at least semi-global as in 
+ *    useful for complex global analysis (or at least semi-global as in
  *    OCaml where you still need to open many .cmi when you locally type a .ml)
  *    such as typing where we want to resolve every use of a global.
  *    For sgrep, where we might for quite some time restrict ourselves to
@@ -70,13 +70,13 @@ module V = Visitor_AST
  *    on the generic AST. That is what I was doing previously, which
  *    has some advantages (some language-specific constructs that introduce
  *    new variables, for example Python comprehensions, are hard to analyze
- *    once converted to the generic AST because they are under an 
- *    Other_xxx category). However, there's potentially lots of code 
+ *    once converted to the generic AST because they are under an
+ *    Other_xxx category). However, there's potentially lots of code
  *    duplication for each language and it's easy for a language to fall
  *    behind.
  *    A nice compromise might be to do most of the work in naming_ast.ml
  *    but still have lang-specific resolve_xxx.ml to tag special
- *    constructs that override what naming_ast.ml would do. 
+ *    constructs that override what naming_ast.ml would do.
  *    See set_resolved()
  *
  * TODO:
@@ -92,7 +92,7 @@ module V = Visitor_AST
  *  - go:
  *    * handle DShortVars and Foreach local vars, DMethod receiver parameter,
  *      and TypeName for new types
- *    * in theory if/for/switch with their init declare new scope, as well 
+ *    * in theory if/for/switch with their init declare new scope, as well
  *      as Block
  *    * should do first pass to get all toplevel decl as you can use
  *      forward ref in Go
@@ -100,7 +100,7 @@ module V = Visitor_AST
  *    * resolve_xxx.ml
  *    * ast_js_build.ml
  *    * check_variables_xxx.ml
- *  - get rid of or unify scope_code.ml, scope_php.ml, and 
+ *  - get rid of or unify scope_code.ml, scope_php.ml, and
  *    ast_generic.resolved_name
  *  - resolve also types! in java if you import org.foo.Bar then later
  *    you can simply use Bar x; for a type, but we don't currently resolve
@@ -133,9 +133,9 @@ module V = Visitor_AST
 type resolved_name = AST_generic.resolved_name
 (*e: type [[Naming_AST.resolved_name]] *)
 
-type scope_info = { 
+type scope_info = {
   (* variable kind and sid *)
-  entname: resolved_name; 
+  entname: resolved_name;
   (* variable type, if known *)
   enttype: type_ option;
 }
@@ -164,7 +164,7 @@ let default_scopes () = {
 (*e: function [[Naming_AST.default_scopes]] *)
 
 (*s: function [[Naming_AST.with_new_function_scope]] *)
-(* because we use a Visitor instead of a clean recursive 
+(* because we use a Visitor instead of a clean recursive
  * function passing down an environment, we need to emulate a scoped
  * environment by using save_excursion.
  *)
@@ -230,7 +230,7 @@ let lookup_nonlocal_scope id scopes =
   let (s, tok) = id in
   match !(scopes.blocks) with
   | _::xxs -> lookup s xxs
-  | [] -> 
+  | [] ->
       let _ = error tok "no outerscope" in
       None
 (*e: function [[Naming_AST.lookup_nonlocal_scope]] *)
@@ -246,15 +246,15 @@ let get_resolved_type (vinit, vtype) =
       (* Alternative is to define a TyInt, TyBool, etc in the generic AST *)
       (* so this is more portable across langauges *)
       match vinit with
-         | Some(L (Bool ((_, tok)))) -> make_type "bool" tok
-         | Some(L (Int ((_, tok)))) -> make_type "int" tok
-         | Some(L (Float ((_, tok)))) -> make_type "float" tok
-         | Some(L (Char ((_, tok)))) -> make_type "char" tok
-         | Some(L (String ((_, tok)))) -> make_type "str" tok
-         | Some(L (Regexp ((_, tok)))) -> make_type "regexp" tok
+         | Some(L (Bool (_, tok))) -> make_type "bool" tok
+         | Some(L (Int (_, tok))) -> make_type "int" tok
+         | Some(L (Float (_, tok))) -> make_type "float" tok
+         | Some(L (Char (_, tok))) -> make_type "char" tok
+         | Some(L (String (_, tok))) -> make_type "str" tok
+         | Some(L (Regexp (_, tok))) -> make_type "regexp" tok
          | Some(L (Unit tok)) -> make_type "unit" tok
          | Some(L (Null tok)) -> make_type "null" tok
-         | Some(L (Imag ((_, tok)))) -> make_type "imag" tok
+         | Some(L (Imag (_, tok))) -> make_type "imag" tok
          | Some(Id (_, {id_type; _})) -> !id_type
          | _ -> None
     )
@@ -263,11 +263,11 @@ let get_resolved_type (vinit, vtype) =
 (* Environment *)
 (*****************************************************************************)
 (*s: type [[Naming_AST.context]] *)
-type context = 
+type context =
   | AtToplevel
   | InClass
   (* separate InMethod? InLambda? just look for InFunction::InClass::_ *)
-  | InFunction 
+  | InFunction
 (*e: type [[Naming_AST.context]] *)
 
 (*s: type [[Naming_AST.env]] *)
@@ -303,12 +303,12 @@ let default_env lang = {
 (*e: function [[Naming_AST.add_constant_env]] *)
 
 (*s: function [[Naming_AST.with_new_context]] *)
-let with_new_context ctx env f = 
+let with_new_context ctx env f =
   Common.save_excursion env.ctx (ctx::!(env.ctx)) f
 (*e: function [[Naming_AST.with_new_context]] *)
 
 (*s: function [[Naming_AST.top_context]] *)
-let top_context env = 
+let top_context env =
   match !(env.ctx) with
   | [] -> raise Impossible
   | x::_xs -> x
@@ -323,7 +323,7 @@ let set_resolved env id_info x =
   (* this is defensive programming against the possibility of introducing
    * cycles in the AST.
    * See tests/python/naming/shadow_name_type.py for a patological case. *)
-  if not !(env.in_type) 
+  if not !(env.in_type)
   then id_info.id_type := x.enttype
 (*e: function [[Naming_AST.set_resolved]] *)
 
@@ -335,9 +335,9 @@ let lookup_scope_opt id env =
   let actual_scopes =
     match !(scopes.blocks) with
     | [] -> [!(scopes.global);!(scopes.imported)]
-    | xs::xxs -> 
+    | xs::xxs ->
        match env.lang with
-       | Lang.Python -> 
+       | Lang.Python ->
             if !(env.in_lvalue)
             (* just look current scope! no access to nested scopes or global *)
             then [xs;                            !(scopes.imported)]
@@ -346,7 +346,7 @@ let lookup_scope_opt id env =
             (* just look current scope! no access to nested scopes or global *)
             [xs;                            !(scopes.imported)]
         *)
-       | _ ->  
+       | _ ->
             [xs] @ xxs @ [!(scopes.global); !(scopes.imported)]
   in
   lookup s actual_scopes
@@ -359,7 +359,7 @@ let error_report = ref false
 (*e: constant [[Naming_AST.error_report]] *)
 
 (*s: function [[Naming_AST.error]] *)
-let error tok s = 
+let error tok s =
   if !error_report
   then raise (Parse_info.Other_error (s,tok))
   else ()
@@ -375,8 +375,8 @@ let is_local_or_global_ctx env lang =
   | AtToplevel | InFunction -> true
   | InClass -> (
       match lang with
-         (* true for Java so that we can type class fields *) 
-        | Lang.Java -> true 
+         (* true for Java so that we can type class fields *)
+        | Lang.Java -> true
         | _ -> false
   )
 (*e: function [[Naming_AST.is_local_or_global_ctx]] *)
@@ -387,9 +387,9 @@ let resolved_name_kind env lang =
   | AtToplevel -> Global
   | InFunction -> Local
   | InClass -> (
-      match lang with 
-         (* true for Java so that we can type class fields *) 
-        | Lang.Java -> EnclosedVar 
+      match lang with
+         (* true for Java so that we can type class fields *)
+        | Lang.Java -> EnclosedVar
         | _ -> raise Impossible
   )
 (*e: function [[Naming_AST.resolved_name_kind]] *)
@@ -429,7 +429,7 @@ let resolve2 lang prog =
       with_new_context InFunction env (fun () ->
       with_new_function_scope new_params env.names (fun () ->
         (* todo: actually we should first go inside x.fparams.ptype
-         * without the new_params (this would also prevent cycle if 
+         * without the new_params (this would also prevent cycle if
          * a parameter name is the same than type name used in ptype
          * (see tests/python/naming/shadow_name_type.py) *)
         k x
@@ -442,8 +442,8 @@ let resolve2 lang prog =
     );
     V.kdef = (fun (k, _v) x ->
       match x with
-      | { name = EId id; info = id_info; _}, 
-        (* note that some languages such as Python do not have VarDef 
+      | { name = EId id; info = id_info; _},
+        (* note that some languages such as Python do not have VarDef
          * construct
          * todo? should add those somewhere instead of in_lvalue detection? *)
         VarDef ({ vinit; vtype }) when is_local_or_global_ctx env lang ->
@@ -462,20 +462,20 @@ let resolve2 lang prog =
 
       | { name = EId id; info = id_info; _}, UseOuterDecl tok ->
           let s = Parse_info.str_of_info tok in
-          let flookup = 
+          let flookup =
              match s with
              | "global" -> lookup_global_scope
              | "nonlocal" -> lookup_nonlocal_scope
-             | _ -> 
+             | _ ->
                 error tok (spf "unrecognized UseOuterDecl directive: %s" s);
-                lookup_global_scope    
+                lookup_global_scope
           in
           (match flookup id env.names with
           | Some resolved ->
              set_resolved env id_info resolved;
              add_ident_current_scope id resolved env.names
           | None ->
-             error tok (spf "could not find %s for directive %s" 
+             error tok (spf "could not find %s for directive %s"
                               (Ast.str_of_ident id) s)
           );
           k x
@@ -485,7 +485,7 @@ let resolve2 lang prog =
     (* sgrep: the import aliases *)
     V.kdir = (fun (k, _v) x ->
        (match x with
-       | ImportFrom (_, DottedName xs, id, Some (alias)) ->
+       | ImportFrom (_, DottedName xs, id, Some alias) ->
           (* for python *)
           let sid = Ast.gensym () in
           let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
@@ -525,7 +525,7 @@ let resolve2 lang prog =
           let resolved = untyped_ent (resolved_name_kind env lang, sid) in
           add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
-          k x          
+          k x
       | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env lang ->
           (* mostly copy-paste of VarDef code *)
           let sid = Ast.gensym () in
@@ -533,12 +533,12 @@ let resolve2 lang prog =
           add_ident_current_scope id resolved env.names;
           set_resolved env id_info resolved;
           k x
-      | OtherPat _ -> 
+      | OtherPat _ ->
          Common.save_excursion env.in_lvalue true (fun () ->
             k x
          )
       | _ -> k x
-      
+
     );
 
     (* the uses *)
@@ -546,7 +546,7 @@ let resolve2 lang prog =
     V.kexpr = (fun (k, vout) x ->
        let recurse = ref true in
        (match x with
-       (* todo: see lrvalue.ml 
+       (* todo: see lrvalue.ml
         * alternative? extra id_info tag?
         *)
        | Assign (e1, _, e2) | AssignOp (e1, _, e2) ->
@@ -555,7 +555,7 @@ let resolve2 lang prog =
            );
            vout (E e2);
            recurse := false;
-       | ArrayAccess (e1, (_, e2, _)) -> 
+       | ArrayAccess (e1, (_, e2, _)) ->
            vout (E e1);
            Common.save_excursion env.in_lvalue false (fun () ->
              vout (E e2);
@@ -564,7 +564,7 @@ let resolve2 lang prog =
 
        | Id (id, id_info) ->
           (match lookup_scope_opt id env with
-          | Some (resolved) -> 
+          | Some resolved ->
              (* name resolution *)
              set_resolved env id_info resolved;
 
@@ -572,7 +572,7 @@ let resolve2 lang prog =
              (match !(env.in_lvalue), lang with
              (* first use of a variable can be a VarDef in some languages *)
              (* type propagation not necessary because this does not hold true for Java or Go *)
-             | true, (Lang.Python | Lang.Ruby) (* PHP? *) 
+             | true, (Lang.Python | Lang.Ruby) (* PHP? *)
                when is_local_or_global_ctx env lang ->
                (* mostly copy-paste of VarDef code *)
                let sid = Ast.gensym () in
@@ -581,7 +581,7 @@ let resolve2 lang prog =
                set_resolved env id_info resolved;
 
              (* hopefully the lang-specific resolved may have resolved that *)
-             | _ -> 
+             | _ ->
                 (* TODO: this can happen because of in_lvalue bug detection, or
                  * for certain entities like functions or classes which are
                  * currently tagged
@@ -599,10 +599,10 @@ let resolve2 lang prog =
       | NamedAttr (_, [id], id_info, _args)
         ->
           (match lookup_scope_opt id env with
-          | Some resolved -> 
+          | Some resolved ->
              (* name resolution *)
              set_resolved env id_info resolved;
-          | _ -> ()          
+          | _ -> ()
           )
       | _ -> ()
       );
@@ -612,7 +612,7 @@ let resolve2 lang prog =
      V.ktype_ = (fun (k, _v) x ->
       (* when we are inside a type, especially in  (OtherType (OT_Expr)),
        * we don't want set_resolved to set the type on some Id because
-       * this could lead to cycle in the AST because of id_type 
+       * this could lead to cycle in the AST because of id_type
        * that will reference a type, that could containi an OT_Expr, containing
        * an Id, that could contain the same id_type, and so on.
        * See tests/python/naming/shadow_name_type.py for a patological example

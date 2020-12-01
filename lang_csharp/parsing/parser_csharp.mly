@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -68,25 +68,25 @@
   Tfor Tforeach
   Tgoto
   Tthrow  Ttry  Tcatch  Tfinally
-  Tchecked Tunchecked 
+  Tchecked Tunchecked
   Tnull
   Ttrue Tfalse
   Tref Tout
 
   Tas Tbase  Tdecimal Tevent Texplicit Tfixed Timplicit
   Tin Tinternal Tis Tlock
-  Toperator  Toverride Tparams Treadonly 
+  Toperator  Toverride Tparams Treadonly
   Tsealed Tsizeof Tstackalloc  Ttypeof
 
 /*(* cpp *)*/
 %token <Parse_info.t>
-  TCppLine TCppError TCppWarning 
+  TCppLine TCppError TCppWarning
   TCppRegion TCppEndRegion
   TDefine TUndef
   TIfdefIf TIfdefElif TIfdefElse TIfdefEndif
 
 /*(* syntax *)*/
-%token <Parse_info.t> TOParen TCParen 
+%token <Parse_info.t> TOParen TCParen
 %token <Parse_info.t> TOBracket TCBracket
 %token <Parse_info.t> TOBrace TCBrace
 %token <Parse_info.t> TOAngle TCAngle
@@ -96,7 +96,7 @@
  TComma TColon TDot TSemiColon
  TStar TDiv TPercent
  TEq TEqEq TNotEq
- TPlus TMinus 
+ TPlus TMinus
  TTilde
  TAnd TOr TXor
  TLess TMore TMoreEq TLessEq

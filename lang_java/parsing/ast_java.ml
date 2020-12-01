@@ -73,7 +73,7 @@ type typ =
 
   and type_argument =
     | TArgument of ref_type
-    | TWildCard of tok (* '?' *) * 
+    | TWildCard of tok (* '?' *) *
             (bool wrap (* extends|super, true = super *) * ref_type) option
 
   and type_arguments = type_argument list (* TODO bracket *)
@@ -112,7 +112,7 @@ type modifier =
 (* ------------------------------------------------------------------------- *)
 (* Annotation *)
 (* ------------------------------------------------------------------------- *)
- and annotation = 
+ and annotation =
      tok (* @ *) * qualified_ident * (annotation_element bracket option)
 
  and annotation_element =
@@ -173,7 +173,7 @@ and expr =
   (* the 'decls option' is for anon classes *)
   | NewClass of tok (* new *) * typ * arguments * decls bracket option
   (* see tests/java/parsing/NewQualified.java *)
-  | NewQualifiedClass of expr * tok (* . *) * 
+  | NewQualifiedClass of expr * tok (* . *) *
                 tok (* new *) * typ * arguments * decls bracket option
   (* the int counts the number of [], new Foo[][] => 2 *)
   | NewArray of tok * typ * expr list * int * init option
@@ -225,7 +225,7 @@ and expr =
   | DeepEllipsis of expr bracket
   | TypedMetavar of ident * typ
 
-  and literal = 
+  and literal =
   | Int of string wrap
   | Float of string wrap
   | String of string wrap
@@ -280,7 +280,7 @@ and case =
 and cases = case list
 
 and for_control =
-  | ForClassic of for_init * expr list (* TODO: expr option? *) * expr list 
+  | ForClassic of for_init * expr list (* TODO: expr option? *) * expr list
   | Foreach of var_definition * expr
   and for_init =
     | ForInitVars of var_with_init list
@@ -352,7 +352,7 @@ and method_decl = {
   and constructor_decl = method_decl
 
   and parameters = parameter_binding list (* TODO bracket *)
-    and parameter_binding = 
+    and parameter_binding =
      | ParamClassic of parameter
      (* java-ext: ?? *)
      | ParamSpread of tok (* ... *) * parameter
@@ -403,8 +403,8 @@ and class_decl = {
   (* javaext: the methods body used to be always empty for interface *)
   cl_body: class_body;
 }
-  and class_kind = 
-  | ClassRegular 
+  and class_kind =
+  | ClassRegular
   | Interface
   (* @interface, a.k.a annotation type declaration *)
   (* java-ext: tree-sitter-only: *)
@@ -439,18 +439,18 @@ and decls = decl list
 (*****************************************************************************)
 (* Directives *)
 (*****************************************************************************)
-(* old: this used to not be mutually recursive, but now that we have 
+(* old: this used to not be mutually recursive, but now that we have
  * DirectiveStmt we need the 'and' below.
 *)
 and import =
   | ImportAll of tok * qualified_ident * tok (* * *)
   | ImportFrom of tok * qualified_ident * ident
 
-(* old: the Package and Import used to be allowed only at the toplevel and 
+(* old: the Package and Import used to be allowed only at the toplevel and
  * followed by a unique class/interface first in a 'compilation_unit' record
  * type.
  *)
-and directive = 
+and directive =
   (* The qualified ident can also contain "*" at the very end. *)
   | Package of tok * qualified_ident * tok (* ; *)
   (* The tok is for static import (javaext:) *)
@@ -472,7 +472,7 @@ type program = stmts
 (* Any *)
 (*****************************************************************************)
 
-type partial = 
+type partial =
  (* the body will be empty in m_body or cl_body *)
  | PartialDecl of decl
  [@@deriving show { with_path = false }] (* with tarzan *)
@@ -522,10 +522,10 @@ let rec info_of_identifier_ (id : identifier_) : tok = match id with
   | Id_then_TypeArgs (id, _) -> snd id
   | TypeArgs_then_Id (_, id_) -> info_of_identifier_ id_
 
-let basic_entity id mods = 
+let basic_entity id mods =
   { name = id; mods; type_ = None }
 
-let entity_of_id id = 
+let entity_of_id id =
   basic_entity id []
 
 (*****************************************************************************)
@@ -539,14 +539,14 @@ type var_decl_id =
   | IdentDecl of ident
   | ArrayDecl of var_decl_id
 
-let mk_param_id id = 
+let mk_param_id id =
   ParamClassic (entity_of_id id)
 
 (* Move array dimensions from variable name to type. *)
 let rec canon_var mods t_opt v =
   match v with
   | IdentDecl str -> { mods = mods; type_ = t_opt; name = str }
-  | ArrayDecl v' -> 
+  | ArrayDecl v' ->
       (match t_opt with
       | None -> raise Common.Impossible
       | Some t -> canon_var mods (Some (TArray (AST_generic.fake_bracket t))) v'
@@ -577,5 +577,5 @@ let this tok  =
   name_of_id ("this", tok)
 let super tok =
   name_of_id ("super", tok)
-let new_id tok = 
+let new_id tok =
   "new", tok

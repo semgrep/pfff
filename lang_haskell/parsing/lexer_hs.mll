@@ -7,14 +7,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 
-open Common 
+open Common
 
 module Flag = Flag_parsing
 
@@ -42,30 +42,30 @@ let keyword_table = Common.hash_of_list [
   "newtype", (fun ii -> Tnewtype ii);
   "type", (fun ii -> Ttype ii);
 
-  "class", (fun ii -> Tclass ii); 
+  "class", (fun ii -> Tclass ii);
   "instance", (fun ii -> Tinstance ii);
 
-  "default", (fun ii -> Tdefault ii); 
-  "deriving", (fun ii -> Tderiving ii); 
+  "default", (fun ii -> Tdefault ii);
+  "deriving", (fun ii -> Tderiving ii);
 
-  "do", (fun ii -> Tdo ii); 
+  "do", (fun ii -> Tdo ii);
 
-  "if", (fun ii -> Tif ii); 
-  "then", (fun ii -> Tthen ii); 
-  "else", (fun ii -> Telse ii); 
+  "if", (fun ii -> Tif ii);
+  "then", (fun ii -> Tthen ii);
+  "else", (fun ii -> Telse ii);
 
-  "case", (fun ii -> Tcase ii); 
+  "case", (fun ii -> Tcase ii);
   "of", (fun ii -> Tof ii);
 
-  "module", (fun ii -> Tmodule ii); 
-  "import", (fun ii -> Timport ii); 
+  "module", (fun ii -> Tmodule ii);
+  "import", (fun ii -> Timport ii);
 
-  "let", (fun ii -> Tlet ii); 
-  "in", (fun ii -> Tin ii); 
+  "let", (fun ii -> Tlet ii);
+  "in", (fun ii -> Tin ii);
   "where", (fun ii -> Twhere ii);
 
-  "infix", (fun ii -> Tinfix ii); 
-  "infixl", (fun ii -> Tinfixl ii); 
+  "infix", (fun ii -> Tinfix ii);
+  "infixl", (fun ii -> Tinfixl ii);
   "infixr", (fun ii -> Tinfixr ii);
 
 
@@ -103,11 +103,11 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-  | "--" [^'\n' '\r']* { 
+  | "--" [^'\n' '\r']* {
       TComment(tokinfo lexbuf)
     }
-  | "{-" { 
-      let info = tokinfo lexbuf in 
+  | "{-" {
+      let info = tokinfo lexbuf in
       let com = comment lexbuf in
       TComment(info |> Parse_info.tok_add_s com)
     }
@@ -179,8 +179,8 @@ rule token = parse
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf |> Parse_info.rewrap_str "") }
-  | _ { 
-        if !Flag.verbose_lexing 
+  | _ {
+        if !Flag.verbose_lexing
         then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
     }
@@ -190,12 +190,12 @@ rule token = parse
 and string buf = parse
   | '"'           { Buffer.add_string buf "" }
   (* opti: *)
-  | [^ '"' '\\']+ { 
+  | [^ '"' '\\']+ {
       Buffer.add_string buf (tok lexbuf);
-      string buf lexbuf 
+      string buf lexbuf
     }
 
-  | ("\\" (_ as v)) as x { 
+  | ("\\" (_ as v)) as x {
       (* todo: check char ? *)
       (match v with
       | _ -> ()
@@ -203,7 +203,7 @@ and string buf = parse
       Buffer.add_string buf x;
       string buf lexbuf
     }
-  | eof { 
+  | eof {
       pr2 "LEXER: WIERD end of file in double quoted string";
     }
 
@@ -211,7 +211,7 @@ and string buf = parse
 and comment = parse
   | "-}" { tok lexbuf }
 
-  | "{-" { 
+  | "{-" {
       (* in haskell comments are nestable *)
       let s = comment lexbuf in
       s ^ comment lexbuf
@@ -219,11 +219,11 @@ and comment = parse
 
   (* noteopti: bugfix, need add '(' too *)
 
-  | [^'-''{']+ { let s = tok lexbuf in s ^ comment lexbuf } 
+  | [^'-''{']+ { let s = tok lexbuf in s ^ comment lexbuf }
   | "-"     { let s = tok lexbuf in s ^ comment lexbuf }
   | "{"     { let s = tok lexbuf in s ^ comment lexbuf }
   | eof { pr2 "LEXER: end of file in comment"; "-}"}
-  | _  { 
+  | _  {
       let s = tok lexbuf in
       pr2 ("LEXER: unrecognised symbol in comment:"^s);
       s ^ comment lexbuf

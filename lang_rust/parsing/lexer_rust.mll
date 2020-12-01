@@ -7,13 +7,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 module Ast = Ast_rust
 module Flag = Flag_parsing
@@ -25,7 +25,7 @@ open Parser_rust
 (*****************************************************************************)
 (*
  * A Lexer for Rust.
- * 
+ *
  * Inspiration:
  *  - lang_csharp/ (itself inspired from lang_python/, lang_cpp/, ...)
  *  - http://doc.rust-lang.org/rust.html#lexical-structure
@@ -96,7 +96,7 @@ let hexdigit = digit | ['a'-'f'] | ['A'-'F']
 
 let ident = (letter | '_') (letter | digit | '_')*
 
-let escapeseq = 
+let escapeseq =
    ( '\\' 'x' hexdigit hexdigit? hexdigit? hexdigit?
     '\\' ['\'' '"' '\\' '0' 'a' 'b' 'f' 'n' 'r' 't' 'v']
    )
@@ -118,10 +118,10 @@ rule token = parse
 
   | "//" [^ '\n']* { TComment (tokinfo lexbuf) }
 
-  | "/*" 
-      { let info = tokinfo lexbuf in 
+  | "/*"
+      { let info = tokinfo lexbuf in
         let com = comment lexbuf in
-        TComment(info |> Parse_info.tok_add_s com) 
+        TComment(info |> Parse_info.tok_add_s com)
       }
 
   | newline { TCommentNewline (tokinfo lexbuf) }
@@ -195,7 +195,7 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
 
-  | '"' { 
+  | '"' {
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in
       TString (s, info |> Parse_info.tok_add_s (s ^ "\""))
@@ -211,8 +211,8 @@ rule token = parse
 
   | eof { EOF (tokinfo lexbuf) }
 
-  | _ { 
-      if !Flag.verbose_lexing 
+  | _ {
+      if !Flag.verbose_lexing
       then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
@@ -224,7 +224,7 @@ and comment = parse
   (* noteopti: *)
   | [^ '*']+ { let s = tok lexbuf in s ^ comment lexbuf }
   | [ '*']   { let s = tok lexbuf in s ^ comment lexbuf }
-  | _  
+  | _
       { let s = tok lexbuf in
         pr2 ("LEXER: unrecognised symbol in comment:"^s);
         s ^ comment lexbuf

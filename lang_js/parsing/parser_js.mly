@@ -29,25 +29,25 @@ module G = AST_generic (* for operators, fake, and now also type_ *)
  *  - https://en.wikipedia.org/wiki/JavaScript_syntax
  *  - http://www.ecma-international.org/publications/standards/Ecma-262.htm
  *  - https://github.com/Microsoft/TypeScript/blob/master/doc/spec.md#A
- * 
+ *
  * src: originally ocamlyacc-ified from Marcel Laverdet 'fbjs2' via Emacs
  * macros, itself extracted from the official ECMAscript specification at:
  * http://www.ecma-international.org/publications/standards/ecma-262.htm
  * back in the day (probably ES4 or ES3).
- * 
+ *
  * I have heavily extended the grammar to provide the first parser for Flow.
  * I have extended it also to deal with many new Javascript features
- * (see cst_js.ml top comment). 
+ * (see cst_js.ml top comment).
  *
- * The grammar is close to the ECMA grammar but I've simplified a few things 
+ * The grammar is close to the ECMA grammar but I've simplified a few things
  * when I could:
  *  - less intermediate grammar rules for advanced features
  *    (they are inlined in the original grammar rule)
- *  - by using my retagging-tokens technique (see parsing_hacks_js.ml) 
- *    I could also get rid of some of the ugliness in the ECMA grammar 
+ *  - by using my retagging-tokens technique (see parsing_hacks_js.ml)
+ *    I could also get rid of some of the ugliness in the ECMA grammar
  *    that has to deal with ambiguous constructs
  *    (they conflate together expressions and arrow parameters, object
- *    values and object matching, etc.). 
+ *    values and object matching, etc.).
  *    Instead, in this grammar things are clearly separated.
  *  - I've used some macros to factorize rules, including some tricky
  *    macros to factorize expression rules.
@@ -74,25 +74,25 @@ let fix_sgrep_module_item xs =
   | [DefStmt ({name = (s, _); _}, FuncDef def)]
     when s = anon_semgrep_lambda ->
       Expr (Fun (def, None))
-  | [ExprStmt (e, sc) as x] -> 
+  | [ExprStmt (e, sc) as x] ->
       if PI.is_fake sc
       then Expr e
       else Stmt x
   | [x] -> Stmt x
   | xs -> Stmts xs
 
-let mk_Fun ?(id=None) ?(attrs=[]) ?(props=[]) 
-  (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) = 
+let mk_Fun ?(id=None) ?(attrs=[]) ?(props=[])
+  (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
   let f_attrs = (props |> List.map attr) @ attrs in
   Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
 
-let mk_FuncDef props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) = 
+let mk_FuncDef props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
   let f_attrs = props |> List.map attr in
   FuncDef { f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }
 
 let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
   let c_attrs = props |> List.map attr in
-  Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body}, 
+  Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body},
          idopt)
 
 let mk_ClassDef ?(attrs=[]) ?(props=[]) tok _generics (c_extends, c_implements) c_body =
@@ -107,19 +107,19 @@ let mk_FieldColon ?(fld_type=None) ?(props=[]) fld_name eopt =
   let fld_attrs = props |> List.map attr in
   FieldColon { fld_name; fld_attrs; fld_type; fld_body = eopt }
 
-let add_modifiers _propsTODO fld = 
+let add_modifiers _propsTODO fld =
   fld
 
 let mk_def (idopt, defkind) =
   (* TODO: fun default_opt -> ... *)
-  let name = 
+  let name =
     match idopt with
     | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, G.fake "")
     | Some id -> id
   in
   basic_entity name, defkind
 
- 
+
 let mk_Super tok =
   IdSpecial (Super, tok)
 
@@ -129,10 +129,10 @@ let mk_pattern binding_pattern init_opt =
   | Some (t, e) -> Assign (binding_pattern, t, e)
 
 (* Javascript has implicit returns for arrows with expression body *)
-let mk_block_return e = 
+let mk_block_return e =
   fb [Return (G.fake "return", Some e, G.sc)]
 
-let special spec tok xs = 
+let special spec tok xs =
   Apply (IdSpecial (spec, tok), fb xs)
 
 let bop op a b c = special (ArithOp op) b [a;c]
@@ -146,7 +146,7 @@ let mk_Assign (e1, (tok, opopt), e2) =
   (* less: should use intermediate? can unsugar like this? *)
   | Some op -> Assign (e1, tok, special (ArithOp op) tok [e1;e2])
 
-let mk_Encaps opt (t1, xs, _t2) = 
+let mk_Encaps opt (t1, xs, _t2) =
   let b, extra =
     match opt with
     | None -> false, []
@@ -176,7 +176,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 %token<string * Parse_info.t> T_NUMBER
 %token<string * Parse_info.t> T_ID
 
-%token<string * Parse_info.t> T_STRING 
+%token<string * Parse_info.t> T_STRING
 %token<string * Parse_info.t> T_ENCAPSED_STRING
 %token<string * Parse_info.t> T_REGEX
 
@@ -189,8 +189,8 @@ let mk_Encaps opt (t1, xs, _t2) =
  T_FUNCTION T_CONST T_VAR T_LET
  T_IF T_ELSE
  T_WHILE T_FOR T_DO T_CONTINUE T_BREAK
- T_SWITCH T_CASE T_DEFAULT 
- T_RETURN 
+ T_SWITCH T_CASE T_DEFAULT
+ T_RETURN
  T_THROW T_TRY T_CATCH T_FINALLY
  T_YIELD T_ASYNC T_AWAIT
  T_NEW T_IN T_OF T_THIS T_SUPER T_WITH
@@ -202,7 +202,7 @@ let mk_Encaps opt (t1, xs, _t2) =
  T_TYPE  T_ANY_TYPE T_NUMBER_TYPE T_BOOLEAN_TYPE T_STRING_TYPE  T_ENUM
  T_DECLARE T_MODULE
  T_PUBLIC T_PRIVATE T_PROTECTED  T_READONLY
- 
+
 (*-----------------------------------------*)
 (* Punctuation tokens *)
 (*-----------------------------------------*)
@@ -214,10 +214,10 @@ let mk_Encaps opt (t1, xs, _t2) =
  T_LBRACKET "[" T_RBRACKET "]"
  T_SEMICOLON ";" T_COMMA "," T_PERIOD "." T_COLON ":"
  T_PLING "?"
- T_ARROW "->" 
+ T_ARROW "->"
  (* regular JS token and also semgrep: *)
  T_DOTS "..."
- T_BACKQUOTE 
+ T_BACKQUOTE
  T_DOLLARCURLY
  (* decorators: https://tc39.es/proposal-decorators/ *)
  T_AT "@"
@@ -231,15 +231,15 @@ let mk_Encaps opt (t1, xs, _t2) =
  T_BIT_OR T_BIT_XOR T_BIT_AND
  T_PLUS T_MINUS
  T_DIV T_MULT "*" T_MOD
- T_NOT T_BIT_NOT 
+ T_NOT T_BIT_NOT
  T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN
  T_BIT_XOR_ASSIGN T_BIT_OR_ASSIGN T_BIT_AND_ASSIGN T_MOD_ASSIGN T_DIV_ASSIGN
- T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN 
+ T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN
  T_ASSIGN "="
  T_EQUAL T_NOT_EQUAL T_STRICT_EQUAL T_STRICT_NOT_EQUAL
  T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
  T_LSHIFT T_RSHIFT T_RSHIFT3
- T_INCR T_DECR 
+ T_INCR T_DECR
  T_EXPONENT
 
 (*-----------------------------------------*)
@@ -308,7 +308,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 (* Rules type decl *)
 (*************************************************************************)
 %start <Ast_js.program> main
-%start <Ast_js.stmt option> module_item_or_eof 
+%start <Ast_js.stmt option> module_item_or_eof
 %start <Ast_js.any> sgrep_spatch_pattern
 (* for lang_json/ *)
 %start <Ast_js.expr> json
@@ -345,7 +345,7 @@ program: module_item* { List.flatten $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
- | module_item { Some (stmt1 $1) } 
+ | module_item { Some (stmt1 $1) }
  | EOF         { None }
 
 module_item:
@@ -385,16 +385,16 @@ json: expr EOF { $1 }
 sgrep_spatch_pattern:
  (* copy-paste of object_literal rule but with T_LCURLY_SEMGREP *)
  | T_LCURLY_SEMGREP "}"    { Expr (Obj ($1, [], $2)) }
- | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}" 
+ | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}"
      { Expr (Obj ($1, $2, $4)) }
 
  (* we would like to just use method_definition, but too many r/r conflicts *)
  | (* TODO decorators ioption(T_ASYNC) ioption(method_get_set_star)
-    * but need also to modify parsing hack for T_LPAREN_METHOD_SEMGREP 
+    * but need also to modify parsing hack for T_LPAREN_METHOD_SEMGREP
     *)
-    T_ID 
-    T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation? 
-    "{" function_body "}" EOF 
+    T_ID
+    T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation?
+    "{" function_body "}" EOF
    { let sig_ = (None, ($2, $3, $4), $5) in
      let fun_ = mk_Fun sig_ ($6, $7, $8) in
      Property (mk_Field (PN $1) (Some fun_))
@@ -404,7 +404,7 @@ sgrep_spatch_pattern:
  | module_item              EOF  { fix_sgrep_module_item $1 }
  | module_item module_item+ EOF  { Stmts (List.flatten ($1::$2)) }
 
- (* partials *) 
+ (* partials *)
  | T_FUNCTION id? call_signature EOF
    { Partial (PartialDef (mk_def ($2, mk_FuncDef [] $3 (fb [])))) }
  | T_CLASS binding_id? generics? class_heritage EOF
@@ -417,30 +417,30 @@ sgrep_spatch_pattern:
 (* import *)
 (*----------------------------*)
 
-import_decl: 
- | T_IMPORT import_clause from_clause sc  
+import_decl:
+ | T_IMPORT import_clause from_clause sc
     { let f = $2 in let (_t, path) = $3 in f $1 path }
- | T_IMPORT module_specifier sc           
+ | T_IMPORT module_specifier sc
     { [ImportFile ($1, $2)] }
 
-import_clause: 
+import_clause:
  | import_default                     { $1 }
- | import_default "," import_names    
+ | import_default "," import_names
     { (fun t path -> $1 t path @ $3 t path) }
  |                    import_names    { $1 }
 
-import_default: binding_id 
+import_default: binding_id
   { (fun t path -> [Import (t, (default_entity, snd $1), Some $1, path)]) }
 
 import_names:
- | "*" T_AS binding_id   
+ | "*" T_AS binding_id
      { (fun t path -> [ModuleAlias (t, $3, path)]) }
- | named_imports         
-     { (fun t path -> $1 |> List.map (fun (n1, n2opt) -> 
+ | named_imports
+     { (fun t path -> $1 |> List.map (fun (n1, n2opt) ->
           Import (t, n1, n2opt, path)))
      }
  (* typing-ext: *)
- | T_TYPE named_imports  
+ | T_TYPE named_imports
      { (fun _t _path -> [] (* TODO *)) }
 
 named_imports:
@@ -458,7 +458,7 @@ import_specifier:
  | T_DEFAULT T_AS binding_id  { ("default",$1), Some ($3) }
  | T_DEFAULT                  { ("default",$1), None }
 
-module_specifier: 
+module_specifier:
   | string_literal { $1 }
   (* sgrep-ext: allow metavar after 'from', transform it as a string "$X" *)
   | T_ID { Flag_parsing.sgrep_guard ($1) }
@@ -470,14 +470,14 @@ module_specifier:
 (* TODO *)
 export_decl:
  | T_EXPORT export_names       { [] (* $1, $2 *) }
- | T_EXPORT variable_stmt 
+ | T_EXPORT variable_stmt
     { vars_to_stmts $2 (*$1, ExportDecl (St $2)*) }
- | T_EXPORT decl        
+ | T_EXPORT decl
     { $2 |> List.map (fun v -> DefStmt v) (*$1, ExportDecl $2*) }
  (* in theory just func/gen/class, no lexical_decl *)
- | T_EXPORT T_DEFAULT decl 
+ | T_EXPORT T_DEFAULT decl
     { $3 |> List.map (fun v -> DefStmt v) (* $1, ExportDefaultDecl ($2, $3) *) }
- | T_EXPORT T_DEFAULT assignment_expr_no_stmt sc 
+ | T_EXPORT T_DEFAULT assignment_expr_no_stmt sc
     { [] (* $1, ExportDefaultExpr ($2, $3, $4) *)  }
  (* ugly hack because should use assignment_expr above instead*)
  | T_EXPORT T_DEFAULT object_literal sc
@@ -551,7 +551,7 @@ object_binding_pattern:
 
 binding_property:
  | binding_id initializeur?
-    { match $2 with 
+    { match $2 with
       (* { x } shorthand for { x: x }, like in OCaml *)
       | None -> mk_FieldColon (PN $1) (Some (Id $1))
       | Some (_, e) -> mk_FieldColon (PN $1) (Some e)
@@ -569,7 +569,7 @@ binding_element:
 (* array destructuring *)
 
 (* TODO use elision below.
- * invent a new Hole category or maybe an array_argument special 
+ * invent a new Hole category or maybe an array_argument special
  * type like for the (call)argument type.
  *)
 array_binding_pattern:
@@ -601,7 +601,7 @@ binding_elision_element:
 (* Function declarations (and exprs) *)
 (*************************************************************************)
 
-(* ugly: id is None only when part of an 'export default' decl 
+(* ugly: id is None only when part of an 'export default' decl
  * less: use other tech to enforce this? extra rule after
  *  T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
@@ -613,7 +613,7 @@ function_expr: T_FUNCTION id? call_signature  "{" function_body "}"
    { mk_Fun ~id:$2 $3 ($4, $5, $6) }
 
 (* typescript-ext: generics? and annotation? *)
-call_signature: generics? "(" formal_parameter_list_opt ")"  annotation? 
+call_signature: generics? "(" formal_parameter_list_opt ")"  annotation?
   { $1, ($2, $3, $4), $5 }
 
 function_body: optl(stmt_list) { $1 }
@@ -641,7 +641,7 @@ formal_parameter:
  (* es6: default parameter *)
  | id initializeur   { ParamClassic { (mk_param $1) with p_default = Some (snd $2)} }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
-  | binding_pattern annotation? initializeur? 
+  | binding_pattern annotation? initializeur?
     { ParamPattern (mk_pattern $1 $3) (* annotation? *) }
 
  (* es6: spread *)
@@ -685,7 +685,7 @@ async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
 (* Class declaration *)
 (*************************************************************************)
 
-(* ugly: c_name is None only when part of an 'export default' decl 
+(* ugly: c_name is None only when part of an 'export default' decl
  * less: use other tech to enforce this? extra rule after
  *  T_EXPORT T_DEFAULT? but then many ambiguities.
  * TODO: actually in tree-sitter-js, it's a binding_id without '?'
@@ -714,11 +714,11 @@ class_expr: T_CLASS binding_id? generics? class_heritage class_body
 (* can't factorize with static_opt, or access_modifier_opt; ambiguities  *)
 class_element:
  |                  method_definition  { [$1] }
- | access_modifiers method_definition  { [add_modifiers $1 $2] } 
+ | access_modifiers method_definition  { [add_modifiers $1 $2] }
 
- |                  property_name annotation? initializeur? sc 
+ |                  property_name annotation? initializeur? sc
     { [mk_Field $1 ~fld_type:$2 (sndopt $3)] }
- | access_modifiers property_name annotation? initializeur? sc 
+ | access_modifiers property_name annotation? initializeur? sc
     { [mk_Field ~props:$1 $2 ~fld_type:$3 (sndopt $4)] }
 
  | sc    { [] }
@@ -726,7 +726,7 @@ class_element:
  | "..." { Flag_parsing.sgrep_guard ([FieldEllipsis $1]) }
 
 (* TODO: cant use access_modifier+, conflict *)
-access_modifiers: 
+access_modifiers:
  | access_modifier                  { [$1] }
  | access_modifiers access_modifier { $1 @ [$2] }
 
@@ -743,24 +743,24 @@ access_modifier:
 (*----------------------------*)
 (* Method definition (in class or object literal) *)
 (*----------------------------*)
-method_definition: 
+method_definition:
   decorators
   (* es7: *)
-  ioption(T_ASYNC)   
+  ioption(T_ASYNC)
   ioption(method_get_set_star)
   property_name call_signature "{" function_body "}"
-    { let attrs = 
-        $1 @ 
+    { let attrs =
+        $1 @
         (match $2 with None -> [] | Some t -> [KeywordAttr (Async, t)]) @
         (match $3 with None -> [] | Some x -> [KeywordAttr x])
       in
       mk_Field $4 (Some (mk_Fun ~attrs $5 ($6, $7, $8))) }
 
-(* we used to enforce that T_GET had a call_signature with 0 param and 
- * T_SET with 1 param, but not worth it (tree-sitter-js does not enforce it) 
+(* we used to enforce that T_GET had a call_signature with 0 param and
+ * T_SET with 1 param, but not worth it (tree-sitter-js does not enforce it)
  *)
 method_get_set_star:
-  | "*"   { Generator, $1 } 
+  | "*"   { Generator, $1 }
   | T_GET { Get, $1 }
   | T_SET { Set, $1 }
 
@@ -768,28 +768,28 @@ method_get_set_star:
 (* Interface declaration *)
 (*************************************************************************)
 (* typescript-ext: *)
-(* TODO: use type_ at the end here and you get conflicts on '[' 
- * Why? because [] can follow an interface_decl? 
+(* TODO: use type_ at the end here and you get conflicts on '['
+ * Why? because [] can follow an interface_decl?
  *)
 
 interface_decl: T_INTERFACE binding_id generics? optl(interface_extends)
   object_type
    { let (t1, _xsTODO, t2) = $5 in
-      Some $2, ClassDef { c_kind = G.Interface, $1; 
+      Some $2, ClassDef { c_kind = G.Interface, $1;
       c_extends = $4; c_implements = []; c_attrs = [];
       c_body = (t1, [], t2) } }
 
-interface_extends: T_EXTENDS listc(type_reference) 
+interface_extends: T_EXTENDS listc(type_reference)
   { $2 |> List.map (fun ids -> Right (G.TyName(G.name_of_ids ids))) }
 
 (*************************************************************************)
 (* Type declaration *)
 (*************************************************************************)
 (* typescript-ext: *)
-type_alias_decl: T_TYPE id "=" type_ sc 
+type_alias_decl: T_TYPE id "=" type_ sc
   { Some $2, DefTodo (("typedef", $1), [Type $4; Tk $5]) }
 
-enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}" 
+enum_decl: T_CONST? T_ENUM id "{" listc(enum_member) ","? "}"
   { Some $3, DefTodo (("enum", $2), [Stmt (Block ($4, [], $7))]) }
 
 enum_member:
@@ -828,7 +828,7 @@ annotation: ":" type_ { $2 }
 
 complex_annotation:
  | annotation { $1 }
- | generics? "(" optl(param_type_list) ")" ":" type_ 
+ | generics? "(" optl(param_type_list) ")" ":" type_
      { $6 (* TODO *) }
 
 (*----------------------------*)
@@ -839,7 +839,7 @@ complex_annotation:
 type_:
  | primary_or_union_type { $1 }
  | "?" type_             { G.TyQuestion ($2, $1) }
- | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_ 
+ | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_
    { $5 (* TODO *) }
 
 primary_or_union_type:
@@ -859,13 +859,13 @@ primary_type2:
  | predefined_type      { G.TyName (G.name_of_id $1) }
  (* TODO: could be TyApply if snd $1 is a Some *)
  | type_reference       { G.TyName(G.name_of_ids $1) }
- | object_type          
+ | object_type
     { let (t1, _xsTODO, t2) = $1 in
       G.TyRecordAnon (G.fake "", (t1, [], t2)) }
- | "[" listc(type_) "]" { G.TyTuple (($1, $2, $3)) }
+ | "[" listc(type_) "]" { G.TyTuple ($1, $2, $3) }
  (* not in Typescript grammar *)
  | T_STRING
-     { G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1); 
+     { G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1);
                                 G.E (G.L (G.String $1))]) }
 
 predefined_type:
@@ -883,26 +883,26 @@ type_reference:
  | type_name type_arguments { $1 (* TODO type_arguments *) }
 
 (* was called type_reference in Flow *)
-type_name: 
+type_name:
  | T_ID { [$1] }
  | module_name "." T_ID { $1 @ [$3] }
 
 module_name:
  | T_ID { [$1] }
- | module_name "." T_ID { $1 @ [$3] } 
+ | module_name "." T_ID { $1 @ [$3] }
 
-union_type: primary_or_union_type T_BIT_OR primary_type 
+union_type: primary_or_union_type T_BIT_OR primary_type
     { G.TyOr ($1, $2, $3) }
 
-intersect_type: primary_or_intersect_type T_BIT_AND primary_type 
+intersect_type: primary_or_intersect_type T_BIT_AND primary_type
     { G.TyAnd ($1, $2, $3) }
 
 
-object_type: "{" type_member* "}"  
-    { ($1, $2, $3) } 
+object_type: "{" type_member* "}"
+    { ($1, $2, $3) }
 
 (* partial type annotations are not supported *)
-type_member: 
+type_member:
  | property_name_typescript complex_annotation sc_or_comma
     { { fld_name = $1; fld_attrs = []; fld_type = Some $2; fld_body = None } }
  | property_name_typescript "?" complex_annotation sc_or_comma
@@ -988,19 +988,19 @@ type_arguments2: T_LESS_THAN type_argument_list1    { (*$1, $2, G.fake ">"*) }
 (* Type or expr *)
 (*----------------------------*)
 
-(* Extends arguments can be any expr according to ES6 
+(* Extends arguments can be any expr according to ES6
  * However, this causes ambiguities with type arguments a la TypeScript.
  * Unfortunately, TypeScript enforces severe restrictions here,
- * which e.g. do not admit mixins, which we want to support 
- * TODO ambiguity Xxx.yyy, a Period expr or a module path in TypeScript? 
+ * which e.g. do not admit mixins, which we want to support
+ * TODO ambiguity Xxx.yyy, a Period expr or a module path in TypeScript?
  *)
 type_or_expr:
 (* (* old: flow: *)
- | left_hand_side_expr_no_stmt { ($1,None) } 
+ | left_hand_side_expr_no_stmt { ($1,None) }
  | type_name type_arguments { ($1, Some $2) }
 *)
  (* typescript-ext: *)
- | type_reference 
+ | type_reference
     { match $1 with
      (* TODO: generate a Left expr? of simple id? or a ObjAccess? *)
      | ids -> Right (G.TyName (G.name_of_ids ids))
@@ -1038,7 +1038,7 @@ stmt_list: item+ { List.flatten $1 }
 empty_stmt: sc { Block ($1, [], $1) }
 
 (* less:
- *    | A.String("use strict", tok) -> 
+ *    | A.String("use strict", tok) ->
  *      [A.ExprStmt (A.Apply(A.IdSpecial (A.UseStrict, tok), fb []), t)]
  *)
 expr_stmt: expr_no_stmt sc { ExprStmt ($1, $2) }
@@ -1124,7 +1124,7 @@ expr:
 (* coupling: see also assignment_expr_no_stmt and extend if can? *)
 assignment_expr:
  | conditional_expr(d1) { $1 }
- | left_hand_side_expr_(d1) assignment_operator assignment_expr 
+ | left_hand_side_expr_(d1) assignment_operator assignment_expr
     { mk_Assign ($1,$2,$3) }
 
  (* es6: *)
@@ -1162,7 +1162,7 @@ post_in_expr(x):
  | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop G.Gt $1 $2 $3 }
  | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop G.LtE $1 $2 $3 }
  | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
- | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)  
+ | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)
     { special Instanceof $2 [$1; $3] }
 
  (* also T_IN! *)
@@ -1183,13 +1183,13 @@ post_in_expr(x):
 pre_in_expr(x):
  | left_hand_side_expr_(x)                     { $1 }
 
- | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)    
+ | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)
     { special (IncrDecr (G.Incr, G.Postfix)) $2 [$1] }
- | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)    
+ | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)
     { special (IncrDecr (G.Decr, G.Postfix)) $2 [$1] }
- | T_INCR pre_in_expr(d1)                      
+ | T_INCR pre_in_expr(d1)
   { special (IncrDecr (G.Incr, G.Prefix)) $1 [$2] }
- | T_DECR pre_in_expr(d1)                      
+ | T_DECR pre_in_expr(d1)
   { special (IncrDecr (G.Decr, G.Prefix)) $1 [$2] }
 
  | T_DELETE pre_in_expr(d1)                    { special Delete $1 [$2] }
@@ -1238,7 +1238,7 @@ member_expr(x):
  | member_expr(x) template_literal   { mk_Encaps (Some $1) $2 }
  | T_SUPER "[" expr "]"              { ArrAccess(mk_Super($1),($2,$3,$4))}
  | T_SUPER "." field_name            { ObjAccess(mk_Super($1), $2, PN $3) }
- | T_NEW "." id { 
+ | T_NEW "." id {
      if fst $3 = "target"
      then special NewTarget $1 []
      else raise (Parsing.Parse_error)
@@ -1375,7 +1375,7 @@ xhp_html:
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
      { { xml_tag = $1; xml_attrs = $2; xml_body = [] } }
  (* reactjs-ext: https://reactjs.org/docs/fragments.html#short-syntax *)
- | T_XHP_SHORT_FRAGMENT xhp_child* T_XHP_CLOSE_TAG 
+ | T_XHP_SHORT_FRAGMENT xhp_child* T_XHP_CLOSE_TAG
      { { xml_tag = ("", $1); xml_attrs = []; xml_body = $2 } }
 
 xhp_child:
@@ -1458,7 +1458,7 @@ post_in_expr_no_in:
  | post_in_expr_no_in T_GREATER_THAN post_in_expr(d1)     { bop G.Gt $1 $2 $3 }
  | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)  { bop G.LtE $1 $2 $3 }
  | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
- | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)     
+ | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)
    { special Instanceof $2 [$1; $3] }
 
  (* no T_IN case *)
@@ -1539,7 +1539,7 @@ ident_keyword_bis:
  | T_NULL { $1 }
  | T_FALSE { $1 } | T_TRUE { $1 }
  | T_CLASS { $1 } | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_STATIC { $1 }
- | T_IMPORT { $1 } | T_EXPORT { $1 } 
+ | T_IMPORT { $1 } | T_EXPORT { $1 }
  | T_ENUM { $1 }
  | T_TYPEOF { $1 } | T_VOID { $1 }
 

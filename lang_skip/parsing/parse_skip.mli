@@ -1,6 +1,6 @@
 
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = 
+type program_and_tokens =
   Ast_skip.program option * Parser_skip.token list
 
 (* This is the main function. See flag_parsing for settings. *)

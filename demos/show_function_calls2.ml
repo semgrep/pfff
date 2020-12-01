@@ -7,7 +7,7 @@ open Cst_php
 module V = Visitor_php
 
 (*s: show_function_calls v2 *)
-let show_function_calls file = 
+let show_function_calls file =
   let ast = Parse_php.parse_program file in
 
   (*s: create visitor *)
@@ -25,7 +25,7 @@ let show_function_calls file =
             (*e: print funcname *)
             k e
 
-        | _ -> 
+        | _ ->
             (*s: visitor recurse using k *)
                k e
             (*e: visitor recurse using k *)
@@ -38,6 +38,6 @@ let show_function_calls file =
   (*e: iter on asts using visitor *)
 (*e: show_function_calls v2 *)
 
-let main = 
+let main =
   show_function_calls Sys.argv.(1)
 (*e: show_function_calls2.ml *)

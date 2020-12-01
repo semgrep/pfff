@@ -2,7 +2,7 @@ module Y = Yojson.Basic
 
 (* compatibility mode with json-wheel *)
 
-type t = 
+type t =
  | Object of (string * t) list
  | Array of t list
  | String of string
@@ -29,15 +29,15 @@ let rec (from_yojson: Y.t -> t) = function
   | `Float f -> Float f
   | `Null -> Null
 
- 
-let load_json file = 
+
+let load_json file =
   let y = Y.from_file file in
   from_yojson y
 
-let json_of_string str = 
+let json_of_string str =
   let y = Y.from_string str in
   from_yojson y
-  
+
 
 let string_of_json ?compact ?recursive ?allow_nan json =
   ignore(compact, recursive, allow_nan);

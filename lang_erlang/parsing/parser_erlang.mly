@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -47,16 +47,16 @@
 %token <string * Parse_info.t> TIdent TVariable
 
 /*(* keywords tokens *)*/
-%token <Parse_info.t> 
+%token <Parse_info.t>
  Tif Tcond Twhen Tcase
  Tbegin Tend
- Tlet Tof  
- Tfun 
- Tafter 
+ Tlet Tof
+ Tfun
+ Tafter
  Tquery Tcatch Treceive
 
 /*(* syntax *)*/
-%token <Parse_info.t> TOParen TCParen 
+%token <Parse_info.t> TOParen TCParen
 %token <Parse_info.t> TOBracket TCBracket
 %token <Parse_info.t> TOBrace TCBrace
 
@@ -67,10 +67,10 @@
 
 /*(* operators *)*/
 %token <Parse_info.t>
- TPlus TMinus TStar TDiv 
+ TPlus TMinus TStar TDiv
  Tdiv Trem Tor Txor Tbor Tbxor Tbsl Tbsr Tand Tband Tnot Tbnot
- TEqEq TSlashEq 
- TEqColonEq TEqSlashEq 
+ TEqEq TSlashEq
+ TEqColonEq TEqSlashEq
  TLess TMore
  TLessEq TMoreEq
  TInc TDec

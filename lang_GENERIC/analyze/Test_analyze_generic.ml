@@ -5,7 +5,7 @@ module V = Visitor_AST
 
 let test_typing_generic file =
   let ast = Parse_generic.parse_program file in
-  let lang = List.hd (Lang.langs_of_filename file) in 
+  let lang = List.hd (Lang.langs_of_filename file) in
   Naming_AST.resolve lang ast;
 
   let v = V.mk_visitor { V.default_visitor with
@@ -27,7 +27,7 @@ let test_cfg_generic file =
   ast |> List.iter (fun item ->
    (match item with
    | DefStmt (_ent, FuncDef def) ->
-     (try 
+     (try
        let flow = Controlflow_build.cfg_of_func def in
        Controlflow.display_flow flow;
       with Controlflow_build.Error err ->
@@ -107,7 +107,7 @@ let test_cfg_il file =
   let ast = Parse_generic.parse_program file in
   let lang = List.hd (Lang.langs_of_filename file) in
   Naming_AST.resolve lang ast;
-  
+
   ast |> List.iter (fun item ->
    (match item with
    | DefStmt (_ent, FuncDef def) ->

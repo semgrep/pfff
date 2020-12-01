@@ -1,6 +1,6 @@
 (*s: parser_combinators.mli *)
 (*****************************************************************************)
-(* src: Jon Harrop. 
+(* src: Jon Harrop.
  *
  * "Certain applications are extremely well suited to functional
  * programming and parsing is one of them. Specifically, the ability to
@@ -10,9 +10,9 @@
  * conventional parser generators such as ocamllex and ocamlyacc. This
  * article explains how parser combinators may be designed and
  * implemented in OCaml, using the standard example of a calculator."
- * 
+ *
  * pad: a few bugfixes. I also put more restrictive and descriptive types.
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -103,7 +103,7 @@ val rawstring : lexer
 val lex_gen : lexer -> string -> token list
 
 (*****************************************************************************)
-val token : lexer 
+val token : lexer
 (* char list -> token * char list *)
 val tokens : (char, token list) genp
 (* char list -> token list * char list *)

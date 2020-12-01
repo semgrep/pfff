@@ -9,7 +9,7 @@ open OUnit
 (*****************************************************************************)
 let verbose = false
 
-let unittest = 
+let unittest =
 "analyze_ml" >::: [
 
 (*****************************************************************************)
@@ -25,7 +25,7 @@ let unittest =
 (* Coverage *)
 (*****************************************************************************)
    "coverage_ml" >::: ([
-     
+
      "basename to readable" >:: (fun () ->
        let dummy_coverage = { Coverage_code.
                               covered_sites = []; all_sites = []
@@ -37,7 +37,7 @@ let unittest =
        ]
        in
        let root = Filename.concat Config_pfff.path_pfff_home "lang_ml" in
-       let cover' = 
+       let cover' =
          Coverage_ml.basename_coverage_to_readable_coverage cover root
          |> List.map fst
        in

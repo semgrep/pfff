@@ -71,7 +71,7 @@ let mk_param s =
     p_variadic = None;
   }
 
-let mk_var (s, tok) = 
+let mk_var (s, tok) =
   match s with
   | "this" -> This tok
   | _ -> IdVar (DName(s, tok))
@@ -80,7 +80,7 @@ let rec validate_parameter_list = function
   | [] -> ()
   | Middle3 _ :: params  -> validate_parameter_list_empty params
   | Left3 param :: params ->
-      if param.p_variadic <> None 
+      if param.p_variadic <> None
       then validate_parameter_list_empty params
       else validate_parameter_list params
   | Right3 _ :: params -> validate_parameter_list params
@@ -92,7 +92,7 @@ and validate_parameter_list_empty = function
 
 let o2l = Common.opt_to_list
 
-let qiopt a b = 
+let qiopt a b =
   match a with
   | None -> b
   | Some t -> QITok t::b
@@ -300,7 +300,7 @@ list_sep(X,Sep):
 listc(X): list_sep(X, ",") { $1 }
 
 (* Like above, but skipping the separate tokens.
- * We deviate from pure CST towards an AST for a few constructs 
+ * We deviate from pure CST towards an AST for a few constructs
  *)
 list_sep2(X,Sep):
  | X                      { [$1] }
@@ -667,7 +667,7 @@ class_entry_type:
 
 
 visibility_modifier:
- | T_PUBLIC    { Public,($1) } 
+ | T_PUBLIC    { Public,($1) }
  | T_PROTECTED { Protected,($1) }
  | T_PRIVATE   { Private,($1) }
 
@@ -968,7 +968,7 @@ expr:
  | T_CLONE expr { Clone($1,$2) }
 
  (* PHP 5.3 Closures *)
- | async_opt T_FUNCTION is_reference "(" parameter_list ")" 
+ | async_opt T_FUNCTION is_reference "(" parameter_list ")"
    lexical_vars return_type?
    "{" inner_statement* "}"
    { validate_parameter_list $5;
@@ -1015,10 +1015,10 @@ simple_expr:
 new_expr:
  | member_expr { $1 }
  | T_NEW member_expr arguments? { New ($1, $2, $3) }
- | T_NEW T_CLASS arguments? extends_from implements_list 
+ | T_NEW T_CLASS arguments? extends_from implements_list
    "{" member_declaration* "}"
-     { let class_ = 
-         { c_type = ClassRegular $2; c_name = Name ("!ANON!", $2); 
+     { let class_ =
+         { c_type = ClassRegular $2; c_name = Name ("!ANON!", $2);
            c_extends = $4; c_tparams = None;
            c_implements = $5; c_body = $6, $7, $8;
            c_attrs = None; c_enum_type = None; }
@@ -1283,13 +1283,13 @@ namespace_declaration:
  | T_NAMESPACE                "{" top_statement* "}"
      { NamespaceBracketDef ($1, None, ($2, List.flatten $3, $4)) }
 
-namespace_use_declaration: 
- | T_USE use_keyword? listc(namespace_use_clause) ";" 
+namespace_use_declaration:
+ | T_USE use_keyword? listc(namespace_use_clause) ";"
    { [NamespaceUse ($1, $2, $3, $4)] }
  | T_USE use_keyword?
-   TANTISLASH? namespace_name TANTISLASH 
+   TANTISLASH? namespace_name TANTISLASH
    "{" listc2(namespace_use_group_clause) "}"
-  ";" 
+  ";"
    { $7 |> List.map (fun (_use_kwd_opt_TODO, name, alias_opt) ->
        let full_name = (qiopt $3 $4) @ name in
        NamespaceUse ($1, $2, [Left (full_name, alias_opt)], $9)
@@ -1305,12 +1305,12 @@ namespace_name:
  | ident                           { [QI (Name $1)] }
  | namespace_name TANTISLASH ident { $1 @ [QITok $2; QI (Name $3)] }
 
-namespace_use_clause: 
+namespace_use_clause:
   TANTISLASH? namespace_name namespace_aliasing_clause?
     { (qiopt $1 $2, $3) }
 
-namespace_use_group_clause: 
- use_keyword? namespace_name namespace_aliasing_clause? 
+namespace_use_group_clause:
+ use_keyword? namespace_name namespace_aliasing_clause?
  { $1, $2, $3 }
 
 namespace_aliasing_clause: T_AS ident { $1, Name $2 }

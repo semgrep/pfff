@@ -11,14 +11,14 @@ let test_parse_ast_ml xs =
   in
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
-    try 
+    try
       Common.save_excursion Flag_parsing.error_recovery true (fun () ->
       Common.save_excursion Flag_parsing.show_parsing_error false (fun () ->
       Common.save_excursion Flag_parsing.exn_when_lexical_error false (fun ()->
       let ((cst_opt, _toks),_stat)  = Parse_ml.parse file in
       (match cst_opt with
       | None -> ()
-      | Some ast -> 
+      | Some ast ->
          let _gen = Ml_to_generic.program ast in
          ()
       )
@@ -30,7 +30,7 @@ let test_dump_ml file =
   let ast = Parse_ml.parse_program file in
   let s = Ast_ml.show_program ast in
   pr2 s
-  
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)

@@ -16,16 +16,16 @@ let test_tokens_js file =
   Flag.verbose_lexing := true;
   Flag.verbose_parsing := true;
 
-  let toks = Parse_js.tokens file 
+  let toks = Parse_js.tokens file
     (* |> Parsing_hacks_js.fix_tokens  *)
   in
   toks |> List.iter (fun x -> pr2_gen x);
   ()
 
 let test_parse_common xs fullxs ext  =
-  let dirname_opt, fullxs = 
+  let dirname_opt, fullxs =
     match xs with
-    | [x] when Common2.is_directory x -> 
+    | [x] when Common2.is_directory x ->
       let skip_list =
         if Sys.file_exists (x ^ "/skip_list.txt")
         then Skip_code.load (x ^ "/skip_list.txt")
@@ -56,7 +56,7 @@ let test_parse_common xs fullxs ext  =
        * You may also want to remove the timeout and save_excursion above.
        *)
 
-      )) 
+      ))
      ) with Stack_overflow as exn ->
        pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
        (None, []), PI.bad_stat file
@@ -70,13 +70,13 @@ let test_parse_common xs fullxs ext  =
   Parse_info.print_parsing_stat_list !stat_list;
 
     let score_path = Config_pfff.regression_data_dir in
-    dirname_opt |> Common.do_option (fun dirname -> 
+    dirname_opt |> Common.do_option (fun dirname ->
       let dirname = Common.fullpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common2.regression_testing newscore 
+      Common2.regression_testing newscore
         (Filename.concat score_path
          (spf "score_parsing__%s%s.marshalled" str ext))
     );
@@ -92,7 +92,7 @@ let test_parse_js xs =
 module FT = File_type
 let test_parse_ts xs =
   let fullxs =
-   Common.files_of_dir_or_files_no_vcs_nofilter xs 
+   Common.files_of_dir_or_files_no_vcs_nofilter xs
   |> List.filter (fun filename ->
     match FT.file_type_of_file filename with
     | FT.PL (FT.Web FT.TypeScript) -> true
@@ -132,13 +132,13 @@ let info_to_json_range info =
     "col", J.Int (loc.PI.column + String.length loc.PI.str);
   ]
 
-let parse_js_r2c xs = 
-  let fullxs = 
+let parse_js_r2c xs =
+  let fullxs =
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false xs
   in
   let json = J.Array (fullxs |> Common.map_filter (fun file ->
     let nblines = Common.cat file |> List.length in
-    try 
+    try
      let (_xs, _stat) =
       Common.save_excursion Flag.error_recovery false (fun () ->
       Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
@@ -150,10 +150,10 @@ let parse_js_r2c xs =
        * sort by the number of parse errors in the triage tool
        *)
       None
-    with (Parse_info.Parsing_error (info) | Parse_info.Lexical_error (_,info)) 
+    with (Parse_info.Parsing_error info | Parse_info.Lexical_error (_,info))
       as exn ->
      let (startp, endp) = info_to_json_range info in
-     let message = 
+     let message =
        match exn with
        | Parse_info.Parsing_error _ -> "parse error"
        | Parse_info.Lexical_error (s, _) -> "lexical error: " ^ s
@@ -168,7 +168,7 @@ let parse_js_r2c xs =
          "size", J.Int nblines;
          "message", J.String message;
 (*
-         "correct", J.Int stat.PI.correct; 
+         "correct", J.Int stat.PI.correct;
          "bad", J.Int stat.PI.bad;
          "timeout", J.Bool stat.PI.have_timeout;
 *)

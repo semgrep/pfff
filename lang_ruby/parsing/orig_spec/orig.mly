@@ -229,7 +229,7 @@ expr: command_call
 
 expr_value: expr
 
-expr_value_do: expr_value do 
+expr_value_do: expr_value do
 
 command_call: command
         | block_command
@@ -318,20 +318,20 @@ fitem: fname
 undef_list: fitem
         | undef_list ','  fitem
 
-op: '|'       | '^'       | '&'       
-  | tCMP      | tEQ       | tEQQ      
-  | tMATCH    | tNMATCH   
-  | '>'       | tGEQ      
-  | '<'       | tLEQ      
-  | tNEQ      
-  | tLSHFT    | tRSHFT    
-  | '+'       | '-'       | '*'       | tSTAR     | '/'       | '%'       
-  | tPOW      
-  | tDSTAR    
-  | '!'       | '~'       
-  | tUPLUS    | tUMINUS   
-  | tAREF     | tASET     
-  | '`'       
+op: '|'       | '^'       | '&'
+  | tCMP      | tEQ       | tEQQ
+  | tMATCH    | tNMATCH
+  | '>'       | tGEQ
+  | '<'       | tLEQ
+  | tNEQ
+  | tLSHFT    | tRSHFT
+  | '+'       | '-'       | '*'       | tSTAR     | '/'       | '%'
+  | tPOW
+  | tDSTAR
+  | '!'       | '~'
+  | tUPLUS    | tUMINUS
+  | tAREF     | tASET
+  | '`'
 
 reswords: keyword__LINE__ | keyword__FILE__ | keyword__ENCODING__
         | keyword_BEGIN | keyword_END
@@ -390,10 +390,10 @@ arg: lhs '=' arg_rhs
    | arg '?' arg opt_nl ':' arg
    | primary
 
-relop: '>'  
-     | '<'  
-     | tGEQ 
-     | tLEQ 
+relop: '>'
+     | '<'
+     | tGEQ
+     | tLEQ
 
 rel_expr: arg relop arg   %prec '>'
         | rel_expr relop arg   %prec '>'
@@ -586,7 +586,7 @@ block_args_tail: f_block_kwarg ',' f_kwrest opt_f_block_arg
         | f_block_arg
 
 opt_block_args_tail: ',' block_args_tail
-        | 
+        |
 
 block_param: f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail
         | f_arg ',' f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail
@@ -875,13 +875,13 @@ user_variable: tIDENTIFIER
         | tCONSTANT
         | tCVAR
 
-keyword_variable: keyword_nil 
-        | keyword_self 
-        | keyword_true 
-        | keyword_false 
-        | keyword__FILE__ 
-        | keyword__LINE__ 
-        | keyword__ENCODING__ 
+keyword_variable: keyword_nil
+        | keyword_self
+        | keyword_true
+        | keyword_false
+        | keyword__FILE__
+        | keyword__LINE__
+        | keyword__ENCODING__
 
 var_ref: user_variable
        | keyword_variable
@@ -922,7 +922,7 @@ f_args: f_arg ',' f_optarg ',' f_rest_arg opt_args_tail
       | f_rest_arg opt_args_tail
       | f_rest_arg ',' f_arg opt_args_tail
       | args_tail
-      | 
+      |
 
 args_forward: tBDOT3
 
@@ -1024,7 +1024,7 @@ call_op: '.'
 call_op2: call_op
         | tCOLON2
 
-opt_terms: 
+opt_terms:
         | terms
 
 opt_nl: none
@@ -1038,10 +1038,10 @@ trailer: none
         | '\n'
         | ','
 
-term: ';' 
-    | '\n' 
+term: ';'
+    | '\n'
 
 terms: term
-     | terms ';' 
+     | terms ';'
 
-none: 
+none:

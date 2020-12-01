@@ -7,7 +7,7 @@ module Flag = Flag_parsing
 (*****************************************************************************)
 
 let test_tokens_ml file =
-  if not (file =~ ".*\\.ml[iyl]?") 
+  if not (file =~ ".*\\.ml[iyl]?")
   then pr2 "warning: seems not a ocaml file";
 
   Flag.verbose_lexing := true;
@@ -21,18 +21,18 @@ let test_tokens_ml file =
 let test_parse_ml_or_mli xs =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs = 
+  let fullxs =
     Lib_parsing_ml.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in
   let stat_list = ref [] in
 
-  fullxs |> Console.progress (fun k -> List.iter (fun file -> 
+  fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
 
-    let (_xs, stat) = 
+    let (_xs, stat) =
       Common.save_excursion Flag.error_recovery true (fun () ->
-        Parse_ml.parse file 
+        Parse_ml.parse file
       )
     in
     Common.push stat stat_list;
@@ -53,22 +53,22 @@ let refactor_grammar subst_file file =
   let h = Hashtbl.create 101 in
 
   let xs = Common.cat subst_file in
-  
-  let rec populate_hash xs = 
+
+  let rec populate_hash xs =
     match xs with
     | [] -> ()
     | [x] -> failwith ("pb not a pair number: " ^ x)
     | x::y::xs ->
         (if x =~ "\\([A-Za-z]+\\)"
-         then 
+         then
           let target = Common.matched1 x in
           if y =~ " \\([A-Za-z]+\\)"
           then
             let orig = Common.matched1 y in
             Hashtbl.add h orig target
-          else 
+          else
             failwith ("wrong format: " ^ x ^ y)
-        else 
+        else
             failwith ("wrong format: " ^ x ^ y)
         );
         populate_hash xs
@@ -78,11 +78,11 @@ let refactor_grammar subst_file file =
   let ys = Common.cat file in
   ys |> List.iter (fun l ->
     let s = Common2.global_replace_regexp "\\([a-zA-Z_][A-Za-z_0-9]*\\)" (fun s ->
-      try 
+      try
         Hashtbl.find h s
-      with 
+      with
       Not_found -> s
-    ) l 
+    ) l
     in
     pr s
   );
@@ -93,13 +93,13 @@ let refactor_grammar subst_file file =
 (*****************************************************************************)
 
 let actions () = [
-  "-tokens_ml", "   <file>", 
+  "-tokens_ml", "   <file>",
   Common.mk_action_1_arg test_tokens_ml;
-  "-parse_ml", "   <files or dirs>", 
+  "-parse_ml", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_ml_or_mli;
-  "-dump_ml", "   <file>", 
+  "-dump_ml", "   <file>",
   Common.mk_action_1_arg test_show_ml;
 
-  "-refactor_grammar", "   <subst_file> <file>", 
+  "-refactor_grammar", "   <subst_file> <file>",
   Common.mk_action_2_arg refactor_grammar;
 ]

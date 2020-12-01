@@ -1,5 +1,5 @@
 
-type t = 
+type t =
   | Global | Local  | Param | Static | Class
 
   | LocalExn | LocalIterator

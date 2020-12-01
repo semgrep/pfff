@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -22,9 +22,9 @@ module FT = File_type
 (*****************************************************************************)
 
 (* copy paste of php code, not sure this is relevant for Javascript *)
-let is_js_script file = 
+let is_js_script file =
   Common.with_open_infile file (fun chan ->
-    try 
+    try
       let l = input_line chan in
       l =~ "#!/usr/.*/js" ||
       l =~ "#!/bin/env js" ||
@@ -33,13 +33,13 @@ let is_js_script file =
     with End_of_file -> false
   )
 
-let find_source_files_of_dir_or_files ?(include_scripts=true)xs = 
-  Common.files_of_dir_or_files_no_vcs_nofilter xs 
+let find_source_files_of_dir_or_files ?(include_scripts=true)xs =
+  Common.files_of_dir_or_files_no_vcs_nofilter xs
   |> List.filter (fun filename ->
     match FT.file_type_of_file filename with
     (* less: could also consider Typescript files *)
     | FT.PL (FT.Web FT.Js) -> true
-    | _ -> 
+    | _ ->
       if include_scripts then is_js_script filename else false
   ) |> Common.sort
 
@@ -47,7 +47,7 @@ let find_source_files_of_dir_or_files ?(include_scripts=true)xs =
 (* Extract infos *)
 (*****************************************************************************)
 
-let extract_info_visitor recursor = 
+let extract_info_visitor recursor =
   let globals = ref [] in
   let hooks = { V.default_visitor with
     V.kinfo = (fun (_k, _) i -> Common.push i globals)
@@ -58,5 +58,5 @@ let extract_info_visitor recursor =
     List.rev !globals
   end
 
-let ii_of_any any = 
+let ii_of_any any =
   extract_info_visitor (fun visitor -> visitor any)

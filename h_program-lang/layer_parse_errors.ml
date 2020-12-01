@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -44,10 +44,10 @@ let gen_red_green_layer ~root stats =
     title = "Parsing errors (red/green)";
     description = "";
     files = stats |> List.map (fun stat ->
-     let file = 
+     let file =
        stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
      in
-      
+
       file,
       { Layer_code.
         micro_level = []; (* TODO use problematic_lines *)
@@ -69,18 +69,18 @@ let gen_heatmap_layer ~root stats =
     title = "Parsing errors (heatmap)";
     description = "lower is better";
     files = stats |> List.map (fun stat ->
-     let file = 
+     let file =
        stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
      in
      let covered = stat.correct in
      let not_covered = stat.bad in
 
-     let percent = 
-        try 
+     let percent =
+        try
           Common2.pourcent_good_bad not_covered covered
        with Division_by_zero -> 0
      in
-      
+
       file,
       { Layer_code.
         micro_level =

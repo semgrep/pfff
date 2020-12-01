@@ -13,7 +13,7 @@ type shape =
   | FunctionShape of shape Common.smap ref * shape
   | RequireShape of module_
   | UnknownShape of string
-(* 
+(*
   | ClassShape of shape Common.smap ref * shape
 *)
   | ClassShape of shape * shape

@@ -1,9 +1,9 @@
 
 type level = Easy_logging__.Logging_types.level
 
-(* Mostly a copy paste of easy_logging.mli inlined here for 
+(* Mostly a copy paste of easy_logging.mli inlined here for
  * quicker reference *)
-class type logger = 
+class type logger =
  object
 
       (** {3 Classic logging Methods}

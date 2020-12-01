@@ -26,11 +26,11 @@ object ('o)
 
 end
 
-val print_ograph_generic: 
+val print_ograph_generic:
   str_of_key:('key -> string) ->
   str_of_node:('key -> 'node -> string) ->
-  Common.filename -> 
-  ('key, 'node,'edge) ograph_mutable -> 
+  Common.filename ->
+  ('key, 'node,'edge) ograph_mutable ->
   unit
 
 (*e: ograph_simple.mli *)

@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -25,10 +25,10 @@ module F = Ast_fuzzy
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* The goal for this module is to retag tokens 
+(* The goal for this module is to retag tokens
  * (e.g., a T_LPAREN in T_LPAREN_ARROW)
  * or insert tokens (e.g., T_VIRTUAL_SEMICOLON) to
- * help the grammar remains simple and unambiguous. See 
+ * help the grammar remains simple and unambiguous. See
  * lang_cpp/parsing/parsing_hacks.ml for more information about
  * this technique.
  *
@@ -40,9 +40,9 @@ module F = Ast_fuzzy
  *    and we detect those tokens in this file.
  *  - we also insert semicolons during error recovery in parser_js.ml. After
  *    all that was what the spec says.
- * Note that we need both techniques. See parse_js.ml comment for 
+ * Note that we need both techniques. See parse_js.ml comment for
  * the limitations of using just the second technique.
- *  
+ *
  * reference:
  *  -http://www.bradoncode.com/blog/2015/08/26/javascript-semi-colon-insertion
  *  -http://www.ecma-international.org/ecma-262/6.0/index.html#sec-automatic-semicolon-insertion
@@ -54,29 +54,29 @@ module F = Ast_fuzzy
 
 (* obsolete *)
 let is_toplevel_keyword = function
- | T.T_IMPORT _ | T.T_EXPORT _ 
+ | T.T_IMPORT _ | T.T_EXPORT _
  | T.T_VAR _ | T.T_LET _ | T.T_CONST _
  | T.T_FUNCTION _
  -> true
  | _ -> false
 
 (* obsolete *)
-let rparens_of_if toks = 
+let rparens_of_if toks =
   let toks = Common.exclude TH.is_comment toks in
 
   let stack = ref [] in
 
   let rparens_if = ref [] in
 
-  toks |> Common2.iter_with_previous_opt (fun prev x -> 
+  toks |> Common2.iter_with_previous_opt (fun prev x ->
     (match x with
-    | T.T_LPAREN _ -> 
+    | T.T_LPAREN _ ->
         Common.push prev stack;
     | T.T_RPAREN info ->
         if !stack <> [] then begin
         let top = Common2.pop2 stack in
         (match top with
-        | Some (T.T_IF _) -> 
+        | Some (T.T_IF _) ->
             Common.push info rparens_if
         | _ ->
             ()
@@ -105,14 +105,14 @@ let is_identifier horigin (info : Parse_info.t) =
  *  - less: '<' when part of a polymorphic type (aka generic)
  *  - less: { when part of a pattern before an assignment
  *)
-let fix_tokens toks = 
- try 
+let fix_tokens toks =
+ try
   let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
-  } toks 
+  } toks
   in
-  let horigin = toks |> List.map (fun t -> TH.info_of_tok t, t) 
+  let horigin = toks |> List.map (fun t -> TH.info_of_tok t, t)
    |> Common.hash_of_list in
   let retag_lparen_arrow = Hashtbl.create 101 in
   let retag_lparen_method = Hashtbl.create 101 in
@@ -126,7 +126,7 @@ let fix_tokens toks =
   | F.Braces (t1, _body, _)::_ when !Flag_parsing.sgrep_mode ->
           Hashtbl.add retag_lbrace t1 true
   (* TODO: skip keywords, attributes that may be before the method id *)
-  | F.Tok(_s, info)::F.Parens(i1, _, _)::F.Braces(_, _, _)::_ 
+  | F.Tok(_s, info)::F.Parens(i1, _, _)::F.Braces(_, _, _)::_
      when !Flag_parsing.sgrep_mode && is_identifier horigin info ->
           Hashtbl.add retag_lparen_method i1 true
   | _ -> ()
@@ -152,11 +152,11 @@ let fix_tokens toks =
   (* use the tagged information and transform tokens *)
   toks |> List.map (function
     | T.T_LPAREN info when Hashtbl.mem retag_lparen_arrow info ->
-      T.T_LPAREN_ARROW (info)
+      T.T_LPAREN_ARROW info
     | T.T_LPAREN info when Hashtbl.mem retag_lparen_method info ->
-      T.T_LPAREN_METHOD_SEMGREP (info)
+      T.T_LPAREN_METHOD_SEMGREP info
     | T.T_LCURLY info when Hashtbl.mem retag_lbrace info ->
-      T.T_LCURLY_SEMGREP (info)
+      T.T_LCURLY_SEMGREP info
     | T.T_IMPORT info when Hashtbl.mem retag_keywords info ->
       T.T_ID (PI.str_of_info info, info)
     | x -> x
@@ -175,12 +175,12 @@ let fix_tokens toks =
 let fix_tokens_ASI xs =
 
   let res = ref [] in
-  let rec aux prev f xs = 
+  let rec aux prev f xs =
     match xs with
     | [] -> ()
     | e::l ->
         if TH.is_comment e
-        then begin 
+        then begin
           Common.push e res;
           aux prev f l
         end else begin
@@ -189,9 +189,9 @@ let fix_tokens_ASI xs =
         end
   in
 
-  let push_sc_before_x x = 
+  let push_sc_before_x x =
      let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-     Common.push (T.T_VIRTUAL_SEMICOLON fake) res; 
+     Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
   in
 
   let f = (fun prev x ->
@@ -199,9 +199,9 @@ let fix_tokens_ASI xs =
      | (T.T_CONTINUE _ | T.T_BREAK _), _
         when TH.line_of_tok x <> TH.line_of_tok prev ->
         push_sc_before_x x;
-     (* very conservative; should be any last(left_hand_side_expression) 
+     (* very conservative; should be any last(left_hand_side_expression)
       * but for that better to rely on ASI via parse-error recovery;
-      * no ambiguity like for continue because 
+      * no ambiguity like for continue because
       *    if(true) x
       *    ++y;
       * is not valid.
@@ -225,15 +225,15 @@ let fix_tokens_ASI xs =
   let _fobsolete = (fun prev x ->
     match prev, x with
     (* { } or ; } TODO: source of many issues *)
-    | (T.T_LCURLY _ | T.T_SEMICOLON _), 
+    | (T.T_LCURLY _ | T.T_SEMICOLON _),
       T.T_RCURLY _ ->
         Common.push x res;
     (* <not } or ;> } *)
-    | _, 
+    | _,
       T.T_RCURLY _ ->
         push_sc_before_x x;
         Common.push x res;
-        
+
     (* ; EOF *)
     | (T.T_SEMICOLON _),
        T.EOF _ ->
@@ -243,10 +243,10 @@ let fix_tokens_ASI xs =
         push_sc_before_x x;
         Common.push x res;
 
-    (* } 
+    (* }
      * <keyword>
      *)
-    | T.T_RCURLY _, 
+    | T.T_RCURLY _,
       (T.T_ID _
        | T.T_IF _ | T.T_SWITCH _ | T.T_FOR _
        | T.T_VAR _  | T.T_FUNCTION _ | T.T_LET _ | T.T_CONST _
@@ -262,31 +262,31 @@ let fix_tokens_ASI xs =
      * <keyword>
      *)
     (* this is valid only if the RPAREN is not the closing paren of an if*)
-    | T.T_RPAREN info, 
+    | T.T_RPAREN info,
       (T.T_VAR _ | T.T_IF _ | T.T_THIS _ | T.T_FOR _ | T.T_RETURN _ |
-       T.T_ID _ | T.T_CONTINUE _ 
-      ) when TH.line_of_tok x <> TH.line_of_tok prev 
+       T.T_ID _ | T.T_CONTINUE _
+      ) when TH.line_of_tok x <> TH.line_of_tok prev
              && not (Hashtbl.mem hrparens_if info) ->
         push_sc_before_x x;
         Common.push x res;
 
 
     (* ]
-     * <keyword> 
+     * <keyword>
      *)
-    | T.T_RBRACKET _, 
+    | T.T_RBRACKET _,
       (T.T_FOR _ | T.T_IF _ | T.T_VAR _ | T.T_ID _)
       when TH.line_of_tok x <> TH.line_of_tok prev ->
         push_sc_before_x x;
         Common.push x res;
 
-    (* <literal> 
-     * <keyword> 
+    (* <literal>
+     * <keyword>
      *)
-    | (T.T_ID _ 
+    | (T.T_ID _
         | T.T_NULL _ | T.T_STRING _ | T.T_REGEX _
         | T.T_FALSE _ | T.T_TRUE _
-      ), 
+      ),
        (T.T_VAR _ | T.T_ID _ | T.T_IF _ | T.T_THIS _ |
         T.T_RETURN _ | T.T_BREAK _ | T.T_ELSE _
       ) when TH.line_of_tok x <> TH.line_of_tok prev ->
@@ -297,7 +297,7 @@ let fix_tokens_ASI xs =
      * <keyword> col 0
      *)
     | (T.T_RCURLY _ | T.T_SEMICOLON _ | T.T_COMMA _ | T.T_ASSIGN _),
-      _ 
+      _
       when is_toplevel_keyword x &&
        TH.line_of_tok x <> TH.line_of_tok prev && TH.col_of_tok x = 0
       ->
@@ -315,14 +315,14 @@ let fix_tokens_ASI xs =
 
 
     (* else *)
-    | _, _ ->        
+    | _, _ ->
         Common.push x res;
   )
   in
   match xs with
   | [] -> []
   | x::_ ->
-      let sentinel = 
+      let sentinel =
         let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
         (T.T_SEMICOLON fake)
       in

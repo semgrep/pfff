@@ -89,7 +89,7 @@ and any x =
 
 and any_aux env = function
   | Expr e -> let e = expr env e in A.Expr2 e
-  | Stmt2 st -> 
+  | Stmt2 st ->
       let st = stmt1 (stmt env st []) in
       A.Stmt st
   | Toplevel x -> any_aux env (Toplevels [x])
@@ -138,7 +138,7 @@ and toplevel env st =
   | NamespaceUse (tok, _kwdopt, xs, _) ->
       xs |> uncomma |> List.map (fun (qu, alias_opt) ->
           let qu = qualified_ident env qu in
-          let alias_opt = 
+          let alias_opt =
             match alias_opt with
             | None -> None
             | Some (_t, id) -> Some (ident env id)
@@ -202,7 +202,7 @@ and stmt env st acc =
       let st = stmt1 (stmt env st []) in
       let il = List.fold_right (if_elseif env) il (if_else env io) in
       A.If (tok, e, st, il) :: acc
-  | IfColon (tok, (_, e,_), _, st, il, io, _, _) -> 
+  | IfColon (tok, (_, e,_), _, st, il, io, _, _) ->
       let e = expr env e in
       let st = stmt1 (List.fold_right (stmt_and_def env) st []) in
       let il = List.fold_right (new_elseif env) il (new_else env io) in
@@ -251,23 +251,23 @@ and stmt env st acc =
   | Unset (tok, (t1, lp, t2), sc) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
-      A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], (t1, lp, t2)),sc) 
+      A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], (t1, lp, t2)),sc)
         :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
   | Declare (tok, args, colon_st) ->
       (match args, colon_st with
       (* declare(strict=1); (or 0) can be skipped,
        * See 'i wiki/index.php/Pfff/Declare_strict' *)
-      | (_,[Common.Left((Name(("strict",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
+      | (_,[Common.Left((Name("strict",_),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
       SingleStmt(EmptyStmt(_))
-      | (_,[Common.Left((Name(("strict_types",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
+      | (_,[Common.Left((Name("strict_types",_),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
       SingleStmt(EmptyStmt(_))
       (* declare(ticks=1); can be skipped too.
        * http://www.php.net/manual/en/control-structures.declare.php#control-structures.declare.ticks
        *)
       -> acc
 
-      | (_,[Common.Left((Name(("ticks",_)), (_,Sc(C(Int((("1"),_)))))))],_), _
+      | (_,[Common.Left((Name("ticks",_), (_,Sc(C(Int((("1"),_)))))))],_), _
       ->
        let cst = colon_stmt env colon_st in
        cst @ acc
@@ -308,13 +308,13 @@ and stmt_and_def env st acc = stmt env st acc
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 and expr env = function
-  | DeepEllipsis (x) -> A.DeepEllipsis (bracket (expr env) x)
+  | DeepEllipsis x -> A.DeepEllipsis (bracket (expr env) x)
 
   | Sc sc -> scalar env sc
 
   | Id n -> A.Id (name env n)
 
-  | IdVar (dn) -> A.Var (dname dn)
+  | IdVar dn -> A.Var (dname dn)
   | This tok -> A.IdSpecial (A.This, tok)
 
   (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)
@@ -401,7 +401,7 @@ and expr env = function
       in
       let cdef = class_def env cdef in
       A.NewAnonClass (tok, args, cdef)
-      
+
   | Clone (tok, e) ->
       A.Call (A.Id [A.builtin "clone", wrap tok], fb [expr env e])
   | AssignRef (e1, tokeq, tokref, e2) ->
@@ -470,33 +470,33 @@ and expr env = function
   | ParenExpr (_, e, _) -> expr env e
 
 and arith_op = function
-  | Plus -> G.Plus 
-  | Minus -> G.Minus 
+  | Plus -> G.Plus
+  | Minus -> G.Minus
   | Mul -> G.Mult
-  | Div  -> G.Div  
+  | Div  -> G.Div
   | Mod-> G.Mod
   | Pow -> G.Pow
   | DecLeft -> G.LSL
   | DecRight-> G.LSR
-  | And -> G.BitAnd 
-  | Or -> G.BitOr 
+  | And -> G.BitAnd
+  | Or -> G.BitOr
   | Xor-> G.BitXor
 
 and logical_op = function
-  | Inf -> G.Lt 
-  | Sup -> G.Gt 
+  | Inf -> G.Lt
+  | Sup -> G.Gt
   | InfEq -> G.LtE
   | SupEq-> G.GtE
-  | Eq -> G.Eq 
+  | Eq -> G.Eq
   | NotEq-> G.NotEq
   | Identical -> G.PhysEq
   | NotIdentical-> G.NotPhysEq
  (* less: add difference in ast_generic? 'and' as shortcut operator
   * and 'and' as boolean operator *)
   | AndLog -> G.And
-  | OrLog -> G.Or 
+  | OrLog -> G.Or
   | XorLog-> G.Xor
-  | AndBool -> G.And 
+  | AndBool -> G.And
   | OrBool-> G.Or
 
 and binary_op = function
@@ -553,7 +553,7 @@ and hint_type env = function
   | Hint (q, _typeTODO) -> A.Hint (name env q)
   | HintArray tok -> A.HintArray tok
   | HintQuestion (tok, t) -> A.HintQuestion (tok, hint_type env t)
-  | HintTuple (t1, v1, t2) -> 
+  | HintTuple (t1, v1, t2) ->
       A.HintTuple (t1, List.map (hint_type env) (comma_list v1), t2)
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
@@ -613,7 +613,7 @@ and lambda_def env (l_use, ld) =
   }
 
 and short_lambda_def env def =
-  let sl_tok = 
+  let sl_tok =
       match def.sl_tok with
       | Some tok -> wrap tok
       | None -> wrap (fake "_lambda")
@@ -826,9 +826,9 @@ and encaps env = function
 and array_pair env = function
   | ArrayExpr e -> expr env e
   | ArrayRef (tok, lv) -> A.Ref (tok, lvalue env lv)
-  | ArrayArrowExpr (e1, tok, e2) -> 
+  | ArrayArrowExpr (e1, tok, e2) ->
       A.Arrow (expr env e1, tok, expr env e2)
-  | ArrayArrowRef (e1, arrow, tokref, lv) -> 
+  | ArrayArrowRef (e1, arrow, tokref, lv) ->
       A.Arrow (expr env e1, arrow, A.Ref (tokref, lvalue env lv))
 
 and for_expr env el = List.map (expr env) (comma_list el)
@@ -889,7 +889,7 @@ and list_assign env x acc =
   | ListEmpty -> acc
 
 and assignOp _env = function
-  | AssignOpArith aop -> 
+  | AssignOpArith aop ->
       let aop = arith_op aop in
       A.ArithOp aop
   | AssignConcat -> A.BinaryConcat

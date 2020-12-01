@@ -7,14 +7,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 open Common2
-open Common 
+open Common
 
 open Ast_html
 
@@ -25,7 +25,7 @@ module T = Parser_html
 module PI = Parse_info
 module Dtd = Dtd_simple
 
-(* While porting the original html parser to return an AST with line 
+(* While porting the original html parser to return an AST with line
  * information, the parser was getting buggy because some of the code
  * was using = or <> which was not working property anymore (because
  * the string of the tags were the same but their position was different)
@@ -41,14 +41,14 @@ let (<>) () () = false
 (* Prelude *)
 (*****************************************************************************)
 
-(* 
+(*
  * src: most of the code in this file comes from ocamlnet/netstring/.
  * The original CVS ID is:
  * $Id: nethtml.ml 1296 2009-11-18 13:27:41Z ChriS $
  * I've extended it mainly to add position information. I've also
  * moved stuff in dtd.ml and removed the encode/decode and xmap stuff.
  * I've also simplified the code, factorized things.
- * 
+ *
  * TODO: need complete_parse_info so have good position information
  * in the tokens.
  *)
@@ -62,7 +62,7 @@ type program_and_tokens = Ast_html.html_tree * Parser_html.token list
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-(* 
+(*
  * For many languages I have tokens() and parse() functions, but for
  * HTML because the lexical rules are so tied to the parsing rules,
  * this module does not provide a tokens() function.
@@ -74,11 +74,11 @@ type program_and_tokens = Ast_html.html_tree * Parser_html.token list
 
 (* a small wrapper over ocamlnet *)
 (*
-let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) = 
- fun (Ast.HtmlRaw raw) -> 
+let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) =
+ fun (Ast.HtmlRaw raw) ->
   let ch = new Netchannels.input_string raw in
-  Nethtml.parse 
-    ~return_declarations:true 
+  Nethtml.parse
+    ~return_declarations:true
     ~return_pis:true
     ~return_comments:true
     ch
@@ -92,9 +92,9 @@ exception End_of_scan
 (* p_string: whether string literals in quotation marks are allowed *)
 let rec skip_space p_string call_scan =
   let tok =
-    if p_string 
+    if p_string
     then call_scan Lexer_html.scan_element_after_Eq
-    else call_scan Lexer_html.scan_element 
+    else call_scan Lexer_html.scan_element
   in
   match tok with
   | T.Space _ -> skip_space p_string call_scan
@@ -104,15 +104,15 @@ let rec skip_space p_string call_scan =
 let rec skip_element call_scan =
   let tok = call_scan Lexer_html.scan_element in
   match tok with
-  | T.Relement _ 
-  | T.Relement_empty _ 
+  | T.Relement _
+  | T.Relement_empty _
     ->  ()
   | T.EOF _ -> raise End_of_scan
   | _ -> skip_element call_scan
 
 
 let parse_atts call_scan =
- 
+
   let rec parse_atts_lookahead next =
     match next with
     | T.Relement _  -> ( [], false )
@@ -124,31 +124,31 @@ let parse_atts call_scan =
             | T.Name (tok2, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (skip_space false call_scan) in
-                ((Attr (String.lowercase_ascii n, tok1), Val (v, tok2)) :: toks, 
+                ((Attr (String.lowercase_ascii n, tok1), Val (v, tok2)) :: toks,
                 is_empty)
             | T.Literal (tok2, v) ->
                 let toks, is_empty =
                   parse_atts_lookahead (skip_space false call_scan) in
-                ((Attr (String.lowercase_ascii n, tok1), Val (v, tok2))::toks, 
+                ((Attr (String.lowercase_ascii n, tok1), Val (v, tok2))::toks,
                 is_empty)
             | T.EOF _ ->
                 raise End_of_scan
             | T.Relement ii ->
                 if !Flag.exn_when_lexical_error
-                then raise (Parse_info.Parsing_error (ii))
-                else 
+                then raise (Parse_info.Parsing_error ii)
+                else
                  (* Illegal *)
                  ( [], false )
             | T.Relement_empty ii ->
                 if !Flag.exn_when_lexical_error
-                then raise (Parse_info.Parsing_error (ii))
-                else 
+                then raise (Parse_info.Parsing_error ii)
+                else
                   (* Illegal *)
                   ( [], true )
             | t ->
                 if !Flag.exn_when_lexical_error
                 then raise (Parse_info.Parsing_error (TH.info_of_tok t))
-                else 
+                else
                   (* Illegal *)
                   parse_atts_lookahead (skip_space false call_scan)
             )
@@ -156,17 +156,17 @@ let parse_atts call_scan =
             raise End_of_scan
         | T.Relement _ ->
             (* <tag name> <==> <tag name="name"> *)
-            ([Attr (String.lowercase_ascii n, tok1), 
+            ([Attr (String.lowercase_ascii n, tok1),
               Val (String.lowercase_ascii n, Ast.fakeInfo())], false)
         | T.Relement_empty _ ->
             (* <tag name> <==> <tag name="name"> *)
-            ([Attr (String.lowercase_ascii n, tok1), 
+            ([Attr (String.lowercase_ascii n, tok1),
               Val (String.lowercase_ascii n, Ast.fakeInfo())], true)
         | next' ->
             (* assume <tag name ... > <==> <tag name="name" ...> *)
-            let toks, is_empty = 
+            let toks, is_empty =
               parse_atts_lookahead next' in
-            ((Attr (String.lowercase_ascii n, tok1), 
+            ((Attr (String.lowercase_ascii n, tok1),
               Val (String.lowercase_ascii n, Ast.fakeInfo())) :: toks,
             is_empty)
         )
@@ -175,15 +175,15 @@ let parse_atts call_scan =
     | t ->
         if !Flag.exn_when_lexical_error
         then raise (Parse_info.Parsing_error (TH.info_of_tok t))
-        else 
+        else
          (* Illegal *)
          parse_atts_lookahead (skip_space false call_scan)
   in
   parse_atts_lookahead (skip_space false call_scan)
 
-(* called for 'Special, not is_empty' tag categories, like 
+(* called for 'Special, not is_empty' tag categories, like
  * <script> and <style>. Parse until </name>.
- * 
+ *
  * todo: this function is very ugly; could perhaps make scan_special
  *  take the name as a parameter and do this loop until find the name
  *  itself.
@@ -193,20 +193,20 @@ let parse_special tag call_scan =
 
   let first_tok = ref None in
 
-  let rec aux () = 
+  let rec aux () =
     match call_scan Lexer_html.scan_special with
     | T.Lelementend (_tok, n) ->
-        if String.lowercase_ascii n =$= name 
+        if String.lowercase_ascii n =$= name
         then ""
         else "</" ^ n ^ aux ()
     | T.EOF _ -> raise End_of_scan
-    | T.CdataSpecial (tok, s) -> 
+    | T.CdataSpecial (tok, s) ->
         (if !first_tok =*= None then first_tok := Some tok);
         s ^ aux ()
     | t ->
         if !Flag.exn_when_lexical_error
         then raise (Parse_info.Parsing_error (TH.info_of_tok t))
-        else 
+        else
          (* Illegal *)
          aux ()
   in
@@ -216,9 +216,9 @@ let parse_special tag call_scan =
     | None -> Ast.fakeInfo()
     | Some tok -> PI.rewrap_str s tok
   in
-  s, info 
+  s, info
 
-(* 
+(*
  * This is very ugly. The reason for this function and the first_tok
  * hack above was that codemap was originally not displaying the color
  * for text inside <script> or <style>. With this function
@@ -240,8 +240,8 @@ let rec merge_cdataspecial_tokens xs =
 (*****************************************************************************)
 
 let model_of ~dtd_hash (Tag (element_name, _tok)) =
-  try 
-    (match Hashtbl.find dtd_hash element_name with 
+  try
+    (match Hashtbl.find dtd_hash element_name with
     | (eclass, Dtd.Sub_exclusions(_,m)) -> eclass, m
     | m -> m
     )
@@ -255,20 +255,20 @@ let exclusions_of ~dtd_hash (Tag (element_name, _tok)) =
     )
   with Not_found -> []
 
-let is_possible_subelement 
+let is_possible_subelement
  ~dtd_hash parent_element parent_excl sub_element =
   let (sub_class, _) = model_of ~dtd_hash sub_element in
   let rec eval m =
     match m with
     | Dtd.Inline2     -> sub_class =*= Dtd.Inline
-    | Dtd.Block2      -> 
-        sub_class =*= Dtd.Block  || 
+    | Dtd.Block2      ->
+        sub_class =*= Dtd.Block  ||
         sub_class =*= Dtd.Essential_block
-    | Dtd.Flow       -> 
-        sub_class =*= Dtd.Inline || 
-        sub_class =*= Dtd.Block  || 
+    | Dtd.Flow       ->
+        sub_class =*= Dtd.Inline ||
+        sub_class =*= Dtd.Block  ||
         sub_class =*= Dtd.Essential_block
-    | Dtd.Elements l -> 
+    | Dtd.Elements l ->
         let (Tag (s, _tok)) = sub_element in
         List.mem s l
     | Dtd.Any        -> true
@@ -301,12 +301,12 @@ type element_state = {
 }
 
 let parse2 file =
- Common.with_open_infile file (fun chan -> 
+ Common.with_open_infile file (fun chan ->
   let buf = Lexing.from_channel chan in
   let table     = Parse_info.full_charpos_to_pos_large file in
 
   let toks = ref [] in
-  let call_scan scannerf = 
+  let call_scan scannerf =
     let tok = scannerf buf in
 
     let tok = tok |> TH.visitor_info_of_tok (fun ii ->
@@ -314,10 +314,10 @@ let parse2 file =
           (* could assert pinfo.filename = file ? *)
           match ii.Parse_info.token with
           | Parse_info.OriginTok pi ->
-              Parse_info.OriginTok 
+              Parse_info.OriginTok
                 (Parse_info.complete_token_location_large file table pi)
           | Parse_info.FakeTokStr _
-          | Parse_info.Ab  
+          | Parse_info.Ab
           | Parse_info.ExpandedTok _
             -> raise Impossible
       })
@@ -329,10 +329,10 @@ let parse2 file =
   let dtd = Dtd.html40_dtd in
   let dtd_hash = Common.hash_of_list dtd in
 
-  let current = ref { 
-    name = Tag ("", Ast.fakeInfo()); atts = []; 
+  let current = ref {
+    name = Tag ("", Ast.fakeInfo()); atts = [];
     subs = []; excl = StringSet.empty
-  } 
+  }
   in
 
   let stack = Stack.create() in
@@ -347,24 +347,24 @@ let parse2 file =
     let backup = Stack.create() in
     let backup_el = !current in
     try
-      while not (is_possible_subelement 
+      while not (is_possible_subelement
                     ~dtd_hash !current.name !current.excl sub_name) do
 
         (* Maybe we are not allowed to end the current element: *)
         let (current_class, _) = model_of ~dtd_hash !current.name in
-        if current_class =*= Dtd.Essential_block 
+        if current_class =*= Dtd.Essential_block
         then raise Stack.Empty;
 
         (* End the current element and remove it from the stack: *)
         let grant_parent = Stack.pop stack in
         (* Save it; may we need it *)
-        Stack.push grant_parent backup;  
+        Stack.push grant_parent backup;
 
         (* If gp_name is an essential element, we are not allowed to close
          * it implicitly, even if that violates the DTD.
          *)
-        current := { grant_parent with subs = 
-            Ast.Element (!current.name, 
+        current := { grant_parent with subs =
+            Ast.Element (!current.name,
                         !current.atts,
                         List.rev !current.subs) :: grant_parent.subs;
         }
@@ -383,9 +383,9 @@ let parse2 file =
     let t = call_scan Lexer_html.scan_document in
     match t with
     | T.TComment info ->
-        current := { !current with subs = 
+        current := { !current with subs =
           (Element(Tag ("--", info),
-                    [Attr ("contents", Ast.fakeInfo()), 
+                    [Attr ("contents", Ast.fakeInfo()),
                     Val (PI.str_of_info info, Ast.fakeInfo())],[]))
             ::!current.subs
         };
@@ -393,7 +393,7 @@ let parse2 file =
     | T.TDoctype info ->
         current := { !current with subs =
           (Element(Tag ("!", info),
-                  [Attr ("contents", Ast.fakeInfo()), 
+                  [Attr ("contents", Ast.fakeInfo()),
                    Val (PI.str_of_info info, Ast.fakeInfo())],[]))
            ::!current.subs;
         };
@@ -421,8 +421,8 @@ let parse2 file =
         | Dtd.Special ->
             let atts, is_empty = parse_atts call_scan in
             unwind_stack name;
-            let data = 
-              if is_empty 
+            let data =
+              if is_empty
               then "", Ast.fakeInfo()
               else begin
                 let d = parse_special name call_scan in
@@ -431,7 +431,7 @@ let parse2 file =
                 d
               end
             in
-            current := { !current with subs = 
+            current := { !current with subs =
                 (Ast.Element(name, atts, [Ast.Data data]))
                 :: !current.subs;
             };
@@ -442,7 +442,7 @@ let parse2 file =
              * the parent of the new element:
              *)
             unwind_stack name;
-            if is_empty then 
+            if is_empty then
               (* Simple case *)
               current := { !current with
                 subs = (Ast.Element(name, atts, [])) :: !current.subs;
@@ -453,11 +453,11 @@ let parse2 file =
                *)
               let new_excl = exclusions_of ~dtd_hash name in
               Stack.push !current stack;
-              current := { 
+              current := {
                 name = name;
                 atts = atts;
                 subs = [];
-                excl = StringSet.union (StringSet.of_list new_excl) 
+                excl = StringSet.union (StringSet.of_list new_excl)
                   !current.excl;
               };
             end;
@@ -473,7 +473,7 @@ let parse2 file =
         (* Read until ">" *)
         skip_element call_scan;
         (* Search the element to close on the stack: *)
-        let found = 
+        let found =
           (Ast.str_of_tag name =$= Ast.str_of_tag !current.name) ||
             try
               Stack.iter
@@ -522,12 +522,12 @@ let parse2 file =
        | T.Name _| T.Space _| T.Relement_empty _| T.Relement _
        | T.CdataSpecial _
       )
-        -> 
+        ->
         (* pad: ???? *)
         parse_next ()
   in
 
-  let xs = 
+  let xs =
     try
       parse_next();  (* never returns. Will get a warning X *)
       (* assert false *)
@@ -536,17 +536,17 @@ let parse2 file =
       while Stack.length stack > 0 do
         let old_el = Stack.pop stack in
         current := { old_el with subs =
-          Ast.Element (!current.name, !current.atts, 
+          Ast.Element (!current.name, !current.atts,
                       List.rev !current.subs) :: old_el.subs;
         };
       done;
       List.rev !current.subs
   in
-  Ast.Element (Tag ("__root__", Ast.fakeInfo()), [], xs), 
+  Ast.Element (Tag ("__root__", Ast.fakeInfo()), [], xs),
    (!toks |> List.rev |> merge_cdataspecial_tokens)
  )
 
-let parse a = 
+let parse a =
   Common.profile_code "Parse_html.parse" (fun () -> parse2 a)
 
 
@@ -556,7 +556,7 @@ let parse a =
 (*****************************************************************************)
 
 (* this function is useful mostly for our unit tests *)
-let (html_tree_of_string: string -> Ast_html.html_tree) = fun s -> 
+let (html_tree_of_string: string -> Ast_html.html_tree) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_html_tree_of_s" "html" in
   Common.write_file tmpfile s;
   let (ast, _toks) = parse tmpfile in

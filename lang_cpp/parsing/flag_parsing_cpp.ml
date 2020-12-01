@@ -3,7 +3,7 @@
 (* types *)
 (*****************************************************************************)
 
-type language = 
+type language =
   | C
   | Cplusplus
 
@@ -11,7 +11,7 @@ type language =
 (* macros *)
 (*****************************************************************************)
 
-let macros_h = 
+let macros_h =
   ref (Filename.concat Config_pfff.path_pfff_home "/data/cpp_stdlib/macros.h")
 
 let cmdline_flags_macrofile () = [

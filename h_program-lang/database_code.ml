@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,7 +21,7 @@ module HC = Highlight_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * This module provides a generic "database" of semantic information
  * on a codebase (a la CIA [1]). The goal is to give access to
  * information computed by a set of global static or dynamic analysis
@@ -29,11 +29,11 @@ module HC = Highlight_code
  * is the test coverage of a file', etc. This is mainly used by codemap
  * to give semantic visual feedback on the code. See also layer_code.ml
  * for complementary semantic information about a codebase.
- * 
+ *
  * update: prolog_code.pl and Prolog may now be the prefered way to
  * represent a code database, but for codemap it's still good to use
  * this database.
- * 
+ *
  * Each programming language analysis library usually provides
  * a more powerful database (e.g. analyze_php/database/database_php.mli)
  * with more information. Such a database is usually also efficiently stored
@@ -42,7 +42,7 @@ module HC = Highlight_code
  * database. Moreover, when we have codebase with multiple langages
  * (e.g. PHP and javascript), having a common type can help for some
  * analysis or visualization.
- * 
+ *
  * Note that by storing this toy database in a JSON format or with Marshall,
  * this database can also easily be read by multiple
  * process at the same time (there is currently a few problems with
@@ -51,39 +51,39 @@ module HC = Highlight_code
  * This also avoids forcing the user to spend time running all
  * the global analysis on his own codebase. We can factorize the essential
  * results of such long computation in a single file.
- * 
+ *
  * An alternative would be to use the TAGS file or information from
  * cscope. But this would require to implement a reader for those
  * two formats. Moreover ctags/cscope do just lexical-based analysis
  * so it's not a good basis and it contains only defition->position
  * information.
- * 
- * history: 
+ *
+ * history:
  *  - started when working for eurosys'06 in patchparse/ in a file called
  *    c_info.ml
- *  - extended for eurosys'08 for coccinelle/ in coccinelle/extra/ 
- *    and use it to discover some .c .h mapping and generate some crazy 
+ *  - extended for eurosys'08 for coccinelle/ in coccinelle/extra/
+ *    and use it to discover some .c .h mapping and generate some crazy
  *    graphs and also to detect drivers splitted in multiple files.
- *  - extended it for aComment in 2008 and 2009, to feed information to some 
+ *  - extended it for aComment in 2008 and 2009, to feed information to some
  *    inter-procedural analysis.
  *  - rewrite it for PHP in Nov 2009
  *  - adapted in Jan 2010 for flib_navigator
  *  - make it generic in Aug 2010 for my code/treemap visualizer
  *  - added comments about Prolog database which may be a better db for
  *    certain use cases.
- * 
+ *
  * history bis:
- *  - Before, I was optimizing stuff by caching the ast in 
- *    some xxx_raw files. But there was lots of small raw files; 
+ *  - Before, I was optimizing stuff by caching the ast in
+ *    some xxx_raw files. But there was lots of small raw files;
  *    get lots of ast files and waste space. Also not good for random
  *    access to the asts. So better to use berkeley DB. My experience with
  *    LFS helped me a little as I was already using berkeley DB and glimpse.
- *    
+ *
  *  - I was also using glimpse and I tried to accelerate even more coccinelle
  *    to generate some mini C files so that glimpse can directly tell us
- *    the toplevel elements to look for. But this generates lots of 
+ *    the toplevel elements to look for. But this generates lots of
  *    very small mini C files which also waste lots of disk space.
- * 
+ *
  * References:
  *  [1] CIA, the C Information Abstractor
  *)
@@ -110,28 +110,28 @@ type entity = {
 
   e_file: Common.filename;
   e_pos: Common2.filepos;
-  
+
   (* Semantic information that can be leverage by a code visualizer.
    * The fields are set as mutable because usually we compute
    * the set of all entities in a first phase and then we
    * do another pass where we adjust numbers of other entity references.
    *)
-  
+
   (* todo: could give more importance when used externally not just
    * from another file but from another directory!
    * or could refine this int with more information.
    *)
   mutable e_number_external_users: int;
 
-  (* Usually the id of a unit test of pleac file. 
+  (* Usually the id of a unit test of pleac file.
    *
    * Indeed a simple algorithm to compute this list is:
-   * just look at the callers, filter the one in unit test or pleac files, 
+   * just look at the callers, filter the one in unit test or pleac files,
    * then for each caller, look at the number of callees, and take
    * the one with best ratio.
-   * 
+   *
    * With references to good examples of use, we can offer
-   * what Perl programmers had for years with their function 
+   * what Perl programmers had for years with their function
    * documentations.
    * If there is no examples_of_use then the user can visually
    * see that some functions should be unit tested :)
@@ -163,13 +163,13 @@ type database = {
   (* Such list can be used in a search box powered by completion.
    * The int is for the total number of times this files is
    * externally referenced. Can be use for instance in the treemap
-   * to artificially augment the size of what is probably a more 
+   * to artificially augment the size of what is probably a more
    * "important" file.
   *)
   dirs: (Common.filename * int) list;
 
   (* see also build_top_k_sorted_entities_per_file for dynamically
-   * computed summary information for a file 
+   * computed summary information for a file
    *)
   files: (Common.filename * int) list;
 
@@ -184,7 +184,7 @@ let empty_database () = {
   entities = Array.of_list [];
 }
 
-let default_db_name = 
+let default_db_name =
   "PFFF_DB.marshall"
 
 
@@ -196,7 +196,7 @@ let default_db_name =
 (* json -> X *)
 (*---------------------------------------------------------------------------*)
 
-let json_of_filepos x = 
+let json_of_filepos x =
   J.Array [J.Int x.Common2.l; J.Int x.Common2.c]
 
 let json_of_property x =
@@ -206,7 +206,7 @@ let json_of_property x =
   | TakeArgNByRef i -> J.Array [J.String "TakeArgNByRef"; J.Int i]
   | _ -> raise Todo
 
-let json_of_entity e = 
+let json_of_entity e =
   J.Object [
     "k", J.String (string_of_entity_kind e.e_kind);
     "n", J.String e.e_name;
@@ -219,14 +219,14 @@ let json_of_entity e =
     "ps", J.Array (e.e_properties |> List.map json_of_property);
   ]
 
-let json_of_database db = 
+let json_of_database db =
   J.Object [
     "root", J.String db.root;
     "dirs", J.Array (db.dirs |> List.map (fun (x, i) ->
       J.Array([J.String x; J.Int i])));
     "files", J.Array (db.files |> List.map (fun (x, i) ->
       J.Array([J.String x; J.Int i])));
-    "entities", J.Array (db.entities |> 
+    "entities", J.Array (db.entities |>
                          Array.to_list |> List.map json_of_entity);
   ]
 
@@ -242,7 +242,7 @@ let ids_of_json json =
       )
   | _ -> failwith "bad json"
 
-let filepos_of_json json = 
+let filepos_of_json json =
   match json with
   | J.Array [J.Int l; J.Int c] ->
       { Common2.l = l; Common2.c = c }
@@ -289,7 +289,7 @@ let entity_of_json2 json =
     }
   | _ -> failwith "Bad json"
 
-let entity_of_json a = 
+let entity_of_json a =
   Common.profile_code "Db.entity_of_json" (fun () ->
     entity_of_json2 a)
 
@@ -303,7 +303,7 @@ let database_of_json2 json =
     "entities", J.Array db_entities;
     ] -> {
       root = db_root;
-      
+
       dirs = db_dirs |> List.map (fun json ->
         match json with
         | J.Array([J.String x; J.Int i]) ->
@@ -317,14 +317,14 @@ let database_of_json2 json =
             x, i
         | _ -> failwith "Bad json"
       );
-      entities = 
+      entities =
         db_entities |> List.map entity_of_json |> Array.of_list
     }
-      
+
   | _ -> failwith "Bad json"
 
 let database_of_json json =
-  Common.profile_code "Db.database_of_json" (fun () -> 
+  Common.profile_code "Db.database_of_json" (fun () ->
     database_of_json2 json
   )
 
@@ -340,7 +340,7 @@ let load_database2 file =
      * to store big database. This should be used only when
      * one wants to have a readable database.
      *)
-    let json = 
+    let json =
       Common.profile_code "Json_in.load_json" (fun () ->
         J.load_json file
       ) in
@@ -352,14 +352,14 @@ let load_database file =
 
 (* We allow to save in JSON format because it may be useful to let
  * the user edit read the generated data.
- * 
+ *
  * less: could use the more efficient json pretty printer, but really
  * marshall is probably better. Only biniou could be a valid alternative.
  *)
 let save_database database file =
   if File_type.is_json_filename file
   then
-    database |> json_of_database 
+    database |> json_of_database
     |> J.string_of_json ~compact:false ~recursive:false ~allow_nan:true
     |> Common.write_file ~file
   else Common2.write_value database file
@@ -369,12 +369,12 @@ let save_database database file =
 (* Entities categories *)
 (*****************************************************************************)
 
-(* coupling: if you add a new kind of entity, then 
+(* coupling: if you add a new kind of entity, then
  * don't forget to modify size_font_multiplier_of_categ in code_map/
- * 
+ *
  * How sure this list is exhaustive ? C-c for usedef2
  *)
-let entity_kind_of_highlight_category_def categ = 
+let entity_kind_of_highlight_category_def categ =
   match categ with
   | HC.Entity (kind, HC.Def2 _) -> Some kind
 
@@ -385,11 +385,11 @@ let entity_kind_of_highlight_category_def categ =
   (* todo: what about other Def ? like Label, Parameter, etc ? *)
   | _ -> None
 
-let is_entity_def_category categ = 
+let is_entity_def_category categ =
   entity_kind_of_highlight_category_def categ <> None
 
 (* less: merge with other function? *)
-let entity_kind_of_highlight_category_use categ = 
+let entity_kind_of_highlight_category_use categ =
   match categ with
   | HC.Entity (kind, HC.Use2 _) -> Some kind
   | HC.FunctionDecl _ -> Some Function
@@ -420,7 +420,7 @@ let matching_use_categ_kind categ kind =
   | GlobalExtern,      HC.Entity (Global, _)
   | Method,    HC.StaticMethod _
   | ClassConstant,  HC.Entity (Constant, _)
-    
+
   (* tofix at some point, wrong tokenizer *)
   | Constant, HC.Local _
   | Global,   HC.Local _
@@ -436,11 +436,11 @@ let matching_use_categ_kind categ kind =
   | Function, HC.Entity (Global, _)
   (* function calls to pointer function via direct syntax *)
   | GlobalExtern, HC.Entity (Function, _)
-    
+
   | Global,   HC.UseOfRef
   | Field, HC.UseOfRef
     -> true
-    
+
   | _ -> false
 
 
@@ -453,7 +453,7 @@ let matching_use_categ_kind categ kind =
  * non valid entities.
  *)
 let entity_and_highlight_category_correpondance entity categ =
-  let entity_kind_use = 
+  let entity_kind_use =
     Common2.some (entity_kind_of_highlight_category_use categ) in
   entity.e_kind = entity_kind_use
 
@@ -470,15 +470,15 @@ let entity_and_highlight_category_correpondance entity categ =
  * php file in flib/herald but files in flib/herald/lib/foo.php.
  * Having flib/herald/lib is not enough. Enter alldirs_and_parent_dirs_of_dirs
  * which will compute all the directories.
- * 
+ *
  * It's a kind of 'find -type d' but reversed, using a set of complete dirs
- * as the starting point. In fact we could define a 
+ * as the starting point. In fact we could define a
  * Common.dirs_of_dirs but then directory without any interesting files
  * would be listed.
  *)
 let alldirs_and_parent_dirs_of_relative_dirs dirs =
-  dirs 
-  |> List.map Common2.inits_of_relative_dir 
+  dirs
+  |> List.map Common2.inits_of_relative_dir
   |> List.flatten |> Common2.uniq_eff
 
 
@@ -497,13 +497,13 @@ let merge_databases db1 db2 =
    * entities requires care.
    *)
   let length_entities1 = Array.length db1.entities in
-  
+
   let db2_entities = db2.entities in
-  let db2_entities_adjusted = 
+  let db2_entities_adjusted =
     db2_entities |> Array.map (fun e ->
       { e with
-        e_good_examples_of_use = 
-          e.e_good_examples_of_use 
+        e_good_examples_of_use =
+          e.e_good_examples_of_use
           |> List.map (fun id -> id + length_entities1);
       }
     )
@@ -511,7 +511,7 @@ let merge_databases db1 db2 =
 
   {
     root = db1.root;
-    dirs = (db1.dirs @ db2.dirs) 
+    dirs = (db1.dirs @ db2.dirs)
       |> Common.group_assoc_bykey_eff
       |> List.map (fun (file, xs) ->
         file, Common2.sum xs
@@ -522,7 +522,7 @@ let merge_databases db1 db2 =
 
 
 let build_top_k_sorted_entities_per_file2 ~k xs =
-  xs 
+  xs
   |> Array.to_list
   |> List.map (fun e -> e.e_file, e)
   |> Common.group_assoc_bykey_eff
@@ -540,7 +540,7 @@ let build_top_k_sorted_entities_per_file ~k xs =
   )
 
 
-let mk_dir_entity dir n = { 
+let mk_dir_entity dir n = {
   e_name = Common2.basename dir ^ "/";
   e_fullname = "";
   e_file = dir;
@@ -550,7 +550,7 @@ let mk_dir_entity dir n = {
   e_good_examples_of_use = [];
   e_properties = [];
 }
-let mk_file_entity file n = { 
+let mk_file_entity file n = {
   e_name = Common2.basename file;
   e_fullname = "";
   e_file = file;
@@ -574,7 +574,7 @@ let mk_multi_dirs_entity name dirs_entities =
 
   e_pos = { Common2.l = 1; c = 0 };
   e_kind = MultiDirs;
-  e_number_external_users = 
+  e_number_external_users =
     (* todo? *)
     (List.length dirs_fullnames);
   e_good_examples_of_use = [];
@@ -610,14 +610,14 @@ let files_and_dirs_database_from_files ~root files =
 
 let files_and_dirs_and_sorted_entities_for_completion2
  ~threshold_too_many_entities
- db 
+ db
  =
   let nb_entities = Array.length db.entities in
 
-  let dirs = 
+  let dirs =
     db.dirs |> List.map (fun (dir, n) -> mk_dir_entity dir n)
   in
-  let files = 
+  let files =
     db.files |> List.map (fun (file, n) -> mk_file_entity file n)
   in
   let multidirs = multi_dirs_entities_of_dirs dirs in
@@ -625,17 +625,17 @@ let files_and_dirs_and_sorted_entities_for_completion2
   let xs =
    multidirs @ dirs @ files @
    (if nb_entities > threshold_too_many_entities
-    then begin 
+    then begin
       pr2 "Too many entities. Completion just for filenames";
       []
-    end else 
-       (db.entities |> Array.to_list |> List.map (fun e -> 
+    end else
+       (db.entities |> Array.to_list |> List.map (fun e ->
          (* we used to return 2 entities per entity by having
           * both an entity with the short name and one with the long
           * name, but now that we do a suffix search, no need
           * to keep the short one
           *)
-         if e.e_fullname = "" 
+         if e.e_fullname = ""
          then e
          else { e with e_name = e.e_fullname }
        )
@@ -657,7 +657,7 @@ let files_and_dirs_and_sorted_entities_for_completion2
   ) |> Common.sort_by_key_highfirst
   |> List.map snd
 
-  
+
 let files_and_dirs_and_sorted_entities_for_completion
     ~threshold_too_many_entities a =
  Common.profile_code "Db.sorted_entities" (fun () ->
@@ -673,7 +673,7 @@ let files_and_dirs_and_sorted_entities_for_completion
 let adjust_method_or_field_external_users ~verbose entities =
   (* phase1: collect all method counts *)
   let h_method_def_count = Common2.hash_with_default (fun () -> 0) in
-  
+
   entities |> Array.iter (fun e ->
     match e.e_kind with
     | Method | Field ->

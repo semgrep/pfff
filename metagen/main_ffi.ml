@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,7 +21,7 @@ open Common
 (*****************************************************************************)
 
 (*
-ocamlc -I ../commons unix.cma str.cma ../commons/lib.cma gen_boilerplate.ml 
+ocamlc -I ../commons unix.cma str.cma ../commons/lib.cma gen_boilerplate.ml
  *)
 
 (*****************************************************************************)
@@ -44,7 +44,7 @@ let action = ref ""
 let main_action file =
   let (ast2, _stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
-  
+
   Export_ast_php.show_info := true;
   let s = Export_ast_php.sexp_string_of_program ast in
   pr2 s;
@@ -61,14 +61,14 @@ let main_action file =
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
-let test_python_gen s = 
+let test_python_gen s =
   raise Todo
 (*
   let t = OCaml.get_type s in
   Python_php.generate_classes (s, t)
 *)
 
-let test_python_all () = 
+let test_python_all () =
   raise Todo
 (*
   pr (Python_php.prelude);
@@ -174,14 +174,14 @@ let ffi_extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
   ffi_extra_actions() ++
   Test_meta_php.actions () ++
   []
 
-let options () = 
+let options () =
   [
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Set verbose,
     " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
@@ -190,18 +190,18 @@ let options () =
   Common.cmdline_flags_other () ++
   [
 (*
-  "-version",   Arg.Unit (fun () -> 
+  "-version",   Arg.Unit (fun () ->
     pr2 (spf "XXX version: %s" Config.version);
     exit 0;
-  ), 
+  ),
     "  guess what";
 *)
 
   (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
+  "-date",   Arg.Unit (fun () ->
     pr2 "version: $Date: 2008/10/26 00:44:57 $";
     raise (Common.UnixExit 0)
-    ), 
+    ),
   "   guess what";
   ] ++
   []
@@ -210,42 +210,42 @@ let options () =
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
-  let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
+let main () =
+  let usage_msg =
+    "Usage: " ^ Common.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
 
     (match args with
-   
+
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | [] when !action = "-yyy" -> 
+    | [] when !action = "-yyy" ->
         pr2 "yyy"
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | x::xs -> 
+    | x::xs ->
         main_action x
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
     )
   )
@@ -254,6 +254,6 @@ let main () =
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
       main ();
   )

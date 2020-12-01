@@ -1,13 +1,13 @@
 
 val pr2_pp: string -> unit
 
-val set_as_comment: 
+val set_as_comment:
   Token_cpp.cppcommentkind -> Token_views_cpp.token_extended -> unit
 
-val msg_context: 
+val msg_context:
   Parser_cpp.token -> Token_views_cpp.context -> unit
 
-val change_tok: 
+val change_tok:
  Token_views_cpp.token_extended -> Parser_cpp.token -> unit
 val fresh_tok:
   Parser_cpp.token -> Parser_cpp.token

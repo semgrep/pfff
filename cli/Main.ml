@@ -1,6 +1,6 @@
 (*s: pfff/cli/Main.ml *)
 (*
- * Please imagine a long and boring GNU-style copyright notice 
+ * Please imagine a long and boring GNU-style copyright notice
  * appearing just here.
  *)
 open Common
@@ -10,10 +10,10 @@ module J = JSON
 (* Purpose *)
 (*****************************************************************************)
 (* A "driver" for the different parsers in pfff.
- * 
+ *
  * Also useful to dump the CST or AST of a language (-dump_xxx).
  *
- * related: 
+ * related:
  *  - https://astexplorer.net/, supports many languages, many parsers
  *)
 
@@ -22,7 +22,7 @@ module J = JSON
 (*****************************************************************************)
 
 (* In addition to flags that can be tweaked via -xxx options (cf the
- * full list of options in the "the options" section below), this 
+ * full list of options in the "the options" section below), this
  * program also depends on external files?
  *)
 
@@ -44,8 +44,8 @@ let action = ref ""
 (*****************************************************************************)
 
 (*s: function [[Main.main_action]] *)
-let main_action _xs = 
-  raise Todo 
+let main_action _xs =
+  raise Todo
 (*e: function [[Main.main_action]] *)
 
 (*****************************************************************************)
@@ -79,7 +79,7 @@ let pfff_extra_actions () = [
 (*****************************************************************************)
 
 (*s: function [[Main.all_actions]] *)
-let all_actions () = 
+let all_actions () =
   pfff_extra_actions() @
   (*s: [[Main.all_actions]] concatenated actions *)
   Test_parsing_generic.actions() @
@@ -134,7 +134,7 @@ let all_actions () =
 
 (*s: function [[Main.options]] *)
 let options () = [
-  "-verbose", Arg.Set verbose, 
+  "-verbose", Arg.Set verbose,
   " ";
   (*s: [[Main.options]] main cases *)
   "-lang", Arg.String (fun s ->
@@ -166,7 +166,7 @@ let options () = [
   Common.options_of_actions action (all_actions()) @
   (*e: [[Main.options]] concatenated actions *)
   [
-    "-version",   Arg.Unit (fun () -> 
+    "-version",   Arg.Unit (fun () ->
       pr2 (spf "pfff version: %s" Config_pfff.version);
       exit 0;
     ), "  guess what";
@@ -178,44 +178,44 @@ let options () = [
 (*****************************************************************************)
 
 (*s: function [[Main.main]] *)
-let main () = 
+let main () =
   (*s: [[Main.main()]] tune the GC *)
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
   (*e: [[Main.main()]] tune the GC *)
 
-  let usage_msg = 
-    "Usage: " ^ Filename.basename Sys.argv.(0) ^ 
+  let usage_msg =
+    "Usage: " ^ Filename.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
-    
+  Common.profile_code "Main total" (fun () ->
+
     (match args with
     (*s: [[Main.main()]] match [[args]] actions *)
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
     (*e: [[Main.main()]] match [[args]] actions *)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | x::xs -> 
+    | x::xs ->
         main_action (x::xs)
-          
+
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
     )
   )
@@ -224,7 +224,7 @@ let main () =
 (*****************************************************************************)
 (*s: toplevel [[Main._1]] *)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
     main ();
   )
 (*e: toplevel [[Main._1]] *)

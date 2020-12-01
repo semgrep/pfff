@@ -1,12 +1,12 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,14 +19,14 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
-(* 
+(*
  * This file contains the type definitions for a HTML Document, its AST,
  * also called the DOM (Document Object Model) by the W3C.
  * src: http://dev.w3.org/html5/spec/spec.html
  *
  * For the types of the full 'HTML + JS(script) + CSS(style)' see ast_web.ml.
  * For information on characters encoding, ascii, utf-8, etc, see encodings.ml
- * 
+ *
  * There are multiple ways to represent an HTML AST:
  *  - just as a tree of 'Element of ... | CdData of ...' (as done in ocamlnet).
  *    This is simple but lack type-checking. Some checking can be done though
@@ -35,18 +35,18 @@ module PI = Parse_info
  *  - a real AST, with one different constructor per html element, and
  *    possibly precise types for the set of acceptable attributes. Because
  *    the DTD of HTML is complex, such an AST can be quite tedious to write.
- *  - an ocamlduce/cduce AST, which have a type system specially made to 
+ *  - an ocamlduce/cduce AST, which have a type system specially made to
  *    express the kind of invariants of a DTD.
- * 
+ *
  * The solution used in this module is to define multiple html types
  * because depending on the usage certain types are more convenient than
  * other.
- * 
- * update: I've added token/info in the html tree so we can at least have 
+ *
+ * update: I've added token/info in the html tree so we can at least have
  *  an AST-based highlighter which is needed for coloring urls as in href
  *  for instance.
- * 
- * alternative implementations: 
+ *
+ * alternative implementations:
  * - xHTML.ml: but poor AST, no parsing, and phantom types are tricky
  * - xml-light: just for strict XML and poor AST
  * - pxp: just for strict XML ?
@@ -63,18 +63,18 @@ module PI = Parse_info
  *  - htcaml: camlp4 on top of xmlm, https://github.com/samoht/htcaml
  *    simple AST
  * - mirage ?
- * - mmm ? 
+ * - mmm ?
  * - hevea has a htmllexer.mll, looks quite similar to the one in ocamlnet
  * - efuns has a html mode ? mldonkey ? cameleon ?
  * - ocamlgtk has a small xml lexer (src/xml_lexer.mll)
  * See also http://caml.inria.fr/cgi-bin/hump.fr.cgi?sort=0&browse=49
- * 
+ *
  * alternative in other languages:
  *  - the one in firefox, webkit
  *  - a python and php one, http://code.google.com/p/html5lib
  *  - a javascript one, http://ejohn.org/blog/pure-javascript-html-parser/
  *  - http://lambda.haskell.org/hp-tmp/docs/2011.2.0.0/packages/html-1.0.1.2/doc/html/Text-Html.html
- * 
+ *
  * See also http://en.wikipedia.org/wiki/HTML5
  *)
 
@@ -92,7 +92,7 @@ and 'a wrap = 'a * info
 (* HTML raw version *)
 (*****************************************************************************)
 
-type html_raw = HtmlRaw of string 
+type html_raw = HtmlRaw of string
 
 (*****************************************************************************)
 (* HTML Tree version *)
@@ -125,8 +125,8 @@ type html_raw = HtmlRaw of string
  *)
 
 (* src: ocamlnet/netstring/nethtml.mli, extended with pad's wrap and newtype *)
-type html_tree = 
-  | Element of 
+type html_tree =
+  | Element of
       tag *
       (attr_name * attr_value) list *
       html_tree list
@@ -145,16 +145,16 @@ type html_tree =
 (* HTML full AST version *)
 (*****************************************************************************)
 
-(* 
+(*
  * The following types are derived from the grammar in the following book:
  * src: HTML & XHTML definitive guide edition 6.
- * 
+ *
  * contentions: if the tag belongs to different types then I prefix it
  * with the current type. For instance 'text' belongs to many types hence
  * 'Address_Text', 'Body_Text', etc (I did some exceptions for A, Br, Hr
  * which were used only in one other place, in <pre> in which case I prefixed
  * only in the pre type).
- * 
+ *
  * concepts: body, block, text, flow ?
  *)
 
@@ -169,7 +169,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
   and head_content =
     | Title of attrs * plain_text
     | Style of attrs * plain_text (* CSS *)
-    | Meta of attrs 
+    | Meta of attrs
     | Link of attrs (* usually link to css file *)
     (* note: a script tag may be placed anywhere within a HTML document *)
     | Head_Script of attrs * plain_text  (* JS *)
@@ -199,13 +199,13 @@ type html = Html of attrs * head * (body, frameset) Common.either
     | Del of attrs * flow | Ins of attrs * flow
     | Address of attrs * address_content list
     | Marquee of attrs * style_text  (* erling :) *)
-    | Map of attrs * area list 
+    | Map of attrs * area list
 
     (* ?? *)
     | Layer of attrs * body_content | Bgsound of attrs
 
    (* also in <a> content, not sure why *)
-   and heading = 
+   and heading =
      | H1 of attrs * text | H2 of attrs * text
      | H3 of attrs * text | H4 of attrs * text
      | H5 of attrs * text | H6 of attrs * text
@@ -216,7 +216,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
   (* diff between block and text ? *)
    and block = block_content list
-    and block_content = 
+    and block_content =
       | Block_P of attrs * text
       | Div of attrs * body_content (* !! *)
       | Blockquote of attrs * body_content (* ? why not block_content ? *)
@@ -240,8 +240,8 @@ type html = Html of attrs * head * (body, frameset) Common.either
       | Basefont of attrs * body_content (* ?? *)
       (* note: "the li_tag within the dir_tag may not contain any element
        * found in a block" *)
-      | Dir of attrs * li list1   
-      | Nobr of attrs * text 
+      | Dir of attrs * li list1
+      | Nobr of attrs * text
       | Xmp of attrs * literal_text
 
 (* ------------------------------------------------------------------------- *)
@@ -262,11 +262,11 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
      (* ?? *)
      | NoScript of attrs * text | Ilayer of attrs * body_content
-     | Spacer of attrs | Wbr of attrs 
+     | Spacer of attrs | Wbr of attrs
 
    and physical_style =
     | B of attrs * text | I of attrs * text | Tt of attrs * text
-    | Big of attrs * text | Small of attrs * text 
+    | Big of attrs * text | Small of attrs * text
     | Strike of attrs * text | S of attrs * text (* <=> strike, new browsers *)
     | Blink of attrs * text | U of attrs * text
     | Font of attrs * style_text
@@ -274,7 +274,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
     | Span of attrs * text (* !! *)
 
     (* ?? *)
-    | Bdo of attrs * text 
+    | Bdo of attrs * text
 
    (* the difference with physical_style is subtle *)
    and content_style =
@@ -351,7 +351,7 @@ type html = Html of attrs * head * (body, frameset) Common.either
 (* Applets/Objects *)
 (* ------------------------------------------------------------------------- *)
 
-  and applet_content = 
+  and applet_content =
     | Applet_Body of body_content
     | AppletParams of param list
   and object_content = applet_content
@@ -366,20 +366,20 @@ type html = Html of attrs * head * (body, frameset) Common.either
 
   and dl_content = dt * dd
    and dt = Dt of attrs * text
-   and dd = Dd of attrs * flow   
+   and dd = Dd of attrs * flow
 
   (* note: "a_content may not contain a_tags; you may not nest <a> tags" *)
   and a_content =
     | A_Heading of heading
     | A_Text of text
-  
+
   and pre_content =
     | Pre_Br of attrs
     | Pre_Hr of attrs
     | Pre_A of attrs
     | Pre_Text of style_text
 
-  and address_content = 
+  and address_content =
     | Address_P of attrs * text
     | Address_Text of text
   and area = unit
@@ -404,17 +404,17 @@ type html = Html of attrs * head * (body, frameset) Common.either
 type any =
   | HtmlTree of html_tree
 
-(* 
+(*
  * TODO
  * type url = Url of string (* actually complicated sublanguage *)
  * type color = Color of string (* ?? *)
- * 
- * ??? tree ? how be precise ? 
+ *
+ * ??? tree ? how be precise ?
  * see xHtml.ml ? but too complicated to build ... shadow type sucks
  *
  * (* aka script *)
  * type javascript = unit
- * 
+ *
  * (*aka style *)
  * type css = unit
  *)
@@ -423,7 +423,7 @@ type any =
 (* Some constructors *)
 (*****************************************************************************)
 
-let fakeInfo ?(next_to=None) ?(str="") () = { 
+let fakeInfo ?(next_to=None) ?(str="") () = {
   PI.token = PI.FakeTokStr (str, next_to);
   transfo = PI.NoTransfo;
   }

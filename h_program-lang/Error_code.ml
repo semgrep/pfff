@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,7 +21,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Centralize error management related to errors in user's code 
+(* Centralize error management related to errors in user's code
  * (as detected by tools such as linters).
  *
  * history:
@@ -33,7 +33,7 @@ module PI = Parse_info
  *  - fully generalize when introduced graph_code_checker.ml
  *  - added @Scheck annotation
  *  - added some false positive deadcode detection
- * 
+ *
  * todo:
  *  - priority to errors, so dead code func more important than dead field
  *  - factorize code with errors_cpp.ml, errors_php.ml, error_php.ml
@@ -44,7 +44,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* see g_errors below *)
 
-(* do not report certain errors. 
+(* do not report certain errors.
  * Must be used with filter_maybe_parse_and_fatal_errors.
  *)
 let report_parse_errors = ref false
@@ -65,7 +65,7 @@ type error = {
  and severity = Error | Warning | Info
 
  and error_kind =
-  (* parsing related errors. 
+  (* parsing related errors.
    * See also try_with_exn_to_errors(), try_with_error_loc_and_reraise(), and
    * filter_maybe_parse_and_fatal_errors
    *)
@@ -82,8 +82,8 @@ type error = {
     *)
   (* global analysis checker.
    * Never done by compilers, and unusual for linters to do that.
-   *  
-   * note: OCaml 4.01 now does that partially by locally checking if 
+   *
+   * note: OCaml 4.01 now does that partially by locally checking if
    * an entity is unused and not exported (which does not require a
    * global analysis)
    *)
@@ -111,7 +111,7 @@ type error = {
    * but they really should (see https://www.wired.com/2014/02/gotofail/).
    * Those are also special cases of Deadcode.
    *)
- | UnusedStatement (* a.k.a UnreachableStatement *) 
+ | UnusedStatement (* a.k.a UnreachableStatement *)
  | UnusedAssign of string
  | UseOfUninitialized of string
  | CFGError of string
@@ -160,24 +160,24 @@ type identifier_index = (string, Parse_info.token_location) Hashtbl.t
 
 let string_of_error_kind error_kind =
   match error_kind with
-  | Deadcode (s, kind) -> 
+  | Deadcode (s, kind) ->
     spf "dead %s, %s" (Entity_code.string_of_entity_kind kind) s
   | UndefinedDefOfDecl (s, kind) ->
     spf "no def found for %s (%s)" s (Entity_code.string_of_entity_kind kind)
   | UnusedExport ((s, kind), file_def) ->
-    spf "useless export of %s (%s) (consider forward decl in %s)" 
+    spf "useless export of %s (%s) (consider forward decl in %s)"
       s (Entity_code.string_of_entity_kind kind) file_def
 
   | UnusedVariable (name, scope) ->
-      spf "Unused variable %s, scope = %s" name 
+      spf "Unused variable %s, scope = %s" name
         (Scope_code.string_of_scope scope)
   | SgrepLint (_title, message) -> message
 
   | UnusedStatement -> spf "unreachable statement"
-  | UnusedAssign s -> 
+  | UnusedAssign s ->
     spf "useless assignement for %s; the value in %s is never used after."
       s s
-  | UseOfUninitialized s -> 
+  | UseOfUninitialized s ->
     spf "use of unitialized variable: %s" s
 
   | LexicalError s -> spf "Lexical error: %s" s
@@ -225,7 +225,7 @@ let check_id_of_error_kind = function
 
 (*
 let loc_of_node root n g =
-  try 
+  try
     let info = G.nodeinfo n g in
     let pos = info.G.pos in
     let file = Filename.concat root pos.PI.file in
@@ -236,9 +236,9 @@ let loc_of_node root n g =
 let string_of_error err =
   let pos = err.loc in
   assert (pos.PI.file <> "");
-  spf "%s:%d:%d: %s" 
-    pos.PI.file 
-    pos.PI.line 
+  spf "%s:%d:%d: %s"
+    pos.PI.file
+    pos.PI.line
     pos.PI.column
     (string_of_error_kind err.typ)
 
@@ -249,7 +249,7 @@ let string_of_error err =
 
 let g_errors = ref []
 
-let mk_error tok err = 
+let mk_error tok err =
   let loc = PI.token_location_of_info tok in
   { loc = loc; typ = err; sev = Error }
 
@@ -258,18 +258,18 @@ let mk_error_loc loc err =
 
 let error tok err =
   Common.push (mk_error tok err) g_errors
-let warning tok err = 
+let warning tok err =
   let loc = PI.token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
-let info tok err = 
+let info tok err =
   let loc = PI.token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Info } g_errors
 
 let error_loc loc err =
   Common.push (mk_error_loc loc err)  g_errors
-let warning_loc loc err = 
+let warning_loc loc err =
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
-let info_loc loc err = 
+let info_loc loc err =
   Common.push { loc = loc; typ = err; sev = Info } g_errors
 
 (*****************************************************************************)
@@ -309,7 +309,7 @@ let rank_of_error err =
   (* usually a bug somewhere in my code *)
   | FatalError _ | Timeout _ | OutOfMemory _
    -> OnlyStrict
-  
+
 
 let score_of_error err =
   err |> rank_of_error |> score_of_rank
@@ -326,8 +326,8 @@ let options () = [
 ]
 
 let _is_test_or_example file =
- (file =~ ".*test.*" || 
-  file =~ ".*spec.*" || 
+ (file =~ ".*test.*" ||
+  file =~ ".*spec.*" ||
   file =~ ".*example.*" ||
   file =~ ".*bench.*"
  )
@@ -337,16 +337,16 @@ let filter_maybe_parse_and_fatal_errors errs =
     let _file = err.loc.PI.file in
     match err.typ with
 (*
-    | LexicalError _ | ParseError 
+    | LexicalError _ | ParseError
     | AstbuilderError _ | OtherParsingError _
-    | FatalError _ 
+    | FatalError _
       when is_test_or_example file -> true
 *)
-    | LexicalError _ | ParseError 
+    | LexicalError _ | ParseError
     | AstBuilderError _ | OtherParsingError _
     | AstGenericError _
       when not !report_parse_errors -> true
-    | FatalError _ 
+    | FatalError _
       when not !report_fatal_errors -> true
     | _ -> false
   )
@@ -378,14 +378,14 @@ let exn_to_error file exn =
     mk_error_loc loc (FatalError (Common.exn_to_s exn))
 
 let try_with_exn_to_error file f =
-  try 
+  try
     f ()
   with exn ->
     Common.push (exn_to_error file exn) g_errors
 
 let try_with_print_exn_and_reraise file f =
-  try 
-    f () 
+  try
+    f ()
   with exn ->
     let bt = Printexc.get_backtrace () in
     let err = exn_to_error file exn in
@@ -396,7 +396,7 @@ let try_with_print_exn_and_reraise file f =
 
 
 let adjust_paths_relative_to_root root errs =
- errs |> List.map (fun e -> 
+ errs |> List.map (fun e ->
    let file = e.loc.PI.file in
    let file' = Common.filename_without_leading_path root file in
    { e with loc = { e.loc with PI.file = file' } }
@@ -408,7 +408,7 @@ let adjust_paths_relative_to_root root errs =
 let adjust_errors xs =
   xs |> Common.exclude (fun err ->
     let file = err.loc.PI.file in
-    
+
     match err.typ with
     | Deadcode (s, kind) ->
        (match kind with
@@ -426,10 +426,10 @@ let adjust_errors xs =
 
        (* FP in graph_code_c for now *)
        | E.Type when s =~ "U____anon" -> true
-        
+
        (* TODO: to remove, but too many for now *)
        | E.Constructor
-       | E.Field 
+       | E.Field
          -> true
 
        (* hmm plan9 specific? being unused for one project does not mean
@@ -448,7 +448,7 @@ let adjust_errors xs =
     (* kencc *)
     | UndefinedDefOfDecl (("SET" | "USED"), _) -> true
 
-    | UndefinedDefOfDecl _ -> 
+    | UndefinedDefOfDecl _ ->
 
       (* hmm very plan9 specific *)
       file =~ "^include/" ||
@@ -492,32 +492,32 @@ let annotation_at a =
 (* Helper functions to use in testing code *)
 (*****************************************************************************)
 
-let (expected_error_lines_of_files: 
+let (expected_error_lines_of_files:
   Common.filename list -> (Common.filename * int (* line *)) list) =
  fun test_files ->
   test_files |> List.map (fun file ->
-    Common.cat file |> Common.index_list_1 |> Common.map_filter 
-      (fun (s, idx) -> 
+    Common.cat file |> Common.index_list_1 |> Common.map_filter
+      (fun (s, idx) ->
         (* Right now we don't care about the actual error messages. We
-         * don't check if they match. We are just happy to check for 
+         * don't check if they match. We are just happy to check for
          * correct lines error reporting.
          *)
         if s =~ ".*ERROR:.*" || s =~ ".*MATCH:.*"
         (* + 1 because the comment is one line before *)
-        then Some (file, idx + 1) 
+        then Some (file, idx + 1)
         else None
       )
   ) |> List.flatten
 
 let compare_actual_to_expected actual_errors expected_error_lines =
-  let actual_error_lines = 
+  let actual_error_lines =
     actual_errors |> List.map (fun err ->
       let loc = err.loc in
       loc.PI.file, loc.PI.line
       )
   in
   (* diff report *)
-  let (_common, only_in_expected, only_in_actual) = 
+  let (_common, only_in_expected, only_in_actual) =
     Common2.diff_set_eff expected_error_lines actual_error_lines in
 
   only_in_expected |> List.iter (fun (src, l) ->

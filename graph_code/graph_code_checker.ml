@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -49,8 +49,8 @@ let check_imperative g =
 
       let ps = pred n in
       (* todo: filter nodes that are in boilerplate code *)
-      if ps = [] 
-      then 
+      if ps = []
+      then
         (match n with
         | s, E.Function when s =$= "main" || s =~ "^main__.*" -> ()
         | _ ->
@@ -67,7 +67,7 @@ let check_imperative g =
       n_def_opt |> Common.do_option (fun n_def ->
         let n_decl = n in
         if not (G.has_node n_def g)
-        then 
+        then
           (* actually in C we can have things that looks like GlobalExtern
            * e.g. Syscall sysnop; but are actually Prototype, so we must look
            * for E.Function in that case
@@ -92,20 +92,20 @@ let check_imperative g =
           let file_decl = G.file_of_node n_decl g in
           let info_decl = G.nodeinfo n_decl g in
           let users_outside = ps |> List.filter (fun n ->
-            try 
+            try
               let file_user = G.file_of_node n g in
               file_user <> file_def
             with Not_found -> true
           )
           in
           if users_outside = [] && ps <> [] && is_header_file file_decl
-          then Error.warning_loc info_decl.G.pos 
+          then Error.warning_loc info_decl.G.pos
             (Error.UnusedExport (n_decl, file_def));
 
           (* for clang I usually add a Use edge between the def and the decl
            * so the decl would not have been marked as dead without this:
            *)
-          if ps = [] 
+          if ps = []
           then Error.warning_loc info_decl.G.pos (Error.Deadcode n_decl);
         end
       );

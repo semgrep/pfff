@@ -19,8 +19,8 @@ val test_visit_php  : Common.filename -> unit
 *)
 (*x: test_parsing_php.mli *)
 
-(* This makes accessible the different test_xxx functions above from 
- * the command line, e.g. '$ pfff -parse_php foo.php' will call the 
+(* This makes accessible the different test_xxx functions above from
+ * the command line, e.g. '$ pfff -parse_php foo.php' will call the
  * test_parse_php function.
  *)
 val actions : unit -> Common.cmdline_actions

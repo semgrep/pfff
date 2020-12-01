@@ -9,7 +9,7 @@ val ( ||| ) : 'a -> 'a -> 'a
 val ( ==> ) : bool -> bool -> bool
 val xor : 'a -> 'a -> bool
 
-@ 
+@
 
 \section{Char}
 
@@ -30,7 +30,7 @@ val is_alpha : char -> bool
 val is_digit : char -> bool
 
 val cbetween : char -> char -> char -> bool
-@ 
+@
 
 \section{Num}
 
@@ -93,7 +93,7 @@ val int_of_all : string -> int
 val ( += ) : int ref -> int -> unit
 val ( -= ) : int ref -> int -> unit
 
-val pourcent: int -> int -> int 
+val pourcent: int -> int -> int
 val pourcent_float: int -> int -> float
 val pourcent_float_of_floats: float -> float -> float
 
@@ -101,10 +101,10 @@ val pourcent_good_bad: int -> int -> int
 val pourcent_good_bad_float: int -> int -> float
 
 type 'a max_with_elem = int ref * 'a ref
-val update_max_with_elem: 
+val update_max_with_elem:
   'a max_with_elem -> is_better:(int -> int ref -> bool) -> int * 'a -> unit
 
-@ 
+@
 
 <<common.mli for basic types>>=
 (*****************************************************************************)
@@ -125,7 +125,7 @@ val numd_float : float numdict
 val testd : 'a numdict -> 'a -> 'a
 
 
-module ArithFloatInfix : sig 
+module ArithFloatInfix : sig
     val (+) : float -> float -> float
     val (-) : float -> float -> float
     val (/) : float -> float -> float
@@ -139,7 +139,7 @@ module ArithFloatInfix : sig
 
     val (+=) : float ref -> float -> unit
 end
-@ 
+@
 
 \section{Random}
 
@@ -152,7 +152,7 @@ val _init_random : unit
 val random_list : 'a list -> 'a
 val randomize_list : 'a list -> 'a list
 val random_subset_of_list : int -> 'a list -> 'a list
-@ 
+@
 
 \section{Tuples}
 
@@ -189,7 +189,7 @@ val tuple_of_list3 : 'a list -> 'a * 'a * 'a
 val tuple_of_list4 : 'a list -> 'a * 'a * 'a * 'a
 val tuple_of_list5 : 'a list -> 'a * 'a * 'a * 'a * 'a
 val tuple_of_list6 : 'a list -> 'a * 'a * 'a * 'a * 'a * 'a
-@ 
+@
 
 \section{Maybe}
 
@@ -228,7 +228,7 @@ val while_some: gen:(unit-> 'a option) -> f:('a -> 'b) -> unit -> 'b list
 
 val (||=): 'a option ref -> (unit -> 'a) -> unit
 
-@ 
+@
 
 \section{TriBool}
 
@@ -237,7 +237,7 @@ val (||=): 'a option ref -> (unit -> 'a) -> unit
 (* TriBool *)
 (*****************************************************************************)
 type bool3 = True3 | False3 | TrueFalsePb3 of string
-@ 
+@
 
 \section{Strings}
 
@@ -286,31 +286,31 @@ val showCodeHex : int list -> unit
 val size_mo_ko : int -> string
 val size_ko : int -> string
 
-val edit_distance: string -> string -> int 
+val edit_distance: string -> string -> int
 
-val md5sum_of_string : string -> string 
+val md5sum_of_string : string -> string
 
 val wrap: ?width:int -> string -> string
 
-@ 
+@
 
 \begin{verbatim}
 (* Note: OCaml Str regexps are different from Perl regexp:
- *  - The OCaml regexp must match the entire way. 
- *    So  "testBee" =~ "Bee" is wrong  
+ *  - The OCaml regexp must match the entire way.
+ *    So  "testBee" =~ "Bee" is wrong
  *    but "testBee" =~ ".*Bee" is right
- *    Can have the perl behavior if use  Str.search_forward instead of 
+ *    Can have the perl behavior if use  Str.search_forward instead of
  *    Str.string_match.
- *  - Must add some additional \ in front of some special char. So use 
+ *  - Must add some additional \ in front of some special char. So use
  *    \\( \\|  and also \\b
  *  - It does not always handle newlines very well.
  *  - \\b does consider _ but not numbers in indentifiers.
- * 
+ *
  * Note: PCRE regexps are then different from Str regexps ...
  *  - just use '(' ')' for grouping, not '\\)'
  *  - still need \\b for word boundary, but this time it works ...
  *    so can match some word that have some digits in them.
- * 
+ *
  *)
 \end{verbatim}
 
@@ -352,7 +352,7 @@ val split_list_regexp : string -> string list -> (string * string list) list
 val split_list_regexp_noheading : string
 
 val all_match : string (* regexp *) -> string -> string list
-val global_replace_regexp : 
+val global_replace_regexp :
   string (* regexp *) -> (string -> string) -> string -> string
 
 val regular_words: string -> string list
@@ -369,7 +369,7 @@ val str_regexp_of_regexp: regexp -> Str.regexp
 
 val compile_regexp_union: regexp list -> Str.regexp
 
-@ 
+@
 
 \section{Filenames}
 
@@ -395,7 +395,7 @@ val filename_of_db : (string * filename) -> filename
 val dbe_of_filename : filename -> string * string * string
 val dbe_of_filename_nodot : filename -> string * string * string
 (* Left (d,b,e) | Right (d,b)  if file has no extension *)
-val dbe_of_filename_safe : 
+val dbe_of_filename_safe :
   filename -> (string * string * string,  string * string) either
 val dbe_of_filename_noext_ok : filename -> string * string * string
 
@@ -429,7 +429,7 @@ type filepos = {
   c: int;
 }
 
-@ 
+@
 
 \section{i18n}
 
@@ -437,11 +437,11 @@ type filepos = {
 (*****************************************************************************)
 (* i18n *)
 (*****************************************************************************)
-type langage = 
+type langage =
   | English
   | Francais
   | Deutsch
-@ 
+@
 
 \section{Date}
 
@@ -452,7 +452,7 @@ type langage =
 
 (* can also use ocamlcalendar, but heavier, use many modules ... *)
 
-type month = 
+type month =
   | Jan  | Feb  | Mar  | Apr  | May  | Jun
   | Jul  | Aug  | Sep  | Oct  | Nov  | Dec
 type year = Year of int
@@ -546,7 +546,7 @@ val minimum_dmy : date_dmy list -> date_dmy
 (* useful to put in logs as prefix *)
 val timestamp: unit -> string
 
-@ 
+@
 
 \section{Lines/words/strings}
 
@@ -580,7 +580,7 @@ val lines_with_nl_either: string -> (string, unit) either  list
 (* reindent a string *)
 val indent_string: int -> string -> string
 
-@ 
+@
 
 \section{Process/files}
 
@@ -607,7 +607,7 @@ val cmd_to_list_and_status : ?verbose:bool -> string -> string list * Unix.proce
 
 val command2 : string -> unit
 val _batch_mode: bool ref
-val command_safe: ?verbose:bool -> 
+val command_safe: ?verbose:bool ->
   filename (* executable *) -> string list (* args *) -> int
 
 val y_or_no: string -> bool
@@ -651,7 +651,7 @@ val readdir_to_link_list : string -> string list
 val readdir_to_dir_size_list : string -> (string * int) list
 
 val glob : string -> filename list
-val files_of_dir_or_files : 
+val files_of_dir_or_files :
   string (* ext *) -> string list -> filename list
 val files_of_dir_or_files_no_vcs :
   string (* ext *) -> string list -> filename list
@@ -675,23 +675,23 @@ val file_perm_of : u:rwx -> g:rwx -> o:rwx -> Unix.file_perm
 val has_env : string -> bool
 
 (* scheme spirit. do a finalize so no leak. *)
-val with_open_outfile : 
+val with_open_outfile :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
-val with_open_infile : 
+val with_open_infile :
   filename -> (in_channel -> 'a) -> 'a
-val with_open_outfile_append : 
+val with_open_outfile_append :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
 
-val with_open_stringbuf : 
+val with_open_stringbuf :
   (((string -> unit) * Buffer.t) -> unit) -> string
 
 exception Timeout
 
-(* subtil: have to make sure that Timeout is not intercepted before here. So 
+(* subtil: have to make sure that Timeout is not intercepted before here. So
  * avoid exn handler such as try (...) with _ -> cos Timeout will not bubble up
- * enough. In such case, add a case before such as  
- * with Timeout -> raise Timeout | _ -> ... 
- * 
+ * enough. In such case, add a case before such as
+ * with Timeout -> raise Timeout | _ -> ...
+ *
  * The same is true for UnixExit (see below).
  *)
 val timeout_function : int -> (unit -> 'a) -> 'a
@@ -699,8 +699,8 @@ val timeout_function : int -> (unit -> 'a) -> 'a
 val timeout_function_opt : int option -> (unit -> 'a) -> 'a
 
 
-(* creation of /tmp files, a la gcc 
- * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" 
+(* creation of /tmp files, a la gcc
+ * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c"
  *)
 val _temp_files_created : string list ref
 (* see flag: val save_tmp_files : bool ref *)
@@ -712,12 +712,12 @@ val erase_this_temp_file : filename -> unit
  * exit and do something before exiting. There is exn handler for exit 0
  * so better never use exit 0 but instead use an exception and just at
  * the very toplevel transform this exn in a unix exit code.
- * 
+ *
  * subtil: same problem than with Timeout. Do not intercept such exception
  * with some blind try (...) with _ -> ...
  *)
-exception UnixExit of int 
+exception UnixExit of int
 val exn_to_real_unixexit : (unit -> 'a) -> 'a
-@ 
+@
 
 

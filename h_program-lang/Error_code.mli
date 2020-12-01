@@ -150,7 +150,7 @@ val filter_maybe_parse_and_fatal_errors: error list -> error list
  * added to g_errors
  *)
 
-val adjust_paths_relative_to_root: 
+val adjust_paths_relative_to_root:
   Common.path -> error list -> error list
 (*e: signature [[Error_code.adjust_paths_relative_to_root]] *)
 

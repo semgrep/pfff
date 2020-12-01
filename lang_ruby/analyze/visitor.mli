@@ -1,20 +1,20 @@
 
 (* This is the same visitor type that is used by CIL *)
-type 'a visitAction = 
-    SkipChildren                        (** Do not visit the children. Return 
+type 'a visitAction =
+    SkipChildren                        (** Do not visit the children. Return
                                             the node as it is. *)
-  | DoChildren                          (** Continue with the children of this 
-                                            node. Rebuild the node on return 
-                                            if any of the children changes 
+  | DoChildren                          (** Continue with the children of this
+                                            node. Rebuild the node on return
+                                            if any of the children changes
                                             (use == test) *)
-  | ChangeTo of 'a                      (** Replace the expression with the 
+  | ChangeTo of 'a                      (** Replace the expression with the
                                             given one *)
-  | ChangeDoChildrenPost of 'a * ('a -> 'a) (** First consider that the entire 
-                                           exp is replaced by the first 
-                                           parameter. Then continue with 
-                                           the children. On return rebuild 
-                                           the node if any of the children 
-                                           has changed and then apply the 
+  | ChangeDoChildrenPost of 'a * ('a -> 'a) (** First consider that the entire
+                                           exp is replaced by the first
+                                           parameter. Then continue with
+                                           the children. On return rebuild
+                                           the node if any of the children
+                                           has changed and then apply the
                                            function on the node *)
 
 type 'a visit_method = 'a -> 'a visitAction

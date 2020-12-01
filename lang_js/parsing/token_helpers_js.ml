@@ -163,8 +163,8 @@ let visitor_info_of_tok f = function
   | T_XHP_SHORT_FRAGMENT ii -> T_XHP_SHORT_FRAGMENT (f ii)
 
   | T_DOTS ii -> T_DOTS (f ii)
-  | LDots (ii) -> LDots (f ii)
-  | RDots (ii) -> RDots (f ii)
+  | LDots ii -> LDots (f ii)
+  | RDots ii -> RDots (f ii)
 
   | T_DOLLARCURLY ii -> T_DOLLARCURLY(f ii)
   | T_BACKQUOTE ii -> T_BACKQUOTE (f ii)
@@ -174,7 +174,7 @@ let visitor_info_of_tok f = function
   | T_ASYNC  ii -> T_ASYNC (f ii)
   | T_AWAIT  ii -> T_AWAIT (f ii)
   | T_SUPER  ii -> T_SUPER (f ii)
-  | T_IMPORT ii -> T_IMPORT (f ii) 
+  | T_IMPORT ii -> T_IMPORT (f ii)
   | T_EXPORT ii -> T_EXPORT (f ii)
   | T_FROM ii -> T_FROM (f ii)
   | T_AS ii -> T_AS (f ii)
@@ -182,7 +182,7 @@ let visitor_info_of_tok f = function
   | T_GET ii -> T_GET (f ii)
   | T_SET ii -> T_SET (f ii)
   | T_EXPONENT ii -> T_EXPONENT (f ii)
-  | T_IMPLEMENTS ii -> T_IMPLEMENTS (f ii) 
+  | T_IMPLEMENTS ii -> T_IMPLEMENTS (f ii)
   | T_CONSTRUCTOR ii -> T_CONSTRUCTOR (f ii)
   | T_TYPE ii -> T_TYPE (f ii)
   | T_ANY_TYPE ii -> T_ANY_TYPE (f ii)
@@ -197,7 +197,7 @@ let visitor_info_of_tok f = function
   | T_PROTECTED ii -> T_PROTECTED (f ii)
   | T_READONLY ii -> T_READONLY (f ii)
 
-let info_of_tok tok = 
+let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   Common2.some !res

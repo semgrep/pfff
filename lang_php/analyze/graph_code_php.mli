@@ -2,10 +2,10 @@
 val add_fake_node_when_undefined_entity: bool ref
 
 val build:
-  ?verbose:bool -> 
+  ?verbose:bool ->
   ?logfile:Common.filename ->
   ?readable_file_format:bool ->
-  ?only_defs:bool -> 
+  ?only_defs:bool ->
   ?is_skip_error_file: (Common.filename -> bool) ->
   ?class_analysis: bool ->
   Common.dirname -> Common.filename list ->

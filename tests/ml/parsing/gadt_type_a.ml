@@ -1,2 +1,2 @@
-let foo (type a) (t: a t) = 
+let foo (type a) (t: a t) =
   failwith "TODO"

@@ -7,7 +7,7 @@
 (* Flags *)
 (*****************************************************************************)
 (*s: common.mli globals flags *)
-(* see the corresponding section for the use of those flags. See also 
+(* see the corresponding section for the use of those flags. See also
  * the "Flags and actions" section at the end of this file.
  *)
 
@@ -41,7 +41,7 @@ val typing_sux_test : unit -> unit
 (*****************************************************************************)
 (* Module side effect *)
 (*****************************************************************************)
-(* 
+(*
  * I define a few unit tests via some let _ = example (... = ...).
  * I also initialize the random seed, cf _init_random .
  * I also set Gc.stack_size, cf _init_gc_stack .
@@ -87,22 +87,22 @@ end
 (*
  * Another related trick, found via Jon Harrop to have an extended standard
  * lib is to do something like
- * 
+ *
  * module List = struct
  *  include List
  *  val map2 : ...
  * end
- * 
+ *
  * And then can put this "module extension" somewhere to open it.
  *)
 
 
 
-(* This module defines the Timeout and UnixExit exceptions.  
- * You  have to make sure that those exn are not intercepted. So 
+(* This module defines the Timeout and UnixExit exceptions.
+ * You  have to make sure that those exn are not intercepted. So
  * avoid exn handler such as try (...) with _ -> cos Timeout will not bubble up
- * enough. In such case, add a case before such as  
- * with Timeout -> raise Timeout | _ -> ... 
+ * enough. In such case, add a case before such as
+ * with Timeout -> raise Timeout | _ -> ...
  * The same is true for UnixExit (see below).
  *)
 (*x: common.mli basic features *)
@@ -118,9 +118,9 @@ val reset_pr_indent : unit -> unit
  * They also add the _prefix_pr, for instance used in MPI to show which
  * worker is talking.
  * update: for pr2, it can also print into a log file.
- * 
+ *
  * The use of 2 in pr2 is because 2 is under UNIX the second descriptor
- * which corresponds to stderr. 
+ * which corresponds to stderr.
  *)
 val _prefix_pr : string ref
 
@@ -161,9 +161,9 @@ val sprintf : ('a, unit, string) format -> 'a
 val spf : ('a, unit, string) format -> 'a
 
 (* default = stderr *)
-val _chan : out_channel ref 
+val _chan : out_channel ref
 (* generate & use a /tmp/debugml-xxx file *)
-val start_log_file : unit -> unit 
+val start_log_file : unit -> unit
 
 (* see flag: val verbose_level : int ref *)
 val log : string -> unit
@@ -229,9 +229,9 @@ val time_func : (unit -> 'a) -> 'a
 (*old: val example : bool -> unit, PB with js_of_ocaml? *)
 val example : bool -> unit
 (* generate failwith <string> when pb *)
-val example2 : string -> bool -> unit 
+val example2 : string -> bool -> unit
 (* use Dumper to report when pb *)
-val assert_equal : 'a -> 'a -> unit 
+val assert_equal : 'a -> 'a -> unit
 
 val _list_bool : (string * bool) list ref
 val example3 : string -> bool -> unit
@@ -239,11 +239,11 @@ val test_all : unit -> unit
 
 
 (* regression testing *)
-type score_result = Ok | Pb of string 
+type score_result = Ok | Pb of string
 type score =      (string (* usually a filename *), score_result) Hashtbl.t
 type score_list = (string (* usually a filename *) * score_result) list
 val empty_score : unit -> score
-val regression_testing : 
+val regression_testing :
   score -> filename (* old score file on disk (usually in /tmp) *) -> unit
 val regression_testing_vs: score -> score -> score
 val total_scores : score -> int (* good *) * int (* total *)
@@ -269,7 +269,7 @@ val frequencyl : (int * 'a) list -> 'a gen
 
 val laws : string -> ('a -> bool) -> 'a gen -> 'a option
 
-(* example of use: 
+(* example of use:
  * let b = laws "unit" (fun x -> reverse [x] = [x])    ig
  *)
 
@@ -338,7 +338,7 @@ val adjust_pp_with_indent : (unit -> unit) -> unit
 val adjust_pp_with_indent_and_header : string -> (unit -> unit) -> unit
 
 
-val mk_str_func_of_assoc_conv: 
+val mk_str_func_of_assoc_conv:
   ('a * string) list -> (string -> 'a) * ('a -> string)
 (*x: common.mli basic features *)
 (*****************************************************************************)
@@ -394,31 +394,31 @@ val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 val save_excursion_and_disable : bool ref -> (unit -> 'b) -> 'b
 val save_excursion_and_enable :  bool ref -> (unit -> 'b) -> 'b
 
-val memoized : 
+val memoized :
   ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 
 val cache_in_ref : 'a option ref -> (unit -> 'a) -> 'a
 
 
 (* take file from which computation is done, an extension, and the function
- * and will compute the function only once and then save result in 
+ * and will compute the function only once and then save result in
  * file ^ extension
  *)
-val cache_computation : 
-  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) -> 
+val cache_computation :
+  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) ->
   (unit -> 'a) -> 'a
 
-(* a more robust version where the client describes the dependencies of the 
- * computation so it will relaunch the computation in 'f' if needed. 
+(* a more robust version where the client describes the dependencies of the
+ * computation so it will relaunch the computation in 'f' if needed.
  *)
 val cache_computation_robust :
-  filename -> 
-  string (* extension for marshalled object *) -> 
-  (filename list * 'x) -> 
-  string (* extension for marshalled dependencies *) -> 
-  (unit -> 'a) -> 
+  filename ->
+  string (* extension for marshalled object *) ->
+  (filename list * 'x) ->
+  string (* extension for marshalled dependencies *) ->
+  (unit -> 'a) ->
   'a
-  
+
 val oncef : ('a -> unit) -> ('a -> unit)
 val once: bool ref -> (unit -> unit) -> unit
 
@@ -431,7 +431,7 @@ val before_leaving : ('a -> unit) -> 'a -> 'a
 (*****************************************************************************)
 
 (* how ensure really atomic file creation ? hehe :) *)
-exception FileAlreadyLocked 
+exception FileAlreadyLocked
 val acquire_file_lock : filename -> unit
 val release_file_lock : filename -> unit
 (*x: common.mli basic features *)
@@ -455,7 +455,7 @@ val string_of_exn : exn -> string
 
 val exn_to_s_with_backtrace : exn -> string
 
-type error = Error of string 
+type error = Error of string
 
 type evotype = unit
 val evoval : evotype
@@ -468,7 +468,7 @@ val _check_stack: bool ref
 
 val check_stack_size: int -> unit
 val check_stack_nbfiles: int -> unit
- 
+
 (* internally common.ml set Gc. parameters *)
 val _init_gc_stack : unit
 (*x: common.mli basic features *)
@@ -496,14 +496,14 @@ val (=:=) : bool   -> bool   -> bool
 
 (* the evil generic (=). I define another symbol to more easily detect
  * it, cos the '=' sign is syntaxically overloaded in caml. It is also
- * used to define function. 
+ * used to define function.
  *)
 val (=*=): 'a -> 'a -> bool
 
 (* if want to restrict the use of '=', uncomment this:
  *
  * val (=): unit -> unit -> bool
- * 
+ *
  * But it will not forbid you to use caml functions like List.find, List.mem
  * which internaly use this convenient but evolution-unfriendly (=)
 *)
@@ -597,7 +597,7 @@ val int_of_all : string -> int
 val ( += ) : int ref -> int -> unit
 val ( -= ) : int ref -> int -> unit
 
-val pourcent: int -> int -> int 
+val pourcent: int -> int -> int
 val pourcent_float: int -> int -> float
 val pourcent_float_of_floats: float -> float -> float
 
@@ -605,7 +605,7 @@ val pourcent_good_bad: int -> int -> int
 val pourcent_good_bad_float: int -> int -> float
 
 type 'a max_with_elem = int ref * 'a ref
-val update_max_with_elem: 
+val update_max_with_elem:
   'a max_with_elem -> is_better:(int -> int ref -> bool) -> int * 'a -> unit
 
 (*x: common.mli for basic types *)
@@ -627,7 +627,7 @@ val numd_float : float numdict
 val testd : 'a numdict -> 'a -> 'a
 
 
-module ArithFloatInfix : sig 
+module ArithFloatInfix : sig
     val (+) : float -> float -> float
     val (-) : float -> float -> float
     val (/) : float -> float -> float
@@ -769,9 +769,9 @@ val showCodeHex : int list -> unit
 val size_mo_ko : int -> string
 val size_ko : int -> string
 
-val edit_distance: string -> string -> int 
+val edit_distance: string -> string -> int
 
-val md5sum_of_string : string -> string 
+val md5sum_of_string : string -> string
 
 val wrap: ?width:int -> string -> string
 
@@ -811,7 +811,7 @@ val split_list_regexp : string -> string list -> (string * string list) list
 val split_list_regexp_noheading : string
 
 val all_match : string (* regexp *) -> string -> string list
-val global_replace_regexp : 
+val global_replace_regexp :
   string (* regexp *) -> (string -> string) -> string -> string
 
 val regular_words: string -> string list
@@ -850,7 +850,7 @@ val filename_of_db : (string * filename) -> filename
 val dbe_of_filename : filename -> string * string * string
 val dbe_of_filename_nodot : filename -> string * string * string
 (* Left (d,b,e) | Right (d,b)  if file has no extension *)
-val dbe_of_filename_safe : 
+val dbe_of_filename_safe :
   filename -> (string * string * string,  string * string) either
 val dbe_of_filename_noext_ok : filename -> string * string * string
 
@@ -888,7 +888,7 @@ type filepos = {
 (*****************************************************************************)
 (* i18n *)
 (*****************************************************************************)
-type langage = 
+type langage =
   | English
   | Francais
   | Deutsch
@@ -899,7 +899,7 @@ type langage =
 
 (* can also use ocamlcalendar, but heavier, use many modules ... *)
 
-type month = 
+type month =
   | Jan  | Feb  | Mar  | Apr  | May  | Jun
   | Jul  | Aug  | Sep  | Oct  | Nov  | Dec
 type year = Year of int
@@ -1052,12 +1052,12 @@ val process_output_to_list : ?verbose:bool -> string -> string list
 val cmd_to_list :            ?verbose:bool -> string -> string list (* alias *)
 
 (* will not raise CmdError *)
-val process_output_to_list2 : ?verbose:bool -> string -> 
+val process_output_to_list2 : ?verbose:bool -> string ->
   string list * Unix.process_status
 
 val command2 : string -> unit
 val _batch_mode: bool ref
-val command_safe: ?verbose:bool -> 
+val command_safe: ?verbose:bool ->
   filename (* executable *) -> string list (* args *) -> int
 
 val y_or_no: string -> bool
@@ -1107,7 +1107,7 @@ val unixname: unit -> string
 
 
 val glob : string -> filename list
-val files_of_dir_or_files : 
+val files_of_dir_or_files :
   string (* ext *) -> string list -> filename list
 val files_of_dir_or_files_no_vcs :
   string (* ext *) -> string list -> filename list
@@ -1131,19 +1131,19 @@ val file_perm_of : u:rwx -> g:rwx -> o:rwx -> Unix.file_perm
 val has_env : string -> bool
 
 (* scheme spirit. do a finalize so no leak. *)
-val with_open_outfile_append : 
+val with_open_outfile_append :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
 
-val with_open_stringbuf : 
+val with_open_stringbuf :
   (((string -> unit) * Buffer.t) -> unit) -> string
 
 exception Timeout
 
-(* subtil: have to make sure that Timeout is not intercepted before here. So 
+(* subtil: have to make sure that Timeout is not intercepted before here. So
  * avoid exn handler such as try (...) with _ -> cos Timeout will not bubble up
- * enough. In such case, add a case before such as  
- * with Timeout -> raise Timeout | _ -> ... 
- * 
+ * enough. In such case, add a case before such as
+ * with Timeout -> raise Timeout | _ -> ...
+ *
  * The same is true for UnixExit (see below).
  *)
 val timeout_function :
@@ -1160,11 +1160,11 @@ val with_tmp_dir: (dirname -> 'a) -> 'a
  * exit and do something before exiting. There is exn handler for exit 0
  * so better never use exit 0 but instead use an exception and just at
  * the very toplevel transform this exn in a unix exit code.
- * 
+ *
  * subtil: same problem than with Timeout. Do not intercept such exception
  * with some blind try (...) with _ -> ...
  *)
-exception UnixExit of int 
+exception UnixExit of int
 val exn_to_real_unixexit : (unit -> 'a) -> 'a
 (*e: common.mli for basic types *)
 
@@ -1295,7 +1295,7 @@ val exclude : ('a -> bool) -> 'a list -> 'a list
  * line. Here we delete any repeated line (here list element).
  *)
 val uniq : 'a list -> 'a list
-val uniq_eff: 'a list -> 'a list 
+val uniq_eff: 'a list -> 'a list
 val big_union_eff: 'a list list -> 'a list
 
 val has_no_duplicate: 'a list -> bool
@@ -1331,7 +1331,7 @@ val and_list : bool list -> bool
 
 val sum_float : float list -> float
 val sum_int : int list -> int
-val avg_list: int list -> float 
+val avg_list: int list -> float
 
 val return_when : ('a -> 'b option) -> 'a list -> 'b
 
@@ -1340,7 +1340,7 @@ val grep_with_previous : ('a -> 'a -> bool) -> 'a list -> 'a list
 val iter_with_previous : ('a -> 'a -> 'b) -> 'a list -> unit
 val iter_with_previous_opt : ('a option -> 'a -> 'b) -> 'a list -> unit
 
-val iter_with_before_after : 
+val iter_with_before_after :
  ('a list -> 'a -> 'a list -> unit) -> 'a list -> unit
 
 val get_pair : 'a list -> ('a * 'a) list
@@ -1379,7 +1379,7 @@ val array_find_index_via_elem : ('a -> bool) -> 'a array -> int
 (* for better type checking, as sometimes when have an 'int array', can
  * easily mess up the index from the value.
  *)
-type idx = Idx of int 
+type idx = Idx of int
 val next_idx: idx -> idx
 val int_of_idx: idx -> int
 
@@ -1399,13 +1399,13 @@ type 'a matrix = 'a array array
 
 val map_matrix : ('a -> 'b) -> 'a matrix -> 'b matrix
 
-val make_matrix_init: 
+val make_matrix_init:
   nrow:int -> ncolumn:int -> (int -> int -> 'a) -> 'a matrix
 
-val iter_matrix: 
+val iter_matrix:
   (int -> int -> 'a -> unit) -> 'a matrix -> unit
 
-val nb_rows_matrix: 'a matrix -> int 
+val nb_rows_matrix: 'a matrix -> int
 val nb_columns_matrix: 'a matrix -> int
 
 val rows_of_matrix: 'a matrix -> 'a list list
@@ -1470,19 +1470,19 @@ val ( $@$ ) : 'a list -> 'a list -> 'a list
 
 val nub : 'a list -> 'a list
 
-(* use internally a hash and return 
- * - the common part, 
- * - part only in a, 
+(* use internally a hash and return
+ * - the common part,
+ * - part only in a,
  * - part only in b
  *)
-val diff_set_eff : 'a list -> 'a list -> 
+val diff_set_eff : 'a list -> 'a list ->
   'a list * 'a list * 'a list
 (*x: common.mli for collection types *)
 (*****************************************************************************)
 (* Set as normal list *)
 (*****************************************************************************)
 
-(* cf above *) 
+(* cf above *)
 (*x: common.mli for collection types *)
 (*****************************************************************************)
 (* Set as sorted list *)
@@ -1566,7 +1566,7 @@ val lookup_list2 : 'a -> ('a, 'b) assoc list -> 'b * int
 val assoc_opt : 'a -> ('a, 'b) assoc -> 'b option
 val assoc_with_err_msg : 'a -> ('a, 'b) assoc -> 'b
 
-type order = HighFirst | LowFirst 
+type order = HighFirst | LowFirst
 val compare_order: order -> 'a -> 'a -> int
 
 val sort_by_val_lowfirst: ('a,'b) assoc -> ('a * 'b) list
@@ -1629,8 +1629,8 @@ val intintmap_string_of_t : 'a -> 'b -> string
 (* Note that Hashtbl keep old binding to a key so if want a hash
  * of a list, then can use the Hashtbl as is. Use Hashtbl.find_all then
  * to get the list of bindings
- * 
- * Note that Hashtbl module use different convention :( the object is 
+ *
+ * Note that Hashtbl module use different convention :( the object is
  * the first argument, not last as for List or Map.
  *)
 
@@ -1647,7 +1647,7 @@ val hremove : 'a -> ('a, 'b) Hashtbl.t -> unit
 
 val hfind_default : 'a -> (unit -> 'b) -> ('a, 'b) Hashtbl.t -> 'b
 val hfind_option : 'a -> ('a, 'b) Hashtbl.t -> 'b option
-val hupdate_default : 
+val hupdate_default :
   'a -> update:('b -> 'b) -> default:(unit -> 'b) -> ('a, 'b) Hashtbl.t -> unit
 
 val add1: int -> int
@@ -1658,7 +1658,7 @@ val hash_to_list_unsorted : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 val hash_of_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
 
 
-val hkeys : ('a, 'b) Hashtbl.t -> 'a list 
+val hkeys : ('a, 'b) Hashtbl.t -> 'a list
 
 (* hunion h1 h2  adds all binding in h2 into h1 *)
 val hunion: ('a, 'b) Hashtbl.t -> ('a, 'b) Hashtbl.t -> unit
@@ -1667,7 +1667,7 @@ val hunion: ('a, 'b) Hashtbl.t -> ('a, 'b) Hashtbl.t -> unit
 (* Hash sets *)
 (*****************************************************************************)
 
-type 'a hashset = ('a, bool) Hashtbl.t 
+type 'a hashset = ('a, bool) Hashtbl.t
 
 
 (* common use of hashset, in a hash of hash *)
@@ -1679,7 +1679,7 @@ val hashset_union: 'a hashset -> 'a hashset -> unit
 (* hashset_inter h1 h2  removes all elements in h1 not in h2 *)
 val hashset_inter: 'a hashset -> 'a hashset -> unit
 
-val hashset_to_set : 
+val hashset_to_set :
  < fromlist : ('a ) list -> 'c; .. > -> ('a, 'b) Hashtbl.t -> 'c
 
 val hashset_to_list : 'a hashset -> 'a list
@@ -1689,7 +1689,7 @@ val hashset_of_list : 'a list -> 'a hashset
 (* Hash  with default value *)
 (*****************************************************************************)
 type ('a, 'b) hash_with_default =
-  < add : 'a -> 'b -> unit; 
+  < add : 'a -> 'b -> unit;
     to_list : ('a * 'b) list;
     to_h: ('a, 'b) Hashtbl.t;
     update : 'a -> ('b -> 'b) -> unit;
@@ -1697,7 +1697,7 @@ type ('a, 'b) hash_with_default =
   >
 
 val hash_with_default: (unit -> 'b) ->
-  < add : 'a -> 'b -> unit; 
+  < add : 'a -> 'b -> unit;
     to_list : ('a * 'b) list;
     to_h: ('a, 'b) Hashtbl.t;
     update : 'a -> ('b -> 'b) -> unit;
@@ -1748,12 +1748,12 @@ type 'a tree2 = Tree of 'a * ('a tree2) list
 val tree2_iter : ('a -> unit) -> 'a tree2 -> unit
 
 
-type ('a, 'b) tree = 
+type ('a, 'b) tree =
   | Node of 'a * ('a, 'b) tree list
   | Leaf of 'b
 
-val map_tree: 
-  fnode:('a -> 'abis) -> 
+val map_tree:
+  fnode:('a -> 'abis) ->
   fleaf:('b -> 'bbis) ->
   ('a, 'b) tree -> ('abis, 'bbis) tree
 
@@ -1767,21 +1767,21 @@ val tree_of_files: filename list -> (dirname, (string * filename)) tree
 (*****************************************************************************)
 
 (* no empty tree, must have one root at least *)
-type 'a treeref = 
-  | NodeRef of 'a *   'a treeref list ref 
+type 'a treeref =
+  | NodeRef of 'a *   'a treeref list ref
 
-val treeref_node_iter: 
+val treeref_node_iter:
   (('a * 'a treeref list ref) -> unit) -> 'a treeref -> unit
-val treeref_node_iter_with_parents: 
-  (('a * 'a treeref list ref) -> ('a list) -> unit) -> 
+val treeref_node_iter_with_parents:
+  (('a * 'a treeref list ref) -> ('a list) -> unit) ->
   'a treeref -> unit
 
-val find_treeref: 
-  (('a * 'a treeref list ref) -> bool) -> 
+val find_treeref:
+  (('a * 'a treeref list ref) -> bool) ->
   'a treeref -> 'a treeref
 
-val treeref_children_ref: 
-  'a treeref -> 'a treeref list ref 
+val treeref_children_ref:
+  'a treeref -> 'a treeref list ref
 
 val find_treeref_with_parents_some:
  ('a * 'a treeref list ref -> 'a list -> 'c option) ->
@@ -1792,29 +1792,29 @@ val find_multi_treeref_with_parents_some:
  'a treeref -> 'c list
 
 
-(* Leaf can seem redundant, but sometimes want to directly see if 
+(* Leaf can seem redundant, but sometimes want to directly see if
  * a children is a leaf without looking if the list is empty.
  *)
-type ('a, 'b) treeref2 = 
-  | NodeRef2 of 'a * ('a, 'b) treeref2 list ref 
+type ('a, 'b) treeref2 =
+  | NodeRef2 of 'a * ('a, 'b) treeref2 list ref
   | LeafRef2 of 'b
 
 
-val find_treeref2: 
-  (('a * ('a, 'b) treeref2 list ref) -> bool) -> 
+val find_treeref2:
+  (('a * ('a, 'b) treeref2 list ref) -> bool) ->
   ('a, 'b) treeref2 -> ('a, 'b) treeref2
 
-val treeref_node_iter_with_parents2: 
-  (('a * ('a, 'b) treeref2 list ref) -> ('a list) -> unit) -> 
+val treeref_node_iter_with_parents2:
+  (('a * ('a, 'b) treeref2 list ref) -> ('a list) -> unit) ->
   ('a, 'b) treeref2 -> unit
 
-val treeref_node_iter2: 
+val treeref_node_iter2:
   (('a * ('a, 'b) treeref2 list ref) -> unit) -> ('a, 'b) treeref2 -> unit
 
 (*
 
 
-val treeref_children_ref: ('a, 'b) treeref -> ('a, 'b) treeref list ref 
+val treeref_children_ref: ('a, 'b) treeref -> ('a, 'b) treeref list ref
 
 val find_treeref_with_parents_some:
  ('a * ('a, 'b) treeref list ref -> 'a list -> 'c option) ->
@@ -1988,7 +1988,7 @@ val new_scope : ('a, 'b) scoped_env ref -> unit
 val del_scope : ('a, 'b) scoped_env ref -> unit
 
 val do_in_new_scope : ('a, 'b) scoped_env ref -> (unit -> unit) -> unit
-  
+
 val add_in_scope : ('a, 'b) scoped_env ref -> 'a * 'b -> unit
 
 

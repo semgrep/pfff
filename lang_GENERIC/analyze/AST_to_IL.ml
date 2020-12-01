@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -85,12 +85,12 @@ let impossible any_generic =
 (* Helpers *)
 (*****************************************************************************)
 (*s: function [[AST_to_IL.fresh_var]] *)
-let fresh_var _env tok = 
+let fresh_var _env tok =
   let i = G.gensym () in
   ("_tmp", tok), i
 (*e: function [[AST_to_IL.fresh_var]] *)
 (*s: function [[AST_to_IL._fresh_label]] *)
-let _fresh_label _env tok = 
+let _fresh_label _env tok =
   let i = G.gensym () in
   ("_label", tok), i
 (*e: function [[AST_to_IL._fresh_label]] *)
@@ -102,10 +102,10 @@ let fresh_lval env tok =
 
 (*s: function [[AST_to_IL.lval_of_id_info]] *)
 let lval_of_id_info _env id id_info =
-  let sid = 
+  let sid =
     match !(id_info.G.id_resolved) with
     | Some (_resolved, sid) -> sid
-    | None -> 
+    | None ->
         warning (snd id) (spf "the ident '%s' is not resolved" (fst id));
         -1
   in
@@ -132,7 +132,7 @@ let lookup_label _env lbl =
 (*e: function [[AST_to_IL.lookup_label]] *)
 
 (*s: function [[AST_to_IL.mk_e]] *)
-let mk_e e eorig = 
+let mk_e e eorig =
   { e; eorig}
 (*e: function [[AST_to_IL.mk_e]] *)
 (*s: function [[AST_to_IL.mk_i]] *)
@@ -145,15 +145,15 @@ let mk_s s =
 (*e: function [[AST_to_IL.mk_s]] *)
 
 (*s: function [[AST_to_IL.add_instr]] *)
-let add_instr env instr = 
+let add_instr env instr =
   Common.push (mk_s (Instr instr)) env.stmts
 (*e: function [[AST_to_IL.add_instr]] *)
 (*s: function [[AST_to_IL.add_stmt]] *)
-let add_stmt env st = 
+let add_stmt env st =
   Common.push st env.stmts
 (*e: function [[AST_to_IL.add_stmt]] *)
 (*s: function [[AST_to_IL.add_stmts]] *)
-let add_stmts env xs = 
+let add_stmts env xs =
   xs |> List.iter (add_stmt env)
 (*e: function [[AST_to_IL.add_stmts]] *)
 
@@ -179,13 +179,13 @@ let rec lval env eorig =
       let base =
         match lval.offset with
         | NoOffset -> lval.base
-        | _ -> 
+        | _ ->
             let fresh = fresh_lval env tok in
             let lvalexp = mk_e (Lvalue lval) e1orig in
             add_instr env (mk_i (Assign (fresh, lvalexp)) e1orig);
             fresh.base
       in
-      let offset = 
+      let offset =
         match field with
         | G.EId id -> Dot id
         | G.EName gname ->
@@ -204,7 +204,7 @@ let rec lval env eorig =
       let base =
         match lval.offset with
         | NoOffset -> lval.base
-        | _ -> 
+        | _ ->
             let fresh = fresh_lval env tok in
             let lvalexp = mk_e (Lvalue lval) e1orig in
             add_instr env (mk_i (Assign (fresh, lvalexp)) e1orig);
@@ -228,7 +228,7 @@ and pattern env pat =
   | _ -> todo (G.P pat)
 
 and pattern_assign_statements env exp eorig pat =
-  let lval = 
+  let lval =
      match pattern env pat with
      | Left l -> l
      | Right _ -> todo (G.P pat)
@@ -258,7 +258,7 @@ and expr env eorig =
       (* in theory in expr() we should return each time a list of pre-instr
        * and a list of post-instrs to execute before and after the use
        * of the expression. However this complicates the interface of 'expr()'.
-       * Right now, for the pre-instr we agglomerate them instead in env 
+       * Right now, for the pre-instr we agglomerate them instead in env
        * and use them in 'expr_with_pre_instr()' below, but for the post
        * we dont. Anyway, for our static analysis purpose it should not matter.
        * We don't do fancy path-sensitive-evaluation-order-sensitive analysis.
@@ -267,7 +267,7 @@ and expr env eorig =
       | [G.Arg e] ->
             let lval = lval env e in
             let lvalexp = mk_e (Lvalue lval) e in
-            let op = 
+            let op =
               (match incdec with | G.Incr -> G.Plus | G.Decr -> G.Minus), tok
             in
             let one = G.Int ("1", tok) in
@@ -279,7 +279,7 @@ and expr env eorig =
       )
 
   (* todo: if the xxx_to_generic forgot to generate Eval *)
-  | G.Call (G.Id (("eval", tok), { G.id_resolved = {contents = None}; _}), 
+  | G.Call (G.Id (("eval", tok), { G.id_resolved = {contents = None}; _}),
       args) ->
       let lval = fresh_lval env tok in
       let special = Eval, tok in
@@ -299,7 +299,7 @@ and expr env eorig =
        * but we will agglomerate all those instrs in the environment and
        * the caller will call them in sequence (see expr_with_pre_instr).
        * In theory, we should not execute those instrs before getting the
-       * value in 'e' in the caller, but for our static analysis purpose 
+       * value in 'e' in the caller, but for our static analysis purpose
        * we should not care about those edge cases. That would require
        * to return in expr multiple arguments and thread things around; Not
        * worth it.
@@ -322,7 +322,7 @@ and expr env eorig =
   | G.Assign (e1, tok, e2) ->
       let exp = expr env e2 in
       assign env e1 tok exp eorig
-  | G.AssignOp (e1, op, e2) -> 
+  | G.AssignOp (e1, op, e2) ->
       let exp = expr env e2 in
       let lval = lval env e1 in
       let lvalexp = mk_e (Lvalue lval) e1 in
@@ -343,11 +343,11 @@ and expr env eorig =
       let xs = bracket_keep (List.map (expr env)) xs in
       let kind = composite_kind kind in
       mk_e (Composite (kind, xs)) eorig
-  | G.Tuple xs -> 
+  | G.Tuple xs ->
       let xs = bracket_keep (List.map (expr env)) xs in
       mk_e (Composite (CTuple, xs)) eorig
 
-  | G.Record _ 
+  | G.Record _
   -> todo (G.E eorig)
 
   | G.Lambda def ->
@@ -362,11 +362,11 @@ and expr env eorig =
       let lval = fresh_lval env tok in
       add_instr env (mk_i (AssignAnon (lval, AnonClass def)) eorig);
       mk_e (Lvalue lval) eorig
-      
+
   | G.IdSpecial (spec, tok) ->
-      let var_special = 
+      let var_special =
         match spec with
-        | G.This -> This | G.Super -> Super 
+        | G.This -> This | G.Super -> Super
         | G.Self -> Self | G.Parent -> Parent
         | _ -> error_any (G.E eorig) "not expected in var_special context"
       in
@@ -378,12 +378,12 @@ and expr env eorig =
   | G.SliceAccess (_, _, _, _)
   -> todo (G.E eorig)
 
-  (* e1 ? e2 : e3 ==> 
+  (* e1 ? e2 : e3 ==>
    *  pre: lval = e1;
    *       if(lval) { lval = e2 } else { lval = e3 }
    *  exp: lval
    *)
-  | G.Conditional (e1orig, e2orig, e3orig) -> 
+  | G.Conditional (e1orig, e2orig, e3orig) ->
       let tok = G.fake "conditional" in
       let lval = fresh_lval env tok in
       let lvalexp = mk_e (Lvalue lval) e1orig in
@@ -433,23 +433,23 @@ and expr env eorig =
 
 
 and expr_opt env = function
-  | None -> 
+  | None ->
       let void = G.Unit (G.fake "void") in
       mk_e (Literal void) (G.L void)
   | Some e -> expr env e
 
-and call_special _env (x, tok) = 
+and call_special _env (x, tok) =
   (match x with
-  | G.Op _ | G.IncrDecr _ -> 
+  | G.Op _ | G.IncrDecr _ ->
         raise Impossible (* should be intercepted before *)
   | G.This | G.Super | G.Self | G.Parent ->
         raise Impossible (* should be intercepted before *)
   | G.Eval -> Eval
   | G.Typeof -> Typeof | G.Instanceof -> Instanceof | G.Sizeof -> Sizeof
-  | G.New -> New 
-  | G.ConcatString _kindopt -> Concat 
+  | G.New -> New
+  | G.ConcatString _kindopt -> Concat
   | G.Spread -> Spread
-  | G.EncodedString _ 
+  | G.EncodedString _
   | G.Defined
   | G.HashSplat
   | G.ForOf
@@ -460,7 +460,7 @@ and composite_kind = function
   | G.Array -> CArray | G.List -> CList | G.Dict -> CDict | G.Set -> CSet
 
 (* TODO: dependency of order between arguments for instr? *)
-and arguments env xs = 
+and arguments env xs =
   xs |> G.unbracket |> List.map (argument env)
 
 and argument env arg =
@@ -508,7 +508,7 @@ let expr_with_pre_stmts_opt env eopt =
 (*s: function [[AST_to_IL.for_var_or_expr_list]] *)
 let for_var_or_expr_list env xs =
   xs |> List.map (function
-   | G.ForInitExpr e -> 
+   | G.ForInitExpr e ->
         let ss, _eIGNORE = expr_with_pre_stmts env e in
         ss
    | G.ForInitVar (ent, vardef) ->
@@ -517,7 +517,7 @@ let for_var_or_expr_list env xs =
       | { G.vinit = Some e; vtype = _typTODO} ->
          let ss, e' = expr_with_pre_stmts env e in
          let lv = lval_of_ent env ent in
-         ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))]; 
+         ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))];
       | _ -> []
       )
   ) |> List.flatten
@@ -537,7 +537,7 @@ let rec stmt env st =
   | G.DefStmt (ent, G.VarDef { G.vinit = Some e; vtype = _typTODO}) ->
     let ss, e' = expr_with_pre_stmts env e in
     let lv = lval_of_ent env ent in
-    ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))]; 
+    ss @ [mk_s (Instr (mk_i (Assign (lv, e')) e))];
   | G.DefStmt def -> [mk_s (MiscStmt (DefStmt def))]
   | G.DirectiveStmt dir -> [mk_s (MiscStmt (DirectiveStmt dir))]
 
@@ -560,7 +560,7 @@ let rec stmt env st =
     let ss, e' = expr_with_pre_stmts env e in
     st @ ss @ [mk_s (Loop (tok, e', st @ ss))]
 
-  | G.For (tok, G.ForEach (pat, tok2, e), st) -> 
+  | G.For (tok, G.ForEach (pat, tok2, e), st) ->
       let ss, e' = expr_with_pre_stmts env e in
       let st = stmt env st in
 
@@ -575,41 +575,41 @@ let rec stmt env st =
       (* same semantic? or need to take Ref? or pass lval
        * directly in next_call instead of using intermediate next_lval?
        *)
-      let assign = 
+      let assign =
         pattern_assign_statements env (mk_e (Lvalue next_lval) e) e pat in
       let cond = mk_e (Lvalue hasnext_lval) e in
 
       (ss @ [hasnext_call]) @
       [mk_s (Loop(tok, cond, [next_call] @ assign @
               st @ ((* ss @ ?*) [hasnext_call])))]
-      
-  | G.For (tok, G.ForClassic (xs, eopt1, eopt2), st) 
-   -> 
+
+  | G.For (tok, G.ForClassic (xs, eopt1, eopt2), st)
+   ->
       let ss1 = for_var_or_expr_list env xs in
       let st = stmt env st in
       let ss2, cond =
         match eopt1 with
-        | None -> 
+        | None ->
             let vtrue = G.Bool (true, tok) in
-            [], mk_e (Literal (vtrue)) (G.L vtrue)
+            [], mk_e (Literal vtrue) (G.L vtrue)
         | Some e -> expr_with_pre_stmts env e
       in
       let next =
         match eopt2 with
         | None -> []
-        | Some e -> 
+        | Some e ->
             let ss, _eIGNORE = expr_with_pre_stmts env e in
             ss
       in
-      ss1 @ ss2 @ 
+      ss1 @ ss2 @
       [mk_s (Loop(tok, cond, st @ next @ ss2))]
-  | G.For (_, G.ForEllipsis _, _) -> 
+  | G.For (_, G.ForEllipsis _, _) ->
       sgrep_construct (G.S st)
 
   (* TODO: repeat env work of controlflow_build.ml *)
   | G.Continue _ | G.Break _
    -> todo (G.S st)
-    
+
   | G.Label (lbl, st) ->
       let lbl = label_of_label env lbl in
       let st = stmt env st in
@@ -626,7 +626,7 @@ let rec stmt env st =
       let ss1, e' = expr_with_pre_stmts env e in
       let ss2, eopt' = expr_with_pre_stmts_opt env eopt in
       let special = Assert, tok in
-      (* less: wrong e? would not be able to match on Assert, or 
+      (* less: wrong e? would not be able to match on Assert, or
        * need add sorig:
        *)
       ss1 @ ss2 @
@@ -635,9 +635,9 @@ let rec stmt env st =
   | G.Throw (tok, e, _) ->
       let ss, e = expr_with_pre_stmts env e in
       ss @ [mk_s (Throw (tok, e))]
-  | G.Try (_, _, _, _) 
+  | G.Try (_, _, _, _)
    -> todo (G.S st)
-      
+
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)
 (*e: function [[AST_to_IL.stmt]] *)

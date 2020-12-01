@@ -33,9 +33,9 @@ val is_ident_like: Parser_cpp.token -> bool
 
 val token_kind_of_tok: Parser_cpp.token -> Parse_info.token_kind
 
-val info_of_tok : 
+val info_of_tok :
   Parser_cpp.token -> Parse_info.t
-val visitor_info_of_tok : 
+val visitor_info_of_tok :
   (Parse_info.t -> Parse_info.t) -> Parser_cpp.token -> Parser_cpp.token
 
 val line_of_tok    : Parser_cpp.token -> int

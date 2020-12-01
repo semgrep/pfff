@@ -1,2 +1,2 @@
-let foo a = 
+let foo a =
   (a : int) + 1

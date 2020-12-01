@@ -11,14 +11,14 @@ module Db = Database_code
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_load_light_db file = 
+let test_load_light_db file =
   let _db = Db.load_database file in
   ()
 
 let test_big_grep file =
   let db = Db.load_database file in
-  let entities = 
-    Db.files_and_dirs_and_sorted_entities_for_completion 
+  let entities =
+    Db.files_and_dirs_and_sorted_entities_for_completion
       ~threshold_too_many_entities:300000
       db in
   let idx = Big_grep.build_index entities in

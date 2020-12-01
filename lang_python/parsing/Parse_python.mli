@@ -2,7 +2,7 @@
 
 (*s: type [[Parse_python.program_and_tokens]] *)
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = 
+type program_and_tokens =
   AST_python.program option * Parser_python.token list
 (*e: type [[Parse_python.program_and_tokens]] *)
 

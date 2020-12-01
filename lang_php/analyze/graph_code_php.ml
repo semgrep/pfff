@@ -709,7 +709,7 @@ and stmt_bis env x =
   | NamespaceUse _ -> raise Impossible
 
   (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id[("define", _)], (_,[String((name)); v],_)), _) ->
+  | Expr(Call(Id[("define", _)], (_,[String(name); v],_)), _) ->
      let env = add_node_and_has_edge env (name, E.Constant) in
      expr env v
 
@@ -872,7 +872,7 @@ and hint_type env t =
 (* ---------------------------------------------------------------------- *)
 and expr env x =
   match x with
-  | Int _ | Double _ 
+  | Int _ | Double _
     -> ()
 
   (* A String in PHP can actually hide a class (or a function).

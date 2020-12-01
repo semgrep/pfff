@@ -18,7 +18,7 @@ let verbose_pp = ref false
 (* Alternative way to get xhp by calling xhpize as a preprocessor.
  * Slower than builtin_xhp and have some issues where the comments
  * are removed, unless you use the experimental_merge_tokens_xhp
- * but which has some issues itself. 
+ * but which has some issues itself.
  *)
 let pp_default = ref (None: string option)
 
@@ -27,13 +27,13 @@ let pp_default = ref (None: string option)
 open Common
 
 (* coupling: copy paste of Php_vs_php *)
-let is_metavar_name s = 
+let is_metavar_name s =
   s =~ "[A-Z]\\([0-9]?_[A-Z]*\\)?"
 
 let cmdline_flags_pp () = [
   "-pp", Arg.String (fun s -> pp_default := Some s),
   " <cmd> optional preprocessor (e.g. xhpize)";
-  "-verbose_pp", Arg.Set verbose_pp, 
+  "-verbose_pp", Arg.Set verbose_pp,
   " ";
   (*s: other cmdline_flags_pp *)
   "-no_fb_ext", Arg.Clear facebook_lang_extensions,

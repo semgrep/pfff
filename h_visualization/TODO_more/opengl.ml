@@ -11,7 +11,7 @@ open Common
  * - glMLite
  * - camlgl ?
  * - ?
- * 
+ *
  * lablGL seems better integrated with lablgtk and have IMHO nicer
  * function names (e.g. GlMat.load_identity so you know glLoadIdentity
  * is actually a function that operates on the matrix system of opengl).
@@ -20,7 +20,7 @@ open Common
  *)
 
 
-(* 
+(*
  * ref: Jon Harrop article and books
  *)
 

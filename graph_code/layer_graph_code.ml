@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -20,10 +20,10 @@ module G = Graph_code
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Module to help visualize dependencies: is an entity an entry-point 
+ * Module to help visualize dependencies: is an entity an entry-point
  * of the program or one of its leaves. It also help visualize
  * all the errors in codegraph (lookup failures, unresolved method calls, etc).
- * 
+ *
  * For the bottom up layer note that a file can be red and be shown
  * as used by a green. It's because This green file maybe use a green
  * entity of this red file, but not the very red entity of this red file.
@@ -33,14 +33,14 @@ module G = Graph_code
 (* Helpers *)
 (*****************************************************************************)
 let kind_of_rank ~max_total n =
-  let percent = 
+  let percent =
     if max_total = 0
     then 0
-    else Common2.pourcent n max_total 
+    else Common2.pourcent n max_total
   in
   let percent_round = (percent / 10) * 10 in
   spf "cover %d%%" percent_round
-  
+
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -49,10 +49,10 @@ let kind_of_rank ~max_total n =
 let gen_rank_heatmap_layer g hentity_to_rank  ~output =
 
   let group_by_file =
-    hentity_to_rank 
+    hentity_to_rank
     |> Common.hash_to_list
     |> Common.map_filter (fun (node, v) ->
-      try 
+      try
         let file = G.file_of_node node g in
         (* we want to make sure this node has a line, some
          * E.File could be there because file_of_node works for them
@@ -61,7 +61,7 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
         let _line = G.nodeinfo node g in
         Some (file, (node, v))
       with Not_found -> None
-    ) 
+    )
     |> Common.group_assoc_bykey_eff
   in
   let xs = hentity_to_rank |> Common.hash_to_list |> List.map snd in
@@ -72,11 +72,11 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
     description = "Associate a rank to each entity according to its depth
 in the Use graph";
     files = group_by_file |> List.map (fun (file, nodes_and_rank) ->
-      let max_file = 
+      let max_file =
         nodes_and_rank |> List.map snd |> Common2.maximum
       in
 
-      file, 
+      file,
       { Layer_code.
         micro_level = nodes_and_rank |> List.map (fun (n, v) ->
           let info = G.nodeinfo n g in
@@ -109,21 +109,21 @@ let gen_statistics_layer ~root stats ~output =
   ]
   in
   let pre b s =
-    if b 
+    if b
     then "resolved " ^ s
     else "unresolved " ^ s
   in
-      
+
   let infos =
-    (!(stats.G.unresolved_calls) 
+    (!(stats.G.unresolved_calls)
      |> List.map (fun x -> x, "unresolved calls")) @
-    (!(stats.G.unresolved_class_access) 
+    (!(stats.G.unresolved_class_access)
      |> List.map (fun x -> x, "unresolved class access")) @
-    (!(stats.G.field_access) 
+    (!(stats.G.field_access)
      |> List.map (fun (x, b) -> x, pre b "field access")) @
-    (!(stats.G.method_calls) 
+    (!(stats.G.method_calls)
      |> List.map (fun (x, b) -> x, pre b "method calls")) @
-    (!(stats.G.lookup_fail) 
+    (!(stats.G.lookup_fail)
      |> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) @
 
       []

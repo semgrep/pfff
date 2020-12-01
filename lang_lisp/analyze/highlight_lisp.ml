@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -35,26 +35,26 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
   )
   in
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
   (* -------------------------------------------------------------------- *)
-  (* 
+  (*
    * note: all TCommentSpace are filtered in xs so easier to write
    * rules (but regular comments are kept as well as newlines).
    *)
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (_ii2)
+      ::T.TCommentNewline _ii2
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline ii4
       ::T.TComment(ii5)
       ::xs ->
 
@@ -81,12 +81,12 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     (* Poor's man semantic tagger. Infer if ident is a func, or variable,
      * based on the few tokens around and the column information.
      *)
-    | T.TOParen ii1::T.TIdent (s2, _ii2)::T.TIdent (_s3, ii3)::xs 
+    | T.TOParen ii1::T.TIdent (s2, _ii2)::T.TIdent (_s3, ii3)::xs
         when PI.col_of_info ii1 = 0 ->
         (match s2 with
         | "setq" | "defvar" ->
             tag ii3 (Entity (Global, (Def2 NoUse)))
-        | "defun" -> 
+        | "defun" ->
             tag ii3 (Entity (Function, (Def2 NoUse)))
         | "defconst" ->
             tag ii3 (Entity (Constant, (Def2 NoUse)))
@@ -96,15 +96,15 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
     (* scheme/racket *)
     | T.TOParen ii1::T.TIdent (s2, _ii2)
-      ::T.TOParen _iibis::T.TIdent (_s3, ii3)::xs 
+      ::T.TOParen _iibis::T.TIdent (_s3, ii3)::xs
         when PI.col_of_info ii1 = 0 ->
         (match s2 with
-        | "define" -> 
+        | "define" ->
             tag ii3 (Entity (Function, (Def2 NoUse)))
         | _ -> ()
         );
         aux_toks xs
-        
+
 
     | _x::xs ->
         aux_toks xs
@@ -119,7 +119,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
 
-  toks |> List.iter (fun tok -> 
+  toks |> List.iter (fun tok ->
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -130,10 +130,10 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
           then tag ii CommentSyncweb
           else tag ii Comment
 
-    | T.TCommentNewline _ii | T.TCommentSpace _ii 
+    | T.TCommentNewline _ii | T.TCommentSpace _ii
       -> ()
 
-    | T.TUnknown ii 
+    | T.TUnknown ii
       -> tag ii Error
     | T.EOF _ii
       -> ()
@@ -147,23 +147,23 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | T.TIdent (s, ii) ->
         (match s with
         (* lisp *)
-        | "defun"  
+        | "defun"
             -> tag ii Keyword
-        | "setq"  | "defvar" 
+        | "setq"  | "defvar"
             -> tag ii KeywordObject (* hmm not really *)
 
         (* scheme *)
-        | "define"  
+        | "define"
             -> tag ii Keyword
 
 
-        | "let"  | "let*" 
+        | "let"  | "let*"
             -> tag ii KeywordObject
 
         | "defconst"
             -> tag ii KeywordObject
 
-        | "require" | "provide" 
+        | "require" | "provide"
         | "module" (* racket *)
             -> tag ii KeywordModule
 
@@ -207,7 +207,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
   );
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
 
   ()
 

@@ -6,7 +6,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -34,20 +34,20 @@ open Parsing_hacks_lib
  * to remember what is what. In lang_cpp/ we want to parse as-is,
  * which means we need to infer back whether an identifier is
  * a typedef or not.
- * 
- * In this module we use a view that is more convenient for 
+ *
+ * In this module we use a view that is more convenient for
  * typedefs detection. We got rid of:
  *  - template arguments (see find_template_commentize())
  *  - qualifiers (see find_qualifier_commentize)
  *  - differences between & and * (filter_for_typedef() below)
- *  - differences between TIdent and TOperator, 
+ *  - differences between TIdent and TOperator,
  *  - const, volatile, restrict keywords
  *  - TODO merge multiple ** or *& or whatever
- * 
+ *
  * history:
  *  - We used to make the lexer and parser cooperate in a lexerParser.ml file.
  *    However, this was not enough because of declarations such as 'acpi acpi;'
- *    and so we had to enable/disable the ident->typedef mechanism 
+ *    and so we had to enable/disable the ident->typedef mechanism
  *    which requires even more lexer/parser cooperation
  *  - This forced-cooperation was ugly so we switched to
  *    a typedef "inference" mechanism
@@ -72,7 +72,7 @@ let look_like_multiplication_context tok_before =
 
 let look_like_declaration_context tok_before =
   match tok_before with
-  | TOBrace _ 
+  | TOBrace _
   | TPtVirg _
   | TCommentNewline_DefineEndOfMacro _
   | TInclude _
@@ -87,13 +87,13 @@ let look_like_declaration_context tok_before =
 (* Better View *)
 (*****************************************************************************)
 
-let  filter_for_typedef multi_groups = 
+let  filter_for_typedef multi_groups =
 
   (* a sentinel, which helps a few typedef heuristics which look
    * for a token before which would not work for the first toplevel
    * declaration.
    *)
-  let multi_groups = 
+  let multi_groups =
     Tok(mk_token_fake (TPtVirg (Parse_info.fake_info ";")))::multi_groups in
 
   let _template_args = ref [] in
@@ -106,7 +106,7 @@ let  filter_for_typedef multi_groups =
   let rec aux xs =
     xs |> Common.map_filter (function
     | TV.Angle (_, _, _) ->
-        (* todo: analayze xs!! add in _template_args 
+        (* todo: analayze xs!! add in _template_args
          * todo: add the t1,t2 around xs to have
          *  some sentinel for the typedef heuristics patterns
          *  who often look for the token just before the typedef.
@@ -118,13 +118,13 @@ let  filter_for_typedef multi_groups =
         Some (TV.Parens (t1, aux xs, t2))
 
     (* remove other noise for the typedef inference *)
-    | TV.Tok t1 -> 
+    | TV.Tok t1 ->
         match t1.TV.t with
         (* const is a strong signal for having a typedef, so why skip it?
          * because it forces to duplicate rules. We need to infer
          * the type anyway even when there is no const around.
          * todo? maybe could do a special pass first that infer typedef
-         * using only const rules, and then remove those const so 
+         * using only const rules, and then remove those const so
          * have best of both worlds.
          *)
         | Tconst _ | Tvolatile _
@@ -144,11 +144,11 @@ let  filter_for_typedef multi_groups =
         | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
         | TAndLog ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
 
-        (* and operator into TIdent 
+        (* and operator into TIdent
          * TODO: skip the token just after the operator keyword?
          * could help some heuristics too
         *)
-        | Toperator ii -> 
+        | Toperator ii ->
             Some (TV.Tok (mk_token_extended (TIdent ("operator", ii))))
 
         | _ -> Some (TV.Tok t1)
@@ -166,23 +166,23 @@ let  filter_for_typedef multi_groups =
  *  - template stuff and qualifiers (but not TIdent_ClassnameAsQualifier)
  *  - const/volatile/restrict
  *  - & => *
- * 
+ *
  * With such a view we can write less patterns.
- * 
+ *
  * Note that qualifiers are slightly less important to filter because
  * most of the heuristics below look for tokens after the ident
  * and qualifiers are usually before.
- * 
+ *
  * todo: do it on multi view? all those rules with TComma and TOPar
  * are ugly.
  *)
-let find_typedefs xxs = 
+let find_typedefs xxs =
 
  let rec aux xs =
   match xs with
   | [] -> ()
 
-  (* struct x ... 
+  (* struct x ...
    * those identifiers (called tags) must not be transformed in typedefs *)
   | {t=(Tstruct _ | Tunion _ | Tenum _ | Tclass _)}::{t=TIdent _}::xs ->
       aux xs
@@ -240,13 +240,13 @@ let find_typedefs xxs =
    * rely on the spacing hint, see the rule below.
    *)
   | ({t=TIdent (s,i1);where=InParameter::_} as tok1)::{t=TMul _}
-    ::{t=TIdent _}::xs 
+    ::{t=TIdent _}::xs
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
   (* xx *yy *)
-  | ({t=TIdent (s,i1);col=c0} as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs 
+  | ({t=TIdent (s,i1);col=c0} as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs
     when c2 = c1 + 1 && c1 >= c0 + String.length s + 1
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
@@ -271,7 +271,7 @@ let find_typedefs xxs =
   (* (xx) yy   and not a if/while before '('  (and yy can also be a constant) *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
     ::{t = (TIdent _|TInt _|TString _|TFloat _|Tnullptr _| TTilde _|TOPar _) }
-    ::xs 
+    ::xs
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same?*)->
       change_tok tok3 (TIdent_Typedef (s, i1));
       (* todo? recurse on bigger ? *)
@@ -279,7 +279,7 @@ let find_typedefs xxs =
   (* todo:  = (xx) ..., |= (xx) ...,   (xx)~, ... *)
   (* (xx){  gccext: kenccext:  *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
-    ::({t=TOBrace _} as tok5)::xs 
+    ::({t=TOBrace _} as tok5)::xs
     when not (TH.is_stuff_taking_parenthized tok1) ->
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux (tok5::xs)
@@ -298,7 +298,7 @@ let find_typedefs xxs =
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* xx* [,)] 
+  (* xx* [,)]
    * don't forget to recurse by reinjecting the comma or closing paren
    *)
   | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}
@@ -341,13 +341,13 @@ let find_typedefs xxs =
 
   (* [(,] xx[...]  could be a array access, so need InParameter guard *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s,i1);where=InParameter::_} as tok1)
-    ::{t=TOCro _}::_tok::{t=TCCro _}::xs 
+    ::{t=TOCro _}::_tok::{t=TCCro _}::xs
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
   (* kencc-ext: xx;  where InStruct *)
-  | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 
+  | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs
       when look_like_declaration_context tok_before ->
       (match tok1.where with
       | (InClassStruct _)::_ ->

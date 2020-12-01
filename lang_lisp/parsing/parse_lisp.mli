@@ -1,6 +1,6 @@
 
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = 
+type program_and_tokens =
   Ast_lisp.program option * Parser_lisp.token list
 
 (* This is the main function *)

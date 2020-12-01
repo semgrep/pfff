@@ -36,7 +36,7 @@ module J = JSON
  * By resolving paths we can have canonical names for imports
  * and so reference the same module entity in codegraph even
  * if the module is represented by different strings.
- * 
+ *
  * reference:
  *  - TODO https://nodejs.org/api/modules.html
  *)
@@ -46,8 +46,8 @@ module J = JSON
 (*****************************************************************************)
 let main_entry_of_package_json file json =
   match json with
-  | J.Object (xs) -> 
-          (try 
+  | J.Object xs ->
+          (try
              (match List.assoc "main" xs with
              | J.String s -> s
              | _ -> raise Not_found
@@ -55,14 +55,14 @@ let main_entry_of_package_json file json =
            with Not_found -> failwith (spf "no main entry in %s" file)
           )
   | _ -> failwith (spf "wrong package.json format for %s" file)
-  
+
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let resolve_path ~root ~pwd str =
-  let candidates = 
+  let candidates =
     [Filename.concat root (Filename.concat pwd str);
      Filename.concat root (Filename.concat pwd (spf "%s.js" str));
 
@@ -72,27 +72,27 @@ let resolve_path ~root ~pwd str =
      Filename.concat root (spf "node_modules/%s/index.js" str);
    ]
   in
-  try 
+  try
     let found = candidates |> List.find (fun path ->
        Sys.file_exists path && not (Sys.is_directory path)
     )
-    in 
+    in
     Some (Common.fullpath found)
-  with Not_found -> 
+  with Not_found ->
     (* look in package.json (of root/package or root/node_modules/package) *)
-    let package_json_candidates = 
+    let package_json_candidates =
       [ Filename.concat root (spf "%s/package.json" str);
         Filename.concat root (spf "node_modules/%s/package.json" str);
       ]
     in
     (try
-      let package_json = 
+      let package_json =
         package_json_candidates |> List.find Sys.file_exists in
       let json = J.load_json package_json in
       let main_path = main_entry_of_package_json package_json json in
       let dir = Filename.dirname package_json in
       let file = Filename.concat dir main_path in
- 
+
       let candidates = [file; spf "%s.js" file] in
       candidates |> Common.find_opt (fun path ->
        Sys.file_exists path && not (Sys.is_directory path))

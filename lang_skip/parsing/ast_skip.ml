@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -18,7 +18,7 @@
 (*****************************************************************************)
 (*
  * An Abstract Syntax Tree for Skip.
- * 
+ *
  * I do an AST as in ast_java.ml because I need less a CST
  * now that we use the fuzzy approach for sgrep and spatch.
  * I just keep the Parse_info.info for the identifiers and literals.
@@ -99,5 +99,5 @@ type any =
 (* Wrappers *)
 (*****************************************************************************)
 
-let str_of_name ((s,_)) = s
-let info_of_name ((_,info)) = info
+let str_of_name (s,_) = s
+let info_of_name (_,info) = info

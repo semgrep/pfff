@@ -1,5 +1,5 @@
 (* returns a futur *)
-val invoke : 
+val invoke :
   ('a -> 'b) -> 'a ->
   (unit -> 'b)
 

@@ -4,15 +4,15 @@ type category =
   | Boolean | Number | String (* or Char *) | Regexp | Atom | Null
 
   (* keywords *)
-  | Keyword 
-  | KeywordConditional | KeywordLoop 
+  | Keyword
+  | KeywordConditional | KeywordLoop
   | KeywordExn | KeywordObject | KeywordModule
   | KeywordConcurrency
 
-  | Builtin 
+  | Builtin
   | BuiltinCommentColor | BuiltinBoolean
 
-  | Operator 
+  | Operator
   | Punctuation
 
   (* entities *)
@@ -59,11 +59,11 @@ type category =
   (* comments *)
   | Comment
   | CommentWordImportantNotion | CommentWordImportantModal
-  | CommentSection0 | CommentSection1 | CommentSection2 
+  | CommentSection0 | CommentSection1 | CommentSection2
   | CommentSection3 | CommentSection4
   | CommentEstet | CommentCopyright | CommentSyncweb
   (* higher means more important, and a regular comment is Importance2 *)
-  | CommentImportance0 | CommentImportance1 
+  | CommentImportance0 | CommentImportance1
   | CommentImportance2 | CommentImportance3
 
   (* misc *)
@@ -114,8 +114,8 @@ val info_of_category :
   list
 
 (* use the same polymorphic variants than in ocamlgtk *)
-val info_of_usedef : 
-  usedef -> 
+val info_of_usedef :
+  usedef ->
   [> `STYLE of [> `ITALIC ] ] list
 val info_of_def_arity :
   def_arity ->

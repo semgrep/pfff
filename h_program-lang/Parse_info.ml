@@ -160,7 +160,7 @@ type info_ = t
 (* see -full_token_info in meta_parse_info.ml *)
 let pp_full_token_info = ref false
 (* for ppx_deriving *)
-let pp fmt t = 
+let pp fmt t =
   if !pp_full_token_info
   then pp_token_mutable fmt t
   else Format.fprintf fmt "()"
@@ -175,9 +175,9 @@ type parsing_stat = {
  (* by our cpp commentizer *)
   mutable commentized: int;
   (* if want to know exactly what was passed through, uncomment:
-   *  
+   *
    * mutable passing_through_lines: int;
-   * 
+   *
    * it differs from bad by starting from the error to
    * the synchro point instead of starting from start of
    * function to end of function.
@@ -195,7 +195,7 @@ let default_stat file =  {
   problematic_lines = [];
 }
 
-let bad_stat file = 
+let bad_stat file =
   (* or Common2.nblines? *)
   let n = Common.cat file |> List.length in
   { (default_stat file) with bad = n }
@@ -270,7 +270,7 @@ exception Other_error of string * t
 
 exception NoTokenLocation of string
 
-let tokinfo lexbuf  = 
+let tokinfo lexbuf  =
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let lexical_error s lexbuf =
@@ -406,21 +406,21 @@ because I don't use berkeley DB. I use codegraph and an entity_finder
 we just focus on use/def and does not store huge asts on disk.
 
 
-let rec distribute_info_items_toplevel2 xs toks filename = 
+let rec distribute_info_items_toplevel2 xs toks filename =
   match xs with
   | [] -> raise Impossible
-  | [Ast_php.FinalDef e] -> 
-      (* assert (null toks) ??? no cos can have whitespace tokens *) 
+  | [Ast_php.FinalDef e] ->
+      (* assert (null toks) ??? no cos can have whitespace tokens *)
       let info_item = toks in
       [Ast_php.FinalDef e, info_item]
   | ast::xs ->
 
       (match ast with
-      | Ast_js.St (Ast_js.Nop None) -> 
+      | Ast_js.St (Ast_js.Nop None) ->
           distribute_info_items_toplevel2 xs toks filename
       | _ ->
 
-      
+
       let ii = Lib_parsing_php.ii_of_any (Ast.Toplevel ast) in
       (* ugly: I use a fakeInfo for lambda f_name, so I have
        * have to filter the abstract info here
@@ -428,7 +428,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       let ii = List.filter PI.is_origintok ii in
       let (min, max) = PI.min_max_ii_by_pos ii in
 
-      let toks_before_max, toks_after = 
+      let toks_before_max, toks_after =
 (* on very huge file, this function was previously segmentation fault
  * in native mode because span was not tail call
  *)
@@ -443,8 +443,8 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       let info_item = toks_before_max in
       (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
 
-let distribute_info_items_toplevel a b c = 
-  Common.profile_code "distribute_info_items" (fun () -> 
+let distribute_info_items_toplevel a b c =
+  Common.profile_code "distribute_info_items" (fun () ->
     distribute_info_items_toplevel2 a b c
   )
 
@@ -466,7 +466,7 @@ let rewrap_str s ii =
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
-let str_of_info_fake_ok ii = 
+let str_of_info_fake_ok ii =
   match ii.token with
   | OriginTok pinfo -> pinfo.str
   | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> pinfo_pp.str
@@ -508,7 +508,7 @@ let full_charpos_to_pos_large2 = fun file ->
           (* '... +1 do'  cos input_line does not return the trailing \n *)
           let col = ref 0 in
           for i = 0 to (len - 1) + 1 do
-            
+
             (* old: arr.(!charpos + i) <- (!line, i); *)
             arr1.{!charpos + i} <- (!line);
             arr2.{!charpos + i} <- !col;
@@ -556,7 +556,7 @@ let full_charpos_to_pos_large a =
  *
  * Hence those types and functions below to overcome the previous limitation,
  * (see especially complete_token_location_large()).
- * alt: 
+ * alt:
  *   - in each lexer you need to take care of newlines and update manually
  *     the field.
  *)
@@ -567,7 +567,7 @@ let complete_token_location_large filename table x =
     column = snd (table (x.charpos));
   }
 
-(* Why is it better to first get all the tokens? 
+(* Why is it better to first get all the tokens?
  * Why not lex on-demand as yacc requires more tokens?
  * There are a few reasons:
  *  - for parsing hacks, it's easier to work on the full list
@@ -576,40 +576,48 @@ let complete_token_location_large filename table x =
  *  - we can have comments as tokens (useful for codemap/efuns) and
  *    skip them easily with one Common.exclude
  *)
-let tokenize_all_and_adjust_pos ?(unicode_hack=false) 
+let tokenize_all_and_adjust_pos ?(unicode_hack=false)
  file tokenizer visitor_tok is_eof =
  Common.with_open_infile file (fun chan ->
-  let lexbuf = 
-     if unicode_hack && Unicode.file_contains_non_ascii file
-     then
-       let string = 
-            Common.profile_code "Unicode.asciify" (fun () ->
-                Unicode.UTF8.asciify chan) in
-       Lexing.from_string string 
-     else Lexing.from_channel chan
+  let lexbuf =
+    if unicode_hack then
+      let string =
+        Common.profile_code "Unicode.input_and_replace_non_ascii" (fun () ->
+          (*
+             This breaks java (and perhaps other) characters constants.
+             UTF-8 characters become something invalid like this:
+               char c = 'ZZZ'
+             There's a hack in the java lexer to support such invalid
+             character literals.
+          *)
+          Unicode.input_and_replace_non_ascii ~replacement_byte:'Z' chan
+        ) in
+      Lexing.from_string string
+    else
+      Lexing.from_channel chan
   in
   let table     = full_charpos_to_pos_large file in
-  let adjust_info ii = 
+  let adjust_info ii =
     { ii with token =
       (* could assert pinfo.filename = file ? *)
        match ii.token with
-       | OriginTok pi -> 
+       | OriginTok pi ->
          OriginTok(complete_token_location_large file table pi)
        | ExpandedTok (pi,vpi, off) ->
          ExpandedTok(complete_token_location_large file table pi,vpi,  off)
-       | FakeTokStr (s,vpi_opt) -> 
+       | FakeTokStr (s,vpi_opt) ->
          FakeTokStr (s,vpi_opt)
        | Ab -> raise Impossible
-    }      
+    }
   in
-  let rec tokens_aux acc = 
-    let tok = 
+  let rec tokens_aux acc =
+    let tok =
       try
-        tokenizer lexbuf 
+        tokenizer lexbuf
       with Lexical_error (s, info) ->
         raise (Lexical_error (s, adjust_info info))
     in
-    if !Flag_parsing.debug_lexer 
+    if !Flag_parsing.debug_lexer
     then Common.pr2_gen tok;
     let tok = tok |> visitor_tok adjust_info in
     if is_eof tok
@@ -622,7 +630,7 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
 (* Hacked lex. Ocamlyacc expects a function returning one token at a time
  * but we actually lex all the file so we need a wrapper to turn that
  * into a stream.
- * This function use refs passed by parse. 'tr' means 'token refs'. 
+ * This function use refs passed by parse. 'tr' means 'token refs'.
  *
  * Why pass is_comment? Why not skip comments before?
  *  - for error recovery to still return comments for separate entities?
@@ -630,11 +638,11 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
  *)
 let mk_lexer_for_yacc toks is_comment =
   let tr = mk_tokens_state toks in
-  let rec lexer = 
+  let rec lexer =
    fun lexbuf ->
      match tr.rest with
      | [] -> (pr2 "LEXER: ALREADY AT END"; tr.current)
-     | v::xs -> 
+     | v::xs ->
          tr.rest <- xs;
          tr.current <- v;
          tr.passed <- v::tr.passed;
@@ -706,7 +714,7 @@ let (error_messagebis: filename -> (string * int) -> int -> string)=
   let tok = lexeme in
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
   let s = Common2.chop linecontent in
-  let s = 
+  let s =
      (* this happens in Javascript for minified files *)
      if String.length s > 200
      then (String.sub s 0 100)  ^ " (TOO LONG, SHORTEN!)..."
@@ -715,7 +723,7 @@ let (error_messagebis: filename -> (string * int) -> int -> string)=
   spf "File \"%s\", line %d, column %d,  charpos = %d
     around = '%s', whole content = %s"
     filename line pos charpos tok s
-     
+
 
 let error_message = fun filename (lexeme, lexstart) ->
   try error_messagebis filename (lexeme, lexstart) 0
@@ -745,7 +753,7 @@ let print_bad line_error (start_line, end_line) filelines  =
 
     for i = start_line to end_line do
       let s = filelines.(i) in
-      let line = 
+      let line =
         (* this happens in Javascript for minified files *)
         if String.length s > 200
         then (String.sub s 0 100)  ^ " (TOO LONG, SHORTEN!)..."
@@ -762,46 +770,46 @@ let print_bad line_error (start_line, end_line) filelines  =
 (* Parsing statistics *)
 (*****************************************************************************)
 
-(* todo: stat per dir ?  give in terms of func_or_decl numbers:   
- * nbfunc_or_decl pbs / nbfunc_or_decl total ?/ 
+(* todo: stat per dir ?  give in terms of func_or_decl numbers:
+ * nbfunc_or_decl pbs / nbfunc_or_decl total ?/
  *
- * note: cela dit si y'a des fichiers avec des #ifdef dont on connait pas les 
- * valeurs alors on parsera correctement tout le fichier et pourtant y'aura 
- * aucune def  et donc aucune couverture en fait.   
- * ==> TODO evaluer les parties non parsé ? 
+ * note: cela dit si y'a des fichiers avec des #ifdef dont on connait pas les
+ * valeurs alors on parsera correctement tout le fichier et pourtant y'aura
+ * aucune def  et donc aucune couverture en fait.
+ * ==> TODO evaluer les parties non parsé ?
  *)
 
 let print_parsing_stat_list ?(verbose=false)statxs =
   let total = (List.length statxs) in
-  let perfect = 
-    statxs 
-      |> List.filter (function 
+  let perfect =
+    statxs
+      |> List.filter (function
           {have_timeout = false; bad = 0; _} -> true | _ -> false)
-      |> List.length 
+      |> List.length
   in
 
-  if verbose then begin 
+  if verbose then begin
   pr "\n\n\n---------------------------------------------------------------";
   pr "pbs with files:";
-  statxs 
-    |> List.filter (function 
-      | {have_timeout = true; _} -> true 
-      | {bad = n; _} when n > 0 -> true 
+  statxs
+    |> List.filter (function
+      | {have_timeout = true; _} -> true
+      | {bad = n; _} when n > 0 -> true
       | _ -> false)
-    |> List.iter (function 
-        {filename = file; have_timeout = timeout; bad = n; _} -> 
+    |> List.iter (function
+        {filename = file; have_timeout = timeout; bad = n; _} ->
           pr (file ^ "  " ^ (if timeout then "TIMEOUT" else i_to_s n));
         );
 
   pr "\n\n\n";
   pr "files with lots of tokens passed/commentized:";
   let threshold_passed = 100 in
-  statxs 
-    |> List.filter (function 
+  statxs
+    |> List.filter (function
       | {commentized = n; _} when n > threshold_passed -> true
       | _ -> false)
-    |> List.iter (function 
-        {filename = file; commentized = n; _} -> 
+    |> List.iter (function
+        {filename = file; commentized = n; _} ->
           pr (file ^ "  " ^ (i_to_s n));
         );
 
@@ -819,14 +827,14 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   (spf "NB total files = %d; " total) ^
   (spf "NB total lines = %d; " total_lines) ^
   (spf "perfect = %d; " perfect) ^
-  (spf "pbs = %d; "     (statxs |> List.filter (function 
-      {bad = n; _} when n > 0 -> true | _ -> false) 
+  (spf "pbs = %d; "     (statxs |> List.filter (function
+      {bad = n; _} when n > 0 -> true | _ -> false)
                                |> List.length)) ^
-  (spf "timeout = %d; " (statxs |> List.filter (function 
-      {have_timeout = true; _} -> true | _ -> false) 
+  (spf "timeout = %d; " (statxs |> List.filter (function
+      {have_timeout = true; _} -> true | _ -> false)
                                |> List.length)) ^
   (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
-                                                          
+
  );
   let gf, badf = float_of_int good, float_of_int bad in
   let passedf = float_of_int passed in

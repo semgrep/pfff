@@ -72,7 +72,7 @@ let mkassert e =
   match e with
   | {pexp_desc = Pexp_construct (Lident "false", None, false) } ->
          mkexp (Pexp_assertfalse)
-  | _ -> mkexp (Pexp_assert (e))
+  | _ -> mkexp (Pexp_assert e)
 ;;
 
 let mkinfix arg1 name arg2 =

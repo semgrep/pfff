@@ -1,3 +1,3 @@
-class foo : ty = 
+class foo : ty =
 object
 end

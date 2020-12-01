@@ -526,7 +526,7 @@ rule st_in_scripting = parse
 
         push_token (T_IDENT (case_str label, lblinfo));
        (* todo: could be newline ... *)
-        push_token (TSpaces (whiteinfo));
+        push_token (TSpaces whiteinfo);
 
         T_OBJECT_OPERATOR(syminfo)
       }
@@ -877,7 +877,7 @@ and st_double_quotes = parse
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
           let bra_info = PI.tokinfo_str_pos "[" pos_after_label in
-          push_token (TOBRA (bra_info));
+          push_token (TOBRA bra_info);
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(case_str s, varinfo)
       }
@@ -925,7 +925,7 @@ and st_backquote = parse
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
           let bra_info = PI.tokinfo_str_pos "[" pos_after_label in
-          push_token (TOBRA (bra_info));
+          push_token (TOBRA bra_info);
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(case_str s, varinfo)
       }
@@ -979,9 +979,9 @@ and st_start_heredoc stopdoc = parse
       if s = stopdoc
       then begin
         set_mode ST_IN_SCRIPTING;
-        push_token (TNewline (space_info));
+        push_token (TNewline space_info);
         if semi = ";"
-        then push_token (TSEMICOLON (colon_info));
+        then push_token (TSEMICOLON colon_info);
 
         T_END_HEREDOC(lbl_info)
       end else
@@ -1002,7 +1002,7 @@ and st_start_heredoc stopdoc = parse
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
           let bra_info = PI.tokinfo_str_pos "[" pos_after_label in
-          push_token (TOBRA (bra_info));
+          push_token (TOBRA bra_info);
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(case_str s, varinfo)
       }
@@ -1051,9 +1051,9 @@ and st_start_nowdoc stopdoc = parse
       if s = stopdoc
       then begin
         set_mode ST_IN_SCRIPTING;
-        push_token (TNewline (space_info));
+        push_token (TNewline space_info);
         if semi = ";"
-        then push_token (TSEMICOLON (colon_info));
+        then push_token (TSEMICOLON colon_info);
         (* reuse same token than for heredocs *)
         T_END_HEREDOC(lbl_info)
       end else

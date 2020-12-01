@@ -1,17 +1,17 @@
-type state =     
+type state =
   | Bol (* beginning of line *)
   | AfterCommand (* after command, before args *)
-  | EndOfExpr (* end of expr / literal *) 
+  | EndOfExpr (* end of expr / literal *)
   | AfterDef (* after a 'def' or '.' token *)
   | AfterLocal (* after a local variable *)
 
 (* alternatives:
- *  - THIS FILE: use continuation and special epsilon trick in 
+ *  - THIS FILE: use continuation and special epsilon trick in
  *    Lexer_ruby.token to do the switch
  *  - instead of passing continuations, have a state for each lexer rule
  *    and let the lexer caller do the switch (see parse_php.ml)
  *)
-type t = { 
+type t = {
   mutable state : state;
   lexer_stack : (string (* to debug *) * cps_lexer) Stack.t;
 }
@@ -23,7 +23,7 @@ let end_state t = t.state <- EndOfExpr
 let def_state t = t.state <- AfterDef
 let local_state t = t.state <- AfterLocal
 
-let create entry = 
+let create entry =
   let stk = Stack.create () in
     Stack.push entry stk;
     {state = Bol;
@@ -37,8 +37,8 @@ let string_of_state = function
   | AfterDef -> "AfterDef"
   | AfterLocal -> "AfterLocal"
 
-let string_of_t x = 
-  Common.spf "state = %s, stack = [%s]" 
+let string_of_t x =
+  Common.spf "state = %s, stack = [%s]"
      (string_of_state x.state)
-     (x.lexer_stack |> Stack.to_seq |> List.of_seq 
+     (x.lexer_stack |> Stack.to_seq |> List.of_seq
       |> List.map fst |> String.concat ",")

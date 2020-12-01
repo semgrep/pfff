@@ -12,7 +12,7 @@ let test_parse_generic xs =
   files |> List.iter (fun file ->
     match Lang.langs_of_filename file with
     | [] -> pr2 (spf "skipping %s" file)
-    | _x::_xs -> 
+    | _x::_xs ->
        Error_code.try_with_print_exn_and_reraise file (fun () ->
         let _ast = Parse_generic.parse_program file in
         ()

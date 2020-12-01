@@ -22,9 +22,9 @@ type visitor_in = {
   kname: (name -> unit)  * visitor_out -> name  -> unit;
   kentity: (entity -> unit)  * visitor_out -> entity  -> unit;
 
-  kfunction_definition: (function_definition -> unit) * visitor_out -> 
+  kfunction_definition: (function_definition -> unit) * visitor_out ->
     function_definition -> unit;
-  kclass_definition: (class_definition -> unit) * visitor_out -> 
+  kclass_definition: (class_definition -> unit) * visitor_out ->
     class_definition -> unit;
 
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
@@ -44,7 +44,7 @@ val mk_visitor: visitor_in -> visitor_out
 (*e: signature [[Visitor_AST.mk_visitor]] *)
 
 (* poor's man fold *)
-(* 
+(*
 val do_visit_with_ref:
   ('a list ref -> visitor_in) -> any -> 'a list
 *)
