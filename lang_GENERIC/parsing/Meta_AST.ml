@@ -296,7 +296,7 @@ and vof_special =
   | New -> OCaml.VSum ("New", [])
   | ConcatString v1 ->
       let v1 = vof_interpolated_kind v1 in
-      OCaml.VSum ("InterpolatedConcat", [v1])
+      OCaml.VSum (("ConcatString", [v1]))
   | Spread -> OCaml.VSum ("Spread", [])
   | HashSplat -> OCaml.VSum ("HashSplat", [])
   | EncodedString v1 ->
