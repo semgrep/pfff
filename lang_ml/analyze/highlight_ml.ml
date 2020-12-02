@@ -594,6 +594,11 @@ let visit_program
              | _ when s =~ "(\\*1 "  -> tag ii CommentSection1
              | _ when s =~ "(\\*2 "  -> tag ii CommentSection2
              | _ when s =~ "(\\*3 "  -> tag ii CommentSection3
+
+             (* ocamldoc *)
+             | _ when s =~ "(\\*\\* *{ *1"  -> tag ii CommentSection1
+             | _ when s =~ "(\\*\\* *{ *2"  -> tag ii CommentSection2
+             | _ when s =~ "(\\*\\* *{ *3"  -> tag ii CommentSection3
              | _ -> tag ii Comment
             )
 
