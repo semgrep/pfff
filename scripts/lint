@@ -10,7 +10,7 @@ pre-commit install
 if ! pre-commit run --all; then
   cat <<EOF
 It looks like the user who committed the code did not set up theit
-pre-commit hook. You need to:
+pre-commit hook. You need the following one-time setup:
 
   1. Install the 'pre-commit' command:
 
@@ -20,8 +20,13 @@ pre-commit hook. You need to:
 
        $ pre-commit install
 
-  3. To fix already committed code, run:
+  3. Install ocp-indent:
+
+       $ opam install ocp-indent
+
+  4. To fix already committed code, run:
 
        $ pre-commit run --all
 EOF
+  exit 1
 fi
