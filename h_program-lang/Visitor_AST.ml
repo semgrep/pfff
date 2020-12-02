@@ -831,6 +831,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_program v = v_stmts v
   and v_any =
     function
+    | Args v1 -> v_list v_argument v1
     | Partial v1 -> v_partial ~recurse:true v1
     | TodoK v1 -> v_ident v1
     | N v1 -> let v1 = v_name v1 in ()

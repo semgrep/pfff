@@ -1130,6 +1130,7 @@ and vof_partial =
 
 and vof_any =
   function
+  | Args v1 -> let v1 = OCaml.vof_list vof_argument v1 in OCaml.VSum("Args", [v1])
   | Partial v1 -> let v1 = vof_partial v1 in OCaml.VSum ("Partial", [ v1 ])
   | TodoK v1 -> let v1 = vof_ident v1 in OCaml.VSum ("TodoK", [ v1 ])
   | Tk v1 -> let v1 = vof_tok v1 in OCaml.VSum ("Tk", [ v1 ])
