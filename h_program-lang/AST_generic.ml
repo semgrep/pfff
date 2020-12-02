@@ -1465,7 +1465,8 @@ and program = item list
 and partial =
   (* the fbody or cbody in definition will be empty *)
   | PartialDef of definition
-  (* todo: PartialIf, PartialWhile, etc. *)
+  (* todo: PartialWhile, etc. *)
+  | PartialIf of tok * expr
 
 (*****************************************************************************)
 (* Any *)

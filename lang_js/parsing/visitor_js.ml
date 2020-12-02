@@ -411,6 +411,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_partial = function
     | PartialDef def -> v_def def
+    | PartialIf (v1, v2) -> v_tok v1; v_expr v2
 
   and v_program v = v_list v_toplevel v
 

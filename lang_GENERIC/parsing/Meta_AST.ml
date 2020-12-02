@@ -1123,6 +1123,10 @@ and vof_partial =
   function
   | PartialDef v1 ->
       let v1 = vof_definition v1 in OCaml.VSum ("PartialDef", [ v1 ])
+  | PartialIf (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_expr v2 in
+      OCaml.VSum ("PartialIf", [ v1; v2 ])
 
 and vof_any =
   function

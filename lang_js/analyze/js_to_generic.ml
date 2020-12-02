@@ -556,6 +556,9 @@ and partial = function
   | PartialDef v1 ->
       let v1 = definition v1 in
       G.PartialDef v1
+  | PartialIf (v1, v2) ->
+      let v2 = expr v2 in
+      G.PartialIf (v1, v2)
 
 and any =
   function

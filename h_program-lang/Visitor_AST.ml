@@ -413,8 +413,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
       | Block v1 -> let v1 = v_bracket v_stmts v1 in ()
       | If (t, v1, v2, v3) ->
+          v_partial ~recurse:false (PartialIf (t, v1));
           let t = v_tok t in
-          let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()
+          let v1 = v_expr v1
+          and v2 = v_stmt v2
+          and v3 = v_option v_stmt v3 in
+          ()
       | While (t, v1, v2) ->
           let t = v_tok t in
           let v1 = v_expr v1 and v2 = v_stmt v2 in ()
@@ -616,6 +620,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           if recurse
           then begin v_entity v1; v_def_kind v2; end;
           ()
+      | PartialIf (v1, v2) ->
+          if recurse
+          then begin v_tok v1; v_expr v2; end
     in
     vin.kpartial (k, all_functions) x
 

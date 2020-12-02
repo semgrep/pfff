@@ -409,6 +409,8 @@ sgrep_spatch_pattern:
    { Partial (PartialDef (mk_def ($2, mk_FuncDef [] $3 (fb [])))) }
  | T_CLASS binding_id? generics? class_heritage EOF
    { Partial (PartialDef (mk_def ($2, mk_ClassDef $1 $3 $4 (fb [])))) }
+ | T_IF "(" expr ")" EOF
+   { Partial (PartialIf ($1, $3)) }
 
 (*************************************************************************)
 (* Namespace *)

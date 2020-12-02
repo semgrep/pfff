@@ -839,6 +839,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and map_partial = function
     | PartialDef v1 -> let v1 = map_definition v1 in PartialDef v1
+    | PartialIf (v1, v2) ->
+        let v1 = map_tok v1 in
+        let v2 = map_expr v2 in
+        PartialIf (v1, v2)
 
   and map_any =
     function

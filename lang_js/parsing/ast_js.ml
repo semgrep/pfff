@@ -515,6 +515,7 @@ and program = toplevel list
 and partial =
   (* the stmt will be empty in f_body and c_body *)
   | PartialDef of definition
+  | PartialIf of tok * expr
 
 (* this is now mutually recursive with the previous types because of StmtTodo*)
 and any =
