@@ -14,7 +14,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
 *)
-open Common
 open IL
 module F = IL (* to be even more similar to controlflow_build.ml *)
 
@@ -147,7 +146,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
 
   | Label _
   | Goto _
-    -> raise Todo
+    -> cfg_todo state previ stmt
 
   | Return (tok, e) ->
       let newi = state.g#add_node { F.n = F.NReturn (tok, e); } in
@@ -159,13 +158,19 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
 
   | Try _
   | Throw (_, _)
-    -> raise Todo
+    -> cfg_todo state previ stmt
 
   | MiscStmt x ->
       let newi = state.g#add_node { F.n = F.NOther x } in
       state.g |> add_arc_opt (previ, newi);
       Some newi
 
+  | TodoStmt _ -> cfg_todo state previ stmt
+
+and cfg_todo state previ stmt =
+  let newi = state.g#add_node { F.n = F.NTodo stmt } in
+  state.g |> add_arc_opt (previ, newi);
+  Some newi
 
 and cfg_stmt_list state previ xs =
   xs |> List.fold_left (fun previ stmt ->

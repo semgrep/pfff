@@ -118,7 +118,8 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
          then config.found_tainted_sink x in'
        end
    | Enter | Exit | TrueNode | FalseNode | Join
-   | NCond _| NReturn _ | NThrow _ | NOther _ -> ()
+   | NCond _| NReturn _ | NThrow _ | NOther _
+   | NTodo _ -> ()
   );
 
 
@@ -149,7 +150,8 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
         )
 
     | Enter | Exit | TrueNode | FalseNode | Join
-    | NCond _| NReturn _ | NThrow _ | NOther _ -> None
+    | NCond _| NReturn _ | NThrow _ | NOther _
+    | NTodo _ -> None
   in
   let kill_ni_opt =
     (* if there was a source(), no need to look for a sanitize() given
@@ -187,7 +189,8 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
              )
         )
     | Enter | Exit | TrueNode | FalseNode | Join
-    | NCond _| NReturn _ | NThrow _ | NOther _ -> None
+    | NCond _| NReturn _ | NThrow _ | NOther _
+    | NTodo _ -> None
   in
   let gen_ni = option_to_varmap gen_ni_opt in
   let kill_ni = option_to_varmap kill_ni_opt in

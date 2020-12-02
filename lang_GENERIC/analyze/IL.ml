@@ -193,6 +193,7 @@ and exp_kind =
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
   | Operator of G.operator wrap * exp list
+  | TodoExp of G.any (* some construct that we still don't support *)
   (*e: type [[IL.exp_kind]] *)
 
 (*s: type [[IL.composite_kind]] *)
@@ -229,6 +230,7 @@ and instr_kind =
   | AssignAnon of lval * anonymous_entity
   | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
+  | TodoInstr of G.any (* some construct that we still don't support *)
   (* todo: PhiSSA! *)
 (*e: type [[IL.instr_kind]] *)
 
@@ -296,6 +298,8 @@ and stmt_kind =
   | Throw of tok * exp (* less: enforce lval here? *)
 
   | MiscStmt of other_stmt
+
+  | TodoStmt of G.any (* some construct that we still don't support *)
   (*e: type [[IL.stmt_kind]] *)
 
 (*s: type [[IL.other_stmt]] *)
@@ -341,6 +345,8 @@ and node_kind =
   | NThrow  of tok * exp
 
   | NOther of other_stmt
+
+  | NTodo of stmt
   (*e: type [[IL.node_kind]] *)
 [@@deriving show { with_path = false }] (* with tarzan *)
 
@@ -387,6 +393,7 @@ let lvar_of_instr_opt x =
        | VarSpecial _ | Mem _ -> None
       )
   | Call _ | CallSpecial _ -> None
+  | TodoInstr _-> None
 (*e: function [[IL.lvar_of_instr_opt]] *)
 
 (*s: function [[IL.exps_of_instr]] *)
@@ -396,6 +403,7 @@ let exps_of_instr x =
   | AssignAnon _ -> []
   | Call (_, e1, args) -> e1::args
   | CallSpecial (_, _, args) -> args
+  | TodoInstr _ -> []
 (*e: function [[IL.exps_of_instr]] *)
 
 (*s: function [[IL.rvars_of_exp]] *)
@@ -408,6 +416,7 @@ let rec rvars_of_exp e =
   | Cast (_, e) -> rvars_of_exp e
   | Composite (_, (_, xs, _)) | Operator (_, xs) -> rvars_of_exps xs
   | Record ys -> rvars_of_exps (ys |> List.map snd)
+  | TodoExp _ -> []
 
 and rvars_of_exps xs =
   xs |> List.map (rvars_of_exp) |> List.flatten

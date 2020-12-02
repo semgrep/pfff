@@ -71,15 +71,37 @@ let sgrep_construct any_generic =
   error_any any_generic "Sgrep Construct"
 (*e: function [[AST_to_IL.sgrep_construct]] *)
 
-(*s: function [[AST_to_IL.todo]] *)
-let todo any_generic =
-  error_any any_generic "TODO Construct"
-(*e: function [[AST_to_IL.todo]] *)
-
 (*s: function [[AST_to_IL.impossible]] *)
 let impossible any_generic =
   error_any any_generic "Impossible Construct"
 (*e: function [[AST_to_IL.impossible]] *)
+
+exception Todo of G.any
+
+let todo gany =
+  raise (Todo gany)
+
+let todo_warning gany =
+  let toks = Lib_AST.ii_of_any gany in
+  let msg = spf
+      "Unsupported construct may affect the accuracy of dataflow analyses" in
+  try
+    warning (List.hd toks) msg
+  with Parse_info.NoTokenLocation _ ->
+    pr2 msg
+
+let exp_todo gany eorig =
+  todo_warning (G.E eorig);
+  { e=TodoExp gany; eorig; }
+
+let instr_todo gany eorig =
+  todo_warning (G.E eorig);
+  { i=TodoInstr gany; iorig=eorig; }
+
+let stmt_todo gany =
+  todo_warning gany;
+  [{ s=TodoStmt gany; }]
+
 
 (*****************************************************************************)
 (* Helpers *)
@@ -239,9 +261,14 @@ and pattern_assign_statements env exp eorig pat =
 (* Assign *)
 (*****************************************************************************)
 and assign env lhs _tok rhs_exp eorig =
-  let lval = lval env lhs in
-  add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
-  mk_e (Lvalue lval) lhs
+  (* TODO: tuples and objects as LHS *)
+  try
+    let lval = lval env lhs in
+    add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
+    mk_e (Lvalue lval) lhs
+  with Todo gany ->
+    add_instr env (instr_todo gany eorig);
+    exp_todo gany lhs
 
 (*****************************************************************************)
 (* Expression *)
@@ -249,7 +276,7 @@ and assign env lhs _tok rhs_exp eorig =
 (* less: we could pass in an optional lval that we know the caller want
  * to assign into, which would avoid creating useless fresh_var intermediates.
 *)
-and expr env eorig =
+and expr_aux env eorig =
   match eorig with
   | G.Call (G.IdSpecial (G.Op op, tok), args) ->
       let args = arguments env args in
@@ -431,6 +458,9 @@ and expr env eorig =
     -> sgrep_construct (G.E eorig)
   | G.OtherExpr (_, _) -> todo (G.E eorig)
 
+and expr env eorig =
+  try expr_aux env eorig
+  with Todo gany -> exp_todo gany eorig
 
 and expr_opt env = function
   | None ->
@@ -526,8 +556,7 @@ let for_var_or_expr_list env xs =
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
-(*s: function [[AST_to_IL.stmt]] *)
-let rec stmt env st =
+let rec stmt_aux env st =
   match st with
   | G.ExprStmt (e, _) ->
       (* optimize? pass context to expr when no need for return value? *)
@@ -644,7 +673,10 @@ let rec stmt env st =
 
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)
-(*e: function [[AST_to_IL.stmt]] *)
+
+and stmt env st =
+  try stmt_aux env st
+  with Todo gany -> stmt_todo gany
 
 (*****************************************************************************)
 (* Entry point *)
