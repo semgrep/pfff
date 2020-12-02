@@ -194,7 +194,7 @@ and exp_kind =
    * (they are too many intermediate _tmp variables then) *)
   | Operator of G.operator wrap * exp list
   | TodoExp of G.any (* some construct that we still don't support *)
-  (*e: type [[IL.exp_kind]] *)
+(*e: type [[IL.exp_kind]] *)
 
 (*s: type [[IL.composite_kind]] *)
 and composite_kind =
@@ -231,7 +231,7 @@ and instr_kind =
   | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
   | TodoInstr of G.any (* some construct that we still don't support *)
-  (* todo: PhiSSA! *)
+(* todo: PhiSSA! *)
 (*e: type [[IL.instr_kind]] *)
 
 (*s: type [[IL.call_special]] *)
@@ -300,7 +300,7 @@ and stmt_kind =
   | MiscStmt of other_stmt
 
   | TodoStmt of G.any (* some construct that we still don't support *)
-  (*e: type [[IL.stmt_kind]] *)
+(*e: type [[IL.stmt_kind]] *)
 
 (*s: type [[IL.other_stmt]] *)
 and other_stmt =
