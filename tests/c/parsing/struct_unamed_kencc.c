@@ -5,5 +5,3 @@ struct {
   // unnamed substructure
   Lock;
 } x;
-
-

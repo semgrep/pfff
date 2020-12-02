@@ -1,6 +1,6 @@
 void main() {
   try {
-  } 
+  }
   // this must be inferred as a typedef, and so is also kind of InParameter
   catch (foo10& x) {
   }

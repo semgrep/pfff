@@ -16,7 +16,3 @@ use X\foo;
 // does not work for constants
 $v = X\CST;
 var_dump($v);
-
-
-
-

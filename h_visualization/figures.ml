@@ -72,4 +72,3 @@ let random_point_in_rect_pixel rect =
   let x = rect.lower_left.xpix + Random.int (rect_pixel_width rect) in
   let y = rect.lower_left.ypix + Random.int (rect_pixel_height rect) in
   { xpix = x; ypix = y }
-

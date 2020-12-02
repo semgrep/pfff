@@ -1,4 +1,4 @@
 <?php
 
-$o = 
+$o =
   $ent->getLegacyFeedbackTarget()->{$this->getURIComparisonMethod()}();

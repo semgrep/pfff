@@ -17,9 +17,9 @@ To solve the issue, the python grammar actually imposes that
 the async_funcdef be decorated by at least one attribute, hence
 the introduction of the weird decorated rule.
 
-* lambda x : y 
+* lambda x : y
 
-We want to allow types on parameters, 
+We want to allow types on parameters,
 with
     fpdef : NAME
           | LPAREN fpdef_list RPAREN
@@ -49,4 +49,3 @@ state 206
 
 ==> have varargslist and typedargslist (as used in recent
 Python grammars)
-

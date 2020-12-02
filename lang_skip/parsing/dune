@@ -9,5 +9,4 @@
  (preprocess (pps ppx_deriving.show))
 )
 (ocamllex lexer_skip)
-(ocamlyacc parser_skip) 
-
+(ocamlyacc parser_skip)

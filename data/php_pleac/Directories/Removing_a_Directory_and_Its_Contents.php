@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Removing a Directory and Its Contents 
-# ********************************************************************** 
+# **********************************************************************
+# Removing a Directory and Its Contents
+# **********************************************************************
 <?php
 function pleac_Removing_a_Directory_and_Its_Contents() {
 // AFAICT, there is currently no library function that recursively removes a
@@ -63,4 +63,3 @@ rmtree($argv[1]) || die("Could not remove directory {$argv[1]}\n");
 
 }
 ?>
-

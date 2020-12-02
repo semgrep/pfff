@@ -1,11 +1,11 @@
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2014 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
  * version 2 as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -52,11 +52,11 @@ let rec v_info x =
   let k _ = () in
   vin.kinfo (k, all_functions) x
 
-and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit = 
- fun _of_a (v1, v2) -> 
+and v_wrap:'a. ('a -> unit) -> 'a wrap -> unit =
+ fun _of_a (v1, v2) ->
    let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = 
+and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit =
   fun of_a (v1, v2, v3) ->
   let v1 = v_info v1 and v2 = of_a v2 and v3 = v_info v3 in ()
 
@@ -89,7 +89,7 @@ and v_expr x =
   | Id v1 -> let v1 = v_name v1 in ()
   | Ellipses v1 -> let v1 = v_info v1 in ()
   | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
-  | Call ((v1, v2)) -> let v1 = v_expr v1 and 
+  | Call ((v1, v2)) -> let v1 = v_expr v1 and
           v2 = v_bracket (v_list v_argument) v2 in ()
   | Assign ((v1, v2, v3)) ->
       let v1 = Ast_cpp.v_assignOp v1
@@ -97,7 +97,7 @@ and v_expr x =
       and v3 = v_expr v3
       in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_bracket v_expr v2 in ()
-  | RecordPtAccess ((v1, t, v2)) -> 
+  | RecordPtAccess ((v1, t, v2)) ->
         let v1 = v_expr v1 and t = v_info t and v2 = v_name v2 in ()
   | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
   | Postfix ((v1, v2)) ->
@@ -131,7 +131,7 @@ and v_expr x =
   in
   vin.kexpr (k, all_functions) x
 and v_argument v = v_expr v
-  
+
 and v_stmt =
   function
   | ExprSt (v1, t) -> let v1 = v_expr v1 in let t = v_info t in ()
@@ -139,13 +139,13 @@ and v_stmt =
   | If ((t, v1, v2, v3)) ->
       let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 and v3 = v_option v_stmt v3 in ()
-  | Switch ((v0, v1, v2)) -> 
+  | Switch ((v0, v1, v2)) ->
       let v0 = v_info v0 in
       let v1 = v_expr v1 and v2 = v_list v_case v2 in ()
-  | While ((t, v1, v2)) -> 
+  | While ((t, v1, v2)) ->
       let t = v_info t in
       let v1 = v_expr v1 and v2 = v_stmt v2 in ()
-  | DoWhile ((t, v1, v2)) -> 
+  | DoWhile ((t, v1, v2)) ->
       let t = v_info t in
       let v1 = v_stmt v1 and v2 = v_expr v2 in ()
   | For ((t, v1, v2, v3, v4)) ->
@@ -155,17 +155,17 @@ and v_stmt =
       and v3 = v_option v_expr v3
       and v4 = v_stmt v4
       in ()
-  | Return (t, v1) -> 
+  | Return (t, v1) ->
       let t = v_info t in
       let v1 = v_option v_expr v1 in ()
-  | Continue t -> 
+  | Continue t ->
       let t = v_info t in
       ()
-  | Break t -> 
+  | Break t ->
       let t = v_info t in
       ()
   | Label ((v1, v2)) -> let v1 = v_name v1 and v2 = v_stmt v2 in ()
-  | Goto (t, v1) -> 
+  | Goto (t, v1) ->
       let t = v_info t in
       let v1 = v_name v1 in ()
   | Vars v1 -> let v1 = v_list v_var_decl v1 in ()
@@ -173,10 +173,10 @@ and v_stmt =
 
 and v_case =
   function
-  | Case ((t, v1, v2)) -> 
+  | Case ((t, v1, v2)) ->
       let t = v_info t in
       let v1 = v_expr v1 and v2 = v_list v_stmt v2 in ()
-  | Default (t, v1) -> 
+  | Default (t, v1) ->
       let t = v_info t in
       let v1 = v_list v_stmt v1 in ()
 and
@@ -197,7 +197,7 @@ and  v_struct_def { s_name = v_s_name; s_kind = v_s_kind; s_flds = v_s_flds } =
   let arg = v_name v_s_name in
   let arg = v_struct_kind v_s_kind in
   let arg = v_bracket (v_list v_field_def) v_s_flds in ()
-  
+
 and v_field_def { fld_name = v_fld_name; fld_type = v_fld_type } =
   let arg = v_option v_name v_fld_name in let arg = v_type_ v_fld_type in ()
 
@@ -209,8 +209,8 @@ and v_func_def {
                } =
   let arg = v_name v_f_name in
   let arg = v_function_type v_f_type in
-  let arg = v_bracket (v_list v_stmt) v_f_body in 
-  let arg = v_bool v_f_static in 
+  let arg = v_bracket (v_list v_stmt) v_f_body in
+  let arg = v_bool v_f_static in
   ()
 
 and v_define_body =
@@ -220,7 +220,7 @@ and v_define_body =
 
 and v_toplevel =
   function
-  | Include (t, v1) -> 
+  | Include (t, v1) ->
       let t = v_info t in
       let v1 = v_wrap v_string v1 in ()
   | Define ((v1, v2)) -> let v1 = v_name v1 and v2 = v_define_body v2 in ()
@@ -261,4 +261,3 @@ and v_program v = v_list v_toplevel v
  and all_functions x = v_any x
 in
  v_any
-

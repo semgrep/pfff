@@ -118,4 +118,3 @@ let db_of_graph_code root g =
     dirs = Common2.hkeys hdirs |> List.map (fun dir -> dir, 1);
     entities = arr;
   }
-

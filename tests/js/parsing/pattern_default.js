@@ -14,5 +14,3 @@ const {
 
 
 let [/*match*/, theirName, myName = theirName] = tokens;
-
-

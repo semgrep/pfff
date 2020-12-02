@@ -58,5 +58,3 @@ class ['a] oseth _xs   =
 
 
   end
-
-

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Processing All Files in a Directory Recursively 
-# ********************************************************************** 
+# **********************************************************************
+# Processing All Files in a Directory Recursively
+# **********************************************************************
 <?php
 function pleac_Processing_All_Files_in_a_Directory_Recursively() {
 // Recursive directory traversal function and helper: traverses a directory tree
@@ -49,7 +49,7 @@ $dirlist = array('/tmp/d1', '/tmp/d2', '/tmp/d3');
 foreach($dirlist as $dir)
 {
   ;
-  // Delete directory [if empty]     -> rmdir($dir); 
+  // Delete directory [if empty]     -> rmdir($dir);
   // Make it the 'current directory' -> chdir($dir);
   // Get list of files it contains   -> $filelist = scandir($dir);
   // Get directory metadata          -> $ds = stat($dir);
@@ -105,7 +105,7 @@ is_dir($dir) || die("{$dir} does not exist / not a directory\n");
 
 // Collect data [use an object to accumulate results]
 $dirsize = new Accumulator(0);
-process_directory('accum_filesize', $dir, $dirsize); 
+process_directory('accum_filesize', $dir, $dirsize);
 
 // Report results
 printf("%s contains %d bytes\n", $dir, $dirsize->value);
@@ -131,7 +131,7 @@ is_dir($dir) || die("{$dir} does not exist / not a directory\n");
 
 // Collect data [use an object to accumulate results]
 $biggest = new Accumulator(array('', 0));
-process_directory('biggest_file', $dir, $biggest); 
+process_directory('biggest_file', $dir, $biggest);
 
 // Report results
 printf("Biggest file is %s containing %d bytes\n", $biggest->value[0], $biggest->value[1]);
@@ -157,11 +157,10 @@ is_dir($dir) || die("{$dir} does not exist / not a directory\n");
 
 // Collect data [use an object to accumulate results]
 $youngest = new Accumulator(array('', 2147483647));
-process_directory('youngest_file', $dir, $youngest); 
+process_directory('youngest_file', $dir, $youngest);
 
 // Report results
 printf("Youngest file is %s dating %s\n", $youngest->value[0], date(DATE_ATOM, $youngest->value[1]));
 
 }
 ?>
-

@@ -6,7 +6,3 @@ function test_optional_comma_call() {
       3,
      );
 }
-
-
-
-

@@ -24,4 +24,3 @@ val naive_top_n_search:
   query:string ->
   Database_code.entity list ->
   Database_code.entity list
-

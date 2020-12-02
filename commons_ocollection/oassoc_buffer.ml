@@ -130,5 +130,3 @@ class ['a,'b] oassoc_buffer   max cached =
       o
 
   end
-
-

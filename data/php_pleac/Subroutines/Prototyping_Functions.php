@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Prototyping Functions 
-# ********************************************************************** 
+# **********************************************************************
+# Prototyping Functions
+# **********************************************************************
 <?php
 function pleac_Prototyping_Functions() {
 // Whether PHP is seen to support prototyping depends on the accepted
@@ -48,4 +48,3 @@ function func_with_no_arg_information()
 
 }
 ?>
-

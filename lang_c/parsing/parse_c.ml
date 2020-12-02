@@ -51,4 +51,3 @@ let parse_program file =
 let any_of_string str =
   let any = Parse_cpp.any_of_string Flag_parsing_cpp.C str in
   Ast_c_build.any any
-

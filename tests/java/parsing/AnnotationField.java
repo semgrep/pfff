@@ -4,4 +4,3 @@ class X {
      @JMAutogen.InferredType(jsonFieldName=XXX)
      public final String username;
 }
-

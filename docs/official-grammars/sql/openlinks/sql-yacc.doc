@@ -1501,4 +1501,3 @@ Grammar
   1115 drop_library: DROP LIBRARY_L q_table_name
 
   1116 drop_assembly: DROP ASSEMBLY_L q_table_name
-

@@ -148,14 +148,14 @@ hidden_fndcl:
     }
 |   '(' hidden_funarg_list ')' sym '(' ohidden_funarg_list ')' ohidden_funres
     {
-        $$ = methodname1(newname($4), $2.N.Right); 
+        $$ = methodname1(newname($4), $2.N.Right);
         $$.Type = functype($2.N, $6, $8);
 
         checkwidth($$.Type);
         addmethod($4, $$.Type, false, nointerface);
         nointerface = false
         funchdr($$);
-        
+
         // inl.C's inlnode in on a dotmeth node expects to find the inlineable body as
         // (dotmeth's type).Nname.Inl, and dotmeth's type has been pulled
         // out by typecheck's lookdot as this $$.ttype.  So by providing
@@ -352,7 +352,7 @@ hidden_funarg:
 |   sym LDDD hidden_type oliteral
     {
         var t *Type
-    
+
         t = typ(TARRAY);
         t.Bound = -1;
         t.Type = $3;

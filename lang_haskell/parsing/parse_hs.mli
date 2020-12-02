@@ -9,4 +9,3 @@ val parse:
 
 (* internal *)
 val tokens: Common.filename -> Parser_hs.token list
-

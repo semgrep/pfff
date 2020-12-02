@@ -264,7 +264,7 @@ comparison_predicate:
 like_predicate:
  | scalar_exp T_NOT T_LIKE scalar_exp opt_escape { }
  | scalar_exp T_LIKE scalar_exp opt_escape { }
-	
+
 
 opt_escape:
  |  /* empty */ { }
@@ -335,7 +335,7 @@ insert_mode:
  | T_INTO { }
  | T_REPLACING { }
  | T_SOFT { }
-	
+
 
 priv_opt_column_commalist:
  | /* empty */ { }
@@ -397,7 +397,7 @@ update_statement_searched:
 
 assignment:
  | column T_COMPARISON scalar_exp { }
-	
+
 
 /*(*************************************************************************)*/
 /*(* DELETE *)*/
@@ -548,4 +548,3 @@ asc_desc_opt:
 limit_clause_opt:
  | { }
  | limit_clause  { }
-

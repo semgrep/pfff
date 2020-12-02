@@ -6,4 +6,3 @@ class X {
          final boolean debug = false;
      }
 }
-

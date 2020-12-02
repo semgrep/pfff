@@ -49,7 +49,7 @@ update: %inline in menhir can help!
 
 * Cast vs unary_expr_not_plus_or_minus
 
-When have read '(foo)' and see a '+', 
+When have read '(foo)' and see a '+',
 if the cast_expression rule was written as:
 
 cast_expression:
@@ -97,12 +97,12 @@ and lang_js/parsing/conflicts.txt
 lambda_expression are at the very top in the grammar expr rules,
 so they can not appear anywhere unless put inside parenthesis. See:
 
-expression: 
+expression:
  | assignment_expression  { $1 }
  /*(* javaext: ? *)*/
  | lambda_expression { $1 }
 
-For example this is is not allowed 'a -> 1 + a -> 2' 
+For example this is is not allowed 'a -> 1 + a -> 2'
 because after 1 +, you can only have a multiplicative_expr, then
  unary_expr, then postfix_expr then primary, which imposes
  a LP expression RP.
@@ -125,12 +125,8 @@ cast_expression, and instead allow it only at the top with
 
 expression:
  | assignment_expression  { $1 }
- | lambda_expression { $1 }     
+ | lambda_expression { $1 }
  | lambda_cast_expression { }
- 
-and 
+
+and
 lambda_cast_expression: LP expression RP lambda_expression
-
-
-
-

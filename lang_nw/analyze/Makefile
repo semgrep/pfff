@@ -39,15 +39,15 @@ all:: rec $(TARGET).cma
 all.opt:: rec.opt $(TARGET).cmxa
 
 rec:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 
 rec.opt:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 clean::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done
 depend::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
 
 $(TARGET).cma: $(OBJS)

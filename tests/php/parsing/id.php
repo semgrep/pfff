@@ -7,7 +7,7 @@ class Cat {
 }
 
 
-// php 5.4 supports this: 
+// php 5.4 supports this:
 //(new Cat())->meow();
 
 // before we had to do this:

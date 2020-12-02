@@ -11,6 +11,5 @@
 )
 (ocamllex lexer_csharp)
 (ocamlyacc parser_csharp)
-;(menhir (modules parser_csharp) 
+;(menhir (modules parser_csharp)
 ;        (flags --unused-tokens --explain --fixed-exception))
-

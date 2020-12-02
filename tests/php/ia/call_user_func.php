@@ -20,4 +20,3 @@ call_user_func($t, 5);
 // this is ok because it's another variable
 $t2 = 'bar';
 call_user_func($t2, 6);
-

@@ -4,5 +4,3 @@ class TraversalRule {
 //   ~TraversalRule();
 //    int foo() = delete;
 };
-
-

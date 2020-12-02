@@ -21,7 +21,7 @@ directive next to R2.
 Note that if you force people to use { } for if and else, as in Hack, then
 you don't have any conflic issues as you will either write
 
- if e then { if then { } else { } } 
+ if e then { if then { } else { } }
 or
  if e then { if then { } } else { }
 
@@ -50,7 +50,7 @@ function_declaration_statement: attributes_opt unticked...
 
 attributes_opt:
  | /* empty */ (R1)
- | attributes  (R2)                
+ | attributes  (R2)
 
 Indeed reading from the start a T_FUNCTION, one can not decide between the
 start of the definition of a function, hence reducing an hypotetical
@@ -84,7 +84,7 @@ want the second one, so we prefer to shift than reduce
 hence the %prec (just like for the dangling else) attached
 to expr in
 
-short_lambda_body: 
+short_lambda_body:
  | TOBRACE inner_statement_list TCBRACE { }
  | expr  %prec LOW_PRIORITY_RULE { }
 

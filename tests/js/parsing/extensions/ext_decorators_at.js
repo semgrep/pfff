@@ -2,4 +2,4 @@
   counter: state.counter
 }))
 
-@foo 
+@foo

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Communicating Between Related Processes 
-# ********************************************************************** 
+# **********************************************************************
+# Communicating Between Related Processes
+# **********************************************************************
 <?php
 function pleac_Communicating_Between_Related_Processes() {
 // PHP supports fork/exec/wait but not pipe. However, it does
@@ -112,4 +112,3 @@ if ($pid == -1) {
 
 }
 ?>
-

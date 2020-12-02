@@ -10,7 +10,7 @@ func foo(a int) {
   bar(y)
   bar(x)
   bar(a)
-  
+
 }
 
 func test2() {

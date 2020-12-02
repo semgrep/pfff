@@ -10,7 +10,3 @@ function deactivate_affiliations($userid) {
 
 
 }
-
-
-
-

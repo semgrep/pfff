@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Reading or Writing to Another Program 
-# ********************************************************************** 
+# **********************************************************************
+# Reading or Writing to Another Program
+# **********************************************************************
 <?php
 function pleac_Reading_or_Writing_to_Another_Program() {
 // Handle each line in the output of a process.
@@ -57,4 +57,3 @@ ob_end_flush();
 
 }
 ?>
-

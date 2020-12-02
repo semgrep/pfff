@@ -21,11 +21,11 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (* Concrete Syntax Tree for Javascript, Typescript, and Flow.
- * 
- * Specification: 
+ *
+ * Specification:
  *  - http://www.ecma-international.org/publications/standards/Ecma-262.htm
  *  - https://github.com/Microsoft/TypeScript/blob/master/doc/spec.md#A
- * See also 
+ * See also
  *  - https://en.wikipedia.org/wiki/JavaScript
  *  - https://en.wikipedia.org/wiki/ECMAScript
  *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
@@ -45,7 +45,7 @@ module PI = Parse_info
  *  - const (immutable declarations)
  *  - get/set (sugar to define getter and setter methods)
  *  - iterators (for ... of and Symbol.iterator special name)
- *  - generators (yield, function* ), which provide a nice syntax 
+ *  - generators (yield, function* ), which provide a nice syntax
  *    to define iterators
  *  - optional trailing commas in parameters, arguments, object literals,
  *    and array literals.
@@ -120,7 +120,7 @@ type name = string wrap
 type xhp_tag = string
  [@@deriving show] (* with tarzan *)
 
-(* es6: note: does not contain the enclosing "'" but the info does 
+(* es6: note: does not contain the enclosing "'" but the info does
  * can contain './' as a prefix and can omit '.js' as an extension.
  *)
 type module_path = string wrap
@@ -172,13 +172,13 @@ type expr =
    (* es6: meta property *)
    | NewTarget of tok (* new *) * tok (* . *) * tok (* always "target" *)
 
-   (* es6: template (interpolated) strings 
+   (* es6: template (interpolated) strings
     * less: you can get multiple EncapsString in encaps below; they
     * are not flatten together, to simplify the lexer/parser.
     * The first expr option is usually a name or a field (e.g., foo.div).
     *)
    | TemplateString of expr option * (tok (* ` *) * encaps list * tok (* ` *))
- 
+
    (* sgrep-ext: *)
    | Ellipsis of tok
    | DeepEllipsis of expr bracket
@@ -235,9 +235,9 @@ type expr =
      and assignment_operator =
        | A_eq
        | A_add  | A_sub
-       | A_mul  | A_div  | A_mod  
+       | A_mul  | A_div  | A_mod
        | A_lsl  | A_lsr  | A_asr
-       | A_and  | A_or | A_xor  
+       | A_and  | A_or | A_xor
 
 (* ------------------------------------------------------------------------- *)
 (* Object properties *)
@@ -251,7 +251,7 @@ type expr =
        | P_shorthand of name
        (* es6: inlining of properties/array-elts/string/args *)
        | P_spread of tok (* ... *) * expr
-       | P_ellipsis of tok 
+       | P_ellipsis of tok
 
    and property_name =
    | PN_Id of name
@@ -266,12 +266,12 @@ type expr =
 
  (* facebook-ext: JSX extension, similar to XHP for PHP (hence the name) *)
  and xhp_html =
-   | Xhp of xhp_tag wrap (* this can be "" for React '<>' short fragment *) * 
+   | Xhp of xhp_tag wrap (* this can be "" for React '<>' short fragment *) *
        xhp_attribute list * tok (* > *) *
        xhp_body list * xhp_tag option wrap
    | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
 
-   and xhp_attribute = 
+   and xhp_attribute =
       | XhpAttrValue of xhp_attr_name * tok (* = *) * xhp_attr_value
       (* not in XHP *)
       | XhpAttrNoValue of xhp_attr_name
@@ -328,8 +328,8 @@ and stmt =
 
   and label = string wrap
 
-  and for_header = 
-    | ForHeaderClassic of lhs_or_vars option * tok (* ; *) * 
+  and for_header =
+    | ForHeaderClassic of lhs_or_vars option * tok (* ; *) *
                           expr option * tok (* ; *) *
                           expr option
     | ForHeaderIn of lhs_or_var * tok (* in *) * expr
@@ -343,7 +343,7 @@ and stmt =
      | LHS1 of expr
      | ForVars of (var_kind wrap * var_binding comma_list)
 
-     and lhs_or_var = 
+     and lhs_or_var =
      | LHS2 of expr
      (* the variable_declaration in var_binding  has v_init = None. *)
      | ForVar of (var_kind wrap * var_binding)
@@ -409,8 +409,8 @@ and annotation =
 (* Pattern (destructuring binding) *)
 (*****************************************************************************)
 (* es7?: *)
-and pattern = 
-  | PatObj of pattern comma_list brace 
+and pattern =
+  | PatObj of pattern comma_list brace
   (* the comma_list can contain multiple Right in a row because of elision *)
   | PatArr of pattern comma_list bracket
 
@@ -463,7 +463,7 @@ and func_decl = {
    p_name: name;
   (* typescript-ext: *)
    p_type: type_opt;
-   (* es6: if not None, then can be followed only by other default parameters 
+   (* es6: if not None, then can be followed only by other default parameters
       or a dots parameter in a parameter comma_list *)
    p_default: default option;
    (* es6: if <> None, then should be last param in a parameter comma_list *)
@@ -507,7 +507,7 @@ and arrow_func = {
 (* Variable definition *)
 (* ------------------------------------------------------------------------- *)
 
-and var_binding = 
+and var_binding =
  | VarClassic of variable_declaration
  (* es6: *)
  | VarPattern of variable_declaration_pattern
@@ -524,7 +524,7 @@ and var_binding =
    * simple statements (stmt)
    *)
   and var_kind =
-    | Var 
+    | Var
     (* es6: *)
     | Const
     | Let
@@ -544,7 +544,7 @@ and class_decl = {
   (* TODO: class_kind wrap; *)
   c_tok: tok; (* 'class' *)
   (* None for anon classes in class expressions or 'export default' decls *)
-  c_name: name option; 
+  c_name: name option;
   (* typescript-ext: *)
   c_type_params: type_parameter comma_list angle option;
   c_extends: (tok (* extends *) * nominal_type) option;
@@ -603,7 +603,7 @@ and item =
 (* Module *)
 (*****************************************************************************)
 
-(* ES6 module directives can appear only at the toplevel (but note that 
+(* ES6 module directives can appear only at the toplevel (but note that
  * CommomJS require() can appear also inside statements)
  *)
 (* es6: *)
@@ -625,7 +625,7 @@ and import =
    and import_name = name * (tok (* as *) * name) option
 
 (* es6: *)
-and export = 
+and export =
   (* St in item can only be a VarsDecl *)
   | ExportDecl of item
   (* item can be only FunDecl or ClassDecl, no St *)
@@ -635,13 +635,13 @@ and export =
   | ExportNames of import_name comma_list brace * sc
   (* reexport *)
   | ReExportNamespace of tok (* * *) * (tok (* from *) * module_path) * sc
-  | ReExportNames of import_name comma_list brace * 
+  | ReExportNames of import_name comma_list brace *
                       (tok (* from *) * module_path) * sc
-  
+
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
- and module_item = 
+ and module_item =
   | It of item
   (* es6-ext: *)
   | Import of (tok (* import *) * import * sc)

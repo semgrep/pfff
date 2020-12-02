@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Determining Current Function Name 
-# ********************************************************************** 
+# **********************************************************************
+# Determining Current Function Name
+# **********************************************************************
 <?php
 function pleac_Determining_Current_Function_Name() {
 // AFAICT there is no means of obtaining the name of the currently executing
@@ -27,4 +27,3 @@ whoami();
 
 }
 ?>
-

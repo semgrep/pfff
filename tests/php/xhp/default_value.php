@@ -5,7 +5,7 @@ class Foo {
 }
 
 class :x:foo {
-  attribute 
+  attribute
     int padding = Foo::CST,
     Foo x = null
     ;

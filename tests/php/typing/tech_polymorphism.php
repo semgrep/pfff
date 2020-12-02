@@ -1,8 +1,8 @@
 <?php
 
 // this will be alpha -> alpha
-function myid($x) { 
-  return $x; 
+function myid($x) {
+  return $x;
 }
 
 // this will return an int

@@ -14,4 +14,3 @@ class SFTHIS {
 
 $o = new SFTHIS();
 $o->bad_code();
-

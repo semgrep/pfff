@@ -27,5 +27,3 @@ function &test2() {
 
 $o2 = test2();
 var_dump($o2);
-
-

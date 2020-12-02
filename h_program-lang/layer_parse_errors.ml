@@ -97,5 +97,3 @@ let gen_heatmap_layer ~root stats =
     );
     kinds = Layer_code.heat_map_properties;
   }
-
-

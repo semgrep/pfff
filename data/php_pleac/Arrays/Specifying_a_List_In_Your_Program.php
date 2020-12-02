@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Specifying a List In Your Program 
-# ********************************************************************** 
+# **********************************************************************
+# Specifying a List In Your Program
+# **********************************************************************
 <?php
 function pleac_Specifying_a_List_In_Your_Program() {
 // PHP offers only the 'array' type which is actually an associative array, though
@@ -74,4 +74,3 @@ $sample = split(' ', 'The vertical bar | looks and behaves like a pipe.');
 
 }
 ?>
-

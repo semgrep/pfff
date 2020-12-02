@@ -23,7 +23,7 @@ ML, HTML and CSS). To install it just do:
    $ opam install pfff
 
 Once installed you should have access to the different libraries
-in ~/.opam/.../lib/pfff-lang_yyy. 
+in ~/.opam/.../lib/pfff-lang_yyy.
 
 The AST dumpers are useful to get familiar with the constructors.
 Here is an example:
@@ -35,8 +35,8 @@ Here is an example:
     }
    $ ./pfff -dump_js demos/foo.js
     [FunDecl(
-       {f_tok=Some(()); f_name=Some(("foo", ())); f_params=[]; 
-        f_return_type=None; 
+       {f_tok=Some(()); f_name=Some(("foo", ())); f_params=[];
+        f_return_type=None;
         f_body=[St(Return((), Some(L(Num(("1", ())))), Some(())))]; });
         FinalDef(())]
 

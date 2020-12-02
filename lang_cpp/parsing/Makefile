@@ -21,7 +21,7 @@ SRC= flag_parsing_cpp.ml \
      parse_cpp.ml \
      test_parsing_cpp.ml unit_parsing_cpp.ml \
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma

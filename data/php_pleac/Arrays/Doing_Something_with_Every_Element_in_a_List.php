@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Doing Something with Every Element in a List 
-# ********************************************************************** 
+# **********************************************************************
+# Doing Something with Every Element in a List
+# **********************************************************************
 <?php
 function pleac_Doing_Something_with_Every_Element_in_a_List() {
 foreach ($list as $item) {
@@ -60,4 +60,3 @@ print_r($array);
 
 }
 ?>
-

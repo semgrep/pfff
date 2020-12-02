@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Introduction 
-# ********************************************************************** 
+# **********************************************************************
+# Introduction
+# **********************************************************************
 <?php
 function pleac_Introduction() {
 // PHP's date / time suport is quite extensive, and appears grouped into three areas of
@@ -9,7 +9,7 @@ function pleac_Introduction() {
 // * UNIX / C Library [libc]-based routines, which include [among others]:
 //   - localtime, gmtime
 //   - strftime, strptime, mktime
-//   - time, getdate, gettimeofday, 
+//   - time, getdate, gettimeofday,
 //
 // * PHP 'native' functions, those date / time routines released in earlier versions,
 //   and which otherwise provide 'convenience' functionality; these include:
@@ -31,7 +31,7 @@ function pleac_Introduction() {
 // which offers a rich set of date / time manipulation facilities. However, since it is
 // not currently shipped with PHP, no examples appear
 
-// Helper functions for performing date arithmetic 
+// Helper functions for performing date arithmetic
 
 function dateOffset()
 {
@@ -68,4 +68,3 @@ printf("Today is day %d of the current year\n", $today['tm_yday']);
 
 }
 ?>
-

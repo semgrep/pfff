@@ -1,6 +1,6 @@
 <?php
 
-class A { 
+class A {
   public function foo(array $x) {
     return 1;
   }

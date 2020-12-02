@@ -7,4 +7,3 @@ val module_name_of_filename:
 
 val top_module_of_node:
   Graph_code.node -> name
-

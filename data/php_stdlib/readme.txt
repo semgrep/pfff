@@ -12,7 +12,7 @@
 
   Don't forget to copy this directory in the project you want to analyze
   and update such a directory when you update the list of builtins.
-  
+
   You can also manually patch things with:
 
       $ pfff_test -builtin_of_idl /path/to/one/idl/file.php

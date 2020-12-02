@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Sorting a Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Sorting a Hash
+# **********************************************************************
 <?php
 function pleac_Sorting_a_Hash() {
 // PHP implements a swag of sorting functions, most designed to work with numerically-indexed
@@ -48,4 +48,3 @@ foreach($food_colour as $food => $colour)
 
 }
 ?>
-

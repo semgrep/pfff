@@ -10,8 +10,3 @@ function remove_affiliation_link(
     }
   }
 }
-
-
-
-
-

@@ -110,7 +110,7 @@ let is_empty_object o = match o with
 let is_empty_class o = match o with
   | ObjectShape {contents = (_,map,[])} ->
       (SMap.cardinal(map) = 1) && (is_empty_object(SMap.find "prototype" map))
-  | _ -> false	
+  | _ -> false
 
 
 (****************)
@@ -210,5 +210,3 @@ type moduleinfo = {
 }
 
 type moduleinfo_map = moduleinfo smap
-
-

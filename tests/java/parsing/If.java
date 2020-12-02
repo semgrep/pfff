@@ -2,10 +2,10 @@ class foo {
   void foo() {
     x = 1;
 
-    if (1) 
+    if (1)
       x = 2;
-      
-    else 
+
+    else
       x = 3;
       // x; NOT ALLOWED
   }

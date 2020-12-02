@@ -1,5 +1,5 @@
 package Foo;
-// := 
+// :=
 
 func testFileLevelDict(t *testing.T, fn string) {
 	// Read the file, as golden output.

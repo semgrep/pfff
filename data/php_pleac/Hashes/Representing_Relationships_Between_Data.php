@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Representing Relationships Between Data 
-# ********************************************************************** 
+# **********************************************************************
+# Representing Relationships Between Data
+# **********************************************************************
 <?php
 function pleac_Representing_Relationships_Between_Data() {
 $father = array('Cain' => 'Adam', 'Abel' => 'Adam', 'Seth' => 'Adam', 'Enoch' => 'Cain',
@@ -93,4 +93,3 @@ print_r($includes);
 
 }
 ?>
-

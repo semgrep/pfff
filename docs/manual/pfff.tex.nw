@@ -45,7 +45,7 @@
 \usepackage{multirow}
 
 %define: \toprule
-\usepackage{booktabs} 
+\usepackage{booktabs}
 %?\usepackage{ctable}
 \newcommand{\otoprule}{\midrule[\heavyrulewidth]}
 
@@ -96,7 +96,7 @@ Yoann Padioleau\\
 \texttt{yoann.padioleau@gmail.com}
 }
 
-\maketitle 
+\maketitle
 
 \pagebreak
 \hrule
@@ -133,7 +133,7 @@ analysis, code visualizations, code navigations, or style-preserving
 source-to-source transformations such as refactorings on source
 code. For now the effort is focused on PHP but there is preliminary
 support for Javascript, Sql, and C++ code. There is also preliminary
-support for OCaml code so that the framework can be used on the code 
+support for OCaml code so that the framework can be used on the code
 of pfff itself.
 
 
@@ -183,7 +183,7 @@ inspired (one could say copy) from OCaml.
 \begin{thebibliography}{99}
 
 \bibitem[1]{cil} George Necula,
-{\em CIL}, 
+{\em CIL},
 CC.
 \verb+http://manju.cs.berkeley.edu/cil/+
 

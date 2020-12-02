@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Replacing the Current Program with a Different One 
-# ********************************************************************** 
+# **********************************************************************
+# Replacing the Current Program with a Different One
+# **********************************************************************
 <?php
 function pleac_Replacing_the_Current_Program_with_a_Different_One() {
 // Transfer control to the shell to run another program.
@@ -10,4 +10,3 @@ pcntl_exec('/path/to/archive', array('accounting.data'));
 
 }
 ?>
-

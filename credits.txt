@@ -1,4 +1,4 @@
-Thanks to 
+Thanks to
  - Olivier Andrieu for ocamlcairo/ (LGPL)
  - Jacques Garrigue for ocamlgtk/ (LGPL)
  - Sylvain Conchon, J.C Filliâtre and Julien Signoles for ocamlgraph/ (LGPL)

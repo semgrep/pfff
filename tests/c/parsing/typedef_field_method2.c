@@ -19,6 +19,5 @@ struct	Machdata {		/* Machine-dependent debugger support */
   Chan* (*open)(Chan*, int);
 
 //  void  (*addmulti)(Ipifc *ifc, uchar *a, uchar *ia);
-  
-};
 
+};

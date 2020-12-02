@@ -11,7 +11,7 @@ def parse_remaining(pairs: str) -> Dict:
      Given a string of remaining arguments (after the "--"), that looks like "['x=y', 'a=b'] return a dict of { 'x': 'y' }
      """
      return {pair.split("=")[0]: pair.split("=")[1] for pair in pairs}
- 
+
 def get_common_metadata(request: Any) -> Dict:
     r2c_headers = {k: v for k, v in request.headers.items() if k.startswith(("X-R2C-"))}
 
@@ -24,9 +24,9 @@ def multimetric(prefix=""):
          def wrapper(*args, **kwargs):
              value = func(*args, **kwargs)
              return tuple({prefix + k: v for k, v in value.items()}.items())
- 
+
          return wrapper
- 
+
      return decorator
 
 def get_common_metadata(request):
@@ -39,4 +39,3 @@ def foo():
      }
 
      return {k: v for k, v in raw_location.items() if v is not None}
- 

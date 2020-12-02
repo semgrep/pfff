@@ -1,3 +1,2 @@
 enum class RelationType {
 };
-

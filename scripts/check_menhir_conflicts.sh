@@ -16,7 +16,7 @@ INSTR="To bypass this, manually set NUM_PERMITTED_CONFLICTS in pfff/lang_$lang/p
 # and/or "Warning: [num] reduce/reduce conflicts were arbitrarily resolved"
 # Split by space to get [num]
 
-resultsr=`grep -i 'shift/reduce conflict.* arbitrarily' $FILE | cut -d ' ' -f 2` 
+resultsr=`grep -i 'shift/reduce conflict.* arbitrarily' $FILE | cut -d ' ' -f 2`
 resultrr=`grep -i 'reduce/reduce conflict.* arbitrarily' $FILE | cut -d ' ' -f 2`
 if [[ $resultsr == one ]]; then
    resultsr=1

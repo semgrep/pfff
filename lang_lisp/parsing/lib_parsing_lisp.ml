@@ -25,5 +25,3 @@ let find_source_files_of_dir_or_files xs =
     | File_type.PL (File_type.Lisp _) -> true
     | _ -> false
   ) |> Common.sort
-
-

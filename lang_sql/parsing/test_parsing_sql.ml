@@ -56,4 +56,3 @@ let actions () = [
   "-stress_sql", "   <file>",
   Common.mk_action_1_arg stress_parse_sql;
 ]
-

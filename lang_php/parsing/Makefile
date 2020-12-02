@@ -18,7 +18,7 @@ SRC= flag_parsing_php.ml \
      unparse_php.ml \
      test_parsing_php.ml unit_parsing_php.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
@@ -90,7 +90,7 @@ SRCMLNW5=parse_php.ml.nw
 SRCMLNW6=lib_parsing_php.ml.nw \
       export_ast_php.ml.nw \
       type_php.ml.nw scope_php.ml.nw \
-      test_parsing_php.ml.nw unit_parsing_php.ml.nw 
+      test_parsing_php.ml.nw unit_parsing_php.ml.nw
 
 # must be in the same order of the #include for syncweb multi files support
 # to work
@@ -106,14 +106,14 @@ TEXMAIN=Parsing_php.tex.nw
 TEX=Parsing_php.tex
 
 # set of ml files, used by lpclean target
-SRCML=$(SRCMLNW1) $(SRCMLNW2) $(SRCMLNW5) unparse_php.ml $(SRCMLNW6) 
+SRCML=$(SRCMLNW1) $(SRCMLNW2) $(SRCMLNW5) unparse_php.ml $(SRCMLNW6)
 LPSRC=$(SRCML:.nw=)
 LPSRCOTHER=$(SRCMLNW3:.nw=) $(SRCMLNW4:.nw=) \
   token_helpers_php.mli parser_php_mly_helper.ml \
   type_php.mli scope_php.mli
 
 sync:
-	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
+	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done
 	$(SYNCWEB) -lang ocamlyacc $(SRCNW) parser_php.mly
 	$(SYNCWEB) -lang ocaml $(SRCNW) lexer_php.mll
 	$(SYNCWEB) -lang ocaml $(SRCNW) token_helpers_php.mli
@@ -177,5 +177,3 @@ doti2:
 
 #	dot2tex ocamldoc.out --figonly -o Fig_depend.tex
 #	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
-
-

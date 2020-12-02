@@ -16,4 +16,3 @@ bar(null);
 
 // this is ok
 bar2(null);
-

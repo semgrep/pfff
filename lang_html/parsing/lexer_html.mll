@@ -161,4 +161,3 @@ and scan_special = parse
   | [^ '<' ]+        { CdataSpecial (tokinfo lexbuf, tok lexbuf) }
 
   | eof { EOF (tokinfo lexbuf) }
-

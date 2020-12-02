@@ -49,7 +49,7 @@ let compare_pos ii1 ii2 =
       |	0 -> compare o1 o2
       |	x -> x
 
-let equal_posl (l1,c1) (l2,c2) = 
+let equal_posl (l1,c1) (l2,c2) =
   (l1 =|= l2) && (c1 =|= c2)
 
 let info_to_fixpos ii =
@@ -73,7 +73,7 @@ let info_to_fixpos ii =
  * information, to "abstract those line" (al) information.
  *)
 
-let al_info tokenindex x = 
+let al_info tokenindex x =
   { pinfo =
     (AbstractLineTok
        {charpos = tokenindex;
@@ -85,7 +85,7 @@ let al_info tokenindex x =
     comments_tag = ref emptyComments;
   }
 
-let semi_al_info x = 
+let semi_al_info x =
   { x with
     cocci_tag = ref emptyAnnot;
     comments_tag = ref emptyComments;
@@ -96,7 +96,7 @@ let semi_al_info x =
 (*****************************************************************************)
 
 (* todo? could also stringify the all ident? *)
-let string_of_name name = 
+let string_of_name name =
   let (_qtop, _scope, (ident, _ii)) = name in
   match ident with
   | IdIdent s -> s
@@ -105,7 +105,7 @@ let string_of_name name =
   | IdDestructor xx -> "destructor todo"
   | IdTemplateId (s, args) -> "template todo"
 
-let is_simple_ident name = 
+let is_simple_ident name =
   let (qtop, scope, (ident, _ii)) = name in
   match qtop, scope, ident with
   | None, [], IdIdent _ -> true
@@ -114,14 +114,14 @@ let is_simple_ident name =
 (* good to look at su ? some people use class for struct too ? *)
 let is_class_structunion class_def =
   let (su, _sopt, _bopt, (members: class_member_sequencable list)),_ii = class_def in
-  su = Class || 
-      (members +> List.exists (fun x -> 
+  su = Class ||
+      (members +> List.exists (fun x ->
         match x with
         | ClassElem (DeclarationField _,ii) -> false
         | ClassElem (EmptyField, ii)  -> false
         | _ -> true
       ))
-  
+
 
 (*****************************************************************************)
 (* Views *)
@@ -131,34 +131,33 @@ let is_class_structunion class_def =
  * represented via the wrap2 and associated with an element, with
  * a list where the comma are on their own. f(1,2,2) was
  * [(1,[]); (2,[,]); (2,[,])] and become [1;',';2;',';2].
- * 
+ *
  * Used in cocci_vs_c.ml, to have a more direct correspondance between
  * the ast_cocci of julia and ast_c.
  *)
-let rec (split_comma: 'a wrap2 list -> ('a, il) either list) = 
+let rec (split_comma: 'a wrap2 list -> ('a, il) either list) =
   function
   | [] -> []
-  | (e, ii)::xs -> 
-      if null ii 
+  | (e, ii)::xs ->
+      if null ii
       then (Left e)::split_comma xs
       else Right ii::Left e::split_comma xs
 
-let rec (unsplit_comma: ('a, il) either list -> 'a wrap2 list) = 
+let rec (unsplit_comma: ('a, il) either list -> 'a wrap2 list) =
   function
   | [] -> []
-  | Right ii::Left e::xs -> 
+  | Right ii::Left e::xs ->
       (e, ii)::unsplit_comma xs
-  | Left e::xs -> 
+  | Left e::xs ->
       let empty_ii = [] in
       (e, empty_ii)::unsplit_comma xs
-  | Right ii::_ -> 
+  | Right ii::_ ->
       raise Impossible
 
 
-let split_register_param = fun (hasreg, idb, ii_b_s) -> 
+let split_register_param = fun (hasreg, idb, ii_b_s) ->
   match hasreg, idb,  ii_b_s with
   | false, Some s, [i1] -> Left (s, [], i1)
   | true, Some s, [i1;i2] -> Left (s, [i1], i2)
   | _, None, ii -> Right ii
   | _ -> raise Impossible
-

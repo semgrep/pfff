@@ -1,7 +1,7 @@
 <?php
 
 class A {
-  protected $fld = 42; 
+  protected $fld = 42;
   public function test() {
     var_dump($this->fld);
   }

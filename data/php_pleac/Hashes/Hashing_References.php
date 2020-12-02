@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Hashing References 
-# ********************************************************************** 
+# **********************************************************************
+# Hashing References
+# **********************************************************************
 <?php
 function pleac_Hashing_References() {
 // PHP implements a special type known as a 'resource' that encompasses things like file handles,
@@ -9,7 +9,7 @@ function pleac_Hashing_References() {
 // * A 'resource' may be converted to a string representation via the 'var_export' function
 // * That same string cannot be converted back into a 'resource'
 // So, in terms of array handling, 'resource' types may be stored as array reference values,
-// but cannot be used as keys. 
+// but cannot be used as keys.
 //
 // I suspect it is this type of problem that the Perl::Tie package helps resolve. However, since
 // PHP doesn't, AFAIK, sport a similar facility, the examples in this section cannot be
@@ -47,4 +47,3 @@ foreach(array_values($name) as $fh)
 
 }
 ?>
-

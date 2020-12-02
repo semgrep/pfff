@@ -2,7 +2,7 @@ DESCRIPTION:
 
 This archive contains files to help editing OCaml code, to highlight
 important parts of the code, to run an OCaml toplevel, and to run the
-Caml debugger within Emacs. 
+Caml debugger within Emacs.
 
 CONTENTS:
 
@@ -22,7 +22,7 @@ CONFIGURATION:
   Add the following line near the beginning of your ~/.emacs file:
 
     (load "/where/ever/you/put/tuareg-mode/tuareg-site-file")
-  
+
   The Tuareg major mode is triggered by visiting a file with extension
   .ml, .mli, .mly, .mll, and .mlp or manually by M-x tuareg-mode. It
   gives you the correct syntax table for the OCaml language.
@@ -59,11 +59,11 @@ SAMPLE CUSTOMIZATIONS
     (setq tuareg-lazy-paren t)
     ;; No indentation after `in' keywords.
     (setq tuareg-in-indent 0)
-    
+
     (add-hook 'tuareg-mode-hook
               ;; Turn on auto-fill minor mode.
               (lambda () (auto-fill-mode 1)))
-    
+
 FEATURES, KNOWN BUGS:
 
   Cf. online help.

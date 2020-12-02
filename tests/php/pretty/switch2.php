@@ -8,4 +8,3 @@ function test_switch() {
     default:
   }
 }
-

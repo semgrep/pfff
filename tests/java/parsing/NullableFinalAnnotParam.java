@@ -5,4 +5,3 @@ class Test {
   public View renderView(Context context, @Nullable final View view) {
   }
 }
-

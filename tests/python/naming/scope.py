@@ -12,7 +12,7 @@ def foo(param1, param2):
   return local
   return param1
   return imported
-  
+
 
 def foo2():
   global global_

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Introduction 
-# ********************************************************************** 
+# **********************************************************************
+# Introduction
+# **********************************************************************
 <?php
 function pleac_Introduction() {
 // Since defined at outermost scope, $greeted may be considered a global variable
@@ -32,4 +32,3 @@ echo "bye there!, there have been {$greetings} greetings so far\n";
 
 }
 ?>
-

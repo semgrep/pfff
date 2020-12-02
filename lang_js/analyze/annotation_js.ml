@@ -87,4 +87,3 @@ let annotations_of_program_with_comments (_, toks) =
         annots |> List.map (fun annot -> annot, tok)
     | _ -> []
   ) |> List.flatten
-

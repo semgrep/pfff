@@ -54,4 +54,3 @@ void main() {
 }
 
 // 	b2 = (char *)b + (n1 * s);
-

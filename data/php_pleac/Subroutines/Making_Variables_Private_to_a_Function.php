@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Making Variables Private to a Function 
-# ********************************************************************** 
+# **********************************************************************
+# Making Variables Private to a Function
+# **********************************************************************
 <?php
 function pleac_Making_Variables_Private_to_a_Function() {
 // Strictly-speaking, PHP is neither lexically [no environment capture] nor
@@ -79,4 +79,3 @@ function check_x($x)
 
 }
 ?>
-

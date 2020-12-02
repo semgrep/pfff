@@ -19,7 +19,7 @@ SRC= ast_hs.ml \
 #     visitor_js.ml lib_parsing_js.ml \
 
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 # globals.cma is used only for Config.patch in test_parse_nw
 LIBS=$(TOP)/commons/lib.cma \

@@ -1,8 +1,6 @@
 package Foo;
 
-func foo() { 
+func foo() {
   if true {
   }
 }
-
-

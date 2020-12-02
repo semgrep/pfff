@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Interpolating Functions and Expressions Within Strings 
-# ********************************************************************** 
+# **********************************************************************
+# Interpolating Functions and Expressions Within Strings
+# **********************************************************************
 <?php
 function pleac_Interpolating_Functions_and_Expressions_Within_Strings() {
 #-----------------------------
@@ -19,4 +19,3 @@ $phrase = "I have " . ($n + 1) . " guanacos.";
 
 }
 ?>
-

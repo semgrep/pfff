@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Recognizing Two Names for the Same File 
-# ********************************************************************** 
+# **********************************************************************
+# Recognizing Two Names for the Same File
+# **********************************************************************
 <?php
 function pleac_Recognizing_Two_Names_for_the_Same_File() {
 function makeDevInodePair($filename)
@@ -127,4 +127,3 @@ foreach($devino as $key)
 
 }
 ?>
-

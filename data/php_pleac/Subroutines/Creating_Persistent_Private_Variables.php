@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Creating Persistent Private Variables 
-# ********************************************************************** 
+# **********************************************************************
+# Creating Persistent Private Variables
+# **********************************************************************
 <?php
 function pleac_Creating_Persistent_Private_Variables() {
 // Local scopes are not created in the same way as in Perl [by simply enclosing
@@ -83,4 +83,3 @@ echo $counter->prev_counter() . "\n";
 
 }
 ?>
-

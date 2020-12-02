@@ -31,7 +31,7 @@ dir: tests/ml/db/parsing_errors
 dir: external/OPAM_DIR
 
 #dir: external/FOR_MERLIN
-# I uppercased below the first letter of directories I don't want to skip 
+# I uppercased below the first letter of directories I don't want to skip
 # (e.g., we want json-wheel, lablgtk, and ocaml hence JLO uppercase below)
 dir: external/FOR_MERLIN/[abcdefghiJkLmnOpqrstuvwxyz]
 # We skip cairo2 above because the external/ contains the .cmt (good citizen)

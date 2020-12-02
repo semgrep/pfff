@@ -4,4 +4,3 @@ val fix_tokens:
 
 val fix_tokens_ASI:
   Parser_js.token list -> Parser_js.token list
-

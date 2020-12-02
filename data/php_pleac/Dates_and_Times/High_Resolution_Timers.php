@@ -1,10 +1,10 @@
-# ********************************************************************** 
-# High-Resolution Timers 
-# ********************************************************************** 
+# **********************************************************************
+# High-Resolution Timers
+# **********************************************************************
 <?php
 function pleac_High_Resolution_Timers() {
 // PHP 5 and above can use the built-in, 'microtime'. Crude implementation for ealier versions:
-// function microtime() { $t = gettimeofday(); return (float) ($t['sec'] + $t['usec'] / 1000000.0); } 
+// function microtime() { $t = gettimeofday(); return (float) ($t['sec'] + $t['usec'] / 1000000.0); }
 
 // ------------
 
@@ -37,4 +37,3 @@ printf("On average, sorting %d random numbers takes %.5f seconds\n", SIZE, $tota
 
 }
 ?>
-

@@ -17,7 +17,7 @@ export CAML_LD_LIBRARY_PATH=/home/pad/.opam/$OPAM/lib/stublibs
 echo setting OCAMLRUNPARAM
 export OCAMLRUNPARAM="b"
 
-# To run, to find the data/ config files, and to run the tests, 
+# To run, to find the data/ config files, and to run the tests,
 # to find the tests/ files.
 echo setting PFFF_HOME
 export PFFF_HOME=`pwd`

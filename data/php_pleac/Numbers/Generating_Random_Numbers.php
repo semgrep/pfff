@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Generating Random Numbers 
-# ********************************************************************** 
+# **********************************************************************
+# Generating Random Numbers
+# **********************************************************************
 <?php
 function pleac_Generating_Random_Numbers() {
 // Techniques used here simply mirror Perl examples, and are not an endorsement
@@ -25,4 +25,3 @@ $password = make_password($chars, $reqlen);
 
 }
 ?>
-

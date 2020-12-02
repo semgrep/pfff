@@ -157,4 +157,3 @@ let rec goto_back c =
 let rec from_cursor = function
   | Top,t -> t
   | c -> from_cursor (move_left c)
-

@@ -4,8 +4,8 @@
 #include <stdio.h>
 
 class Foo {
-	
-  
+
+
 protected:
   char *pt;
   int lg;
@@ -30,7 +30,7 @@ public:
 
   friend bool operator<(const Foo &, const Foo &);
   friend bool operator>(const Foo &,const Foo &);
-  friend bool operator==(const Foo &,const Foo &); 
+  friend bool operator==(const Foo &,const Foo &);
   friend Foo operator+(const Foo &c1,const Foo &c2);
   friend Foo operator-(const Foo &c1,const Foo &c2);
 

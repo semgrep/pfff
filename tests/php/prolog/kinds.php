@@ -2,7 +2,7 @@
 
 function foo() { }
 const BAR = 1;
-class A { 
+class A {
   public $fld = 0;
   public function bar() { }
   const CST = 1;

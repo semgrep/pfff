@@ -11,4 +11,3 @@ end
 module XXX
   def Functions::namespace_context=(x) ; @@namespace_context=x ; end
 end
-

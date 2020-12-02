@@ -11,7 +11,3 @@ $o = new A();
 //$o->fn();
 var_dump( ($o->fn)() );
 var_dump(call_user_func($o->fn));
-
-
-
-

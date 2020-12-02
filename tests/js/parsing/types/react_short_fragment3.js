@@ -18,7 +18,7 @@ const Val = ({ x = []}) => {
           >
             {baz ? 'test' : <a href={parentTag}>test2</a>} // real error there before
           </Button>
-        )} 
+        )}
       </div>
     </>
   );

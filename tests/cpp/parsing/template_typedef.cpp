@@ -21,4 +21,3 @@ void main() {
 }
 
 static facebook::concurrency::ThreadLocal<unsigned int> state;
-

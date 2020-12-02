@@ -12,4 +12,3 @@ val line_of_tok  : Parser_csharp.token -> int
 val str_of_tok   : Parser_csharp.token -> string
 val file_of_tok  : Parser_csharp.token -> Common.filename
 val pos_of_tok   : Parser_csharp.token -> int
-

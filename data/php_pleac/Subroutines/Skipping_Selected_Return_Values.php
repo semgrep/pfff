@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Skipping Selected Return Values 
-# ********************************************************************** 
+# **********************************************************************
+# Skipping Selected Return Values
+# **********************************************************************
 <?php
 function pleac_Skipping_Selected_Return_Values() {
 // The 'list' keyword [looks like a function but is actually a special language
@@ -31,4 +31,3 @@ list($dev, $ino,,,$uid) = array_slice(array_values(stat($filename)), 0, 13);
 
 }
 ?>
-

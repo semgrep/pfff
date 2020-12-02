@@ -1,4 +1,4 @@
-class A 
+class A
   def foo(x,t) return 1 end
 end
 

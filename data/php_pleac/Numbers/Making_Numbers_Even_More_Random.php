@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Making Numbers Even More Random 
-# ********************************************************************** 
+# **********************************************************************
+# Making Numbers Even More Random
+# **********************************************************************
 <?php
 function pleac_Making_Numbers_Even_More_Random() {
 // The above is considered - for many reasons - a poor way of seeding the RNG. PHP
@@ -24,4 +24,3 @@ $truly_random_value = mt_rand();
 
 }
 ?>
-

@@ -1,4 +1,3 @@
 function foo() {}
 
 f = function() { };
-

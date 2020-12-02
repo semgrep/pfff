@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Comparing Floating-Point Numbers 
-# ********************************************************************** 
+# **********************************************************************
+# Comparing Floating-Point Numbers
+# **********************************************************************
 <?php
 function pleac_Comparing_Floating_Point_Numbers() {
 // In PHP floating point comparisions are 'safe' [meaning the '==' comparison operator
@@ -45,4 +45,3 @@ printf("One week's wage is: $%.2f\n", $week / 100);
 
 }
 ?>
-

@@ -10,6 +10,6 @@ its documentation are strongly connected.
 
 \t what is wrong with Javadoc or omcaldoc in our case ?
 % I dont like it, cf sexp_int.mli, too many functions, given equal
-% importance. Of course could reorder, but then that's the point, 
+% importance. Of course could reorder, but then that's the point,
 % you want to reorder => use LP. Moreover 2 views will always be better
 % than just one view.

@@ -9,7 +9,7 @@ function foo($x) {
   // growing the type of $x (union(int, array)) will grow the
   // type of $y too. Is it good? I think yes. An assignement
   // is a dataflow between two variables.
-  
+
   // You cant use a technique a la W, or compose_subst
   // and have alpha->int, beta->alpha so beta->int
   // because later $x may grow and you want to back propagate that

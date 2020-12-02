@@ -16,7 +16,7 @@ INSTR="To bypass this, manually set NUM_PERMITTED_CONFLICTS in pfff/lang_$lang/p
 # and/or "[num] reduce/reduce conflicts"
 # Split by space to get [num]
 
-resultsr=`grep -i 'shift/reduce conflict' $FILE | cut -d ' ' -f 1` 
+resultsr=`grep -i 'shift/reduce conflict' $FILE | cut -d ' ' -f 1`
 resultrr=`grep -i 'reduce/reduce conflict' $FILE | cut -d ' ' -f 1`
 
 result=$((resultsr+resultrr))

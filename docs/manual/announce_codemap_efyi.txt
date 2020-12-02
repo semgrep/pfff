@@ -1,7 +1,7 @@
 Hi e,
 
-I've built a graphical tool to help visualize, navigate, and search 
-our codebase. You can try it with 
+I've built a graphical tool to help visualize, navigate, and search
+our codebase. You can try it with
   $ ssh -Y <devmachine>
   $ ~pad/bin/www_visual /path/to/my/local/www
 or
@@ -29,8 +29,8 @@ to know how to use it.
    zoom in all those directories at once (the nectar directories in
    flib/, in lib/, in html/js/, etc). The tool will then tile and
    render the contents of the files in those directories and will put
-   in bigger fonts the functions/methods/classes/interface very often used. 
-   You can visually see that indeed NectarAppSpecificEvent is often used. 
+   in bigger fonts the functions/methods/classes/interface very often used.
+   You can visually see that indeed NectarAppSpecificEvent is often used.
    You can middle-click on the screen on the function name and it will open
    the file under your favourite editor[1] at the right place.
 
@@ -40,7 +40,7 @@ to know how to use it.
    of the function, that is unit test code that exercises this
    function.
 
-There is good support for PHP (and XHP) and Javascript sources, 
+There is good support for PHP (and XHP) and Javascript sources,
 preliminary support for thrift and C++, and excellent support
 for OCaml (nobody probably care).
 
@@ -59,16 +59,16 @@ level of directories.
 Double-clicking zooms in on the blue-highlighted area.
 Right-clicking zoom directly to the file under the cursor.
 Middle-clicking open the file under the cursor in your
-emacs provided you have M-x server-start and have emacsclient 
+emacs provided you have M-x server-start and have emacsclient
 in your path.
 
 Here are more information about the tool:
 
 This tool displays a \"code map\" of some source code using
 Treemaps. "Treemaps display hierarchical (tree-structured) data as a
-set of nested rectangles. Each branch of the tree is given a 
+set of nested rectangles. Each branch of the tree is given a
 rectangle, which is then tiled with smaller rectangles representing
-sub-branches. A leaf node's rectangle has an area proportional 
+sub-branches. A leaf node's rectangle has an area proportional
 to a specified dimension on the data.
 " [3]
 
@@ -76,7 +76,7 @@ In my case the dimension is the size of the file.
 As you zoom in the tool also renders the content of the files
 and try to give visual feedback about important semantic information.
 For instance classes or methods that are very often used are displayed
-in a bigger font, bad code is highlighted in an ugly magenta color, 
+in a bigger font, bad code is highlighted in an ugly magenta color,
 unit tested code has a special icon, etc.
 
 Note that this is not a replacement for an editor; it's
@@ -85,13 +85,13 @@ click on the screen and it will open the file under the cursor
 in your favourite editor[1] at the right position.
 
 Each file is colored at the beginnng according to its
-"category/aspect": core code in green, third party code in purple, 
+"category/aspect": core code in green, third party code in purple,
 test code in yellow, etc. The tool uses basic heuristics based on the
 name of the files and directories.
 
 Files and directories are sorted alphabetically
-and partially ordered from top to bottom and left to right. 
-So a toplevel 'zzz' subdirectory should be located at the bottom 
+and partially ordered from top to bottom and left to right.
+So a toplevel 'zzz' subdirectory should be located at the bottom
 right of the screen.
 
 [1] Emacs
@@ -125,9 +125,8 @@ announce: code navigator and visualizer (php, cpp, thrift, etc), pfff_visual
   structure
  good: leverage this huge screens
  install: need rpm -i gtk2, cairo, pcre, ... ? TEST on unittest005 :)
- support: php, cpp, thrift, js?, ocaml :), and adding basic support for new 
+ support: php, cpp, thrift, js?, ocaml :), and adding basic support for new
   language takes few times.
 announce: php code checker, scheck_php (and php_etags)
 
 announce to guy who looked for files
-

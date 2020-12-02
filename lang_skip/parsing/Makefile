@@ -15,7 +15,7 @@ SRC= ast_skip.ml \
      parse_skip.ml \
      test_parsing_skip.ml unit_parsing_skip.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 # globals.cma is used only for Config.patch in test_parse_skip
 LIBS=$(TOP)/commons/lib.cma \

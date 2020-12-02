@@ -44,5 +44,3 @@ let ii_of_any any =
   in
   visitor any;
   List.rev !globals
-
-

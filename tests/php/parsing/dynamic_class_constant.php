@@ -7,5 +7,3 @@ class X {
 
 $x = 'X';
 echo $x::TEST;
-
-

@@ -6,4 +6,3 @@ function foo() {
   // new one actually
   print($global);
 }
-

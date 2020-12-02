@@ -7,4 +7,3 @@ foo();
 
 function bar(x) { }
 function qux(x=42) { }
-

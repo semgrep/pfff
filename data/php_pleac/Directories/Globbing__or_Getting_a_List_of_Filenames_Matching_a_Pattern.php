@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Globbing, or Getting a List of Filenames Matching a Pattern 
-# ********************************************************************** 
+# **********************************************************************
+# Globbing, or Getting a List of Filenames Matching a Pattern
+# **********************************************************************
 <?php
 function pleac_Globbing__or_Getting_a_List_of_Filenames_Matching_a_Pattern() {
 $dirname = '/tmp/';
@@ -30,4 +30,3 @@ $dirs = array_filter(glob($dirname . '*', GLOB_ONLYDIR),
 
 }
 ?>
-

@@ -13,5 +13,5 @@ class A {
   public function __construct(public $x, $y) {
     $this->y = $y;
   }
-  
+
 }

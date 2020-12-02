@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Inverting a Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Inverting a Hash
+# **********************************************************************
 <?php
 function pleac_Inverting_a_Hash() {
 // PHP offers the 'array_flip' function to perform the task of exchanging the keys / values
@@ -10,7 +10,7 @@ $reverse = array_flip($hash);
 
 // ----------------------------
 
-$surname = array('Babe' => 'Ruth', 'Mickey' => 'Mantle'); 
+$surname = array('Babe' => 'Ruth', 'Mickey' => 'Mantle');
 $first_name = array_flip($surname);
 
 echo "{$first_name['Mantle']}\n";
@@ -47,4 +47,3 @@ echo "foods with colour {$colour} were: " . join(' ', $foods_with_colour[$colour
 
 }
 ?>
-

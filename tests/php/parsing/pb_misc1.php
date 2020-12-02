@@ -15,5 +15,5 @@ class DatabaseMssql extends Database {
       return mssql_close($this->mConn);
     } else return true;
   }
-  
+
 }

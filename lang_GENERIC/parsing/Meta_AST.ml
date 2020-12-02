@@ -1145,4 +1145,3 @@ and vof_any =
   | Pr v1 -> let v1 = vof_program v1 in OCaml.VSum ("Pr", [ v1 ])
   | Lbli v1 -> let v1 = vof_label_ident v1 in OCaml.VSum ("Lbli", [v1])
   | IoD v1 -> let v1 = vof_ident_or_dynamic v1 in OCaml.VSum ("IoD", [v1])
-

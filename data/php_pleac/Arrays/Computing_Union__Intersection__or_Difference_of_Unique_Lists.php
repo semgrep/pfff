@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Computing Union, Intersection, or Difference of Unique Lists 
-# ********************************************************************** 
+# **********************************************************************
+# Computing Union, Intersection, or Difference of Unique Lists
+# **********************************************************************
 <?php
 function pleac_Computing_Union__Intersection__or_Difference_of_Unique_Lists() {
 // PHP offers a number of array-based 'set operation' functions:
@@ -19,4 +19,3 @@ $diff = array_values(array_diff($a, $b));                 // 1, 8
 
 }
 ?>
-

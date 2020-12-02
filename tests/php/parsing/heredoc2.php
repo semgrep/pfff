@@ -5,4 +5,3 @@ hello
 END;
 
 echo $x;
-

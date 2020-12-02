@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Calculating More Trigonometric Functions 
-# ********************************************************************** 
+# **********************************************************************
+# Calculating More Trigonometric Functions
+# **********************************************************************
 <?php
 function pleac_Calculating_More_Trigonometric_Functions() {
 function my_tan($theta) { return sin($theta) / cos($theta); }
@@ -14,4 +14,3 @@ printf("%f\n", tan($theta));
 
 }
 ?>
-

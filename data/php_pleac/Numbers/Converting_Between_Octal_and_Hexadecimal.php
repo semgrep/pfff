@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Converting Between Octal and Hexadecimal 
-# ********************************************************************** 
+# **********************************************************************
+# Converting Between Octal and Hexadecimal
+# **********************************************************************
 <?php
 function pleac_Converting_Between_Octal_and_Hexadecimal() {
 // Like C, PHP supports decimal-alternate notations. Thus, for example, the integer
@@ -40,4 +40,3 @@ printf("%d %x %o\n", $number, $number, $number);
 
 }
 ?>
-

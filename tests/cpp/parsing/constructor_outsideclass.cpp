@@ -1,7 +1,7 @@
-Foo::Foo() 
+Foo::Foo()
 {
 }
 
-inline Foo::Foo() 
+inline Foo::Foo()
 {
 }

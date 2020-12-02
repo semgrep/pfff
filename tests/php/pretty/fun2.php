@@ -8,6 +8,3 @@ function deactivate_affiliations($userid) {
 }
 
 // test
-
-
-

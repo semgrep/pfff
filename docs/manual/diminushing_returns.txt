@@ -1,7 +1,7 @@
 Here are the different steps we want to implement for each language:
- - lexing, 
- - parsing, 
- - typing, 
+ - lexing,
+ - parsing,
+ - typing,
  - linking,
  - flowing
 
@@ -25,5 +25,3 @@ yourself in the code.
 
 So for code search, code understanding, and also arguably for
 bug findings, there is diminushing returns at each step :(
-
-

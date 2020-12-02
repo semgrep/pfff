@@ -912,4 +912,3 @@ and attributes env = function
         | AttributeWithArgs ((s, tok), (lp, xs, rp)) ->
             A.Call (A.Id [s, wrap tok], (lp, (List.map (static_scalar env) (comma_list xs)), rp)
                    ))
-

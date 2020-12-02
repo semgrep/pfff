@@ -21,5 +21,5 @@ Public License can be found in /usr/share/common-licenses/GPL.
 
 
 
-Some files and modifications are copyrighted by 
+Some files and modifications are copyrighted by
 Yoann Padioleau <yoann.padioleau@gmail.com>

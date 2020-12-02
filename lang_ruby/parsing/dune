@@ -12,7 +12,7 @@
 )
 (ocamllex lexer_ruby)
 
-(rule 
+(rule
  (targets parser_ruby.ml)
  (deps (:input-file parser_ruby.dyp))
  (action (chdir %{project_root} (run %{bin:dypgen} --no-mli --pv-obj  %{input-file})))

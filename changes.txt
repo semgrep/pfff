@@ -72,7 +72,7 @@ features
 ** misc
 
 *** started using dypgen and menhir code generators instead of just ocamlyacc
-ported the Javascript, C++, and OCaml grammar to menhir 
+ported the Javascript, C++, and OCaml grammar to menhir
 
 *** removed dependency to camlp4 so can be used with recent OCaml
 
@@ -83,7 +83,7 @@ ported the Javascript, C++, and OCaml grammar to menhir
 
 ** big split! move sgrep/spatch, codemap, codegraph, the lang_xxx bytecode
 related, mini, and scheck in separate repositories
-either under github.com/returntocorp (pfff, sgrep, check_generic) 
+either under github.com/returntocorp (pfff, sgrep, check_generic)
 or under github.com/aryx
 
 ** introducing ast_generic.ml
@@ -122,7 +122,7 @@ and sgrep will find aliases.
 Support for Python only for now (Javascript should be similar).
 
 *** basic handling of '...' between statements!
-the PHP version of sgrep never had that! 
+the PHP version of sgrep never had that!
 (coccinelle had though, and even better with working on the CFG).
 
 ** scheck
@@ -167,7 +167,7 @@ and by using a fix_token parsing hack strategy when needed.
 *** basic codegraph for toplevel entities handling JS modules
 
 *** AST-based highlighter with different colors for locals, params
-and globals 
+and globals
 
 ** new OPAM release
 (I need some of the new code from pfff in efuns,
@@ -208,7 +208,7 @@ thanks to Cygwin and Cygwin/X. See install_windows.txt.
 
 ** ocaml
 
-*** partial support for attributes 
+*** partial support for attributes
 enough to recognize most attributes in the stdlib/ and to colorize
 them in codemap and efuns
 
@@ -249,7 +249,7 @@ motivated by magicator?
 
 * -----------------------------------------------------------
 
-* --- (2016) 
+* --- (2016)
 
 * -----------------------------------------------------------
 
@@ -269,7 +269,7 @@ motivated by magicator?
 
 ** introduce lpizer
 
-*** fine grained lpizer with support for C 
+*** fine grained lpizer with support for C
 (to automatically generate chunks of a literate programs)
 
 * 0.29 (Q3 2014) (datalog for "flowing", codeslicer)
@@ -380,7 +380,7 @@ and toplevel prototypes
 
 *** improve speed of parser on patholigical element_list case
 
-*** stags: better support 
+*** stags: better support
 
 ** ocaml
 
@@ -391,7 +391,7 @@ for implicit fields
 
 *** fixed all new ocaml 4.02 warnings, e.g. unused parameters
 
-*** less common specific code, ++ -> @, push2 -> push, 
+*** less common specific code, ++ -> @, push2 -> push,
 use of spatch for ocaml :)
 
 * 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
@@ -413,7 +413,7 @@ entities to the lowest one! Also factorized more code.
 
 *** show information about entity under cursor (def or use) in tooltip
 
-*** go to definition when on a use 
+*** go to definition when on a use
 finally ... basic TAGS functionality, "hypertext" because can follow "links"
 
 *** handle skip list
@@ -447,7 +447,7 @@ parts of the analysis!!
 
 ** clang
 
-*** codegraph: less dupes, less false edges due to dupes, 
+*** codegraph: less dupes, less false edges due to dupes,
 
 *** codegraph: better handle typedefs, more accurate type dependencies
 for structures
@@ -542,12 +542,12 @@ added debugging support, better error message, stack trace, etc.
 ** spatch
 
 *** better heuristics to preserve space around commas
- 
+
 ** vcs
 
 *** support for mercurial, help diff analysis on mercurial repo
 
-** internal: 
+** internal:
 
 *** use Travis CI for build and test regressions,
 https://travis-ci.org/facebook/pfff
@@ -560,7 +560,7 @@ https://travis-ci.org/facebook/pfff
 
 *** use of js_of_ocaml
 
-*** assume OPAM for web/ 
+*** assume OPAM for web/
 (but not for the rest of pfff/ so people don't need OPAM to compile pfff)
 
 *** basic facebook integration in web UI, use oauth to track who is using it
@@ -592,7 +592,7 @@ tested for ocaml
 
 ** sgrep/spatch
 
-*** partial support for C/C++/OCaml/Js/Java/PHP via ast_fuzzy 
+*** partial support for C/C++/OCaml/Js/Java/PHP via ast_fuzzy
 
 *** better error message when try to do transformations not handled well
 (e.g. minus on a '...')
@@ -610,7 +610,7 @@ adapted each time:
  - visitors, dumpers, mappers
  - tags, prolog db
  - sgrep/spatch
- - scheck/cmf 
+ - scheck/cmf
  - codegraph
 
 *** huge refactoring on the PHP grammar and AST, unified lvalue and expr,
@@ -652,7 +652,7 @@ basic lexer and grammar
 
 ** java/bytecode: mapping bytecode to java
 Handle nested classes, generic classes, anon classes
-(understand better how things are bytecompiled, e.g. where 
+(understand better how things are bytecompiled, e.g. where
 does foo$1$bar.class come from?)
 
 * -----------------------------------------------------------
@@ -660,7 +660,7 @@ does foo$1$bar.class come from?)
 * 0.22 (Q4 2012) (codegraph faster/finer, .cmt/.class parsers)
 
 ** codegraph for more languages, at very fine grained level
-added OCaml (.ml and .cmt), Java (.java and .class), and improved 
+added OCaml (.ml and .cmt), Java (.java and .class), and improved
 PHP.
 Also improved speed a lot.
 
@@ -683,7 +683,7 @@ can fix bugs one by one
 * 0.21 (Q3 2012) (codegraph, java/c parser)
 
 ** introduce codegraph, a hierarchical matrix-based dependency visualizer
-with support for PHP, C, 
+with support for PHP, C,
 
 ** introduce lang_c/
 a simplified version of lang_cpp/ just focusing on C.
@@ -709,7 +709,7 @@ futur backend of codegraph
 
 ** internals
 
-*** improve ast_php_simple.ml 
+*** improve ast_php_simple.ml
 good basis then for graph_code_php.ml, new, check_variables_php.ml, etc.
 
 * 0.19 (Q1 2012) (pfff_logger)
@@ -833,10 +833,10 @@ later in codemap or pfff_statistics
 - static dead code layer
 - dead: dynamic live code layer (using xhprof data)
 - test coverage layer (using phpunit and xdebug data)
-- 
+-
 - bugs layer
 - security layer
-- cyclomatic complexity, 
+- cyclomatic complexity,
 - age (and activity) layer
 - number of authors layer
 
@@ -896,7 +896,7 @@ update: supersed by abstract interpreter
 ** global analysis
 
 *** store additional attributes/properties per entities in the light code db
-- does it take argument by refs. 
+- does it take argument by refs.
 - does it contain dynamic calls ($fn(...))
 
 This can help the visualizer to give more semantic visual feedback.
@@ -908,7 +908,7 @@ applied codemap on many open source project and generated screenshots.
 
 ** internals
 
-*** refactored the code in visual/ to have smaller and cleaner files 
+*** refactored the code in visual/ to have smaller and cleaner files
 thanks to literate programming and codemap itself to show the problem
 and assist in the refactoring
 
@@ -939,18 +939,18 @@ Real start of multi-language support.
 Show treemap and thumbnails of file content!
 Have also minimap, zoom, labels, alpha for overlapping labels,
 labels in diagonal, anamorphic content showing in bigger fonts
-the important stuff, magnifying glass, clickable content 
-where a click opens the file in your editor at the right place, etc. 
+the important stuff, magnifying glass, clickable content
+where a click opens the file in your editor at the right place, etc.
 => A kind of google maps but on code :)
 
 Support for PHP, Javascript, ML, C++, C, thrift.
 
 For PHP do also URL highlighting which helps understand the control flow
-in webapps. 
+in webapps.
 Also highlight local/globals/parameters variables differently.
 Also highlight bad smells (especially security related bad smells)
 
-Integrate other PL artifacts: 
+Integrate other PL artifacts:
  - The builtins API reference
  - PLEAC cookbooks
 => a single place to query information about the code
@@ -975,7 +975,7 @@ source itself; to see if such features are useful.
 
 ** introduce lang_cpp/
 
-** introduce analyze_js/, analyze_cpp/, analyze_ml/ 
+** introduce analyze_js/, analyze_cpp/, analyze_ml/
 very basic support. Just highlighting
 
 ** introduce database_code.ml, a generic code-information database
@@ -1085,14 +1085,14 @@ reorganized json/sexp output, factorize code and use more ocaml.ml
 
 * 0.8  (Q1 2010) (sgrep php, treemap, xdebug dynamic analysis)
 
-** xdebug trace parsing, can now do dynamic analysis! 
+** xdebug trace parsing, can now do dynamic analysis!
 Done for type "inference/extraction" at the beginnning and useful
 for coverage too!
 
 ** dead: GUI, trivial type inference feedback based on xdebug info
 update: not really used for now, superseded by julien static type inference
 
-** sgrep: introducing $V special metavar 
+** sgrep: introducing $V special metavar
 
 ** dead? introducing parsing_sql/
 could be useful at some point for better type checking or type inference
@@ -1106,16 +1106,16 @@ by source-to-source transformation.
 now I can code in PHP :)
 
 ** improved pretty printer, and helpers for AST transformation
-with map_php.ml. Used by ppp and closure implemetation. 
+with map_php.ml. Used by ppp and closure implemetation.
 
-** sgrep: 
+** sgrep:
 - a -emacs flag
 - improved -xhp and made it the default operating mode
 
 ** deadcode:
 - do fixpoint analysis per file
 
-* 0.6 
+* 0.6
 
 ** introducing sgrep_php
 a code matcher working at the AST level
@@ -1130,7 +1130,7 @@ ref from sebastien bergmann
 
 * 0.5
 
-** dead: XHP poor's man support. 
+** dead: XHP poor's man support.
 Just have A new -pp option to give opportunity to call
 a preprocessor (eg 'xhpize -d').
 
@@ -1165,7 +1165,7 @@ update: not used anymore
 
 complement git.ml
 
-* 0.2 
+* 0.2
 
 ** analysis
 deadcode analysis v1

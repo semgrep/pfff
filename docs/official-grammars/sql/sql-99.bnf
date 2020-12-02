@@ -1478,7 +1478,7 @@ This probably says something about the <slash> <asterisk> and <asterisk>
 
 --p
 --small
---i 
+--i
 Note that <double colon> must be a pair of characters with no
 intervening space, not a pair of colon symbols separated by arbitrary
 white space.
@@ -3764,7 +3764,7 @@ Much, if not all, of the following material comes from ISO/IEC 9075-5:1999, SQL/
 
 --p
 --small
---i 
+--i
 Note that <double period> must be a pair of period characters with no
 intervening space, not a pair of period symbols separated by arbitrary
 white space.
@@ -4489,4 +4489,3 @@ times' repeater ellipsis '...' mark.
 --/p
 
 --hr
-

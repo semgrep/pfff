@@ -128,4 +128,3 @@ let vof_rule (v1, v2) =
   in OCaml.VTuple [ v1; v2 ]
 
 let vof_stylesheet v = OCaml.vof_list vof_rule v
-

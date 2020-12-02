@@ -9,7 +9,7 @@ eval $(opam env)
 pre-commit install
 if ! pre-commit run --all; then
   cat <<EOF
-It looks like the user who committed the code did not set up theit
+It looks like the user who committed the code did not set up their
 pre-commit hook. You need the following one-time setup:
 
   1. Install the 'pre-commit' command:

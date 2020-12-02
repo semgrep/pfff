@@ -15,7 +15,7 @@
 \newcommand{\tm}{OCamlTreemap\xspace}
 
 %------------------------------------------------------------------------------
-%history: 
+%history:
 %------------------------------------------------------------------------------
 %thx to LP, changed for the better a few things :)
 % - ??
@@ -58,7 +58,7 @@
 
 \usepackage{multirow}
 
-\usepackage{booktabs} 
+\usepackage{booktabs}
 \newcommand{\otoprule}{\midrule[\heavyrulewidth]}
 
 \usepackage{graphicx}
@@ -82,7 +82,7 @@
 \begin{document}
 
 \title{
-{\Huge 
+{\Huge
 Treemaps
 }\\
 in OCaml\\
@@ -96,7 +96,7 @@ Yoann Padioleau\\
 %dup: authors.txt
 
 
-\maketitle 
+\maketitle
 
 %TODO? an abstract ? instead of the copyright ?
 
@@ -138,7 +138,7 @@ Yoann Padioleau\\
 % enter treemaps, space filling!
 
 % size important
-% can play intensitiy, ... ex of treemap where size, modulated, 
+% can play intensitiy, ... ex of treemap where size, modulated,
 %  and intensitiy, and commit, and semantic, and speedbar!
 
 % ex of pfff treemap, or linux!
@@ -157,7 +157,7 @@ Yoann Padioleau\\
  * Advantages of my solution compared to using kdirstat on ~/www ?
  *  - can customize color for files, eg colors for css/php/js/...
  *  - can focus only on certain files, eg .php
- * 
+ *
  *  - can access info from my other ocaml libs, eg
  *    pfff_db, and git. To do that with kdirstat would
  *    force me to hack a complex codebase, and dependencies (kde ...)
@@ -169,16 +169,16 @@ More applications:
 \cite{treemap-history}
 
 \begin{verbatim}
-(* 
+(*
  * Basic references:
  *  http://en.wikipedia.org/wiki/Treemapping
  *  http://www.cs.umd.edu/hcil/treemap-history/index.shtml
- * 
+ *
  * Seminal: http://hcil.cs.umd.edu/trs/91-03/91-03.html
- * 
+ *
  * http://www.smartmoney.com/map-of-the-market/
  * (need jave plugin)
- * 
+ *
  * Treemaps are cool. They can show multiple attributes at the same time:
  *  - size (size of rectangle)
  *  - depth (if nested, especially when use borders or cushion)
@@ -186,12 +186,12 @@ More applications:
  *  - intensity (degrade de couleur)
  *  - extra info by for instance drawing points (des petits pois) inside it
  *    can also use filling pattern as in xfig to convey additional info.
- * 
+ *
  * Does the position (x,y) mean something ? if sort alphabetically, then
  * yes can also give spatial indication. If use squarified then it's kind
  * of sorted by size which also give good spatial indication wether some
  * modules are important or not.
- * 
+ *
  * More references:
  *  - seminal paper http://hcil.cs.umd.edu/trs/91-03/91-03.html
  *  - cushion so better see structure
@@ -199,41 +199,41 @@ More applications:
  *    visually see the bigger picture, that is their enclosing rectangles)
  *  - squarified so can more easily compare two items
  *    (solve pb of elongated rectangle)
- * 
- * 
+ *
+ *
  * ***** other ocaml libs
- * 
+ *
  * 3d stuff: lmntal style, with physics (not that needed)
  * http://ubietylab.net/ubigraph/content/Demos/Networkx.html
  * not free, they have a binding for ocaml
- * 
+ *
  * **** other perl/python/ruby libs
- * 
+ *
  * python seems quite good and fresh with latest research :)
  * semi:
  * http://www.machine-envy.com/blog/2006/07/29/a-treemap-viewer-for-python/
  * semi:
  * http://www.scipy.org/Cookbook/Matplotlib/TreeMap?action=show&redirect=TreeMap
  * (but does not have the cushion :( )
- * 
+ *
  * http://rubytreemap.rubyforge.org/
- * 
+ *
  * **** other java libraries ...
- * 
+ *
  * treemap by bouthier (ex maryland)
- * perfuse 
- * 
+ * perfuse
+ *
  * **** misc
- * 
+ *
  * http://kdirstat.sourceforge.net/kdirstat/
- * use apparently qtreemap 
- * 
- * http://kprof.sourceforge.net/ 
+ * use apparently qtreemap
+ *
+ * http://kprof.sourceforge.net/
  * also use treemap
- * 
- * *** list of libs 
+ *
+ * *** list of libs
  * http://en.wikipedia.org/wiki/List_of_treemapping_software
- * 
+ *
 
  *)
 
@@ -289,20 +289,20 @@ $ ./treemap_viewer -algorithm squarified  examples/treemap/ex.json
 The source code of \tm is governed by the following copyright:
 <<Facebook copyright>>=
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-@ 
+@
 %alt: (* Copyright 2009, 2010 Facebook. All Rights Reserved. *)
 
 \subsection{About this document}
@@ -312,7 +312,7 @@ The source code of \tm is governed by the following copyright:
 \section{Examples of Use}
 
 % manual
-% treedir 
+% treedir
 
 % mli
 
@@ -329,11 +329,11 @@ The source code of \tm is governed by the following copyright:
 \subsection{Treemap data structure}
 
 \begin{verbatim}
-(* 
+(*
  * We use the directory/file metaphor for the nodes/leafs,
- * because dirs/files are one of the best example of use of treemaps, 
- * and because it was the one chosen by Schneiderman in his original paper. 
- * 
+ * because dirs/files are one of the best example of use of treemaps,
+ * and because it was the one chosen by Schneiderman in his original paper.
+ *
  * The type is polymorphic because we want the interactive treemap visualizer
  * to offer hooks to display certain information about the dir/file under
  * the cursor.
@@ -343,14 +343,14 @@ The source code of \tm is governed by the following copyright:
 
 
 <<type treemap>>=
-type ('dir, 'file) treemap = 
+type ('dir, 'file) treemap =
  (treemap_data * 'dir, treemap_data * 'file) tree
-    and treemap_data = { 
-      size : int; 
-      color : Simple_color.color; 
+    and treemap_data = {
+      size : int;
+      color : Simple_color.color;
       label: string;
     }
-@ 
+@
 
 
 <<signature tree and treemap examples>>=
@@ -360,10 +360,10 @@ val treemap_rectangles_ex:
 val tree_ex_shneiderman_1991 : (unit, int) tree
 val tree_ex_wijk_1999: (unit, int) tree
 val treemap_ex_ordered_2001: (unit, unit) treemap
-@ 
+@
 
 <<variable tree_ex_shneiderman_1991>>=
-let tree_ex_shneiderman_1991 = 
+let tree_ex_shneiderman_1991 =
   let ninfo = () in
   Node (ninfo,  [
     Leaf 12;
@@ -386,7 +386,7 @@ let tree_ex_shneiderman_1991 =
       Leaf 40;
     ]);
   ])
-@ 
+@
 
 
 \subsection{The algorithm}
@@ -394,26 +394,26 @@ let tree_ex_shneiderman_1991 =
 \cite{treemap-seminal}
 
 <<signature display_treemap>>=
-val display_treemap : 
+val display_treemap :
   ('dir, 'file) treemap -> int * int -> 'file option Common.matrix
-@ 
+@
 
 <<type rectangle1>>=
 (* The array has 2 elements, for x, y. I use an array because that's how
  * the seminal algorithm on treemap was written. It allows to pass
  * as an int the current split and do x.(axis_split) and do a 1-axis_split
  * in recursive calls to go from a x-split to a y-split.
- * 
- * A rectangle is represented by 2 variables called P and Q in the seminal 
+ *
+ * A rectangle is represented by 2 variables called P and Q in the seminal
  * algorithm.
  *)
 (*
-type rectangle1 = 
+type rectangle1 =
   float array (* lower left  coord, P *) *
   float array (* upper right coord, Q *)
 *)
 
-@ 
+@
 
 
 \begin{figure*}\begin{center}
@@ -429,19 +429,19 @@ type rectangle1 =
 
 
 <<function display_treemap>>=
-(* 
- * ref: http://hcil.cs.umd.edu/trs/91-03/91-03.html, page 6 
- * 
- * The algorithm is very simple. Look at the paper. I've just added 
+(*
+ * ref: http://hcil.cs.umd.edu/trs/91-03/91-03.html, page 6
+ *
+ * The algorithm is very simple. Look at the paper. I've just added
  * the depth argument.
- * 
+ *
  * axis_split is 0 when split enclosing rectangle vertically, and 1
  * when doing it horizontally. We alternate hence the (1 - axis_split) below.
- * 
+ *
  * still? look if python port look the same
  *)
-let display_treemap (treemap: ('dir,'file) treemap) (w, h) = 
-  
+let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
+
   let mat = Array.make_matrix w h None in
 
   (* p and q are the coords of the current rectangle being laid out *)
@@ -452,8 +452,8 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
     | Leaf (tnode, fileinfo) ->
         let color = color_of_treemap_node root in
 
-        let rect_opt = 
-          draw_rect_treemap_float_ortho 
+        let rect_opt =
+          draw_rect_treemap_float_ortho
             ((p.(0), p.(1)),
              (q.(0), q.(1)))
             color
@@ -461,7 +461,7 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
         in
         rect_opt +> Common.do_option (update_mat_with_fileinfo fileinfo mat)
 
-    | Node (tnode, dirinfo) -> 
+    | Node (tnode, dirinfo) ->
         ()
     );
     let size_root = size_of_treemap_node root in
@@ -472,9 +472,9 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
           (* if want margin, then maybe can increment slightly p and decrement
            * q ? like 1% of its width ?
            *)
-          q.(axis_split) <- 
-            p.(axis_split) +. 
-            (float_of_int (size_of_treemap_node child) /. 
+          q.(axis_split) <-
+            p.(axis_split) +.
+            (float_of_int (size_of_treemap_node child) /.
              float_of_int (size_root)) *. width;
           aux_treemap child (Array.copy p) (Array.copy q) (1 - axis_split)
             ~depth:(depth + 1)
@@ -485,7 +485,7 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
   in
   aux_treemap treemap [|0.0;0.0|] [|1.0;1.0|] 0  ~depth:1;
   mat
-@ 
+@
 
 \subsection{Screen and viewport}
 
@@ -509,7 +509,7 @@ type screen_dim = {
   h_status: int;
   w_legend: int;
 }
-@ 
+@
 
 
 \begin{figure*}\begin{center}
@@ -528,20 +528,20 @@ type screen_dim = {
 val draw_rect_treemap_float_ortho :
   (float * float) * (float * float) ->
   Graphics.color -> int * int -> ((int * int) * (int * int)) option
-@ 
+@
 
 <<function draw_rect_treemap_float_ortho>>=
-(* 
+(*
  * The treemap algorithms assume an ortho? space from 0,0 to 1.1 but
  * our current screen have pixels and goes from 0,0 to 1024,168 for
- * instance. Those functions are here to make the translation 
+ * instance. Those functions are here to make the translation
  * (it can produce some aliasing effects).
 
- * TODO: pass a converter function from ortho space to regular ? 
+ * TODO: pass a converter function from ortho space to regular ?
  * as in opengl?
  *)
 
-let draw_rect_treemap_float_ortho ((x1, y1),(x2, y2)) color (w, h) = 
+let draw_rect_treemap_float_ortho ((x1, y1),(x2, y2)) color (w, h) =
 
   let w = float_of_int w in
   let h = float_of_int h in
@@ -555,50 +555,50 @@ let draw_rect_treemap_float_ortho ((x1, y1),(x2, y2)) color (w, h) =
   if w <= 0 || h <= 0
   then None
   else begin
-    Graphics.fill_rect 
+    Graphics.fill_rect
       x1 y1 w h;
     Some ((x1,y1), (x2,y2))
   end
-@ 
+@
 
 
 \section{Other Algorithms}
 \label{sec:xxx}
 
 <<type algorithm>>=
-type algorithm = 
+type algorithm =
   | Classic
   | Squarified
   | SquarifiedNoSort
   | Ordered of pivot
 
-  and pivot = 
+  and pivot =
     | PivotBySize
     | PivotByMiddle
-@ 
+@
 
 <<signature algos>>=
 val algos: algorithm list
 
 val layoutf_of_algo: algorithm -> ('a, 'b) layout_func
 
-@ 
+@
 
 <<variable algos>>=
-let algos = [Classic; Squarified; SquarifiedNoSort; 
+let algos = [Classic; Squarified; SquarifiedNoSort;
              Ordered PivotBySize; Ordered PivotByMiddle]
-@ 
+@
 
 
 <<signature display_treemap_algo>>=
-val display_treemap_algo : 
+val display_treemap_algo :
   ?algo:algorithm ->
   ?drawing_file_hook:
     (Figures.rect_pixel -> 'file -> 'file option Common.matrix -> unit) ->
-  ('dir, 'file) treemap -> 
-  int * int -> 
+  ('dir, 'file) treemap ->
+  int * int ->
   'file option Common.matrix
-@ 
+@
 
 \subsection{Tiling rectangles}
 \label{sec:xxx}
@@ -609,54 +609,54 @@ val display_treemap_algo :
 % proof that array and side effects really lead to buggy code :)
 
 <<type layout_func>>=
-type ('a, 'b) layout_func = 
+type ('a, 'b) layout_func =
   (float * ('a, 'b) treemap) list ->
   int ->
   rectangle ->
   (float * ('a, 'b) treemap * rectangle) list
-@ 
+@
 
 
 <<function display_treemap_generic>>=
-let display_treemap_generic 
+let display_treemap_generic
     ?(drawing_file_hook=(fun _rect _file _mat -> ()))
     (treemap: ('dir,'file) treemap)
-    (w, h) 
-    flayout 
- = 
-  
+    (w, h)
+    flayout
+ =
+
   let mat = Array.make_matrix w h None in
 
   let rec aux_treemap root rect ~depth =
     let (p,q) = rect.p, rect.q in
 
-    if not (valid_rect rect) 
+    if not (valid_rect rect)
     then () (* TODO ? warning ? *)
-    else 
+    else
 
     (match root with
     | Leaf (tnode, fileinfo) ->
         let color = color_of_treemap_node root in
 
-        let rect_opt = 
-          draw_rect_treemap_float_ortho 
+        let rect_opt =
+          draw_rect_treemap_float_ortho
             ((p.x, p.y),
              (q.x, q.y))
             color
             (w, h)
         in
         let info = fileinfo in
-          
+
         (match rect_opt with
         | None -> ()
         | Some ((x1,y1), (x2,y2)) ->
 
             for i = x1 to x2 - 1 do
               for j = y1 to y2 - 1 do
-                mat.(i).(j) <- Some info; 
+                mat.(i).(j) <- Some info;
               done
             done;
-            
+
             drawing_file_hook {
               F.lower_left =   { F.x = x1; F.y = y1 };
               F.upper_right =  { F.x = x2; F.y = y2 };
@@ -667,12 +667,12 @@ let display_treemap_generic
         );
         draw_label rect  (w, h) depth (tnode).label ~is_dir:false
 
-        
+
     | Node (mode, children) ->
 
         (* let's draw some borders. Far better to see the structure. *)
-        let _rect_opt = 
-          draw_rect_treemap_float_ortho 
+        let _rect_opt =
+          draw_rect_treemap_float_ortho
             ((p.x, p.y),
             (q.x, q.y))
             Graphics.black
@@ -680,7 +680,7 @@ let display_treemap_generic
 
         in
         (* does not work, weird *)
-        let border = 
+        let border =
           match depth with
           | 1 -> 0.0
           | 2 -> 0.002
@@ -689,7 +689,7 @@ let display_treemap_generic
           | 5 -> 0.0002
           | _ -> 0.0
         in
-        let p = { 
+        let p = {
           x = p.x +. border;
           y = p.y +. border;
         }
@@ -702,14 +702,14 @@ let display_treemap_generic
         (* todo? can overflow ... check still inside previous rect *)
         let rect = { p = p; q = q } in
 
-        let children' = 
+        let children' =
           children +> List.map (fun child ->
             float_of_int (size_of_treemap_node child),
             child
           )
         in
-       
-        let rects_with_info = 
+
+        let rects_with_info =
           (* generic call *)
           flayout children' depth rect
         in
@@ -724,37 +724,37 @@ let display_treemap_generic
   in
   aux_treemap treemap rect_ortho ~depth:1;
   mat
-@ 
+@
 
 
 <<function display_treemap_algo>>=
-let display_treemap_algo ?(algo=Classic) ?drawing_file_hook 
+let display_treemap_algo ?(algo=Classic) ?drawing_file_hook
  treemap (w, h) =
 
   (* old: display_treemap            treemap (w, h) *)
   let layoutf = layoutf_of_algo algo in
   display_treemap_generic ?drawing_file_hook
     treemap (w, h) layoutf
-@ 
+@
 
 
 <<layout slice and dice>>=
-let (slice_and_dicing_layout: ('a, 'b) layout_func) = 
+let (slice_and_dicing_layout: ('a, 'b) layout_func) =
  fun children depth rect ->
 
   let p = [| rect.p.x; rect.p.y |] in
   let q = [| rect.q.x; rect.q.y |] in
 
   let axis_split = (depth + 1) mod 2 in
-  
+
   let stotal = children +> List.map fst +> Common2.sum_float in
 
   let width = q.(axis_split) -. p.(axis_split) in
 
   children +> List.map (fun (size, child) ->
 
-    q.(axis_split) <- 
-      p.(axis_split) +. 
+    q.(axis_split) <-
+      p.(axis_split) +.
       ((size) /. stotal) *. width;
 
     let rect_here = {
@@ -765,7 +765,7 @@ let (slice_and_dicing_layout: ('a, 'b) layout_func) =
     p.(axis_split) <- q.(axis_split);
     size, child, rect_here
   )
-@ 
+@
 
 
 \subsection{Clustered treemaps}
@@ -777,7 +777,7 @@ let (slice_and_dicing_layout: ('a, 'b) layout_func) =
 \cite{treemap-squarified}
 
 <<variable tree_ex_wijk_1999>>=
-let tree_ex_wijk_1999 = 
+let tree_ex_wijk_1999 =
   let ninfo = () in
   Node (ninfo,  [
     Leaf 6;
@@ -788,7 +788,7 @@ let tree_ex_wijk_1999 =
     Leaf 2;
     Leaf 1;
   ])
-@ 
+@
 
 
 \begin{figure*}\begin{center}
@@ -814,35 +814,35 @@ let tree_ex_wijk_1999 =
  * the paper to follow what I say.
  *)
 
- 
-(* 
- * A few examples. 
- * 
- * the total sum in squarified_list_area_ex is 24, just like the area 
+
+(*
+ * A few examples.
+ *
+ * the total sum in squarified_list_area_ex is 24, just like the area
  * of rect_orig below. This simplifies discussions.
- * 
+ *
  * I've added the string later as we want squarify to also return
  * information related to the node with its size (that is the full treemap
  * node, with its descendant)
 *)
-let squarified_list_area_ex = 
+let squarified_list_area_ex =
   [6; 6; 4; 3; 2; 2; 1] +> List.map (fun x -> float_of_int x, spf "info: %d" x)
 
 (* normally our algorithm should do things proportionnally to the size
  * of the aready. It should not matter that the total sum of area is
- * equal to the size of the rectangle. Indeed later we will always do 
+ * equal to the size of the rectangle. Indeed later we will always do
  * things in an ortho plan, that is with a rectangle 0x0 to 1x1.
  *)
-let squarified_list_area_ex2 = 
+let squarified_list_area_ex2 =
   squarified_list_area_ex +> List.map (fun (x, info) -> x *. 2.0, info)
-let dim_rect_orig = 
+let dim_rect_orig =
   { p = {x = 0.0; y = 0.0; }; q = { x = 6.0; y = 4.0} }
-@ 
+@
 
 
 <<type split>>=
-type split = 
-  (* Spread one next to the other, e.g. | | | | | |  
+type split =
+  (* Spread one next to the other, e.g. | | | | | |
    * The split lines will be vertical, but the rectangles
    * would be spreaded horizontally. In the paper they call that horizontal
    * Split but I prefer Spread, because the split lines are actually verticals.
@@ -854,25 +854,25 @@ type split =
    *                                   _
    *)
   | SpreadVertically
-@ 
+@
 
 
 <<function ratio_rect_dim>>=
 (* we want the ratio to be a close to 1 as possible (that is to be a square) *)
-let ratio_rect_dim (w,h) = 
+let ratio_rect_dim (w,h) =
   let res = max (w /. h) (h /. w) in
   (* assert (res >= 1.0); *)
   res
 
-let _ = assert (ratio_rect_dim (6.0, 4.0) = 1.5) 
-let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5) 
-@ 
+let _ = assert (ratio_rect_dim (6.0, 4.0) = 1.5)
+let _ = assert (ratio_rect_dim (4.0, 6.0) = 1.5)
+@
 
 
 <<function worst>>=
-(* On the running example, at the first step we want to add the rect of 
+(* On the running example, at the first step we want to add the rect of
  * size 6 on the left, alone, and its aspect ratio will be 8/3.
- * Indeed its height is fixed (4) and so his width is 
+ * Indeed its height is fixed (4) and so his width is
  * whatever that must lead to an area of 6, that is 6/4 (1.5)
  * which leads then to an aspect ratio of 4 vs 1.5 = 4 / 1.5 = 8/3.
  * If we add 2 rect of size 6, then their aspect ratio is 1.5 which is
@@ -883,7 +883,7 @@ let worst elems_in_row  size_side_row =
   let s = Common2.sum_float elems_in_row in
   let rplus = Common2.maximum elems_in_row in
   let rminus = Common2.minimum elems_in_row in
-  
+
   (* cf formula in paper *)
   max ((Common2.square size_side_row *. rplus) /. Common2.square s)
       (Common2.square s /.  (Common2.square size_side_row *. rminus))
@@ -894,14 +894,14 @@ let _ = assert
   (worst [6.0;6.0] 4.0 = 3.0 /. 2.0) (* 1.5, which is close to 1 so better *)
 let _ = assert
   (worst [6.0;6.0;4.0] 4.0 = 4.0) (* 4.0, we regress *)
-@ 
+@
 
 
 <<function layout>>=
 (* We are given a fixed row which contains a set of elems that we have
  * to spread unoformly, just like in the original algorithm.
  *)
-let layout row rect = 
+let layout row rect =
 
   let p = [| rect.p.x; rect.p.y |] in
   let q = [| rect.q.x; rect.q.y |] in
@@ -917,22 +917,22 @@ let layout row rect =
   in
 
   let res = ref [] in
-  let spread = 
+  let spread =
     if rect_width rect >= rect_height rect
     then SpreadHorizontally
     else SpreadVertically
   in
-  let axis_split = 
+  let axis_split =
     match spread with
     | SpreadHorizontally -> 0
     | SpreadVertically -> 1
   in
   let width = q.(axis_split) -. p.(axis_split) in
-    
+
   children +> List.iter (fun (percent_child, size_child, info) ->
 
-    q.(axis_split) <- 
-      p.(axis_split) +. 
+    q.(axis_split) <-
+      p.(axis_split) +.
       percent_child *. width;
     let rect_here = {
       p = {  x = p.(0); y = p.(1); };
@@ -947,11 +947,11 @@ let layout row rect =
 
 
 <<function squarify_orig>>=
-let rec (squarify_orig: 
+let rec (squarify_orig:
    ?verbose:bool ->
-   (float * 'a) list -> (float * 'a) list -> rectangle -> 
+   (float * 'a) list -> (float * 'a) list -> rectangle ->
    (float * 'a * rectangle) list
-   ) = 
+   ) =
  fun ?(verbose=false) children current_row rect ->
   (* does not work well because of float approximation.
    * assert(Common.sum_float (children ++ current_row) = rect_area rect);
@@ -961,7 +961,7 @@ let rec (squarify_orig:
   let floats xs = List.map fst xs in
 
   (* First heuristic in the squarified paper *)
-  let spread = 
+  let spread =
     if rect_width rect >= rect_height rect (* e.g. 6 x 4 rectangle *)
     then SpreadHorizontally
     else SpreadVertically
@@ -973,8 +973,8 @@ let rec (squarify_orig:
    * In the paper they call this variable 'width' but it's misleading.
    * Note that because we are in Horizontal mode, inside this left row,
    * things will be spreaded this time vertically.
-   *)  
-  let size_side_row = 
+   *)
+  let size_side_row =
     match spread with
     | SpreadHorizontally -> rect_height rect
     | SpreadVertically -> rect_width rect
@@ -983,7 +983,7 @@ let rec (squarify_orig:
   | c::cs ->
       if null current_row ||
          (worst (floats (current_row @ [c])) size_side_row)
-          <= 
+          <=
           (worst (floats current_row)         size_side_row)
       then
         (* not yet optimal row, let's recurse *)
@@ -994,13 +994,13 @@ let rec (squarify_orig:
         let stotal = Common2.sum_float (floats (current_row @ children)) in
         let portion_for_row = srow /. stotal in
 
-        let row_rect, remaining_rect = 
+        let row_rect, remaining_rect =
           match spread with
           | SpreadHorizontally ->
-              let middle_x = 
-                (q.x -. p.x) *. portion_for_row 
+              let middle_x =
+                (q.x -. p.x) *. portion_for_row
                   +. p.x
-              in 
+              in
               {
                 p = p;
                 q = { x = middle_x; y = q.y };
@@ -1011,8 +1011,8 @@ let rec (squarify_orig:
               }
 
           | SpreadVertically ->
-              let middle_y = 
-                (q.y -. p.y) *. portion_for_row 
+              let middle_y =
+                (q.y -. p.y) *. portion_for_row
                   +. p.y in
               {
                 p = p;
@@ -1022,7 +1022,7 @@ let rec (squarify_orig:
                 p = { x = p.x; y = middle_y};
                 q = q;
               }
-              
+
 
         in
         if verbose then begin
@@ -1031,7 +1031,7 @@ let rec (squarify_orig:
           pr2 "row rect";
           pr2 (s_of_rectangle row_rect);
         end;
-        
+
         let rects_row = layout current_row row_rect in
         let rects_remain = squarify_orig children [] remaining_rect in
         rects_row @ rects_remain
@@ -1043,23 +1043,23 @@ let rec (squarify_orig:
         pr2 "row rect";
         pr2 (s_of_rectangle rect);
       end;
-      
+
       layout current_row rect
-@ 
+@
 
 
 <<function squarify>>=
-let squarify children rect = 
+let squarify children rect =
   (* squarify_orig assume the sum of children = area rect *)
   let area = rect_area rect in
   let total = Common2.sum_float (List.map fst children) in
-  let children' = children +> List.map (fun (x, info) -> 
+  let children' = children +> List.map (fun (x, info) ->
     (x /. total) *. area,
     info
   )
   in
   squarify_orig children' [] rect
-@ 
+@
 
 
 <<function test_squarify>>=
@@ -1072,19 +1072,19 @@ let test_squarify () =
   pr2_xxxxxxxxxxxxxxxxx ();
   squarify squarified_list_area_ex2 rect_ortho +> ignore;
   ()
-@ 
+@
 
 
 <<layout squarify>>=
-let (squarify_layout: ('a, 'b) layout_func) = 
+let (squarify_layout: ('a, 'b) layout_func) =
  fun children _depth rect ->
   let children' = children +> Common.sort_by_key_highfirst in
   squarify children' rect
 
-let (squarify_layout_no_sort_size: ('a, 'b) layout_func) = 
+let (squarify_layout_no_sort_size: ('a, 'b) layout_func) =
  fun children _depth rect ->
   squarify children rect
-@ 
+@
 
 
 
@@ -1095,13 +1095,13 @@ let (squarify_layout_no_sort_size: ('a, 'b) layout_func) =
 \cite{treemap-ordered}
 
 <<variable treemap_ex_ordered_2001>>=
-let (treemap_ex_ordered_2001: (unit, unit) treemap) = 
+let (treemap_ex_ordered_2001: (unit, unit) treemap) =
   let children = children_ex_ordered_2001 in
 
-  let children_treemap = 
-    children +> Common.index_list_1 +> List.map (fun (size, i) -> 
-      
-      Leaf ({ 
+  let children_treemap =
+    children +> Common.index_list_1 +> List.map (fun (size, i) ->
+
+      Leaf ({
         size = size;
         color = Color.color_of_string (spf "grey%d" (90 - (i * 3)));
         label = spf "size = %d" size;
@@ -1115,7 +1115,7 @@ let (treemap_ex_ordered_2001: (unit, unit) treemap) =
     label = "";
   }, ()), children_treemap
   )
-@ 
+@
 
 
 \begin{figure*}\begin{center}
@@ -1174,7 +1174,7 @@ let (treemap_ex_ordered_2001: (unit, unit) treemap) =
 
 <<ordered examples>>=
 (* ref:
-*) 
+*)
 
 let children_ex_ordered_2001 = [
     1; 5; 3; 4; 5; 1;
@@ -1182,7 +1182,7 @@ let children_ex_ordered_2001 = [
     5; 2; 10; 1; 2; 1;
     1; 2;
   ]
-@ 
+@
 
 
 <<type pivotized>>=
@@ -1192,7 +1192,7 @@ type 'a pivotized = {
   pivot: 'a; (* this one should be singleton and the other a list *)
   above_pivot: 'a;
 }
-@ 
+@
 
 
 <<function compute_rects_pivotized>>=
@@ -1207,56 +1207,56 @@ let compute_rects_pivotized childs_pivotized rect spread =
     above_pivot = Common2.sum_float (List.map fst x.above_pivot);
   }
   in
-  
+
   let total_size = size.left +. size.right +. size.pivot +. size.above_pivot in
-  
+
   let portion_for_left = size.left /. total_size in
   let portion_for_right = size.right /. total_size in
-  
-  let portion_for_pivot_vs_above = 
-    (size.pivot ) /. (size.pivot +. size.above_pivot) 
+
+  let portion_for_pivot_vs_above =
+    (size.pivot ) /. (size.pivot +. size.above_pivot)
   in
-  
-  (* computing the rectangle of the left and right is easy as the 
+
+  (* computing the rectangle of the left and right is easy as the
    * height is fixed (when we spread horizontally)
    *)
   match spread with
   | SpreadHorizontally ->
       (* TODO do something that adapt to rect ? lourd que rect
        * commence pas 0,0, ca fait faire des calculs en plus. *)
-      let middle_x1 = 
+      let middle_x1 =
         p.x +. ((rect_width rect) *. portion_for_left)
       in
-      let middle_x2 = 
+      let middle_x2 =
         q.x -.  ((rect_width rect) *. portion_for_right)
       in
-      let middle_y = 
+      let middle_y =
         p.y +. ((rect_height rect) *. portion_for_pivot_vs_above)
       in
-      { left = { 
+      { left = {
             p = p;
             q = { x = middle_x1; y = q.y } };
-        right = { 
+        right = {
             p = { x = middle_x2; y = p.y };
             q = q; };
-        pivot = { 
-            p = { x = middle_x1; y = p.y}; 
+        pivot = {
+            p = { x = middle_x1; y = p.y};
             q = { x = middle_x2; y = middle_y}; };
-        above_pivot = { 
+        above_pivot = {
             p = { x = middle_x1; y = middle_y };
             q = { x = middle_x2; y = q.y; } };
       }
 
-  | SpreadVertically -> 
+  | SpreadVertically ->
       (* just the reverse of previous code, x become y and vice versa *)
-      let middle_y1 = 
+      let middle_y1 =
         p.y +. ((rect_height rect) *. portion_for_left)
       in
-      let middle_y2 = 
+      let middle_y2 =
         q.y -. ((rect_height rect) *. portion_for_right)
       in
 
-      let middle_x = 
+      let middle_x =
         p.x +. ((rect_width rect) *. portion_for_pivot_vs_above)
       in
       { left = {
@@ -1272,19 +1272,19 @@ let compute_rects_pivotized childs_pivotized rect spread =
           p = { x = middle_x; y = middle_y1; };
           q = { x = q.x; y = middle_y2; } }
       }
-@ 
+@
 
 
 <<function balayer_right_wrong>>=
 (*
-let rec balayer_right_wrong xs = 
+let rec balayer_right_wrong xs =
   match xs with
   | [] -> []
   | x::xs ->
-      let first = 
+      let first =
         [], x::xs
       in
-      let last = 
+      let last =
         x::xs, []
       in
       let rest = balayer_right_wrong xs in
@@ -1295,11 +1295,11 @@ let rec balayer_right_wrong xs =
 let balayer_right xs =
   let n = List.length xs in
   let res = ref [] in
-  for i = 0 to n do 
+  for i = 0 to n do
     Common.push (take i xs, drop i xs) res;
   done;
   List.rev !res
-let _ = assert (balayer_right [1;2;3;2] = 
+let _ = assert (balayer_right [1;2;3;2] =
     [
       [], [1;2;3;2];
       [1], [2;3;2];
@@ -1313,39 +1313,39 @@ let _ = assert (balayer_right [1;2;3;2] =
 <<function orderify_children>>=
 let orderify_children ?(pivotf=PivotBySize) xs rect =
 
-  let rec aux xs rect = 
+  let rec aux xs rect =
     match xs with
     | [] -> []
-    | [size, x] -> 
+    | [size, x] ->
         [size, x, rect]
-          
+
     | _x::_y::_ys ->
-        
-        let left, pivot, right = 
+
+        let left, pivot, right =
           match pivotf with
-          | PivotBySize -> 
+          | PivotBySize ->
               let pivot_max = Common2.maximum (xs +> List.map fst) in
-              Common2.split_when 
-                (fun x -> fst x = pivot_max) xs 
+              Common2.split_when
+                (fun x -> fst x = pivot_max) xs
           | PivotByMiddle ->
               let nmiddle = List.length xs / 2 in
               let start, thend = Common2.splitAt nmiddle xs in
-              
+
               start, List.hd thend, List.tl thend
         in
-        
-        let spread = 
+
+        let spread =
           if rect_width rect >= rect_height rect (* e.g. 6 x 4 rectangle *)
           then SpreadHorizontally
           else SpreadVertically
         in
-        
+
         let right_combinations = balayer_right right in
-        
-        let scores_and_rects = 
+
+        let scores_and_rects =
           right_combinations +> List.map (fun (above_pivot, right) ->
-            
-            let childs_pivotized = 
+
+            let childs_pivotized =
               { left = left;
                 pivot = [pivot];
                 right = right;
@@ -1360,36 +1360,36 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
         in
         let best = Common.sort_by_key_lowfirst scores_and_rects +> List.hd in
         let (_score, (rects, childs_pivotized)) = best in
-        
+
         (* pr2_gen rects; *)
-        aux childs_pivotized.left rects.left @ 
+        aux childs_pivotized.left rects.left @
         aux childs_pivotized.pivot rects.pivot @
         aux childs_pivotized.above_pivot rects.above_pivot @
-        aux childs_pivotized.right rects.right @ 
+        aux childs_pivotized.right rects.right @
         []
   in
   aux xs rect
-@ 
+@
 
 
 <<function test_orderify>>=
-let test_orderify () = 
+let test_orderify () =
   let xs = children_ex_ordered_2001 +> List.map float_of_int in
   let rect = rect_ortho in
 
   let fake_treemap = () in
   let children = xs +> List.map (fun size -> size, fake_treemap) in
-  
+
   let layout = orderify_children children rect in
   pr2_gen layout
-@ 
+@
 
 
 <<layout ordered>>=
-let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) = 
+let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) =
  fun ?pivotf children _depthTODOMAYBE rect ->
   orderify_children ?pivotf children rect
-@ 
+@
 
 
 
@@ -1413,52 +1413,52 @@ let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) =
 \subsection{Interactivity}
 
 <<signature display_treemap_interactive>>=
-val display_treemap_interactive : 
+val display_treemap_interactive :
   ?algo:algorithm ->
   ?drawing_file_hook:
     (Figures.rect_pixel -> 'file -> 'file option Common.matrix -> unit) ->
   (* used to display file information in the status area *)
-  ?info_of_file_under_cursor:(Graphics.status -> 'file -> string) -> 
-  ('dir, 'file) treemap -> 
+  ?info_of_file_under_cursor:(Graphics.status -> 'file -> string) ->
+  ('dir, 'file) treemap ->
   screen_dim ->
   unit
-@ 
+@
 
 
 <<function update_mat_with_fileinfo>>=
 let update_mat_with_fileinfo fileinfo mat rect =
-  
+
   let ((x1,y1), (x2,y2)) = rect in
 
   for i = x1 to x2 - 1 do
     for j = y1 to y2 - 1 do
-      mat.(i).(j) <- Some fileinfo; 
+      mat.(i).(j) <- Some fileinfo;
     done
   done
-@ 
+@
 
 
 <<function display_treemap_interactive>>=
-let display_treemap_interactive 
+let display_treemap_interactive
  ?algo
  ?drawing_file_hook
  ?(info_of_file_under_cursor=(fun _ _ -> ""))
- treemap 
- dim  
+ treemap
+ dim
   =
   let dim = ref dim in
   let matrix_info = ref (
-    display_treemap_algo 
-      ?algo 
-      ?drawing_file_hook 
-      treemap 
+    display_treemap_algo
+      ?algo
+      ?drawing_file_hook
+      treemap
       (!dim.w_view, !dim.h_view)
   )
   in
-  while true do                                   
+  while true do
     let status = Graphics.wait_next_event [
-        Graphics.Mouse_motion; 
-        Graphics.Key_pressed; 
+        Graphics.Mouse_motion;
+        Graphics.Key_pressed;
         Graphics.Button_down;
         Graphics.Button_up;
       ]
@@ -1474,15 +1474,15 @@ let display_treemap_interactive
 
       Graphics.set_color Graphics.black;
       Graphics.moveto (0 + !dim.w / 2) (!dim.h - (!dim.h_status / 2));
-      
-      let info = 
-        try 
-          !matrix_info.(x).(y) 
+
+      let info =
+        try
+          !matrix_info.(x).(y)
         with Invalid_argument(s) ->
           pr2 (spf "pb with coord (%d,%d).  %s" x y s);
           raise (Invalid_argument(s))
-          
-      in 
+
+      in
       match info with
       | None -> pr2 "Impossible";
       | Some file ->
@@ -1499,30 +1499,30 @@ let display_treemap_interactive
       dim := current_dim ~w_legend:!dim.w_legend ~h_status:!dim.h_status;
       Graphics.clear_graph ();
       matrix_info :=
-        display_treemap_algo 
-          ?algo 
-          ?drawing_file_hook 
-          treemap 
+        display_treemap_algo
+          ?algo
+          ?drawing_file_hook
+          treemap
           (!dim.w_view, !dim.h_view);
       (* draw_legend_hook !dim ? *)
     end
   done
-@ 
+@
 
 
 <<function info_of_file_under_cursor_default>>=
 
 let info_of_file_under_cursor_default = fun status (f, _) ->
   let s = f in
-  if status.Graphics.button 
-  then begin 
+  if status.Graphics.button
+  then begin
     pr2 (spf "%s" f);
     (* Sys.command (spf "/home/pad/packages/Linux/bin/emacsclient -n %s" f) +> ignore; *)
   end;
   if status.Graphics.keypressed (* Graphics.key_pressed () *)
   then raise (UnixExit 0);
   s
-@ 
+@
 
 
 \section{JSON Reader}
@@ -1560,7 +1560,7 @@ $ ./treemap_viewer -algorithm squarified  examples/treemap/ex.json
       "children": [
         {
           "kind": "Node",  "label": "c/",
-          "children": [ 
+          "children": [
             {
               "kind": "Leaf", "size": 2, "color": "purple",
               "label": "a/c/foo.txt"
@@ -1585,12 +1585,12 @@ $ ./treemap_viewer -algorithm squarified  examples/treemap/ex.json
           "label": "b/bar2.txt"
         }
 ] } ] }
-@ 
+@
 
-%(* 
+%(*
 % * For the people who want to use the treemap rendering but do not
 % * want to write OCaml code (pfff), here is some json reader code.
-% * 
+% *
 % * Here is an example generated via:
 % *  $ ./ocamltreemap -test_json_of examples/treemap/ex_dirs/
 % * {
@@ -1641,26 +1641,26 @@ $ ./treemap_viewer -algorithm squarified  examples/treemap/ex.json
 % *     }
 % *   ]
 % * }
-% * 
+% *
 % *)
 
 
 <<signature treemap_of_json>>=
-val treemap_of_json: 
-  Json_type.json_type -> 
+val treemap_of_json:
+  Json_type.json_type ->
   (Common.dirname, Common.filename * int) Treemap.treemap
-@ 
+@
 
 
 <<signature json_of_treemap>>=
 val json_of_treemap:
   ('dir, 'file) Treemap.treemap -> Json_type.json_type
-@ 
+@
 
 
 <<function treemap_of_json>>=
 (* cf json_of_treemap_basic below. Just do reverse operation *)
-let rec treemap_of_json j = 
+let rec treemap_of_json j =
   match j with
   | J.Object [
       "kind", J.String "Node";
@@ -1675,7 +1675,7 @@ let rec treemap_of_json j =
       let rect = {
         label = s;
         color = Color.black;
-        size = size; 
+        size = size;
       }
       in
       Common2.Node ((rect, s), children)
@@ -1694,28 +1694,28 @@ let rec treemap_of_json j =
       in
       Common2.Leaf (rect, (lbl, size))
 
-  | _ -> 
+  | _ ->
       failwith "wrong format"
-@ 
+@
 
 
 <<function json_of_color>>=
 let json_of_color c = J.String (Color.string_of_color c)
-@ 
+@
 
 
 <<function json_of_treemap>>=
-(* I was first using ocamltarzan to auto generate the json_of, but it 
+(* I was first using ocamltarzan to auto generate the json_of, but it
  * leds to verbosity, so I ended up manually coding it.
  *)
-let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type) 
+let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
  = function
   | Common2.Node (((rect, _a), xs)) ->
       let { size = _v_sizeTODO; color = _v_colorTODO; label = v_label } = rect in
-      
+
       let bnds = [] in
 
-      let children = 
+      let children =
         J.Array (List.map json_of_treemap xs)
       in
       let bnd = ("children", children) in
@@ -1742,31 +1742,31 @@ let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
       let bnd = ("color", arg) in
       let bnds = bnd :: bnds in
       let arg = J.Int v_size in
-      let bnd = ("size", arg) in 
-      let bnds = bnd :: bnds in 
+      let bnd = ("size", arg) in
+      let bnds = bnd :: bnds in
 
       let arg = J.String "Leaf" in
       let bnd = ("kind", arg) in
       let bnds = bnd :: bnds in
       J.Object bnds
-@ 
+@
 
 
 <<function test_json_of>>=
-let test_json_of dir = 
+let test_json_of dir =
   let maxc = 256 in
-  let tree = tree_of_dirs_or_files 
+  let tree = tree_of_dirs_or_files
     ~file_hook:(fun file -> Common2.filesize file) [dir] in
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (_f, intleaf) -> intleaf) 
-    ~color_of_leaf:(fun (_f, _intleaf) -> 
+    ~size_of_leaf:(fun (_f, intleaf) -> intleaf)
+    ~color_of_leaf:(fun (_f, _intleaf) ->
       Color.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
     )
     ~label_of_dir:(fun dir -> Filename.basename dir)
     ~label_of_file:(fun (f, _intleaf) -> f)
-    tree 
+    tree
   in
-  let json = 
+  let json =
     json_of_treemap
       (*
       (fun _ -> J.Null)
@@ -1775,7 +1775,7 @@ let test_json_of dir =
       treemap in
   let s = Json_out.string_of_json json in
   pr s
-@ 
+@
 
 
 <<function test_of_json>>=
@@ -1786,7 +1786,7 @@ let test_of_json file =
     let json2 = json_of_treemap treemap in
     let s = Json_out.string_of_json json2 in
     pr s
-@ 
+@
 
 
 <<treemap_json actions>>=
@@ -1794,7 +1794,7 @@ let test_of_json file =
   Common.mk_action_1_arg test_json_of;
   "-test_of_json", "<file>",
   Common.mk_action_1_arg test_of_json;
-@ 
+@
 
 
 
@@ -1808,38 +1808,38 @@ WindowsStat
 MacosStat
 
 <<signature tree_of_dir>>=
-type directory_sort = 
+type directory_sort =
   | NoSort
   | SortDirThenFiles
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
 val follow_symlinks: bool ref
-@ 
+@
 
 <<function tree_of_dir>>=
 (*
-let tree_of_dir2 
-  ?(filter_file=(fun _ -> true))  
-  ?(filter_dir=(fun _ -> true))  
+let tree_of_dir2
+  ?(filter_file=(fun _ -> true))
+  ?(filter_dir=(fun _ -> true))
   ?(sort=SortDirAndFilesCaseInsensitive)
-  ~file_hook 
-  dir 
+  ~file_hook
+  dir
  =
-  let rec aux dir = 
+  let rec aux dir =
 
-    let subdirs = 
+    let subdirs =
       Common2.readdir_to_dir_list dir +> List.map (Filename.concat dir) in
-    let files = 
+    let files =
       Common2.readdir_to_file_list dir +> List.map (Filename.concat dir) in
-    
-    let subdirs = 
-      subdirs +> Common.map_filter (fun dir -> 
+
+    let subdirs =
+      subdirs +> Common.map_filter (fun dir ->
         if filter_dir dir
         then Some (dir, aux dir)
         else None
       )
     in
-    let files = 
+    let files =
       files +> Common.map_filter (fun file ->
         if filter_file file
         then Some (file, (Leaf (file, file_hook file)))
@@ -1851,7 +1851,7 @@ let tree_of_dir2
       match sort with
       | NoSort -> subdirs ++ files
       | SortDirThenFiles ->
-          Common.sort_by_key_lowfirst subdirs ++ 
+          Common.sort_by_key_lowfirst subdirs ++
           Common.sort_by_key_lowfirst files
       | SortDirAndFiles ->
           Common.sort_by_key_lowfirst (subdirs ++ files)
@@ -1867,7 +1867,7 @@ let tree_of_dir2
   in
   aux dir
 *)
-@ 
+@
 
 
 \subsection{Source code architecture visualization}
@@ -1908,7 +1908,7 @@ open Figures
 
 (* tree -> treemap -> treemap_rendering *)
 
-type ('dir, 'file) tree = 
+type ('dir, 'file) tree =
   ('dir, 'file) Common2.tree
 
 <<type treemap>>
@@ -1937,8 +1937,8 @@ val rect_ortho: rectangle
 <<signature algos>>
 
 (* treemap -> treemap_rendering *)
-val render_treemap: 
-  ?algo:algorithm -> 
+val render_treemap:
+  ?algo:algorithm ->
   ?big_borders:bool ->
   ('dir, 'file) treemap -> treemap_rendering
 
@@ -1951,8 +1951,8 @@ val tree_of_dirs_or_files:
   ?filter_file:(Common.filename -> bool) ->
   ?filter_dir:(Common.dirname -> bool) ->
   ?sort:directory_sort ->
-  file_hook:(Common.filename -> 'a) -> 
-  Common2.path list -> 
+  file_hook:(Common.filename -> 'a) ->
+  Common2.path list ->
   (Common.dirname, Common.filename * 'a) tree
 
 
@@ -1972,7 +1972,7 @@ val remove_singleton_subdirs:
 
 val actions : unit -> Common.cmdline_actions
 
-@ 
+@
 
 
 
@@ -1989,18 +1989,18 @@ val treemap_of_tree :
   ?label_of_dir:('dir -> string) ->
   ('dir, 'file) tree ->
   ('dir, 'file) treemap
-@ 
+@
 
 
 
 
 <<signature graphic helpers>>=
-val info_of_file_under_cursor_default : 
+val info_of_file_under_cursor_default :
   Graphics.status -> (Common.filename * 'a) -> string
 
 val current_dim:
   w_legend:int -> h_status:int -> screen_dim
-@ 
+@
 
 
 
@@ -2009,13 +2009,13 @@ val color_of_treemap_node :
   ('a, 'b) treemap -> Simple_color.color
 val size_of_treemap_node :
   ('a, 'b) treemap  -> int
-@ 
+@
 
 
 <<signature algorithm accessors>>=
 val s_of_algo: algorithm -> string
 val algo_of_s: string -> algorithm
-@ 
+@
 
 
 
@@ -2023,7 +2023,7 @@ val algo_of_s: string -> algorithm
 val test_treemap_manual : unit -> unit
 val test_treemap_tree : algorithm -> int -> unit
 val test_treemap_dir : string -> algorithm -> unit
-@ 
+@
 
 
 \subsection{[[treemap.ml]]}
@@ -2073,7 +2073,7 @@ let xy_ratio = 1.71
 (* The dimentions are in a  [0.0-1.0] range for y and [0.0-xyratio] for x,
  * where xyratio is used to cope with most 16/9 screens.
   *)
-let rect_ortho = 
+let rect_ortho =
   { p = {x = 0.0; y = 0.0; }; q = { x = xy_ratio; y = 1.0} }
 
 (* the dimentions are in a  [0.0-1.0] range
@@ -2106,10 +2106,10 @@ type treemap_rendering = treemap_rectangle list
 
 <<function treemap_of_tree>>
 
-let treemap_of_tree ~size_of_leaf  ~color_of_leaf 
+let treemap_of_tree ~size_of_leaf  ~color_of_leaf
     ?label_of_file ?label_of_dir tree =
  Common.profile_code "Treemap.treemap_of_tree" (fun () ->
-   treemap_of_tree2 ~size_of_leaf  ~color_of_leaf 
+   treemap_of_tree2 ~size_of_leaf  ~color_of_leaf
      ?label_of_file ?label_of_dir tree)
 
 (*****************************************************************************)
@@ -2143,7 +2143,7 @@ let treemap_of_tree ~size_of_leaf  ~color_of_leaf
 <<function worst>>
 
 <<function layout>>
-    
+
 (* the main algorithmic part of squarifying *)
 <<function squarify_orig>>
 
@@ -2186,7 +2186,7 @@ let treemap_of_tree ~size_of_leaf  ~color_of_leaf
 (* frontend *)
 (*---------------------------------------------------------------------------*)
 
-let layoutf_of_algo algo = 
+let layoutf_of_algo algo =
   match algo with
   | Classic -> slice_and_dicing_layout
   | Squarified -> squarify_layout
@@ -2202,9 +2202,9 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
   let rec aux_treemap root rect ~depth =
     let (p,q) = rect.p, rect.q in
 
-    if not (valid_rect rect) 
+    if not (valid_rect rect)
     then () (* TODO ? warning ? *)
-    else 
+    else
 
     (match root with
     | Leaf (tnode, _fileinfo) ->
@@ -2231,7 +2231,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         } treemap_rects;
 
         (* does not work, weird *)
-        let border = 
+        let border =
           if not big_borders then
           match depth with
           | 1 -> 0.0
@@ -2240,7 +2240,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
           | 4 -> 0.0005
           | 5 -> 0.0002
           | _ -> 0.0
-          else 
+          else
           match depth with
           | 1 -> 0.0
           | 2 -> 0.003
@@ -2250,7 +2250,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
           | 6 -> 0.0005
           | _ -> 0.0002
         in
-        let p = { 
+        let p = {
           x = p.x +. border;
           y = p.y +. border;
         }
@@ -2263,14 +2263,14 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         (* todo? can overflow ... check still inside previous rect *)
         let rect = { p = p; q = q } in
 
-        let children' = 
+        let children' =
           children +> List.map (fun child ->
             float_of_int (size_of_treemap_node child),
             child
           )
         in
 
-        let rects_with_info = 
+        let rects_with_info =
           (* generic call *)
           flayout children' depth rect
         in
@@ -2284,11 +2284,11 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     )
   in
   aux_treemap treemap rect_ortho ~depth:1;
-  
+
   List.rev !treemap_rects
 
-let render_treemap ?algo ?big_borders x = 
-  Common.profile_code "Treemap.render_treemap" (fun () -> 
+let render_treemap ?algo ?big_borders x =
+  Common.profile_code "Treemap.render_treemap" (fun () ->
     render_treemap_algo2 ?algo ?big_borders x)
 
 (*****************************************************************************)
@@ -2301,7 +2301,7 @@ let render_treemap ?algo ?big_borders x =
 (* Source converters  *)
 (*****************************************************************************)
 
-type directory_sort = 
+type directory_sort =
   | NoSort
   | SortDirThenFiles
   | SortDirAndFiles
@@ -2314,39 +2314,39 @@ let follow_symlinks = ref false
 
 (* specialized version *)
 let tree_of_dir3
-  ?(filter_file=(fun _ -> true))  
-  ?(filter_dir=(fun _ -> true))  
+  ?(filter_file=(fun _ -> true))
+  ?(filter_dir=(fun _ -> true))
   ?(sort=SortDirAndFilesCaseInsensitive)
-  ~file_hook 
-  dir 
+  ~file_hook
+  dir
  =
-  if sort <> SortDirAndFilesCaseInsensitive 
+  if sort <> SortDirAndFilesCaseInsensitive
   then failwith "Only SortDirAndFilesCaseInsensitive is handled";
 
-  let rec aux dir = 
-    
+  let rec aux dir =
+
     let children = Sys.readdir dir in
     let children = Array.map (fun x -> Common2.lowercase x, x) children in
 
     Array.fast_sort (fun (a1, _b1) (a2, _b2) -> compare a1 a2) children;
 
     let res = ref [] in
-    
+
     children +> Array.iter (fun (_, f) ->
       let full = Filename.concat dir f in
 
       let stat = Common2.unix_lstat_eff full in
-      
+
       match stat.Unix.st_kind with
       | Unix.S_REG ->
           if filter_file full
           then Common.push (Leaf (full, file_hook full)) res
-      | Unix.S_DIR -> 
+      | Unix.S_DIR ->
           if filter_dir full
           then Common.push (aux full) res
       | Unix.S_LNK ->
           if !follow_symlinks then
-          (try 
+          (try
           (match (Unix.stat full).Unix.st_kind with
           | Unix.S_REG ->
               if filter_file full
@@ -2389,17 +2389,17 @@ let add_intermediate_nodes root_path nodes =
   let root = Common.split "/" root in
 
   (* extract dirs and file from file, e.g. ["home";"pad"], "__flib.php", path *)
-  let xs = nodes +> List.map (fun x -> 
+  let xs = nodes +> List.map (fun x ->
     match x with
     | Leaf (file, _) -> Common2.dirs_and_base_of_file file, x
     | Node (dir, _) -> Common2.dirs_and_base_of_file dir, x
   )
   in
   (* remove the root part *)
-  let xs = xs +> List.map (fun ((dirs, base), node) -> 
+  let xs = xs +> List.map (fun ((dirs, base), node) ->
     let n = List.length root in
-    let (root', rest) = 
-      Common2.take n dirs,  
+    let (root', rest) =
+      Common2.take n dirs,
       Common2.drop n dirs
     in
     assert(root' =*= root);
@@ -2407,41 +2407,41 @@ let add_intermediate_nodes root_path nodes =
   )
   in
   (* now ready to build the tree recursively *)
-  let rec aux current_root xs = 
-    let files_here, rest = 
+  let rec aux current_root xs =
+    let files_here, rest =
       xs +> List.partition (fun ((dirs, _base), _) -> null dirs)
     in
-    let groups = 
-      rest +> group_by_mapped_key (fun ((dirs, _base),_) -> 
+    let groups =
+      rest +> group_by_mapped_key (fun ((dirs, _base),_) ->
         (* would be a file if null dirs *)
         assert(not (null dirs));
         List.hd dirs
       ) in
 
-    let nodes = 
-      groups +> List.map (fun (k, xs) -> 
-        let xs' = xs +> List.map (fun ((dirs, base), node) -> 
+    let nodes =
+      groups +> List.map (fun (k, xs) ->
+        let xs' = xs +> List.map (fun ((dirs, base), node) ->
           (List.tl dirs, base), node
-        ) 
+        )
         in
         let dirname = Filename.concat current_root k in
         Node (dirname, aux dirname xs')
       )
     in
-    let leaves = files_here +> List.map (fun ((_dir, _base), node) -> 
+    let leaves = files_here +> List.map (fun ((_dir, _base), node) ->
       node
     ) in
     nodes @ leaves
   in
   aux root_path xs
- 
-  
+
+
 let tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook paths =
   match paths with
   | [] -> failwith "tree_of_dirs_or_files: empty list"
   | [x] -> tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
-  | xs -> 
-      let nodes = 
+  | xs ->
+      let nodes =
         xs +> List.map (fun x ->
           tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
         )
@@ -2462,7 +2462,7 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
  * childrens. This function removes those intermediate singleton
  * sub directories.
  *)
-let rec remove_singleton_subdirs tree = 
+let rec remove_singleton_subdirs tree =
   match tree with
   | Leaf _x -> tree
   | Node (x, [Node (_y, ys)]) ->
@@ -2484,7 +2484,7 @@ let rec remove_singleton_subdirs tree =
 <<variable tree_ex_wijk_1999>>
 
 <<variable treemap_ex_ordered_2001>>
-     
+
 
 
 
@@ -2500,20 +2500,20 @@ let rec remove_singleton_subdirs tree =
 let actions () = [
   <<treemap actions>>
 ]
-@ 
+@
 
 
 <<function treemap accessors>>=
-let color_of_treemap_node x = 
-  match x with 
+let color_of_treemap_node x =
+  match x with
   | Node (({color = c; _}, _), _) -> c
   | Leaf (({color = c; _}, _)) -> c
 
-let size_of_treemap_node x = 
-  match x with 
+let size_of_treemap_node x =
+  match x with
   | Node (({size = s; _}, _), _) -> s
   | Leaf (({size = s; _}, _)) -> s
-@ 
+@
 
 
 
@@ -2523,9 +2523,9 @@ let current_dim ~w_legend ~h_status =
 
   let w, h = Graphics.size_x (), Graphics.size_y () in
 
-  let w_view, h_view = 
-    Graphics.size_x () - w_legend, 
-    Graphics.size_y () - h_status 
+  let w_view, h_view =
+    Graphics.size_x () - w_legend,
+    Graphics.size_y () - h_status
   in
 
   {
@@ -2536,7 +2536,7 @@ let current_dim ~w_legend ~h_status =
     h_status = h_status;
     w_legend = w_legend;
   }
-@ 
+@
 
 
 
@@ -2562,11 +2562,11 @@ let s_of_algo algo =
   | SquarifiedNoSort -> "squarified_no_sort"
   | Ordered PivotBySize -> "ordered_by_size"
   | Ordered PivotByMiddle -> "ordered_by_middle"
-@ 
+@
 
 
 <<graphic helpers>>=
-let draw_string_centered str = 
+let draw_string_centered str =
   let (w, h) = Graphics.text_size str in
   Graphics.rmoveto (- w / 2) (- h / 2);
   Graphics.draw_string str
@@ -2599,7 +2599,7 @@ let draw_text_center_rect_float_ortho ((x1, y1),(x2, y2)) color (w, h) str =
 let draw_label rect (w, h) depth label ~is_dir =
   let (p, q) = rect.p, rect.q in
 
-  let font_label_opt = 
+  let font_label_opt =
     if is_dir then
       match depth with
       | 1 -> None
@@ -2607,10 +2607,10 @@ let draw_label rect (w, h) depth label ~is_dir =
       | 3 -> Some  "-misc-*-*-*-*-10-*-*-*-*-*-*"
       | 4 -> Some "-misc-*-*-*-*7-*-*-*-*-*-*"
       | _ -> None
-    else 
+    else
       Some "-misc-*-*-*-*-6-*-*-*-*-*-*"
   in
-  
+
   font_label_opt +> Common.do_option (fun font ->
     Graphics.set_font font;
 
@@ -2621,22 +2621,22 @@ let draw_label rect (w, h) depth label ~is_dir =
       (w, h)
       label
   )
-@ 
+@
 
 
 <<function treemap_of_tree>>=
 let treemap_of_tree2
-    ~size_of_leaf 
-    ~color_of_leaf 
+    ~size_of_leaf
+    ~color_of_leaf
     ?(label_of_file=(fun _ -> ""))
     ?(label_of_dir=(fun _ -> ""))
-    tree = 
-  let rec aux tree = 
+    tree =
+  let rec aux tree =
     match tree with
     | Node (nodeinfo, xs) ->
         let sizeme = ref 0 in
-       
-        let child = List.map (fun x -> 
+
+        let child = List.map (fun x ->
           let (res, size) = aux x in
           sizeme := !sizeme + size;
           res
@@ -2650,7 +2650,7 @@ let treemap_of_tree2
          *)
         let sizeme = !sizeme in
         Node((
-          { 
+          {
             size = sizeme;
             color = Color.black; (* TODO ? nodes have colors ? *)
             label = label_of_dir nodeinfo;
@@ -2660,7 +2660,7 @@ let treemap_of_tree2
         let sizeme = size_of_leaf leaf in
         let nodeinfo = leaf in
         Leaf((
-          { 
+          {
             size = sizeme;
             color = color_of_leaf leaf;
             label = label_of_file leaf;
@@ -2669,7 +2669,7 @@ let treemap_of_tree2
   in
   let (tree, _size) = aux tree in
   tree
-@ 
+@
 
 
 
@@ -2684,7 +2684,7 @@ let treemap_of_tree2
 
 <<concrete rectangles example>>=
 (* src: python treemap.py
- * lower, upper, rgb 
+ * lower, upper, rgb
  *)
 let treemap_rectangles_ex = [
  [0.0, 0.0], [1.0, 1.0],                                                                 (0.17778372236496054, 0.75183542244426871, 0.77892130219255096);
@@ -2711,7 +2711,7 @@ let treemap_rectangles_ex = [
  [0.8936170212765957, 0.0], [1.0, 0.59999999999999998],                                    (0.7942020522649591, 0.27351921049542915, 0.86191731793444748);
  [0.8936170212765957, 0.59999999999999998], [1.0, 1.0],                                  (0.27214488578650742, 0.41635201268319189, 0.1301335726270938);
 ]
-@ 
+@
 
 
 <<function test_treemap_manual>>=
@@ -2719,26 +2719,26 @@ let treemap_rectangles_ex = [
 let test_treemap_manual () =
   Graphics.open_graph " 640x640";
   Graphics.set_color (Graphics.rgb 1 1 1);
-  let w, h = Graphics.size_x (), Graphics.size_y () in                   
+  let w, h = Graphics.size_x (), Graphics.size_y () in
 
   treemap_rectangles_ex +> List.iter (fun (upper, lower, (r,g,b)) ->
     match upper, lower with
     | [x1, y1], [x2, y2] ->
         let maxc = float_of_int 256 in
         let (r,g,b) =
-          int_of_float (r *. maxc), 
-          int_of_float (g *. maxc), 
-          int_of_float (b *. maxc) 
+          int_of_float (r *. maxc),
+          int_of_float (g *. maxc),
+          int_of_float (b *. maxc)
         in
         let color = Graphics.rgb (r) (g) (b) in
 
-        draw_rect_treemap_float_ortho ((x1, y1),(x2, y2)) color (w, h) 
+        draw_rect_treemap_float_ortho ((x1, y1),(x2, y2)) color (w, h)
         +> ignore
     | _ -> failwith "wront format"
   );
   Common.pause();
   ()
-@ 
+@
 
 
 
@@ -2746,14 +2746,14 @@ let test_treemap_manual () =
 let test_treemap algorithm treemap =
   Graphics.open_graph " 640x640";
   Graphics.set_color (Graphics.rgb 1 1 1);
-  let w, h = Graphics.size_x (), Graphics.size_y () in                   
+  let w, h = Graphics.size_x (), Graphics.size_y () in
 
   Graphics.set_line_width 2;
 
   display_treemap_algo ~algo:algorithm treemap (w, h) +> ignore;
-  while true do                                   
+  while true do
     let status = Graphics.wait_next_event [
-        Graphics.Key_pressed; 
+        Graphics.Key_pressed;
       ]
     in
     if status.Graphics.keypressed (* Graphics.key_pressed () *)
@@ -2761,30 +2761,30 @@ let test_treemap algorithm treemap =
   done;
   (* old: pause (); *)
   ()
-@ 
+@
 
 
 <<function test_treemap_tree>>=
 let test_treemap_tree algorithm ex =
   let maxc = 256 in
 
-  let tree = 
+  let tree =
     match ex with
     | 1 -> tree_ex_shneiderman_1991
     | 2 -> tree_ex_wijk_1999
     | _ -> raise Impossible
   in
 
-  let treemap = treemap_of_tree 
-    ~size_of_leaf:(fun intleaf -> intleaf) 
-    ~color_of_leaf:(fun intleaf -> 
+  let treemap = treemap_of_tree
+    ~size_of_leaf:(fun intleaf -> intleaf)
+    ~color_of_leaf:(fun intleaf ->
       Graphics.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
     )
     ~label_of_file:(fun intleaf -> i_to_s intleaf)
-    tree 
+    tree
   in
   test_treemap algorithm treemap
-@ 
+@
 
 
 <<function test_treemap_dir>>=
@@ -2795,9 +2795,9 @@ let test_treemap_dir dir algo =
 
   Graphics.open_graph (spf " %dx%d" w_view_hint (h_view_hint+ h_status));
   Graphics.set_color (Graphics.rgb 1 1 1);
-  let w_view, h_view = 
-    Graphics.size_x (), 
-    Graphics.size_y () - h_status 
+  let w_view, h_view =
+    Graphics.size_x (),
+    Graphics.size_y () - h_status
   in
   let w, h = Graphics.size_x (), Graphics.size_y () in
 
@@ -2814,7 +2814,7 @@ let test_treemap_dir dir algo =
 
   (* work ? Graphics.set_line_width 2; *)
 
-  let tree = 
+  let tree =
     tree_of_dir ~file_hook:(fun file ->
       file, Common.filesize file
     )
@@ -2822,22 +2822,22 @@ let test_treemap_dir dir algo =
   in
 
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
-    ~color_of_leaf:(fun (f, intleaf) -> 
+    ~size_of_leaf:(fun (f, intleaf) -> intleaf)
+    ~color_of_leaf:(fun (f, intleaf) ->
       Graphics.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
     )
     ~label_of_dir:(fun dir -> basename dir)
-    tree 
+    tree
   in
-  
-  display_treemap_interactive 
+
+  display_treemap_interactive
     ~algo
-    treemap 
+    treemap
     dim
     ~info_of_file_under_cursor:(fun status (f, size) ->
       let s = f in
-      if status.Graphics.button 
-      then begin 
+      if status.Graphics.button
+      then begin
         pr2 (spf "%s" f);
         Sys.command (spf "/home/pad/packages/Linux/bin/emacsclient -n %s" f) +> ignore;
       end;
@@ -2846,10 +2846,10 @@ let test_treemap_dir dir algo =
       then raise (UnixExit 0);
       s
     );
-      
+
 
   ()
-@ 
+@
 
 
 <<treemap actions>>=
@@ -2857,7 +2857,7 @@ let test_treemap_dir dir algo =
   Common.mk_action_0_arg (test_squarify);
   "-test_orderify", "<>",
   Common.mk_action_0_arg (test_orderify);
-@ 
+@
 
 
 \subsection{[[treemap_json.mli]]}
@@ -2874,7 +2874,7 @@ val json_of_treemap_rendering:
 
 val actions : unit -> Common.cmdline_actions
 
-@ 
+@
 
 \subsection{[[treemap_json.ml]]}
 
@@ -2906,7 +2906,7 @@ module Color = Simple_color
 <<function json_of_color>>
 
 <<function json_of_treemap>>
-      
+
 
 (*****************************************************************************)
 (* Treemap rendering *)
@@ -2926,7 +2926,7 @@ and vof_point { x = v_x; y = v_y } =
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_float v_x in
   let bnd = ("x", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-  
+
 let rec vof_treemap_rendering v = Ocaml.vof_list vof_treemap_rectangle v
 and
   vof_treemap_rectangle {
@@ -2950,12 +2950,12 @@ and
   let bnd = ("tr_color", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_rectangle v_tr_rect in
-  let bnd = ("tr_rect", arg) in 
+  let bnd = ("tr_rect", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 
 
-let json_of_treemap_rendering rendering = 
+let json_of_treemap_rendering rendering =
   let v = vof_treemap_rendering rendering in
   Ocaml.json_of_v v
 
@@ -2965,7 +2965,7 @@ let json_of_treemap_rendering rendering =
 <<function test_json_of>>
 
 <<function test_of_json>>
-    
+
 
 (*****************************************************************************)
 (* Actions *)
@@ -2976,7 +2976,7 @@ let actions () = [
 
 ]
 
-@ 
+@
 
 \subsection{[[treemap_graphics.mli]]}
 
@@ -2996,7 +2996,7 @@ open Treemap
 
 <<signature test treemap functions>>
 
-@ 
+@
 
 \subsection{[[treemap_graphics.ml]]}
 
@@ -3070,21 +3070,21 @@ let actions () = [
 <<treemap_graphics actions>>
 ]
 
-@ 
+@
 
 <<treemap_graphics actions>>=
   "-test_treemap_manual", "<>",
   Common.mk_action_0_arg (test_treemap_manual);
 
   "-test_treemap", "<algorithm>",
-  Common.mk_action_1_arg (fun s -> 
+  Common.mk_action_1_arg (fun s ->
     let treemap = treemap_ex_ordered_2001 in
     test_treemap (algo_of_s s) treemap
 
   );
 
   "-test_treemap_tree", "<algorithm> <ex>",
-  Common.mk_action_2_arg (fun s i -> 
+  Common.mk_action_2_arg (fun s i ->
     test_treemap_tree (algo_of_s s) (s_to_i i)
   );
   "-test_treemap_dir", "<dir> <algorithm>",
@@ -3092,13 +3092,13 @@ let actions () = [
     test_treemap_dir dir (algo_of_s str)
   );
 
-@ 
+@
 
 
 \subsection{[[main_treemap.ml]]}
 
 <<function main_action>>=
-let main_action jsonfile = 
+let main_action jsonfile =
   let json = Json_in.load_json jsonfile in
   let treemap = Treemap_json.treemap_of_json json in
 
@@ -3109,28 +3109,28 @@ let main_action jsonfile =
 
   let dim = init_graph !big_screen in
 
-  Treemap_graphics.display_treemap_interactive 
+  Treemap_graphics.display_treemap_interactive
     ~algo:!algorithm
     ~info_of_file_under_cursor:Treemap_graphics.info_of_file_under_cursor_default
     treemap dim
   ;
   ()
-@ 
+@
 
 
 <<treemap_viewer cmdline options>>=
     "-algorithm", Arg.String (fun s ->
       algorithm := Treemap.algo_of_s s;
-    ), 
-    (spf " <algo> (choices are: %s, default = %s" 
+    ),
+    (spf " <algo> (choices are: %s, default = %s"
         (Treemap.algos +> List.map Treemap.s_of_algo +> Common.join ", ")
         (Treemap.s_of_algo !algorithm));
 
-    "-big_screen", Arg.Set big_screen, 
+    "-big_screen", Arg.Set big_screen,
     " ";
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Set verbose,
     " ";
-@ 
+@
 
 
 <<treemap_viewer flags>>=
@@ -3138,7 +3138,7 @@ let algorithm = ref Treemap.Squarified
 let big_screen = ref false
 
 let verbose = ref false
-@ 
+@
 
 
 <<main_treemap.ml>>=
@@ -3163,24 +3163,24 @@ let version = "0.1"
 (* Helpers *)
 (*****************************************************************************)
 
-let init_graph big_screen = 
+let init_graph big_screen =
 
-  let w_view_hint, h_view_hint = 
+  let w_view_hint, h_view_hint =
     if big_screen
     then
-      2300, 1500 
+      2300, 1500
     else
       640, 640
   in
   let h_status = 30 in
   let w_legend = 200 in
-  
-  Graphics.open_graph 
+
+  Graphics.open_graph
     (spf " %dx%d" (w_view_hint + w_legend) (h_view_hint+ h_status));
   Graphics.set_color (Graphics.rgb 1 1 1);
-  let w_view, h_view = 
-    Graphics.size_x () - w_legend, 
-    Graphics.size_y () - h_status 
+  let w_view, h_view =
+    Graphics.size_x () - w_legend,
+    Graphics.size_y () - h_status
   in
   let w, h = Graphics.size_x (), Graphics.size_y () in
 
@@ -3204,12 +3204,12 @@ let init_graph big_screen =
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
  Treemap.actions () @
  Treemap_json.actions () @
  []
 
-let options () = 
+let options () =
   [
   <<treemap_viewer cmdline options>>
   ] @
@@ -3218,17 +3218,17 @@ let options () =
   Common.cmdline_flags_verbose () @
   Common.cmdline_flags_other () @
   [
-  "-version",   Arg.Unit (fun () -> 
+  "-version",   Arg.Unit (fun () ->
     pr2 (spf "ocamltreemap version: %s" version);
     exit 0;
-  ), 
+  ),
     "  guess what";
 
   (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
+  "-date",   Arg.Unit (fun () ->
     pr2 "version: $Date: 2008/10/26 00:44:57 $";
     raise (Common.UnixExit 0)
-    ), 
+    ),
   "   guess what";
   ] @
   []
@@ -3237,54 +3237,54 @@ let options () =
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
-  let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
+let main () =
+  let usage_msg =
+    "Usage: " ^ Common.basename Sys.argv.(0) ^
       " [options] <json file> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
 
     (match args with
-   
+
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | [x] -> 
+    | [x] ->
         main_action x
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
 
-    | x::y::xs -> 
-        Common.usage usage_msg (options()); 
+    | x::y::xs ->
+        Common.usage usage_msg (options());
         failwith "too many arguments"
     )
   )
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
       main ();
   )
 
-@ 
+@
 
 \section{Changelog}
 \label{sec:changelog}
@@ -3296,40 +3296,40 @@ let _ =
 %\subsection{Code Chunks}
 \nowebchunks
 
-%todo: need special support, cf smldefs 
+%todo: need special support, cf smldefs
 %\subsection{Identifiers}
 %\nowebindex
 
-%\chapter{References} 
+%\chapter{References}
 \addcontentsline{toc}{section}{References}
 
 
 \begin{thebibliography}{99}
 
 \bibitem[1]{wp-literate-programming} Donald Knuth,,
-{\em Literate Programming}, 
+{\em Literate Programming},
 \url{http://en.wikipedia.org/wiki/Literate\_Program}
 
 \bibitem[2]{noweb} Norman Ramsey,
-{\em Noweb}, 
+{\em Noweb},
 \url{http://www.cs.tufts.edu/~nr/noweb/}
 
 \bibitem[3]{syncweb} Yoann Padioleau,
-{\em Syncweb, literate programming meets unison}, 
+{\em Syncweb, literate programming meets unison},
 \url{http://padator.org/software/project-syncweb/readme.txt}
 
 
 \bibitem[4]{common-pad-manual} Yoann Padioleau,
-{\em Commons Pad OCaml Library}, 
+{\em Commons Pad OCaml Library},
 \url{http://padator.org/docs/Commons.pdf}
 
 
 \bibitem[5]{treemap-wikipedia} Wikipedia,
-{\em Treemapping}, 
+{\em Treemapping},
 \url{http://en.wikipedia.org/wiki/Treemapping}
 
 \bibitem[6]{treemap-history} Ben Shneiderman,
-{\em History of Treemap Research}, 
+{\em History of Treemap Research},
 \url{http://www.cs.umd.edu/hcil/treemap-history/index.shtml}
 
 \bibitem[7]{treemap-market} Martin Wattenberg,
@@ -3341,8 +3341,8 @@ let _ =
 
 \bibitem[8]{treemap-seminal} Ben Shneiderman,
 {\em Tree visualization with Tree-maps:
-A 2-d space-filling approach History of Treemap Research}, 
-1991, 
+A 2-d space-filling approach History of Treemap Research},
+1991,
 \url{http://hcil.cs.umd.edu/trs/91-03/91-03.html}
 
 \bibitem[9]{treemap-cushion} Jarke van Wijk, Huub van de Wetering,
@@ -3359,7 +3359,7 @@ A 2-d space-filling approach History of Treemap Research},
 \url{ftp://ftp.cs.umd.edu/pub/hcil/Reports-Abstracts-Bibliography/2001-06html/2001-06.htm}
 
 \bibitem[12]{treemap-list-software-wikipedia} Wikipedia
-{\em List of treemapping software}, 
+{\em List of treemapping software},
 \url{http://en.wikipedia.org/wiki/List_of_treemapping_software}
 
 
@@ -3367,7 +3367,7 @@ A 2-d space-filling approach History of Treemap Research},
 
 % xxxStat disk explorer
 
-% SeeSoft and other code visualization 
+% SeeSoft and other code visualization
 
 
 \end{thebibliography}

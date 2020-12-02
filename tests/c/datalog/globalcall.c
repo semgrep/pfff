@@ -27,4 +27,3 @@ int main() {
   int v = global;
   printf("%d\n", global);
 }
-

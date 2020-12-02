@@ -138,4 +138,3 @@ val load_whitelist: Common.filename -> whitelist
 val save_whitelist: whitelist -> Common.filename -> graph -> unit
 (* does side effect on the graph *)
 val adjust_graph: graph -> adjust list -> whitelist -> unit
-

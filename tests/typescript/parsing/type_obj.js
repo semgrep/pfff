@@ -5,4 +5,3 @@ interface PermissionsResponse {
   [name: string]: PermissionEntry;
   };
 };
-

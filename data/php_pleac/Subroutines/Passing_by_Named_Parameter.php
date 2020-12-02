@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Passing by Named Parameter 
-# ********************************************************************** 
+# **********************************************************************
+# Passing by Named Parameter
+# **********************************************************************
 <?php
 function pleac_Passing_by_Named_Parameter() {
 // PHP doesn't directly support named / keyword parameters, but these can be
@@ -77,4 +77,3 @@ the_func(array('start_time' => new RaceTime(30, 'm')));
 
 }
 ?>
-

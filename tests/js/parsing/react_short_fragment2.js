@@ -5,7 +5,7 @@ const Val = (x) => {
           <Button>
             {baz ? 'test' : <a href={parentTag}>test2</a>} // added > before test2
           </Button>
-        )} 
+        )}
       </div>
   );
 };

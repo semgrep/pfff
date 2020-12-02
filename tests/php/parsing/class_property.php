@@ -40,4 +40,3 @@ test();
 $b = new B();
 $b->test();
 $b::testA();
-

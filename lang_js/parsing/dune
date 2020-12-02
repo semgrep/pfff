@@ -12,5 +12,3 @@
 (ocamllex lexer_js)
 (menhir (modules parser_js)
         (flags --unused-tokens --explain --fixed-exception))
-
-

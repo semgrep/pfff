@@ -11,4 +11,3 @@ def foo():
     message += f": {part!s}"
     name = f"{name}_{idx!s}"
     raise ValueError(f"Invalid color {k!s} in {the_color}")
-

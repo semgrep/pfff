@@ -5,5 +5,3 @@ let foo x =
             #else
   |    1 -> 2
             #endif
-
-

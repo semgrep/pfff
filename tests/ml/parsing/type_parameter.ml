@@ -11,4 +11,3 @@ let string_of_hint_type (h : hint_type option) = match h with
        | HintArray _ -> "array"
       )
   | None -> ""
-

@@ -18,9 +18,9 @@ SRC= ast_css.ml \
 
 #     visitor_html.ml \
 #     unparse_html.ml \
-     
 
-SYSLIBS= str.cma unix.cma 
+
+SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma
 
 INCLUDEDIRS= $(TOP)/commons \

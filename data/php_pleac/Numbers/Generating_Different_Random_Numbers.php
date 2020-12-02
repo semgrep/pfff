@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Generating Different Random Numbers 
-# ********************************************************************** 
+# **********************************************************************
+# Generating Different Random Numbers
+# **********************************************************************
 <?php
 function pleac_Generating_Different_Random_Numbers() {
 // PHP sports a large number of C Standard Library routines including the 'srand'
@@ -17,4 +17,3 @@ srand($seed);
 
 }
 ?>
-

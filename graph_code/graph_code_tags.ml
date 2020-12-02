@@ -106,4 +106,3 @@ let defs_of_graph_code ?(verbose=false) g =
     |> Common.sort_by_key_lowfirst
     |> List.map snd
   )
-

@@ -210,7 +210,3 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
   (* ast phase 2 *)
 
   ()
-
-
-
-

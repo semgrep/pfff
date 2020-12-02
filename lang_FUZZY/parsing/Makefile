@@ -11,7 +11,7 @@ SRC= lang_fuzzy.ml \
      parse_fuzzy.ml \
      test_parsing_fuzzy.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \

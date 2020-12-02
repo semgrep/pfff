@@ -11,5 +11,5 @@
  (preprocess (pps ppx_deriving.show))
 )
 (ocamllex lexer_php)
-(menhir (modules parser_php) 
+(menhir (modules parser_php)
         (flags --unused-tokens --explain --fixed-exception))

@@ -14,7 +14,7 @@
 
 
 %------------------------------------------------------------------------------
-%history: 
+%history:
 %------------------------------------------------------------------------------
 %thx to LP, changed for the better a few things :)
 % - ??
@@ -57,7 +57,7 @@
 
 \usepackage{multirow}
 
-\usepackage{booktabs} 
+\usepackage{booktabs}
 \newcommand{\otoprule}{\midrule[\heavyrulewidth]}
 
 \usepackage{graphicx}
@@ -82,7 +82,7 @@
 \begin{document}
 
 \title{
-{\Huge 
+{\Huge
 Pfff visual
 }\\
 Google Maps for Source Code\\
@@ -95,7 +95,7 @@ Yoann Padioleau\\
 }
 %dup: authors.txt
 
-\maketitle 
+\maketitle
 
 %dup: with section Copyright
 %\pagebreak
@@ -136,20 +136,20 @@ Yoann Padioleau\\
 The source code of \pfff is governed by the following copyright:
 <<Facebook copyright>>=
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2010 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-@ 
+@
 %alt: (* Copyright 2009, 2010 Facebook. All Rights Reserved. *)
 
 \subsection{About this document}
@@ -174,35 +174,35 @@ Hope you like it.
 \section*{Indexes}
 \addcontentsline{toc}{section}{Index}
 
-%\chapter{References} 
+%\chapter{References}
 \addcontentsline{toc}{section}{References}
 
 \begin{thebibliography}{99}
 
 \bibitem[1]{wp-literate-programming} Donald Knuth,,
-{\em Literate Programming}, 
+{\em Literate Programming},
 \url{http://en.wikipedia.org/wiki/Literate\_Program}
 
 \bibitem[2]{noweb} Norman Ramsey,
-{\em Noweb}, 
+{\em Noweb},
 \url{http://www.cs.tufts.edu/~nr/noweb/}
 
 \bibitem[3]{syncweb} Yoann Padioleau,
-{\em Syncweb, literate programming meets unison}, 
+{\em Syncweb, literate programming meets unison},
 \url{http://padator.org/software/project-syncweb/readme.txt}
 
 
 \bibitem[4]{common-pad-manual} Yoann Padioleau,
-{\em Commons Pad OCaml Library}, 
+{\em Commons Pad OCaml Library},
 \url{http://padator.org/docs/Commons.pdf}
 
 
 \bibitem[5]{treemap-wikipedia} Wikipedia,
-{\em Treemapping}, 
+{\em Treemapping},
 \url{http://en.wikipedia.org/wiki/Treemapping}
 
 
-% SeeSoft and other code visualization 
+% SeeSoft and other code visualization
 
 \end{thebibliography}
 

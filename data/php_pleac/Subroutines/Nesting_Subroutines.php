@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Nesting Subroutines 
-# ********************************************************************** 
+# **********************************************************************
+# Nesting Subroutines
+# **********************************************************************
 <?php
 function pleac_Nesting_Subroutines() {
 // *** Warning *** Whilst PHP *does* allow functions to be defined within other
@@ -36,7 +36,7 @@ function outer($arg)
   return $x + inner($x);
 }
 
-// ------------ 
+// ------------
 
 // Equivalent to previously-shown code
 function inner($x)
@@ -52,4 +52,3 @@ function outer($arg)
 
 }
 ?>
-

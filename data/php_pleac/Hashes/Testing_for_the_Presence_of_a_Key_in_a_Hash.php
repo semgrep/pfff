@@ -1,21 +1,21 @@
-# ********************************************************************** 
-# Testing for the Presence of a Key in a Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Testing for the Presence of a Key in a Hash
+# **********************************************************************
 <?php
 function pleac_Testing_for_the_Presence_of_a_Key_in_a_Hash() {
 // Returns TRUE on all existing entries with non-NULL values
 if (isset($hash[$key]))
-  ; // entry exists  
+  ; // entry exists
 else
-  ; // no such entry 
+  ; // no such entry
 
 // ------------
 
 // Returns TRUE on all existing entries regardless of attached value
 if (array_key_exists($key, $hash))
-  ; // entry exists  
+  ; // entry exists
 else
-  ; // no such entry 
+  ; // no such entry
 
 // ----------------------------
 
@@ -45,4 +45,3 @@ foreach(array('Toddler', 'Unborn', 'Phantasm', 'Relic') as $thing)
 
 }
 ?>
-

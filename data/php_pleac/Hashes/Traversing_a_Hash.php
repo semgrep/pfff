@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Traversing a Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Traversing a Hash
+# **********************************************************************
 <?php
 function pleac_Traversing_a_Hash() {
 // Access keys and values
@@ -57,7 +57,7 @@ while (!feof(STDIN))
 
 if (isset($from))
 {
-  echo "Senders:\n";  
+  echo "Senders:\n";
   foreach($from as $sender => $count) echo "{$sender} : {$count}\n";
 }
 else
@@ -67,4 +67,3 @@ else
 
 }
 ?>
-

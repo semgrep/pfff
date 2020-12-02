@@ -5,4 +5,3 @@ function foo() {
       $this->getName() == $this->getUntranslatedName()) {
   }
 }
-

@@ -16,5 +16,3 @@ val fresh_tok:
 val regexp_ns_decl_like: Str.regexp
 val regexp_macro: Str.regexp
 val regexp_declare: Str.regexp
-
-

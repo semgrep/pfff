@@ -7,7 +7,7 @@
 //from _checkModuleLib.php in $extension_defines
 define('MCC_NZLIB_COMPRESSION', 0);
 define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
- 
+
 define('MCC_COMPRESSION_THRESHHOLD', 0);
 
 // ------------------------------------------
@@ -28,7 +28,7 @@ define('_SYSTEM_TTFONTS', 0);
 
 // defined ?? this flib/third-party/geojson/WKT/WKT.class.php defines
 // only class GeoJSONWKT. Maybe some magic done around class name
-class WKT { 
+class WKT {
   public static function load($x) { }
 }
 

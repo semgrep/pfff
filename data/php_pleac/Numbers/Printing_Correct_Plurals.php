@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Printing Correct Plurals 
-# ********************************************************************** 
+# **********************************************************************
+# Printing Correct Plurals
+# **********************************************************************
 <?php
 function pleac_Printing_Correct_Plurals() {
 function pluralise($value, $root, $singular='' , $plural='s')
@@ -44,4 +44,3 @@ foreach(array('mess', 'index', 'leaf', 'puppy') as $word)
 
 }
 ?>
-

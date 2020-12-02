@@ -8,8 +8,8 @@ building treemap is faster now because:
  - unix_stat_eff
 
 painting treemap is faster now because:
- - nblines_eff, 
- - faster source_archi_of_filename with ocamllex and caching/reusing of 
+ - nblines_eff,
+ - faster source_archi_of_filename with ocamllex and caching/reusing of
    dir -> archi
  - less draw labeling and text_extent, and memoizing stuff there too
  - do the drawing of content in the backgrond

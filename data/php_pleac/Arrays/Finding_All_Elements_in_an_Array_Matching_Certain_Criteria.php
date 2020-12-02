@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Finding All Elements in an Array Matching Certain Criteria 
-# ********************************************************************** 
+# **********************************************************************
+# Finding All Elements in an Array Matching Certain Criteria
+# **********************************************************************
 <?php
 function pleac_Finding_All_Elements_in_an_Array_Matching_Certain_Criteria() {
 // PHP implements 'grep' functionality [as embodied in the current section] in the 'array_filter'
@@ -24,7 +24,7 @@ function is_pig($user)
 {
   $user_details = preg_split('/(\s)+/', $user);
   // Assuming field 5 is the resource being compared
-  return $user_details[5] > 1e7;  
+  return $user_details[5] > 1e7;
 }
 
 $pigs = array_filter(array_slice(preg_split('/\n/', `who -u`), 0, -1), 'is_pig');
@@ -64,4 +64,3 @@ $engineers = array_filter($employees,
 
 }
 ?>
-

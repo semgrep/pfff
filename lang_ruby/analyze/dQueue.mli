@@ -61,5 +61,3 @@ val move_left : 'a cursor -> 'a cursor
 
 val goto_front : 'a cursor -> 'a cursor
 val goto_back : 'a cursor -> 'a cursor
-
-

@@ -23,4 +23,3 @@ val reorder_files_skip_errors_last:
 (* returns true if we should skip the file for errors *)
 val build_filter_errors_file:
   skip list -> (Common.filename (* readable *) -> bool)
-

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Sharing Variables in Different Processes 
-# ********************************************************************** 
+# **********************************************************************
+# Sharing Variables in Different Processes
+# **********************************************************************
 <?php
 function pleac_Sharing_Variables_in_Different_Processes() {
 // sharetest - test shared variables across forks
@@ -62,4 +62,3 @@ function squabble() {
 
 }
 ?>
-

@@ -241,7 +241,7 @@ enumerator_list: enumerator {}
 enumerator: TIdent {}
           | TIdent TEq const_expr {}
 /*------------------------------------------------------------------------------*/
- 	
+
 init_declarator_list: init_declarator {}
 	            | init_declarator_list TComma init_declarator {}
 
@@ -297,7 +297,7 @@ direct_abstract_declarator: TOPar abstract_declarator TCPar {}
 			  | TOPar parameter_type_list TCPar {}
 			  | direct_abstract_declarator TOPar TCPar {}
 			  | direct_abstract_declarator TOPar parameter_type_list TCPar {}
-			
+
 /*------------------------------------------------------------------------------*/
 initialize: assign_expr {}
           | TOBrace initialize_list TCBrace {}

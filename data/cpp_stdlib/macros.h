@@ -18,15 +18,15 @@
  */
 //ex: #define KERN_WARNING "WARNING"
 
-/* EX_TABLE & co. 
+/* EX_TABLE & co.
  *
  * Replaced by a string. We can't put everything as comment
  * because it can be part of an expression where we wait for
- * something, where we wait for a string. So at least we 
+ * something, where we wait for a string. So at least we
  * must keep the EX_TABLE token and transform it as a string.
  *
- * normally not needed if have good stringification of macro 
- * but those macros are sometimes used multiple times 
+ * normally not needed if have good stringification of macro
+ * but those macros are sometimes used multiple times
  * as in EX_TABLE(0b) EX_TABLE(1b)  and we don't detect
  * it well yet.
  */
@@ -45,7 +45,7 @@
 // ****************************************************************************
 
 // static DECLARATOR(x);
-// LIST_HEAD stuff 
+// LIST_HEAD stuff
 // (used in qemu, freebsd)
 
 // ****************************************************************************
@@ -117,7 +117,7 @@
  */
 
 // #define uninitialized_var(x) x = x
-// as in u16 uninitialized_var(ioboard_type);	/* GCC be quiet */ 
+// as in u16 uninitialized_var(ioboard_type);	/* GCC be quiet */
 
 // ****************************************************************************
 // Misc
@@ -126,7 +126,7 @@
 // LIST_HEAD
 // GENTEST, GENHEADER
 // structure
-// MACHINE_START 
+// MACHINE_START
 // higher order, ASSERTCMP
 // parts of stuff, start of stuff
 // begin end wierd, as in C++ firefox and NS_DECLARE_BEGIN/END with code in

@@ -1,4 +1,4 @@
-;;; tuareg-site-file.el --- Automatically extracted autoloads.\n;;; Code:\n(add-to-list 'load-path\n             (or (file-name-directory load-file-name) (car load-path)))\n
+;;; tuareg-site-file.el --- Automatically extracted autoloads.\n;;; Code:\n(add-to-list 'load-path\n             (or (file-name-directory load-file-name) (car load-path)))\n
 ;;;### (autoloads (ocamldebug) "ocamldebug" "ocamldebug.el" (20189
 ;;;;;;  10013))
 ;;; Generated autoloads from ocamldebug.el
@@ -14,7 +14,7 @@ the ocamldebug commands `cd DIR' and `directory'.
 (defalias 'camldebug 'ocamldebug)
 
 ;;;***
-
+
 ;;;### (autoloads (tuareg-run-ocaml tuareg-mode) "tuareg" "tuareg.el"
 ;;;;;;  (20518 44893))
 ;;; Generated autoloads from tuareg.el
@@ -95,8 +95,7 @@ Run an OCaml toplevel process. I/O via buffer `*ocaml-toplevel*'.
 \(fn)" t nil)
 
 ;;;***
-
+
 ;;;### (autoloads nil nil ("tuareg-pkg.el") (20526 55482 305493))
 
 ;;;***
-

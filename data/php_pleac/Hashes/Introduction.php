@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Introduction 
-# ********************************************************************** 
+# **********************************************************************
+# Introduction
+# **********************************************************************
 <?php
 function pleac_Introduction() {
 // PHP uses the term 'array' to refer to associative arrays - referred to in Perl
@@ -29,4 +29,3 @@ $food_colour = array_combine(array('Apple', 'Banana', 'Lemon', 'Carrot'),
 
 }
 ?>
-

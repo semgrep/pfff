@@ -4,4 +4,3 @@ var DOM = {
   setContent : function(el, content) {
   }
 };
-

@@ -63,4 +63,3 @@ let line_of_tok x = fst (linecol_of_tok x)
 let str_of_tok  x = PI.str_of_info  (info_of_tok x)
 let file_of_tok x = PI.file_of_info (info_of_tok x)
 let pos_of_tok x =  PI.pos_of_info (info_of_tok x)
-

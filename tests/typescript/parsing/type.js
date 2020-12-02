@@ -10,5 +10,3 @@ var obj: {str:string; i:int} = {str: "...", i: 0};
 function id<T>(x:T):T { return x; }
 
 var o = {id: function<T>(x:T):T { return x; }}
-
-

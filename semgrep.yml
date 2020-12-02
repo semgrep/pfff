@@ -1,4 +1,4 @@
-# This file contains Semgrep rules. 
+# This file contains Semgrep rules.
 # See https://semgrep.dev for more information.
 
 # You can use this file locally either with:
@@ -54,7 +54,7 @@ rules:
 
   - id: no-List-find-outside-try
     patterns:
-    - pattern-either: 
+    - pattern-either:
       - pattern: |
           List.find ...
     - pattern-not-inside: |

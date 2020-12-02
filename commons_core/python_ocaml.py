@@ -17,5 +17,3 @@ def append_test(xs):
     sentence = "this is a melon"
     words = sentence.split()
     return (words + xs)
-
-

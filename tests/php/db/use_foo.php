@@ -6,5 +6,3 @@ function use_foo() {
   $o = new A();
   $o->mbar();
 }
-
-

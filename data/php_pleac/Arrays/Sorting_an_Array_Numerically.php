@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Sorting an Array Numerically 
-# ********************************************************************** 
+# **********************************************************************
+# Sorting an Array Numerically
+# **********************************************************************
 <?php
 function pleac_Sorting_an_Array_Numerically() {
 // PHP offers a rich set of sorting functions. Key features:
@@ -70,4 +70,3 @@ if (($pid = trim(fgets(STDIN))))
 
 }
 ?>
-

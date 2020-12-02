@@ -209,4 +209,3 @@ and comment = parse
       pr2 ("LEXER: unrecognised symbol in comment:"^s);
       s ^ comment lexbuf
     }
-

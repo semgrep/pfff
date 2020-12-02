@@ -246,7 +246,3 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
   (* ast phase 2 *)
 
   ()
-
-
-
-

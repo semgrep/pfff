@@ -642,6 +642,3 @@ expression_no_in_opt:
 case_clauses_opt:
  | /*(* empty *)*/ { }
  | case_clauses { }
-
-
-

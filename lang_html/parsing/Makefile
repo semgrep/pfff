@@ -21,7 +21,7 @@ SRC= ast_html.ml \
      test_parsing_html.ml
 
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma
 
 INCLUDEDIRS= $(TOP)/commons \
