@@ -7,4 +7,3 @@ require_once 'b.php';
 a();
 a();
 b();
-

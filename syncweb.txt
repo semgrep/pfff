@@ -33,4 +33,3 @@ The darcs masters are in ~/mobile/commons/ and here are the clones:
  - lang_html/ DEV
  - lang_css/ DEV
  - lang_js/ DEV
-

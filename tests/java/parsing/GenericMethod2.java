@@ -4,6 +4,3 @@ public class WebViewTest {
   public <T extends Parcelable<T>> T getResultDataParcelable() {
   }
 }
-
-
-

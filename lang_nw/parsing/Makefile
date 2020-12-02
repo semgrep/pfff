@@ -27,7 +27,7 @@ INCLUDEDIRS= $(TOP)/commons \
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 ##############################################################################
 # Generic variables

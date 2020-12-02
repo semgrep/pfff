@@ -4,4 +4,3 @@ class ['a] oassoc_id xs =
 
     method empty = {< >}
   end
-

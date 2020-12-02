@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Using Complex Numbers 
-# ********************************************************************** 
+# **********************************************************************
+# Using Complex Numbers
+# **********************************************************************
 <?php
 function pleac_Using_Complex_Numbers() {
 // PHP offers no native support for complex numbers. However, a 'Math_Complex' class
@@ -27,4 +27,3 @@ echo $r->toString() . "\n";
 
 }
 ?>
-

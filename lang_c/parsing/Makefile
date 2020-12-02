@@ -13,7 +13,7 @@ SRC= ast_c.ml visitor_c.ml \
      parse_c.ml \
      test_parsing_c.ml unit_parsing_c.ml \
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \

@@ -6,4 +6,3 @@ def foo():
     return 3
   # unreachable return
   return 0
-

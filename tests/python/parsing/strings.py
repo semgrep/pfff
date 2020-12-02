@@ -4,4 +4,3 @@ def get_version():
 
 u"\u2018"
 ub"Hi"
-

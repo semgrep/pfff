@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Merging Hashes 
-# ********************************************************************** 
+# **********************************************************************
+# Merging Hashes
+# **********************************************************************
 <?php
 function pleac_Merging_Hashes() {
 // PHP offers the 'array_merge' function for this task [a related function, 'array_combine',
@@ -14,7 +14,7 @@ $hash = array_combine($keys, $values);
 
 // ------------
 
-// Can always merge arrays manually 
+// Can always merge arrays manually
 foreach(array($h1, $h2, $h3) as $hash)
 {
   foreach($hash as $key => $value)
@@ -57,4 +57,3 @@ foreach(array($food_colour, $drink_colour) as $hash)
 
 }
 ?>
-

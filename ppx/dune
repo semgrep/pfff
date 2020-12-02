@@ -1,6 +1,6 @@
 (library
  (public_name ppx_profiling)
  (kind ppx_deriver)
- (libraries 
+ (libraries
    str unix
    commons ocaml-migrate-parsetree))

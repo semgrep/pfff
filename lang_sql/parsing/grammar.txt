@@ -1,6 +1,6 @@
 yacc grammar on the web
 
-yacc grammar in mysql 
+yacc grammar in mysql
 
 
 lemon for PHP
@@ -8,4 +8,4 @@ lemon for PHP
 hack in SQL_parser for PHP
 
 
-python? ruby ? 
+python? ruby ?

@@ -278,4 +278,3 @@ let abstract_position_trees trees =
   } in
   let mapper = mk_mapper hooks in
   mapper trees
-

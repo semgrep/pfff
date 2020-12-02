@@ -36,8 +36,8 @@ maybe use latex visual trick to say when good function
 }
 
 \todo{
-make features stuff 
-configure, Makefile.config 
+make features stuff
+configure, Makefile.config
 cf readme.txt ?
 features.ml.cpp, MPI, Regexp, Backtrace
 yes sometimes cpp is useful
@@ -76,16 +76,16 @@ wants to, he can also leverage the other commons_xxx libraries by
 explicitely building them after he has installed the necessary
 external files.
 
-For many configurable things we can use some flags in ml files, 
+For many configurable things we can use some flags in ml files,
 and have some -xxx command line argument to set them or not,
 but for other things flags are not enough as they will not remove
 the header and linker dependencies in Makefiles. A solution is
 to use cpp and pre-process many files that have such configuration
 issue. Another solution is to centralize all the cpp issue in one
 file, features.ml.cpp, that acts as a generic wrapper for other
-librairies and depending on the configuration actually call 
+librairies and depending on the configuration actually call
 the external library or provide a fake empty services indicating
-that the service is not present. 
+that the service is not present.
 So you should have a ../configure that call cpp on features.ml.cpp
 to set those linking-related configuration settings.
 \end{verbatim}
@@ -103,8 +103,8 @@ why in single file ?
  * make ocaml script that just do a load common.ml without the need
  * to load many other files (like dumper.ml, or ANSITerminal.ml and
  * other recursive dependencies).
- * 
- * Note that you can still use the functions below from an open Common. 
+ *
+ * Note that you can still use the functions below from an open Common.
  * You don't need to do a 'open Common_extra'; loading the commons.cma is
  * enough to make the connexions.
  *)
@@ -122,7 +122,7 @@ set_link
 \vspace{1cm}
 
 This manual is copyright 2009 Yoann Padioleau,
-and distributed under the terms of the 
+and distributed under the terms of the
 GNU Free Documentation License version 1.3.
 
 
@@ -217,8 +217,8 @@ GNU Free Documentation License version 1.3.
 \toprule
 {\bf Function} & {\bf Chapter} & {\bf Modules} \\
 \otoprule
-Main services 
-  & \ref{chapter:parse-entry-point} 
+Main services
+  & \ref{chapter:parse-entry-point}
   & [[parse_c.mli]] \\
  % and parsing_stat.mli ?
 \midrule
@@ -241,7 +241,7 @@ and Julia Lawall may have written a few helpers.
 %dup: credits.txt
 Thanks to:
 \begin{itemize}
-  \item  Richard Jones for his dumper module, 
+  \item  Richard Jones for his dumper module,
 %ref ?
   \item  Brian Hurt and Nicolas Cannasse for their dynArray module,
 %ref ?
@@ -252,4 +252,3 @@ Thanks to:
   \item Jane street for their backtrace module and sexplib
 %ref ? now obsolete
 \end{itemize}
-

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Finding Elements in One Array but Not Another 
-# ********************************************************************** 
+# **********************************************************************
+# Finding Elements in One Array but Not Another
+# **********************************************************************
 <?php
 function pleac_Finding_Elements_in_One_Array_but_Not_Another() {
 // PHP offers the 'array_diff' and 'array_diff_assoc' functions to perform this task. Same
@@ -48,4 +48,3 @@ $seen = array_combine(array_keys($b), array_fill(0, count($b), 1));
 
 }
 ?>
-

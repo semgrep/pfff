@@ -7,4 +7,3 @@ class Foo {
                + "Defaults to number of connected devices.")
   private int adbThreadCount = 0;
 }
-

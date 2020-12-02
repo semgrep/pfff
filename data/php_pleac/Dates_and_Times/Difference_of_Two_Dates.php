@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Difference of Two Dates 
-# ********************************************************************** 
+# **********************************************************************
+# Difference of Two Dates
+# **********************************************************************
 <?php
 function pleac_Difference_of_Two_Dates() {
 // Date intervals are most easily computed using timestamps [i.e. *NIX Epoch
@@ -33,4 +33,3 @@ printf("There were %d minutes between Nat and Bree\n", dateInterval('mins', $dif
 
 }
 ?>
-

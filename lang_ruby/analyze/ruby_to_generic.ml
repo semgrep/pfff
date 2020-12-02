@@ -660,4 +660,3 @@ let any x =
   | Pr xs -> G.Ss (list_stmts xs)
   (* sgrep_spatch_pattern just generate E/S2/Ss *)
   | _ -> raise Impossible
-

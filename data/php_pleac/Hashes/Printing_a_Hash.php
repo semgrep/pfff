@@ -1,13 +1,13 @@
-# ********************************************************************** 
-# Printing a Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Printing a Hash
+# **********************************************************************
 <?php
 function pleac_Printing_a_Hash() {
 // PHP offers, 'print_r', which prints hash contents in 'debug' form; it also
 // works recursively, printing any contained arrays in similar form
 //     Array
 //     (
-//         [key1] => value1 
+//         [key1] => value1
 //         [key2] => value2
 //         ...
 //     )
@@ -42,7 +42,7 @@ foreach($keys as $key)
 // 1. Sort the original hash
 asort($hash);
 
-// 2. Extract values, sort, traverse original in value order [warning: finds 
+// 2. Extract values, sort, traverse original in value order [warning: finds
 //    only first matching key in the case where duplicate values exist]
 $values = array_values($hash); sort($values);
 
@@ -53,4 +53,3 @@ foreach($values as $value)
 
 }
 ?>
-

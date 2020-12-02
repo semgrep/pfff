@@ -5,5 +5,3 @@ struct Foo {
 };
 
 struct Foo x = { .x = 42, .y = 43 };
-
-

@@ -65,4 +65,3 @@ class virtual ['a] ocollection =
       match o#view with Cons (_e,tl) -> tl | Empty -> failwith "no tail"
 
   end
-

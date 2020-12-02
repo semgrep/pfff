@@ -5,9 +5,9 @@
 %******************************************************************************
 
 \newif\iffinal
-\finalfalse 
+\finalfalse
 
-%cf also \newif below 
+%cf also \newif below
 
 %------------------------------------------------------------------------------
 %history: thx to LP:
@@ -37,7 +37,7 @@
 
 
 %define: \toprule
-\usepackage{booktabs} 
+\usepackage{booktabs}
 %?\usepackage{ctable}
 \newcommand{\otoprule}{\midrule[\heavyrulewidth]}
 
@@ -97,7 +97,7 @@ Yoann Padioleau\\
 \texttt{yoann.padioleau@gmail.com}
 }
 
-\maketitle 
+\maketitle
 
 \pagebreak
 \bigskip
@@ -108,7 +108,7 @@ Yoann Padioleau\\
     under the terms of the GNU Free Documentation License, Version 1.3.
 \end{quote}
 \bigskip
-\pagebreak 
+\pagebreak
 
 \shorttoc{Short Contents}{0}
 \tableofcontents
@@ -175,7 +175,7 @@ Yoann Padioleau\\
 
 
 
-\fi %ifextraextra 
+\fi %ifextraextra
 
 
 
@@ -187,7 +187,7 @@ Yoann Padioleau\\
 
 #include "common.ml.nw"
 
-\fi %ifimplem 
+\fi %ifimplem
 
 
 \chapter*{Conclusion}
@@ -202,17 +202,17 @@ Yoann Padioleau\\
 %\subsection{Code Chunks}
 \nowebchunks
 
-%todo: need special support, cf smldefs 
+%todo: need special support, cf smldefs
 %\subsection{Identifiers}
 %\nowebindex
 
 
-\chapter{References} 
+\chapter{References}
 
 \begin{thebibliography}{99}
 
 \bibitem[1]{cil} George Necula,
-{\em CIL}, 
+{\em CIL},
 CC.
 \verb+http://manju.cs.berkeley.edu/cil/+
 

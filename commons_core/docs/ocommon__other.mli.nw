@@ -293,5 +293,3 @@ val launch_gv_cmd : Common.filename -> unit
 
 
 \chapter{Odb}
-
-

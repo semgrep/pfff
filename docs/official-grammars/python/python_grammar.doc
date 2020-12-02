@@ -1,211 +1,211 @@
 src: http://docs.python.org/release/2.5.2/ref/grammar.txt
 
-identifier ::= 
+identifier ::=
              (letter|"_") (letter | digit | "_")*
-  
-letter ::= 
+
+letter ::=
              lowercase | uppercase
-  
-lowercase ::= 
+
+lowercase ::=
              "a"..."z"
-  
-uppercase ::= 
+
+uppercase ::=
              "A"..."Z"
-  
-digit ::= 
+
+digit ::=
              "0"..."9"
 
-stringliteral ::= 
+stringliteral ::=
              [stringprefix](shortstring | longstring)
-  
-stringprefix ::= 
+
+stringprefix ::=
              "r" | "u" | "ur" | "R" | "U" | "UR" | "Ur" | "uR"
-  
-shortstring ::= 
+
+shortstring ::=
              "'" shortstringitem* "'"
               | '"' shortstringitem* '"'
-  
-longstring ::= 
+
+longstring ::=
              "'''" longstringitem* "'''"
                 | '"""' longstringitem* '"""'
-  
-shortstringitem ::= 
+
+shortstringitem ::=
              shortstringchar | escapeseq
-  
-longstringitem ::= 
+
+longstringitem ::=
              longstringchar | escapeseq
-  
-shortstringchar ::= 
+
+shortstringchar ::=
              <any source character except "\" or newline or the quote>
-  
-longstringchar ::= 
+
+longstringchar ::=
              <any source character except "\">
-  
-escapeseq ::= 
+
+escapeseq ::=
              "\" <any ASCII character>
 
-longinteger ::= 
+longinteger ::=
              integer ("l" | "L")
-  
-integer ::= 
+
+integer ::=
              decimalinteger | octinteger | hexinteger
-  
-decimalinteger ::= 
+
+decimalinteger ::=
              nonzerodigit digit* | "0"
-  
-octinteger ::= 
+
+octinteger ::=
              "0" octdigit+
-  
-hexinteger ::= 
+
+hexinteger ::=
              "0" ("x" | "X") hexdigit+
-  
-nonzerodigit ::= 
+
+nonzerodigit ::=
              "1"..."9"
-  
-octdigit ::= 
+
+octdigit ::=
              "0"..."7"
-  
-hexdigit ::= 
+
+hexdigit ::=
              digit | "a"..."f" | "A"..."F"
 
-floatnumber ::= 
+floatnumber ::=
              pointfloat | exponentfloat
-  
-pointfloat ::= 
+
+pointfloat ::=
              [intpart] fraction | intpart "."
-  
-exponentfloat ::= 
+
+exponentfloat ::=
              (intpart | pointfloat)
               exponent
-  
-intpart ::= 
+
+intpart ::=
              digit+
-  
-fraction ::= 
+
+fraction ::=
              "." digit+
-  
-exponent ::= 
+
+exponent ::=
              ("e" | "E") ["+" | "-"] digit+
 
 imagnumber ::= (floatnumber | intpart) ("j" | "J")
 
-atom ::= 
+atom ::=
              identifier | literal | enclosure
-  
-enclosure ::= 
+
+enclosure ::=
              parenth_form | list_display
                 | generator_expression | dict_display
                 | string_conversion | yield_atom
 
-literal ::= 
+literal ::=
              stringliteral | integer | longinteger
                 | floatnumber | imagnumber
 
-parenth_form ::= 
+parenth_form ::=
              "(" [expression_list] ")"
 
-list_display ::= 
+list_display ::=
              "[" [expression_list | list_comprehension] "]"
-  
-list_comprehension ::= 
+
+list_comprehension ::=
              expression list_for
-  
-list_for ::= 
+
+list_for ::=
              "for" target_list "in" old_expression_list
               [list_iter]
-  
-old_expression_list ::= 
+
+old_expression_list ::=
              old_expression
               [("," old_expression)+ [","]]
-  
-list_iter ::= 
+
+list_iter ::=
              list_for | list_if
-  
-list_if ::= 
+
+list_if ::=
              "if" old_expression [list_iter]
 
-generator_expression ::= 
+generator_expression ::=
              "(" expression genexpr_for ")"
-  
-genexpr_for ::= 
+
+genexpr_for ::=
              "for" target_list "in" or_test
               [genexpr_iter]
-  
-genexpr_iter ::= 
+
+genexpr_iter ::=
              genexpr_for | genexpr_if
-  
-genexpr_if ::= 
+
+genexpr_if ::=
              "if" old_expression [genexpr_iter]
 
-dict_display ::= 
+dict_display ::=
              "\{" [key_datum_list] "\}"
-  
-key_datum_list ::= 
+
+key_datum_list ::=
              key_datum ("," key_datum)* [","]
-  
-key_datum ::= 
+
+key_datum ::=
              expression ":" expression
 
-string_conversion ::= 
+string_conversion ::=
              "`" expression_list "`"
 
-yield_atom ::= 
+yield_atom ::=
              "(" yield_expression ")"
-  
-yield_expression ::= 
+
+yield_expression ::=
              "yield" [expression_list]
 
-primary ::= 
+primary ::=
              atom | attributeref
               | subscription | slicing | call
 
-attributeref ::= 
+attributeref ::=
              primary "." identifier
 
-subscription ::= 
+subscription ::=
              primary "[" expression_list "]"
 
-slicing ::= 
+slicing ::=
              simple_slicing | extended_slicing
-  
-simple_slicing ::= 
+
+simple_slicing ::=
              primary "[" short_slice "]"
-  
-extended_slicing ::= 
-             primary "[" slice_list "]" 
-  
-slice_list ::= 
+
+extended_slicing ::=
+             primary "[" slice_list "]"
+
+slice_list ::=
              slice_item ("," slice_item)* [","]
-  
-slice_item ::= 
+
+slice_item ::=
              expression | proper_slice | ellipsis
-  
-proper_slice ::= 
+
+proper_slice ::=
              short_slice | long_slice
-  
-short_slice ::= 
+
+short_slice ::=
              [lower_bound] ":" [upper_bound]
-  
-long_slice ::= 
+
+long_slice ::=
              short_slice ":" [stride]
-  
-lower_bound ::= 
+
+lower_bound ::=
              expression
-  
-upper_bound ::= 
+
+upper_bound ::=
              expression
-  
-stride ::= 
+
+stride ::=
              expression
-  
-ellipsis ::= 
+
+ellipsis ::=
              "..."
 
-call ::= 
+call ::=
              primary "(" [argument_list [","]
                             | expression genexpr_for] ")"
-  
-argument_list ::= 
+
+argument_list ::=
              positional_arguments ["," keyword_arguments]
                                      ["," "*" expression]
                                      ["," "**" expression]
@@ -213,78 +213,78 @@ argument_list ::=
                                     ["," "**" expression]
                 | "*" expression ["," "**" expression]
                 | "**" expression
-  
-positional_arguments ::= 
+
+positional_arguments ::=
              expression ("," expression)*
-  
-keyword_arguments ::= 
+
+keyword_arguments ::=
              keyword_item ("," keyword_item)*
-  
-keyword_item ::= 
+
+keyword_item ::=
              identifier "=" expression
 
-power ::= 
+power ::=
              primary ["**" u_expr]
 
-u_expr ::= 
+u_expr ::=
              power | "-" u_expr
               | "+" u_expr | "\~" u_expr
 
-m_expr ::= 
+m_expr ::=
              u_expr | m_expr "*" u_expr
               | m_expr "//" u_expr
               | m_expr "/" u_expr
                 | m_expr "\%" u_expr
-  
-a_expr ::= 
+
+a_expr ::=
              m_expr | a_expr "+" m_expr
               | a_expr "-" m_expr
 
-shift_expr ::= 
+shift_expr ::=
              a_expr
               | shift_expr ( "<<" | ">>" ) a_expr
 
-and_expr ::= 
+and_expr ::=
              shift_expr | and_expr "\;SPMamp;" shift_expr
-  
-xor_expr ::= 
+
+xor_expr ::=
              and_expr | xor_expr "\textasciicircum" and_expr
-  
-or_expr ::= 
+
+or_expr ::=
              xor_expr | or_expr "|" xor_expr
 
-comparison ::= 
+comparison ::=
              or_expr ( comp_operator or_expr )*
-  
-comp_operator ::= 
+
+comp_operator ::=
              "<" | ">" | "==" | ">=" | "<=" | "<>" | "!="
                 | "is" ["not"] | ["not"] "in"
 
-expression ::= 
+expression ::=
              conditional_expression | lambda_form
-  
-old_expression ::= 
+
+old_expression ::=
              or_test | old_lambda_form
-  
-conditional_expression ::= 
+
+conditional_expression ::=
              or_test ["if" or_test "else" expression]
-  
-or_test ::= 
+
+or_test ::=
              and_test | or_test "or" and_test
-  
-and_test ::= 
+
+and_test ::=
              not_test | and_test "and" not_test
-  
-not_test ::= 
+
+not_test ::=
              comparison | "not" not_test
 
-lambda_form ::= 
+lambda_form ::=
              "lambda" [parameter_list]: expression
-  
-old_lambda_form ::= 
+
+old_lambda_form ::=
              "lambda" [parameter_list]: old_expression
 
-expression_list ::= 
+expression_list ::=
              expression ( "," expression )* [","]
 
 simple_stmt ::= expression_stmt
@@ -303,20 +303,20 @@ simple_stmt ::= expression_stmt
                 | global_stmt
                 | exec_stmt
 
-expression_stmt ::= 
+expression_stmt ::=
              expression_list
 
-assert_stmt ::= 
+assert_stmt ::=
              "assert" expression ["," expression]
 
-assignment_stmt ::= 
+assignment_stmt ::=
              (target_list "=")+
               (expression_list | yield_expression)
-  
-target_list ::= 
+
+target_list ::=
              target ("," target)* [","]
-  
-target ::= 
+
+target ::=
              identifier
                 | "(" target_list ")"
                 | "[" target_list "]"
@@ -324,42 +324,42 @@ target ::=
                 | subscription
                 | slicing
 
-augmented_assignment_stmt ::= 
+augmented_assignment_stmt ::=
              target augop
               (expression_list | yield_expression)
-  
-augop ::= 
+
+augop ::=
              "+=" | "-=" | "*=" | "/=" | "\%=" | "**="
                 | ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="
 
-pass_stmt ::= 
+pass_stmt ::=
              "pass"
 
-del_stmt ::= 
+del_stmt ::=
              "del" target_list
 
-print_stmt ::= 
+print_stmt ::=
              "print" ([expression ("," expression)* [","]
                 | ">>" expression
                   [("," expression)+ [","])
 
-return_stmt ::= 
+return_stmt ::=
              "return" [expression_list]
 
-yield_stmt ::= 
+yield_stmt ::=
              yield_expression
 
-raise_stmt ::= 
+raise_stmt ::=
              "raise" [expression ["," expression
               ["," expression]]]
 
-break_stmt ::= 
+break_stmt ::=
              "break"
 
-continue_stmt ::= 
+continue_stmt ::=
              "continue"
 
-import_stmt ::= 
+import_stmt ::=
              "import" module ["as" name]
                 ( "," module ["as" name] )*
                 | "from" relative_module "import" identifier
@@ -369,24 +369,24 @@ import_stmt ::=
                     identifier ["as" name]
                   ( "," identifier ["as" name] )* [","] ")"
                 | "from" module "import" "*"
-  
-module ::= 
+
+module ::=
              (identifier ".")* identifier
-  
-relative_module ::= 
+
+relative_module ::=
              "."* module | "."+
-  
-name ::= 
+
+name ::=
              identifier
 
-global_stmt ::= 
+global_stmt ::=
              "global" identifier ("," identifier)*
 
-exec_stmt ::= 
+exec_stmt ::=
              "exec" or_expr
               ["in" expression ["," expression]]
 
-compound_stmt ::= 
+compound_stmt ::=
              if_stmt
                 | while_stmt
                 | for_stmt
@@ -394,96 +394,96 @@ compound_stmt ::=
                 | with_stmt
                 | funcdef
                 | classdef
-  
-suite ::= 
+
+suite ::=
              stmt_list NEWLINE
               | NEWLINE INDENT statement+ DEDENT
-  
-statement ::= 
+
+statement ::=
              stmt_list NEWLINE | compound_stmt
-  
-stmt_list ::= 
+
+stmt_list ::=
              simple_stmt (";" simple_stmt)* [";"]
 
-if_stmt ::= 
+if_stmt ::=
              "if" expression ":" suite
                 ( "elif" expression ":" suite )*
                 ["else" ":" suite]
 
-while_stmt ::= 
+while_stmt ::=
              "while" expression ":" suite
                 ["else" ":" suite]
 
-for_stmt ::= 
+for_stmt ::=
              "for" target_list "in" expression_list
               ":" suite
                 ["else" ":" suite]
 
 try_stmt ::=  try1_stmt | try2_stmt
-  
-try1_stmt ::= 
+
+try1_stmt ::=
              "try" ":" suite
                 ("except" [expression
                              ["," target]] ":" suite)+
                 ["else" ":" suite]
                 ["finally" ":" suite]
-  
-try2_stmt ::= 
+
+try2_stmt ::=
              "try" ":" suite
                 "finally" ":" suite
 
-with_stmt ::= 
+with_stmt ::=
   "with" expression ["as" target] ":" suite
 
-funcdef ::= 
+funcdef ::=
              [decorators] "def" funcname "(" [parameter_list] ")"
               ":" suite
-  
-decorators ::= 
+
+decorators ::=
              decorator+
-  
-decorator ::= 
+
+decorator ::=
              "@" dotted_name ["(" [argument_list [","]] ")"] NEWLINE
-  
-dotted_name ::= 
+
+dotted_name ::=
              identifier ("." identifier)*
-  
-parameter_list ::= 
+
+parameter_list ::=
                  (defparameter ",")*
                 (~~"*" identifier [, "**" identifier]
                  | "**" identifier
                  | defparameter [","] )
-  
-defparameter ::= 
+
+defparameter ::=
              parameter ["=" expression]
-  
-sublist ::= 
+
+sublist ::=
              parameter ("," parameter)* [","]
-  
-parameter ::= 
+
+parameter ::=
              identifier | "(" sublist ")"
-  
-funcname ::= 
+
+funcname ::=
              identifier
 
-classdef ::= 
+classdef ::=
              "class" classname [inheritance] ":"
               suite
-  
-inheritance ::= 
+
+inheritance ::=
              "(" [expression_list] ")"
-  
-classname ::= 
+
+classname ::=
              identifier
 
-file_input ::= 
+file_input ::=
              (NEWLINE | statement)*
 
-interactive_input ::= 
+interactive_input ::=
              [stmt_list] NEWLINE | compound_stmt NEWLINE
 
-eval_input ::= 
+eval_input ::=
              expression_list NEWLINE*
 
-input_input ::= 
+input_input ::=
              expression_list NEWLINE

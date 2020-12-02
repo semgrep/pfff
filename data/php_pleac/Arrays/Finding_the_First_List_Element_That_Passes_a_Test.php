@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Finding the First List Element That Passes a Test 
-# ********************************************************************** 
+# **********************************************************************
+# Finding the First List Element That Passes a Test
+# **********************************************************************
 <?php
 function pleac_Finding_the_First_List_Element_That_Passes_a_Test() {
 // This section illustrates various 'find first' techniques. The Perl examples all use an
@@ -26,7 +26,7 @@ foreach($array as $item)
   // Found - save and leave
   $match = $item;
   $found = TRUE;
-  break;  
+  break;
 }
 
 if ($found)
@@ -91,7 +91,7 @@ function array_update($arr, $lambda, $updarr)
 function highest_salaried_engineer(&$arr, $employee)
 {
   static $highest_salary = 0;
-  
+
   if ($employee->category == 'Engineer')
   {
     if ($employee->salary > $highest_salary)
@@ -113,4 +113,3 @@ echo 'Highest paid engineer is: ' . $highest_salaried_engineer[0]->name . "\n";
 
 }
 ?>
-

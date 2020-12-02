@@ -17,21 +17,21 @@ let look_like_only_idents xs =
 
 (*
   | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
-    ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
+    ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct ->
+      body +> List.iter (iter_token_brace (fun tok ->
         tok.where <- (InClassStruct s)::tok.where;
       ));
       set_in_other xs
 
   (* struct/union/class x : ... { } *)
   | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
-    ::BToken ({t=TCol _})::xs when TH.is_classkey_keyword tokstruct -> 
+    ::BToken ({t=TCol _})::xs when TH.is_classkey_keyword tokstruct ->
 
-      (try 
+      (try
         let (before, elem, after) = Common2.split_when is_braceised xs in
-        (match elem with 
-        | Braceised(body, tok1, tok2) -> 
-            body +> List.iter (iter_token_brace (fun tok -> 
+        (match elem with
+        | Braceised(body, tok1, tok2) ->
+            body +> List.iter (iter_token_brace (fun tok ->
               tok.where <- InInitializer::tok.where;
             ));
             set_in_other after
@@ -47,10 +47,10 @@ let look_like_only_idents xs =
 
 (* todo: this lead to some regressions :(
   (* = ... ;  *)
-  | Tok ({t=TEq ii;where = [InTopLevel]})::xs -> 
+  | Tok ({t=TEq ii;where = [InTopLevel]})::xs ->
 
       let (before, ptvirg, after) =
-        try 
+        try
           xs +> Common2.split_when (function
           | Tok ({t=TPtVirg _;}) -> true
           | _ -> false
@@ -67,16 +67,16 @@ let look_like_only_idents xs =
       aux after
 *)
 
-  (* TODO xx(...) {  InFunction (can have some try or const or throw after 
+  (* TODO xx(...) {  InFunction (can have some try or const or throw after
    * the paren *)
 
- (* could try: ) { } but it can be the ) of a if or while, so 
+ (* could try: ) { } but it can be the ) of a if or while, so
   * better to base the heuristic on the position in column zero.
   * Note that some struct or enum or init put also their { in first column
   * but set_in_other will overwrite the previous InFunction tag.
   *)
 
-(*TODOC++ext: now can have some const or throw between 
+(*TODOC++ext: now can have some const or throw between
   => do a view that filter them first ?
 *)
 
@@ -84,9 +84,9 @@ let look_like_only_idents xs =
 
   (* ) { and the closing } is in column zero, then certainly a function *)
 (*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({t=TCPar _})::(Braceised (body, tok1, Some tok2))::xs 
-      when tok1.col <> 0 && tok2.col = 0 -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
+  | BToken ({t=TCPar _})::(Braceised (body, tok1, Some tok2))::xs
+      when tok1.col <> 0 && tok2.col = 0 ->
+      body +> List.iter (iter_token_brace (fun tok ->
         tok.where <- InFunction::tok.where;
       ));
       aux xs
@@ -94,13 +94,13 @@ let look_like_only_idents xs =
   | (BToken x)::xs -> aux xs
 
 (*TODO1 not valid anymore with c++ nestedness of method *)
-  | (Braceised (body, tok1, Some tok2))::xs 
-      when tok1.col = 0 && tok2.col = 0 -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
+  | (Braceised (body, tok1, Some tok2))::xs
+      when tok1.col = 0 && tok2.col = 0 ->
+      body +> List.iter (iter_token_brace (fun tok ->
         tok.where <- InFunction::tok.where;
       ));
       aux xs
-  | Braceised (body, tok1, tok2)::xs -> 
+  | Braceised (body, tok1, tok2)::xs ->
       aux xs
  in
 
@@ -119,7 +119,7 @@ let look_like_only_idents xs =
    * But FP on C code, so should guard that with Flag_parsing_cpp.lang = C++
    *)
 (*
-  | Tok{t=TIdent _; where = ctx}::(Parens(_t1, body, _t2) as parens)::xs 
+  | Tok{t=TIdent _; where = ctx}::(Parens(_t1, body, _t2) as parens)::xs
     when List.length body > 0 && look_like_only_idents body ->
       [parens] +> TV.iter_token_multi (fun tok ->
         let where =
@@ -135,10 +135,9 @@ let look_like_only_idents xs =
 
   (* could be a cast too ... or what else? *)
   | x::(Parens(_t1, _body, _t2) as parens)::xs ->
-      (* let's default to something? hmm, no, got lots of regressions then 
+      (* let's default to something? hmm, no, got lots of regressions then
        *  old: msg_context t1.t (TV.InArgument); ...
        *)
       aux [x];
       aux (parens::xs)
 *)
-

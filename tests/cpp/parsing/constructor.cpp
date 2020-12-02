@@ -19,4 +19,3 @@ class Foo4: public Foo3 {
 public:
  Foo4(const vector<string>& filenames, bool generatingBias);
 };
-

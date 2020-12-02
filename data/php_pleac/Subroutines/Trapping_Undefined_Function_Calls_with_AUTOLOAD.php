@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Trapping Undefined Function Calls with AUTOLOAD 
-# ********************************************************************** 
+# **********************************************************************
+# Trapping Undefined Function Calls with AUTOLOAD
+# **********************************************************************
 <?php
 function pleac_Trapping_Undefined_Function_Calls_with_AUTOLOAD() {
 // PHP sports an AUTOLOAD facility that is quite easy to use, but, AFAICT, is geared
@@ -24,7 +24,7 @@ function __autoload($classname)
 
 // ------------
 
-// Attempt to instantiate object of undefined class 
+// Attempt to instantiate object of undefined class
 new UnknownClassObject();
 
 // Execution continues here if class exists
@@ -47,7 +47,7 @@ foreach ($colours as $colour)
 }
 
 // Let's add a new colour to the list
-array_push($colours, 'chartreuse'); 
+array_push($colours, 'chartreuse');
 
 foreach ($colours as $colour)
 {
@@ -65,8 +65,7 @@ foreach ($colours as $colour)
   echo $$colour("Careful with this $colour, James") . "\n";
 }
 
-foreach ($colours as $colour) unset($$colour); 
+foreach ($colours as $colour) unset($$colour);
 
 }
 ?>
-

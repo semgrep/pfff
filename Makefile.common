@@ -1,6 +1,6 @@
 # -*- makefile -*-
 ##############################################################################
-# Prelude 
+# Prelude
 ##############################################################################
 
 # This file assumes the "includer" has set the variables below and then done
@@ -49,7 +49,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 #-52 allow to match on Failure("hd")
 WARNING_FLAGS?=-w +a-4-6-7-29-41-44-45-48-52-67 -warn-error +a
 
-OCAMLCFLAGS=-g -thread $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
+OCAMLCFLAGS=-g -thread $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA)
 
 # This flag is also used in subdirectories so don't change its name here
 # the -w y is to silence errors on the visitor_xxx files with the unused
@@ -84,7 +84,7 @@ SYNCWEB=~/github/syncweb/syncweb $(SYNCFLAGS)
 NOWEB=~/github/syncweb/scripts/noweblatex
 OCAMLDOC=ocamldoc $(INCLUDES)
 
-PDFLATEX=pdflatex --shell-escape 
+PDFLATEX=pdflatex --shell-escape
 
 lpclean::
 	rm -f *.aux *.toc *.log *.brf *.out
@@ -128,7 +128,7 @@ doti:
 # sandbox .opam/ with a read-only filesystem like OPAM 2 does when installing
 # new packages. In the mean time cp -a ~/.opam/ /tmp to back it up.
 install-lib: all all.opt .merlin_opam
-	cp .merlin_opam .merlin; 
+	cp .merlin_opam .merlin;
 	ocamlfind install $(OPAMPKG) META lib.cma lib.cmxa *.a *.cmi *.cmt* *.cmx *.mli *.ml .merlin
 	rm -f .merlin
 
@@ -164,7 +164,7 @@ INCLUDEOPAM=$(notdir $(INCLUDEDIRS2))
 .ml.cmx:
 	$(OCAMLOPT)  -c $<
 
-.ml.mldepend: 
+.ml.mldepend:
 	$(OCAMLC) -i $<
 
 clean::

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Sorting a List by Computable Field 
-# ********************************************************************** 
+# **********************************************************************
+# Sorting a List by Computable Field
+# **********************************************************************
 <?php
 function pleac_Sorting_a_List_by_Computable_Field() {
 // Tasks in this section would typically use the PHP 'usort' family of functions
@@ -224,4 +224,3 @@ $sorted_fields = array_values($temp);
 
 }
 ?>
-

@@ -21,7 +21,7 @@ module G = AST_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Poor's man Javascript transpiler! 
+(* Poor's man Javascript transpiler!
  * Probably incorrect and incomplete but good enough for codegraph.
  *
  * You can test the babel transpiler and see live how it transpiles code
@@ -56,7 +56,7 @@ let xhp_attr_value expr x =
   | C.XhpAttrEllipsis t -> A.Ellipsis t
 
 (* todo: should probably use Obj instead of tuples with string keys *)
-let xhp_attribute expr x = 
+let xhp_attribute expr x =
   match x with
   | C.XhpAttrNoValue (str) -> A.Arr (fake_bracket [A.String str])
   | C.XhpAttrValue (str, _tok, attrval) ->
@@ -78,12 +78,12 @@ let rec xhp expr x =
     let args1 = List.map (xhp_attribute expr) attrs in
     let args2 = List.map (xhp_body expr) body in
     A.Apply (id, fake_bracket [A.Arr (fake_bracket args1); A.Arr (fake_bracket args2)])
-and xhp_body expr x = 
+and xhp_body expr x =
   match x with
   (* todo: contain enclosing quote? *)
   | C.XhpText str -> A.String str
   | C.XhpNested x -> xhp expr x
-  | C.XhpExpr (_, eopt, _) -> 
+  | C.XhpExpr (_, eopt, _) ->
      (match eopt with
      | None -> A.String ("", fake "")
      | Some e -> expr e
@@ -230,19 +230,19 @@ let compile_pattern desc varname pat =
    * when the right-hand-side of the destructuring assignment is a simple variable name *)
   let varexpr = A.Id (varname, ref A.NotResolved) in
   compile_pattern_inner desc varexpr pat
-   
+
 
 let var_pattern (expr, fname, fpname) x =
-  match x.C.vpat_init with 
+  match x.C.vpat_init with
   | None -> failwith "weird var_pattern without init; Part of ForOf?"
   | Some (tok, e) ->
     let e = expr e in
-    let vname, vars = 
+    let vname, vars =
       match e with
       | A.Id (name, _) -> name, []
       | _ ->
         let intermediate = gensym_name "tmp" tok in
-        let var = { A.v_name = intermediate; v_kind = A.Let, fake "let"; 
+        let var = { A.v_name = intermediate; v_kind = A.Let, fake "let";
                     v_init = Some e; v_type = None;
                     v_resolved = ref A.NotResolved } in
         intermediate, [var]
@@ -252,7 +252,7 @@ let var_pattern (expr, fname, fpname) x =
 (*****************************************************************************)
 (* Iterator for of *)
 (*****************************************************************************)
-(* for (xx of yy) -~> 
+(* for (xx of yy) -~>
  *   for (var _iterator = yy[Symbol.iterator](), _step;
  *        !(_step = _iterator.next()).done;;) {
  *     xx = _step.value;
@@ -265,28 +265,28 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
 
   let iterator = "!iterator!", tok in
   let step = "!step!", tok in
-  let symbol_iterator = 
+  let symbol_iterator =
     A.ObjAccess (A.Id (("Symbol", tok), ref A.NotResolved),
                  fake ".",
                  A.PN ("iterator", tok))
   in
 
-  let for_init = 
+  let for_init =
     Left [
-      { A.v_name = iterator; v_kind = A.Let, fake "let"; 
+      { A.v_name = iterator; v_kind = A.Let, fake "let";
         v_resolved = ref A.NotResolved; v_type = None;
-        v_init = Some (A.Apply (A.ArrAccess (e2, fake_bracket symbol_iterator), 
+        v_init = Some (A.Apply (A.ArrAccess (e2, fake_bracket symbol_iterator),
             fake_bracket [])) };
-      { A.v_name = step; v_kind = A.Let, fake "let"; 
+      { A.v_name = step; v_kind = A.Let, fake "let";
         v_resolved = ref A.NotResolved; v_type = None;
         v_init = None; }
     ]
   in
-  let for_cond = 
+  let for_cond =
     A.Apply (A.IdSpecial (A.ArithOp G.Not, tok), fake_bracket [
       A.ObjAccess (A.Assign (A.Id (step, ref A.NotResolved),
                          fake "=",
-                          A.Apply (A.ObjAccess (A.Id (iterator, 
+                          A.Apply (A.ObjAccess (A.Id (iterator,
                                                       ref A.NotResolved),
                                                 fake ".",
                                                 A.PN ("next", tok)),
@@ -297,21 +297,21 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
   in
   let step_value = A.ObjAccess (A.Id (step, ref A.NotResolved),
                                 fake ".",
-                               A.PN ("value", tok)) 
+                               A.PN ("value", tok))
   in
-  let step_value_cst = 
-    C.Period (C.V step, tok, ("value", tok)) 
+  let step_value_cst =
+    C.Period (C.V step, tok, ("value", tok))
   in
 
   let vars_or_assign_stmts =
    match lhs_var with
-   | C.LHS2 e -> 
+   | C.LHS2 e ->
      let e = expr e in
      [A.ExprStmt (A.Assign (e, fake "=", step_value), G.sc)]
-   | C.ForVar (vkind, binding) -> 
-      let binding = 
+   | C.ForVar (vkind, binding) ->
+      let binding =
         match binding with
-        | C.VarClassic x -> 
+        | C.VarClassic x ->
             if x.C.v_init <> None
             then failwith "for-of loop variable can not have an initializer";
             C.VarClassic { x with C.v_init = Some (tok, step_value_cst) }
@@ -321,7 +321,7 @@ let forof (lhs_var, tok, e2, st) (expr, stmt, var_binding) =
             C.VarPattern { x with C.vpat_init = Some (tok, step_value_cst) }
       in
       var_binding vkind binding |> List.map (fun var -> A.DefStmt var)
-  in 
+  in
   let finalst = vars_or_assign_stmts @ st  in
-  [A.For (fake "for", A.ForClassic (for_init, Some for_cond, None), 
+  [A.For (fake "for", A.ForClassic (for_init, Some for_cond, None),
       A.Block (fake_bracket finalst))]

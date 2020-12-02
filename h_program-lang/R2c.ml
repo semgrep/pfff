@@ -70,4 +70,3 @@ let string_of_errors errs =
   let arr = J.Array (errs |> List.map (error_to_json)) in
   let json = J.Object ["results", arr] in
   J.string_of_json json
-

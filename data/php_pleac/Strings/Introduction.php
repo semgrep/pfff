@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Introduction 
-# ********************************************************************** 
+# **********************************************************************
+# Introduction
+# **********************************************************************
 <?php
 function pleac_Introduction() {
 #-----------------------------
@@ -12,7 +12,7 @@ $string = "\n";                     # a "newline" character
 $string = "Jon \"Maddog\" Orwant";  # literal double quotes
 $string = "Jon 'Maddog' Orwant";    # literal single quotes
 #-----------------------------
-$a = 
+$a =
 "This is a multiline
 here document";
 
@@ -24,4 +24,3 @@ EOF;
 
 }
 ?>
-

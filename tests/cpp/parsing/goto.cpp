@@ -1,6 +1,6 @@
 void main() {
 
   goto bad;
-bad: 
+bad:
   return 1;
 }

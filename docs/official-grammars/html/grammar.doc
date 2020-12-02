@@ -32,7 +32,7 @@ block_content 	::=	<isindex>
  	|	listing_tag
  	|	menu_tag
  	|	multicol_tag
- 	 	 
+
  	|	nobr_tag
  	|	ol_tag
  	|	p_tag
@@ -115,7 +115,7 @@ h2_tag 	::=	<h2> text </h2>
 h3_tag 	::=	<h3> text </h3>
 h4_tag 	::=	<h4> text </h4>
 h5_tag 	::=	<h5> text </h5>
- 	 	 
+
 h6_tag 	::=	<h6> text </h6>
 head_content 	::=	<base>
  	|	<isindex>
@@ -239,7 +239,7 @@ text_content 	::=	<br>
  	|	ilayer_tag
  	|	noembed_tag
  	|	noscript_tag
- 	 	 
+
  	|	object_tag
  	|	physical_style
  	|	plain_text

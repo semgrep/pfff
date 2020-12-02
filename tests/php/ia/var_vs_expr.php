@@ -1,7 +1,7 @@
 <?php
 
 // Concrete value and variables to concrete values are
-// represented differently (which implies to do many 
+// represented differently (which implies to do many
 // Ptr.get in the code)
 
 function main() {

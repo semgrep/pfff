@@ -241,7 +241,7 @@ EXTEND
 			     (fun xs -> [ExStr (l,s); ExStr (l,"(")] @ xs @ [ExStr (l,")")]) +> join_app
 			    )
 			| _ -> failwith "pb"
-				     )	
+				     )
 		     )
 	    | TyTup (l, xs) ->
 		let newids = xs +> List.map (fun _ -> name ()) in
@@ -250,7 +250,7 @@ EXTEND
 		      None,
 		      zip xs newids +> List.map (fun (e,id) -> body_ctyp id e) +> join_virg +>
 			(fun xs -> [ExStr (l,"(")] @ xs @ [ExStr (l,")")]) +> join_app
-		      ]	
+		      ]
 		     )
 	    | TyArr (l,c1,c2) -> ExStr(l, "<fun>")
 	    | TyApp (l,c1,c2) ->
@@ -309,12 +309,12 @@ EXTEND
 				 PaLid (l, "str__of_" ^ str_poly))),
 			     None, body])
 	  in
-	
+
 	  [(PaLid (l, "string_of_" ^ str), (* let string_of... *)
 	   f_str_func_params     (*  str__a str__b ... *)
 	      (ExFun(l, [(PaLid (l,"a0"), None,  (* a0 = .... *)
 			 (body_ctyp "a0" ctyp))])))    (*  match a with .... *)
-	
+
 	   ;(PaLid (l, "print_" ^ str),
 	     (if param_polymorphs = []
 	     then fun e -> e
@@ -456,7 +456,7 @@ EXTEND
             | "{{"; e1 = expr; "|"; p1 = patt; "<-"; e2 = expr; "and"; e3s = LIST1 expr SEP "and"; "}}" ->
 	       let maps    = (ExAcc (l, ExUid (l, "List"), ExLid (l,"map"))) in
 	       let filters =(ExAcc (l, ExUid (l, "List"), ExLid (l,"filter"))) in
-	
+
 	       ExApp (l,
 		      ExApp(l, maps,ExFun (l, [p1, None, e1])),
 		      e3s +> List.fold_left (fun acc expr ->
@@ -592,7 +592,7 @@ EXTEND
 			     (fun xs -> [ExStr (l,s); ExStr (l,"(")] @ xs @ [ExStr (l,")")]) +> join_app
 			    )
 			| _ -> failwith "pb"
-				     )	
+				     )
 		     )
 	    | TyTup (l, xs) ->
 		let newids = xs +> List.map (fun _ -> name ()) in
@@ -601,7 +601,7 @@ EXTEND
 		      None,
 		      zip xs newids +> List.map (fun (e,id) -> body_ctyp id e) +> join_virg +>
 			(fun xs -> [ExStr (l,"(")] @ xs @ [ExStr (l,")")]) +> join_app
-		      ]	
+		      ]
 		     )
 	    | TyArr (l,c1,c2) -> ExStr(l, "<fun>")
 	    | TyApp (l,c1,c2) ->
@@ -660,12 +660,12 @@ EXTEND
 				 PaLid (l, "str__of_" ^ str_poly))),
 			     None, body])
 	  in
-	
+
 	  [(PaLid (l, "string_of_" ^ str), (* let string_of... *)
 	   f_str_func_params     (*  str__a str__b ... *)
 	      (ExFun(l, [(PaLid (l,"a0"), None,  (* a0 = .... *)
 			 (body_ctyp "a0" ctyp))])))    (*  match a with .... *)
-	
+
 	   ;(PaLid (l, "print_" ^ str),
 	     (if param_polymorphs = []
 	     then fun e -> e
@@ -710,7 +710,7 @@ let gen_print_funs loc tdl =
 let fun_name n = "print_" ^ n
 let fun_param_name n = "pr_" ^ n
 let param_name cnt = "x" ^ string_of_int cnt
-			
+
 let list_mapi f l =
   let rec loop cnt =
     function
@@ -765,7 +765,7 @@ let gen_print_cons_expr loc c tl =
         let p = gen_print_cons_patt loc c tl in
         let e = gen_print_cons_expr loc c tl in
         p, None, e
-	
+
 let gen_print_sum loc cdl =
   let pwel = List.map gen_print_cons cdl in
   <:expr< fun [ $list:pwel$ ] >>

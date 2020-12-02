@@ -44,7 +44,7 @@
 \usepackage{multirow}
 
 %define: \toprule
-\usepackage{booktabs} 
+\usepackage{booktabs}
 %?\usepackage{ctable}
 \newcommand{\otoprule}{\midrule[\heavyrulewidth]}
 
@@ -93,7 +93,7 @@ Yoann Padioleau\\
 \texttt{yoann.padioleau@gmail.com}
 }
 
-\maketitle 
+\maketitle
 
 \pagebreak
 \hrule
@@ -132,7 +132,7 @@ Yoann Padioleau\\
 \begin{thebibliography}{99}
 
 \bibitem[1]{cil} George Necula,
-{\em CIL}, 
+{\em CIL},
 CC.
 \verb+http://manju.cs.berkeley.edu/cil/+
 

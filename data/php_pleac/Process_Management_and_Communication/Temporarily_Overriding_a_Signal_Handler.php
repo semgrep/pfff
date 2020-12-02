@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Temporarily Overriding a Signal Handler 
-# ********************************************************************** 
+# **********************************************************************
+# Temporarily Overriding a Signal Handler
+# **********************************************************************
 <?php
 function pleac_Temporarily_Overriding_a_Signal_Handler() {
 // the signal handler
@@ -31,4 +31,3 @@ function get_name() {
 
 }
 ?>
-

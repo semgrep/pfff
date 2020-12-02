@@ -9,5 +9,3 @@
 function foo<A, B as X<int>>(A $x) {
   return null;
 }
-
-

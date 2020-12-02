@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Parsing Dates and Times from Strings 
-# ********************************************************************** 
+# **********************************************************************
+# Parsing Dates and Times from Strings
+# **********************************************************************
 <?php
 function pleac_Parsing_Dates_and_Times_from_Strings() {
 // 'strtotime' parses a textual date expression by attempting a 'best guess' at
@@ -44,4 +44,3 @@ else
 
 }
 ?>
-

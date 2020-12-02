@@ -27,7 +27,7 @@ even curry and write code like 'x => y => x + y').
 
 The other conflict is that when we see '(x)' in '(x) => ...'
 there is no way to know whether this is an expression (reduce) or
-the parameter specification of a lambda (shift). 
+the parameter specification of a lambda (shift).
 
 *** technique 1
 
@@ -129,7 +129,7 @@ and we don't know yet if we need to reduce import to an identifier
 which starts a multiplication or to shift to allow an
 import namespace declaration.
 
-How to solve the ambiguity? 
+How to solve the ambiguity?
 You could use a parsing hack and looking if you are in the
 first column, but this does not always work.
 

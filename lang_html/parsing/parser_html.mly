@@ -88,4 +88,3 @@ html_list:
 attr_list:
  | attr_list attr { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
-

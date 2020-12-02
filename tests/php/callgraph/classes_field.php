@@ -1,6 +1,6 @@
 <?php
 
-function __builtin__echo($xs) { 
+function __builtin__echo($xs) {
 }
 
 class A {

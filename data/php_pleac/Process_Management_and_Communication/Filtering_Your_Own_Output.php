@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Filtering Your Own Output 
-# ********************************************************************** 
+# **********************************************************************
+# Filtering Your Own Output
+# **********************************************************************
 <?php
 function pleac_Filtering_Your_Own_Output() {
 // Output buffering: Only display a certain number of lines of output.
@@ -85,4 +85,3 @@ ob_end_flush();
 
 }
 ?>
-

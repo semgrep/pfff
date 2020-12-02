@@ -15,4 +15,3 @@ tbdffmt(Fmt* fmt)
 
     p = va_arg(f->args, uchar*);
 }
-

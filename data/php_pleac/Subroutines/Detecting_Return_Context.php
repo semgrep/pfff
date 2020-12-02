@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Detecting Return Context 
-# ********************************************************************** 
+# **********************************************************************
+# Detecting Return Context
+# **********************************************************************
 <?php
 function pleac_Detecting_Return_Context() {
 // PHP can be described as a dynamically typed language because variables serve
@@ -47,4 +47,3 @@ if (is_string($ret))
 
 }
 ?>
-

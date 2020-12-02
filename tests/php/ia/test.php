@@ -13,4 +13,3 @@ $o->foo();
 //$o->bar();
 $x = null;
 $x->foo();
-

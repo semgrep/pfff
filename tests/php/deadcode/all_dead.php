@@ -8,5 +8,3 @@ function nocaller() {
 // dead by transitivity of dead nocaller
 function calledbynocaller() {
 }
-
-

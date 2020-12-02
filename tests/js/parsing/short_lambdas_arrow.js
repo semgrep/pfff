@@ -7,9 +7,9 @@ var nums = evens.map((v, i) => v + i);
 
 
 // Statement bodies
-nums.forEach(v => { 
-  if (v % 5 === 0) 
-    fives.push(v); 
+nums.forEach(v => {
+  if (v % 5 === 0)
+    fives.push(v);
 });
 
 
@@ -18,8 +18,7 @@ var bob = {
   _name: "Bob",
   _friends: [],
   printFriends: function () {
-    this._friends.forEach(f => 
+    this._friends.forEach(f =>
       console.log(this._name + " knows " + f));
   }
 };
-

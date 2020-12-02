@@ -10,6 +10,9 @@ jobs:
           name: Install opam dependencies
           command: ./scripts/install-opam-deps
       - run:
+          name: Check code formatting
+          command: ./scripts/lint
+      - run:
           name: Build
           command: ./scripts/build
       - run:

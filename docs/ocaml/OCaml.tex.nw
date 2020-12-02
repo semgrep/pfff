@@ -62,7 +62,7 @@
 \usepackage{multirow}
 
 %define: \toprule
-\usepackage{booktabs} 
+\usepackage{booktabs}
 %?\usepackage{ctable}
 \newcommand{\otoprule}{\midrule[\heavyrulewidth]}
 
@@ -111,7 +111,7 @@ Yoann Padioleau\\
 \texttt{pad@fb.com}
 }
 
-\maketitle 
+\maketitle
 
 \pagebreak
 \hrule
@@ -153,17 +153,17 @@ Yoann Padioleau\\
 \ocaml is a powerful language, trust me.
 % xen tool stack on top of xen kernel, static driver verifier microsoft
 % jane street trading software (X% of ws transactions)
-% mylife full backend stack,   
-% unison file two-way synchronizer (rsync on steroids),  
+% mylife full backend stack,
+% unison file two-way synchronizer (rsync on steroids),
 %  mldonkey (peer-to-peer),
 % fftw generator (MIT),
-% many top static analysis tools in the academic world at top 
+% many top static analysis tools in the academic world at top
 % universities like stanford, berkeley, caltech, and industry world
 % CEA (french nuclear plant, they don't like bugs in their code)
 % so used by static analysis world, by financial world (jane street), by system
 % world (Xen, mldonkey, mylife backend),
 % F# is a copy of OCaml, and of course
-% origin in academics, especially program analysis, compilation, theorem 
+% origin in academics, especially program analysis, compilation, theorem
 % proving, its original niche.
 
 %goal of this document ?
@@ -189,9 +189,9 @@ Yoann Padioleau\\
 % - debugging, no side effect, so local, so when bug, local
 % - documentation, I can say something but not too much about what the program
 %   does.
-% - code factorization power, with HOF, ex with_open, finalize is not a 
+% - code factorization power, with HOF, ex with_open, finalize is not a
 %   keyword, cache_computation, etc
-% - easy debugging, replay!!, and display complex structure in 
+% - easy debugging, replay!!, and display complex structure in
 %   debugger/interpreter (in contrast to C++ world ...), a la vardump
 
 \section{\ocaml vs X}
@@ -220,18 +220,18 @@ Yoann Padioleau\\
 %ocamllex ocamlyacc
 
 %ocamldebug!!!
-%ocamlmktop 
+%ocamlmktop
 
 %profiler ?
 
-%emacs mode, cf later 
+%emacs mode, cf later
 
-%package manager, cf later 
+%package manager, cf later
 % ocamlfind and findlib
 
 \chapter{Installing OCaml}
 
-%different ways 
+%different ways
 
 %if with pad, then no need, see section X
 
@@ -245,24 +245,24 @@ Yoann Padioleau\\
 \section{Unix distributions}
 
 \section{Pad's installation}
-%also /home/pad/packages/bin 
+%also /home/pad/packages/bin
 
 
 \chapter{Your First Program}
 
-%ocamlc 
+%ocamlc
 
 \section{[[foo.ml]]}
 
-% currification 
+% currification
 % link to syntax memento section for why that way
 
-% wierd, let main = ... 
+% wierd, let main = ...
 % like in PHP, toplevel statements
-% compiler generate code for functions and anonymous functions for toplevel 
+% compiler generate code for functions and anonymous functions for toplevel
 %  and when run it run all those fake functions (in the order of the
 % file and the modules given at link time). Usually only toplevel
-% is let main = 
+% is let main =
 
 % (actually in C too, because can do
 % static int x = <expression>;
@@ -289,7 +289,7 @@ let x = 1
 
 % don't repeat yourself, cf haxe slides
 
-% type inference for polymorphic code too !! no ugly 
+% type inference for polymorphic code too !! no ugly
 % Map<...,<...,...>> x = new Map<....<....,...>>
 
 \section{Values}
@@ -310,7 +310,7 @@ let x = 1
 \section{Expression oriented}
 % nice if then else as expression. Like ternary. This has
 % implication. Instead of  $x = 0; if (...) then $x =1; else $x = 2;
-% (which is modifying memory cells), 
+% (which is modifying memory cells),
 % instead do  let x = if ... then ... else ...
 % can do that in C with ternary, but not that readable for big
 %  expression and can't nest them. Not unusual in OCaml to do:
@@ -328,9 +328,9 @@ let x = 1
 
 \section{Project organization}
 
-% dir organization 
+% dir organization
 
-% flags 
+% flags
 
 % libraries .cma (even C people dunno that ...)
 
@@ -340,7 +340,7 @@ let x = 1
 
 % libraries .cma
 
-%ocamldep 
+%ocamldep
 
 % vs omake, ocamlbuild, Mottl, ... ?
 
@@ -363,7 +363,7 @@ let x = 1
 % use pfff/tags :)
 
 \subsection{Type Inference feedback}
-% .annot 
+% .annot
 
 % ocamlc -dtype
 % C-c C-t
@@ -389,22 +389,22 @@ let x = 1
 
 \chapter{Debugging}
 
-%ocamlc -g 
+%ocamlc -g
 
 %OCAMLRUNPARAM="b"
 
 
 % for profiling, see my commons
 
-Amazing debugger. Can go back in time. 
+Amazing debugger. Can go back in time.
 
-% cf later emacs section 
+% cf later emacs section
 
 \section{Printf style debugging}
 
 %pr2_gen, a la Perl Dumper
 
-% cf also ocamltarzan 
+% cf also ocamltarzan
 
 \section{Displaying complex values}
 
@@ -414,7 +414,7 @@ Amazing debugger. Can go back in time.
 
 % p *  it
 
-%ocaml.v json sexp 
+%ocaml.v json sexp
 
 \section{Breaking points}
 
@@ -426,11 +426,11 @@ Amazing debugger. Can go back in time.
 
 \chapter{Libraries}
 
-% sdtlib 
+% sdtlib
 
 % commons, cf commons.pdf
 
-% external/ocamlxxx 
+% external/ocamlxxx
 
 % ocamltarzan
 
@@ -441,7 +441,7 @@ Amazing debugger. Can go back in time.
 \chapter{Pitfalls}
 
 \section{Ugly stuff}
-% a few ugly stuff 
+% a few ugly stuff
 
 %no '-' in filename!!! otherwise can't open, or cant debug because tools
 %are not prepared to have _ in name, like ocamldebug ...
@@ -466,19 +466,19 @@ Amazing debugger. Can go back in time.
 % ;;
 
 % function calls, currification, why that way ?
-%  less chars when  foo 1 2 than foo(1, 2) 
+%  less chars when  foo 1 2 than foo(1, 2)
 %  encourage make no diff between func and other values, a func
 %  can be passed as a param, partially applied, etc
 
-% comments are (* *) 
+% comments are (* *)
 
 \chapter{Tricks}
 % cf commons ?  put in commons ?
 
-% of other languages 
-%  - with_open 
-%  - finalize unwind_protect 
-%  - +>, better sense of reading 
+% of other languages
+%  - with_open
+%  - finalize unwind_protect
+%  - +>, better sense of reading
 %  - visitor
 %  - hooks
 %  - ocamltarzan/camlmix, -dump_ast, ocaml.ml, see also camlp4, dyntype, ...
@@ -506,7 +506,7 @@ Amazing debugger. Can go back in time.
 %NO OPEN, except for Ast
 % and Common. But for Common use directly only
 % popular func, such as pr2, spf. otherwise qualify, as in
-% Common.map_filter 
+% Common.map_filter
 
 \section{Do's and don't}
 
@@ -521,28 +521,28 @@ Amazing debugger. Can go back in time.
 % how things work, and you need that to be proficient, know what
 % cost things (not like lisp programmer ... cf quote)
 
-\section{\ocaml tutorials} 
+\section{\ocaml tutorials}
 
 \url{http://www.ocaml-tutorial.org}
 
-\section{\ocaml books} 
+\section{\ocaml books}
 
-\section{Functional programming} 
+\section{Functional programming}
 
 % wadler, htdp, sicp
 % seven languages in seven weeks ?
 
-\section{\ocaml cookbook} 
+\section{\ocaml cookbook}
 %PLEAC
 
-%excellent ressource 
+%excellent ressource
 
 \appendix
 
 \begin{thebibliography}{99}
 
 \bibitem[1]{cil} George Necula,
-{\em CIL}, 
+{\em CIL},
 CC.
 \verb+http://manju.cs.berkeley.edu/cil/+
 

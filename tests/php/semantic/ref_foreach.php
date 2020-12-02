@@ -13,4 +13,3 @@ foreach($array as &$k) {
 };
 
 var_dump($array);
-

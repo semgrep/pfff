@@ -11,5 +11,3 @@ val parse:
 
 val highlight:
   org -> (string * Highlight_code.category option * Common2.filepos) list
-
-

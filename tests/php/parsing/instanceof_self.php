@@ -11,4 +11,3 @@ class A {
 }
 
 A::foo();
-

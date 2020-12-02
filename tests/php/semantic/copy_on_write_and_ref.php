@@ -8,7 +8,7 @@ $x = array(array(1,2,3), array(4,5,6));
 // else, such as a regular shared ref), then they would just stop (the
 // right thing being, as in OCaml, to just traverse the graph and
 // remember if one had already visited a node and what was the new
-// corresponding pointer to reference again) 
+// corresponding pointer to reference again)
 
 // taking a ref to a subpart of $x should increment the refcount
 $z =& $x[1][0];

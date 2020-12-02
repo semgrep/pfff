@@ -17,10 +17,10 @@
 % - bddbddb, DOOP, http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
 % - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea
 % - Frama C, CodeSonar, Coverity, ...
-% 
+%
 % note: I always wanted (but was never able to write ...) an interprocedural
 % (dataflow) analysis. With Datalog I did it in one day! It's so easy.
-% 
+%
 
 % history:
 %  - I used to have an array_point_to/2 but it can not work, we have to
@@ -33,7 +33,7 @@
 % Abstract memory locations (also called heap objects), are mostly qualified
 % symbols (e.g 'main__foo', 'ret_main', '_cst_line2_'):
 % - each globals, functions, constants
-% - each malloc (context insensitively). will do sensitively later for 
+% - each malloc (context insensitively). will do sensitively later for
 %   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc)
 %   so have some form of type sensitivty at least
 % - each locals (context insensitively first), when their addresses are taken
@@ -138,7 +138,7 @@ point_to(P, F) :-
 %point_to(F, L) :-
 %        field_point_to(F, L).
 
-        
+
 %-------------------------------------------------------------------------------
 % Calls context-insensitive
 %-------------------------------------------------------------------------------
@@ -153,7 +153,7 @@ assign(RET, V) :-
         call_edge(I, F),
         call_ret(I, RET).
 
-call_edge(I, F) :- 
+call_edge(I, F) :-
         call_direct(I, F).
 % power of mutually recursive analysis! dataflow -> controlflow -> dataflow
 call_edge(I, F) :-
@@ -166,6 +166,6 @@ call_edge(I, F) :-
 %*******************************************************************************
 % Postlude
 %*******************************************************************************
-  
+
 point_to(A,B)?
 %call_edge(A,B)?

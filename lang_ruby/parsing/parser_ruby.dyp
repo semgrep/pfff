@@ -15,7 +15,7 @@
  *     * Neither the name of the <organization> nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -136,8 +136,8 @@ let tuple = function
   | [x] -> x
   | lst -> Tuple lst
 
-let is_exnblock = function 
-  | S ExnBlock _ -> true 
+let is_exnblock = function
+  | S ExnBlock _ -> true
   | _ -> false
 
 let rec param_to_pattern = function
@@ -146,7 +146,7 @@ let rec param_to_pattern = function
   | Formal_star (t, id) -> Splat (t, (Some (Id (id, ID_Lowercase))))
   | Formal_rest t -> Splat (t, None)
   | Formal_tuple (_, xs, _) -> params_to_pattern xs
-  | Formal_default (id, t, e) -> 
+  | Formal_default (id, t, e) ->
       Binop(Id(id, ID_Lowercase), (Op_ASSIGN, t), e)
   | Formal_hash_splat (t, Some id) ->
       Unary((Op_UStarStar, t), Id (id, ID_Lowercase))
@@ -156,7 +156,7 @@ let rec param_to_pattern = function
   | Formal_kwd (id, t, _) -> raise Common.Impossible
   | ParamEllipsis _ -> raise Common.Impossible
 
-and params_to_pattern xs = 
+and params_to_pattern xs =
   let xs = List.map param_to_pattern xs in
   Tuple xs
 }
@@ -210,7 +210,7 @@ and params_to_pattern xs =
 /*(*-----------------------------------------*)*/
 
 /* keywords */
-%token 
+%token
  <Parse_info.t> K_CLASS <Parse_info.t> K_MODULE <Parse_info.t> K_DEF
  <Parse_info.t> K_BEGIN  <Parse_info.t> K_END
  <Parse_info.t> K_ALIAS <Parse_info.t> K_UNDEF
@@ -334,7 +334,7 @@ eol_or_semi:
 /*(*************************************************************************)*/
 /*(*1 Sgrep *)*/
 /*(*************************************************************************)*/
-sgrep_spatch_pattern: eols stmt_list T_EOF 
+sgrep_spatch_pattern: eols stmt_list T_EOF
    { match $2 with
      | [] -> Ss []
      | [S s] -> S2 s
@@ -347,19 +347,19 @@ sgrep_spatch_pattern: eols stmt_list T_EOF
 /*(*************************************************************************)*/
 
 stmt:
-  | K_ALIAS<pos> meth_or_atom<e1> meth_or_atom<e2> 
+  | K_ALIAS<pos> meth_or_atom<e1> meth_or_atom<e2>
       { D (Alias(pos, e1,e2)) }
-  | K_UNDEF<pos> meth_or_atom_list<e1> 
+  | K_UNDEF<pos> meth_or_atom_list<e1>
       { D (Undef(pos, e1)) }
 
-  | stmt<s> K_IF<pos>     eols stmt<g> 
-      { if M.is_cond_modifier g then raise Dyp.Giveup; 
+  | stmt<s> K_IF<pos>     eols stmt<g>
+      { if M.is_cond_modifier g then raise Dyp.Giveup;
         S (If(pos, g, [s], None)) }
   | stmt<s> K_UNLESS<pos> eols stmt<g>
-      { if M.is_cond_modifier g then raise Dyp.Giveup; 
+      { if M.is_cond_modifier g then raise Dyp.Giveup;
         S (Unless(pos, g, [s], None)) }
-  | stmt<s> K_UNTIL<pos>  eols stmt<g> 
-      { if M.is_cond_modifier g then raise Dyp.Giveup; 
+  | stmt<s> K_UNTIL<pos>  eols stmt<g>
+      { if M.is_cond_modifier g then raise Dyp.Giveup;
         S (Until(pos, is_exnblock s, g, [s])) }
   | stmt<s> K_WHILE<pos>  eols stmt<g>
       { if M.is_cond_modifier g then raise Dyp.Giveup;
@@ -369,17 +369,17 @@ stmt:
         S (ExnBlock({body_exprs = [s]; rescue_exprs = [($2, [],None,[g])];
             ensure_expr = None; else_expr = None})) }
 
-  /* handle special case for x = y rescue z where rescue binds to 
+  /* handle special case for x = y rescue z where rescue binds to
    * just the rhs, not the full assignment (unlike the other modifiers)
    */
   | lhs_assign_op<l,op,_tk> eols arg<r> K_RESCUE<pos> eols stmt<guard>
       { if M.is_cond_modifier guard then raise Dyp.Giveup;
         let r' = S (ExnBlock({body_exprs=[r];rescue_exprs =[($4,[],None,[guard])];
                  ensure_expr = None; else_expr = None}))
-         in (*prune_binop l op r'*) 
+         in (*prune_binop l op r'*)
          Binop(l,(op,pos),r') (* TODO: wrong pos *)}
   | mlhs_assign_op<l,op,tk> eols mrhs<r>
-      { (*prune_binop (tuple l) op (tuple r)*) 
+      { (*prune_binop (tuple l) op (tuple r)*)
          let lhs = tuple l in
          Binop(lhs,(op,tk), (tuple r)) (* TODO: wrong pos?*)
       }
@@ -389,9 +389,9 @@ stmt:
   | scope_END<pos>  eols T_LBRACE  eols stmt_list<xs> T_RBRACE
       { S.leave_scope dyp; D (EndBlock(pos, ($3, xs, $6)))}
 
-  | topcall<c> 
+  | topcall<c>
       { c }
-  | expr<e> 
+  | expr<e>
       { e }
 
   | T_USTAR primary { Splat($1, Some $2) }
@@ -406,17 +406,17 @@ scope_END:    K_END<pos>    {S.enter_scope dyp; pos}
 
 expr:
   | K_RETURN<pos> call_args<xs>
-      { M.well_formed_return xs; 
+      { M.well_formed_return xs;
         S (Return(pos, xs)) }
  /*(* call_args-->arg_comma_star_list-->arg_comma_nonempty_list->arg vs arg*)*/
   | K_RETURN<pos> arg<p>
       { match p with
         | S Block(_, [x], _) -> S (Return(pos, [x]))
         | arg -> if M.is_cond_modifier arg then raise Dyp.Giveup;
-                 S (Return(pos, [arg])) 
+                 S (Return(pos, [arg]))
       }
   /*(* stmt-->topcall-->command-->K_YIELD vs stmt-->expr-->K_YIELD *)*/
-  | K_YIELD<pos> call_args<xs> 
+  | K_YIELD<pos> call_args<xs>
       { M.well_formed_return xs;
         S (Yield(pos, xs)) }
 
@@ -435,7 +435,7 @@ expr:
 /*(*************************************************************************)*/
 
 arg:
-  | lhs_pruned_assign_op<l,op,tk> eols arg<r> 
+  | lhs_pruned_assign_op<l,op,tk> eols arg<r>
       { M.prune_right_assoc tk l op r }
 
   | unary_op<o,pos>    eols arg<a> { M.prune_uop (U o) a pos }
@@ -444,7 +444,7 @@ arg:
   | arg<l> T_ANDOP     eols arg<r> { M.prune_left_assoc $2 l Op_AND r }
   | arg<l> T_OROP      eols arg<r> { M.prune_left_assoc $2 l Op_OR r }
 
-  | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>   
+  | arg<e1> T_QUESTION<pos> eols expr<e2> T_COLON eols expr<e3>
     { M.prune_tern e1 e2 e3 $2 $5 }
 
   | primary<p> {p}
@@ -456,7 +456,7 @@ arg:
 primary:
   | T_LPAREN eols stmt_list T_RPAREN
       { (* don't collapse the block here to prevent the disambiguation
-           rules from erroneously firing *) 
+           rules from erroneously firing *)
          S (Block($1, $3, $4)) }
 
   | constant<c> { c }
@@ -476,7 +476,7 @@ primary:
 
   /*(* stmt-->topcall vs stmt-->expr-->arg-->primary *)*/
   | func<f>                { f }
-  | func<f> code_block<cb> 
+  | func<f> code_block<cb>
       { match f with
         | Call(m,args,None) -> M.methodcall m args (Some cb)
         | _ -> M.methodcall f [] (Some cb)
@@ -492,7 +492,7 @@ primary:
   | hash { $1 }
 
   | K_RETURN<pos> { S (Return(pos, [])) }
-/*  
+/*
  * | K_RETURN<pos>T_LPAREN eols call_args<args> eols T_RPAREN{Return(pos, args)}
  * | K_RETURN<pos> any_LPAREN eols expr<arg> eols T_RPAREN { S (Return(pos, [arg]))}
  */
@@ -507,7 +507,7 @@ primary:
     { S (Unless(pos, g, xs, else_e)) }
 
   | K_WHILE<pos> expr<g> do_sep stmt_list<xs> K_lEND
-    { M.well_formed_do g xs; 
+    { M.well_formed_do g xs;
       S (While(pos, false, g, xs)) }
 
   | K_UNTIL<pos> expr<g> do_sep stmt_list<xs> K_lEND
@@ -526,7 +526,7 @@ primary:
 
   /*(* TODO: mlhs in tree-sitter-ruby, not formal_arg_list *)*/
   | K_FOR<pos> formal_arg_list<vars> K_IN arg<a> do_sep stmt_list<xs> K_lEND
-    { M.well_formed_do a xs; 
+    { M.well_formed_do a xs;
       S (For(pos, params_to_pattern vars, $3, a, xs)) }
 
   | K_lBEGIN<pos> eols body_exn<body>  K_lEND { S (ExnBlock(body)) }
@@ -584,9 +584,9 @@ string:
   | string<s1> one_string<s2> { M.merge_string_lits s1 s2 }
 
 one_string:
-  | T_SINGLE_STRING 
+  | T_SINGLE_STRING
       { Literal(String ((Single $1))) }
-  | T_DOUBLE_BEG<pos> interp_str<xs> 
+  | T_DOUBLE_BEG<pos> interp_str<xs>
       { Literal(String ((Double (pos, xs, fake "\"")))) }
 
   | T_USER_BEG<m,pos> interp_str<str> { M.process_user_string m str pos }
@@ -594,30 +594,30 @@ one_string:
 
 interp_str:
   | T_SINGLE_STRING {[StrChars $1]}
-  | interp_str_work<i> 
+  | interp_str_work<i>
       {match i with [] -> [StrChars ("", Parse_info.fake_info "")] | lst -> lst}
 
 interp_str_work:
   | T_INTERP_STR<s,pos> interp_code<tl>
       { if s = "" then tl else (StrChars (s,pos))::tl }
 
-  | T_INTERP_END<s,pos2> 
+  | T_INTERP_END<s,pos2>
       { if s = "" then [] else [StrChars (s, pos2)] }
 
 interp_code:
   | eols stmt_list<ss> interp_str_work<tl>
-      {   
-        let mk_block lst = 
+      {
+        let mk_block lst =
           match lst with
           | [x] -> x
           | _ -> S (Block(G.fake_bracket lst))
         in
           match ss with
           | [] -> tl
-          | x::_ -> StrExpr (mk_block ss)::tl 
+          | x::_ -> StrExpr (mk_block ss)::tl
       }
 
-  | T_INTERP_END<s,pos> 
+  | T_INTERP_END<s,pos>
       { if s = "" then [] else [StrChars (s, pos)] }
 
 /*(*----------------------------*)*/
@@ -626,18 +626,18 @@ interp_code:
 
 body_exn:
  | stmt_list<xs> rescue_list<resc_e> case_else<else_e> ensure_clause<ens_e>
-     { { body_exprs = xs; rescue_exprs = resc_e; 
-        ensure_expr = ens_e; else_expr = else_e} 
+     { { body_exprs = xs; rescue_exprs = resc_e;
+        ensure_expr = ens_e; else_expr = else_e}
      }
 
 rescue_clause:
-  | K_RESCUE<resc_pos>                     then_sep stmt_list<xs> 
+  | K_RESCUE<resc_pos>                     then_sep stmt_list<xs>
       { ($1, [], None, xs) }
   | K_RESCUE<pos> T_ASSOC seen_id<bind>    then_sep stmt_list<xs>
       { ($1, [], Some ($2, bind), xs) }
   | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<xs>
     { ($1, exn, None, xs) }
-  | K_RESCUE<pos> arg_comma_star_list<exn> 
+  | K_RESCUE<pos> arg_comma_star_list<exn>
     { ($1, exn, None, []) }
 
 seen_id: variable<i> { M.seen dyp (Id i); Id i}
@@ -674,7 +674,7 @@ case_else:
 
 when_clauses:
   | /* empty */ { [] }
-  | K_WHEN arg_comma_star_list<e> then_sep stmt_list<es> 
+  | K_WHEN arg_comma_star_list<e> then_sep stmt_list<es>
     when_clauses<rest>
     { ($1, e, es) :: rest }
 
@@ -696,7 +696,7 @@ array_body_rest:
   /*(* recursive *)*/
   | array_item<e> T_COMMA eols array_body_rest<es> @{ e::es, [Dyp.Dont_shift] }
 
-array_item: 
+array_item:
   | arg<e> { e }
   | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
       { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
@@ -716,24 +716,24 @@ hash_elem:
 
 /*(* TODO: move arg bin_op OP_ASSOC here like in tree-sitter-ruby *)*/
 pair:
-  | identifier T_COLON arg 
+  | identifier T_COLON arg
     { token_immediate_check (snd $1) $2;
       keyword_arg_to_expr $1 $2 $3
-     } 
+     }
 
 /*(*************************************************************************)*/
 /*(*1 Call *)*/
 /*(*************************************************************************)*/
 
 topcall:
-  | func<f> 
+  | func<f>
       { f }
   | func<f> code_block<cb>
       { match f with
         | Call(m,args,None) -> M.methodcall m args (Some cb)
         | _ -> M.methodcall f [] (Some cb) }
 
-  | command<c> 
+  | command<c>
       { c }
   | command_name<m> call_args<xs> do_codeblock<cb>
       { M.well_formed_command m xs;
@@ -747,7 +747,7 @@ command:
   | command_name<m> call_args<xs>
       { M.well_formed_command m xs;
         M.methodcall m xs None}
-  | K_YIELD<pos>    call_args<xs> 
+  | K_YIELD<pos>    call_args<xs>
       { M.well_formed_return xs;
         S (Yield(pos, xs)) }
 
@@ -757,12 +757,12 @@ command:
         M.methodcall cmd [cmd2] None}
 
 command_name:
-  | variable<id> 
+  | variable<id>
       { Id id }
 
   | primary<p> T_DOT eols message_identifier<m>
       { M.unfold_dot p (m) $2}
-  | primary<p> T_SCOPE    message_identifier<m> 
+  | primary<p> T_SCOPE    message_identifier<m>
       { M.scope $2 p (sm m) }
 
   /*(* recursive *)*/
@@ -777,7 +777,7 @@ command_name:
 func:
   | command_name<c> any_LPAREN eols call_args<xs> eols T_RPAREN
       { match xs with
-        | [] -> Call(c, xs, None) 
+        | [] -> Call(c, xs, None)
         | _ -> M.methodcall c xs None
       }
   | command_name<c> any_LPAREN eols command<a> eols T_RPAREN
@@ -813,13 +813,13 @@ arg_comma_nonempty_list:
 star_amper:
   | T_USTAR arg
       { [Splat($1, Some $2)] }
-  | T_UAMPER<pos> arg<a> 
+  | T_UAMPER<pos> arg<a>
       { [Unary((Op_UAmper,pos),a)] }
 
   | T_USTAR<pos1> arg<a1> T_COMMA eols T_UAMPER<pos2> arg<a2>
       { [Splat(pos1, Some a1); Unary((Op_UAmper,pos2),a2)] }
 
-argument: 
+argument:
  | arg { $1 }
  | pair { $1 }
 
@@ -827,7 +827,7 @@ argument:
 /*(*1 LHS/RHS *)*/
 /*(*************************************************************************)*/
 
-assign_op: 
+assign_op:
   | T_ASSIGN          { Op_ASSIGN, $1 }
   | T_OP_ASGN<op,pos> { Op_OP_ASGN (H.binary_op_of_string op), pos }
 
@@ -838,7 +838,7 @@ assign_op:
 lhs_assign_op: lhs<l> assign_op<op,tk>   { M.seen dyp l; l,op,tk}
 
 lhs:
-  | var_or_scoped_id<id> 
+  | var_or_scoped_id<id>
       { id }
   | K_NIL             { Literal(Nil $1) }
   | K_TRUE            { Literal(Bool (true,$1)) }
@@ -866,7 +866,7 @@ mlhs_clean:
 
 mlhs_item:
   | lhs<l>                               {l}
-  | T_USTAR                              { Splat($1, None) } 
+  | T_USTAR                              { Splat($1, None) }
   | T_LPAREN eols mlhs<ls> eols T_RPAREN { tuple ls }
 
 mlhs_rest:
@@ -879,7 +879,7 @@ mlhs_rest:
 /*(*2 Pruned LHS *)*/
 /*(*----------------------------*)*/
 
-lhs_pruned_assign_op: lhs_prune_binop<l> assign_op<op,tk> 
+lhs_pruned_assign_op: lhs_prune_binop<l> assign_op<op,tk>
   { M.seen dyp l; l,op,tk}
 
 lhs_prune_binop: lhs<l> {match l with Binop _ -> raise Dyp.Giveup | _ -> l}
@@ -949,8 +949,8 @@ formal_arg:
   | T_USTAR T_LID<id,pos>  { M.seen_str dyp id; Formal_star ($1, $2) }
 
   | T_USTAR                { Formal_rest $1 }
-  | T_LID<id,pos> T_ASSIGN eols arg<e> 
-      { M.seen_str dyp id; 
+  | T_LID<id,pos> T_ASSIGN eols arg<e>
+      { M.seen_str dyp id;
         Formal_default ($1, $2, e) }
   | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple ($1, f, $3)}
   | T_DOT3 { ParamEllipsis $1 }
@@ -959,7 +959,7 @@ formal_arg_nonempty_list:
   | formal_arg<f> { [f] }
   | formal_arg<f> T_COMMA { [f; Formal_rest $2 (* TODO *)] }
   /*(* recursive *)*/
-  | formal_arg<f> T_COMMA eols formal_arg_nonempty_list<fs> 
+  | formal_arg<f> T_COMMA eols formal_arg_nonempty_list<fs>
        @{ f::fs, [Dyp.Dont_shift] }
 
 formal_arg_list:
@@ -972,10 +972,10 @@ method_formals:
       { match xs with
         | (Formal_tuple _)::_ -> raise Dyp.Giveup
         | e -> e }
-  | any_LPAREN eols formal_arg_list<xs> eols T_RPAREN 
+  | any_LPAREN eols formal_arg_list<xs> eols T_RPAREN
       { (* RPAREN usually puts the lexer in an end state, but we need to
          force it to an end state *)
-         S.state_override := true; 
+         S.state_override := true;
          xs }
 
 /*(*************************************************************************)*/
@@ -992,7 +992,7 @@ class_definition:
       { S.leave_scope dyp;
         D (ClassDef(pos, SingletonC ($2, id), body)) }
 
-module_definition: scope_MODULE<pos> cst_or_scoped_id<id> eols body_exn<body> K_lEND 
+module_definition: scope_MODULE<pos> cst_or_scoped_id<id> eols body_exn<body> K_lEND
       { S.leave_scope dyp;
         D (ModuleDef (pos, id, body)) }
 
@@ -1008,7 +1008,7 @@ class_inheritance:
 /*(*1 Name *)*/
 /*(*************************************************************************)*/
 
-identifier: 
+identifier:
   | T_LID { $1 }
   /*(* weird, but found code like that *)*/
   | T_INST_VAR   { $1 }
@@ -1038,11 +1038,11 @@ message_identifier:
   | T_LBRACK<pos>     T_RBRACK { MethodOperator(Op_AREF,pos) }
 
   /*(* not 'assignable' part I guess *)*/
-  | bin_op<op,tk> { 
+  | bin_op<op,tk> {
         (* TODO: use bin_msg instead *)
-        match op with 
-        | B op -> MethodOperator(op,tk) 
-        | x -> failwith (Common.spf "not a binary msg: %s" 
+        match op with
+        | B op -> MethodOperator(op,tk)
+        | x -> failwith (Common.spf "not a binary msg: %s"
                           (Ast_ruby.show_binary_op x))
      }
   | T_LBRACK_ARG<pos> T_RBRACK T_ASSIGN { MethodOperator(Op_ASET,pos) }
@@ -1062,9 +1062,9 @@ method_name:
 method_kind:
   | method_name { M $1 }
   /*(* for complex method definitions *)*/
-  | variable2<id1> T_DOT eols method_name<id2> 
+  | variable2<id1> T_DOT eols method_name<id2>
       { SingletonM (DotAccess(Id id1,($2), id2))}
-  | variable2<id1> T_SCOPE    method_name<id2> 
+  | variable2<id1> T_SCOPE    method_name<id2>
       { SingletonM (M.scope $2 (Id id1) (sm id2)) }
   | T_LPAREN arg T_RPAREN T_DOT method_name
       { SingletonM (DotAccess($2, ($4), ($5))) }
@@ -1077,14 +1077,14 @@ meth_or_atom:
 var_or_scoped_id:
   | variable<id>                           { Id id }
   | T_USCOPE<pos> variable<id>             { ScopedId (TopScope((pos),id))}
-  | var_or_scoped_id<id1> T_SCOPE variable2<id2>  
+  | var_or_scoped_id<id1> T_SCOPE variable2<id2>
       { ScopedId (Scope(id1,$2,SV id2)) }
 
 /*(*TODO: should be just constant below, not any variable *)*/
 cst_or_scoped_id:
   | variable<id>                           { NameConstant (fst id) }
   | T_USCOPE<pos> variable<id>             { NameScope (TopScope((pos),id))}
-  | var_or_scoped_id<id1> T_SCOPE variable2<id2>  
+  | var_or_scoped_id<id1> T_SCOPE variable2<id2>
       { NameScope (Scope(id1,$2,SV id2)) }
 
 
@@ -1098,9 +1098,9 @@ bin_op:
   | T_LT     { B Op_LT,$1 }     | T_GT     { B Op_GT,$1 }
   | T_GEQ    { B Op_GEQ,$1 }    | T_LEQ    { B Op_LEQ,$1 }
   | T_EQ     { B Op_EQ,$1 }     | T_EQQ    { B Op_EQQ,$1 } | T_NEQ    { B Op_NEQ,$1 }
-  | T_CMP    { B Op_CMP,$1 } 
+  | T_CMP    { B Op_CMP,$1 }
   | T_MATCH  { B Op_MATCH,$1 } | T_NMATCH { B Op_NMATCH,$1 }
-  | T_AMPER  { B Op_BAND,$1 } | T_VBAR   { B Op_BOR,$1 }  | T_CARROT { B Op_XOR,$1 } 
+  | T_AMPER  { B Op_BAND,$1 } | T_VBAR   { B Op_BOR,$1 }  | T_CARROT { B Op_XOR,$1 }
   /*(* TODO: should move T_ASSOC in pair *)*/
   | T_ASSOC  { Op_ASSOC,$1 }
   | T_DOT2   { B Op_DOT2,$1 }

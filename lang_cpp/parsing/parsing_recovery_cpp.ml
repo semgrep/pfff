@@ -138,5 +138,3 @@ and find_next_synchro_orig next already_passed =
         already_passed, v::xs
       end
       else find_next_synchro_orig xs (v::already_passed)
-
-

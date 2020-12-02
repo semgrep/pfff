@@ -45,4 +45,3 @@ let basename_coverage_to_readable_coverage xs root =
     | x::y::_xs ->
         failwith (spf "ambiguity on %s (%s, %s, ...)" file x y)
   )
-

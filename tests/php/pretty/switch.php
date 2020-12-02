@@ -9,4 +9,3 @@ function test_switch() {
       return false;
   }
 }
-

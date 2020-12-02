@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Program: Calculating Prime Factors 
-# ********************************************************************** 
+# **********************************************************************
+# Program: Calculating Prime Factors
+# **********************************************************************
 <?php
 function pleac_Program__Calculating_Prime_Factors() {
 // @@INCOMPLETE@@
@@ -8,4 +8,3 @@ function pleac_Program__Calculating_Prime_Factors() {
 
 }
 ?>
-

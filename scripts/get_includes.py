@@ -56,4 +56,3 @@ if __name__ == "__main__":
         print "".join(["directory %s\n" % (d,) for d in getdirs(rootdir)])
     else:
         print "".join(["#directory \"%s\";;\n" % (d,) for d in getdirs(rootdir)])
-

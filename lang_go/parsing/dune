@@ -11,6 +11,5 @@
  (preprocess (pps ppx_deriving.show))
 )
 (ocamllex lexer_go)
-(menhir (modules parser_go) 
+(menhir (modules parser_go)
         (flags --unused-tokens --explain --fixed-exception))
-

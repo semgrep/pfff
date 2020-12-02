@@ -18,4 +18,3 @@ foobar::foo();
 //hello
 $x = 'foobar';
 $x::foo();
-

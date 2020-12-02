@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Appending One Array to Another 
-# ********************************************************************** 
+# **********************************************************************
+# Appending One Array to Another
+# **********************************************************************
 <?php
 function pleac_Appending_One_Array_to_Another() {
 // PHP offers the 'array_merge' function to perform this task. Duplicate values are retained,
@@ -33,4 +33,3 @@ echo join(' ', $members) . "\n";
 
 }
 ?>
-

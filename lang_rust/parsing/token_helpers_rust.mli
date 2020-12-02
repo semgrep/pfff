@@ -12,4 +12,3 @@ val line_of_tok  : Parser_rust.token -> int
 val str_of_tok   : Parser_rust.token -> string
 val file_of_tok  : Parser_rust.token -> Common.filename
 val pos_of_tok   : Parser_rust.token -> int
-

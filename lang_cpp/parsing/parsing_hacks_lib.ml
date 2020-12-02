@@ -282,5 +282,3 @@ let regexp_ns_decl_like = Str.regexp
      "TX_DECL_\\|DOM_CLASSINFO_\\|NS_CLASSINFO_\\|IMPL_INTERNAL_\\|" ^
      "ON_\\|EVT_\\|NS_UCONV_\\|NS_GENERIC_\\|NS_COM_" ^
      "\\).*")
-
-

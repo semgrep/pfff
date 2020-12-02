@@ -22,5 +22,3 @@ class X {
         public abstract String rightCap(Object to);
     }
 }
-
-

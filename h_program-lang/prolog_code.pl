@@ -86,7 +86,7 @@
 %     ex: arity('foobar', 3).
 %     ex: arity(('Preparable', 'gen'), 0).
 %
-%  - properties: static/1, abstract/1, final/1, is_public/1, is_private/1, 
+%  - properties: static/1, abstract/1, final/1, is_public/1, is_private/1,
 %     is_protected/1,  async/1
 %      ex: static(('Filesystem', 'readFile')).
 %      ex: abstract('AbstractTestCase').
@@ -127,7 +127,7 @@
 %  - CIA
 %  - ODASA, codequest
 %  - LFS/PofFS
-% 
+%
 % limitations:
 %  - in the case of PHP, the language is case insensitive but we actually
 %    generate facts where the case matters. You can use downcase_atom/2

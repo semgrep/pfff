@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Printing a Date 
-# ********************************************************************** 
+# **********************************************************************
+# Printing a Date
+# **********************************************************************
 <?php
 function pleac_Printing_a_Date() {
 // 'date' and 'strftime' both print a date string based on:
@@ -10,8 +10,8 @@ function pleac_Printing_a_Date() {
 
 $ts = 1234567890;
 
-date('Y/m/d', $ts); 
-date('Y/m/d', mktime($h, $m, $s, $mth, $d, $y, $is_dst)); 
+date('Y/m/d', $ts);
+date('Y/m/d', mktime($h, $m, $s, $mth, $d, $y, $is_dst));
 
 date('Y/m/d');         // same as: date('Y/m/d', time());
 
@@ -36,7 +36,7 @@ echo "{$t}\n";
 
 // ----------------------------
 
-// 'strtotime' parses a textual date expression, and generates a timestamp 
+// 'strtotime' parses a textual date expression, and generates a timestamp
 $t = strftime('%A %D', strtotime('18 Jan 1973, 3:45:50'));
 echo "{$t}\n";
 
@@ -46,4 +46,3 @@ echo "{$t}\n";
 
 }
 ?>
-

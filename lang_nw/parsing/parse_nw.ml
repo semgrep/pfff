@@ -73,4 +73,3 @@ let parse2 filename =
 
 let parse a =
   Common.profile_code "Parse_nw.parse" (fun () -> parse2 a)
-

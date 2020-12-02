@@ -102,5 +102,3 @@ let plot_matrix ~lines ~columns ~xlabel ~ylabel matrix =
   jgraph_program tmpfile;
   gv_command tmpfile;
   ()
-
-

@@ -58,6 +58,7 @@ packages="
   grain_dypgen
   menhir
   ocamlgraph
+  ocp-indent
   ounit2
   ppx_deriving
   uucp

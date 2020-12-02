@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Working with Roman Numerals 
-# ********************************************************************** 
+# **********************************************************************
+# Working with Roman Numerals
+# **********************************************************************
 <?php
 function pleac_Working_with_Roman_Numerals() {
 // PHP offers no native support for Roman Numerals. However, a 'Numbers_Roman' class
@@ -23,4 +23,3 @@ printf("Arabic for fifteen is: %d\n", $arabic_fifteen);
 
 }
 ?>
-

@@ -3,5 +3,3 @@ import "fmt"
 
 
 type Context = formatter.Context
-
-

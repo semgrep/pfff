@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Iterating Over an Array by Reference 
-# ********************************************************************** 
+# **********************************************************************
+# Iterating Over an Array by Reference
+# **********************************************************************
 <?php
 function pleac_Iterating_Over_an_Array_by_Reference() {
 // Conventional 'read-only' access
@@ -71,4 +71,3 @@ foreach($rogue_cats as $cat)
 
 }
 ?>
-

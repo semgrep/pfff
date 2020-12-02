@@ -7,7 +7,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -19,7 +19,7 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (* A Concrete Syntax Tree (CST) for OCaml.
- * 
+ *
  * For an Abstract Syntax Tree (AST), see ../analyze/ast_ml.ml.
  *)
 
@@ -38,7 +38,7 @@ type 'a wrap = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
-and 'a bracket = tok * 'a * tok 
+and 'a bracket = tok * 'a * tok
 
 and 'a comma_list = ('a, tok (* ',' *)) Common.either list
 and 'a and_list = ('a, tok (* 'and' *)) Common.either list
@@ -72,7 +72,7 @@ type todo_category = string wrap
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
-type ty = 
+type ty =
   | TyName of long_name
   | TyVar of tok (* ' *) * name
 
@@ -86,7 +86,7 @@ type ty =
 
   | TyTodo of todo_category * ty list
 
- and ty_args = 
+ and ty_args =
     | TyArg1 of ty
     | TyArgMulti of ty comma_list paren
     (* todo? | TyNoArg and merge TyName and TyApp ? *)
@@ -104,7 +104,7 @@ type expr =
   | Tuple of expr comma_list
   | List of expr semicolon_list bracket
 
-  (* can be empty; can not be singular as we use instead ParenExpr *) 
+  (* can be empty; can not be singular as we use instead ParenExpr *)
   | Sequence of seq_expr paren (* can also be 'begin'/'end' *)
 
   | Prefix of string wrap * expr
@@ -123,7 +123,7 @@ type expr =
 
   | New of tok * long_name (* class_longident *)
   | ObjAccess of expr * tok (* # *) * name
-  
+
 
   | LetIn of tok * rec_opt * let_binding and_list * tok (* in *) * seq_expr
   | Fun of tok * parameter list (* at least one *) * tok (* -> *) * expr
@@ -133,10 +133,10 @@ type expr =
   | If of tok * seq_expr * tok * expr * (tok * expr) option
   | Match of tok * seq_expr * tok * match_case pipe_list
 
-  | Try of tok * seq_expr * tok * match_case pipe_list 
+  | Try of tok * seq_expr * tok * match_case pipe_list
 
   | While of tok * seq_expr * tok * seq_expr * tok
-  | For of tok * name * tok * seq_expr * for_direction * seq_expr * 
+  | For of tok * name * tok * seq_expr * for_direction * seq_expr *
            tok * seq_expr * tok
 
   (* unparser *)
@@ -160,12 +160,12 @@ type expr =
  and record_expr =
    | RecordNormal of                         field_and_expr semicolon_list
    | RecordWith of expr * tok (* "with" *) * field_and_expr semicolon_list
-   and field_and_expr = 
+   and field_and_expr =
      | FieldExpr of long_name * tok (* = *) * expr
      (* new 3.12 feature *)
      | FieldImplicitExpr of long_name
 
- and argument = 
+ and argument =
    | ArgExpr of expr
 
    | ArgLabelTilde of name (* todo: without the tilde and : ? *) * expr
@@ -193,7 +193,7 @@ type expr =
 (* ------------------------------------------------------------------------- *)
 (* Patterns *)
 (* ------------------------------------------------------------------------- *)
-and pattern = 
+and pattern =
   | PatVar of name
   | PatConstant of pattern_signed_constant
   | PatConstr(*Algebric*) of long_name (* constr_longident *) * pattern option
@@ -216,9 +216,9 @@ and pattern =
   | PatEllipsis of tok
 
   | PatTodo of todo_category * pattern list
-    
+
  (* less? merge with expr, no need for too precise AST, remember ast_php.ml *)
- and pattern_signed_constant = 
+ and pattern_signed_constant =
     | C2 of constant
     (* actually only valid for the Int and Float case, not Char and String
      * but don't want to introduce yet another intermediate type just for
@@ -249,7 +249,7 @@ and let_binding =
    (* todo: l_type: ty option *)
  }
 
- and parameter = 
+ and parameter =
    | ParamPat of pattern
    (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
    | ParamTodo of tok
@@ -314,23 +314,23 @@ type module_expr =
 (* could split in sig_item and struct_item but many constructions are
  * valid in both contexts.
  *)
-and item = 
+and item =
   | Type      of tok * type_declaration and_list
 
   | Exception of tok * name * constructor_arguments
   | External  of tok * name (* val_ident *) * tok (*:*) * ty * tok (* = *) *
       string wrap list (* primitive declarations *)
-      
+
   | Open of tok * long_name
-      
+
   (* only in sig_item *)
   | Val of tok * name (* val_ident *) * tok (*:*) * ty
-      
+
   (* only in struct_item *)
   | Let of tok * rec_opt * let_binding and_list
 
   | Module of tok * uname * tok * module_expr
-      
+
   | ItemTodo of todo_category * item list
  [@@deriving show { with_path = false}]
 
@@ -400,7 +400,7 @@ let uncomma xs = Common.map_filter (function
 let unpipe xs = uncomma xs
 
 let name_of_long_name (_, name) = name
-let module_of_long_name (qu, _) = 
+let module_of_long_name (qu, _) =
   qu |> List.map fst |> List.map str_of_name |> Common.join "."
-let module_infos_of_long_name (qu, _) = 
+let module_infos_of_long_name (qu, _) =
   qu |> List.map fst |> List.map info_of_name

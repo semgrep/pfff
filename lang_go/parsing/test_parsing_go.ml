@@ -88,4 +88,3 @@ let actions () = [
   "-dump_go", "   <file>",
   Common.mk_action_1_arg test_dump_go;
 ]
-

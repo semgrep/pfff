@@ -50,11 +50,11 @@ $(TARGET).cma: $(OBJS) $(LIBS)
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
 
-treemap_viewer: $(LIBS) $(EXTRALIBS) $(OBJS) $(SRC2:.ml=.cmo) graphics/main_treemap.cmo 
-	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 
+treemap_viewer: $(LIBS) $(EXTRALIBS) $(OBJS) $(SRC2:.ml=.cmo) graphics/main_treemap.cmo
+	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^
 
 treemap_viewer.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) graphics/main_treemap.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBSOPT) $(SYSLIBS:.cma=.cmxa) $^ 
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBSOPT) $(SYSLIBS:.cma=.cmxa) $^
 
 clean::
 	rm -f $(PROGS) $(PROGS:=.opt)
@@ -72,15 +72,15 @@ TEX=Treemap.tex
 # user oriented, public API in some sense + ml that share code with mli
 LPSRC1=treemap.mli treemap.ml treemap_json.mli treemap_json.ml \
  graphics/treemap_graphics.mli graphics/treemap_graphics.ml \
- graphics/main_treemap.ml 
+ graphics/main_treemap.ml
 LPSRCSHARED=
-# internal oriented 
+# internal oriented
 LPSRC2=
 LPSRC=$(LPSRC1) $(LPSRCSHARED) $(LPSRC2)
 
 #------------------------------------------------------------------------------
 sync:
-	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
+	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done
 
 pdf:
 	$(NOWEB) $(TEXMAIN) > $(TEX)

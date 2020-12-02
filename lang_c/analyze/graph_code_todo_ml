@@ -35,7 +35,7 @@
         (* todo? *)
         | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) -> ()
 
-        | (Typ.Builtin _ |Typ.Function _ |Typ.EnumName _ |Typ.Other _ 
+        | (Typ.Builtin _ |Typ.Function _ |Typ.EnumName _ |Typ.Other _
           |Typ.Pointer _
           ) ->
             error env (spf "unhandled typ: %s" (Common.dump typ_subexpr))

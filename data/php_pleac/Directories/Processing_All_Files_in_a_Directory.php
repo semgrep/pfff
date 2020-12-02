@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Processing All Files in a Directory 
-# ********************************************************************** 
+# **********************************************************************
+# Processing All Files in a Directory
+# **********************************************************************
 <?php
 function pleac_Processing_All_Files_in_a_Directory() {
 // Conventional POSIX-like approach to directory traversal
@@ -55,7 +55,7 @@ echo "Text files in {$dirname}:\n";
 
 foreach(scandir($dirname) as $file)
 {
-  // Take care when constructing paths to ensure cross-platform operability 
+  // Take care when constructing paths to ensure cross-platform operability
   $path = $dirname . $file;
 
   if (is_file($path) && isTextFile($path)) echo $path . "\n";
@@ -85,4 +85,3 @@ foreach(plain_files('/tmp/') as $path)
 
 }
 ?>
-

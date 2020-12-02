@@ -3,4 +3,3 @@ def bar():
 
 def foo():
 	...
-

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Exchanging Values Without Using Temporary Variables 
-# ********************************************************************** 
+# **********************************************************************
+# Exchanging Values Without Using Temporary Variables
+# **********************************************************************
 <?php
 function pleac_Exchanging_Values_Without_Using_Temporary_Variables() {
 #-----------------------------
@@ -23,4 +23,3 @@ list($alpha, $beta, $production) = array($beta, $production, $alpha);
 
 }
 ?>
-

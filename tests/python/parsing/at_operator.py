@@ -2,4 +2,3 @@
 
 def foo():
         Q_k = np.eye(m - k) - 2.0 * v @ v.T
-

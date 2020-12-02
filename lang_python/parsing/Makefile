@@ -15,7 +15,7 @@ SRC= Flag_parsing_python.ml AST_python.ml \
      Parsing_hacks_python.ml Parse_python.ml \
      Test_parsing_python.ml Unit_parsing_python.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \

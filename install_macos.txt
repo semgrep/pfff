@@ -7,5 +7,5 @@ Then, install a few packages, for example with Brew:
 For codequery:
  $ brew install swi-prolog
 
-=> you can now run './configure' and build the many pfff tools :) 
+=> you can now run './configure' and build the many pfff tools :)
 See install.txt for the remaining steps.

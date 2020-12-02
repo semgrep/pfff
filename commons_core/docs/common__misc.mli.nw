@@ -168,5 +168,3 @@ val execute_and_show_progress :
 (* cf ocamlcairo, ocamlgl and my opengl.ml  (otimetracker) *)
 
 @
-
-

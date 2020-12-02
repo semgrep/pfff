@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Introduction 
-# ********************************************************************** 
+# **********************************************************************
+# Introduction
+# **********************************************************************
 <?php
 function pleac_Introduction() {
 $entry = stat('/bin/vi');
@@ -39,7 +39,7 @@ function containsText($file)
 // PHP offers the [currently experimental] Fileinfo group of functions to
 // determine file types based on their contents / 'magic numbers'. This
 // is functionality similar to the *NIX, 'file' utility. Note that it must
-// first be installed using the PEAR utility [see PHP documentation] 
+// first be installed using the PEAR utility [see PHP documentation]
 function isTextFile($file)
 {
   // Note: untested code, but I believe this is how it is supposed to work
@@ -76,4 +76,3 @@ closedir($dirhdl);
 
 }
 ?>
-

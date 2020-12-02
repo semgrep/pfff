@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Finding Common or Different Keys in Two Hashes 
-# ********************************************************************** 
+# **********************************************************************
+# Finding Common or Different Keys in Two Hashes
+# **********************************************************************
 <?php
 function pleac_Finding_Common_or_Different_Keys_in_Two_Hashes() {
 // PHP offers a number of array-based 'set operation' functions:
@@ -26,4 +26,3 @@ $non_citrus = array_diff_key($food_colour, $citrus_colour);
 
 }
 ?>
-

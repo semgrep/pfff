@@ -32,11 +32,11 @@ OPTPROGS= $(PROGS:=.opt)
 # not a configuration option anymore; used by too many things
 JSONCMA=external/deps-netsys/netsys_oothr.cma external/deps-netsys/netsys.cma\
         external/deps-netstring/netstring.cma\
-        external/json-wheel/jsonwheel.cma 
+        external/json-wheel/jsonwheel.cma
 
 # could be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/graph.cma commons_wrappers/graph/lib.cma
-GRAPHDIRS=commons_wrappers/graph 
+GRAPHDIRS=commons_wrappers/graph
 
 #------------------------------------------------------------------------------
 # Main variables
@@ -45,7 +45,7 @@ GRAPHDIRS=commons_wrappers/graph
 SYSLIBS=bigarray.cma str.cma unix.cma
 SYSLIBS+=$(OCAMLCOMPILERCMA)
 
-#old: I used to have a BASICLIBS for small pfff utilities and LIBS for 
+#old: I used to have a BASICLIBS for small pfff utilities and LIBS for
 # the rest but now that codemap/codegraph are out of this repository, there
 # is less of a need to have BASICLIBS
 LIBS= commons/lib.cma \
@@ -255,7 +255,7 @@ purebytecode:
 # stags targets (was pfff_tags)
 #------------------------------------------------------------------------------
 
-# I've added -linkall just to debug possible issues in wrong 
+# I've added -linkall just to debug possible issues in wrong
 # order of the SRC files in the library
 # (I had a linking error in efuns, which require -linkall)
 stags: $(LIBS) $(OBJS) main_stags.cmo
@@ -505,7 +505,7 @@ LPDIRS=\
  h_visualization\
  docs/ocaml \
  lang_php/parsing lang_php/analyze \
- code_map 
+ code_map
 
 lpclean::
 	set -e; for i in $(LPDIRS); do echo $$i; $(MAKE) -C $$i $@; done

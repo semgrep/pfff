@@ -14,10 +14,10 @@
 (defun pad-ocaml-project-pfff ()
   (interactive)
 
-  (setq 
+  (setq
    pad-ocaml-project-path "/home/pad/pfff"
-   pad-ocaml-project-subdirs 
-   (split-string 
+   pad-ocaml-project-subdirs
+   (split-string
     "commons globals
      external/json-wheel
      h_version-control
@@ -78,7 +78,7 @@
 ;     facebook/qa_code facebook/check_cpp
 
 
-; branches 
+; branches
 ;
 ;  master
 ;
@@ -103,9 +103,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "pfff"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 500
 
@@ -158,9 +158,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "pfff_db"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 1
 
@@ -187,9 +187,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "facebook/pfff_misc"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 100
 
@@ -230,12 +230,12 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "sgrep"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 9
-       
+
        (0 "-e 1 /home/pad/c-pfff/tests/")
        (1 "-f /home/pad/c-pfff/tests/semantic_grep/method_call.php  /home/pad/c-pfff/tests/method_call.php")
        (2 " -e foo(X,X) /home/pad/pfff/tests/sgrep/linear_pattern.php")
@@ -257,9 +257,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "spatch"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 3
 
@@ -293,9 +293,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "scheck"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
 
@@ -315,9 +315,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "codemap"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
 
@@ -332,9 +332,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "codegraph"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 4
 
@@ -354,16 +354,16 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "pfff_db_light"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
-       
-       (0 
+
+       (0
         "-gen_pleac /home/pad/software-src/pleac/pleac_ocaml.data /home/pad/software-src/pleac/skeleton.sgml")
        )
-     
+
      )
     )
    )
@@ -373,9 +373,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "h_visualization/treemap_viewer"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 4
 
@@ -394,9 +394,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "h_version-control/vcs"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 5
 
@@ -417,9 +417,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "facebook/visual/visual"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 1
 
@@ -437,9 +437,9 @@
   (setq
    pad-ocaml-project-prog     "pfff_browser"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 2
        (0 "/tmp/pfff_db")
@@ -455,9 +455,9 @@
   (setq
    pad-ocaml-project-prog     "meta/ffi"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 21
        (0 "/home/pad/c-pfff/demos/foo0.php")
@@ -474,9 +474,9 @@
 
   (setq
    pad-ocaml-project-prog     "lang_js/meta/gen_code"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      ""
      (case 0
        (0 "-gen_matcher stmt")
@@ -497,9 +497,9 @@
   (setq
    pad-ocaml-project-prog     "compile_php/phpcc"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 1
        (0 "/home/pad/c-pfff/tests/interpreter/hello_world.php")
@@ -515,9 +515,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/pfff_fb"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "-dump_xhpast_pfff_symbolic /home/pad/pfff/facebook/tests/xhpast/preg-quote.php"))
@@ -529,9 +529,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/pfff_fb"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 50
        (0 "-test_treemap_misc")
@@ -560,9 +560,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/qa_code/checker"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 2
        (0 "/home/pad/www/html/ajax/groups/mall/ufi.php")
@@ -578,9 +578,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/spatch"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "-f /home/pad/pfff/tests/php/spatch/reindent_expr.spatch /home/pad/pfff/tests/php/spatch/reindent_expr.php")
@@ -594,9 +594,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/dead_code/reaper"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "-deadcode_analysis_diff /tmp/deadcode_db/")
@@ -611,9 +611,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/codestat"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "/home/pad/fbcode/ci_central_lookup")
@@ -627,9 +627,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/fb_phpunit/fb_phpunit_wrap"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 1
        (0 "")
@@ -643,9 +643,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "facebook/qa_test/qa_test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 3
        (0 "")
@@ -661,9 +661,9 @@
   ; --------------------------------------------------------------------------
   (setq
    pad-ocaml-project-prog     "facebook/thrift/client_php"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 1
        (0 "")
@@ -678,9 +678,9 @@
   (setq
    pad-ocaml-project-prog     "facebook/check_module/checkModule"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "-test")
@@ -695,7 +695,7 @@
        (60 "--di-gen /home/pad/pfff/facebook/tests/mini_www/flib/dependency_injection/foo.php")
        (100 "--debug -juju /home/pad/www/html/intern/colbert/index.php")
        )
-     
+
      ))
    )
 
@@ -705,9 +705,9 @@
   (setq
    pad-ocaml-project-prog     "pfff_visual"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "-ss 1 -with_layer /tmp/layer_security.json  /home/pad/pfff/facebook/tests/mini_www/")
@@ -721,9 +721,9 @@
   (setq
    pad-ocaml-project-prog     "codegraph"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 0
        (0 "-verbose -test_graph_code_ml /home/pad/pfff")
@@ -734,9 +734,9 @@
   (setq
    pad-ocaml-project-prog     "codegraph_build"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 1
        (0 "-verbose -lang js /home/pad/work/r2c/JSLint")
@@ -751,9 +751,9 @@
   (setq
    pad-ocaml-project-prog     "pfff_test"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
+   pad-ocaml-project-args
+   (join-string
+    (list
      "-debugger"
      (case 13
        (0 "all")
@@ -781,10 +781,10 @@
   (setq
    pad-ocaml-project-prog     "demos/show_function_calls2.byte"
    ;pad-ocaml-project-prog "gui/test"
-   pad-ocaml-project-args 
-   (join-string 
-    (list 
-     
+   pad-ocaml-project-args
+   (join-string
+    (list
+
      (case 0
        (0 "/home/pad/pfff/demos/foo.php")
        )
@@ -793,7 +793,7 @@
 
   ; --------------------------------------------------------------------------
   ; for the help system, for C-c C-h to find where to look for
-  (mapcar (lambda (p) 
+  (mapcar (lambda (p)
             (ocaml-add-path (concat pad-ocaml-project-path "/" p))
             (ocaml-add-path "/usr/lib/ocaml/3.09.2/lablgtk2")
             (ocaml-add-path "/usr/lib/ocaml/3.09.2/lablgtksourceview")

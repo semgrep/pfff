@@ -13,5 +13,3 @@ val annotations_of_program_with_comments:
 
 (* Helper. The string is the string of a comment (with its markers). *)
 val extract_annotations: string -> annotation list
-
-

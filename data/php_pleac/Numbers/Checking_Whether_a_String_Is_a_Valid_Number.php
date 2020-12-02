@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Checking Whether a String Is a Valid Number 
-# ********************************************************************** 
+# **********************************************************************
+# Checking Whether a String Is a Valid Number
+# **********************************************************************
 <?php
 function pleac_Checking_Whether_a_String_Is_a_Valid_Number() {
 // Two basic approaches to numeric validation:
@@ -32,4 +32,3 @@ echo getnum('x') . "\n";   // fail
 
 }
 ?>
-

@@ -10,7 +10,7 @@ SRC= ast_web.ml \
      parse_web.ml \
      test_parsing_web.ml \
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma
 
 INCLUDEDIRS= $(TOP)/commons \

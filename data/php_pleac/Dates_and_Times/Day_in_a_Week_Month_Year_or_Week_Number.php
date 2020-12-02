@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Day in a Week/Month/Year or Week Number 
-# ********************************************************************** 
+# **********************************************************************
+# Day in a Week/Month/Year or Week Number
+# **********************************************************************
 <?php
 function pleac_Day_in_a_Week_Month_Year_or_Week_Number() {
 // 'getdate' accepts a timestamp [or implicitly calls 'time'] and returns an array of
@@ -48,4 +48,3 @@ echo $month . SEP . $day . SEP . $year . ' was a ' . $date['weekday']
 
 }
 ?>
-

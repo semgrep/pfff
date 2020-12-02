@@ -20,7 +20,7 @@ module M = Map_ast_js
 (* Prelude *)
 (*****************************************************************************)
 
-let extract_info_visitor recursor = 
+let extract_info_visitor recursor =
   let globals = ref [] in
   let hooks = { V.default_visitor with
     V.kinfo = (fun (_k, _) i -> Common.push i globals)
@@ -31,16 +31,16 @@ let extract_info_visitor recursor =
     List.rev !globals
   end
 
-let ii_of_any any = 
+let ii_of_any any =
   extract_info_visitor (fun visitor -> visitor any)
 
 
 (*****************************************************************************)
 (* Abstract position *)
 (*****************************************************************************)
-let abstract_position_visitor recursor = 
+let abstract_position_visitor recursor =
   let hooks = { (*M.default_visitor with *)
-    M.kinfo = (fun (_k, _) i -> 
+    M.kinfo = (fun (_k, _) i ->
       { i with Parse_info.token = Parse_info.Ab }
     )
   } in
@@ -48,5 +48,5 @@ let abstract_position_visitor recursor =
     let vout = M.mk_visitor hooks in
     recursor vout;
   end
-let abstract_position_info_any x = 
+let abstract_position_info_any x =
   abstract_position_visitor (fun visitor -> visitor.M.vany x)

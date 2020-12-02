@@ -15,7 +15,7 @@ while(<>) {
   s#\(\*[0-9] #(* #g;
 
     if($after_percentpercent) {
-  
+
   # use chars instead of long tokens for parens-like tokens
   s#\bTOPAR\b#"("#g;
   s#\bTCPAR\b#")"#g;
@@ -76,7 +76,7 @@ while(<>) {
   #s#\bTQuote\b#"'"#g;
   #s#\bBACKQUOTE\b#"`"#g;
 
-  }  
+  }
 
   print;
 }

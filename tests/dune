@@ -1,6 +1,6 @@
 (test
  (name Test)
- (libraries 
+ (libraries
     bigarray str
     yojson
     dyp
@@ -8,7 +8,7 @@
     uutf uucp
 
     commons commons_core
-    pfff-config 
+    pfff-config
     pfff-h_program-lang
     pfff-lang_python pfff-lang_python-analyze
     pfff-lang_js pfff-lang_js-analyze

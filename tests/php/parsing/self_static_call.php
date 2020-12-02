@@ -10,4 +10,3 @@ class CallSelf {
 }
 
 CallSelf::test();
-

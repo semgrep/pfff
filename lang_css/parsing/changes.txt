@@ -15,4 +15,3 @@
 (2010-03-10) version 1.0:
 
   * First public release.
-

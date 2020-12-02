@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Redefining a Function 
-# ********************************************************************** 
+# **********************************************************************
+# Redefining a Function
+# **********************************************************************
 <?php
 function pleac_Redefining_a_Function() {
 // In PHP once a function has been defined it remains defined. In other words,
@@ -29,7 +29,7 @@ $grow = 'expand';
 // Call function via original name, and variable, respectively
 expand();
 
-$grow(); 
+$grow();
 
 // Remove alias variable
 unset($grow);
@@ -91,4 +91,3 @@ foreach ($colours as $colour) { unset($$colour); }
 
 }
 ?>
-

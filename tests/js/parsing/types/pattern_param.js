@@ -1,4 +1,4 @@
-function foo({a,b}, [c,d]) { 
+function foo({a,b}, [c,d]) {
 }
 
 function createCompiler({

@@ -7,4 +7,3 @@ struct Tree {
 	ulong qidgen;
 	ulong dirqidgen;
 };
-

@@ -9,5 +9,3 @@
    {"class":"Bar", "line":6, "column":18},
    {"func":"foo_func", "line":8, "column":4},
    {"class":"Bar", "line":12, "column":15}]}
-
-

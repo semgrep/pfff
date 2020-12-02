@@ -721,7 +721,7 @@ The plain text version of this grammar is
 	|   <left paren> <value expression> <right paren>
 	|   <cast specification>
 
-<unsigned value specification> ::= <unsigned literal> | <general value specification> 
+<unsigned value specification> ::= <unsigned literal> | <general value specification>
 
 <unsigned literal> ::= <unsigned numeric literal> | <general literal>
 

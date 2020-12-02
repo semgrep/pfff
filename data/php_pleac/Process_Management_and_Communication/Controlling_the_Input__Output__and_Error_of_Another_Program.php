@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Controlling the Input, Output, and Error of Another Program 
-# ********************************************************************** 
+# **********************************************************************
+# Controlling the Input, Output, and Error of Another Program
+# **********************************************************************
 <?php
 function pleac_Controlling_the_Input__Output__and_Error_of_Another_Program() {
 $proc = proc_open($cmd,
@@ -82,4 +82,3 @@ if (is_resource($proc)) {
 
 }
 ?>
-

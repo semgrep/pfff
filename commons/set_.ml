@@ -297,6 +297,3 @@ let choose = min_elt
 (* pad: *)
 let (of_list: 'a list -> 'a t) = fun  xs ->
   List.fold_left (fun a e -> add e a) empty xs
-
-
-

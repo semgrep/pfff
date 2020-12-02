@@ -26,4 +26,3 @@ void* dlrealloc(void*, size_t);
 
 
 static int64_t normalizeTimestamp(int64_t timestamp, int timeUnit = 60);
-

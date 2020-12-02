@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Preprocessing Input 
-# ********************************************************************** 
+# **********************************************************************
+# Preprocessing Input
+# **********************************************************************
 <?php
 function pleac_Preprocessing_Input() {
 // Process command-line arguments using fopen(). PHP supports URLs for
@@ -32,4 +32,3 @@ foreach ($filenames as $filename) {
 
 }
 ?>
-

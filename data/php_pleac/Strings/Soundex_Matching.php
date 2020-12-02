@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Soundex Matching 
-# ********************************************************************** 
+# **********************************************************************
+# Soundex Matching
+# **********************************************************************
 <?php
 function pleac_Soundex_Matching() {
 #-----------------------------
@@ -31,7 +31,7 @@ $pwents = getpwent();
 foreach($pwents as $username => $fullname) {
     preg_match("/(\w+)[^,]*\b(\w+)/", $fullname, $matches);
     list(, $firstname, $lastname) = $matches;
-  
+
     if ($name_code == soundex($username) ||
         $name_code == soundex($lastname) ||
         $name_code == soundex($firstname))
@@ -43,4 +43,3 @@ foreach($pwents as $username => $fullname) {
 
 }
 ?>
-

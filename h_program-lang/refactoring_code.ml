@@ -74,4 +74,3 @@ let load file =
 
     | _ -> failwith ("wrong format for refactoring action: " ^ s)
   )
-

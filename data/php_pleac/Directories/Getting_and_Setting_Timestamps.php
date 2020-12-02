@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Getting and Setting Timestamps 
-# ********************************************************************** 
+# **********************************************************************
+# Getting and Setting Timestamps
+# **********************************************************************
 <?php
 function pleac_Getting_and_Setting_Timestamps() {
 $filename = 'example.txt';
@@ -72,4 +72,3 @@ touch($filename, $mtime, $atime) || die("Error updating timestamp on file, {$fil
 
 }
 ?>
-

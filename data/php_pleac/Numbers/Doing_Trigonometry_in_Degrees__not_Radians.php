@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Doing Trigonometry in Degrees, not Radians 
-# ********************************************************************** 
+# **********************************************************************
+# Doing Trigonometry in Degrees, not Radians
+# **********************************************************************
 <?php
 function pleac_Doing_Trigonometry_in_Degrees__not_Radians() {
 // 'deg2rad' and 'rad2deg' are actually PHP built-ins, but here is how you might implement
@@ -26,4 +26,3 @@ printf("%f\n", degree_sin(380.0));
 
 }
 ?>
-

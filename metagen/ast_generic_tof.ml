@@ -431,4 +431,3 @@ and tof_expr =
          ("Ellipses", [ OCaml.Var "tok" ]);
          ("OtherExpr",
           [ OCaml.Var "other_expr_operator"; OCaml.List (OCaml.Var "any") ]) ])
-

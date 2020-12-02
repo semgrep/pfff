@@ -555,7 +555,7 @@ case:
 				nn = newname(n.Sym);
 				declare(nn, dclcontext);
 				$$.Rlist = list1(nn);
-	
+
 				// keep track of the instances for reporting unused
 				nn.Name.Defn = typesw.Right;
 			}
@@ -601,7 +601,7 @@ case:
 				nn = newname(n.Sym);
 				declare(nn, dclcontext);
 				$$.Rlist = list1(nn);
-	
+
 				// keep track of the instances for reporting unused
 				nn.Name.Defn = typesw.Right;
 			}
@@ -639,7 +639,7 @@ caseblock:
 	{
 		// This is the only place in the language where a statement
 		// list is not allowed to drop the final semicolon, because
-		// it's the only place where a statement list is not followed 
+		// it's the only place where a statement list is not followed
 		// by a closing brace.  Handle the error for pedantry.
 
 		// Find the final token of the statement list.
@@ -785,7 +785,7 @@ if_stmt:
 	}
 
 elseif:
-	LELSE LIF 
+	LELSE LIF
 	{
 		markdcl();
 	}
@@ -1123,7 +1123,7 @@ pexpr:
 |	'(' expr_or_type ')'
 	{
 		$$ = $2;
-		
+
 		// Need to know on lhs of := whether there are ( ).
 		// Don't bother with the OPAREN in other cases:
 		// it's just a waste of memory and time.
@@ -1501,14 +1501,14 @@ hidden_fndcl:
 	}
 |	'(' hidden_funarg_list ')' sym '(' ohidden_funarg_list ')' ohidden_funres
 	{
-		$$ = methodname1(newname($4), $2.N.Right); 
+		$$ = methodname1(newname($4), $2.N.Right);
 		$$.Type = functype($2.N, $6, $8);
 
 		checkwidth($$.Type);
 		addmethod($4, $$.Type, false, nointerface);
 		nointerface = false
 		funchdr($$);
-		
+
 		// inl.C's inlnode in on a dotmeth node expects to find the inlineable body as
 		// (dotmeth's type).Nname.Inl, and dotmeth's type has been pulled
 		// out by typecheck's lookdot as this $$.ttype.  So by providing
@@ -2169,7 +2169,7 @@ hidden_funarg:
 |	sym LDDD hidden_type oliteral
 	{
 		var t *Type
-	
+
 		t = typ(TARRAY);
 		t.Bound = -1;
 		t.Type = $3;

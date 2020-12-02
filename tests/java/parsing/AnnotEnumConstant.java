@@ -17,4 +17,3 @@ public enum SerializableMode {
      @Incubating
     ACROSS_CLASSLOADERS
 }
-

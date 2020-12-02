@@ -4,4 +4,3 @@ class X {
     return (mutex_ != NULL);
   }
 };
-

@@ -29,7 +29,7 @@ Here is how to install it:
 
 pfff has been tested on MacOS and Linux and is licensed under the LGPL.
 
-Thanks to 
+Thanks to
  - Lex Stein for ocamlbdb/
  - Olivier Andrieu for ocamlcairo
  - Jacques Garrigue for ocamlgtk
@@ -39,7 +39,7 @@ Thanks to
  - Thomas Gazagnaire for dynType
  - Maas-Maarten Zeeman for OUnit.ml
  - Thorsten Ohl for xHTML.ml
- - Sylvain Conchon, Jean-Christophe Filliâtre and Julien Signoles for 
+ - Sylvain Conchon, Jean-Christophe Filliâtre and Julien Signoles for
    ocamlgraph
  - Xavier Leroy for ocamlmpi
  - Markus Mottl for ocamlpcre

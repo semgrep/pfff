@@ -19,10 +19,10 @@
 # - bddbddb, DOOP, http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
 # - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea
 # - Frama C, CodeSonar, Coverity, ...
-# 
+#
 # note: I always wanted (but was never able to write ...) an interprocedural
 # (dataflow) analysis. With Datalog I did it in one day! It's so easy.
-# 
+#
 # TODO: abuse cpp to express context-sensitivity in a generic way
 # (like they do in DOOP with logiblox)
 
@@ -49,7 +49,7 @@ Z 256
 # Abstract memory locations (also called heap objects), are mostly qualified
 # symbols (e.g 'main__foo', 'ret_main', '_cst_line2_'):
 # - each globals, functions, constants
-# - each malloc (context insensitively). will do sensitively later for 
+# - each malloc (context insensitively). will do sensitively later for
 #   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc)
 #   so have some form of type sensitivty at least
 # - each locals (context insensitively first), when their addresses are taken
@@ -109,7 +109,7 @@ point_to(p, q) :- point_to0(p, q).
 point_to(p, q) :- \
         assign_address(p, q).
 
-# p = q  
+# p = q
 # (covers regular assignments but also arguments to parameters and return
 #  to caller, see the assign/2 definition down in this file)
 point_to(p, l) :- \
@@ -178,7 +178,7 @@ point_to(p, v) :- \
 #point_to(F, L) :-
 #        field_point_to(F, L).
 
-        
+
 #-------------------------------------------------------------------------------
 # Calls context-insensitive
 #-------------------------------------------------------------------------------

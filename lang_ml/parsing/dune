@@ -10,6 +10,5 @@
  (preprocess (pps ppx_deriving.show))
 )
 (ocamllex lexer_ml)
-(menhir (modules parser_ml) 
+(menhir (modules parser_ml)
         (flags --unused-tokens --explain --fixed-exception))
-

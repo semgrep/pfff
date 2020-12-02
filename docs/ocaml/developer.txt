@@ -61,11 +61,11 @@ old: nested func
 
 better:
 let model_of ~dtd_hash element_name =
-  if element_name = "" 
+  if element_name = ""
   then (Everywhere, Any)
   else
-    try 
-      (match Hashtbl.find dtd_hash element_name with 
+    try
+      (match Hashtbl.find dtd_hash element_name with
       | (eclass, Sub_exclusions(_,m)) -> eclass, m
       | m -> m
       )
@@ -94,9 +94,9 @@ else if X2 then ...
 else if X3
 ==>
 match () with
- | _ when X1 -> 
- | _ when X2 -> 
- | _ when X3 -> 
+ | _ when X1 ->
+ | _ when X2 ->
+ | _ when X3 ->
 
 *** use regexps, not complex String.sub/String.length expressions
 
@@ -129,4 +129,3 @@ dont do:
 
 
 *** use Common.profile_code(), not printf and manual Sys.time()
-

@@ -92,7 +92,7 @@ static bool utf8ize(uint32_t v, char* buf /* [5] */) {
 %option bison-bridge
 %option 8bit
 
- /* I think an interactive scanner is required because of the bison state 
+ /* I think an interactive scanner is required because of the bison state
   * pushing we do. I'm putting an explicit interactive declaration here in case
   * someone tries adding -CF or whatever to the make flags. */
 %option interactive

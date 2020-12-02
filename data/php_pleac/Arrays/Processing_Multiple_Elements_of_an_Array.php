@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Processing Multiple Elements of an Array 
-# ********************************************************************** 
+# **********************************************************************
+# Processing Multiple Elements of an Array
+# **********************************************************************
 <?php
 function pleac_Processing_Multiple_Elements_of_an_Array() {
 // Array elements can be deleted using 'unset'; removing several elements would require applying
@@ -50,4 +50,3 @@ echo join(' ', $pair) . "\n";
 
 }
 ?>
-

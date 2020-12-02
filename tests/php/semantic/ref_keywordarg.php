@@ -24,4 +24,3 @@ var_dump($array);
 $array = array();
 taking_an_array_ref($array);
 var_dump($array);
-

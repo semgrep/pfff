@@ -6,4 +6,3 @@ class Test {
       return start(a, b);
   }
 }
-

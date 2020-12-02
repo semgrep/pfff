@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Returning More Than One Array or Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Returning More Than One Array or Hash
+# **********************************************************************
 <?php
 function pleac_Returning_More_Than_One_Array_or_Hash() {
 // Multiple return values are possible via packing a set of values within a
@@ -24,4 +24,3 @@ list($arr, $hash) = some_func($arrin, $hashin);
 
 }
 ?>
-

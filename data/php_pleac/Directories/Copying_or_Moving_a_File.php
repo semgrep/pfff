@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Copying or Moving a File 
-# ********************************************************************** 
+# **********************************************************************
+# Copying or Moving a File
+# **********************************************************************
 <?php
 function pleac_Copying_or_Moving_a_File() {
 $oldfile = '/tmp/old'; $newfile = '/tmp/new';
@@ -10,7 +10,7 @@ copy($oldfile, $newfile) || die("Error copying file\n");
 // ----------------------------
 
 // All the following copy a file by copying its contents. Examples do so in a single
-// operation, but it is also possible to copy arbitrary blocks, or, line-by-line in 
+// operation, but it is also possible to copy arbitrary blocks, or, line-by-line in
 // the case of 'text' files
 $oldfile = '/tmp/old'; $newfile = '/tmp/new';
 
@@ -65,4 +65,3 @@ is_file($newfile) || die("Problem copying file {$oldfile} to file {$newfile}\n")
 
 }
 ?>
-

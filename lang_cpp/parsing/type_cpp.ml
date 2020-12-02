@@ -39,4 +39,3 @@ let rec is_method_type x =
   | FunctionType _ ->
       true
   | _ -> false
-

@@ -20,7 +20,7 @@ It's tempting to extend the lexer with
 but then 'Process::' is parsed as that. So you need at least:
   | id as s ":" ws { T_KWD_ARG (s, tk lexbuf) }
 
-but then code such as 
+but then code such as
   return true ? nil: x
 is wrong.
 

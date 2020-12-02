@@ -4,4 +4,3 @@ function foo() {
         eval(2);
     } while (i < 1 + eval(2));
 }
-

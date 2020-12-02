@@ -1,9 +1,9 @@
 void main() {
 
-  vector<int> x = 
+  vector<int> x =
     vector<int>();
 
-  vector<int> x = 
+  vector<int> x =
     vector<int>(2);
 
   vector<int> x(2);
@@ -31,4 +31,3 @@ void main() {
 
   foo1 x((const char*)foo1, foo2);
 }
-

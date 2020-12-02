@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Presizing a Hash 
-# ********************************************************************** 
+# **********************************************************************
+# Presizing a Hash
+# **********************************************************************
 <?php
 function pleac_Presizing_a_Hash() {
 // PHP hashes are dynamic expanding and contracting as entries are added, and removed,
@@ -8,7 +8,7 @@ function pleac_Presizing_a_Hash() {
 // means of doing so except by the number of datums used when defining the hash
 
 // zero elements
-$hash = array();            
+$hash = array();
 
 // ------------
 
@@ -17,4 +17,3 @@ $hash = array('Apple' => 'red', 'Lemon' => 'yellow', 'Carrot' => 'orange');
 
 }
 ?>
-

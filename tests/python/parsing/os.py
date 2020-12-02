@@ -8,6 +8,3 @@ def bar1():
 
 def bar2():
   return os.path.xxx.join()
-
-
-

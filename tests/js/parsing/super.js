@@ -3,4 +3,3 @@ module.exports = class ModuleTemplate extends Tapable {
  		super();
     }
 };
-

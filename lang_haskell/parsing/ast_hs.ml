@@ -6,4 +6,3 @@ type toplevel =
  | NotParsedCorrectly of info list
  | FinalDef of info (* EOF *)
  *)
-

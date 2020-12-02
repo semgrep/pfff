@@ -22,5 +22,3 @@ interface Enum {
      None
    }
 }
-
-

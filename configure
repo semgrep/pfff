@@ -25,12 +25,12 @@ use Pod::Usage;
 
 # If you want to run the tests you will also need:
 # - swipl
-# - javac 
+# - javac
 
 
-my $project = 
+my $project =
     "pfff";
-my $projectcmdline = 
+my $projectcmdline =
     "./pfff -dump_php demos/foo.php";
 
 ######################################################################
@@ -42,7 +42,7 @@ my $prefix="/usr/local";
 # code_map/ and code_graph/ bring many dependencies (lablgtk2, cairo2),
 # so it's a configuration option
 # (less: could auto detect)
-my $visual=1; 
+my $visual=1;
 
 # lang_bytecode/ brings many dependencies (extlib, ptrees, ocamlzip), which
 # in turns require zlib.h, so it's a configuration option
@@ -51,7 +51,7 @@ my $bytecode=1;
 
 # lang_cmt/ also requires compiler-libs and with the many changes in the
 # .cmt format, this can easily break compilations, so it's also
-#  a configuration option. 
+#  a configuration option.
 my $cmt=1;
 
 
@@ -76,7 +76,7 @@ GetOptions (
     "visual!" => \$visual,
     "bytecode!" => \$bytecode,
     "cmt!" => \$cmt,
-    'help|?' => \$help, 
+    'help|?' => \$help,
     'man' => \$man
     ) or pod2usage(2);
     #or die "$0: GetOptions: $!";
@@ -93,7 +93,7 @@ BEGIN { die "need Perl 5 or greater" if $] < 5 ; }
 
 #A mini Common.pm
 sub pr2 { print STDERR "@_\n" }
-sub cat { 
+sub cat {
     my ($what) = @_;
     my @list;
     open(TMP, $what);
@@ -106,7 +106,7 @@ sub plural { my ($e) = @_; if ($e > 1) { "s" } else { "" } }
 
 sub check_config { my ($command, $expect, $msggood, $msgbad) = @_;
     my $error = 0;
-		   
+
     my $full = cat($command);
     my $res = join(" ", @{$full});
 #	       pr2 $res;
@@ -133,11 +133,11 @@ sub show_missing_package_error_msg {
     my ($error2) = @_;
     pr2 "
 ----------------------------------------------------------------------
-!!!! You can try to compile and test $project, 
+!!!! You can try to compile and test $project,
 but some features or plugins may be missing. !!!!\n
-We have found $error2 missing package" . plural($error2) . ". " . 
+We have found $error2 missing package" . plural($error2) . ". " .
 "
-Have a look at the install_xxx.txt corresponding to your OS. 
+Have a look at the install_xxx.txt corresponding to your OS.
 ";
 }
 
@@ -157,10 +157,10 @@ my $arch = `uname`;
 #---------------------------------------------------------------------
 # Compilers and runtimes
 #---------------------------------------------------------------------
-# We need at least 3.12 because I use the forall 'a. new typing feature 
+# We need at least 3.12 because I use the forall 'a. new typing feature
 # as well as the '_' pattern in records.
 # We optionaly need 4.00 or 4.01 for codegraph for ocaml code using the .cmt
-$error += 
+$error +=
     check_config("echo \"1;;\\n\" | ocaml |",
                  "(Objective|OCaml)(.*) ([34]\.*.*)",
                  "OCaml (the wonderful language) is present.",
@@ -201,7 +201,7 @@ if($ocaml_version < 4000) {
     #TODO: need fix javalib error about JClassflow
     $bytecode=0;
 } else {
-    #TODO: need to use parsetree-migrate 
+    #TODO: need to use parsetree-migrate
     $cmt=0;
     #TODO: need fix javalib error about JClassflow
     $bytecode=0;
@@ -216,7 +216,7 @@ if($ocaml_version < 4000) {
 #---------------------------------------------------------------------
 
 #alt: battery_included, godi (still exist?)
-$error += 
+$error +=
  check_config("opam --version |",
              "^[12]\.[0-9]\.[0-9]",
              "OPAM the OCaml package manager is present.",
@@ -314,14 +314,14 @@ system("ln -s \"$opam_dir\" external/OPAM_DIR");
 
 
 ######################################################################
-# Diagnostic 
+# Diagnostic
 ######################################################################
 
-if($error || $error2) { 
+if($error || $error2) {
     pr2 "!!Problems during ./configure!!";
 }
 
-if($error2) { 
+if($error2) {
     show_missing_package_error_msg($error2);
 } else {
     pr2 "\nAll seems fine for $project.";
@@ -329,7 +329,7 @@ if($error2) {
 
 pr2 "To compile $project type:
   \$ $MAKE_PROGRAM depend
-  \$ $MAKE_PROGRAM 
+  \$ $MAKE_PROGRAM
 To test $project simply type:
   \$ $projectcmdline
 

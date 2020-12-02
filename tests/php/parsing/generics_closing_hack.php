@@ -17,4 +17,3 @@ function foo(Vector<Vector<T>> $meh): MehType {
 class Foooooo extends Meh<Meh<T>> {
 
 }
-

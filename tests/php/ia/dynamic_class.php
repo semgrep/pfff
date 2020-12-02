@@ -8,4 +8,3 @@ var_dump($o);
 $x = "A";
 $o2 = new $x();
 var_dump($o2);
-

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Handling Exceptions 
-# ********************************************************************** 
+# **********************************************************************
+# Handling Exceptions
+# **********************************************************************
 <?php
 function pleac_Handling_Exceptions() {
 // Unlike in Perl, PHP's 'die' [actually an alias for 'exit'] doesn't throw
@@ -8,7 +8,7 @@ function pleac_Handling_Exceptions() {
 // returning an integer value to the operating system, or printing a message.
 // So, the following, does not exhibit the same behaviour as the Perl example
 
-die("some message\n"); 
+die("some message\n");
 
 // Instead, like so many modern languages, PHP implements exception handling
 // via the 'catch' and 'throw' keywords. Furthermore, a C++ or Java programmer
@@ -60,4 +60,3 @@ catch (FullMoonException $e)
 
 }
 ?>
-

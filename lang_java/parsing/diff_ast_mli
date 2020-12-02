@@ -3,45 +3,45 @@
 @@ -2,19 +2,21 @@
     Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
     Released under the GNU General Public License *)
- 
+
 -type ident
 +type ident = { id : string; pos : int }
- 
+
 -val ident : string -> int -> ident
 +let ident s n = { id = s; pos = n }
- 
+
 -val synth_id : string -> ident
 +let id_string ident = ident.id
- 
+
 -val id_string : ident -> string
 +let id_pos ident = ident.pos
- 
+
 -val star_ident : ident
 +let synth_id s = { id = s; pos = -1 }
- 
+
 -val this_ident : ident
 +let star_ident = synth_id "*"
- 
+
 -val super_ident : ident
 +let this_ident = synth_id "this"
 +
 +let super_ident = synth_id "super"
- 
+
  type name = ident list
- 
+
 @@ -24,11 +26,11 @@ type typ =
    | TypeName of name
    | ArrayType of typ
- 
+
 -val no_type : typ
 +let named_type str = TypeName [synth_id str]
- 
+
 -val void_type : typ
 +let no_type = TypeName []
- 
+
 -val named_type : string -> typ
 +let void_type = named_type "void"
- 
+
  type modifier =
    | Public
 @@ -55,8 +57,7 @@ type compilation_unit =
@@ -51,13 +51,13 @@
 -    (* pad: comments : Source.comments  *)
 -  }
 +    comments : Source.comments }
- 
+
  and decls = decl list
- 
+
 @@ -158,32 +159,258 @@ type mdeclarator = var_decl_id * vars
- 
+
  type var_decls = (var_decl_id * init option) list
- 
+
 -val add_comments : compilation_unit -> compilation_unit
 -
 -val compilation_unit : name option -> names -> decls -> compilation_unit
@@ -85,11 +85,11 @@
 -val type_name : expr -> typ
 +let add_comments comp =
 +  { comp with comments = Source.comments () }
- 
+
 -val id_pos : ident -> int
 +let compilation_unit pkg ims dcls =
 +  { package = pkg; imports = ims; decls = dcls; comments = [] }
- 
+
 -val stmt_pos : stmt -> int
 +let class_decl mods name super ifs body =
 +  { cl_mods = mods; cl_name = name; cl_super = super;

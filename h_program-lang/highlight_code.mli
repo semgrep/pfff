@@ -136,4 +136,3 @@ val info_of_entity_kind_and_usedef2:
 
 val arity_ids : 'a list -> def_arity
 val rewrap_arity_def2_category: def_info -> category -> category
-

@@ -10,4 +10,3 @@ class virtual ['a] osequence =
     method virtual last: 'a
     (* head tail push pop top cons snoc *)
   end
-

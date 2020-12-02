@@ -21,4 +21,3 @@ commons_backtrace.cmxa: $(MYBACKTRACESRC:.ml=.cmx) backtrace_c.o
 
 clean::
 	rm -f dllcommons_backtrace.so
-

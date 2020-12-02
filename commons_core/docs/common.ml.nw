@@ -3730,7 +3730,7 @@ let _ = example (drop 3 [1;2;3;4] =*= [4])
 
 let rec drop_while p = function
   | [] -> []
-  | x::xs -> if p x then drop_while p xs else x::xs	
+  | x::xs -> if p x then drop_while p xs else x::xs
 
 
 let rec drop_until p xs =

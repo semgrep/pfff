@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Retrieving from a Hash in Insertion Order 
-# ********************************************************************** 
+# **********************************************************************
+# Retrieving from a Hash in Insertion Order
+# **********************************************************************
 <?php
 function pleac_Retrieving_from_a_Hash_in_Insertion_Order() {
 // Unless sorted, hash elements remain in the order of insertion. If care is taken to
@@ -44,4 +44,3 @@ foreach($foods as $food) echo "  {$food} => {$food_colour[$food]}\n";
 
 }
 ?>
-

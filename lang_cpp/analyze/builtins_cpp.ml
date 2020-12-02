@@ -39,5 +39,3 @@ let rename_header_std_files dir =
         let cmd = spf "mv %s %s" file (file ^ ".hpp") in
         Common2.command2_y_or_no_exit_if_no cmd
   )
-
-

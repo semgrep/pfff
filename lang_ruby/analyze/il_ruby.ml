@@ -278,4 +278,3 @@ type any_formal =
 
 let b_to_any x = B x
 let m_to_any x = M x
-

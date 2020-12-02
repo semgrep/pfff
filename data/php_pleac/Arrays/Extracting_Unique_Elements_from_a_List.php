@@ -1,10 +1,10 @@
-# ********************************************************************** 
-# Extracting Unique Elements from a List 
-# ********************************************************************** 
+# **********************************************************************
+# Extracting Unique Elements from a List
+# **********************************************************************
 <?php
 function pleac_Extracting_Unique_Elements_from_a_List() {
 // PHP offers the 'array_unique' function to perform this task. It works with both keyed,
-// and numerically-indexed arrays; keys / indexes are preserved; use of 'array_values' 
+// and numerically-indexed arrays; keys / indexes are preserved; use of 'array_values'
 // is recommended to reindex numerically-indexed arrays since there will likely be missing
 // indexes
 
@@ -67,4 +67,3 @@ foreach($ucnt as $user => $cnt)
 
 }
 ?>
-

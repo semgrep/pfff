@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Hashes with Multiple Values Per Key 
-# ********************************************************************** 
+# **********************************************************************
+# Hashes with Multiple Values Per Key
+# **********************************************************************
 <?php
 function pleac_Hashes_with_Multiple_Values_Per_Key() {
 foreach(array_slice(preg_split('/\n/', `who`), 0, -1) as $entry)
@@ -39,4 +39,3 @@ foreach($ttys as $user => $all_ttys)
 
 }
 ?>
-

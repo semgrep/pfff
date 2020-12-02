@@ -3,5 +3,3 @@ struct Tree {
  	void	(*destroy)(File file);
  	void	(*destroy)(File *file);
 };
-
-

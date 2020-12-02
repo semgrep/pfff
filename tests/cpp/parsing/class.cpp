@@ -2,4 +2,3 @@ class Foo {
   int x;
   ;
 };
-

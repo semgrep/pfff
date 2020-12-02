@@ -13,4 +13,3 @@ export default class Heap {
     this.compare = new Comparator(comparatorFunction);
   }
 }
-

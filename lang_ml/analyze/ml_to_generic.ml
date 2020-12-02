@@ -527,4 +527,3 @@ and any = function
   | T x -> let x = type_ x in G.T x
   | P x -> let x = pattern x in G.P x
   | Pr _x -> raise Todo
-

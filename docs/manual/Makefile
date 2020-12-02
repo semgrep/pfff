@@ -17,11 +17,11 @@ SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
 NOWEB=~/c__syncweb/scripts/noweblatex
 OCAMLDOC=ocamldoc $(INCLUDES)
 
-PDFLATEX=pdflatex --shell-escape 
+PDFLATEX=pdflatex --shell-escape
 
 #------------------------------------------------------------------------------
 sync:
-	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
+	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done
 
 
 pdf:
@@ -34,4 +34,3 @@ lpclean::
 
 clean::
 	rm -f *.aux *.toc *.log
-

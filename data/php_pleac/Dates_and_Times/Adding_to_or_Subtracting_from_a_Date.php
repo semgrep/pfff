@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Adding to or Subtracting from a Date 
-# ********************************************************************** 
+# **********************************************************************
+# Adding to or Subtracting from a Date
+# **********************************************************************
 <?php
 function pleac_Adding_to_or_Subtracting_from_a_Date() {
 // Date arithmetic is probably most easily performed using timestamps [i.e. *NIX Epoch
@@ -26,15 +26,15 @@ echo 'Two weeks in the past is: ' . date('Y-m-d', $now - $diff2) . "\n";
 
 // Date arithmetic performed using a custom function, 'dateOffset'. Internally, offset may
 // be computed in one of several ways:
-// * Direct timestamp manipulation - fastest, but no daylight saving adjustment 
+// * Direct timestamp manipulation - fastest, but no daylight saving adjustment
 // * Via 'date' built-in function - slower [?], needs a base time from which to
-//   compute values, but has daylight saving adjustment 
+//   compute values, but has daylight saving adjustment
 // * Via 'strtotime' built-in function - as for 'date'
 // * Via 'DateTime' class
 //
 // Approach used here is to utilise direct timestamp manipulation in 'dateOffset' [it's
 // performance can also be improved by replacing $tbl with a global definition etc],
-// and to illustrate how the other approaches might be used 
+// and to illustrate how the other approaches might be used
 
 // 1. 'dateOffset'
 
@@ -95,4 +95,3 @@ printf("Birthtime is: %s\nthen is:      %s\n", $birthtime->format(DATE_RFC1123),
 
 }
 ?>
-

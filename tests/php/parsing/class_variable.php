@@ -10,4 +10,3 @@ echo A::$x;
 
 $x = 'XXX';
 echo A::$x;
-

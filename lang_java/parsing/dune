@@ -11,6 +11,5 @@
  (preprocess (pps ppx_deriving.show))
 )
 (ocamllex lexer_java)
-(menhir (modules parser_java) 
+(menhir (modules parser_java)
         (flags --unused-tokens --explain --fixed-exception))
-

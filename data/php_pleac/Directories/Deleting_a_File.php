@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Deleting a File 
-# ********************************************************************** 
+# **********************************************************************
+# Deleting a File
+# **********************************************************************
 <?php
 function pleac_Deleting_a_File() {
 // The 'unlink' function is used to delete regular files, whilst the 'rmdir' function
@@ -32,7 +32,7 @@ if ($problem)
   fwrite(STDERR, 'Could not delete all of:');
   foreach($files as $filename) { fwrite(STDERR, ' ' . $filename); }
   fwrite(STDERR, "\n"); exit(1);
-} 
+}
 
 // ------------
 
@@ -60,4 +60,3 @@ $count = rmAll($files);
 
 }
 ?>
-

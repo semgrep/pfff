@@ -14,7 +14,7 @@ SRC= cst_ml.ml \
      parse_ml.ml \
      test_parsing_ml.ml unit_parsing_ml.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 # globals.cma is used only for Config.patch in test_parse_ml
 LIBS=$(TOP)/commons/lib.cma \

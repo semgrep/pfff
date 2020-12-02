@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Controlling Input and Output of Another Program 
-# ********************************************************************** 
+# **********************************************************************
+# Controlling Input and Output of Another Program
+# **********************************************************************
 <?php
 function pleac_Controlling_Input_and_Output_of_Another_Program() {
 // Connect to input and output of a process.
@@ -40,4 +40,3 @@ print("\n");
 
 }
 ?>
-

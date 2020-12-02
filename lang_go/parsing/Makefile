@@ -16,7 +16,7 @@ SRC= ast_go.ml \
      parse_go.ml \
      test_parsing_go.ml unit_parsing_go.ml
 
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 
 LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \

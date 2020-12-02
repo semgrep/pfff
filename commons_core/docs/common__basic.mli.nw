@@ -754,4 +754,3 @@ val (=*=): 'a -> 'a -> bool
  * which internaly use this convenient but evolution-unfriendly (=)
 *)
 @
-

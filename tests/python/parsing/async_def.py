@@ -12,4 +12,3 @@ class DatabaseConnectionTest(SimpleTestCase):
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     async def async_update(self, **kwargs):
         return 1
-

@@ -1,7 +1,7 @@
 <?php
 
 // the current algorithm for the interpreter is not to manage
-// branches independently and merge unify heaps after, but 
+// branches independently and merge unify heaps after, but
 // instead process branch sequentially and unify/merge/abstract
 // as you go.
 

@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Converting Epoch Seconds to DMYHMS 
-# ********************************************************************** 
+# **********************************************************************
+# Converting Epoch Seconds to DMYHMS
+# **********************************************************************
 <?php
 function pleac_Converting_Epoch_Seconds_to_DMYHMS() {
 $dmyhms = getdate();            // timestamp: current date / time
@@ -17,4 +17,3 @@ $seconds = $dmyhms['seconds'];
 
 }
 ?>
-

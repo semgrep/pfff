@@ -28,4 +28,3 @@ val visit : 'a visit_method -> 'a -> ('a -> 'a) -> 'a
 class type ['a] std_visitor = object
   method visit : 'a visit_method
 end
-

@@ -65,18 +65,18 @@ information (the database) in `/tmp/pfff.json`
 1. In `commons/file_type.ml`, add your language under the appropriate programming
    language type in
    `type file_type`
-   and add in matching to the file extension of your language in 
+   and add in matching to the file extension of your language in
    `file_type_of_file2`
 2. In `commons/file_type.mli`, add you language under the appropriate programming
-   language type in 
+   language type in
    `type file_type`
-3. In `lang_GENERIC/parsing/Lang.ml`, add your language and necessary code in 
+3. In `lang_GENERIC/parsing/Lang.ml`, add your language and necessary code in
    * `type t`
    * `list_of_lang`
    * `langs_of_filename`
    * `string_of_lang`
    * `ext_of_lang`
-4. In `lang_GENERIC/parsing/Lang.mli`, add your language in `type t`. 
+4. In `lang_GENERIC/parsing/Lang.mli`, add your language in `type t`.
 5. In `lang_GENERIC/parsing/Parse_generic.ml`, add you language
    and necessary code into:
    * `parse_pattern`

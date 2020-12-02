@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Renaming Files 
-# ********************************************************************** 
+# **********************************************************************
+# Renaming Files
+# **********************************************************************
 <?php
 function pleac_Renaming_Files() {
 $filepairs = array('x.txt' => 'x2.txt', 'y.txt' => 'y.doc', 'zxc.txt' => 'cxz.txt');
@@ -39,7 +39,7 @@ is_file($oldfile) || die("Problem renaming file {$oldfile} to file {$newfile}\n"
 $argc > 2 || die("usage: rename from to [file ...]\n");
 
 $from = $argv[1];
-$to = $argv[2]; 
+$to = $argv[2];
 
 if (count(($argv = array_slice($argv, 3))) < 1)
   while (!feof(STDIN)) $argv[] = substr(fgets(STDIN), 0, -1);
@@ -55,4 +55,3 @@ foreach($argv as $file)
 
 }
 ?>
-

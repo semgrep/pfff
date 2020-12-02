@@ -1,6 +1,6 @@
 <?hh
 
-function f1(): 
+function f1():
  (function(string): string) {
   return null;
 }

@@ -4,4 +4,3 @@ def foo():
       x = 1
     else:
       x = 2
-

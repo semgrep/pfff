@@ -1,6 +1,6 @@
-# ********************************************************************** 
-# Accessing Subroutine Arguments 
-# ********************************************************************** 
+# **********************************************************************
+# Accessing Subroutine Arguments
+# **********************************************************************
 <?php
 function pleac_Accessing_Subroutine_Arguments() {
 // Conventionally-defined function together with parameter list
@@ -36,7 +36,7 @@ $funcname = 'hypotenuse';
 $diag = call_user_func($funcname, 3, 4);
 
 // b. Package arguments as array, pass together with function name
-$args = array(3, 4); 
+$args = array(3, 4);
 $diag = call_user_func_array($funcname, $args);
 
 // ----------------------------
@@ -67,4 +67,3 @@ trunc_em($nums);
 
 }
 ?>
-

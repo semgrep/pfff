@@ -24,4 +24,3 @@ class ['a,'b] oassocb _xs =
     method keys =
       List.map fst (o#tolist)
   end
-

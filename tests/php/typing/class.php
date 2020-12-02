@@ -8,5 +8,3 @@ class A {
     return $b === true;
   }
 }
-
-

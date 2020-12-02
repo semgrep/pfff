@@ -3,7 +3,7 @@
 * if header and loop body
 
 Go allow if/for/switch/select to omit the parenthesis around
-the conditional/iterator/... as in 
+the conditional/iterator/... as in
 
   if true { ... }
 
@@ -20,7 +20,7 @@ the right '{' to retag (basically the one following an if/for/switch/select.
 
 * Typename and CompositeLit
 
-From golang spec: 
+From golang spec:
 
 "A parsing ambiguity arises when a composite literal using the TypeName
 form of the LiteralType appears as an operand between the keyword and

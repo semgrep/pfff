@@ -6,5 +6,3 @@ val extract_from_sources:
   src:Common.dirname -> dst:Common.dirname ->
   Common.filename list ->
   unit
-
-
