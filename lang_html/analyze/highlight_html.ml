@@ -149,11 +149,11 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
 
     | T.Cdata (_ii, _s) | T.CdataSpecial (_ii, _s) ->
         (* can be js code, css code *)
-(* 
+(*
         if not (Hashtbl.mem already_tagged ii)
         then () (* tag ii String ? *)
 *)
-      ()
+        ()
 
     | T.TPi _ii
     | T.TDoctype _ii
