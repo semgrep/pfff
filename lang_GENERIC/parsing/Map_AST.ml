@@ -449,6 +449,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v2 = map_of_list map_catch v2
           and v3 = map_of_option map_finally v3
           in Try (t, v1, v2, v3)
+      | WithUsingResource (t, v1, v2) ->
+          let t = map_tok t in
+          let v1 = map_stmt v1 in
+          let v2 = map_stmt v2 in
+          WithUsingResource ((t, v1, v2))
       | Assert (t, v1, v2, sc) ->
           let t = map_tok t in
           let v1 = map_expr v1 in

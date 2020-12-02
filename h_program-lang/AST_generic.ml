@@ -725,6 +725,7 @@ and stmt =
 
   | Throw of tok (* 'raise' in OCaml, 'throw' in Java/PHP *) * expr * sc
   | Try of tok * stmt * catch list * finally option
+  | WithUsingResource of tok (* 'with' in Python, 'using' in C# *) * stmt (* resource acquisition *) * stmt (* newscope: block *)
   | Assert of tok * expr * expr option (* message *) * sc
   (*e: [[AST_generic.stmt]] other cases *)
   (*s: [[AST_generic.stmt]] toplevel and nested construct cases *)
