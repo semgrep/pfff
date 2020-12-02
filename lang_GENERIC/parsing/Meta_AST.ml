@@ -620,6 +620,11 @@ and vof_stmt =
       and v2 = OCaml.vof_list vof_catch v2
       and v3 = OCaml.vof_option vof_finally v3
       in OCaml.VSum ("Try", [ t; v1; v2; v3 ])
+  | WithUsingResource (t, v1, v2) ->
+      let t = vof_tok t in
+      let v1 = vof_stmt v1 in
+      let v2 = vof_stmt v2 in
+      OCaml.VSum (("WithUsingResource", [ t; v1; v2 ]))
   | Assert (t, v1, v2, sc) ->
       let t = vof_tok t in
       let v1 = vof_expr v1 in

@@ -458,6 +458,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v2 = v_list v_catch v2
           and v3 = v_option v_finally v3
           in ()
+      | WithUsingResource (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_stmt v1 and v2 = v_stmt v2 in
+          ()
       | Assert (t, v1, v2, sc) ->
           let t = v_tok t in
           let v1 = v_expr v1 and v2 = v_option v_expr v2 in

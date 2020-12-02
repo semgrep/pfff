@@ -589,6 +589,9 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       state.g |> add_arc_opt (previ, newi);
       cfg_stmt state (Some newi) st
 
+  | WithUsingResource (_, stmts1, stmts2) ->
+      cfg_stmt_list state previ [stmts1; stmts2]
+
   (* for dataflow purpose, such definitions are really the same than
    * an assignment. Liveness analysis does not make any difference between
    * a definition and an assign.

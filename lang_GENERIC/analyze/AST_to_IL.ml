@@ -637,6 +637,10 @@ let rec stmt env st =
       ss @ [mk_s (Throw (tok, e))]
   | G.Try (_, _, _, _)
     -> todo (G.S st)
+  | G.WithUsingResource (_, stmt1, stmt2) ->
+    let stmt1 = stmt env stmt1 in
+    let stmt2 = stmt env stmt2 in
+    stmt1 @ stmt2
 
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)
