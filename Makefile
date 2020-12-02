@@ -8,6 +8,7 @@ install:
 	dune install
 
 #coupling: see .circleci/config.yml
+#todo: --config semgrep_ocaml.yml
 check:
 	docker run --rm -v "${PWD}:/src" returntocorp/semgrep:develop --config semgrep.yml --exclude parsing_errors --exclude todo --exclude TODO_more --exclude _build --strict
 

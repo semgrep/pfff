@@ -9,7 +9,7 @@ external/battery_included/ocamlgtk
 *.lsif.in
 
 #TODO
-todo
+#todo
 /code_map/thread_bug_ml
 /gitlog
 /h_program-lang/old/dm_ml
