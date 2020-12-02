@@ -10,7 +10,7 @@ yourself.
 
 ## Developer setup
 
-Install opam if you don't have it already. Then install the
+Install opam if you don't have it already. Then install
 pfff's dependencies using:
 
 ```
