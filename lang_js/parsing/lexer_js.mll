@@ -371,7 +371,7 @@ rule initial = parse
       | None -> T_ID (s, info)
     }
   (* sgrep-ext: *)
-  | '$' ['A'-'Z''_']['A'-'Z''_''0'-'9']* "..."
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
      { Flag.sgrep_guard (T_ID (tok lexbuf, tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
