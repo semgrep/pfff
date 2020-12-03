@@ -782,7 +782,7 @@ interface_decl: T_INTERFACE binding_id generics? optl(interface_extends)
       c_body = (t1, [], t2) } }
 
 interface_extends: T_EXTENDS listc(type_reference)
-  { $2 |> List.map (fun ids -> Right (G.TyName(G.name_of_ids ids))) }
+  { $2 |> List.map (fun t -> Right t) }
 
 (*************************************************************************)
 (* Type declaration *)
@@ -858,9 +858,8 @@ primary_type:
  | primary_type "[" "]" { G.TyArray (($2, None, $3), $1) }
 
 primary_type2:
- | predefined_type      { G.TyName (G.name_of_id $1) }
- (* TODO: could be TyApply if snd $1 is a Some *)
- | type_reference       { G.TyName(G.name_of_ids $1) }
+ | predefined_type      { G.TyId ($1, G.empty_id_info()) }
+ | type_reference       { $1 }
  | object_type
     { let (t1, _xsTODO, t2) = $1 in
       G.TyRecordAnon (G.fake "", (t1, [], t2)) }
@@ -879,8 +878,16 @@ predefined_type:
  (* not in Typescript grammar, but often part of union type *)
  | T_NULL          { "null", $1 }
 
+%inline
+type_reference: type_reference_aux
+  { match $1 with
+    (* TODO: could be TyApply if snd $1 is a Some *)
+    | [id] -> G.TyId (id, G.empty_id_info())
+    | ids ->  G.TyIdQualified (G.name_of_ids ids, G.empty_id_info())
+  }
+
 (* was called nominal_type in Flow *)
-type_reference:
+type_reference_aux:
  | type_name { $1 }
  | type_name type_arguments { $1 (* TODO type_arguments *) }
 
@@ -1005,7 +1012,7 @@ type_or_expr:
  | type_reference
     { match $1 with
      (* TODO: generate a Left expr? of simple id? or a ObjAccess? *)
-     | ids -> Right (G.TyName (G.name_of_ids ids))
+     | t -> Right t
     }
 
 (*************************************************************************)

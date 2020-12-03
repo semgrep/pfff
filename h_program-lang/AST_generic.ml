@@ -340,6 +340,14 @@ and expr =
   (* see also Call(IdSpecial (New,_), [ArgType _;...] for other values *)
   (*e: [[AST_generic.expr]] other composite cases *)
 
+  (* less: With Id and IdQualified, and now TyId and TyIdQualified,
+   * and also EId and EName, maybe we should factorize things, have
+   * actually a proper name type that can be the simple Id case or
+   * IdQualified case.
+   * Note that separating between Id and IdQualified is useful in semgrep
+   * where metavariables can only be in the Id category (but what if
+   * we allow metavariables on qualifiers at some point??)
+  *)
   | Id of ident * id_info
   (*s: [[AST_generic.expr]] other identifier cases *)
   (* old: Id above used to be called Name and was generalizing also IdQualified
@@ -930,11 +938,11 @@ and type_ =
   (* old: was originally TyApply (name, []), but better to differentiate.
    * todo? may need also TySpecial because the name can actually be
    *  self/parent/static (e.g., in PHP)
-   * todo? maybe go even further and differentiate TyId vs TyIdQualified?
   *)
-  | TyName of name
+  | TyId of ident * id_info
+  | TyIdQualified of name * id_info
   (* covers tuples, list, etc.
-   * TODO: merge with TyName? name_info has name_typeargs
+   * TODO: merge with TyIdQualified? name_info has name_typeargs
   *)
   | TyNameApply of name * type_arguments
 

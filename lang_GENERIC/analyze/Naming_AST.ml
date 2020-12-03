@@ -235,8 +235,9 @@ let lookup_nonlocal_scope id scopes =
       None
 (*e: function [[Naming_AST.lookup_nonlocal_scope]] *)
 
+(* should use TyBuiltin instead? *)
 let make_type type_string tok =
-  Some(TyName(((type_string, tok), {name_qualifier=None; name_typeargs=None})))
+  Some(TyId(((type_string, tok), empty_id_info())))
 
 let get_resolved_type (vinit, vtype) =
   match vtype with

@@ -363,7 +363,9 @@ let visit_program
 
                          V.ktype_ = (fun (k, _) t ->
                            (match t with
-                            | G.TyName name ->
+                            | G.TyId ((_, info), _) ->
+                                tag info (Entity (Type, (Use2 fake_no_use2)))
+                            | G.TyIdQualified (name,_idinfo) ->
                                 let info = info_of_name name in
                                 tag info (Entity (Type, (Use2 fake_no_use2)))
                             | G.TyNameApply (name, _ty_args) ->

@@ -126,7 +126,7 @@ let rec type_ =
       G.OtherType (G.OT_EnumName, [G.I v1])
   | TTypeName v1 ->
       let v1 = name v1 in
-      G.TyName (v1, G.empty_name_info)
+      G.TyId (v1, G.empty_id_info())
   | TMacroApply (v1, (_lp, v2, _rp)) ->
       let v1 = name v1 in
       let v2 = type_ v2 in

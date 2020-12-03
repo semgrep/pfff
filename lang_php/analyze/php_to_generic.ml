@@ -59,6 +59,7 @@ let var v = wrap string v
 
 let qualified_ident v = list ident v
 
+(* TODO: generate Left id or Right name *)
 let name_of_qualified_ident xs =
   match List.rev (qualified_ident xs) with
   | [] -> raise Impossible
@@ -377,7 +378,7 @@ and array_value v       = expr v
 and hint_type =
   function
   | Hint v1 -> let v1 = name v1 in
-      G.TyName (name_of_qualified_ident v1)
+      G.TyIdQualified (name_of_qualified_ident v1, G.empty_id_info())
   | HintArray t ->
       G.TyBuiltin ("array", t)
   | HintQuestion (t, v1) -> let v1 = hint_type v1 in

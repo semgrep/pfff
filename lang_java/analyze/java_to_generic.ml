@@ -86,12 +86,13 @@ and class_type v =
   in
   (match List.rev res with
    | [] -> raise Impossible (* list1 *)
-   | name::xs ->
-       let info = { G.
-                    name_typeargs = None; (* could be v1TODO above *)
-                    name_qualifier = Some (G.QDots (List.rev xs));
-                  } in
-       G.TyName (name, info)
+   | [id] -> G.TyId (id, G.empty_id_info())
+   | id::xs ->
+       let name_info = { G.
+                         name_typeargs = None; (* could be v1TODO above *)
+                         name_qualifier = Some (G.QDots (List.rev xs));
+                       } in
+       G.TyIdQualified ((id, name_info), G.empty_id_info())
   )
 
 and type_argument =

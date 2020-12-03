@@ -48,7 +48,6 @@ let name_of_qualified_ident = function
 let fake s = Parse_info.fake_info s
 let fake_id s = (s, fake s)
 let fb = G.fake_bracket
-let fake_name s = (s, fake s), G.empty_name_info
 let mk_name s tok = (s, tok), G.empty_name_info
 
 let ii_of_any = Lib_parsing_go.ii_of_any
@@ -115,7 +114,12 @@ let top_func () =
   let rec type_ =
     function
     | TName v1 -> let v1 = qualified_ident v1 in
-        G.TyName (name_of_qualified_ident v1)
+        (match v1 with
+         | Left id ->
+             G.TyId (id, G.empty_id_info())
+         | Right _ ->
+             G.TyIdQualified (name_of_qualified_ident v1, G.empty_id_info())
+        )
     | TPtr (t, v1) -> let v1 = type_ v1 in
         G.TyPointer (t, v1)
     | TArray (v1, v2) ->
@@ -145,12 +149,12 @@ let top_func () =
                                cextends = []; cimplements = []; cmixins = [];
                                cbody = v1; } in
         Common.push (ent, def) anon_types;
-        G.TyName (mk_name s t)
+        G.TyId ((s,t), G.empty_id_info())
 
   and chan_dir = function
-    | TSend -> G.TyName (fake_name "send")
-    | TRecv -> G.TyName (fake_name "recv")
-    | TBidirectional -> G.TyName (fake_name "bidirectional")
+    | TSend -> G.TyId (fake_id "send", G.empty_id_info())
+    | TRecv -> G.TyId (fake_id "recv", G.empty_id_info())
+    | TBidirectional -> G.TyId (fake_id "bidirectional", G.empty_id_info())
 
   and func_type { fparams = fparams; fresults = fresults } =
     let fparams = list parameter_binding fparams in
