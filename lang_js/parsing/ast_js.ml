@@ -214,6 +214,10 @@ and expr =
   | Conditional of expr * expr * expr
 
   (* typescript: *)
+  (* I'm not sure E : T is valid TS code actually; tree-sitter-ts allows it
+   * but I can't find doc about it. Looks like the 'as' or <T> syntax
+   * are the only "cast" syntax.
+  *)
   | Cast of expr * tok (* ':' *) * type_
   | TypeAssert of expr * tok (* 'as' or '<' *) * type_ (* X as T or <T> X *)
 
