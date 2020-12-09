@@ -488,8 +488,13 @@ let top_func () =
         let _v1 = tok v1 and (e, args) = call_expr v2 in
         [G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])]
 
-  and case_clause (v1, v2) = let v1 = case_kind v1 and v2 = stmt v2 in
-    v1, v2
+  and case_clause = function
+    | CaseClause (v1, v2) ->
+        let v1 = case_kind v1 and v2 = stmt v2 in
+        G.CasesAndBody (v1, v2)
+    | CaseEllipsis (_v1, v2) ->
+        G.CaseEllipsis (v2)
+
   and expr_or_type_to_pattern = function
     (* can't call expr_or_type because we want to intercept this one *)
     | Left (ParenType t) ->

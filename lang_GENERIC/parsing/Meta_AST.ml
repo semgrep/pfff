@@ -660,10 +660,14 @@ and vof_label_ident =
   | LInt v1 -> let v1 = vof_wrap OCaml.vof_int v1 in OCaml.VSum ("LInt", [ v1 ])
   | LDynamic v1 -> let v1 = vof_expr v1 in OCaml.VSum ("LDynamic", [ v1 ])
 
-and vof_case_and_body (v1, v2) =
-  let v1 = OCaml.vof_list vof_case v1
-  and v2 = vof_stmt v2
-  in OCaml.VTuple [ v1; v2 ]
+and vof_case_and_body = function
+  | CasesAndBody (v1, v2) ->
+      let v1 = OCaml.vof_list vof_case v1
+      and v2 = vof_stmt v2
+      in OCaml.VSum ("CasesAndBody", [ v1; v2 ])
+  | CaseEllipsis v1 ->
+      let v1 = vof_tok v1 in
+      OCaml.VSum ("CaseEllipsis", [ v1 ])
 and vof_case =
   function
   | Case (t, v1) ->

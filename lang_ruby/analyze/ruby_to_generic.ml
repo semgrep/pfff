@@ -438,7 +438,8 @@ and stmt st =
             let st = list_stmt1 sts in
             [[G.Default t], st]
       in
-      G.Switch (t, eopt, whens @ default)
+      G.Switch (t, eopt,
+                (whens @ default) |> List.map (fun x -> G.CasesAndBody x))
 
   | ExnBlock b -> body_exn b
 

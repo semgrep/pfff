@@ -487,8 +487,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | LInt v1 -> let v1 = map_wrap map_of_int v1 in LInt v1
     | LDynamic v1 -> let v1 = map_expr v1 in LDynamic v1
 
-  and map_case_and_body (v1, v2) =
-    let v1 = map_of_list map_case v1 and v2 = map_stmt v2 in (v1, v2)
+  and map_case_and_body = function
+    | CasesAndBody (v1, v2) ->
+        let v1 = map_of_list map_case v1 and v2 = map_stmt v2 in
+        CasesAndBody (v1, v2)
+    | CaseEllipsis v1 ->
+        let v1 = map_tok v1 in
+        CaseEllipsis v1
 
   and map_case =
     function

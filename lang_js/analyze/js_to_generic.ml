@@ -259,7 +259,8 @@ and stmt x =
       G.For (t, v1, v2)
   | Switch (v0, v1, v2) ->
       let v0 = info v0 in
-      let v1 = expr v1 and v2 = list case v2 in
+      let v1 = expr v1
+      and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x) in
       G.Switch (v0, Some v1, v2)
   | Continue (t, v1, sc) -> let v1 = option label v1 in
       G.Continue (t, G.opt_to_label_ident v1, sc)

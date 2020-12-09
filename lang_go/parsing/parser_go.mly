@@ -490,14 +490,19 @@ select_stmt:  LSELECT LBODY caseblock_list "}"
     { Select ($1, List.rev $3) }
 
 case:
-|   LCASE listc(expr_or_type) ":"             { CaseExprs ($1, $2) }
-|   LCASE listc(expr_or_type) "=" expr ":"    { CaseAssign ($1, $2, $3, $4) }
+|   LCASE listc(expr_or_type) ":"           { CaseExprs ($1, $2) }
+|   LCASE listc(expr_or_type) "=" expr ":"  { CaseAssign ($1, $2, $3, $4) }
 |   LCASE listc(expr_or_type) ":=" expr ":" { CaseAssign ($1, $2, $3, $4) }
 |   LDEFAULT ":"                            { CaseDefault $1 }
 
-caseblock: case listsc(stmt)
+caseblock_list:
+| (*empty*)  { [] }
+| caseblock_list caseblock { $2::$1 }
+
+caseblock:
+| case listsc(stmt)
     {
-      $1, Block (AST_generic.fake_bracket (List.rev $2))
+      CaseClause ($1, Block (AST_generic.fake_bracket (List.rev $2)))
       (*
         // If the last token read by the lexer was consumed
         // as part of the case, clear it (parser has cleared yychar).
@@ -525,6 +530,18 @@ caseblock: case listsc(stmt)
         popdcl();
       *)
     }
+(* sgrep-ext:
+ * We can't use just '...' because this cause s/r conflict with
+ *   case foo:
+ *      bar()
+ *   ...
+ * where we don't know if the ... should be part of the list of
+ * stmts of the foo: case, or an ellipsis for extra cases.
+ *
+ * I've added the ";"? because parsing_hacks adds them after a '...'\n.
+ * alt: we could detect if there's a case before and disable it.
+ *)
+| LCASE "..." ";"? { CaseEllipsis ($1, $2) }
 
 (*************************************************************************)
 (* Expressions *)
@@ -961,9 +978,6 @@ elseif_list:
 | (*empty*)      { [] }
 | elseif_list elseif { $2::$1 }
 
-caseblock_list:
-| (*empty*)  { [] }
-| caseblock_list caseblock { $2::$1 }
 
 (* lists with ending ";", 0 element allowed *)
 xdcl_list:

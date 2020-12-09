@@ -763,7 +763,10 @@ and stmt =
  * so case_and_body of Switch <=> action of MatchPattern
 *)
 (*s: type [[AST_generic.case_and_body]] *)
-and case_and_body = case list * stmt
+and case_and_body =
+  | CasesAndBody of (case list * stmt)
+  (* sgrep: *)
+  | CaseEllipsis of tok (* ... *)
 (*e: type [[AST_generic.case_and_body]] *)
 (*s: type [[AST_generic.case]] *)
 and case  =

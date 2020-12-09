@@ -307,7 +307,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         and v3 = v_prefix_postfix v3
         in ()
 
-  and v_case_clause (v1, v2) = let v1 = v_case_kind v1 and v2 = v_stmt v2 in ()
+  and v_case_clause = function
+    | CaseClause (v1, v2) -> let v1 = v_case_kind v1 and v2 = v_stmt v2 in ()
+    | CaseEllipsis (v1, v2) -> v_tok v1; v_tok v2
+
   and v_case_kind =
     function
     | CaseExprs (t, v1) ->

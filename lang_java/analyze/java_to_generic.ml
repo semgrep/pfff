@@ -336,6 +336,7 @@ and stmt =
           (fun (v1, v2) -> let v1 = cases v1 and v2 = stmts v2 in
             v1, G.stmt1 v2
           ) v2
+        |> List.map (fun x -> G.CasesAndBody x)
       in
       G.Switch (v0, Some v1, v2)
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in

@@ -262,7 +262,8 @@ let rec stmt =
       G.If (t, v1, v2, v3)
   | Switch (v0, v1, v2) ->
       let v0 = info v0 in
-      let v1 = expr v1 and v2 = list case v2 in
+      let v1 = expr v1
+      and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x)  in
       G.Switch (v0, Some v1, v2)
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
       G.While (t, v1, v2)

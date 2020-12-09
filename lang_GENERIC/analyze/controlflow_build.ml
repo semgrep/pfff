@@ -415,9 +415,12 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       (* if no default: then must add path from start to end directly
        * todo? except if the cases cover the full spectrum ?
       *)
-      if (not (cases_and_body |> List.exists (fun (cases, _body) ->
-        cases |> List.exists (function
-          | Ast.Default _ -> true | _ -> false))))
+      if (not (cases_and_body |> List.exists (function
+        | CasesAndBody (cases, _body) ->
+            cases |> List.exists (function
+              | Ast.Default _ -> true | _ -> false)
+        | CaseEllipsis _ -> raise Impossible
+      )))
       then begin
         state.g |> add_arc (newi, endi);
       end;
@@ -659,23 +662,25 @@ and (cfg_cases:
   in
 
   cases |> List.fold_left (fun previ case_and_body ->
-    let (cases, stmt) = case_and_body in
-    let node =
-      (* TODO: attach expressions there!!! *)
-      match cases with
-      | [Default _] -> F.Default
-      | _ -> F.Case
-    in
+    match case_and_body with
+    | CasesAndBody (cases, stmt) ->
+        let node =
+          (* TODO: attach expressions there!!! *)
+          match cases with
+          | [Default _] -> F.Default
+          | _ -> F.Case
+        in
 
-    let i () = info_opt (S stmt) in
+        let i () = info_opt (S stmt) in
 
-    let newi = state.g#add_node { F.n = node; i=i() } in
-    state.g |> add_arc_opt (previ, newi);
-    (* connect SwitchHeader to Case node *)
-    state.g |> add_arc (switchi, newi);
+        let newi = state.g#add_node { F.n = node; i=i() } in
+        state.g |> add_arc_opt (previ, newi);
+        (* connect SwitchHeader to Case node *)
+        state.g |> add_arc (switchi, newi);
 
-    (* the stmts can contain 'break' that will be linked to the endswitch *)
-    cfg_stmt state (Some newi) stmt
+        (* the stmts can contain 'break' that will be linked to the endswitch *)
+        cfg_stmt state (Some newi) stmt
+    | CaseEllipsis _ -> raise Impossible
   ) previ
 
 (*

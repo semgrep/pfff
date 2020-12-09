@@ -246,7 +246,10 @@ and stmt =
   | Defer of tok * call_expr
 
 (* todo: split in case_clause_expr and case_clause_type *)
-and case_clause = case_kind * stmt (* can be Empty*)
+and case_clause =
+  | CaseClause of (case_kind * stmt) (* the stmt can be Empty*)
+  (* sgrep-ext: *)
+  | CaseEllipsis of tok (* 'case' *) * tok (* '...' *)
 and case_kind =
   | CaseExprs of tok * expr_or_type list
   | CaseAssign of tok * expr_or_type list * tok (* = or := *) * expr

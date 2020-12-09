@@ -404,6 +404,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     in
     vin.kstmts (k, all_functions) xs
 
+  and v_cases_and_body x =
+    match x with
+    | CasesAndBody (v1, v2) ->
+        let v1 = v_list v_case v1 and v2 = v_stmt v2 in ()
+    | CaseEllipsis (v1) -> v_tok v1
+
   and v_stmt x =
     let k x =
       match x with
@@ -434,10 +440,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Switch (v0, v1, v2) ->
           let v0 = v_tok v0 in
           let v1 = v_option v_expr v1
-          and v2 =
-            v_list
-              (fun (v1, v2) -> let v1 = v_list v_case v1 and v2 = v_stmt v2 in ())
-              v2
+          and v2 = v_list v_cases_and_body v2
           in ()
       | Return (t, v1, sc) ->
           let t = v_tok t in
