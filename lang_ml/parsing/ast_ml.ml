@@ -59,7 +59,7 @@ type todo_category = string wrap
 type type_ =
   | TyName of name (* include builtins *)
   | TyVar of ident (* 'a *)
-  | TyAny of ident (* _ *)
+  | TyAny of tok (* _ *)
 
   | TyFunction of type_ * type_
   | TyApp of type_ list * name (* less: could be merged with TyName *)

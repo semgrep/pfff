@@ -885,7 +885,7 @@ simple_core_type2:
 
 type_variable:
  | "'" ident          { TyVar $2 }
- | "_"                { TyAny ("_", $1) }
+ | "_"                { TyAny $1 }
 
 polymorphic_variant_type:
  | "[" tag_field "]"
