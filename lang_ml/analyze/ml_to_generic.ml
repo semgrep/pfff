@@ -76,7 +76,7 @@ and type_ =
   | TyEllipsis v1 -> let v1 = tok v1 in G.TyEllipsis v1
   | TyName v1 -> let v1 = name v1 in G.TyIdQualified (v1, G.empty_id_info())
   | TyVar v1 -> let v1 = ident v1 in G.TyVar v1
-  | TyAny v1 -> let v1 = ident v1 in G.TyAny v1
+  | TyAny v1 -> let v1 = tok v1 in G.TyAny v1
   | TyFunction (v1, v2) -> let v1 = type_ v1 and v2 = type_ v2 in
       G.TyFun ([G.ParamClassic (G.param_of_type v1)],v2)
   | TyApp (v1, v2) -> let v1 = list type_ v1 and v2 = name v2 in
