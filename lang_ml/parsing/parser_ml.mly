@@ -883,7 +883,9 @@ simple_core_type2:
  (* sgrep-ext: *)
  | "..."              { TyEllipsis $1 }
 
-type_variable: "'" ident          { TyVar ($2) }
+type_variable:
+ | "'" ident          { TyVar $2 }
+ | "_"                { TyAny ("_", $1) }
 
 polymorphic_variant_type:
  | "[" tag_field "]"

@@ -343,6 +343,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | TyIdQualified (v1, v2) ->
           let v1 = v_name v1 in v_id_info v2
       | TyVar v1 -> let v1 = v_ident v1 in ()
+      | TyAny v1 -> let v1 = v_ident v1 in ()
       | TyArray (v1, v2) ->
           let v1 = v_bracket (v_option v_expr) v1 and v2 = v_type_ v2 in ()
       | TyPointer (t, v1) ->
