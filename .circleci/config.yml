@@ -28,14 +28,16 @@ jobs:
     working_directory: /src
     steps:
       - checkout
-      - run: |
-          semgrep --config semgrep.yml --error --strict --verbose \
-            --exclude parsing_errors \
-            --exclude tests/ml/parsing \
-            --exclude todo \
-            --exclude TODO_more \
-            --exclude _build \
-            .
+      - run:
+          name: Semgrep checks
+          command: |
+            semgrep --config semgrep.yml --error --strict --verbose \
+              --exclude parsing_errors \
+              --exclude tests/ml/parsing \
+              --exclude todo \
+              --exclude TODO_more \
+              --exclude _build \
+              .
 
 workflows:
   version: 2
