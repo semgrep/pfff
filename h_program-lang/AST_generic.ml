@@ -1472,10 +1472,13 @@ and program = item list
 (*****************************************************************************)
 (* sgrep: this is only used by semgrep *)
 and partial =
-  (* the fbody or cbody in definition will be empty *)
+  (* partial defs. The fbody or cbody in definition will be empty. *)
   | PartialDef of definition
-  (* todo: PartialWhile, etc. *)
+  (* partial stmts *)
   | PartialIf of tok * expr
+  | PartialTry of tok * stmt
+  | PartialCatch of catch
+  | PartialFinally of tok * stmt
 
 (*****************************************************************************)
 (* Any *)

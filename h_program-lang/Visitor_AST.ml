@@ -460,6 +460,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_expr v1 in
           v_tok sc
       | Try (t, v1, v2, v3) ->
+          v_partial ~recurse:false (PartialTry (t, v1));
           let t = v_tok t in
           let v1 = v_stmt v1
           and v2 = v_list v_catch v2
@@ -503,9 +504,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         ()
 
   and v_catch (t, v1, v2) =
+    v_partial ~recurse:false (PartialCatch (t, v1, v2));
     let t = v_tok t in
     let v1 = v_pattern v1 and v2 = v_stmt v2 in ()
   and v_finally (t, v) =
+    v_partial ~recurse:false (PartialFinally (t, v));
     let t = v_tok t in
     v_stmt v
   and v_label v = v_ident v
@@ -626,6 +629,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | PartialIf (v1, v2) ->
           if recurse
           then begin v_tok v1; v_expr v2; end
+      | PartialTry (v1, v2) ->
+          if recurse
+          then begin v_tok v1; v_stmt v2; end
+      | PartialCatch (v1) ->
+          if recurse
+          then begin v_catch v1; end
+      | PartialFinally (v1, v2) ->
+          if recurse
+          then begin v_tok v1; v_stmt v2; end
     in
     vin.kpartial (k, all_functions) x
 

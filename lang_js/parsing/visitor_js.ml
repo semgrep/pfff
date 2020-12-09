@@ -214,7 +214,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let t = v_tok t in
           let v1 = v_stmt v1
           and v2 = v_option v_catch_block v2
-          and v3 = v_option v_tok_and_stmt v3
+          and v3 = v_option v_finally v3
           in ()
       | With (v1, v2, v3) ->
           v_tok v1;
@@ -222,6 +222,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           v_stmt v3
     in
     vin.kstmt (k, all_functions) x
+
+  and v_finally x = v_tok_and_stmt x
 
   and v_catch_block = function
     | BoundCatch (t, v1, v2) ->
@@ -412,6 +414,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_partial = function
     | PartialDef def -> v_def def
     | PartialIf (v1, v2) -> v_tok v1; v_expr v2
+    | PartialTry (v1, v2) | PartialFinally (v1, v2) -> v_tok v1; v_stmt v2
+    | PartialCatch (v1) -> v_catch_block v1
 
   and v_program v = v_list v_toplevel v
 

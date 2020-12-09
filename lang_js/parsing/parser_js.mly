@@ -404,13 +404,20 @@ sgrep_spatch_pattern:
  | module_item              EOF  { fix_sgrep_module_item $1 }
  | module_item module_item+ EOF  { Stmts (List.flatten ($1::$2)) }
 
- (* partials *)
+ (* partials defs *)
  | T_FUNCTION id? call_signature EOF
    { Partial (PartialDef (mk_def ($2, mk_FuncDef [] $3 (fb [])))) }
  | T_CLASS binding_id? generics? class_heritage EOF
    { Partial (PartialDef (mk_def ($2, mk_ClassDef $1 $3 $4 (fb [])))) }
+ (* partials stmts *)
  | T_IF "(" expr ")" EOF
    { Partial (PartialIf ($1, $3)) }
+ | T_TRY block EOF
+   { Partial (PartialTry ($1, $2)) }
+ | catch EOF
+   { Partial (PartialCatch $1) }
+ | finally EOF
+   { Partial (PartialFinally $1) }
 
 (*************************************************************************)
 (* Namespace *)

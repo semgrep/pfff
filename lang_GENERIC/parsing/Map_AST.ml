@@ -849,6 +849,17 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = map_tok v1 in
         let v2 = map_expr v2 in
         PartialIf (v1, v2)
+    | PartialTry (v1, v2) ->
+        let v1 = map_tok v1 in
+        let v2 = map_stmt v2 in
+        PartialTry (v1, v2)
+    | PartialFinally (v1, v2) ->
+        let v1 = map_tok v1 in
+        let v2 = map_stmt v2 in
+        PartialFinally (v1, v2)
+    | PartialCatch (v1) ->
+        let v1 = map_catch v1 in
+        PartialCatch (v1)
 
   and map_any =
     function

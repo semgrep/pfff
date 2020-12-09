@@ -1133,6 +1133,17 @@ and vof_partial =
       let v1 = vof_tok v1 in
       let v2 = vof_expr v2 in
       OCaml.VSum ("PartialIf", [ v1; v2 ])
+  | PartialTry (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_stmt v2 in
+      OCaml.VSum ("PartialTry", [ v1; v2 ])
+  | PartialFinally (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_stmt v2 in
+      OCaml.VSum ("PartialFinally", [ v1; v2 ])
+  | PartialCatch (v1) ->
+      let v1 = vof_catch v1 in
+      OCaml.VSum ("PartialCatch", [ v1 ])
 
 and vof_any =
   function
