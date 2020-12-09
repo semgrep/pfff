@@ -343,6 +343,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v2 = map_id_info v2 in
         TyIdQualified (v1, v2)
     | TyVar v1 -> let v1 = map_ident v1 in TyVar v1
+    | TyAny v1 -> let v1 = map_ident v1 in TyAny v1
     | TyArray (v1, v2) ->
         let v1 = map_bracket (map_of_option map_expr) v1
         and v2 = map_type_ v2

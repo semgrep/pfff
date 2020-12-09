@@ -947,6 +947,7 @@ and type_ =
   | TyNameApply of name * type_arguments
 
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
+  | TyAny of ident (* anonymous type, '_' in OCaml *)
 
   | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
 

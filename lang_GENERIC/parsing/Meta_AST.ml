@@ -465,6 +465,7 @@ and vof_type_ =
       let v2 = vof_id_info v2 in
       OCaml.VSum ("TyIdQualified", [ v1; v2 ])
   | TyVar v1 -> let v1 = vof_ident v1 in OCaml.VSum ("TyVar", [ v1 ])
+  | TyAny v1 -> let v1 = vof_ident v1 in OCaml.VSum ("TyAny", [ v1 ])
   | TyArray (v1, v2) ->
       let v1 = vof_bracket (OCaml.vof_option vof_expr) v1
       and v2 = vof_type_ v2
