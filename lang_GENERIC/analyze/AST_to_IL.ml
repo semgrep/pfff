@@ -454,7 +454,8 @@ and expr_aux env eorig =
   | G.Ref (_, _)
     -> todo (G.E eorig)
 
-  | G.Ellipsis _ |G.TypedMetavar (_, _, _)|G.DisjExpr (_, _)|G.DeepEllipsis _
+  | G.Ellipsis _ | G.TypedMetavar (_, _, _)| G.DisjExpr (_, _)
+  | G.DeepEllipsis _ | G.DotAccessEllipsis _
     -> sgrep_construct (G.E eorig)
   | G.OtherExpr (_, _) -> todo (G.E eorig)
 

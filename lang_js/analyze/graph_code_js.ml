@@ -512,7 +512,7 @@ and stmts env xs =
 and expr env e =
   match e with
   | ExprTodo _ | Cast _ | TypeAssert _ -> failwith "ExprTodo|Cast|..."
-  | Ellipsis _ | DeepEllipsis _ -> ()
+  | Ellipsis _ | DeepEllipsis _ | ObjAccessEllipsis _ -> ()
 
   | Bool _ | Num _ | String _ | Regexp _ -> ()
   | Id (n(*, scope*)) ->

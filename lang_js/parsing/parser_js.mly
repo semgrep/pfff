@@ -1240,6 +1240,8 @@ call_expr(x):
  (* es6: *)
  | call_expr(x) template_literal     { mk_Encaps (Some $1) $2 }
  | T_SUPER arguments                 { Apply (mk_Super($1), $2) }
+ (* sgrep-ext: *)
+ | call_expr(x) "..."       { ObjAccessEllipsis ($1, $2) }
 
 new_expr(x):
  | member_expr(x)    { $1 }
@@ -1259,6 +1261,8 @@ member_expr(x):
      then special NewTarget $1 []
      else raise (Parsing.Parse_error)
   }
+  (* sgrep-ext: *)
+ | member_expr(x) "..." { ObjAccessEllipsis($1, $2) }
 
 primary_expr(x):
  | primary_expr_no_braces { $1 }

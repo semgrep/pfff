@@ -137,6 +137,9 @@ and vof_xml_body =
 
 and vof_expr =
   function
+  | DotAccessEllipsis (v1, v2) ->
+      let v1 = vof_expr v1 in let v2 = vof_tok v2 in
+      OCaml.VSum ("DotAccessEllipsis", [v1; v2])
   | DisjExpr (v1, v2) -> let v1 = vof_expr v1 in let v2 = vof_expr v2 in
       OCaml.VSum ("DisjExpr", [v1; v2])
   | Xml v1 -> let v1 = vof_xml v1 in OCaml.VSum ("Xml", [ v1 ])

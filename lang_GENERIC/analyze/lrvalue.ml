@@ -209,7 +209,7 @@ let rec visit_expr hook lhs expr =
   (* we should not be called on a sgrep pattern *)
   | TypedMetavar (_id, _, _t) -> raise Impossible
   | DisjExpr _ -> raise Impossible
-  | DeepEllipsis _ -> raise Impossible
+  | DeepEllipsis _ | DotAccessEllipsis _ -> raise Impossible
   | Ellipsis _tok -> ()
 
   | OtherExpr (_other_xxx, anys) -> List.iter (anyhook hook Rhs) anys

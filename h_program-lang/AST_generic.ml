@@ -450,6 +450,8 @@ and expr =
   (*x: [[AST_generic.expr]] semgrep extensions cases *)
   | TypedMetavar of ident * tok (* : *) * type_
   (*e: [[AST_generic.expr]] semgrep extensions cases *)
+  (* for ellipsis in method chaining *)
+  | DotAccessEllipsis of expr * tok (* '...' *)
   (*s: [[AST_generic.expr]] OtherXxx case *)
   (* TODO: other_expr_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token *)

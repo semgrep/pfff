@@ -163,6 +163,9 @@ and xhp_attr v          = expr v
 
 and expr (x: expr) =
   match x with
+  | ObjAccessEllipsis (v1, v2) ->
+      let v1 = expr v1 in
+      G.DotAccessEllipsis (v1, v2)
   (* not sure this is actually a valid JS/TS construct *)
   | Cast (v1, _v2, v3) ->
       let v1 = expr v1 in

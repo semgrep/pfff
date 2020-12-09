@@ -199,6 +199,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_expr x =
     let k x =
       match x with
+      | DotAccessEllipsis (v1, v2) -> v_expr v1; v_tok v2
       | DisjExpr (v1, v2) -> let v1 = v_expr v1 in let v2 = v_expr v2 in ()
       | L v1 -> let v1 = v_literal v1 in ()
       | Ellipsis v1 -> let v1 = v_tok v1 in ()

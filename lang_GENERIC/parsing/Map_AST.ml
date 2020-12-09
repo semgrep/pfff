@@ -155,6 +155,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and map_expr x =
     let k x = match x with
+      | DotAccessEllipsis (v1, v2) -> let v1 = map_expr v1 in
+          let v2 = map_tok v2 in
+          DotAccessEllipsis (v1, v2)
       | DisjExpr (v1, v2) -> let v1 = map_expr v1 in let v2 = map_expr v2 in
           DisjExpr (v1, v2)
       | L v1 -> let v1 = map_literal v1 in L v1

@@ -227,6 +227,7 @@ and expr =
   (* sgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
+  | ObjAccessEllipsis of expr * tok (* ... *)
 
 and arguments = argument list bracket
 and argument = expr

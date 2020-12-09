@@ -139,6 +139,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_expr (x: expr) =
     (* tweak *)
     let k x =  match x with
+      | ObjAccessEllipsis (v1, v2) -> v_expr v1; v_tok v2
       | Cast (v1, v2, v3) ->
           v_expr v1; v_tok v2; v_type_ v3
       | TypeAssert (v1, v2, v3) ->
