@@ -447,11 +447,14 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
      | Some (Ast.NotParsedCorrectly _xs) ->
+         (* todo: could count same line multiple times! use Hashtbl.add
+          * and a simple Hashtbl.length at the end to add in error_line_count
+         *)
          if !was_define && !Flag_cpp.filter_define_error
          then stat.Stat.commentized <- stat.Stat.commentized + diffline
-         else stat.Stat.bad     <- stat.Stat.bad     + diffline
+         else stat.Stat.error_line_count <- stat.Stat.error_line_count + diffline
 
-     | _ -> stat.Stat.correct <- stat.Stat.correct + diffline
+     | _ -> ()
     );
 
     (match elem with
@@ -481,14 +484,8 @@ let parse file  =
       parse2 file
     with Stack_overflow ->
       pr2 (spf "PB stack overflow in %s" file);
-      [(Ast.NotParsedCorrectly [], ([]))], {Stat.
-                                             correct = 0;
-                                             bad = Common2.nblines_with_wc file;
-                                             filename = file;
-                                             have_timeout = true;
-                                             commentized = 0;
-                                             problematic_lines = [];
-                                           }
+      [(Ast.NotParsedCorrectly [], ([]))],
+      { (Stat.bad_stat file) with Stat.have_timeout = true }
   )
 
 let parse_program file =

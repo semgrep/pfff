@@ -1,4 +1,9 @@
 (*s: pfff/h_program-lang/Parse_info.mli *)
+
+(*****************************************************************************)
+(* Tokens *)
+(*****************************************************************************)
+
 (* ('token_location' < 'token_origin' < 'token_mutable') * token_kind *)
 
 (*s: type [[Parse_info.token_location]] *)
@@ -83,6 +88,10 @@ and esthet =
   | Space
   (*e: type [[Parse_info.esthet]] *)
 
+(*****************************************************************************)
+(* Errors during parsing *)
+(*****************************************************************************)
+
 (* note that those exceptions can be converted in Error_code.error with
  * Error_code.try_with_exn_to_error()
 *)
@@ -110,6 +119,10 @@ exception NoTokenLocation of string
 (*s: signature [[Parse_info.lexical_error]] *)
 val lexical_error: string -> Lexing.lexbuf -> unit
 (*e: signature [[Parse_info.lexical_error]] *)
+
+(*****************************************************************************)
+(* Info accessors *)
+(*****************************************************************************)
 
 (*s: signature [[Parse_info.fake_token_location]] *)
 val fake_token_location : token_location
@@ -161,14 +174,19 @@ val compare_pos: t -> t -> int
 val min_max_ii_by_pos: t list -> t * t
 (*e: signature [[Parse_info.min_max_ii_by_pos]] *)
 
+(*****************************************************************************)
+(* Parsing statistics *)
+(*****************************************************************************)
 
 (*s: type [[Parse_info.parsing_stat]] *)
 type parsing_stat = {
   filename: Common.filename;
-  mutable correct: int;
-  mutable bad: int;
-  (* used only for cpp for now *)
+  total_line_count: int;
+  mutable error_line_count: int;
   mutable have_timeout: bool;
+  (* used only for cpp for now, to help diagnose problematic macros,
+   * see print_recurring_problematic_tokens below.
+  *)
   mutable commentized: int;
   mutable problematic_lines: (string list * int ) list;
 }
@@ -185,6 +203,12 @@ val print_parsing_stat_list: ?verbose:bool -> parsing_stat list -> unit
 val print_recurring_problematic_tokens: parsing_stat list -> unit
 (*e: signature [[Parse_info.print_recurring_problematic_tokens]] *)
 
+val print_regression_information:
+  ext:string -> Common2.path list -> Common2.score -> unit
+
+(*****************************************************************************)
+(* Lexer helpers *)
+(*****************************************************************************)
 
 (*s: type [[Parse_info.tokens_state]] *)
 (* lexer helpers *)

@@ -93,7 +93,6 @@ let parse2 filename =
 
   match elems with
   | Left xs ->
-      stat.PI.correct <- (Common.cat filename |> List.length);
       (Some xs, toks), stat
 
   | Right (_info_of_bads, line_error, cur) ->
@@ -106,7 +105,7 @@ let parse2 filename =
 
       if !Flag.show_parsing_error
       then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
-      stat.PI.bad     <- Common.cat filename |> List.length;
+      stat.PI.error_line_count <- stat.PI.total_line_count;
       (None, toks), stat
 
 let parse a =

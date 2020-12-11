@@ -23,7 +23,7 @@ let test_tokens_php file =
 let test_parse_php xs  =
   let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
 
-  let dirname_opt, fullxs =
+  let fullxs =
     match xs with
     | [x] when Common2.is_directory x ->
         let skip_list =
@@ -31,8 +31,8 @@ let test_parse_php xs  =
           then Skip_code.load (x ^ "/skip_list.txt")
           else []
         in
-        Some x,  Skip_code.filter_files skip_list x fullxs
-    | _ -> None, fullxs
+        Skip_code.filter_files skip_list x fullxs
+    | _ -> fullxs
   in
 
   let stat_list = ref [] in
@@ -52,8 +52,8 @@ let test_parse_php xs  =
     in
     Common.push stat stat_list;
     (*s: add stat for regression testing in hash *)
-    let s = spf "bad = %d" stat.Parse_info.bad in
-    if stat.Parse_info.bad = 0
+    let s = spf "bad = %d" stat.Parse_info.error_line_count in
+    if stat.Parse_info.error_line_count = 0
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
     ;
@@ -62,17 +62,7 @@ let test_parse_php xs  =
 
   Parse_info.print_parsing_stat_list !stat_list;
   (*s: print regression testing results *)
-  let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname ->
-    let dirname = Common.fullpath dirname in
-    pr2 "--------------------------------";
-    pr2 "regression testing  information";
-    pr2 "--------------------------------";
-    let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore
-      (Filename.concat score_path
-         ("score_parsing__" ^str ^ "php.marshalled"))
-  );
+  Parse_info.print_regression_information ~ext:"php" xs newscore;
   ()
 (*e: print regression testing results *)
 (*e: test_parse_php *)

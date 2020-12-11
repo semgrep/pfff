@@ -52,7 +52,7 @@ let gen_red_green_layer ~root stats =
       { Layer_code.
         micro_level = []; (* TODO use problematic_lines *)
         macro_level = [
-          (if stat.bad > 0
+          (if stat.error_line_count > 0
            then "bad"
            else "ok"
           ), 1.
@@ -72,8 +72,8 @@ let gen_heatmap_layer ~root stats =
       let file =
         stat.filename |> Common2.relative_to_absolute |> Common.readable ~root
       in
-      let covered = stat.correct in
-      let not_covered = stat.bad in
+      let not_covered = stat.error_line_count in
+      let covered = stat.total_line_count - not_covered in
 
       let percent =
         try

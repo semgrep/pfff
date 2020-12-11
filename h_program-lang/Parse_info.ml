@@ -168,11 +168,10 @@ let pp fmt t =
 
 type parsing_stat = {
   filename: Common.filename;
-  mutable correct: int;
-  mutable bad: int;
-  (* used only for cpp for now *)
+  total_line_count: int;
+  mutable error_line_count: int;
   mutable have_timeout: bool;
-  (* by our cpp commentizer *)
+  (* used by our cpp commentizer *)
   mutable commentized: int;
   (* if want to know exactly what was passed through, uncomment:
    *
@@ -187,22 +186,25 @@ type parsing_stat = {
   mutable problematic_lines:
     (string list (* ident in error line *) * int (* line_error *)) list;
 }
-let default_stat file =  {
-  filename = file;
-  have_timeout = false;
-  correct = 0; bad = 0;
-  commentized = 0;
-  problematic_lines = [];
-}
+let default_stat file =
+  let n = Common2.nblines_eff file in
+  {
+    filename = file;
+    total_line_count = n;
+
+    have_timeout = false;
+    error_line_count = 0;
+    commentized = 0;
+    problematic_lines = [];
+  }
 
 let bad_stat file =
-  (* or Common2.nblines? *)
-  let n = Common.cat file |> List.length in
-  { (default_stat file) with bad = n }
+  let stat = default_stat file in
+  stat.error_line_count <- stat.total_line_count;
+  stat
 
 let correct_stat file =
-  let n = Common.cat file |> List.length in
-  { (default_stat file) with correct = n }
+  default_stat file
 
 (* Many parsers need to interact with the lexer, or use tricks around
  * the stream of tokens, or do some error recovery, or just need to
@@ -784,7 +786,7 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   let perfect =
     statxs
     |> List.filter (function
-        {have_timeout = false; bad = 0; _} -> true | _ -> false)
+        {have_timeout = false; error_line_count = 0; _} -> true | _ -> false)
     |> List.length
   in
 
@@ -794,10 +796,10 @@ let print_parsing_stat_list ?(verbose=false)statxs =
     statxs
     |> List.filter (function
       | {have_timeout = true; _} -> true
-      | {bad = n; _} when n > 0 -> true
+      | {error_line_count = n; _} when n > 0 -> true
       | _ -> false)
     |> List.iter (function
-        {filename = file; have_timeout = timeout; bad = n; _} ->
+        {filename = file; have_timeout = timeout; error_line_count = n; _} ->
           pr (file ^ "  " ^ (if timeout then "TIMEOUT" else i_to_s n));
     );
 
@@ -816,11 +818,14 @@ let print_parsing_stat_list ?(verbose=false)statxs =
     pr "\n\n\n";
   end;
 
-  let good = statxs |> List.fold_left (fun acc {correct = x; _} -> acc+x) 0 in
-  let bad  = statxs |> List.fold_left (fun acc {bad = x; _} -> acc+x) 0  in
-  let passed = statxs |> List.fold_left (fun acc {commentized = x; _} -> acc+x) 0
+  let total_lines =
+    statxs |> List.fold_left (fun acc {total_line_count = x; _} -> acc+x) 0 in
+  let bad  =
+    statxs |> List.fold_left (fun acc {error_line_count = x; _} -> acc+x) 0  in
+  let passed =
+    statxs |> List.fold_left (fun acc {commentized = x; _} -> acc+x) 0
   in
-  let total_lines = good + bad in
+  let good = total_lines - bad in
 
   pr "---------------------------------------------------------------";
   pr (
@@ -828,7 +833,7 @@ let print_parsing_stat_list ?(verbose=false)statxs =
     (spf "NB total lines = %d; " total_lines) ^
     (spf "perfect = %d; " perfect) ^
     (spf "pbs = %d; "     (statxs |> List.filter (function
-         {bad = n; _} when n > 0 -> true | _ -> false)
+         {error_line_count = n; _} when n > 0 -> true | _ -> false)
                            |> List.length)) ^
     (spf "timeout = %d; " (statxs |> List.filter (function
          {have_timeout = true; _} -> true | _ -> false)
@@ -847,6 +852,29 @@ let print_parsing_stat_list ?(verbose=false)statxs =
     (spf "=========> %f"  (100.0 *. (gf /. (gf +. badf))) ^ "%"
     )
   )
+
+
+(*****************************************************************************)
+(* Regression stats *)
+(*****************************************************************************)
+
+let print_regression_information ~ext xs newscore =
+  let dirname_opt =
+    match xs with
+    | [x] when Common2.is_directory x -> Some (Common.fullpath x)
+    | _ -> None
+  in
+  let score_path = Config_pfff.regression_data_dir in
+  dirname_opt |> Common.do_option (fun dirname ->
+    pr2 "--------------------------------";
+    pr2 "regression testing  information";
+    pr2 "--------------------------------";
+    let str = Str.global_replace (Str.regexp "/") "__" dirname in
+    Common2.regression_testing newscore
+      (Filename.concat score_path
+         ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+  );
+  ()
 
 (*****************************************************************************)
 (* Most problematic tokens *)

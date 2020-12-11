@@ -254,8 +254,9 @@ let parse2 ?(timeout=0) filename =
   let rec aux tr =
     let line_start = TH.line_of_tok tr.PI.current in
     let res = parse_module_item_or_eof tr in
-    let passed = tr.PI.passed in
     tr.PI.passed <- [];
+(*
+    let _passed = tr.PI.passed in
     let lines =
       try
         let (head, _middle, last) = Common2.head_middle_tail passed in
@@ -264,13 +265,12 @@ let parse2 ?(timeout=0) filename =
         line2 - line1 (* +1? *)
       with _ -> 1
     in
+*)
     match res with
     (* EOF *)
     | Left None ->
-        stat.PI.correct <- stat.PI.correct + lines;
         []
     | Left (Some x) ->
-        stat.PI.correct <- stat.PI.correct + lines;
         logger#ldebug (lazy
                         (spf "parsed: %s" (Ast.Program [x] |> Ast_js.show_any)));
 
@@ -287,8 +287,10 @@ let parse2 ?(timeout=0) filename =
         end;
         if !Flag.error_recovery
         then begin
-          (* todo? try to recover? call 'aux tr'? but then can be really slow *)
-          stat.PI.bad <- stat.PI.bad + (max_line - line_start);
+          (* todo? try to recover? call 'aux tr'? but then can be really slow*)
+          (* TODO: count a bad line twice? use Hashtbl.length tech instead *)
+          stat.PI.error_line_count <-
+            stat.PI.error_line_count + (max_line - line_start);
           []
         end
         else raise (PI.Parsing_error (TH.info_of_tok err_tok))
@@ -300,18 +302,11 @@ let parse2 ?(timeout=0) filename =
       ignore(Unix.alarm 0);
       if !Flag.show_parsing_error
       then pr2 (spf "TIMEOUT on %s" filename);
-      stat.PI.bad <- Common.cat filename |> List.length;
+      stat.PI.error_line_count <- stat.PI.total_line_count;
       stat.PI.have_timeout <- true;
-      stat.PI.correct <- 0;
       []
   in
   if timeout > 0 then ignore(Unix.alarm 0);
-  (* the correct count is accurate because items do not fall always
-   * on clean line boundaries so we may count multiple times the same line
-  *)
-  if stat.PI.bad = 0
-  then stat.PI.correct <- Common.cat filename |> List.length;
-
   (Some items, toks), stat
 
 let parse ?timeout a =

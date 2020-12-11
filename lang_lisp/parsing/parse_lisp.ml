@@ -132,13 +132,11 @@ let parse2 filename =
   let toks_orig = tokens filename in
 
   let toks = toks_orig |> Common.exclude TH.is_comment in
-  let nblines = Common2.nblines filename in
 
   let ast =
     try
       (match sexps toks with
        | xs, [] ->
-           stat.PI.correct <- nblines;
            Some xs
        | _, x::_xs ->
            raise (PI.Other_error ("trailing constructs", (TH.info_of_tok x)))
@@ -149,7 +147,7 @@ let parse2 filename =
                s
                (PI.str_of_info info)
                (PI.string_of_info info));
-        stat.PI.bad <- nblines;
+        stat.PI.error_line_count <- stat.PI.total_line_count;
         None
     | exn ->
         raise exn

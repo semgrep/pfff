@@ -68,7 +68,6 @@ let parse2 filename =
         else Parser_ml.implementation lexer lexbuf_fake
       )
     in
-    stat.PI.correct <- (Common.cat filename |> List.length);
     (Some xs, toks), stat
 
   with Parsing.Parse_error   ->
@@ -86,7 +85,7 @@ let parse2 filename =
       Parse_info.print_bad line_error (0, checkpoint2) filelines;
     end;
 
-    stat.PI.bad     <- Common.cat filename |> List.length;
+    stat.PI.error_line_count <- stat.PI.total_line_count;
     (None, toks), stat
 
 let parse a =

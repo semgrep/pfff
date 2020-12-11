@@ -194,7 +194,6 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
   match elems with
   | Left xs ->
-      stat.PI.correct <- (Common.cat filename |> List.length);
       (xs, toks), stat
   | Right (info_of_bads, line_error, cur) ->
 
@@ -207,7 +206,8 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
       if !Flag.show_parsing_error
       then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
-      stat.PI.bad     <- Common.cat filename |> List.length;
+      (* TODO: just count the skipped lines; Use Hashtbl.length strategy *)
+      stat.PI.error_line_count <- stat.PI.total_line_count;
 
       let info_item = (List.rev tr.PI.passed) in
       ([Ast.NotParsedCorrectly info_of_bads], info_item),

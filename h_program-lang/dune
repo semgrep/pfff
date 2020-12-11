@@ -6,7 +6,7 @@
    yojson uucp uutf ounit2
 
    commons
-   pfff-h_files-format
+   pfff-h_files-format pfff-config
  )
  (preprocess (pps ppx_deriving.show))
 )
