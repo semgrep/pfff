@@ -24,9 +24,9 @@ function foo() {}
 function bar() {}
 " in
       Common2.with_tmp_file ~str:file_content ~ext:"js" (fun tmpfile ->
-        let (ast_and_tokens, _stat) = Parse_js.parse tmpfile in
+        let res = Parse_js.parse tmpfile in
         let annots =
-          Annotation_js.annotations_of_program_with_comments ast_and_tokens
+          Annotation_js.annotations_of_program_with_comments res
           |> List.map fst
         in
         assert_equal

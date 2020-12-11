@@ -175,7 +175,7 @@ val min_max_ii_by_pos: t list -> t * t
 (*e: signature [[Parse_info.min_max_ii_by_pos]] *)
 
 (*****************************************************************************)
-(* Parsing statistics *)
+(* Parsing results *)
 (*****************************************************************************)
 
 (*s: type [[Parse_info.parsing_stat]] *)
@@ -205,6 +205,16 @@ val print_recurring_problematic_tokens: parsing_stat list -> unit
 
 val print_regression_information:
   ext:string -> Common2.path list -> Common2.score -> unit
+
+(* a parser can also "return" an exception like Lexical_error,
+ * or Parsing_error (unless Flag_parsing.error_recovery is true).
+*)
+type ('ast, 'toks) parsing_result = {
+  ast: 'ast;
+  (* Note that the token list contains usually also the comment-tokens *)
+  tokens: 'toks list;
+  stat: parsing_stat
+}
 
 (*****************************************************************************)
 (* Lexer helpers *)

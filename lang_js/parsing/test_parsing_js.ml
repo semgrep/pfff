@@ -43,7 +43,7 @@ let test_parse_common xs fullxs ext  =
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
 
-    let (_xs, stat) =
+    let {Parse_info. stat; _} =
       try (
         Common.save_excursion Flag.error_recovery true (fun () ->
           Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
@@ -59,7 +59,7 @@ let test_parse_common xs fullxs ext  =
           ))
       ) with Stack_overflow as exn ->
         pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
-        (None, []), PI.bad_stat file
+        { Parse_info. ast = []; tokens = []; stat = PI.bad_stat file }
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.Parse_info.error_line_count in
@@ -127,7 +127,7 @@ let parse_js_r2c xs =
   let json = J.Array (fullxs |> Common.map_filter (fun file ->
     let nblines = Common.cat file |> List.length in
     try
-      let (_xs, _stat) =
+      let _res =
         Common.save_excursion Flag.error_recovery false (fun () ->
           Common.save_excursion Flag.exn_when_lexical_error true (fun () ->
             Common.save_excursion Flag.show_parsing_error true (fun () ->

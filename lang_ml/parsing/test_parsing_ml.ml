@@ -30,7 +30,7 @@ let test_parse_ml_or_mli xs =
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
 
-    let (_xs, stat) =
+    let { Parse_info. stat; _ } =
       Common.save_excursion Flag.error_recovery true (fun () ->
         Parse_ml.parse file
       )

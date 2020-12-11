@@ -231,6 +231,13 @@ let mk_tokens_state toks = {
   *)
 }
 
+type ('ast, 'toks) parsing_result = {
+  ast: 'ast;
+  (* Note that the token list contains usually also the comment-tokens *)
+  tokens: 'toks list;
+  stat: parsing_stat
+}
+
 (*****************************************************************************)
 (* Lexer helpers *)
 (*****************************************************************************)

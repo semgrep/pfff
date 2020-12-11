@@ -27,14 +27,6 @@ let logger = Logging.get_logger [__MODULE__]
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-
-(* the token list contains also the comment-tokens *)
-type program_and_tokens =
-  Ast_js.program option * Parser_js.token list
-
-(*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
 let error_msg_tok tok =
@@ -307,14 +299,14 @@ let parse2 ?(timeout=0) filename =
       []
   in
   if timeout > 0 then ignore(Unix.alarm 0);
-  (Some items, toks), stat
+  {PI. ast = items; tokens = toks; stat }
 
 let parse ?timeout a =
   Common.profile_code "Parse_js.parse" (fun () -> parse2 ?timeout a)
 
 let parse_program file =
-  let ((astopt, _toks), _stat) = parse file in
-  Common2.some astopt
+  let res = parse file in
+  res.PI.ast
 
 
 let parse_string (w : string) : Ast.program =

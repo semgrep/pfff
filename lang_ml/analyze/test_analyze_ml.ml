@@ -15,13 +15,9 @@ let test_parse_ast_ml xs =
       Common.save_excursion Flag_parsing.error_recovery true (fun () ->
         Common.save_excursion Flag_parsing.show_parsing_error false (fun () ->
           Common.save_excursion Flag_parsing.exn_when_lexical_error false (fun ()->
-            let ((cst_opt, _toks),_stat)  = Parse_ml.parse file in
-            (match cst_opt with
-             | None -> ()
-             | Some ast ->
-                 let _gen = Ml_to_generic.program ast in
-                 ()
-            )
+            let { Parse_info. ast = ast; _ }  = Parse_ml.parse file in
+            let _gen = Ml_to_generic.program ast in
+            ()
           )))
     with exn -> raise exn
   ))

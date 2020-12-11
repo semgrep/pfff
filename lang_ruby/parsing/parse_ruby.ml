@@ -36,9 +36,6 @@ module Utils = Utils_ruby
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* the token list contains also the comment-tokens *)
-type program_and_tokens =
-  Ast_ruby.program option * Parser_ruby.token list (* may be partial *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)
@@ -130,7 +127,7 @@ let parse file =
 
       let ast = List.hd l' in
       (*orig-todo? Ast.mod_ast (replace_heredoc state) ast*)
-      (Some ast, List.rev !toks), stat
+      {PI. ast = ast; tokens = List.rev !toks; stat }
 
     with (Dyp.Syntax_error
          | Failure _ | Stack.Empty | Common.Timeout
@@ -160,12 +157,12 @@ let parse file =
 
         stat.PI.error_line_count <- stat.PI.total_line_count;
         if exn = Common.Timeout then stat.PI.have_timeout <- true;
-        (None, List.rev !toks), stat
+        {PI. ast = []; tokens = List.rev !toks; stat }
   )
 
 let parse_program file =
-  let ((ast, _toks), _stat) = parse file in
-  Common2.some ast
+  let res = parse file in
+  res.PI.ast
 
 (* for semgrep *)
 let any_of_string str =

@@ -29,9 +29,6 @@ module T = Parser_python
 (* Types *)
 (*****************************************************************************)
 (*s: type [[Parse_python.program_and_tokens]] *)
-(* the token list contains also the comment-tokens *)
-type program_and_tokens =
-  AST_python.program option * Parser_python.token list
 (*e: type [[Parse_python.program_and_tokens]] *)
 
 (*s: type [[Parse_python.parsing_mode]] *)
@@ -124,7 +121,7 @@ let rec parse_basic ?(parsing_mode=Python) filename =
         Parser_python.main lexer lexbuf_fake
       )
     in
-    (Some xs, toks), stat
+    { Parse_info. ast = xs; tokens = toks; stat }
 
   with Parsing.Parse_error ->
 
@@ -166,7 +163,7 @@ let rec parse_basic ?(parsing_mode=Python) filename =
         Parse_info.print_bad line_error (0, checkpoint2) filelines;
       end;
       stat.PI.error_line_count <- stat.PI.total_line_count;
-      (None, toks), stat
+      { Parse_info. ast = []; tokens = toks; stat }
     end
 (*e: function [[Parse_python.parse_basic]] *)
 
@@ -179,8 +176,8 @@ let parse ?parsing_mode a =
 
 (*s: function [[Parse_python.parse_program]] *)
 let parse_program ?parsing_mode file =
-  let ((astopt, _toks), _stat) = parse ?parsing_mode file in
-  Common2.some astopt
+  let res = parse ?parsing_mode file in
+  res.PI.ast
 (*e: function [[Parse_python.parse_program]] *)
 
 (*****************************************************************************)
