@@ -35,7 +35,7 @@ let test_parse_go xs =
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
     Error_code.try_with_print_exn_and_reraise file(fun () ->
-      let (_xs, stat) =
+      let {Parse_info. stat; _} =
         Common.save_excursion Flag.error_recovery true (fun () ->
           Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
             Parse_go.parse file

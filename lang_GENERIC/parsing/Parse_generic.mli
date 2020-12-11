@@ -1,7 +1,8 @@
 (*s: pfff/lang_GENERIC/parsing/Parse_generic.mli *)
 
 (*s: signature [[Parse_generic.parse_with_lang]] *)
-val parse_with_lang: Lang.t -> Common.filename -> AST.program
+val parse_with_lang: Lang.t -> Common.filename ->
+  AST.program * Parse_info.parsing_stat
 (*e: signature [[Parse_generic.parse_with_lang]] *)
 
 (*s: signature [[Parse_generic.parse_program]] *)

@@ -130,8 +130,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   files |> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);
 
-    let ((astopt, toks), _stat) = Parse_js.parse file in
-    let ast = astopt ||| [] in
+    let {Parse_info. ast; tokens =toks; _} = Parse_js.parse file in
 
     let hcomplete_name_of_info =
       failwith "Class_pre_es6 in TODO_more"
@@ -167,7 +166,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
-      let ((_ast, toks), _stat) = Parse_js.parse file in
+      let {Parse_info.tokens = toks; _ } = Parse_js.parse file in
 
       let toks = toks |> Common.exclude (function
         | T.TCommentSpace _ -> true

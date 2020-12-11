@@ -20,14 +20,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-
-type program_and_tokens =
-  Ast_ml.program option * Parser_ml.token list
-
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
@@ -37,7 +29,6 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-
 let tokens2 file =
   let token = Lexer_ml.token in
   Parse_info.tokenize_all_and_adjust_pos
@@ -68,7 +59,7 @@ let parse2 filename =
         else Parser_ml.implementation lexer lexbuf_fake
       )
     in
-    (Some xs, toks), stat
+    {PI. ast = xs; tokens = toks; stat }
 
   with Parsing.Parse_error   ->
 
@@ -86,14 +77,14 @@ let parse2 filename =
     end;
 
     stat.PI.error_line_count <- stat.PI.total_line_count;
-    (None, toks), stat
+    {PI. ast = []; tokens = toks; stat }
 
 let parse a =
   Common.profile_code "Parse_ml.parse" (fun () -> parse2 a)
 
 let parse_program file =
-  let ((astopt, _toks), _stat) = parse file in
-  Common2.some astopt
+  let res = parse file in
+  res.PI.ast
 
 (*****************************************************************************)
 (* Sub parsers *)

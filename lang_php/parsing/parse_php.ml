@@ -32,11 +32,6 @@ module PI = Parse_info
 *)
 
 (*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-type program_with_comments = Cst_php.program * Parser_php.token list
-
-(*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
 let error_msg_tok tok =
@@ -194,7 +189,7 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
 
   match elems with
   | Left xs ->
-      (xs, toks), stat
+      {PI. ast = xs; tokens = toks; stat }
   | Right (info_of_bads, line_error, cur) ->
 
       if not !Flag.error_recovery
@@ -210,15 +205,14 @@ let parse2 ?(pp=(!Flag_php.pp_default)) filename =
       stat.PI.error_line_count <- stat.PI.total_line_count;
 
       let info_item = (List.rev tr.PI.passed) in
-      ([Ast.NotParsedCorrectly info_of_bads], info_item),
-      stat
+      {PI. ast = [Ast.NotParsedCorrectly info_of_bads]; tokens=info_item; stat}
 
 let parse ?pp a =
   Common.profile_code "Parse_php.parse" (fun () -> parse2 ?pp a)
 
 let parse_program ?pp file =
-  let ((ast, _toks), _stat) = parse ?pp file in
-  ast
+  let res = parse ?pp file in
+  res.PI.ast
 
 (*****************************************************************************)
 (* Sub parsers *)

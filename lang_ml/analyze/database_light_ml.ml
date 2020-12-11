@@ -140,14 +140,8 @@ let compute_database ?(verbose=false) files_or_dirs =
   files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
-      let ((ast, toks), _stat) =
+      let { Parse_info. ast; tokens = toks; _ } =
         parse file
-      in
-      let ast =
-        match ast with
-        (* in database light we do error recovery *)
-        | None -> []
-        | Some xs -> xs
       in
 
       (* this is quite similar to what we do in tags_ml.ml *)
@@ -277,7 +271,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       then pr2 (spf "skipping external file: %s" file)
       else begin
 
-        let ((_ast, toks), _stat) = parse file in
+        let { Parse_info. tokens = toks; _} = parse file in
 
         let file = Common.readable ~root file in
 

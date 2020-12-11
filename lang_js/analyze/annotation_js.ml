@@ -70,8 +70,7 @@ let extract_annotations str =
  * but this should be good enough for the tags. Being more precise
  * would require to lex the comment.
 *)
-let annotations_of_program_with_comments (_, toks) =
-
+let annotations_of_program_with_comments { Parse_info. tokens = toks; _} =
   toks |> List.map (function
     | Parser_js.TComment tok ->
         let s = Parse_info.str_of_info tok in

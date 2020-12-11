@@ -27,13 +27,6 @@ module TH = Token_helpers_java
 *)
 
 (*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-
-(* the token list contains also the comment-tokens *)
-type program_and_tokens = Ast_java.program option * Parser_java.token list
-
-(*****************************************************************************)
 (* Error diagnostic *)
 (*****************************************************************************)
 let error_msg_tok tok =
@@ -47,7 +40,6 @@ let tokens2 file =
   let token = Lexer_java.token in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
-
 let tokens a =
   Common.profile_code "Java parsing.tokens" (fun () -> tokens2 a)
 
@@ -93,7 +85,7 @@ let parse2 filename =
 
   match elems with
   | Left xs ->
-      (Some xs, toks), stat
+      {PI. ast = xs; tokens = toks; stat }
 
   | Right (_info_of_bads, line_error, cur) ->
       if not !Flag.error_recovery
@@ -106,17 +98,16 @@ let parse2 filename =
       if !Flag.show_parsing_error
       then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
       stat.PI.error_line_count <- stat.PI.total_line_count;
-      (None, toks), stat
+      {PI. ast = []; tokens = toks; stat }
 
 let parse a =
   Common.profile_code "Parse_java.parse" (fun () -> parse2 a)
 
 let parse_program file =
-  let ((ast, _toks), _stat) = parse file in
-  Common2.some ast
+  let res = parse file in
+  res.PI.ast
 
-let parse_string (w : string)
-  : (Ast_java.program option * Parser_java.token list) * Parse_info.parsing_stat =
+let parse_string (w : string) =
   Common2.with_tmp_file ~str:w ~ext:"java" parse
 
 (*****************************************************************************)

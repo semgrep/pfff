@@ -14,7 +14,7 @@ let test_parse_c xs =
   fullxs |> (*Console.progress (fun k -> *) List.iter ((fun file ->
     (*k(); *)
     pr (spf "PARSING: %s" file);
-    let (_xs, stat) =
+    let {Parse_info. stat; _ } =
       Parse_c.parse file
     in
     Common.push stat stat_list;

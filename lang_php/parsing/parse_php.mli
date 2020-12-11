@@ -1,10 +1,9 @@
 
-type program_with_comments = Cst_php.program * Parser_php.token list
-
 (* This is the main function. raise Parse_error when not Flag.error_recovery.*)
 val parse :
   ?pp:string option ->
-  Common.filename -> (program_with_comments * Parse_info.parsing_stat)
+  Common.filename ->
+  (Cst_php.program, Parser_php.token) Parse_info.parsing_result
 
 val parse_program:
   ?pp:string option ->

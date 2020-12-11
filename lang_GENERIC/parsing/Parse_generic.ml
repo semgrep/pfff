@@ -44,57 +44,57 @@ let parse_with_lang lang file =
   match lang with
   | Lang.Python | Lang.Python2 | Lang.Python3 ->
       let parsing_mode = lang_to_python_parsing_mode lang in
-      let ast = Parse_python.parse_program ~parsing_mode file in
+      let {Parse_info. ast; stat; _} = Parse_python.parse ~parsing_mode file in
       (* old: Resolve_python.resolve ast;
        * switched to call Naming_AST.ml in sgrep to correct def and use tagger
       *)
-      Python_to_generic.program ast
+      Python_to_generic.program ast, stat
   | Lang.Typescript (* abusing Js parser for now here *)
   | Lang.Javascript ->
-      let ast = Parse_js.parse_program file in
-      Js_to_generic.program ast
+      let {Parse_info. ast; stat; _} = Parse_js.parse file in
+      Js_to_generic.program ast, stat
   | Lang.JSON ->
       let ast = Parse_json.parse_program file in
-      Json_to_generic.program ast
+      Json_to_generic.program ast, Parse_info.correct_stat file
   | Lang.C ->
       (* this internally uses the CST for c++ *)
-      let ast = Parse_c.parse_program file in
-      C_to_generic.program ast
+      let {Parse_info. ast; stat; _} = Parse_c.parse file in
+      C_to_generic.program ast, stat
+  | Lang.Cplusplus ->
+      failwith "TODO"
   | Lang.Java ->
-      let ast = Parse_java.parse_program file in
-      Java_to_generic.program ast
+      let {Parse_info. ast; stat; _} = Parse_java.parse file in
+      Java_to_generic.program ast, stat
   | Lang.Go ->
-      let ast = Parse_go.parse_program file in
+      let {Parse_info. ast; stat; _} = Parse_go.parse file in
       (* old: Resolve_go.resolve ast;
        * switched to call Naming_AST.ml in sgrep to correct def and use tagger
       *)
-      Go_to_generic.program ast
+      Go_to_generic.program ast, stat
   | Lang.OCaml ->
-      let ast = Parse_ml.parse_program file in
-      Ml_to_generic.program ast
+      let {Parse_info. ast; stat; _} = Parse_ml.parse file in
+      Ml_to_generic.program ast, stat
   | Lang.Ruby ->
-      let ast = Parse_ruby.parse_program file in
-      Ruby_to_generic.program ast
+      let {Parse_info. ast; stat; _} = Parse_ruby.parse file in
+      Ruby_to_generic.program ast, stat
+  | Lang.PHP ->
+      let {Parse_info. ast = cst; stat; _} = Parse_php.parse file in
+      let ast = Ast_php_build.program cst in
+      Php_to_generic.program ast, stat
   | Lang.Csharp ->
       failwith "No C# parser in pfff; use the one in tree-sitter"
-  | Lang.PHP ->
-      let cst = Parse_php.parse_program file in
-      let ast = Ast_php_build.program cst in
-      Php_to_generic.program ast
   | Lang.Kotlin ->
       failwith "No Kotlin parser in pfff; use the one in tree-sitter"
-  | Lang.Cplusplus ->
-      failwith "No C++ generic parser in pfff; use the one in tree-sitter"
 
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
 (*s: function [[Parse_generic.parse_program]] *)
 let parse_program file =
   match Lang.langs_of_filename file with
-  | [x] -> parse_with_lang x file
+  | [x] -> parse_with_lang x file |> fst
   | x::_xs ->
       (* print a warning? that we default to one? *)
-      parse_with_lang x file
+      parse_with_lang x file |> fst
   | [] -> failwith (spf "unsupported file for AST generic: %s" file)
 (*e: function [[Parse_generic.parse_program]] *)
 

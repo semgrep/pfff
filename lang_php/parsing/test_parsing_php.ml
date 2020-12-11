@@ -45,7 +45,7 @@ let test_parse_php xs  =
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k ();
 
-    let (_xs, stat) =
+    let { Parse_info. stat; _ } =
       Common.save_excursion Flag.error_recovery true (fun () ->
         Parse_php.parse file
       )

@@ -30,12 +30,6 @@ module Lexer = Lexer_go
 *)
 
 (*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-type program_and_tokens =
-  Ast_go.program option * Parser_go.token list
-
-(*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
 let error_msg_tok tok =
@@ -76,7 +70,7 @@ let parse2 filename =
         Parser_go.file  lexer lexbuf_fake
       )
     in
-    (Some xs, toks_orig), PI.correct_stat filename
+    {PI. ast = xs; tokens = toks_orig; stat = PI.correct_stat filename }
 
   with Parsing.Parse_error ->
 
@@ -87,21 +81,19 @@ let parse2 filename =
     if !Flag.show_parsing_error
     then begin
       pr2 ("parse error \n = " ^ error_msg_tok cur);
-
       let filelines = Common2.cat_array filename in
       let checkpoint2 = Common.cat filename |> List.length in
       let line_error = PI.line_of_info (TH.info_of_tok cur) in
       Parse_info.print_bad line_error (0, checkpoint2) filelines;
     end;
-
-    (None, toks_orig), PI.bad_stat filename
+    {PI. ast = []; tokens = toks_orig; stat = PI.bad_stat filename }
 
 let parse a =
   Common.profile_code "Parse_go.parse" (fun () -> parse2 a)
 
 let parse_program file =
-  let ((astopt, _toks), _stat) = parse file in
-  Common2.some astopt
+  let res = parse file in
+  res.PI.ast
 
 (*****************************************************************************)
 (* Sub parsers *)

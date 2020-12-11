@@ -38,15 +38,13 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
     List.map (fun file ->
       k();
 
-      let ((astopt, toks), _) =
+      let res =
         Common.save_excursion Flag_parsing.show_parsing_error false (fun ()->
           Common.save_excursion Flag_parsing.exn_when_lexical_error false(fun()->
             Common.save_excursion Flag_parsing.error_recovery true (fun ()->
               Parse_js.parse file
             )))
       in
-      let _ast = astopt ||| [] in
-
       let filelines = Common2.cat_array file in
 
       (* many class idioms are recognized in Class_js *)
@@ -81,7 +79,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
 
       (* the module idioms are contained in annotations *)
       let annots =
-        Annotation_js.annotations_of_program_with_comments (astopt,toks) in
+        Annotation_js.annotations_of_program_with_comments res in
       let tags_modules =
         annots |> Common.map_filter (function
           | (Annot.ProvidesModule m | Annot.ProvidesLegacy m), info ->

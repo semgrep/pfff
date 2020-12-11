@@ -19,7 +19,7 @@ let test_parse_simple xs  =
   let stat_list = ref [] in
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k ();
-    let ((cst, _toks), stat) =
+    let { Parse_info. stat; ast = cst; _ } =
       Common.save_excursion Flag_parsing.error_recovery true (fun () ->
         Parse_php.parse file
       )

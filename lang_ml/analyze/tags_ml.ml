@@ -18,6 +18,7 @@ open Highlight_code
 module Flag = Flag_parsing
 module Tags = Tags_file
 module E = Entity_code
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -60,11 +61,12 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       let (ast, toks) =
         try
           Common.save_excursion Flag.show_parsing_error false(fun()->
-            Parse_ml.parse file |> fst
+            let res = Parse_ml.parse file in
+            res.PI.ast, res.PI.tokens
           )
         with Parse_info.Parsing_error pos ->
           pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
-          Some [], []
+          [], []
       in
       let filelines = Common2.cat_array file in
       let defs = ref [] in
@@ -77,7 +79,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         ~lexer_based_tagger:true (* !! *)
         ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
         prefs
-        (Common2.some ast, toks)
+        (ast, toks)
       ;
 
       (* processing the tokens in order *)
