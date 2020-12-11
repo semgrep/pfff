@@ -21,48 +21,28 @@ let test_parse xs =
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
-
-    let (stat) =
-      let stat = Parse_info.default_stat file in
-      let n = Common2.nblines_file file in
+    let stat = Parse_info.default_stat file in
+    let () =
       Common.save_excursion Flag.error_recovery true (fun () ->
         Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
           try
             let ast =  Parse_ruby.parse_program file in
             let _cfg = Il_ruby_build.refactor_ast ast in
-            { stat with PI.correct = n }
+            ()
           with exn ->
             pr2 (Common.exn_to_s exn);
-            let stat = Parse_info.default_stat file in
-            { stat with PI.bad = n }
+            stat.PI.error_line_count <- stat.PI.total_line_count;
         )) in
     Common.push stat stat_list;
-    let s = spf "bad = %d" stat.PI.bad in
-    if stat.PI.bad = 0
+    let s = spf "bad = %d" stat.PI.error_line_count in
+    if stat.PI.error_line_count = 0
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
   ));
   flush stdout; flush stderr;
 
   Parse_info.print_parsing_stat_list !stat_list;
-
-  (* todo: could factorize with other *)
-  let dirname_opt =
-    match xs with
-    | [x] when Common2.is_directory x -> Some (Common.fullpath x)
-    | _ -> None
-  in
-  let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname ->
-    pr2 "--------------------------------";
-    pr2 "regression testing  information";
-    pr2 "--------------------------------";
-    let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore
-      (Filename.concat score_path
-         ("score_il__" ^str ^ ext ^ ".marshalled"))
-  );
-
+  Parse_info.print_regression_information ~ext xs newscore;
   ()
 
 

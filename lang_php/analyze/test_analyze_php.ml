@@ -25,14 +25,13 @@ let test_parse_simple xs  =
       )
     in
     Common.push stat stat_list;
-    if stat.Parse_info.bad = 0
+    if stat.Parse_info.error_line_count = 0
     then
       Error_code.try_with_print_exn_and_reraise file (fun () ->
         let _ast = Ast_php_build.program cst in
         ()
       )
   ));
-
   Parse_info.print_parsing_stat_list !stat_list;
   ()
 

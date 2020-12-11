@@ -124,7 +124,6 @@ let rec parse_basic ?(parsing_mode=Python) filename =
         Parser_python.main lexer lexbuf_fake
       )
     in
-    stat.PI.correct <- (Common.cat filename |> List.length);
     (Some xs, toks), stat
 
   with Parsing.Parse_error ->
@@ -166,8 +165,7 @@ let rec parse_basic ?(parsing_mode=Python) filename =
         let line_error = PI.line_of_info (TH.info_of_tok cur) in
         Parse_info.print_bad line_error (0, checkpoint2) filelines;
       end;
-
-      stat.PI.bad     <- Common.cat filename |> List.length;
+      stat.PI.error_line_count <- stat.PI.total_line_count;
       (None, toks), stat
     end
 (*e: function [[Parse_python.parse_basic]] *)

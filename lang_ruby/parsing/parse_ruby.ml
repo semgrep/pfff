@@ -109,7 +109,6 @@ let mk_lexer file chan =
 (*****************************************************************************)
 let parse file =
   let stat = Parse_info.default_stat file in
-  let n = Common2.nblines_file file in
 
   Common.with_open_infile file (fun chan ->
     let toks, lexbuf, lexer = mk_lexer file chan in
@@ -131,7 +130,6 @@ let parse file =
 
       let ast = List.hd l' in
       (*orig-todo? Ast.mod_ast (replace_heredoc state) ast*)
-      stat.PI.correct <- n;
       (Some ast, List.rev !toks), stat
 
     with (Dyp.Syntax_error
@@ -160,7 +158,7 @@ let parse file =
           Parse_info.print_bad line_error (0, checkpoint2) filelines;
         end;
 
-        stat.PI.bad <- n;
+        stat.PI.error_line_count <- stat.PI.total_line_count;
         if exn = Common.Timeout then stat.PI.have_timeout <- true;
         (None, List.rev !toks), stat
   )

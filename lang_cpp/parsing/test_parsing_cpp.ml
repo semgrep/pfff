@@ -43,26 +43,18 @@ let test_parse_cpp ?lang xs  =
     in
     Common.push stat stat_list;
 
-    let s = spf "bad = %d" stat.Stat.bad in
-    if stat.Stat.bad = 0
+    let s = spf "bad = %d" stat.Stat.error_line_count in
+    if stat.Stat.error_line_count = 0
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
   ));
 
   Stat.print_recurring_problematic_tokens !stat_list;
+  Stat.print_parsing_stat_list !stat_list;
+  Stat.print_regression_information ~ext:"cpp" xs newscore;
+
   (match xs with
    | [dirname] when Common2.is_directory dirname ->
-       let dirname = Common.fullpath dirname in
-       pr2 "--------------------------------";
-       pr2 "regression testing  information";
-       pr2 "--------------------------------";
-       let score_path = Config_pfff.regression_data_dir in
-       let str = Str.global_replace (Str.regexp "/") "__" dirname in
-       Common2.regression_testing newscore
-         (Filename.concat score_path
-            ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"));
-
-
        let layer_file = "/tmp/layer_parse_errors_red_green.json" in
        pr2 (spf "generating parse error layer in %s" layer_file);
        let layer =
@@ -76,7 +68,6 @@ let test_parse_cpp ?lang xs  =
        Layer_code.save_layer layer layer_file;
    | _ -> ()
   );
-  Stat.print_parsing_stat_list !stat_list;
   ()
 
 let test_dump_cpp file =

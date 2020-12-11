@@ -23,7 +23,7 @@ let test_tokens_js file =
   ()
 
 let test_parse_common xs fullxs ext  =
-  let dirname_opt, fullxs =
+  let fullxs =
     match xs with
     | [x] when Common2.is_directory x ->
         let skip_list =
@@ -31,8 +31,8 @@ let test_parse_common xs fullxs ext  =
           then Skip_code.load (x ^ "/skip_list.txt")
           else []
         in
-        Some x,  Skip_code.filter_files skip_list x fullxs
-    | _ -> None, fullxs
+        Skip_code.filter_files skip_list x fullxs
+    | _ -> fullxs
   in
 
   let stat_list = ref [] in
@@ -62,25 +62,13 @@ let test_parse_common xs fullxs ext  =
         (None, []), PI.bad_stat file
     in
     Common.push stat stat_list;
-    let s = spf "bad = %d" stat.Parse_info.bad in
-    if stat.Parse_info.bad = 0
+    let s = spf "bad = %d" stat.Parse_info.error_line_count in
+    if stat.Parse_info.error_line_count = 0
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
   ));
   Parse_info.print_parsing_stat_list !stat_list;
-
-  let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname ->
-    let dirname = Common.fullpath dirname in
-    pr2 "--------------------------------";
-    pr2 "regression testing  information";
-    pr2 "--------------------------------";
-    let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore
-      (Filename.concat score_path
-         (spf "score_parsing__%s%s.marshalled" str ext))
-  );
-
+  Parse_info.print_regression_information ~ext xs newscore;
   ()
 
 let test_parse_js xs =

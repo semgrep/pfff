@@ -41,8 +41,8 @@ let test_parse_go xs =
             Parse_go.parse file
           )) in
       Common.push stat stat_list;
-      let s = spf "bad = %d" stat.PI.bad in
-      if stat.PI.bad = 0
+      let s = spf "bad = %d" stat.PI.error_line_count in
+      if stat.PI.error_line_count = 0
       then Hashtbl.add newscore file (Common2.Ok)
       else Hashtbl.add newscore file (Common2.Pb s)
     )
@@ -50,25 +50,8 @@ let test_parse_go xs =
 
   flush stdout; flush stderr;
   Parse_info.print_parsing_stat_list !stat_list;
-
-  (* todo: could factorize with other *)
-  let dirname_opt =
-    match xs with
-    | [x] when Common2.is_directory x -> Some (Common.fullpath x)
-    | _ -> None
-  in
-  let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname ->
-    pr2 "--------------------------------";
-    pr2 "regression testing  information";
-    pr2 "--------------------------------";
-    let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore
-      (Filename.concat score_path
-         ("score_parsing__" ^str ^ ext ^ ".marshalled"))
-  );
+  Parse_info.print_regression_information ~ext xs newscore;
   ()
-
 
 
 let test_dump_go file =
