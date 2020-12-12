@@ -779,6 +779,13 @@ let print_bad line_error (start_line, end_line) filelines  =
 (* Parsing statistics *)
 (*****************************************************************************)
 
+let aggregate_stats statxs =
+  let total_lines =
+    statxs |> List.fold_left (fun acc {total_line_count = x; _} -> acc+x) 0 in
+  let bad  =
+    statxs |> List.fold_left (fun acc {error_line_count = x; _} -> acc+x) 0 in
+  total_lines, bad
+
 (* todo: stat per dir ?  give in terms of func_or_decl numbers:
  * nbfunc_or_decl pbs / nbfunc_or_decl total ?/
  *
@@ -788,7 +795,7 @@ let print_bad line_error (start_line, end_line) filelines  =
  * ==> TODO evaluer les parties non parsé ?
 *)
 
-let print_parsing_stat_list ?(verbose=false)statxs =
+let print_parsing_stat_list ?(verbose=false) statxs =
   let total = (List.length statxs) in
   let perfect =
     statxs

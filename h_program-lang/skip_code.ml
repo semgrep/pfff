@@ -14,6 +14,8 @@
 *)
 open Common
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -140,7 +142,7 @@ let filter_files_if_skip_list ~root xs =
   try
     let skip_file = find_skip_file_from_root root in
     let skip_list = load skip_file in
-    pr2 (spf "using skip list in %s" skip_file);
+    logger#info "using skip list in %s" skip_file;
     filter_files skip_list root xs
   with Not_found -> xs
 

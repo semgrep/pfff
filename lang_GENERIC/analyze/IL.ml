@@ -70,6 +70,7 @@ module G = AST_generic
  *  - C-- in OCaml? too low-level?
  *  - LLVM IR (but too far away from original code? complicated
  *    source maps)
+ *  - BRIL https://capra.cs.cornell.edu/bril/ used for teaching
  *  - gcc RTL (too low-level? similar to 3-address code?)
  *  - SiMPL language in BAP/BitBlaze dynamic analysis libraries
  *    but probably too close to assembly/bytecode

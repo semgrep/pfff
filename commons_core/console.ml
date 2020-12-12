@@ -35,7 +35,7 @@ let execute_and_show_progress2 ?(show=true) len f =
   let continue_pourcentage () =
     incr _count;
     ANSITerminal.set_cursor 1 (-1);
-    ANSITerminal.printf [] "%d / %d" !_count len; flush stdout;
+    ANSITerminal.eprintf [] "%d / %d" !_count len; flush stderr;
   in
   let nothing () = () in
 

@@ -203,6 +203,8 @@ val print_parsing_stat_list: ?verbose:bool -> parsing_stat list -> unit
 val print_recurring_problematic_tokens: parsing_stat list -> unit
 (*e: signature [[Parse_info.print_recurring_problematic_tokens]] *)
 
+val aggregate_stats: parsing_stat list -> int * int (* total * bad *)
+
 val print_regression_information:
   ext:string -> Common2.path list -> Common2.score -> unit
 
