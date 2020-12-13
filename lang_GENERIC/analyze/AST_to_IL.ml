@@ -263,14 +263,42 @@ and pattern_assign_statements env exp eorig pat =
 (* Assign *)
 (*****************************************************************************)
 and assign env lhs _tok rhs_exp eorig =
-  (* TODO: tuples and objects as LHS *)
-  try
-    let lval = lval env lhs in
-    add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
-    mk_e (Lvalue lval) lhs
-  with Todo gany ->
-    add_instr env (instr_todo gany eorig);
-    exp_todo gany lhs
+  match lhs with
+  | G.Id _
+  | G.IdQualified _
+  | G.DotAccess _
+  | G.ArrayAccess _
+  | G.DeRef _
+    ->
+      begin
+        try
+          let lval = lval env lhs in
+          add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
+          mk_e (Lvalue lval) lhs
+        with Todo gany ->
+          add_instr env (instr_todo gany eorig);
+          exp_todo gany lhs
+      end
+  | G.Tuple (tok1, lhss, tok2) -> (* E1, ..., En = RHS *)
+      (* tmp = RHS*)
+      let tmp = fresh_var env tok2 in
+      let tmp_lval = { base = Var tmp; offset = NoOffset } in
+      add_instr env (mk_i (Assign (tmp_lval, rhs_exp)) eorig);
+      (* Ei = tmp[i] *)
+      let tup_elems =
+        lhss
+        |> List.mapi (fun i lhs_i ->
+          let index_i = Literal(G.Int(string_of_int i, tok1)) in
+          let offset_i = Index ({e=index_i; eorig;}) in
+          let lval_i = { base=Var tmp; offset=offset_i; } in
+          assign env lhs_i tok1 ({e=Lvalue lval_i; eorig;}) eorig
+        )
+      in
+      (* (E1, ..., En) *)
+      mk_e (Composite (CTuple, (tok1,tup_elems,tok2))) eorig
+  | _ ->
+      add_instr env (instr_todo (G.E eorig) eorig);
+      exp_todo (G.E eorig) lhs
 
 (*****************************************************************************)
 (* Expression *)
