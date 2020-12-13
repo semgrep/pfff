@@ -526,6 +526,9 @@ and arguments env xs =
 and argument env arg =
   match arg with
   | G.Arg e -> expr env e
+  | G.ArgKwd (_, e) ->
+      (* TODO: Handle the keyword/label somehow (when relevant). *)
+      expr env e
   | _ -> todo (G.Ar arg)
 
 and record env ((_tok, origfields, _) as record_def) =
