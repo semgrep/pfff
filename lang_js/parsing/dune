@@ -5,7 +5,7 @@
  (libraries
 
    commons commons_core
-   pfff-config pfff-h_program-lang
+   pfff-config pfff-h_program-lang pfff-lang_GENERIC_base
  )
  (preprocess (pps ppx_deriving.show ppx_profiling))
 )

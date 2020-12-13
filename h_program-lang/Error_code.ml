@@ -361,10 +361,13 @@ let exn_to_error file exn =
       mk_error tok (AstBuilderError s);
   | Parse_info.Other_error (s, tok) ->
       mk_error tok (OtherParsingError s);
+      (* TODO: can't now that AST_generic is out of h_program-lang *)
+(*
   | AST_generic.Error (s, tok) ->
       mk_error tok (AstGenericError s);
       (* this should never be captured *)
       (* in theory we should also avoid to capture those *)
+*)
   | Common.Timeout ->
       let loc = Parse_info.first_loc_of_file file in
       mk_error_loc loc (Timeout None)

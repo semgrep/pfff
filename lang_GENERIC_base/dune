@@ -1,0 +1,10 @@
+(library
+ (public_name pfff-lang_GENERIC_base)
+ (name pfff_lang_GENERIC_base)
+ (wrapped false)
+ (libraries
+   commons
+   pfff-h_program-lang
+ )
+ (preprocess (pps ppx_deriving.show))
+)
