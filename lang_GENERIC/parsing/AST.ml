@@ -1,11 +1,11 @@
 (*s: pfff/lang_GENERIC/parsing/AST.ml *)
 (*
- * See pfff/h_program-lang/AST_generic.ml.
+ * See pfff/lang_GENERIC_base/AST_generic.ml.
  *
- * I put AST_generic.ml under h_program-lang/ because it is used by the other
+ * I put AST_generic.ml under another dir because it is used by the other
  * lang_xxx/analyze/xxx_to_generic.ml files. We need to break the mutual
  * dependency between the lang_xxx/ and lang_GENERIC/ by moving some
- * basic files of lang_GENERIC/parsing/ under h_program-lang/.
+ * basic files of lang_GENERIC/parsing/ under lang_GENERIC_base/.
  *
  * This file provides just convenient aliases so one can write in signature
  * files AST.program instead of the longer AST_generic.program.

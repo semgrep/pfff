@@ -33,4 +33,9 @@ val vof_expr: AST_generic.expr -> OCaml.v
 val vof_stmt: AST_generic.stmt -> OCaml.v
 (*e: signature [[Meta_AST.vof_stmt]] *)
 
+(* reused in other dumpers *)
+val vof_incr_decr: AST_generic.incr_decr -> OCaml.v
+val vof_inc_dec: AST_generic.incr_decr * AST_generic.prefix_postfix -> OCaml.v
+val vof_prepost: AST_generic.prefix_postfix -> OCaml.v
+
 (*e: pfff/lang_GENERIC/parsing/Meta_AST.mli *)
