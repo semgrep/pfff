@@ -189,6 +189,8 @@ let bracket_keep f (t1, x, t2) =
 (*****************************************************************************)
 let rec lval env eorig =
   match eorig with
+  | G.Id (("_", tok), _) -> (* wildcard *)
+      fresh_lval env tok
   | G.Id (id, id_info) ->
       let lval = lval_of_id_info env id id_info in
       lval
