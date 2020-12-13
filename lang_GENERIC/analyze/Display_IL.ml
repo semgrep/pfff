@@ -26,6 +26,7 @@ let short_string_of_node_kind nkind =
   | Join -> "<join>"
 
   | NCond _ -> "cond(...)"
+  | NGoto (_, n) -> "goto " ^ str_of_name n
   | NReturn _ -> "return ...;"
   | NThrow _ -> "throw ...;"
 

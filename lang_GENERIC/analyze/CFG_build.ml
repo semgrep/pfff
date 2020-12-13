@@ -34,6 +34,11 @@ module F = IL (* to be even more similar to controlflow_build.ml *)
 (* Types *)
 (*****************************************************************************)
 
+(* Like IL.label but without the token attached to the ident, this is to allow
+ * the label to be used as a key in a map or hash table.
+*)
+type label_key = string * G.sid
+
 (*s: type [[CFG_build.state]] *)
 (* Information passed recursively in stmt or stmt_list below.
  * The graph g is mutable, so most of the work is done by side effects on it.
@@ -44,6 +49,11 @@ type state = {
 
   (* When there is a 'return' we need to know the exit node to link to *)
   exiti: F.nodei;
+
+  (* Attaches labels to nodes. *)
+  labels: (label_key, F.nodei) Hashtbl.t;
+  (* Gotos pending to be resolved. *)
+  gotos: (nodei * label_key) list ref;
 }
 (*e: type [[CFG_build.state]] *)
 
@@ -64,35 +74,68 @@ let add_arc_opt (starti_opt, nodei) g =
   )
 (*e: function [[CFG_build.add_arc_opt]] *)
 
+let key_of_label ((str,_tok), sid) : label_key = (str, sid)
+
+let add_pending_goto state gotoi label =
+  state.gotos := (gotoi, (key_of_label label)) :: !(state.gotos)
+
+let label_node state labels nodei =
+  labels
+  |> List.iter (fun label -> Hashtbl.add state.labels (key_of_label label) nodei)
+
+let resolve_gotos state =
+  !(state.gotos)
+  |> List.iter (fun (srci, label_key) ->
+    match Hashtbl.find_opt state.labels label_key with
+    | None -> Common.pr2 @@ Common.spf "Could not resolve label: %s" (fst label_key)
+    | Some dsti -> state.g |> add_arc (srci, dsti)
+  );
+  state.gotos := []
+
 (*****************************************************************************)
 (* Algorithm *)
 (*****************************************************************************)
 
 (* The CFG building algorithm works by iteratively visiting the
  * statements in the AST of a function. At each statement,
- * the cfg_stmt function is called, and passed the index of the
- * previous node (if there is one), and returns the index of
- * the created node (if there is one).
+ * the cfg_stmt function is called, and passed the index of the;
+ * previous node (if there is one), and returns a cfg_stmt_result.
+ *
+ * Function cfg_stmt_list is the one responsible for labeling nodes.
+ * We do everything in one pass by collecting the list of gotos and
+ * resolving them at the end. Alternatively, we could do it in two
+ * passes, with the first pass doing the labeling work.
  *
  * history:
  * - ver1: old code was returning a nodei, but break has no end, so
  *   cfg_stmt should return a nodei option.
  * - ver2: old code was taking a nodei, but should also take a nodei
  *   option. There can be deadcode in the function.
+ * - ver3: In order to handle labels/gotos the now return either a
+ *   label or a pair nodei * nodei option (entry and exit).
  *
  * subtle: try/throw. The current algo is not very precise, but
  * it's probably good enough for many analysis.
 *)
 
+type cfg_stmt_result =
+  (* A label for a label statement. *)
+  | CfgLabel     of label
+  (* The fist (entry) and last (exit) node of the created CFG.
+   * Last node is optional; it is None when the execution will not
+   * continue (return), or when it may continue with a different
+   * statement than the subsequent one (goto).
+  *)
+  | CfgFirstLast of F.nodei * F.nodei option
 
-let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
+let rec cfg_stmt : state -> F.nodei option -> stmt -> cfg_stmt_result =
   fun state previ stmt ->
 
   match stmt.s with
   | Instr x ->
       let newi = state.g#add_node { F.n = F.NInstr x } in
       state.g |> add_arc_opt (previ, newi);
-      Some newi
+      CfgFirstLast (newi, Some newi)
 
   | If (tok, e, st1, st2) ->
       (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
@@ -115,17 +158,16 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       (match finalthen, finalelse with
        | None, None ->
            (* probably a return in both branches *)
-           None
+           CfgFirstLast (newi, None)
        | Some nodei, None
        | None, Some nodei ->
-           Some nodei
+           CfgFirstLast (newi, Some nodei)
        | Some n1, Some n2 ->
            let lasti = state.g#add_node { F.n = F.Join } in
            state.g |> add_arc (n1, lasti);
            state.g |> add_arc (n2, lasti);
-           Some lasti
+           CfgFirstLast (newi, Some lasti)
       )
-
 
   | Loop (tok, e, st) ->
       (* previ -> newi ---> newfakethen -> ... -> finalthen -
@@ -142,11 +184,14 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
 
       let finalthen = cfg_stmt_list state (Some newfakethen) st in
       state.g |> add_arc_opt (finalthen, newi);
-      Some newfakeelse
+      CfgFirstLast (newi, Some newfakeelse)
 
-  | Label _
-  | Goto _
-    -> cfg_todo state previ stmt
+  | Label label -> CfgLabel label
+  | Goto (tok, label) ->
+      let newi = state.g#add_node { F.n = F.NGoto (tok, label) } in
+      state.g |> add_arc_opt (previ, newi);
+      add_pending_goto state newi label;
+      CfgFirstLast (newi, None)
 
   | Return (tok, e) ->
       let newi = state.g#add_node { F.n = F.NReturn (tok, e); } in
@@ -154,7 +199,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       state.g |> add_arc (newi, state.exiti);
       (* the next statement if there is one will not be linked to
        * this new node *)
-      None
+      CfgFirstLast (newi, None)
 
   | Try _
   | Throw (_, _)
@@ -163,19 +208,31 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
   | MiscStmt x ->
       let newi = state.g#add_node { F.n = F.NOther x } in
       state.g |> add_arc_opt (previ, newi);
-      Some newi
+      CfgFirstLast (newi, Some newi)
 
   | TodoStmt _ -> cfg_todo state previ stmt
 
 and cfg_todo state previ stmt =
   let newi = state.g#add_node { F.n = F.NTodo stmt } in
   state.g |> add_arc_opt (previ, newi);
-  Some newi
+  CfgFirstLast (newi, Some newi)
 
 and cfg_stmt_list state previ xs =
-  xs |> List.fold_left (fun previ stmt ->
-    cfg_stmt state previ stmt
-  ) previ
+  let lasti_opt =
+    xs |> List.fold_left (fun (previ, labels) stmt ->
+      (* We don't create special nodes for labels in the CFG; instead,
+       * we assign them to the entry nodes of the labeled statements.
+      *)
+      match cfg_stmt state previ stmt with
+      | CfgFirstLast (firsti, lasti) ->
+          label_node state labels firsti;
+          (lasti, [])
+      | CfgLabel label ->
+          (previ, label::labels)
+    ) (previ, [])
+    |> fst
+  in
+  lasti_opt
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -194,11 +251,15 @@ let (cfg_of_stmts: stmt list -> F.cfg) =
   let state = {
     g = g;
     exiti = exiti;
+    labels = Hashtbl.create 2;
+    gotos = ref [];
   }
   in
   let last_node_opt =
     cfg_stmt_list state (Some newi) xs
   in
+  (* Must wait until all nodes have been labeled before resolving gotos. *)
+  resolve_gotos state;
   (* maybe the body does not contain a single 'return', so by default
    * connect last stmt to the exit node
   *)

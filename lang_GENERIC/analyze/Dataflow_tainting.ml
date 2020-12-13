@@ -118,7 +118,7 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
          then config.found_tainted_sink x in'
        end
    | Enter | Exit | TrueNode | FalseNode | Join
-   | NCond _| NReturn _ | NThrow _ | NOther _
+   | NCond _ | NGoto _ | NReturn _ | NThrow _ | NOther _
    | NTodo _ -> ()
   );
 
@@ -150,7 +150,7 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
         )
 
     | Enter | Exit | TrueNode | FalseNode | Join
-    | NCond _| NReturn _ | NThrow _ | NOther _
+    | NCond _ | NGoto _ | NReturn _ | NThrow _ | NOther _
     | NTodo _ -> None
   in
   let kill_ni_opt =
@@ -189,7 +189,7 @@ let (transfer: config -> flow:F.cfg -> unit Dataflow.transfn) =
              )
         )
     | Enter | Exit | TrueNode | FalseNode | Join
-    | NCond _| NReturn _ | NThrow _ | NOther _
+    | NCond _ | NGoto _ | NReturn _ | NThrow _ | NOther _
     | NTodo _ -> None
   in
   let gen_ni = option_to_varmap gen_ni_opt in
