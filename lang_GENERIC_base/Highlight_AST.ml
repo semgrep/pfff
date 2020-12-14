@@ -17,9 +17,9 @@ open AST_generic
 open Highlight_code
 open Entity_code
 module E = Entity_code
+module G = AST_generic
 module PI = Parse_info
 module V = Visitor_AST
-module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -92,20 +92,32 @@ let last_id xs =
   | [] -> failwith "last_id: empty list of idents"
 
 let info_of_name ((_s, info), _nameinfo) = info
-let info_of_id (_s, info) = info
-
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-(* try to better colorize identifiers which can be many different things
- * e.g. a field, a type, a function, a parameter, etc
+(* try to better colorize identifiers, which can be many different things:
+ * a field, a type, a function, a parameter, a local, a global, etc.
 *)
 let visit_program
     (already_tagged, tag)
     ast
   =
+
+  let tag_id (_s, ii) categ =
+    (* so treat the most specific in the enclosing code and then
+     * do not fear to write very general case patterns later because
+     * the specific will have priority over the general
+     * (e.g., a Method use vs a Field use)
+    *)
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
+  in
+  let _tag_if_not_tagged ii categ =
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
+  in
 
   (* ocaml specific *)
   let in_let = ref false in
@@ -142,8 +154,7 @@ let visit_program
                   | OrType xs ->
                       xs |> List.iter (function
                         | OrConstructor (id, _) ->
-                            let info = info_of_id id in
-                            tag info (Entity (Constructor, Def2 fake_no_def2))
+                            tag_id id (Entity (Constructor, Def2 fake_no_def2))
                         | _ -> ()
                       )
                   | AndType (_, xs, _) ->
@@ -204,15 +215,13 @@ let visit_program
       V.kparam = (fun (k, _) x ->
         (match x with
          | ParamPattern (PatId (id, _idinfo)) ->
-             let info = info_of_id id in
-             tag info (Parameter Def);
+             tag_id id (Parameter Def);
              (* less: let kpattern do its job? *)
          | ParamPattern _ -> ()
          | ParamClassic p | ParamRest (_, p) | ParamHashSplat (_, p) ->
              (match p.pname with
               | Some id ->
-                  let info = info_of_id id in
-                  tag info (Parameter Def);
+                  tag_id id (Parameter Def);
               | None -> ()
              )
          | ParamEllipsis _ | OtherParam _ -> ()
@@ -261,16 +270,12 @@ let visit_program
       V.kexpr = (fun (k, _) x ->
         match x with
         | Id (id, _idinfo) ->
-            let info = info_of_id id in
             (* TODO could be a param, could be a local. use scope analysis
              * TODO could also be actually a func passed to a higher
              *  order function, as in List.map snd, or even x |> Common.sort
             *)
             (* could have been tagged as a function name in the rule below *)
-            if not (Hashtbl.mem already_tagged info)
-            then begin
-              tag info (Local Use)
-            end;
+            tag_id id (Local Use);
             k x
 
         (* pad specific *)
@@ -283,17 +288,15 @@ let visit_program
             tag info UseOfRef
 
         | Call (Id (id, _idinfo), _args) ->
-            let info = info_of_id id in
-            tag info (Entity (Function, (Use2 fake_no_use2)));
+            tag_id id (Entity (Function, (Use2 fake_no_use2)));
             k x
         | Call (IdQualified ((id, {name_qualifier = qu; _}), _idinfo), _args)->
-            let info = info_of_id id in
             (match qu with
              | Some (QDots [s2, info2]) when Hashtbl.mem h_builtin_modules s2->
                  tag info2 BuiltinCommentColor;
-                 tag info Builtin;
+                 tag_id id Builtin;
              | _ ->
-                 tag info (Entity (Function, (Use2 fake_no_use2)));
+                 tag_id id (Entity (Function, (Use2 fake_no_use2)));
             );
             k x
 
@@ -336,13 +339,11 @@ let visit_program
       V.kpattern = (fun (k, _) x ->
         (match x with
          | PatConstructor ((id, _name_info), _popt) ->
-             let info = snd id in
              if !in_try_with
-             then tag info (KeywordExn)
-             else tag info (ConstructorMatch fake_no_use2)
+             then tag_id id (KeywordExn)
+             else tag_id id (ConstructorMatch fake_no_use2)
          | PatId (id, _idinfo) ->
-             let info = info_of_id id in
-             tag info (Parameter Def)
+             tag_id id (Parameter Def)
          | PatRecord (_, xs, _) ->
              xs |> List.iter (fun (name, _pat) ->
                let info = info_of_name name in
@@ -356,8 +357,8 @@ let visit_program
 
       V.ktype_ = (fun (k, _) t ->
         (match t with
-         | TyId ((_, info), _) ->
-             tag info (Entity (Type, (Use2 fake_no_use2)))
+         | TyId (id, _) ->
+             tag_id id (Entity (Type, (Use2 fake_no_use2)))
          | TyIdQualified (name,_idinfo) ->
              let info = info_of_name name in
              tag info (Entity (Type, (Use2 fake_no_use2)))
@@ -367,8 +368,7 @@ let visit_program
              tag info TypeVoid;
              (* todo: ty_args *)
          | TyVar id ->
-             let info = info_of_id id in
-             tag info TypeVoid;
+             tag_id id TypeVoid;
          | _ -> ()
         );
         k t

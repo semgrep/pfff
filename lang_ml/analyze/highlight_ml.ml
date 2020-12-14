@@ -82,6 +82,10 @@ let visit_program
     Hashtbl.add already_tagged ii true
   )
   in
+  let tag_if_not_tagged ii categ =
+    if not (Hashtbl.mem already_tagged ii)
+    then tag ii categ
+  in
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
@@ -357,7 +361,7 @@ let visit_program
       | T.Tdownto ii
         -> tag ii KeywordLoop
 
-      | T.Tbegin ii | T.Tend ii -> tag ii KeywordLoop (* TODO: better categ ? *)
+      | T.Tbegin ii | T.Tend ii -> tag ii KeywordLoop (* TODO: better categ? *)
 
       | T.TBang ii | T.TAssign ii | T.TAssignMutable ii ->
           if not (Hashtbl.mem already_tagged ii)
@@ -383,12 +387,6 @@ let visit_program
       | T.TBracketPercent ii | T.TBracketPercentPercent ii
         ->
           tag ii Punctuation
-
-      | T.TUpperIdent (s, ii) ->
-          (match s with
-           | "Todo" -> tag ii BadSmell
-           | _ -> () (* tag ii Constructor *)
-          )
 
       | T.TLabelDecl (_s, ii) ->tag ii (Parameter Def)
 
@@ -443,15 +441,23 @@ let visit_program
       | T.TOptLabelDecl (_, ii)
         -> tag ii (Parameter Def)
 
-      | T.TLowerIdent (s, ii)
-        ->
-          match s with
-          | _ when Hashtbl.mem h_pervasives_pad s ->
-              tag ii BuiltinCommentColor
-          | _ when Hashtbl.mem h_builtin_bool s ->
-              tag ii BuiltinBoolean
-          | "failwith" | "raise" ->
-              tag ii KeywordExn
-          | _ ->
-              ()
+      | T.TLowerIdent (s, ii)->
+          (match s with
+           | _ when Hashtbl.mem h_pervasives_pad s ->
+               tag ii BuiltinCommentColor
+           | _ when Hashtbl.mem h_builtin_bool s ->
+               tag ii BuiltinBoolean
+           | "failwith" | "raise" ->
+               tag ii KeywordExn
+           (* all the identifiers should have been tagged by now. *)
+           | _ -> tag_if_not_tagged ii Error
+          )
+
+      | T.TUpperIdent (s, ii) ->
+          (match s with
+           | "Todo" -> tag ii BadSmell
+           (* all the identifiers should have been tagged by now. *)
+           | _ -> tag_if_not_tagged ii Error
+          )
+
     )

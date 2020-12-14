@@ -147,9 +147,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     (* specials *)
 
     (* less: could highlight certain words in the comment? *)
-    | T.TComment ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then tag ii Comment
+    | T.TComment ii -> tag_if_not_tagged ii Comment
     | T.TCommentSpace (_ii) | T.TCommentNewline _ii -> ()
 
     | T.TUnknown ii -> tag ii Error
@@ -164,8 +162,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     (* still? both strings and regular identifiers can be used to represent
      * entities such as classes so have to look for both? *)
     | T.T_STRING (_, ii) | T.T_ENCAPSED_STRING(_, ii) ->
-        if not (Hashtbl.mem already_tagged ii)
-        then tag ii H.String
+        tag_if_not_tagged ii H.String
 
     | T.T_BACKQUOTE ii -> tag ii H.String
     | T.T_DOLLARCURLY ii -> tag ii H.String
@@ -174,8 +171,7 @@ let visit_program ~tag_hook _prefs (ast, toks) =
 
     (* all the name and varname should have been tagged by now. *)
     | T.T_ID (_, ii) ->
-        if not (Hashtbl.mem already_tagged ii)
-        then tag ii Error
+        tag_if_not_tagged ii Error
 
     (* keywords *)
 
