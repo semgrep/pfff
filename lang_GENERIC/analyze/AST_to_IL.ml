@@ -189,6 +189,8 @@ let bracket_keep f (t1, x, t2) =
 (*****************************************************************************)
 let rec lval env eorig =
   match eorig with
+  | G.Id (("_", tok), _) -> (* wildcard *)
+      fresh_lval env tok
   | G.Id (id, id_info) ->
       let lval = lval_of_id_info env id id_info in
       lval
@@ -261,14 +263,42 @@ and pattern_assign_statements env exp eorig pat =
 (* Assign *)
 (*****************************************************************************)
 and assign env lhs _tok rhs_exp eorig =
-  (* TODO: tuples and objects as LHS *)
-  try
-    let lval = lval env lhs in
-    add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
-    mk_e (Lvalue lval) lhs
-  with Todo gany ->
-    add_instr env (instr_todo gany eorig);
-    exp_todo gany lhs
+  match lhs with
+  | G.Id _
+  | G.IdQualified _
+  | G.DotAccess _
+  | G.ArrayAccess _
+  | G.DeRef _
+    ->
+      begin
+        try
+          let lval = lval env lhs in
+          add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
+          mk_e (Lvalue lval) lhs
+        with Todo gany ->
+          add_instr env (instr_todo gany eorig);
+          exp_todo gany lhs
+      end
+  | G.Tuple (tok1, lhss, tok2) -> (* E1, ..., En = RHS *)
+      (* tmp = RHS*)
+      let tmp = fresh_var env tok2 in
+      let tmp_lval = { base = Var tmp; offset = NoOffset } in
+      add_instr env (mk_i (Assign (tmp_lval, rhs_exp)) eorig);
+      (* Ei = tmp[i] *)
+      let tup_elems =
+        lhss
+        |> List.mapi (fun i lhs_i ->
+          let index_i = Literal(G.Int(string_of_int i, tok1)) in
+          let offset_i = Index ({e=index_i; eorig;}) in
+          let lval_i = { base=Var tmp; offset=offset_i; } in
+          assign env lhs_i tok1 ({e=Lvalue lval_i; eorig;}) eorig
+        )
+      in
+      (* (E1, ..., En) *)
+      mk_e (Composite (CTuple, (tok1,tup_elems,tok2))) eorig
+  | _ ->
+      add_instr env (instr_todo (G.E eorig) eorig);
+      exp_todo (G.E eorig) lhs
 
 (*****************************************************************************)
 (* Expression *)
@@ -374,8 +404,7 @@ and expr_aux env eorig =
       let xs = bracket_keep (List.map (expr env)) xs in
       mk_e (Composite (CTuple, xs)) eorig
 
-  | G.Record _
-    -> todo (G.E eorig)
+  | G.Record fields -> record env fields
 
   | G.Lambda def ->
       (* TODO: we should have a use def.f_tok *)
@@ -497,7 +526,31 @@ and arguments env xs =
 and argument env arg =
   match arg with
   | G.Arg e -> expr env e
+  | G.ArgKwd (_, e) ->
+      (* TODO: Handle the keyword/label somehow (when relevant). *)
+      expr env e
   | _ -> todo (G.Ar arg)
+
+and record env ((_tok, origfields, _) as record_def) =
+  let eorig = G.Record record_def in
+  let fields =
+    origfields
+    |> List.map (function
+      | G.FieldStmt (G.DefStmt (G.{name=EId id;tparams=[];_}, def_kind)) ->
+          let fdeforig =
+            match def_kind with
+            (* TODO: Consider what to do with vtype. *)
+            | G.VarDef        G.{vinit=Some fdeforig;_}
+            | G.FieldDefColon G.{vinit=Some fdeforig;_} -> fdeforig
+            | ___else___ -> todo (G.E eorig)
+          in
+          let field_def = expr env fdeforig in
+          (id, field_def)
+      | G.FieldStmt _ -> todo (G.E eorig)
+      | G.FieldSpread _ -> todo (G.E eorig)
+    )
+  in
+  mk_e (Record fields) eorig
 
 (*s: function [[AST_to_IL.lval_of_ent]] *)
 let lval_of_ent env ent =
