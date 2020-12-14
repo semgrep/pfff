@@ -536,12 +536,12 @@ and record env ((_tok, origfields, _) as record_def) =
   let fields =
     origfields
     |> List.map (function
-      | G.FieldStmt (G.DefStmt (G.{name=EId id;tparams=[];_}, def_kind)) ->
+      | G.FieldStmt (G.DefStmt ({G. name=G.EId id;tparams=[];_}, def_kind)) ->
           let fdeforig =
             match def_kind with
             (* TODO: Consider what to do with vtype. *)
-            | G.VarDef        G.{vinit=Some fdeforig;_}
-            | G.FieldDefColon G.{vinit=Some fdeforig;_} -> fdeforig
+            | G.VarDef        {G. vinit=Some fdeforig;_}
+            | G.FieldDefColon {G. vinit=Some fdeforig;_} -> fdeforig
             | ___else___ -> todo (G.E eorig)
           in
           let field_def = expr env fdeforig in
