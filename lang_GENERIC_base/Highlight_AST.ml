@@ -285,7 +285,8 @@ let visit_program
             k x
         (* ocaml specific *)
         | Call (Id ((("ref", info)), _idinfo), _args) ->
-            tag info UseOfRef
+            tag info UseOfRef;
+            k x
 
         | Call (Id (id, _idinfo), _args) ->
             tag_id id (Entity (Function, (Use2 fake_no_use2)));
