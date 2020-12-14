@@ -40,6 +40,7 @@ module G = AST_generic
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
 
+(* totally ocaml specific *)
 let h_builtin_modules = Common.hashset_of_list [
   "Pervasives"; "Common";
   "List"; "Hashtbl"; "Array"; "Stack";
@@ -61,7 +62,7 @@ let kind_of_body x =
   | Lambda _ -> Entity (Function, def2)
 
   (* ocaml specific *)
-  | Call (IdQualified ((("ref", _), _nameinfo), _idinfo), _args) ->
+  | Call (Id ((("ref", _)), _idinfo), _args) ->
       Entity (Global, def2)
   | Call (IdQualified ((("create", _),
                         { name_qualifier = Some (QDots ["Hashtbl", _]); _ }), _idinfo),
@@ -205,7 +206,16 @@ let visit_program
          | ParamPattern (PatId (id, _idinfo)) ->
              let info = info_of_id id in
              tag info (Parameter Def);
-         | _ -> ()
+             (* less: let kpattern do its job? *)
+         | ParamPattern _ -> ()
+         | ParamClassic p | ParamRest (_, p) | ParamHashSplat (_, p) ->
+             (match p.pname with
+              | Some id ->
+                  let info = info_of_id id in
+                  tag info (Parameter Def);
+              | None -> ()
+             )
+         | ParamEllipsis _ | OtherParam _ -> ()
         );
         k x
       );
@@ -250,30 +260,36 @@ let visit_program
 
       V.kexpr = (fun (k, _) x ->
         match x with
-        | IdQualified (name, _idinfo) ->
-            let info = info_of_name name in
+        | Id (id, _idinfo) ->
+            let info = info_of_id id in
+            (* TODO could be a param, could be a local. use scope analysis
+             * TODO could also be actually a func passed to a higher
+             *  order function, as in List.map snd, or even x |> Common.sort
+            *)
             (* could have been tagged as a function name in the rule below *)
             if not (Hashtbl.mem already_tagged info)
             then begin
-              (* TODO could be a param, could be a local. Need scope analysis
-               * TODO could also be actually a func passed to a higher
-               *  order function, as in List.map snd, or even x +> Common.sort
-              *)
               tag info (Local Use)
             end;
             k x
 
-        | Call (IdQualified ((("=~", _), _nameinfo), _idinfo),
+        (* pad specific *)
+        | Call (Id ((("=~", _)), _idinfo),
                 (_, [_arg1; Arg (L (G.String (_, info)))], _)) ->
             tag info Regexp;
             k x
+        (* ocaml specific *)
+        | Call (Id ((("ref", info)), _idinfo), _args) ->
+            tag info UseOfRef
 
-        | Call (IdQualified ((id, {name_qualifier = qu; _}), _idinfo),
-                _args) ->
-            let (s, info) = id in
+        | Call (Id (id, _idinfo), _args) ->
+            let info = info_of_id id in
+            tag info (Entity (Function, (Use2 fake_no_use2)));
+            k x
+        | Call (IdQualified ((id, {name_qualifier = qu; _}), _idinfo), _args)->
+            let info = info_of_id id in
             (match qu with
-             | _ when s = "ref" -> tag info UseOfRef
-             | Some (QDots [s2, info2]) when Hashtbl.mem h_builtin_modules s2 ->
+             | Some (QDots [s2, info2]) when Hashtbl.mem h_builtin_modules s2->
                  tag info2 BuiltinCommentColor;
                  tag info Builtin;
              | _ ->
@@ -289,7 +305,9 @@ let visit_program
         | DotAccess (_e, tok, (EId id | EName (id, _))) ->
             let info = snd id in
             (match PI.str_of_info tok with
+             (* ocaml specific *)
              | "#" -> tag info (Entity (Method, (Use2 fake_no_use2)))
+
              | _ -> tag info (Entity (Field, (Use2 fake_no_use2)))
             );
             k x
