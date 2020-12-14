@@ -15,11 +15,9 @@
 *)
 
 open Highlight_code
-open Ast_js
 module T = Parser_js
 module E = Entity_code
 module H = Highlight_code
-module V = Visitor_js
 
 (*****************************************************************************)
 (* Prelude *)
@@ -31,7 +29,6 @@ module V = Visitor_js
 (* Helpers when have global-analysis information *)
 (*****************************************************************************)
 
-let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 (*****************************************************************************)
@@ -52,15 +49,6 @@ let visit_program ~tag_hook _prefs (ast, toks) =
     Hashtbl.add already_tagged ii true
   )
   in
-  let tag_name (_s, ii) categ =
-    (* so treat the most specific in the enclosing code and then
-     * do not fear to write very general case patterns later because
-     * the specific will have priority over the general
-     * (e.g., a Method use vs a Field use)
-    *)
-    if not (Hashtbl.mem already_tagged ii)
-    then tag ii categ
-  in
   let tag_if_not_tagged ii categ =
     if not (Hashtbl.mem already_tagged ii)
     then tag ii categ
@@ -68,76 +56,16 @@ let visit_program ~tag_hook _prefs (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
-  (* try to better colorize identifiers which can be many different things
-   * e.g. a field, a type, a function, a parameter, etc
+  (* Now using the AST_generic instead of Ast_js to factorize code between
+   * all the AST-based code highlighters. Also, there is no more id_resolved
+   * in ast_js.ml so we need Highlight_AST and Naming_AST to colorize
+   * differently parameters, locals, globals, etc.
   *)
-  let visitor = V.mk_visitor { V.default_visitor with
-                               V.ktop = (fun (k, _) t ->
-                                 (match t with
-                                  (* TODO: after split VarDef FuncDef ClasDef, no need kind_of_expr_opt *)
-                                  | DefStmt ({name; _}, VarDef { v_kind; v_init; _ }) ->
-                                      let kind = Graph_code_js.kind_of_expr_opt v_kind v_init in
-                                      tag_name name (Entity (kind, (Def2 fake_no_def2)));
-                                  | _ -> ()
-                                 );
-                                 k t
-                               );
-                               V.kprop = (fun (k,_) x ->
-                                 (match x with
-                                  | Field {fld_name = PN name; fld_body = Some (Fun _); _} ->
-                                      tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
-                                  | Field {fld_name = PN name; _ } ->
-                                      tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
-                                  | _ -> ()
-                                 );
-                                 k x
-                               );
-                               V.kexpr = (fun (k,_) x ->
-                                 (match x with
-                                  | ObjAccess (_, _, PN name) ->
-                                      tag_name name (Entity (E.Field, (Use2 fake_no_use2)));
-                                  | IdSpecial (special, ii) ->
-                                      (match special with
-                                       | Eval -> tag ii BadSmell
-                                       | _ -> tag ii Builtin
-                                      )
-                                  (* TODO: use generic AST based highlighter
-                                        | Id (name, scope) ->
-                                           (match !scope with
-                                           | NotResolved | Global _ ->
-                                              tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
-                                           | Local -> tag_name name (H.Local Use)
-                                           | Param -> tag_name name (H.Parameter Use)
-                                           );
-                                        | Apply (Id (name, {contents = Global _ | NotResolved}), _) ->
-                                           tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-                                        | Apply (Id (_name, {contents = Local | Param}), _) ->
-                                           (* todo: tag_name name PointerCall; *)
-                                           ()
-                                  *)
-                                  | Apply (ObjAccess (_, _, PN name), _) ->
-                                      tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
-                                  | Fun (_, Some name) ->
-                                      tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
-                                  | _ -> ()
-                                 ); k x
-                               );
-                               V.kstmt = (fun (k,_) x ->
-                                 (match x with
-                                  | DefStmt ({name = name; _}, _) ->
-                                      tag_name name (H.Local Def);
-                                  | _ -> ()
-                                 ); k x
-                               );
-                               V.kparam = (fun (k, _) x ->
-                                 (match x with
-                                  | {p_name = name; _} ->
-                                      tag_name name (H.Parameter Def);
-                                 ); k x
-                               );
-
-                             } in
-  visitor (Program ast);
+  let gen = Js_to_generic.program ast in
+  Naming_AST.resolve Lang.Javascript gen;
+  Highlight_AST.visit_program
+    (already_tagged, tag)
+    gen;
 
   (* -------------------------------------------------------------------- *)
   (* token phase 1 (individual tokens) *)

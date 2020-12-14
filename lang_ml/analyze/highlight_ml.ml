@@ -16,14 +16,14 @@
 open Common
 
 open Highlight_code
+open Entity_code
 module PI = Parse_info
 module T = Parser_ml
-open Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Syntax highlighting for OCaml code for codemap (and now also for efuns).
+(* Syntax highlighting of OCaml code for codemap (and now also for efuns).
  *
  * This code can also be abused to generate the light database
  * and the TAGS file (because codemap needs to know about
@@ -60,7 +60,9 @@ let h_builtin_bool = Common.hashset_of_list [
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-(* set to true when want to debug the AST-based tagger *)
+(* Set to true when want to debug the AST-based tagger.
+ * Less useful now that we do tag_if_not_tagged Error for TLowerIdent.
+*)
 let disable_token_phase2 = false
 
 (*****************************************************************************)

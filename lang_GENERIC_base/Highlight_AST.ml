@@ -128,14 +128,14 @@ let visit_program
 
       V.kdef = (fun (k, _) x ->
         match x with
-        | ({ name = EId (_s, info); _}, def) ->
+        | ({ name = EId (id); _}, def) ->
             (match def with
              | Signature ty ->
-                 tag info (kind_of_ty ty);
+                 tag_id id (kind_of_ty ty);
                  k x
 
              | ModuleDef { mbody = body } ->
-                 tag info (Entity (E.Module, Def2 fake_no_def2));
+                 tag_id id (Entity (E.Module, Def2 fake_no_def2));
                  (match body with
                   | ModuleAlias name ->
                       let info = info_of_name name in
@@ -145,10 +145,10 @@ let visit_program
                  k x
 
              | TypeDef { tbody = G.Exception _ } ->
-                 tag info (Entity (E.Exception, Def2 fake_no_def2));
+                 tag_id id (Entity (E.Exception, Def2 fake_no_def2));
                  k x
              | TypeDef { tbody = kind } ->
-                 tag info (Entity (E.Type, Def2 fake_no_def2));
+                 tag_id id (Entity (E.Type, Def2 fake_no_def2));
                  (* todo: ty_params *)
                  (match kind with
                   | OrType xs ->
@@ -159,8 +159,8 @@ let visit_program
                       )
                   | AndType (_, xs, _) ->
                       xs |> List.iter (function
-                        | FieldStmt (DefStmt ({ name = EId (_id, info); _}, _))->
-                            tag info (Entity (Field, (Def2 fake_no_def2)));
+                        | FieldStmt (DefStmt ({ name = EId (id); _}, _))->
+                            tag_id id (Entity (Field, (Def2 fake_no_def2)));
                         | _ ->  ()
                       );
                   | _ -> ()
@@ -169,8 +169,8 @@ let visit_program
 
              | VarDef { vinit = Some body; vtype = _ }  ->
                  (if not !in_let
-                  then tag info (kind_of_body body)
-                  else tag info (Local Def)
+                  then tag_id id (kind_of_body body)
+                  else tag_id id (Local Def)
                  );
                  Common.save_excursion in_let true (fun () ->
                    k x
@@ -178,8 +178,8 @@ let visit_program
 
              | FuncDef _ ->
                  (if not !in_let
-                  then tag info (Entity (Function, (Def2 NoUse)))
-                  else tag info (Local Def)
+                  then tag_id id (Entity (Function, (Def2 NoUse)))
+                  else tag_id id (Local Def)
                  );
                  Common.save_excursion in_let true (fun () ->
                    k x
@@ -189,12 +189,23 @@ let visit_program
             )
         | _ -> k x
       );
-
+      (* JS
+               V.kprop = (fun (k,_) x ->
+                 (match x with
+                  | Field {fld_name = PN name; fld_body = Some (Fun _); _} ->
+                      tag_name name (Entity (E.Method, (Def2 fake_no_def2)));
+                  | Field {fld_name = PN name; _ } ->
+                      tag_name name (Entity (E.Field, (Def2 fake_no_def2)));
+                  | _ -> ()
+                 );
+                 k x
+               );
+      *)
       V.kdir = (fun (k, _) x ->
         (match x with
          | ImportAll (_, DottedName xs, _) ->
-             let info = snd (last_id xs) in
-             tag info (Entity (Module, Use2 fake_no_use2))
+             let id = last_id xs in
+             tag_id id (Entity (Module, Use2 fake_no_use2))
          | _-> ()
         );
         k x
@@ -204,8 +215,8 @@ let visit_program
         let (_id, infos) = x in
         (match infos.name_qualifier with
          | Some (QDots xs) ->
-             xs |> List.iter (fun (_, ii) ->
-               tag ii (Entity (Module, Use2 fake_no_use2))
+             xs |> List.iter (fun id ->
+               tag_id id (Entity (Module, Use2 fake_no_use2))
              )
          | _ -> ()
         );
@@ -269,6 +280,21 @@ let visit_program
 
       V.kexpr = (fun (k, _) x ->
         match x with
+        (* TODO: use generic AST based highlighter
+              | Id (name, scope) ->
+                 (match !scope with
+                 | NotResolved | Global _ ->
+                    tag_name name (Entity (E.Global, (Use2 fake_no_use2)))
+                 | Local -> tag_name name (H.Local Use)
+                 | Param -> tag_name name (H.Parameter Use)
+                 );
+              | Apply (Id (name, {contents = Global _ | NotResolved}), _) ->
+                 tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
+              | Apply (Id (_name, {contents = Local | Param}), _) ->
+                 (* todo: tag_name name PointerCall; *)
+                 ()
+        *)
+
         | Id (id, _idinfo) ->
             (* TODO could be a param, could be a local. use scope analysis
              * TODO could also be actually a func passed to a higher
@@ -276,6 +302,13 @@ let visit_program
             *)
             (* could have been tagged as a function name in the rule below *)
             tag_id id (Local Use);
+            k x
+
+        | IdSpecial (kind, info) ->
+            (match kind with
+             | Eval -> tag info BadSmell
+             | _ -> tag info Builtin
+            );
             k x
 
         (* pad specific *)
@@ -306,13 +339,18 @@ let visit_program
             (*tag tok_with (KeywordConditional); *)
             k x
 
+        (* JS TODO
+                    | Apply (ObjAccess (_, _, PN name), _) ->
+                        tag_name name (Entity (E.Method, (Use2 fake_no_use2)));
+                    | Fun (_, Some name) ->
+                        tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
+        *)
         | DotAccess (_e, tok, (EId id | EName (id, _))) ->
-            let info = snd id in
             (match PI.str_of_info tok with
              (* ocaml specific *)
-             | "#" -> tag info (Entity (Method, (Use2 fake_no_use2)))
+             | "#" -> tag_id id (Entity (Method, (Use2 fake_no_use2)))
 
-             | _ -> tag info (Entity (Field, (Use2 fake_no_use2)))
+             | _ -> tag_id id (Entity (Field, (Use2 fake_no_use2)))
             );
             k x
         | G.Constructor (name, _eopt) ->
