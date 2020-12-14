@@ -94,38 +94,40 @@ let var_stats prog : var_stats =
       stat
   in
 
-  let visitor = V.mk_visitor { V.default_visitor with
-                               V.kdef = (fun (k, _v) x ->
-                                 match x with
-                                 | { name=EId id;
-                                     info={ id_resolved = {contents = Some(_kind, sid)}; _}; _},
-                                   VarDef ({ vinit = Some _; _ }) ->
-                                     let var = (Ast.str_of_ident id, sid) in
-                                     let stat = get_stat_or_create var h in
-                                     incr stat.lvalue;
-                                     k x
-                                 | _ -> k x
-                               );
-                               V.kexpr = (fun (k, vout) x ->
-                                 match x with
-                                 (* TODO: very incomplete, what if Assign (Tuple?) *)
-                                 | Assign (
-                                   Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ })),
-                                   _,
-                                   e2) ->
-                                     let var = (Ast.str_of_ident id, sid) in
-                                     let stat = get_stat_or_create var h in
-                                     incr stat.lvalue;
-                                     vout (E e2)
+  let hooks =
+    { V.default_visitor with
+      V.kdef = (fun (k, _v) x ->
+        match x with
+        | { name=EId id;
+            info={ id_resolved = {contents = Some(_kind, sid)}; _}; _},
+          VarDef ({ vinit = Some _; _ }) ->
+            let var = (Ast.str_of_ident id, sid) in
+            let stat = get_stat_or_create var h in
+            incr stat.lvalue;
+            k x
+        | _ -> k x
+      );
+      V.kexpr = (fun (k, vout) x ->
+        match x with
+        (* TODO: very incomplete, what if Assign (Tuple?) *)
+        | Assign (
+          Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ })),
+          _,
+          e2) ->
+            let var = (Ast.str_of_ident id, sid) in
+            let stat = get_stat_or_create var h in
+            incr stat.lvalue;
+            vout (E e2)
 
-                                 | Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ }))->
-                                     let var = (Ast.str_of_ident id, sid) in
-                                     let stat = get_stat_or_create var h in
-                                     incr stat.rvalue;
-                                     k x
-                                 | _ -> k x
-                               );
-                             } in
+        | Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ }))->
+            let var = (Ast.str_of_ident id, sid) in
+            let stat = get_stat_or_create var h in
+            incr stat.rvalue;
+            k x
+        | _ -> k x
+      );
+    } in
+  let visitor = V.mk_visitor hooks in
   visitor (Pr prog);
   h
 
@@ -235,75 +237,77 @@ let propagate2 lang prog =
   let stats = var_stats prog in
 
   (* step2: second pass where we actually propagate when we can *)
-  let visitor = V.mk_visitor { V.default_visitor with
-                               (* the defs *)
+  let hooks =
+    { V.default_visitor with
+      (* the defs *)
 
-                               V.kdef = (fun (k, _v) x ->
-                                 match x with
-                                 | { name = EId id;
-                                     info = { id_resolved = {contents = Some (_kind, sid)}; _} as id_info;
-                                     attrs = attrs; _},
-                                   (* note that some languages such as Python do not have VarDef.
-                                    * todo? should add those somewhere instead of in_lvalue detection? *)
-                                   VarDef ({ vinit = Some (L literal); _ }) ->
-                                     let _stats =
-                                       try Hashtbl.find stats (Ast.str_of_ident id, sid)
-                                       with Not_found -> raise Impossible
-                                     in
-                                     if Ast.has_keyword_attr Const attrs ||
-                                        Ast.has_keyword_attr Final attrs
-                                        (* TODO later? (!(stats.rvalue) = 1) *)
-                                     then begin
-                                       id_info.id_const_literal := Some literal;
-                                       add_constant_env id (sid, literal) env;
-                                     end;
-                                     k x
+      V.kdef = (fun (k, _v) x ->
+        match x with
+        | { name = EId id;
+            info = { id_resolved = {contents = Some (_kind, sid)}; _} as id_info;
+            attrs = attrs; _},
+          (* note that some languages such as Python do not have VarDef.
+           * todo? should add those somewhere instead of in_lvalue detection? *)
+          VarDef ({ vinit = Some (L literal); _ }) ->
+            let _stats =
+              try Hashtbl.find stats (Ast.str_of_ident id, sid)
+              with Not_found -> raise Impossible
+            in
+            if Ast.has_keyword_attr Const attrs ||
+               Ast.has_keyword_attr Final attrs
+               (* TODO later? (!(stats.rvalue) = 1) *)
+            then begin
+              id_info.id_const_literal := Some literal;
+              add_constant_env id (sid, literal) env;
+            end;
+            k x
 
-                                 | _ -> k x
-                               );
+        | _ -> k x
+      );
 
-                               (* the uses (and also defs for Python Assign) *)
+      (* the uses (and also defs for Python Assign) *)
 
-                               V.kexpr = (fun (k, _) x ->
+      V.kexpr = (fun (k, _) x ->
 
-                                 (match x with
-                                  | Id (id, id_info)->
-                                      (match find_id env id id_info with
-                                       | Some literal ->
-                                           id_info.id_const_literal := Some literal
-                                       | _ -> ()
-                                      );
+        (match x with
+         | Id (id, id_info)->
+             (match find_id env id id_info with
+              | Some literal ->
+                  id_info.id_const_literal := Some literal
+              | _ -> ()
+             );
 
-                                      (* Assign that is really a hidden VarDef (e.g., in Python) *)
-                                  | Assign (
-                                    Id (id, ({ id_resolved = {contents = Some (kind, sid)}; _ }
-                                             as id_info)),
-                                    _,
-                                    rexp) ->
-                                      (match eval_expr env rexp with
-                                       | Some literal ->
-                                           let stats =
-                                             try Hashtbl.find stats (Ast.str_of_ident id, sid)
-                                             with Not_found -> raise Impossible
-                                           in
-                                           if (!(stats.lvalue) = 1) &&
-                                              (* restrict to Python/Ruby Globals for now *)
-                                              (lang = Lang.Python || lang = Lang.Ruby) &&
-                                              kind = Global
-                                           then begin
-                                             id_info.id_const_literal := Some literal;
-                                             add_constant_env id (sid, literal) env;
-                                           end;
-                                           k x
-                                       | None -> ()
-                                      )
+             (* Assign that is really a hidden VarDef (e.g., in Python) *)
+         | Assign (
+           Id (id, ({ id_resolved = {contents = Some (kind, sid)}; _ }
+                    as id_info)),
+           _,
+           rexp) ->
+             (match eval_expr env rexp with
+              | Some literal ->
+                  let stats =
+                    try Hashtbl.find stats (Ast.str_of_ident id, sid)
+                    with Not_found -> raise Impossible
+                  in
+                  if (!(stats.lvalue) = 1) &&
+                     (* restrict to Python/Ruby Globals for now *)
+                     (lang = Lang.Python || lang = Lang.Ruby) &&
+                     kind = Global
+                  then begin
+                    id_info.id_const_literal := Some literal;
+                    add_constant_env id (sid, literal) env;
+                  end;
+                  k x
+              | None -> ()
+             )
 
-                                  | _ -> ()
-                                 );
-                                 k x
-                               );
-                             }
+         | _ -> ()
+        );
+        k x
+      );
+    }
   in
+  let visitor = V.mk_visitor hooks in
   visitor (Pr prog);
   ()
 
