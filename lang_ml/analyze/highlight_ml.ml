@@ -86,6 +86,9 @@ let visit_program
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
+  (* Now using the AST_generic instead of Ast_ml to factorize code between
+   * all the AST-based code highlighters.
+  *)
   let gen = Ml_to_generic.program ast in
   Highlight_AST.visit_program
     (already_tagged, tag)

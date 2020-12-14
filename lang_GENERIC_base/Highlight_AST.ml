@@ -24,12 +24,12 @@ module G = AST_generic
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Syntax highlighting for AST_generic for codemap (and now also for efuns).
+(* Syntax highlighting of AST_generic for codemap (and now also for efuns).
  *
  * This code can also be abused to generate the light database
  * and the TAGS file (because codemap needs to know about
  * def and use of entities), but you should now prefer to
- * base such analysis on graph_code_cmt.ml instead of this file.
+ * base such analysis on graph_code_xxx.ml instead of this file.
  *
  * history:
  *  - generalized from highlight_ml.ml and highlight_js.ml
@@ -59,6 +59,8 @@ let kind_of_body x =
   let def2 = Def2 fake_no_def2 in
   match x with
   | Lambda _ -> Entity (Function, def2)
+
+  (* ocaml specific *)
   | Call (IdQualified ((("ref", _), _nameinfo), _idinfo), _args) ->
       Entity (Global, def2)
   | Call (IdQualified ((("create", _),
@@ -74,6 +76,8 @@ let kind_of_ty ty =
   let def2 = Def2 fake_no_def2 in
   match ty with
   | TyFun _ -> (FunctionDecl NoUse)
+
+  (* ocaml specific *)
   | TyNameApply ((("ref", _), _), _) -> Entity (Global, def2)
   (* todo: should handle module aliases there too *)
   | TyNameApply ((("t", _),
@@ -94,14 +98,15 @@ let info_of_id (_s, info) = info
 (* Entry point *)
 (*****************************************************************************)
 
+(* try to better colorize identifiers which can be many different things
+ * e.g. a field, a type, a function, a parameter, etc
+*)
 let visit_program
     (already_tagged, tag)
     ast
   =
 
-  (* try to better colorize identifiers which can be many different things
-   * e.g. a field, a type, a function, a parameter, etc
-  *)
+  (* ocaml specific *)
   let in_let = ref false in
   let in_try_with = ref false in
 
