@@ -25,6 +25,10 @@ module V = Visitor_AST
  * This is mainly to provide advanced features to semgrep such as the
  * constant propagation of literals.
  *
+ * See also semgrep/matching/Normalize_generic.ml which also performs
+ * some expression evaluation. We should get rid of it though
+ * once we have const analysis available on arguments.
+ *
  * Right now we just propagate constants when we're sure it's a constant
  * because:
  *  - the variable declaration use the 'const' keyword in Javascript/Go/...
