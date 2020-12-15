@@ -328,7 +328,6 @@ if($error2) {
 }
 
 pr2 "To compile $project type:
-  \$ $MAKE_PROGRAM depend
   \$ $MAKE_PROGRAM
 To test $project simply type:
   \$ $projectcmdline

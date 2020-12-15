@@ -6,6 +6,6 @@ packages usually not present in a default install:
 
 Then:
   $ ./configure
-  $ make depend
+  $ opam install . --deps-only
   $ make
-  $ make opt
+  $ make install
