@@ -179,6 +179,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_expr (x : expr) =
     let k x = match x with
+      | ObjAccessEllipsis (v1, v2) -> v_expr v1; v_tok v2
       | MethodRef (v1, v2, v3, v4) ->
           OCaml.v_either v_expr v_typ v1;
           v_tok v2;

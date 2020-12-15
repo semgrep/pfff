@@ -528,6 +528,10 @@ method_invocation:
  (* javaext: ? *)
  | name "." SUPER "." identifier "(" listc0(argument) ")"
 	{ Call (Dot (Name (name $1 @ [super_name1 $3]), $2, $5), ($6,$7,$8))}
+ (* sgrep-ext: *)
+ | primary "..."
+	{ ObjAccessEllipsis ($1, $2) }
+
 
 argument: expression { $1 }
 

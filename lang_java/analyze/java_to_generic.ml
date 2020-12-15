@@ -201,6 +201,9 @@ and literal = function
 
 and expr e =
   match e with
+  | ObjAccessEllipsis (v1, v2) ->
+      let v1 = expr v1 in
+      G.DotAccessEllipsis (v1, v2)
   | Ellipsis v1 -> let v1 = tok v1 in G.Ellipsis v1
   | DeepEllipsis v1 -> let v1 = bracket expr v1 in G.DeepEllipsis v1
   | Name v1 -> name v1

@@ -791,7 +791,7 @@ and expr env = function
   | InstanceOf (e, tref) ->
       expr env e;
       typ env (tref);
-  | Ellipsis _ | DeepEllipsis _ -> ()
+  | Ellipsis _ | DeepEllipsis _ | ObjAccessEllipsis _ -> ()
   | Lambda (_params, _t, _st) -> raise Todo (* imitate method_decl code *)
   | MethodRef _ -> raise Todo
 

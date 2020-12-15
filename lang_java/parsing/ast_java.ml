@@ -224,6 +224,7 @@ and expr =
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
   | TypedMetavar of ident * typ
+  | ObjAccessEllipsis of expr * tok (* ... *)
 
 and literal =
   | Int of string wrap
