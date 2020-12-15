@@ -6,5 +6,6 @@ packages usually not present in a default install:
 
 Then:
   $ ./configure
+  $ opam install . --deps-only
   $ make
   $ make install

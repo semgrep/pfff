@@ -44,14 +44,14 @@ as well as the docs/manual/ directory.
 
 ## Usage for `pfff`
 ```sh
-$ ./pfff -parse_php demos/foo.php
+$ pfff -parse_php demos/foo.php
 ```
 or
 ```sh
-$ ./pfff -dump_php demos/foo.php
+$ pfff -dump_php demos/foo.php
 ```
 
-You can also look at `./pfff --help`
+You can also look at `pfff --help`
 
 ## Usage for `pfff_db`
 ```sh

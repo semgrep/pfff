@@ -8,8 +8,8 @@ Then, install a few Cygwin packages:
 Once OPAM is installed, you will need to install a compatible
 version of OCaml and a few OPAM packages:
  - opam init
- - opam switch 4.02.3
- - opam install json-wheel
+ - opam switch 4.07.0
+ - opam install dune json-wheel
 
 
 Troubles?
