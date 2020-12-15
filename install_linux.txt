@@ -6,6 +6,5 @@ packages usually not present in a default install:
 
 Then:
   $ ./configure
-  $ make depend
   $ make
-  $ make opt
+  $ make install
