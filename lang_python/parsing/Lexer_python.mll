@@ -93,10 +93,13 @@ type state_mode =
   | STATE_OFFSET
   | STATE_UNDERSCORE_TOKEN
 
-  | STATE_IN_FSTRING_SINGLE
-  | STATE_IN_FSTRING_DOUBLE
-  | STATE_IN_FSTRING_TRIPLE_SINGLE
-  | STATE_IN_FSTRING_TRIPLE_DOUBLE
+  (* below the 'string' contains the prefix, e.g. "f", but
+   * can also be "fr" in which case we must treat \ differently.
+   *)
+  | STATE_IN_FSTRING_SINGLE of string
+  | STATE_IN_FSTRING_DOUBLE of string
+  | STATE_IN_FSTRING_TRIPLE_SINGLE of string
+  | STATE_IN_FSTRING_TRIPLE_DOUBLE of string
 
 type lexer_state = {
   mutable curr_offset : int;
@@ -134,10 +137,10 @@ let pr_mode mode = pr2 (match mode with
   | STATE_TOKEN -> "token"
   | STATE_OFFSET -> "offset"
   | STATE_UNDERSCORE_TOKEN -> "_token"
-  | STATE_IN_FSTRING_SINGLE -> "f'"
-  | STATE_IN_FSTRING_DOUBLE -> "f\""
-  | STATE_IN_FSTRING_TRIPLE_SINGLE -> "f'''"
-  | STATE_IN_FSTRING_TRIPLE_DOUBLE -> "f\"\"\""
+  | STATE_IN_FSTRING_SINGLE _ -> "f'"
+  | STATE_IN_FSTRING_DOUBLE _ -> "f\""
+  | STATE_IN_FSTRING_TRIPLE_SINGLE _ -> "f'''"
+  | STATE_IN_FSTRING_TRIPLE_DOUBLE _ -> "f\"\"\""
 )
 
 let pr_state state = List.iter pr_mode !(state.mode)
@@ -200,6 +203,8 @@ let fstringspecifier = 'f' | 'F'
 let fstringprefix = fstringspecifier | (fstringspecifier rawprefix) | (rawprefix fstringspecifier)
 
 let escapeseq = '\\' _
+(* for raw fstring *)
+let escapeseq2 = '\\' [^ '{']
 
 let identifier = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
@@ -348,10 +353,10 @@ and _token python2 state = parse
   | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
   | "!" { if !(state.mode) |> List.exists (function
-            | STATE_IN_FSTRING_SINGLE
-            | STATE_IN_FSTRING_DOUBLE
-            | STATE_IN_FSTRING_TRIPLE_SINGLE
-            | STATE_IN_FSTRING_TRIPLE_DOUBLE -> true
+            | STATE_IN_FSTRING_SINGLE _
+            | STATE_IN_FSTRING_DOUBLE _
+            | STATE_IN_FSTRING_TRIPLE_SINGLE _
+            | STATE_IN_FSTRING_TRIPLE_DOUBLE _ -> true
             | _ -> false)
           then BANG (tokinfo lexbuf)
           else begin
@@ -453,20 +458,20 @@ and _token python2 state = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  | fstringprefix "'"  {
-       push_mode state STATE_IN_FSTRING_SINGLE;
+  | fstringprefix as pre "'"  {
+       push_mode state (STATE_IN_FSTRING_SINGLE pre);
        FSTRING_START (tokinfo lexbuf)
     }
-  | fstringprefix '"'  {
-       push_mode state STATE_IN_FSTRING_DOUBLE;
+  | fstringprefix as pre '"'  {
+       push_mode state (STATE_IN_FSTRING_DOUBLE pre);
        FSTRING_START (tokinfo lexbuf)
     }
-  | fstringprefix "'''" {
-       push_mode state STATE_IN_FSTRING_TRIPLE_SINGLE;
+  | fstringprefix as pre "'''" {
+       push_mode state (STATE_IN_FSTRING_TRIPLE_SINGLE pre);
        FSTRING_START (tokinfo lexbuf)
      }
-  | fstringprefix "\"\"\"" {
-       push_mode state STATE_IN_FSTRING_TRIPLE_DOUBLE;
+  | fstringprefix as pre "\"\"\"" {
+       push_mode state (STATE_IN_FSTRING_TRIPLE_DOUBLE pre);
        FSTRING_START (tokinfo lexbuf)
      }
 
@@ -526,7 +531,7 @@ and dq_longstrlit state pos pre = shortest
 (* Rules on interpolated strings *)
 (*****************************************************************************)
 
-and fstring_single state = parse
+and fstring_single state pre = parse
  | "'" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' {
@@ -534,12 +539,18 @@ and fstring_single state = parse
     push_mode state STATE_UNDERSCORE_TOKEN;
     FSTRING_LBRACE (tokinfo lexbuf)
    }
- | ([^ '\\' '\r' '\n' '\'' '{'] | escapeseq)*
+ (* using escapeseq2 here! for raw-fstring *)
+ | ([^ '\\' '\r' '\n' '\'' '{'] | escapeseq2)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ (* ugly: for raw-fstring *)
+ | "\\{" { if pre =~ ".*[rR]" then Parse_info.yyback 1 lexbuf;
+      FSTRING_STRING (tok lexbuf, tokinfo lexbuf)
+    }
+
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
-and fstring_double state = parse
+and fstring_double state pre = parse
  | '"' { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' {
@@ -547,12 +558,17 @@ and fstring_double state = parse
     push_mode state STATE_UNDERSCORE_TOKEN;
     FSTRING_LBRACE (tokinfo lexbuf)
    }
- | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq)*
+ | ([^ '\\' '\r' '\n' '\"' '{'] | escapeseq2)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ (* ugly: for raw-fstring *)
+ | "\\{" { if pre =~ ".*[rR]" then Parse_info.yyback 1 lexbuf;
+      FSTRING_STRING (tok lexbuf, tokinfo lexbuf)
+    }
+
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
-and fstring_triple_single state = parse
+and fstring_triple_single state pre = parse
  | "'''" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' {
@@ -561,12 +577,18 @@ and fstring_triple_single state = parse
     FSTRING_LBRACE (tokinfo lexbuf)
    }
  | '\'' { FSTRING_STRING (tok lexbuf, tokinfo lexbuf) }
- | ([^ '\\' '{' '\''] | escapeseq)*
+
+ | ([^ '\\' '{' '\''] | escapeseq2)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ (* ugly: for raw-fstring *)
+ | "\\{" { if pre =~ ".*[rR]" then Parse_info.yyback 1 lexbuf;
+      FSTRING_STRING (tok lexbuf, tokinfo lexbuf)
+    }
+
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 
-and fstring_triple_double state = parse
+and fstring_triple_double state pre = parse
  | "\"\"\"" { pop_mode state; FSTRING_END (tokinfo lexbuf) }
  | "{{" { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
  | '{' {
@@ -575,8 +597,14 @@ and fstring_triple_double state = parse
     FSTRING_LBRACE (tokinfo lexbuf)
    }
  | '"' { FSTRING_STRING (tok lexbuf, tokinfo lexbuf) }
- | ([^ '\\' '{' '"'] | escapeseq)*
+
+ | ([^ '\\' '{' '"'] | escapeseq2)*
     { FSTRING_STRING (tok lexbuf, tokinfo lexbuf)}
+ (* ugly: for raw-fstring *)
+ | "\\{" { if pre =~ ".*[rR]" then Parse_info.yyback 1 lexbuf;
+      FSTRING_STRING (tok lexbuf, tokinfo lexbuf)
+    }
+
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
 (*e: pfff/lang_python/parsing/Lexer_python.mll *)

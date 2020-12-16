@@ -79,14 +79,14 @@ let tokens2 parsing_mode file =
          | _ -> ()
         );
         tok
-    | Lexer.STATE_IN_FSTRING_SINGLE ->
-        Lexer.fstring_single state lexbuf
-    | Lexer.STATE_IN_FSTRING_DOUBLE ->
-        Lexer.fstring_double state lexbuf
-    | Lexer.STATE_IN_FSTRING_TRIPLE_SINGLE ->
-        Lexer.fstring_triple_single state lexbuf
-    | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE ->
-        Lexer.fstring_triple_double state lexbuf
+    | Lexer.STATE_IN_FSTRING_SINGLE pre ->
+        Lexer.fstring_single state pre lexbuf
+    | Lexer.STATE_IN_FSTRING_DOUBLE pre ->
+        Lexer.fstring_double state pre lexbuf
+    | Lexer.STATE_IN_FSTRING_TRIPLE_SINGLE pre ->
+        Lexer.fstring_triple_single state pre lexbuf
+    | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE pre ->
+        Lexer.fstring_triple_double state pre lexbuf
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
