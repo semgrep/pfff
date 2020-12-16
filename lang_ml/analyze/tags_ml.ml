@@ -79,6 +79,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         ~lexer_based_tagger:true (* !! *)
         ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
         prefs
+        file
         (ast, toks)
       ;
 

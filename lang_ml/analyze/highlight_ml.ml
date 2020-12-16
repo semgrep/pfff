@@ -19,6 +19,7 @@ open Highlight_code
 open Entity_code
 module PI = Parse_info
 module T = Parser_ml
+module FT = File_type
 
 (*****************************************************************************)
 (* Prelude *)
@@ -76,7 +77,7 @@ let disable_token_phase2 = false
 *)
 let visit_program
     ?(lexer_based_tagger=false)
-    ~tag_hook _prefs  (*db_opt *) (ast, toks) =
+    ~tag_hook _prefs  (*db_opt *) file (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -89,6 +90,11 @@ let visit_program
     then tag ii categ
   in
 
+  let is_lex_or_yacc_file =
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.ML ("mll" | "mly" | "dyp")) -> true
+    | _ -> false
+  in
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
@@ -452,14 +458,16 @@ let visit_program
            | "failwith" | "raise" ->
                tag ii KeywordExn
            (* all the identifiers should have been tagged by now. *)
-           | _ -> tag_if_not_tagged ii Error
+           | _ when not is_lex_or_yacc_file -> tag_if_not_tagged ii Error
+           | _ -> ()
           )
 
       | T.TUpperIdent (s, ii) ->
           (match s with
            | "Todo" -> tag ii BadSmell
            (* all the identifiers should have been tagged by now. *)
-           | _ -> tag_if_not_tagged ii Error
+           | _ when not is_lex_or_yacc_file -> tag_if_not_tagged ii Error
+           | _ -> ()
           )
 
     )
