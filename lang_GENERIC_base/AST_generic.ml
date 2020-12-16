@@ -124,15 +124,16 @@ open Common
  *    for this return, so it must be 'Return of tok * expr option' instead)
  *  - each expression or statement should ideally have enough tokens in it
  *    to get its range, so at least the leftmost and rightmost token in
- *    all constructs.
+ *    all constructs, so the Return above should even be
+ *    'Return of tok * expr option * tok' for the ending semicolon
  *    (alt: have the range info in each expr/stmt/pattern but big refactoring)
  *  - to correctly compute a CFG (Control Flow Graph), the stmt type
  *    should list all constructs that contains other statements and
- *    try to avoid to use the very generic OtherXxx of any
+ *    try to avoid to use the very generic 'OtherXxx of any'
  *  - to correctly compute a DFG (Data Flow Graph), and to correctly resolve
  *    names (see Naming_AST.ml), each constructs that introduce a new
- *     variable should have a relevant comment 'newvar:'
- *  - to correctly resolve names, each constructs that introduce a new scope
+ *    variable should have a relevant comment 'newvar:'
+ *  - to correctly resolve names, each construct that introduces a new scope
  *    should have a relevant comment 'newscope:'
  *  - todo? each language should add the VarDefs that defines the locals
  *    used in a function (instead of having the first Assign play the role

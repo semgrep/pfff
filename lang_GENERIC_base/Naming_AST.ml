@@ -151,7 +151,10 @@ type scopes = {
   blocks: scope list ref;
   (* useful for python, kind of global scope but for entities *)
   imported: scope ref;
-  (* todo? class? function? (for 'var' in JS) *)
+  (* todo?
+   * - class? right now we abuse EnclosedVar in resolved_name_kind.
+   * - function? for 'var' in JS
+  *)
 }
 (*e: type [[Naming_AST.scopes]] *)
 
@@ -389,7 +392,9 @@ let resolved_name_kind env lang =
   | InFunction -> Local
   | InClass -> (
       match lang with
-      (* true for Java so that we can type class fields *)
+      (* true for Java so that we can type class fields.
+       * alt: use a different scope.class?
+      *)
       | Lang.Java -> EnclosedVar
       | _ -> raise Impossible
     )
@@ -416,7 +421,7 @@ let params_of_parameters env xs =
 let resolve2 lang prog =
   let env = default_env lang in
 
-  (* would be better to use a classic recursive with environment visit *)
+  (* would be better to use a classic recursive-with-environment visit *)
   let hooks =
     { V.default_visitor with
       (* the defs *)
