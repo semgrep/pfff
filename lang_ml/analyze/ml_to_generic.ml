@@ -349,13 +349,16 @@ and let_binding =
       (match v1 with
        | G.PatTyped (G.PatId (id, _idinfo), ty) ->
            let ent = G.basic_entity id [] in
-           let idinfo = ent.G.info in
-           (* less: abusing id_type? Do we asume id_info is populated
-            * by further static analysis (naming/typing)? But the info
-            * is here, and this can be used in semgrep too to express
-            * a form of TypedMetavar, so let's abuse it for now.
-           *)
-           idinfo.G.id_type := Some ty;
+           (match ent.G.name with
+            | G.EId (_, idinfo) ->
+                (* less: abusing id_type? Do we asume id_info is populated
+                 * by further static analysis (naming/typing)? But the info
+                 * is here, and this can be used in semgrep too to express
+                 * a form of TypedMetavar, so let's abuse it for now.
+                *)
+                idinfo.G.id_type := Some ty;
+            | _ -> raise Impossible
+           );
            Left (ent, [], None, v2)
        | _ -> Right (v1, v2)
       )

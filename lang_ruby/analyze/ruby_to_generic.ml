@@ -46,7 +46,7 @@ let fake s = Parse_info.fake_info s
 let fb = G.fake_bracket
 
 let nonbasic_entity id_or_e =
-  { G.name = id_or_e; attrs = []; info = G.empty_id_info(); tparams = [] }
+  { G.name = id_or_e; attrs = []; tparams = [] }
 
 (*****************************************************************************)
 (* Entry point *)

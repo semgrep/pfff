@@ -652,12 +652,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         name = x_name;
         attrs = v_attrs;
         tparams = v_tparams;
-        info = v_info;
       } = x in
       let arg = v_ident_or_dynamic x_name in
       let arg = v_list v_attribute v_attrs in
       let arg = v_list v_type_parameter v_tparams in
-      let arg = v_id_info v_info in
       ()
     in
     vin.kentity (k, all_functions) x

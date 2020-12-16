@@ -834,12 +834,8 @@ and
     name = v_name;
     attrs = v_attrs;
     tparams = v_tparams;
-    info = v_info
   } =
   let bnds = [] in
-  let arg = vof_id_info v_info in
-  let bnd = ("info", arg) in
-  let bnds = bnd :: bnds in
   let arg = OCaml.vof_list vof_type_parameter v_tparams in
   let bnd = ("tparams", arg) in
   let bnds = bnd :: bnds in

@@ -555,8 +555,8 @@ and record env ((_tok, origfields, _) as record_def) =
 (*s: function [[AST_to_IL.lval_of_ent]] *)
 let lval_of_ent env ent =
   match ent.G.name with
-  | G.EId (id, _idinfo) -> lval_of_id_info env id ent.G.info
-  | G.EName gname -> lval env (G.IdQualified(gname,ent.G.info))
+  | G.EId (id, idinfo) -> lval_of_id_info env id idinfo
+  | G.EName gname -> lval env (G.IdQualified(gname, G.empty_id_info()))
   | G.EDynamic eorig -> lval env eorig
 (*e: function [[AST_to_IL.lval_of_ent]] *)
 

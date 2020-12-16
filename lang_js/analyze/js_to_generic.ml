@@ -487,8 +487,7 @@ and field_classic {fld_name=v1; fld_attrs = v2; fld_type = vt; fld_body = v3} =
     match v1 with
     | Left n -> G.basic_entity n v2
     | Right e ->
-        {G. name = G.EDynamic e; attrs = v2; tparams = [];
-         info = G.empty_id_info()}
+        {G. name = G.EDynamic e; attrs = v2; tparams = []; }
   in
   match v3 with
   | Some (Fun (def, None)) ->

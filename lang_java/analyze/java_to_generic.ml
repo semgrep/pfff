@@ -44,11 +44,11 @@ let fb = G.fake_bracket
 
 
 let id_of_entname = function
-  | G.EId (id, _) -> id
+  | G.EId (id, idinfo) -> id, idinfo
   | G.EName _ | G.EDynamic _ -> raise Impossible
 
-let entity_to_param { G.name; attrs; tparams = _unused; info } t =
-  let id = id_of_entname name in
+let entity_to_param { G.name; attrs; tparams = _unused; } t =
+  let id, info = id_of_entname name in
   { G. pname = Some id; ptype = t; pattrs = attrs; pinfo = info;
     pdefault = None; }
 
@@ -401,7 +401,7 @@ and for_control tok =
       in
       G.ForClassic (v1, list_to_opt_seq v2, list_to_opt_seq v3)
   | Foreach (v1, v2) -> let ent, typ = var v1 and v2 = expr v2 in
-      let id = id_of_entname ent.G.name in
+      let id, _idinfo = id_of_entname ent.G.name in
       let pat =
         match typ with
         | Some t -> G.PatVar (t, Some (id, G.empty_id_info ()))
@@ -424,7 +424,7 @@ and var { name = name; mods = mods; type_ = xtyp } =
 
 and catch (tok, (v1, _union_types), v2) =
   let ent, typ = var v1 in
-  let id = id_of_entname ent.G.name in
+  let id, _idinfo = id_of_entname ent.G.name in
   let v2 = stmt v2 in
   let pat =
     match typ with
