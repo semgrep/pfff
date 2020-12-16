@@ -71,15 +71,18 @@ let sgrep_construct any_generic =
   error_any any_generic "Sgrep Construct"
 (*e: function [[AST_to_IL.sgrep_construct]] *)
 
+exception Todo of G.any
+
+(*s: function [[AST_to_IL.todo]] *)
+let todo gany =
+  raise (Todo gany)
+(*e: function [[AST_to_IL.todo]] *)
+
 (*s: function [[AST_to_IL.impossible]] *)
 let impossible any_generic =
   error_any any_generic "Impossible Construct"
 (*e: function [[AST_to_IL.impossible]] *)
 
-exception Todo of G.any
-
-let todo gany =
-  raise (Todo gany)
 
 let todo_warning gany =
   let toks = Lib_AST.ii_of_any gany in
@@ -135,11 +138,10 @@ let lval_of_id_info _env id id_info =
   { base = Var var; offset = NoOffset }
 (*e: function [[AST_to_IL.lval_of_id_info]] *)
 
-(*s: function [[AST_to_IL.lval_of_id_qualified]] *)
+
 let lval_of_id_qualified env name id_info =
   let id, _ = name in
   lval_of_id_info env id id_info
-(*e: function [[AST_to_IL.lval_of_id_qualified]] *)
 
 (*s: function [[AST_to_IL.label_of_label]] *)
 (* TODO: should do first pass on body to get all labels and assign
@@ -552,6 +554,11 @@ and record env ((_tok, origfields, _) as record_def) =
   in
   mk_e (Record fields) eorig
 
+
+(*****************************************************************************)
+(* Exprs and instrs *)
+(*****************************************************************************)
+
 (*s: function [[AST_to_IL.lval_of_ent]] *)
 let lval_of_ent env ent =
   match ent.G.name with
@@ -559,11 +566,6 @@ let lval_of_ent env ent =
   | G.EName gname -> lval env (G.IdQualified(gname, G.empty_id_info()))
   | G.EDynamic eorig -> lval env eorig
 (*e: function [[AST_to_IL.lval_of_ent]] *)
-
-
-(*****************************************************************************)
-(* Exprs and instrs *)
-(*****************************************************************************)
 
 (*s: constant [[AST_to_IL.expr_orig]] *)
 (* just to ensure the code after does not call expr directly *)
@@ -728,9 +730,11 @@ let rec stmt_aux env st =
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)
 
+(*s: function [[AST_to_IL.stmt]] *)
 and stmt env st =
   try stmt_aux env st
   with Todo gany -> stmt_todo gany
+(*e: function [[AST_to_IL.stmt]] *)
 
 (*****************************************************************************)
 (* Entry point *)
