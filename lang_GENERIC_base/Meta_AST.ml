@@ -249,7 +249,10 @@ and vof_expr =
       in OCaml.VSum ("OtherExpr", [ v1; v2 ])
 
 and vof_ident_or_dynamic = function
-  | EId v1 -> let v1 = vof_ident v1 in OCaml.VSum ("EId", [v1])
+  | EId (v1, v2) ->
+      let v1 = vof_ident v1 in
+      let v2 = vof_id_info v2 in
+      OCaml.VSum ("EId", [v1; v2])
   | EName v1 -> let v1 = vof_name v1 in OCaml.VSum ("EName", [v1])
   | EDynamic v1 -> let v1 = vof_expr v1 in OCaml.VSum ("EDynamic", [v1])
 

@@ -98,7 +98,7 @@ let rec expr = function
       let e = expr e in
       let fld =
         match method_name m with
-        | Left id -> G.EId id
+        | Left id -> G.EId (id, G.empty_id_info())
         | Right e -> G.EDynamic e
       in
       G.DotAccess (e, t, fld)

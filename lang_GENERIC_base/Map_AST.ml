@@ -250,7 +250,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     vin.kexpr (k, all_functions) x
 
   and map_ident_or_dynamic = function
-    | EId v1 -> let v1 = map_ident v1 in EId v1
+    | EId (v1, v2) ->
+        let v1 = map_ident v1 in
+        let v2 = map_id_info v2 in
+        EId (v1, v2)
     | EName v1 -> let v1 = map_name v1 in EName v1
     | EDynamic v1 -> let v1 = map_expr v1 in EDynamic v1
 

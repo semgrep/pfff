@@ -128,7 +128,7 @@ let visit_program
 
       V.kdef = (fun (k, _) x ->
         match x with
-        | ({ name = EId (id); _}, def) ->
+        | ({ name = EId (id, _); _}, def) ->
             (match def with
              | Signature ty ->
                  tag_id id (kind_of_ty ty);
@@ -159,7 +159,7 @@ let visit_program
                       )
                   | AndType (_, xs, _) ->
                       xs |> List.iter (function
-                        | FieldStmt (DefStmt ({ name = EId (id); _}, _))->
+                        | FieldStmt (DefStmt ({ name = EId (id, _); _}, _))->
                             tag_id id (Entity (Field, (Def2 fake_no_def2)));
                         | _ ->  ()
                       );
@@ -345,7 +345,7 @@ let visit_program
                     | Fun (_, Some name) ->
                         tag_name name (Entity (E.Function, (Use2 fake_no_use2)));
         *)
-        | DotAccess (_e, tok, (EId id | EName (id, _))) ->
+        | DotAccess (_e, tok, (EId (id, _) | EName (id, _))) ->
             (match PI.str_of_info tok with
              (* ocaml specific *)
              | "#" -> tag_id id (Entity (Method, (Use2 fake_no_use2)))
@@ -361,8 +361,8 @@ let visit_program
         | Record (_, xs, _) ->
             xs |> List.iter (fun x ->
               match x with
-              | FieldStmt (DefStmt ({ name = EId (_, info); _}, _)) ->
-                  tag info (Entity (Field, (Use2 fake_no_use2)));
+              | FieldStmt (DefStmt ({ name = EId (id, _idinfo); _}, _)) ->
+                  tag_id id (Entity (Field, (Use2 fake_no_use2)));
               | _ -> ()
             );
             k x

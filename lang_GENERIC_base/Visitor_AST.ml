@@ -266,7 +266,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     vin.kexpr (k, all_functions) x
 
   and v_ident_or_dynamic = function
-    | EId id -> v_ident id
+    | EId (id, idinfo) -> v_ident id; v_id_info idinfo
     | EName n -> v_name n
     | EDynamic e -> v_expr e
 

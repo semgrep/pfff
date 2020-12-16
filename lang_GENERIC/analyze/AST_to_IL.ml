@@ -211,7 +211,7 @@ let rec lval env eorig =
       in
       let offset =
         match field with
-        | G.EId id -> Dot id
+        | G.EId (id, _idinfo) -> Dot id
         | G.EName gname ->
             let attr = expr env (G.id_of_name gname) in
             Index attr
@@ -536,7 +536,7 @@ and record env ((_tok, origfields, _) as record_def) =
   let fields =
     origfields
     |> List.map (function
-      | G.FieldStmt (G.DefStmt ({G. name=G.EId id;tparams=[];_}, def_kind)) ->
+      | G.FieldStmt (G.DefStmt ({G. name=G.EId (id, _);tparams=[];_}, def_kind)) ->
           let fdeforig =
             match def_kind with
             (* TODO: Consider what to do with vtype. *)
@@ -555,7 +555,7 @@ and record env ((_tok, origfields, _) as record_def) =
 (*s: function [[AST_to_IL.lval_of_ent]] *)
 let lval_of_ent env ent =
   match ent.G.name with
-  | G.EId id -> lval_of_id_info env id ent.G.info
+  | G.EId (id, _idinfo) -> lval_of_id_info env id ent.G.info
   | G.EName gname -> lval env (G.IdQualified(gname,ent.G.info))
   | G.EDynamic eorig -> lval env eorig
 (*e: function [[AST_to_IL.lval_of_ent]] *)

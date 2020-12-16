@@ -449,7 +449,7 @@ let resolve2 lang prog =
       );
       V.kdef = (fun (k, _v) x ->
         match x with
-        | { name = EId id; info = id_info; _},
+        | { name = EId (id, _id_info); info = id_info; _},
           (* note that some languages such as Python do not have VarDef
            * construct
            * todo? should add those somewhere instead of in_lvalue detection? *)
@@ -467,7 +467,7 @@ let resolve2 lang prog =
             let resolved = { entname = resolved_name_kind env lang, sid; enttype = resolved_type } in add_ident_current_scope id resolved env.names;
             set_resolved env id_info resolved;
 
-        | { name = EId id; info = id_info; _}, UseOuterDecl tok ->
+        | { name = EId (id, _idinfo); info = id_info; _}, UseOuterDecl tok ->
             let s = Parse_info.str_of_info tok in
             let flookup =
               match s with

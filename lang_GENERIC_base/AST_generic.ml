@@ -285,8 +285,12 @@ and qualifier =
  * represent entities like in Ruby where a class name can be dynamic.
 *)
 and ident_or_dynamic =
-  (* In the case of a field, hard to add '* id_info'; hard to resolve *)
-  | EId of ident
+  (* In the case of a field, it may be hard to resolve the id_info.
+   * For example, a method id can refer to many method definitions.
+   * But for certain things, like a private field, we can resolve it
+   * (right now we use an EnclosedVar for those fields).
+  *)
+  | EId of ident * id_info
   (* Useful for OCaml field access, but also for Ruby class entity name.
    * Note that we could also use EDynamic (IdQualified) but better to
    * add special case here.
@@ -1078,7 +1082,7 @@ and entity = {
   attrs: attribute list;
   (*e: [[AST_generic.entity]] attribute field *)
   (*s: [[AST_generic.entity]] id info field *)
-  (* naming/typing *)
+  (* naming/typing, TODO remove now that have id_info in EId ? *)
   info: id_info;
   (*e: [[AST_generic.entity]] id info field *)
   (*s: [[AST_generic.entity]] other fields *)
@@ -1647,11 +1651,13 @@ let param_of_type typ = {
 (*e: function [[AST_generic.param_of_type]] *)
 
 (*s: function [[AST_generic.basic_entity]] *)
-let basic_entity id attrs = {
-  name = EId id;
-  attrs = attrs;
-  tparams = []; info = empty_id_info ();
-}
+let basic_entity id attrs =
+  let idinfo = empty_id_info () in
+  {
+    name = EId (id, idinfo);
+    attrs = attrs;
+    tparams = []; info = idinfo;
+  }
 (*e: function [[AST_generic.basic_entity]] *)
 
 (*s: function [[AST_generic.basic_field]] *)
@@ -1761,7 +1767,8 @@ let is_boolean_operator = function
 
 let ident_or_dynamic_to_expr name idinfo =
   match name with
-  | EId id -> Id (id, idinfo)
+  (* assert idinfo = _idinfo below? *)
+  | EId (id, _idinfo) -> Id (id, idinfo)
   | EName n -> IdQualified (n, idinfo)
   | EDynamic e -> e
 

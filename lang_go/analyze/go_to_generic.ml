@@ -227,7 +227,7 @@ let top_func () =
               { (G.empty_id_info()) with G.id_resolved = vref; })
     | Selector (v1, v2, v3) ->
         let v1 = expr v1 and v2 = tok v2 and v3 = ident v3 in
-        G.DotAccess (v1, v2, G.EId v3)
+        G.DotAccess (v1, v2, G.EId (v3, G.empty_id_info()))
     | Index (v1, v2) -> let v1 = expr v1 and v2 = bracket index v2 in
         G.ArrayAccess (v1, v2)
     | Call v1 -> let (e, args) = call_expr v1 in
