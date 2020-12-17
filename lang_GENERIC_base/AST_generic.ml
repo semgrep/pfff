@@ -236,6 +236,12 @@ and resolved_name_kind =
    * With sid this is potentially less useful for scoping-related issues,
    * but this can be useful in codemap to again highlight specially
    * enclosed vars.
+   * todo: this is currently used also for fields, but we should use another
+   * constructor.
+   * Note that it's tempting to add a depth parameter to EnclosedVar, but
+   * that would prevent semgrep to work because whatever the depth you are,
+   * if you reference the same entity, this entity must have the same
+   * resolved_name (sid and resolved_name_kind).
   *)
   | EnclosedVar (* less: add depth? *)
 
@@ -929,7 +935,9 @@ and other_pattern_operator =
 
 (*s: type [[AST_generic.type_]] *)
 and type_ =
-  (* todo? a type_builtin = TInt | TBool | ...? see Literal *)
+  (* todo? a type_builtin = TInt | TBool | ...? see Literal.
+   * or just delete and use TyId instead?
+  *)
   | TyBuiltin of string wrap (* int, bool, etc. could be TApply with no args *)
 
   (* old: was 'type_ list * type*' , but languages such as C and
@@ -1000,7 +1008,6 @@ and other_type_operator =
   (* C *) (* todo? convert in unique names with TyName? *)
   | OT_StructName | OT_UnionName | OT_EnumName
   (* PHP *)
-  | OT_ShapeComplex (* complex TyAnd with complex keys *)
   | OT_Variadic (* ???? *)
   (* Other *)
   | OT_Expr | OT_Arg (* Python: todo: should use expr_to_type() when can *)
