@@ -14,6 +14,7 @@
 *)
 open OCaml
 open AST_generic
+module H = AST_generic_helpers
 
 (* Disable warnings against unused variables *)
 [@@@warning "-26"]
@@ -739,7 +740,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
          *
          * This feels a bit hacky here, so let's take a TODO to improve this
         *)
-        v_expr (vardef_to_assign (ventity, vdef))
+        v_expr (H.vardef_to_assign (ventity, vdef))
     | _ -> ()
 
   and v_field x =

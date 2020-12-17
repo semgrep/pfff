@@ -17,6 +17,7 @@ open Common
 
 open IL
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -111,12 +112,12 @@ let stmt_todo gany =
 (*****************************************************************************)
 (*s: function [[AST_to_IL.fresh_var]] *)
 let fresh_var _env tok =
-  let i = G.gensym () in
+  let i = H.gensym () in
   ("_tmp", tok), i
 (*e: function [[AST_to_IL.fresh_var]] *)
 (*s: function [[AST_to_IL._fresh_label]] *)
 let _fresh_label _env tok =
-  let i = G.gensym () in
+  let i = H.gensym () in
   ("_label", tok), i
 (*e: function [[AST_to_IL._fresh_label]] *)
 (*s: function [[AST_to_IL.fresh_lval]] *)
@@ -215,7 +216,7 @@ let rec lval env eorig =
         match field with
         | G.EId (id, _idinfo) -> Dot id
         | G.EName gname ->
-            let attr = expr env (G.id_of_name gname) in
+            let attr = expr env (H.id_of_name gname) in
             Index attr
         | G.EDynamic e2orig ->
             let attr = expr env e2orig in

@@ -362,7 +362,7 @@ and cpp_directive env x =
         match inc_kind with
         | Local -> "\"" ^ path ^ "\""
         | Standard -> "<" ^ path ^ ">"
-        | Weird when AST_generic.is_metavar_name path ->
+        | Weird when AST_generic_helpers.is_metavar_name path ->
             path
         | Weird ->
             debug (Cpp x); raise Todo

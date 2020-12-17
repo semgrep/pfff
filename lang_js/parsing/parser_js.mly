@@ -18,6 +18,7 @@ open Common
 
 open Ast_js
 module G = AST_generic (* for operators, fake, and now also type_ *)
+module H = AST_generic_helpers
 
 (*************************************************************************)
 (* Prelude *)
@@ -890,7 +891,7 @@ type_reference: type_reference_aux
   { match $1 with
     (* TODO: could be TyApply if snd $1 is a Some *)
     | [id] -> G.TyId (id, G.empty_id_info())
-    | ids ->  G.TyIdQualified (G.name_of_ids ids, G.empty_id_info())
+    | ids ->  G.TyIdQualified (H.name_of_ids ids, G.empty_id_info())
   }
 
 (* was called nominal_type in Flow *)

@@ -16,6 +16,7 @@ open Common
 
 open Ast_java
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -348,9 +349,9 @@ and stmt =
       G.DoWhile (t, v1, v2)
   | For (t, v1, v2) -> let v1 = for_control t v1 and v2 = stmt v2 in
       G.For (t, v1, v2)
-  | Break (t, v1) -> let v1 = G.opt_to_label_ident v1 in
+  | Break (t, v1) -> let v1 = H.opt_to_label_ident v1 in
       G.Break (t, v1, G.sc)
-  | Continue (t, v1) -> let v1 = G.opt_to_label_ident v1 in
+  | Continue (t, v1) -> let v1 = H.opt_to_label_ident v1 in
       G.Continue (t, v1, G.sc)
   | Return (t, v1) -> let v1 = option expr v1 in
       G.Return (t, v1, G.sc)
@@ -382,7 +383,7 @@ and tok_and_stmt (t, v) =
 and stmts v = list stmt v
 
 and case = function
-  | Case (t, v1) -> let v1 = expr v1 in G.Case (t, G.expr_to_pattern v1)
+  | Case (t, v1) -> let v1 = expr v1 in G.Case (t, H.expr_to_pattern v1)
   | Default t -> G.Default t
 
 and cases v = list case v

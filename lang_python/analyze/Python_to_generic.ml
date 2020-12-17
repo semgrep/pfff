@@ -19,6 +19,7 @@ open Common
 
 open AST_python
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -182,7 +183,7 @@ let rec expr (x: expr) =
       G.TypedMetavar (v1, v2, v3)
   | ExprStar v1 ->
       let v1 = expr v1 in
-      G.Call (G.IdSpecial (G.Spread, fake "spread"), fb [G.expr_to_arg v1])
+      G.Call (G.IdSpecial (G.Spread, fake "spread"), fb [G.arg v1])
 
   | Name (v1, v2, v3) ->
       let v1 = name v1
@@ -251,14 +252,14 @@ let rec expr (x: expr) =
       let v1 = boolop v1
       and v2 = list expr v2 in
       G.Call (G.IdSpecial (G.Op v1, tok),
-              fb (v2 |> List.map G.expr_to_arg))
+              fb (v2 |> List.map G.arg))
   | BinOp ((v1, (v2, tok), v3)) ->
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
-      G.Call (G.IdSpecial (G.Op v2, tok), fb ([v1;v3] |> List.map G.expr_to_arg))
+      G.Call (G.IdSpecial (G.Op v2, tok), fb ([v1;v3] |> List.map G.arg))
   | UnaryOp (((v1, tok), v2)) -> let v1 = unaryop v1 and v2 = expr v2 in
       (match v1 with
        | Left op ->
-           G.Call (G.IdSpecial (G.Op op, tok), fb ([v2] |> List.map G.expr_to_arg))
+           G.Call (G.IdSpecial (G.Op op, tok), fb ([v2] |> List.map G.arg))
        | Right oe ->
            G.OtherExpr (oe, [G.E v2])
       )
@@ -268,7 +269,7 @@ let rec expr (x: expr) =
       and v3 = list expr v3 in
       (match v2, v3 with
        | [Left op, tok], [e] ->
-           G.Call (G.IdSpecial (G.Op op, tok), fb ([v1;e] |> List.map G.expr_to_arg))
+           G.Call (G.IdSpecial (G.Op op, tok), fb ([v1;e] |> List.map G.arg))
        | [Right oe, _tok], [e] ->
            G.OtherExpr (oe, [G.E v1; G.E e])
        | _ ->
@@ -306,9 +307,9 @@ and argument = function
   | Arg e -> let e = expr e in
       G.Arg e
   | ArgStar (t, e) -> let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.Spread, t), fb[G.expr_to_arg e]))
+      G.Arg (G.Call (G.IdSpecial (G.Spread, t), fb[G.arg e]))
   | ArgPow (t, e) ->  let e = expr e in
-      G.Arg (G.Call (G.IdSpecial (G.HashSplat, t), fb[G.expr_to_arg e]))
+      G.Arg (G.Call (G.IdSpecial (G.HashSplat, t), fb[G.arg e]))
   | ArgKwd (n, e) -> let n = name n in let e = expr e in
       G.ArgKwd (n, e)
   | ArgComp (e, xs) ->
@@ -335,7 +336,7 @@ and dictorset_elt = function
       v1
   | PowInline v1 ->
       let v1 = expr v1 in
-      G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.expr_to_arg v1])
+      G.Call (G.IdSpecial (G.Spread, fake "spread"), fb[G.arg v1])
 (*e: function [[Python_to_generic.dictorset_elt]] *)
 
 (*s: function [[Python_to_generic.number]] *)
@@ -470,7 +471,7 @@ and parameters xs =
 (*s: function [[Python_to_generic.type_]] *)
 and type_ v =
   let v = expr v in
-  G.expr_to_type v
+  H.expr_to_type v
 (*e: function [[Python_to_generic.type_]] *)
 
 (*s: function [[Python_to_generic.type_parent]] *)
@@ -510,7 +511,7 @@ and list_stmt1 xs =
    * in which case we remove the G.Block around it.
    * hacky ...
   *)
-  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when G.is_metavar_name s
+  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when H.is_metavar_name s
     -> x
   | xs -> G.Block (fb xs)
 (*e: function [[Python_to_generic.list_stmt1]] *)
@@ -603,7 +604,7 @@ and stmt_aux x =
       let e =
         match v2 with
         | None -> v1
-        | Some e2 -> G.LetPattern (G.expr_to_pattern e2, v1)
+        | Some e2 -> G.LetPattern (H.expr_to_pattern e2, v1)
       in
       [G.OtherStmtWithStmt (G.OSWS_With, Some e, v3)]
 
@@ -714,7 +715,7 @@ and stmt x =
 (*s: function [[Python_to_generic.pattern]] *)
 and pattern e =
   let e = expr e in
-  G.expr_to_pattern e
+  H.expr_to_pattern e
 (*e: function [[Python_to_generic.pattern]] *)
 
 (*s: function [[Python_to_generic.excepthandler]] *)
@@ -728,12 +729,12 @@ and excepthandler =
       t,
       (match v1, v2 with
        | Some e, None ->
-           G.PatVar (G.expr_to_type e, None)
+           G.PatVar (H.expr_to_type e, None)
        | None, None ->
            G.PatUnderscore (fake "_")
        | None, Some _ -> raise Impossible (* see the grammar *)
        | Some e, Some n ->
-           G.PatVar (G.expr_to_type e, Some (n, G.empty_id_info ()))
+           G.PatVar (H.expr_to_type e, Some (n, G.empty_id_info ()))
       ), v3
 (*e: function [[Python_to_generic.excepthandler]] *)
 

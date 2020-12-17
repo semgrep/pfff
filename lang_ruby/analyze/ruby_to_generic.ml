@@ -16,6 +16,7 @@ open Common
 
 open Ast_ruby
 module G = AST_generic
+module H = AST_generic_helpers
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -93,7 +94,7 @@ let rec expr = function
       let e = expr e in
       let xs = list expr xs in
       let last = option expr bopt |> Common.opt_to_list in
-      G.Call (e, fb ((xs @ last) |> List.map G.expr_to_arg))
+      G.Call (e, fb ((xs @ last) |> List.map G.arg))
   | DotAccess (e, t, m) ->
       let e = expr e in
       let fld =
@@ -104,7 +105,7 @@ let rec expr = function
       G.DotAccess (e, t, fld)
   | Splat (t, eopt) ->
       let xs =
-        option expr eopt |> Common.opt_to_list |> List.map G.expr_to_arg in
+        option expr eopt |> Common.opt_to_list |> List.map G.arg in
       let special = G.IdSpecial (G.Spread, t) in
       G.Call (special, fb xs)
   | CodeBlock ((t1,_,t2), params_opt, xs) ->
@@ -466,11 +467,11 @@ and exprs_to_eopt = function
 
 and pattern pat =
   let e = expr pat in
-  G.expr_to_pattern e
+  H.expr_to_pattern e
 
 and type_ e =
   let e = expr e in
-  G.expr_to_type e
+  H.expr_to_type e
 
 and option_tok_stmts x =
   match x with
@@ -508,7 +509,7 @@ and definition def =
              | None -> []
              | Some (_t2, e) ->
                  let e = expr e in
-                 [G.expr_to_type e]
+                 [H.expr_to_type e]
            in
            let ent =
              match name with
@@ -637,7 +638,7 @@ and list_stmt1 xs =
    * in which case we remove the G.Block around it.
    * hacky ...
   *)
-  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when G.is_metavar_name s
+  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when H.is_metavar_name s
     -> x
   | xs -> G.Block (fb xs)
 

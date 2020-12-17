@@ -14,7 +14,7 @@
 *)
 open Common
 open AST_generic
-module Ast = AST_generic
+module H = AST_generic_helpers
 module V = Visitor_AST
 
 (*****************************************************************************)
@@ -68,12 +68,12 @@ type var_stats = (var, lr_stats) Hashtbl.t
 
 let add_constant_env ident (sid, literal) env =
   env.constants :=
-    ((Ast.str_of_ident ident, sid), literal)::!(env.constants)
+    ((H.str_of_ident ident, sid), literal)::!(env.constants)
 
 let find_id env id id_info =
   match id_info with
   | { id_resolved = {contents = Some (_kind, sid)}; _ } ->
-      let s = Ast.str_of_ident id in
+      let s = H.str_of_ident id in
       List.assoc_opt (s, sid) !(env.constants)
   | __else__ ->
       None
@@ -105,7 +105,7 @@ let var_stats prog : var_stats =
         | { name = EId (id,
                         { id_resolved = {contents = Some(_kind, sid)}; _}); _},
           VarDef ({ vinit = Some _; _ }) ->
-            let var = (Ast.str_of_ident id, sid) in
+            let var = (H.str_of_ident id, sid) in
             let stat = get_stat_or_create var h in
             incr stat.lvalue;
             k x
@@ -118,13 +118,13 @@ let var_stats prog : var_stats =
           Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ })),
           _,
           e2) ->
-            let var = (Ast.str_of_ident id, sid) in
+            let var = (H.str_of_ident id, sid) in
             let stat = get_stat_or_create var h in
             incr stat.lvalue;
             vout (E e2)
 
         | Id (id, ({ id_resolved = {contents = Some (_kind, sid)}; _ }))->
-            let var = (Ast.str_of_ident id, sid) in
+            let var = (H.str_of_ident id, sid) in
             let stat = get_stat_or_create var h in
             incr stat.rvalue;
             k x
@@ -255,11 +255,11 @@ let propagate2 lang prog =
            * todo? should add those somewhere instead of in_lvalue detection?*)
           VarDef ({ vinit = Some (L literal); _ }) ->
             let _stats =
-              try Hashtbl.find stats (Ast.str_of_ident id, sid)
+              try Hashtbl.find stats (H.str_of_ident id, sid)
               with Not_found -> raise Impossible
             in
-            if Ast.has_keyword_attr Const attrs ||
-               Ast.has_keyword_attr Final attrs
+            if H.has_keyword_attr Const attrs ||
+               H.has_keyword_attr Final attrs
                (* TODO later? (!(stats.rvalue) = 1) *)
             then begin
               id_info.id_const_literal := Some literal;
@@ -291,7 +291,7 @@ let propagate2 lang prog =
              (match eval_expr env rexp with
               | Some literal ->
                   let stats =
-                    try Hashtbl.find stats (Ast.str_of_ident id, sid)
+                    try Hashtbl.find stats (H.str_of_ident id, sid)
                     with Not_found -> raise Impossible
                   in
                   if (!(stats.lvalue) = 1) &&

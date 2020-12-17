@@ -15,6 +15,7 @@
 open Common
 
 module G = AST_generic
+module H = AST_generic_helpers
 
 open Cst_cpp
 open Ast_c
@@ -237,7 +238,7 @@ and expr =
       in G.Record v1
   | GccConstructor (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.New, fake "new"),
-              fb((G.ArgType v1)::([v2] |> List.map G.expr_to_arg)))
+              fb((G.ArgType v1)::([v2] |> List.map G.arg)))
 
 and argument v =
   match v with
@@ -309,7 +310,7 @@ and case_stmt = function
 and case =
   function
   | Case (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in
-      [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
+      [G.Case (t, H.expr_to_pattern v1)], G.stmt1 v2
   | Default (t, v1) -> let v1 = list stmt v1 in
       [G.Default t], G.stmt1 v1
 and

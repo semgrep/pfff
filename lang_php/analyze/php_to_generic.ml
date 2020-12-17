@@ -17,6 +17,7 @@ open Common
 open Cst_php
 open Ast_php
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -212,7 +213,7 @@ and opt_expr_to_label_ident = function
 and case =
   function
   | Case (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in
-      [G.Case (t, G.expr_to_pattern v1)], G.stmt1 v2
+      [G.Case (t, H.expr_to_pattern v1)], G.stmt1 v2
   | Default (t, v1) -> let v1 = list stmt v1 in
       [G.Default t], G.stmt1 v1
 
@@ -266,17 +267,17 @@ and expr =
   | Class_get (v1, t, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.EDynamic v2)
   | New (t, v1, v2) -> let v1 = expr v1 and v2 = list expr v2 in
-      G.Call (G.IdSpecial(G.New, t), fb ((v1::v2) |> List.map G.expr_to_arg))
+      G.Call (G.IdSpecial(G.New, t), fb ((v1::v2) |> List.map G.arg))
 
   | NewAnonClass (t, args, cdef) ->
       let (_ent, cdef) = class_def cdef in
       let args = list expr args in
       let anon_class = G.AnonClass cdef in
       G.Call (G.IdSpecial(G.New, t),
-              fb ((anon_class::args) |> List.map G.expr_to_arg))
+              fb ((anon_class::args) |> List.map G.arg))
   | InstanceOf (t, v1, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.Call (G.IdSpecial(G.Instanceof, t),
-              fb([v1;v2] |> List.map G.expr_to_arg))
+              fb([v1;v2] |> List.map G.arg))
   (* v[] = 1 --> v <append>= 1.
    * update: because we must generate an OE_ArrayAppend in other contexts,
    * this prevents the simple pattern '$x[]' to be matched in an Assign
@@ -336,7 +337,7 @@ and expr =
       G.Call (G.IdSpecial (G.Op v1, t), fb[G.Arg v2])
   | Guil (t, v1, _) -> let v1 = list expr v1 in
       G.Call (G.IdSpecial (G.ConcatString G.InterpolatedConcat, t),
-              fb (v1 |> List.map G.expr_to_arg))
+              fb (v1 |> List.map G.arg))
   | ConsArray v1 -> let v1 = bracket (list array_value) v1 in
       G.Container (G.Array, v1)
   | CondExpr (v1, v2, v3) ->
@@ -365,7 +366,7 @@ and expr =
        | _ -> error tok "TODO: Lambda"
       )
 
-and argument e = let e = expr e in G.expr_to_arg e
+and argument e = let e = expr e in G.arg e
 
 and special = function
   | This -> G.This
@@ -373,7 +374,7 @@ and special = function
 
 and foreach_pattern v   =
   let v = expr v in
-  G.expr_to_pattern v
+  H.expr_to_pattern v
 
 and array_value v       = expr v
 

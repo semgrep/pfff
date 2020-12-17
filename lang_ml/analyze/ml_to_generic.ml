@@ -16,6 +16,7 @@ open Common
 
 open Ast_ml
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -96,7 +97,7 @@ and expr =
       let v1 = expr v1 in
       let v3 = type_ v3 in
       (match v1 with
-       | G.Id (id, _idinfo) when G.is_metavar_name (fst id) ->
+       | G.Id (id, _idinfo) when H.is_metavar_name (fst id) ->
            G.TypedMetavar (id, v2, v3)
        | _ -> G.Cast (v3, v1)
       )
@@ -106,7 +107,7 @@ and expr =
       let v3 = tok v3 in
       G.DeepEllipsis (v1, v2, v3)
   | L v1 -> let v1 = literal v1 in G.L v1
-  | Name v1 -> let v1 = name v1 in G.id_of_name v1
+  | Name v1 -> let v1 = name v1 in H.id_of_name v1
   | Constructor (v1, v2) ->
       let v1 = name v1 and v2 = option expr v2 in
       G.Constructor (v1, Common.opt_to_list v2)
@@ -178,7 +179,7 @@ and expr =
       )
   | New (v1, v2) -> let v1 = tok v1 and v2 = name v2 in
       G.Call (G.IdSpecial (G.New, v1),
-              G.fake_bracket [G.Arg (G.id_of_name v2)])
+              G.fake_bracket [G.Arg (H.id_of_name v2)])
   | ObjAccess (v1, t, v2) ->
       let v1 = expr v1 and v2 = ident v2 in
       let t = tok t in

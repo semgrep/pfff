@@ -18,6 +18,7 @@ open Common
 open AST_generic
 module Ast = AST_generic
 module F = Controlflow
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -601,13 +602,13 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
   *)
   | DefStmt (ent, VarDef def) ->
       cfg_simple_node state previ
-        (exprstmt (Ast.vardef_to_assign (ent, def)))
+        (exprstmt (H.vardef_to_assign (ent, def)))
 
   (* just to factorize code, a nested func is really like a lambda *)
   | DefStmt (ent, FuncDef def) ->
       let resolved = Some (Local, Ast.sid_TODO) in
       cfg_simple_node state previ
-        (exprstmt (Ast.funcdef_to_lambda (ent, def) resolved))
+        (exprstmt (H.funcdef_to_lambda (ent, def) resolved))
 
   (* TODO: we should process lambdas! and generate an arc to its
    * entry that then go back here! After all most lambdas are used for

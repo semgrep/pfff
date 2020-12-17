@@ -16,6 +16,7 @@ open Common
 
 open Ast_js
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -266,9 +267,9 @@ and stmt x =
       and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x) in
       G.Switch (v0, Some v1, v2)
   | Continue (t, v1, sc) -> let v1 = option label v1 in
-      G.Continue (t, G.opt_to_label_ident v1, sc)
+      G.Continue (t, H.opt_to_label_ident v1, sc)
   | Break (t, v1, sc) -> let v1 = option label v1 in
-      G.Break (t, G.opt_to_label_ident v1, sc)
+      G.Break (t, H.opt_to_label_ident v1, sc)
   | Return (t, v1, sc) ->
       let v1 = option expr v1 in
       G.Return (t, v1, sc)
@@ -287,7 +288,7 @@ and stmt x =
 
 and catch_block = function
   | BoundCatch (t, v1, v2) ->
-      let v1 = G.expr_to_pattern (expr v1)
+      let v1 = H.expr_to_pattern (expr v1)
       and v2 = stmt v2
       in t, v1, v2
   | UnboundCatch (t, v1) ->
@@ -327,7 +328,7 @@ and for_header =
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
-            G.expr_to_pattern e
+            H.expr_to_pattern e
       in
       G.ForEach (pattern, t, v2)
   | ForOf (v1, t, v2) ->
@@ -339,7 +340,7 @@ and for_header =
             G.PatId (id, G.empty_id_info())
         | Right e ->
             let e = expr e in
-            G.expr_to_pattern e
+            H.expr_to_pattern e
       in
       let e = G.Call (G.IdSpecial (G.ForOf, t), G.fake_bracket [G.Arg v2]) in
       G.ForEach (pattern, t, e)
@@ -349,7 +350,7 @@ and for_header =
 and case =
   function
   | Case (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
-      [G.Case (t, G.expr_to_pattern v1)], v2
+      [G.Case (t, H.expr_to_pattern v1)], v2
   | Default (t, v1) -> let v1 = stmt v1 in
       [G.Default t], v1
 
@@ -414,7 +415,7 @@ and parameter_binding = function
 
 and pattern x =
   let x = expr x in
-  G.expr_to_pattern x
+  H.expr_to_pattern x
 
 and parameter x =
   match x with
@@ -440,7 +441,7 @@ and attribute = function
         | Some x -> x
         | None -> G.fake_bracket []
       in
-      let args = list argument args |> List.map G.expr_to_arg in
+      let args = list argument args |> List.map G.arg in
       G.NamedAttr (t, ids, G.empty_id_info (), (t1, args, t2))
 
 and keyword_attribute (x, tok) =
@@ -467,7 +468,7 @@ and obj_ v = bracket (list property) v
 and parent = function
   | Left e ->
       let e = expr e in
-      G.expr_to_type e
+      H.expr_to_type e
   | Right t -> t
 
 and class_ { c_extends; c_implements; c_body; c_kind; c_attrs;  } =

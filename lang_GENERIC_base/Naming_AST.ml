@@ -15,8 +15,8 @@
 *)
 open Common
 open AST_generic
-module Ast = AST_generic
 module V = Visitor_AST
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -182,8 +182,7 @@ let _with_new_block_scope _params _lang _scopes _f =
 (*e: function [[Naming_AST._with_new_block_scope]] *)
 
 (*s: function [[Naming_AST.add_ident_current_scope]] *)
-let add_ident_current_scope id resolved scopes =
-  let s = Ast.str_of_ident id in
+let add_ident_current_scope (s, _) resolved scopes =
   match !(scopes.blocks) with
   | [] -> scopes.global := (s, resolved)::!(scopes.global)
   | xs::xxs -> scopes.blocks := ((s, resolved)::xs)::xxs
@@ -191,15 +190,13 @@ let add_ident_current_scope id resolved scopes =
 
 (*s: function [[Naming_AST.add_ident_imported_scope]] *)
 (* for Python *)
-let add_ident_imported_scope id resolved scopes =
-  let s = Ast.str_of_ident id in
+let add_ident_imported_scope (s, _) resolved scopes =
   scopes.imported := (s, resolved)::!(scopes.imported)
 (*e: function [[Naming_AST.add_ident_imported_scope]] *)
 
 (*s: function [[Naming_AST._add_ident_function_scope]] *)
 (* for JS 'var' *)
-let _add_ident_function_scope id _resolved _scopes =
-  let _s = Ast.str_of_ident id in
+let _add_ident_function_scope _id _resolved _scopes =
   raise Todo
 (*e: function [[Naming_AST._add_ident_function_scope]] *)
 
@@ -222,8 +219,7 @@ let rec lookup s xxs =
 
 (*s: function [[Naming_AST.lookup_global_scope]] *)
 (* for Python, PHP? *)
-let lookup_global_scope id scopes =
-  let s = Ast.str_of_ident id in
+let lookup_global_scope (s, _) scopes =
   lookup s [!(scopes.global)]
 (*e: function [[Naming_AST.lookup_global_scope]] *)
 
@@ -332,9 +328,8 @@ let set_resolved env id_info x =
 (*e: function [[Naming_AST.set_resolved]] *)
 
 (* accessors *)
-let lookup_scope_opt id env =
+let lookup_scope_opt (s, _) env =
   let scopes = env.names in
-  let s = Ast.str_of_ident id in
 
   let actual_scopes =
     match !(scopes.blocks) with
@@ -405,10 +400,10 @@ let resolved_name_kind env lang =
 let params_of_parameters env xs =
   xs |> Common.map_filter (function
     | ParamClassic { pname = Some id; pinfo = id_info; ptype = typ; _ } ->
-        let sid = Ast.gensym () in
+        let sid = H.gensym () in
         let resolved = { entname = Param, sid; enttype = typ } in
         set_resolved env id_info resolved;
-        Some (Ast.str_of_ident id, resolved)
+        Some (H.str_of_ident id, resolved)
     | _ -> None
   )
 (*e: function [[Naming_AST.params_of_parameters]] *)
@@ -459,7 +454,7 @@ let resolve2 lang prog =
             k x;
 
             (* name resolution *)
-            let sid = Ast.gensym () in
+            let sid = H.gensym () in
             (* for the type, we use the (optional) type in vtype, or, if we can infer  *)
             (* the type of the expression vinit (literal or id), we use that as a type *)
             (* useful for Go, where you can write var x = 2 without declaring the type *)
@@ -483,7 +478,7 @@ let resolve2 lang prog =
                  add_ident_current_scope id resolved env.names
              | None ->
                  error tok (spf "could not find %s for directive %s"
-                              (Ast.str_of_ident id) s)
+                              (H.str_of_ident id) s)
             );
             k x
         | _ -> k x
@@ -494,23 +489,23 @@ let resolve2 lang prog =
         (match x with
          | ImportFrom (_, DottedName xs, id, Some alias) ->
              (* for python *)
-             let sid = Ast.gensym () in
+             let sid = H.gensym () in
              let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
              add_ident_imported_scope alias resolved env.names;
          | ImportFrom (_, DottedName xs, id, None) ->
              (* for python *)
-             let sid = Ast.gensym () in
+             let sid = H.gensym () in
              let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
              add_ident_imported_scope id resolved env.names;
          | ImportAs (_, DottedName xs, Some alias) ->
              (* for python *)
-             let sid = Ast.gensym () in
+             let sid = H.gensym () in
              let resolved = untyped_ent (ImportedModule (DottedName xs), sid) in
              add_ident_imported_scope alias resolved env.names;
 
          | ImportAs (_, FileName (s, tok), Some alias) ->
              (* for Go *)
-             let sid = Ast.gensym () in
+             let sid = H.gensym () in
              let base = Filename.basename s, tok in
              let resolved = untyped_ent (ImportedModule (DottedName [base]), sid) in
              add_ident_imported_scope alias resolved env.names;
@@ -528,14 +523,14 @@ let resolve2 lang prog =
              * the name of a class, not a newly introduced local.
             *)
             (* mostly copy-paste of VarDef code *)
-            let sid = Ast.gensym () in
+            let sid = H.gensym () in
             let resolved = untyped_ent (resolved_name_kind env lang, sid) in
             add_ident_current_scope id resolved env.names;
             set_resolved env id_info resolved;
             k x
         | PatVar (_e, Some (id, id_info)) when is_local_or_global_ctx env lang ->
             (* mostly copy-paste of VarDef code *)
-            let sid = Ast.gensym () in
+            let sid = H.gensym () in
             let resolved = untyped_ent (resolved_name_kind env lang, sid) in
             add_ident_current_scope id resolved env.names;
             set_resolved env id_info resolved;
@@ -582,7 +577,7 @@ let resolve2 lang prog =
                    | true, (Lang.Python | Lang.Ruby) (* PHP? *)
                      when is_local_or_global_ctx env lang ->
                        (* mostly copy-paste of VarDef code *)
-                       let sid = Ast.gensym () in
+                       let sid = H.gensym () in
                        let resolved = untyped_ent(resolved_name_kind env lang, sid) in
                        add_ident_current_scope id resolved env.names;
                        set_resolved env id_info resolved;

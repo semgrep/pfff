@@ -16,6 +16,7 @@ open Common
 
 open Ast_go
 module G = AST_generic
+module H = AST_generic_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -242,13 +243,13 @@ let top_func () =
         let (v1, tok) = wrap arithmetic_operator v1
         and v2 = expr v2
         in
-        G.Call (G.IdSpecial (G.Op v1, tok), fb[G.expr_to_arg v2])
+        G.Call (G.IdSpecial (G.Op v1, tok), fb[G.arg v2])
     | Binary (v1, v2, v3) ->
         let v1 = expr v1
         and (v2, tok) = wrap arithmetic_operator v2
         and v3 = expr v3
         in
-        G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.expr_to_arg))
+        G.Call (G.IdSpecial (G.Op v2, tok), fb([v1;v3] |> List.map G.arg))
     | CompositeLit (v1, v2) ->
         let v1 = type_ v1 and (_t1, v2, _t2) = bracket (list init_for_composite_lit) v2 in
         G.Call (G.IdSpecial (G.New, fake "new"),
@@ -311,7 +312,7 @@ let top_func () =
     | ArgType v1 -> let v1 = type_ v1 in
         G.ArgType v1
     | ArgDots (v1, v2) -> let v1 = expr v1 in let v2 = tok v2 in
-        let special = G.Call (G.IdSpecial (G.Spread, v2), fb[G.expr_to_arg v1]) in
+        let special = G.Call (G.IdSpecial (G.Spread, v2), fb[G.arg v1]) in
         G.Arg special
 
   and init =
@@ -460,7 +461,7 @@ let top_func () =
              let pattern = G.PatUnderscore (fake "_") in
              [G.For (t, G.ForEach (pattern, v2, v3), v4)]
          | Some (xs, _tokEqOrColonEqTODO) ->
-             let pattern = G.PatTuple (xs |> List.map G.expr_to_pattern |> G.fake_bracket) in
+             let pattern = G.PatTuple (xs |> List.map H.expr_to_pattern |> G.fake_bracket) in
              [G.For (t, G.ForEach (pattern, v2, v3), v4)]
         )
     | Return (v1, v2) ->
@@ -468,10 +469,10 @@ let top_func () =
         [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr), G.sc)]
     | Break (v1, v2) ->
         let v1 = tok v1 and v2 = option ident v2 in
-        [G.Break (v1, G.opt_to_label_ident v2, G.sc)]
+        [G.Break (v1, H.opt_to_label_ident v2, G.sc)]
     | Continue (v1, v2) ->
         let v1 = tok v1 and v2 = option ident v2 in
-        [G.Continue (v1, G.opt_to_label_ident v2, G.sc)]
+        [G.Continue (v1, H.opt_to_label_ident v2, G.sc)]
     | Goto (v1, v2) ->
         let v1 = tok v1 and v2 = ident v2 in
         [G.Goto (v1, v2)]
@@ -502,7 +503,7 @@ let top_func () =
         G.PatType t
     | x ->
         (match expr_or_type x with
-         | Left e -> G.expr_to_pattern e
+         | Left e -> H.expr_to_pattern e
          | Right t ->G.PatType t
         )
 
