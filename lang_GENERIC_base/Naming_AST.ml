@@ -418,7 +418,10 @@ let params_of_parameters env xs =
 let resolve2 lang prog =
   let env = default_env lang in
 
-  (* would be better to use a classic recursive-with-environment visit *)
+  (* would be better to use a classic recursive-with-environment visit.
+   * coupling: we do similar things in Constant_propagation.ml so if you
+   * add a feature here, you might want to add a similar thing over there too.
+  *)
   let hooks =
     { V.default_visitor with
       (* the defs *)
@@ -601,7 +604,7 @@ let resolve2 lang prog =
          | DotAccess ((IdSpecial (This, _) | Id(("this", _), _)),
                       _, EId (id, id_info)) ->
              (match lookup_scope_opt id env with
-              (* TODO: this is v0 support for doing naming and typing of fields.
+              (* TODO: this is a v0 for doing naming and typing of fields.
                * we should really use a different lookup_scope_class, that
                * would handle shadowing of fields from locals, etc. but it's
                * a start.

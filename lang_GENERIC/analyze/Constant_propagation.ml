@@ -86,6 +86,10 @@ let find_id env id id_info =
  * Note that this may be incomplete and buggy. Worst case we do a
  * constant propagation on a variable containing a literal that may
  * have its content changed; not a big-deal in semgrep context actually.
+ *
+ * TODO: do it also for Java private fields; if they are not used in an
+ * lvalue in this class, they can't be accessed from anywhere else so it's
+ * safe to do the const propagation.
 *)
 let var_stats prog : var_stats =
   let h = Hashtbl.create 101 in
@@ -190,10 +194,17 @@ let rec eval_expr env = function
   | L literal -> Some literal
   | Id (id, id_info)->
       find_id env id id_info
+  (* TODO: do what we do in Normalize_generic.ml.
+   * | Call(IdSpecial((Op(Plus | Concat) | ConcatString _), _), args)->
+  *)
+
   | Call(IdSpecial(Op op, _), (_,args,_)) ->
       eval_op env op args
   | __else__ -> None
 
+(* coupling: see also semgrep/matching/Normalize_generic.ml, even though
+ * we should remove it because it's doing similar work.
+*)
 and eval_op env op args =
   match args with
   | [Arg e] ->
@@ -281,6 +292,16 @@ let propagate2 lang prog =
                   id_info.id_const_literal := Some literal
               | _ -> ()
              );
+
+             (* todo: Java does not generate a special This! use Id *)
+         | DotAccess ((IdSpecial (This, _) | Id(("this", _), _)),
+                      _, EId (id, id_info)) ->
+             (match find_id env id id_info with
+              | Some literal ->
+                  id_info.id_const_literal := Some literal
+              | _ -> ()
+             );
+
 
              (* Assign that is really a hidden VarDef (e.g., in Python) *)
          | Assign (
