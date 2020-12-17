@@ -123,7 +123,7 @@ and annotation_element =
 and element_value =
   | AnnotExprInit of expr
   | AnnotNestedAnnot of annotation
-  | AnnotArrayInit of element_value list (* TODO bracket *)
+  | AnnotArrayInit of element_value list bracket
 
 and annotation_pair =
   | AnnotPair of (ident * element_value)

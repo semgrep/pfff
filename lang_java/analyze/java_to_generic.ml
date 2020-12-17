@@ -160,9 +160,9 @@ and element_value =
   | AnnotNestedAnnot v1 ->
       let v1 = annotation v1 in
       G.OtherExpr (G.OE_Annot, [G.At v1])
-  | AnnotArrayInit v1 ->
+  | AnnotArrayInit (t1, v1, t2) ->
       let v1 = list element_value v1 in
-      G.Container (G.List, fb v1)
+      G.Container (G.List, (t1, v1, t2))
 
 and annotation_pair =
   function

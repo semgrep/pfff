@@ -1022,9 +1022,8 @@ element_value_pair:
  | "..." { Flag_parsing.sgrep_guard (AnnotPairEllipsis $1) }
 
 element_value_array_initializer:
- | "{" "}" { [] }
- | "{" listc(element_value) "}" { $2 }
- | "{" listc(element_value) "," "}" { $2 }
+ | "{" "}" { ($1, [], $2) }
+ | "{" listc(element_value) ","? "}" { $1, $2, $4 }
 
 (* should be statically a constant expression; can contain '+', '*', etc.*)
 expr1: conditional_expression { $1 }
