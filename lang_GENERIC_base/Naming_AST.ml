@@ -482,7 +482,7 @@ let resolve2 lang prog =
                  set_resolved env id_info resolved;
                  add_ident_current_scope id resolved env.names
              | None ->
-                 error tok (spf "could not find %s for directive %s"
+                 error tok (spf "could not find '%s' for directive %s"
                               (H.str_of_ident id) s)
             );
             k x
@@ -594,7 +594,7 @@ let resolve2 lang prog =
                         * currently tagged
                        *)
                        let (s, tok) = id in
-                       error tok (spf "could not find %s in environment" s)
+                       error tok (spf "could not find '%s' in environment" s)
                   )
              )
          (* todo: Java does not generate a special This! use Id *)
@@ -610,7 +610,7 @@ let resolve2 lang prog =
                   set_resolved env id_info resolved
               | _ ->
                   let (s, tok) = id in
-                  error tok (spf "could not find %s field in environment" s)
+                  error tok (spf "could not find '%s' field in environment" s)
              )
          | _ -> ()
         );
