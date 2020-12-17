@@ -18,6 +18,8 @@ open AST_generic
 module V = Visitor_AST
 module H = AST_generic_helpers
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -361,7 +363,7 @@ let error_report = ref false
 let error tok s =
   if !error_report
   then raise (Parse_info.Other_error (s,tok))
-  else ()
+  else logger#error "%s at %s" s (Parse_info.string_of_info tok)
 (*e: function [[Naming_AST.error]] *)
 
 (*****************************************************************************)
@@ -438,6 +440,9 @@ let resolve2 lang prog =
           ))
       );
       V.kclass_definition = (fun (k, _v) x ->
+        (* todo: we should first process all fields in the class before
+         * processing the methods, as some languages may allow forward ref.
+        *)
         with_new_context InClass env (fun () ->
           k x
         )
@@ -591,6 +596,21 @@ let resolve2 lang prog =
                        let (s, tok) = id in
                        error tok (spf "could not find %s in environment" s)
                   )
+             )
+         (* todo: Java does not generate a special This! use Id *)
+         | DotAccess ((IdSpecial (This, _) | Id(("this", _), _)),
+                      _, EId (id, id_info)) ->
+             (match lookup_scope_opt id env with
+              (* TODO: this is v0 support for doing naming and typing of fields.
+               * we should really use a different lookup_scope_class, that
+               * would handle shadowing of fields from locals, etc. but it's
+               * a start.
+              *)
+              | Some ({entname = (EnclosedVar, _sid); _} as resolved) ->
+                  set_resolved env id_info resolved
+              | _ ->
+                  let (s, tok) = id in
+                  error tok (spf "could not find %s field in environment" s)
              )
          | _ -> ()
         );
