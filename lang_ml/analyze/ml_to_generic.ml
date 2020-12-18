@@ -41,7 +41,6 @@ let error = G.error
 (* TODO: each use of this is usually the sign of a todo to improve
  * AST_generic.ml or ast_ml.ml *)
 let fake = G.fake
-let s = G.s
 
 let add_attrs ent attrs =
   { ent with G.attrs = attrs }
@@ -192,13 +191,13 @@ and expr =
       let defs =
         v2 |> List.map (function
           | Left (ent, params, tret, expr) ->
-              s (G.DefStmt (ent, mk_var_or_func tlet params tret expr))
+              G.DefStmt (ent, mk_var_or_func tlet params tret expr) |> G.s
           | Right (pat, e) ->
               let exp = G.LetPattern (pat, e) in
               G.exprstmt exp
         )
       in
-      let st = s (G.Block (G.fake_bracket (defs @ [G.exprstmt v3]))) in
+      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v3])) |> G.s in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun (t, v1, v2) ->
       let v1 = list parameter v1
@@ -232,12 +231,12 @@ and expr =
       let catches = v2 |> List.map (fun (pat, e) ->
         fake "catch", pat, G.exprstmt e
       ) in
-      let st = s (G.Try (t, G.exprstmt v1, catches, None)) in
+      let st = G.Try (t, G.exprstmt v1, catches, None) |> G.s in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | While (t, v1, v2) ->
       let v1 = expr v1 and v2 = expr v2 in
-      let st = G.s (G.While (t, v1, G.exprstmt v2)) in
+      let st = G.While (t, v1, G.exprstmt v2) |> G.s in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | For (t, v1, v2, v3, v4, v5) ->
@@ -255,7 +254,7 @@ and expr =
                          G.fake_bracket [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
                                  Some cond, Some next) in
-      let st = G.s (G.For (t, header, G.exprstmt v5)) in
+      let st = G.For (t, header, G.exprstmt v5) |> G.s in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | ExprTodo (t, xs) ->
@@ -420,8 +419,8 @@ and type_def_kind =
                           (match v3 with
                            | Some tok -> [G.attr G.Mutable tok]
                            | None -> []) in
-                      G.FieldStmt (G.s (G.DefStmt
-                                          (ent, G.FieldDefColon { G.vinit = None; vtype = Some v2 })))
+                      G.FieldStmt (G.DefStmt
+                                     (ent, G.FieldDefColon { G.vinit = None; vtype = Some v2 }) |> G.s )
                    ))
           v1
       in G.AndType v1
