@@ -249,45 +249,46 @@ and argument v =
 and const_expr v =
   expr v
 
-let rec stmt =
-  function
-  | DefStmt x -> definition x
-  | DirStmt x -> directive x
+let rec stmt st =
+  (match st with
+   | DefStmt x -> definition x
+   | DirStmt x -> directive x
 
-  | CaseStmt x -> case_stmt x
+   | CaseStmt x -> case_stmt x
 
-  | ExprSt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
-  | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
-  | If (t, v1, v2, v3) ->
-      let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
-      G.If (t, v1, v2, v3)
-  | Switch (v0, v1, v2) ->
-      let v0 = info v0 in
-      let v1 = expr v1
-      and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x)  in
-      G.Switch (v0, Some v1, v2)
-  | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
-      G.While (t, v1, v2)
-  | DoWhile (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in
-      G.DoWhile (t, v1, v2)
-  | For (t, v1, v2, v3, v4) ->
-      let init = expr_or_vars v1
-      and v2 = option expr v2
-      and v3 = option expr v3
-      and v4 = stmt v4
-      in
-      let header = G.ForClassic (init, v2, v3) in
-      G.For (t, header, v4)
-  | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1, G.sc)
-  | Continue t -> G.Continue (t, G.LNone, G.sc)
-  | Break t -> G.Break (t, G.LNone, G.sc)
-  | Label (v1, v2) -> let v1 = name v1 and v2 = stmt v2 in
-      G.Label (v1, v2)
-  | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)
-  | Vars v1 -> let v1 = list var_decl v1 in
-      G.stmt1 (v1 |> List.map (fun v -> G.DefStmt v))
-  | Asm v1 -> let v1 = list expr v1 in
-      G.OtherStmt (G.OS_Asm, v1 |> List.map (fun e -> G.E e))
+   | ExprSt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
+   | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
+   | If (t, v1, v2, v3) ->
+       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
+       G.If (t, v1, v2, v3)
+   | Switch (v0, v1, v2) ->
+       let v0 = info v0 in
+       let v1 = expr v1
+       and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x)  in
+       G.Switch (v0, Some v1, v2)
+   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
+       G.While (t, v1, v2)
+   | DoWhile (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in
+       G.DoWhile (t, v1, v2)
+   | For (t, v1, v2, v3, v4) ->
+       let init = expr_or_vars v1
+       and v2 = option expr v2
+       and v3 = option expr v3
+       and v4 = stmt v4
+       in
+       let header = G.ForClassic (init, v2, v3) in
+       G.For (t, header, v4)
+   | Return (t, v1) -> let v1 = option expr v1 in G.Return (t, v1, G.sc)
+   | Continue t -> G.Continue (t, G.LNone, G.sc)
+   | Break t -> G.Break (t, G.LNone, G.sc)
+   | Label (v1, v2) -> let v1 = name v1 and v2 = stmt v2 in
+       G.Label (v1, v2)
+   | Goto (t, v1) -> let v1 = name v1 in G.Goto (t, v1)
+   | Vars v1 -> let v1 = list var_decl v1 in
+       (G.stmt1 (v1 |> List.map (fun v -> G.s (G.DefStmt v)))).G.s
+   | Asm v1 -> let v1 = list expr v1 in
+       G.OtherStmt (G.OS_Asm, v1 |> List.map (fun e -> G.E e))
+  ) |> G.s
 
 and expr_or_vars v1 =
   match v1 with
@@ -348,7 +349,7 @@ and func_def {
   entity, G.FuncDef { G.
                       fparams = params;
                       frettype = Some ret;
-                      fbody = G.Block v3;
+                      fbody = G.s (G.Block v3);
                       fkind = G.Function, G.fake "";
                     }
 

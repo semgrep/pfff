@@ -131,7 +131,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
 
   let i () = info_opt (S stmt) in
 
-  match stmt with
+  match stmt.s with
   | Label _ | Goto _ -> raise Todo
 
   | Block (_, stmts, _) ->
@@ -144,7 +144,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        *                 |-> newfakelse
       *)
       let node, stmt =
-        (match stmt with
+        (match stmt.s with
          | While (_, e, stmt) ->
              F.WhileHeader e, stmt
          | For (_, forheader, stmt) ->
@@ -354,7 +354,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
   | Continue (_, _TODOlabelid, _) | Break (_, _TODOlabelid, _) ->
 
       let is_continue, node =
-        match stmt with
+        match stmt.s with
         | Continue _ -> true,  F.Continue
         | Break _    -> false, F.Break
         | _ -> raise Impossible

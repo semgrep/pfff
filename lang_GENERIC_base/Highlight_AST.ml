@@ -159,7 +159,7 @@ let visit_program
                       )
                   | AndType (_, xs, _) ->
                       xs |> List.iter (function
-                        | FieldStmt (DefStmt ({ name = EId (id, _); _}, _))->
+                        | FieldStmt ({s=DefStmt({name=EId (id, _); _}, _);_})->
                             tag_id id (Entity (Field, (Def2 fake_no_def2)));
                         | _ ->  ()
                       );
@@ -268,7 +268,7 @@ let visit_program
 *)
 
       V.kstmt = (fun (k, _) x ->
-        match x with
+        match x.s with
         | Try (_try_tok, _e (*, tok_with*), _match_cases, _finally) ->
             (*tag tok_with (KeywordExn); *)
             (*k (Try (try_tok, e, tok_with, []));*)
@@ -361,7 +361,7 @@ let visit_program
         | Record (_, xs, _) ->
             xs |> List.iter (fun x ->
               match x with
-              | FieldStmt (DefStmt ({ name = EId (id, _idinfo); _}, _)) ->
+              | FieldStmt ({s=DefStmt ({ name = EId (id, _idinfo); _}, _);_})->
                   tag_id id (Entity (Field, (Use2 fake_no_use2)));
               | _ -> ()
             );

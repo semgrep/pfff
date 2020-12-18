@@ -324,14 +324,14 @@ and arguments v : G.argument list G.bracket = bracket (list argument) v
 
 and fix_op v = v
 
-and stmt =
-  function
-  | EmptyStmt t -> G.Block (t, [], t)
-  | Block v1 -> let v1 = bracket stmts v1 in G.Block v1
-  | Expr (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
+and stmt st =
+  match st with
+  | EmptyStmt t -> G.Block (t, [], t) |> G.s
+  | Block v1 -> let v1 = bracket stmts v1 in G.Block v1 |> G.s
+  | Expr (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t) |> G.s
   | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
-      G.If (t, v1, v2, v3)
+      G.If (t, v1, v2, v3) |> G.s
   | Switch (v0, v1, v2) ->
       let v0 = info v0 in
       let v1 = expr v1
@@ -342,38 +342,38 @@ and stmt =
           ) v2
         |> List.map (fun x -> G.CasesAndBody x)
       in
-      G.Switch (v0, Some v1, v2)
+      G.Switch (v0, Some v1, v2) |> G.s
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
-      G.While (t, v1, v2)
+      G.While (t, v1, v2) |> G.s
   | Do (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in
-      G.DoWhile (t, v1, v2)
+      G.DoWhile (t, v1, v2) |> G.s
   | For (t, v1, v2) -> let v1 = for_control t v1 and v2 = stmt v2 in
-      G.For (t, v1, v2)
+      G.For (t, v1, v2) |> G.s
   | Break (t, v1) -> let v1 = H.opt_to_label_ident v1 in
-      G.Break (t, v1, G.sc)
+      G.Break (t, v1, G.sc) |> G.s
   | Continue (t, v1) -> let v1 = H.opt_to_label_ident v1 in
-      G.Continue (t, v1, G.sc)
+      G.Continue (t, v1, G.sc) |> G.s
   | Return (t, v1) -> let v1 = option expr v1 in
-      G.Return (t, v1, G.sc)
+      G.Return (t, v1, G.sc) |> G.s
   | Label (v1, v2) -> let v1 = ident v1 and v2 = stmt v2 in
-      G.Label (v1, v2)
+      G.Label (v1, v2) |> G.s
   | Sync (v1, v2) ->
       let v1 = expr v1 and v2 = stmt v2 in
-      G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2])
+      G.OtherStmt (G.OS_Sync, [G.E v1; G.S v2]) |> G.s
   | Try (t, _v0TODO, v1, v2, v3) ->
       let v1 = stmt v1
       and v2 = catches v2
       and v3 = option tok_and_stmt v3
       in
-      G.Try (t,v1, v2, v3)
+      G.Try (t,v1, v2, v3) |> G.s
   | Throw (t, v1) -> let v1 = expr v1 in
-      G.Throw (t, v1, G.sc)
+      G.Throw (t, v1, G.sc) |> G.s
   | LocalVar v1 -> let (ent, v) = var_with_init v1 in
-      G.DefStmt (ent, G.VarDef v)
+      G.DefStmt (ent, G.VarDef v) |> G.s
   | DeclStmt v1 -> decl v1
   | DirectiveStmt v1 -> directive v1
   | Assert (t, v1, v2) -> let v1 = expr v1 and v2 = option expr v2 in
-      G.Assert (t, v1, v2, G.sc)
+      G.Assert (t, v1, v2, G.sc) |> G.s
 
 
 and tok_and_stmt (t, v) =
@@ -542,19 +542,19 @@ and class_kind (x, t) =
 and decl decl =
   match decl with
   | Class v1 -> let (ent, def) = class_decl v1 in
-      G.DefStmt (ent, G.ClassDef def)
+      G.DefStmt (ent, G.ClassDef def) |> G.s
   | Method v1 -> let (ent, def) = method_decl v1 in
-      G.DefStmt (ent, G.FuncDef def)
+      G.DefStmt (ent, G.FuncDef def) |> G.s
   | Field v1 -> let (ent, def) = field v1 in
-      G.DefStmt (ent, G.VarDef def)
+      G.DefStmt (ent, G.VarDef def) |> G.s
   | Enum v1 -> let (ent, def) = enum_decl v1 in
-      G.DefStmt (ent, G.TypeDef def)
+      G.DefStmt (ent, G.TypeDef def) |> G.s
   | Init (_v1TODO, v2) -> let v2 = stmt v2 in
       v2
-  | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1, G.sc)
-  | EmptyDecl t -> G.Block (t, [], t)
+  | DeclEllipsis v1 ->  G.ExprStmt (G.Ellipsis v1, G.sc) |> G.s
+  | EmptyDecl t -> G.Block (t, [], t) |> G.s
   | AnnotationTypeElementTodo t ->
-      G.OtherStmt (G.OS_Todo, [G.Tk t])
+      G.OtherStmt (G.OS_Todo, [G.Tk t]) |> G.s
 
 and decls v = list decl v
 
@@ -566,19 +566,19 @@ and import = function
 
 and directive = function
   | Import (_vstatic, v2) ->
-      G.DirectiveStmt (import v2)
+      G.DirectiveStmt (import v2) |> G.s
   | Package (t, qu, _t2) ->
       let qu = qualified_ident qu in
-      G.DirectiveStmt (G.Package (t, qu))
+      G.DirectiveStmt (G.Package (t, qu)) |> G.s
   | ModuleTodo t ->
-      G.OtherStmt (G.OS_Todo, [G.Tk t])
+      G.OtherStmt (G.OS_Todo, [G.Tk t]) |> G.s
 
 let program v = stmts v
 
 let partial = function
   | PartialDecl x ->
       let x = decl x in
-      (match x with
+      (match x.G.s with
        | G.DefStmt def -> G.PartialDef def
        | _ -> failwith "unsupported PartialDecl"
       )

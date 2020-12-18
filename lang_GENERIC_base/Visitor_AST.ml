@@ -414,7 +414,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_stmt x =
     let k x =
-      match x with
+      (* todo? visit the s_id too? *)
+      match x.s with
       | DisjStmt (v1, v2) -> let v1 = v_stmt v1 in let v2 = v_stmt v2 in ()
       | ExprStmt (v1, t) ->
           let v1 = v_expr v1 in

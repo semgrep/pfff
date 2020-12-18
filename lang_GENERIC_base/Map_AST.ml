@@ -400,87 +400,91 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and map_other_attribute_operator x  = x
 
   and map_stmt x =
-    let k x = match x with
-      | DisjStmt (v1, v2) -> let v1 = map_stmt v1 in let v2 = map_stmt v2 in
-          DisjStmt (v1, v2)
-      | ExprStmt (v1, t) ->
-          let v1 = map_expr v1 in
-          let t = map_tok t in
-          ExprStmt (v1, t)
-      | DefStmt v1 -> let v1 = map_definition v1 in DefStmt v1
-      | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt v1
-      | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block v1
-      | If (t, v1, v2, v3) ->
-          let t = map_tok t in
-          let v1 = map_expr v1
-          and v2 = map_stmt v2
-          and v3 = map_of_option map_stmt v3
-          in If (t, v1, v2, v3)
-      | While (t, v1, v2) ->
-          let t = map_tok t in
-          let v1 = map_expr v1 and v2 = map_stmt v2 in While (t, v1, v2)
-      | DoWhile (t, v1, v2) ->
-          let t = map_tok t in
-          let v1 = map_stmt v1 and v2 = map_expr v2 in DoWhile (t, v1, v2)
-      | For (t, v1, v2) ->
-          let t = map_tok t in
-          let v1 = map_for_header v1 and v2 = map_stmt v2 in For (t, v1, v2)
-      | Switch (v0, v1, v2) ->
-          let v0 = map_tok v0 in
-          let v1 = map_of_option map_expr v1
-          and v2 = map_of_list map_case_and_body v2
-          in Switch (v0, v1, v2)
-      | Return (t, v1, sc) ->
-          let t = map_tok t in
-          let v1 = map_of_option map_expr v1 in
-          let sc = map_tok sc in
-          Return (t, v1, sc)
-      | Continue (t, v1, sc) ->
-          let t = map_tok t in
-          let v1 = map_label_ident v1 in
-          let sc = map_tok sc in
-          Continue (t, v1, sc)
-      | Break (t, v1, sc) ->
-          let t = map_tok t in
-          let v1 = map_label_ident v1 in
-          let sc = map_tok sc in
-          Break (t, v1, sc)
-      | Label (v1, v2) ->
-          let v1 = map_label v1 and v2 = map_stmt v2 in Label (v1, v2)
-      | Goto (t, v1) ->
-          let t = map_tok t in
-          let v1 = map_label v1 in Goto (t, v1)
-      | Throw (t, v1, sc) ->
-          let t = map_tok t in
-          let v1 = map_expr v1 in
-          let sc = map_tok sc in
-          Throw (t, v1, sc)
-      | Try (t, v1, v2, v3) ->
-          let t = map_tok t in
-          let v1 = map_stmt v1
-          and v2 = map_of_list map_catch v2
-          and v3 = map_of_option map_finally v3
-          in Try (t, v1, v2, v3)
-      | WithUsingResource (t, v1, v2) ->
-          let t = map_tok t in
-          let v1 = map_stmt v1 in
-          let v2 = map_stmt v2 in
-          WithUsingResource ((t, v1, v2))
-      | Assert (t, v1, v2, sc) ->
-          let t = map_tok t in
-          let v1 = map_expr v1 in
-          let v2 = map_of_option map_expr v2 in
-          let sc = map_tok sc in
-          Assert (t, v1, v2, sc)
-      | OtherStmtWithStmt (v1, v2, v3) ->
-          let v1 = map_other_stmt_with_stmt_operator v1
-          and v2 = map_of_option map_expr v2
-          and v3 = map_stmt v3
-          in OtherStmtWithStmt (v1, v2, v3)
-      | OtherStmt (v1, v2) ->
-          let v1 = map_other_stmt_operator v1
-          and v2 = map_of_list map_any v2
-          in OtherStmt (v1, v2)
+    let k x =
+      let skind =
+        match x.s with
+        | DisjStmt (v1, v2) -> let v1 = map_stmt v1 in let v2 = map_stmt v2 in
+            DisjStmt (v1, v2)
+        | ExprStmt (v1, t) ->
+            let v1 = map_expr v1 in
+            let t = map_tok t in
+            ExprStmt (v1, t)
+        | DefStmt v1 -> let v1 = map_definition v1 in DefStmt v1
+        | DirectiveStmt v1 -> let v1 = map_directive v1 in DirectiveStmt v1
+        | Block v1 -> let v1 = map_bracket (map_of_list map_stmt) v1 in Block v1
+        | If (t, v1, v2, v3) ->
+            let t = map_tok t in
+            let v1 = map_expr v1
+            and v2 = map_stmt v2
+            and v3 = map_of_option map_stmt v3
+            in If (t, v1, v2, v3)
+        | While (t, v1, v2) ->
+            let t = map_tok t in
+            let v1 = map_expr v1 and v2 = map_stmt v2 in While (t, v1, v2)
+        | DoWhile (t, v1, v2) ->
+            let t = map_tok t in
+            let v1 = map_stmt v1 and v2 = map_expr v2 in DoWhile (t, v1, v2)
+        | For (t, v1, v2) ->
+            let t = map_tok t in
+            let v1 = map_for_header v1 and v2 = map_stmt v2 in For (t, v1, v2)
+        | Switch (v0, v1, v2) ->
+            let v0 = map_tok v0 in
+            let v1 = map_of_option map_expr v1
+            and v2 = map_of_list map_case_and_body v2
+            in Switch (v0, v1, v2)
+        | Return (t, v1, sc) ->
+            let t = map_tok t in
+            let v1 = map_of_option map_expr v1 in
+            let sc = map_tok sc in
+            Return (t, v1, sc)
+        | Continue (t, v1, sc) ->
+            let t = map_tok t in
+            let v1 = map_label_ident v1 in
+            let sc = map_tok sc in
+            Continue (t, v1, sc)
+        | Break (t, v1, sc) ->
+            let t = map_tok t in
+            let v1 = map_label_ident v1 in
+            let sc = map_tok sc in
+            Break (t, v1, sc)
+        | Label (v1, v2) ->
+            let v1 = map_label v1 and v2 = map_stmt v2 in Label (v1, v2)
+        | Goto (t, v1) ->
+            let t = map_tok t in
+            let v1 = map_label v1 in Goto (t, v1)
+        | Throw (t, v1, sc) ->
+            let t = map_tok t in
+            let v1 = map_expr v1 in
+            let sc = map_tok sc in
+            Throw (t, v1, sc)
+        | Try (t, v1, v2, v3) ->
+            let t = map_tok t in
+            let v1 = map_stmt v1
+            and v2 = map_of_list map_catch v2
+            and v3 = map_of_option map_finally v3
+            in Try (t, v1, v2, v3)
+        | WithUsingResource (t, v1, v2) ->
+            let t = map_tok t in
+            let v1 = map_stmt v1 in
+            let v2 = map_stmt v2 in
+            WithUsingResource ((t, v1, v2))
+        | Assert (t, v1, v2, sc) ->
+            let t = map_tok t in
+            let v1 = map_expr v1 in
+            let v2 = map_of_option map_expr v2 in
+            let sc = map_tok sc in
+            Assert (t, v1, v2, sc)
+        | OtherStmtWithStmt (v1, v2, v3) ->
+            let v1 = map_other_stmt_with_stmt_operator v1
+            and v2 = map_of_option map_expr v2
+            and v3 = map_stmt v3
+            in OtherStmtWithStmt (v1, v2, v3)
+        | OtherStmt (v1, v2) ->
+            let v1 = map_other_stmt_operator v1
+            and v2 = map_of_list map_any v2
+            in OtherStmt (v1, v2)
+      in
+      { x with s = skind }
     in
     vin.kstmt (k, all_functions) x
 
