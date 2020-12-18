@@ -111,7 +111,7 @@ let rec expr = function
   | CodeBlock ((t1,_,t2), params_opt, xs) ->
       let params = match params_opt with None -> [] | Some xs -> xs in
       let params = list formal_param params in
-      let st = G.Block (t1, list_stmts xs, t2) in
+      let st = G.Block (t1, list_stmts xs, t2) |> G.s in
       let def = { G.fparams = params; frettype = None; fbody = st;
                   fkind = G.LambdaKind, t1} in
       G.Lambda def
@@ -368,28 +368,28 @@ and expr_as_stmt = function
   | D x -> definition x
   | e ->
       let e = expr e in
-      G.ExprStmt (e, fake ";")
+      G.ExprStmt (e, fake ";") |> G.s
 
 and stmt st =
   match st with
   | Block (t1, xs, t2) ->
       let xs = list_stmts xs in
-      G.Block (t1, xs, t2)
+      G.Block (t1, xs, t2) |> G.s
   | If (t, e, st, elseopt) ->
       let e = expr e in
       let st = list_stmt1 st in
       let elseopt = option_tok_stmts elseopt in
-      G.If (t, e, st, elseopt)
+      G.If (t, e, st, elseopt) |> G.s
   | While (t, _bool, e, st) ->
       let e = expr e in
       let st = list_stmt1 st in
-      G.While (t, e, st)
+      G.While (t, e, st) |> G.s
   | Until (t, _bool, e, st) ->
       let e = expr e in
       let special = G.IdSpecial (G.Op (G.Not), t) in
       let e = G.Call (special, fb [G.Arg e]) in
       let st = list_stmt1 st in
-      G.While (t, e, st)
+      G.While (t, e, st) |> G.s
   | Unless (t, e, st, elseopt) ->
       let e = expr e in
       let st = list_stmt1 st in
@@ -398,36 +398,36 @@ and stmt st =
       let e = G.Call (special, fb [G.Arg e]) in
       let st1 =
         match elseopt with
-        | None -> G.Block (fb [])
+        | None -> G.Block (fb []) |> G.s
         | Some st -> st
       in
-      G.If (t, e, st1, Some st)
+      G.If (t, e, st1, Some st) |> G.s
   | For (t1, pat, t2, e, st) ->
       let pat = pattern pat in
       let e = expr e in
       let st = list_stmt1 st in
       let header = G.ForEach (pat, t2, e) in
-      G.For (t1, header, st)
+      G.For (t1, header, st) |> G.s
 
   | Return (t, es) ->
       let eopt = exprs_to_eopt es in
-      G.Return (t, eopt, G.sc)
+      G.Return (t, eopt, G.sc) |> G.s
   | Yield (t, es) ->
       let eopt = exprs_to_eopt es in
-      G.ExprStmt (G.Yield (t, eopt, false), fake ";")
+      G.ExprStmt (G.Yield (t, eopt, false), fake ";") |> G.s
 
   | Break (t, es) ->
       let lbl = exprs_to_label_ident es in
-      G.Break (t, lbl, G.sc)
+      G.Break (t, lbl, G.sc) |> G.s
   | Next (t, es) ->
       let lbl = exprs_to_label_ident es in
-      G.Continue (t, lbl, G.sc)
+      G.Continue (t, lbl, G.sc) |> G.s
   | Redo (t, es) ->
       let lbl = exprs_to_label_ident es in
-      G.OtherStmt (G.OS_Redo, [G.Tk t; G.Lbli lbl])
+      G.OtherStmt (G.OS_Redo, [G.Tk t; G.Lbli lbl]) |> G.s
   | Retry (t, es) ->
       let lbl = exprs_to_label_ident es in
-      G.OtherStmt (G.OS_Retry, [G.Tk t; G.Lbli lbl])
+      G.OtherStmt (G.OS_Retry, [G.Tk t; G.Lbli lbl]) |> G.s
 
   | Case (t, { case_guard = eopt; case_whens = whens; case_else = stopt}) ->
       let eopt = option expr eopt in
@@ -440,7 +440,7 @@ and stmt st =
             [[G.Default t], st]
       in
       G.Switch (t, eopt,
-                (whens @ default) |> List.map (fun x -> G.CasesAndBody x))
+                (whens @ default) |> List.map (fun x -> G.CasesAndBody x)) |> G.s
 
   | ExnBlock b -> body_exn b
 
@@ -490,15 +490,15 @@ and definition def =
            (match method_name mn with
             | Left id ->
                 let ent = G.basic_entity id [] in
-                G.DefStmt (ent, G.FuncDef funcdef)
+                G.DefStmt (ent, G.FuncDef funcdef) |> G.s
             | Right e ->
                 let ent = G.basic_entity ("",fake"") [] in
-                G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
+                G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)]) |> G.s
            )
        | SingletonM e ->
            let e = expr e in
            let ent = G.basic_entity ("",fake"") [] in
-           G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)])
+           G.OtherStmt (G.OS_Todo, [G.E e; G.Def (ent, G.FuncDef funcdef)]) |> G.s
       )
   | ClassDef (t, kind, body) ->
       let body = body_exn body in
@@ -523,10 +523,10 @@ and definition def =
                        cimplements = []; cmixins = [];
                        cbody = fb ([G.FieldStmt body]);
                      } in
-           G.DefStmt (ent, G.ClassDef def)
+           G.DefStmt (ent, G.ClassDef def) |> G.s
        | SingletonC (t, e) ->
            let e = expr e in
-           G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body])
+           G.OtherStmt (G.OS_Todo, [G.Tk t; G.E e; G.S body]) |> G.s
       )
   | ModuleDef (_t, name, body) ->
       let body = body_exn body in
@@ -539,24 +539,24 @@ and definition def =
       in
       let mkind = G.ModuleStruct (None, [body]) in
       let def = { G.mbody = mkind } in
-      G.DefStmt (ent, G.ModuleDef def)
+      G.DefStmt (ent, G.ModuleDef def) |> G.s
 
   | BeginBlock (_t, (t1, st, t2)) ->
       let st = list_stmts st in
-      let st = G.Block (t1, st, t2) in
-      G.OtherStmtWithStmt (G.OSWS_BEGIN, None, st)
+      let st = G.Block (t1, st, t2) |> G.s in
+      G.OtherStmtWithStmt (G.OSWS_BEGIN, None, st) |> G.s
   | EndBlock (_t, (t1, st, t2)) ->
       let st = list_stmts st in
-      let st = G.Block (t1, st, t2) in
-      G.OtherStmtWithStmt (G.OSWS_END, None, st)
+      let st = G.Block (t1, st, t2) |> G.s in
+      G.OtherStmtWithStmt (G.OSWS_END, None, st) |> G.s
 
   | Alias (t, mn1, mn2) ->
       let mn1 = method_name_to_any mn1 in
       let mn2 = method_name_to_any mn2 in
-      G.DirectiveStmt (G.OtherDirective (G.OI_Alias, [G.Tk t; mn1; mn2]))
+      G.DirectiveStmt (G.OtherDirective (G.OI_Alias, [G.Tk t; mn1; mn2])) |>G.s
   | Undef (t, mns) ->
       let mns = list method_name_to_any mns in
-      G.DirectiveStmt (G.OtherDirective (G.OI_Undef, (G.Tk t)::mns))
+      G.DirectiveStmt (G.OtherDirective (G.OI_Undef, (G.Tk t)::mns)) |> G.s
 
 and body_exn x =
   match x with
@@ -575,12 +575,12 @@ and body_exn x =
             Some (t, st)
       in
       (match elseopt with
-       | None -> G.Try (fake "try", body, catches, finally_opt)
+       | None -> G.Try (fake "try", body, catches, finally_opt) |> G.s
        | Some (_t, sts) ->
            let st = list_stmt1 sts in
-           let try_ = G.Try (fake "try", body, catches, finally_opt) in
-           let st = G.Block (fb [try_; st]) in
-           G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st)
+           let try_ = G.Try (fake "try", body, catches, finally_opt) |> G.s in
+           let st = G.Block (fb [try_; st]) |> G.s in
+           G.OtherStmtWithStmt (G.OSWS_Else_in_try, None, st) |> G.s
 
       )
 
@@ -638,9 +638,9 @@ and list_stmt1 xs =
    * in which case we remove the G.Block around it.
    * hacky ...
   *)
-  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when H.is_metavar_name s
+  | [{G.s=G.ExprStmt (G.Id ((s, _), _), _);_} as x] when H.is_metavar_name s
     -> x
-  | xs -> G.Block (fb xs)
+  | xs -> G.Block (fb xs) |> G.s
 
 (* was called stmts, but you should either use list_stmt1 or list_stmts *)
 and list_stmts xs =

@@ -82,7 +82,7 @@ let mk_func_def fkind params ret st =
 let wrap_init_in_block_maybe x v =
   match x with
   | None -> [v]
-  | Some e -> [G.Block (fb [G.exprstmt e;v])]
+  | Some e -> [G.s (G.Block (fb [G.exprstmt e; v]))]
 
 (*****************************************************************************)
 (* Entry point *)
@@ -204,9 +204,9 @@ let top_func () =
         let v1 = ident v1 in
         let (params, ret) = func_type v2 in
         let ent = G.basic_entity v1 [] in
-        G.FieldStmt (G.DefStmt
-                       (ent, G.FuncDef (mk_func_def (G.Method, G.fake "") params ret
-                                          G.empty_fbody)))
+        G.FieldStmt (G.s (G.DefStmt
+                            (ent, G.FuncDef (mk_func_def (G.Method, G.fake "") params ret
+                                               G.empty_fbody))))
     | EmbeddedInterface v1 -> let v1 = qualified_ident v1 in
         let name = name_of_qualified_ident v1 in
         G.FieldSpread (fake "...", G.IdQualified (name, G.empty_id_info()))
@@ -398,9 +398,9 @@ let top_func () =
         let v1 = list decl v1 in
         v1
     | Block (t1, v1, t2) -> let v1 = list stmt_aux v1 |> List.flatten in
-        [G.Block (t1, v1, t2)]
+        [G.Block (t1, v1, t2) |> G.s]
     | Empty ->
-        [G.Block (fb[])]
+        [G.Block (fb[]) |> G.s]
     | SimpleStmt v1 ->
         let v1 = simple v1 in
         [G.exprstmt v1]
@@ -411,7 +411,7 @@ let top_func () =
         and v4 = option stmt v4
         in
         wrap_init_in_block_maybe v1
-          (G.If (t, v2, v3, v4))
+          (G.If (t, v2, v3, v4) |> G.s)
     | Switch (v0, v1, v2, v3) ->
         let v0 = tok v0 in
         let v1 = option simple v1
@@ -434,10 +434,10 @@ let top_func () =
         and v3 = list case_clause v3
         in
         wrap_init_in_block_maybe v1
-          (G.Switch (v0, v2, v3))
+          (G.Switch (v0, v2, v3) |> G.s)
     | Select (v1, v2) ->
         let v1 = tok v1 and v2 = list comm_clause v2 in
-        [G.Switch (v1, None, v2)]
+        [G.Switch (v1, None, v2) |> G.s]
     | For (t, (v1, v2, v3), v4) ->
         let v1 = option simple v1
         and v2 = option expr v2
@@ -446,7 +446,7 @@ let top_func () =
         in
         (* TODO: some of v1 are really ForInitVar *)
         let init = match v1 with None -> [] | Some e -> [G.ForInitExpr e] in
-        [G.For (t, G.ForClassic (init, v2, v3), v4)]
+        [G.For (t, G.ForClassic (init, v2, v3), v4) |> G.s]
 
     | Range (t, v1, v2, v3, v4) ->
         let opt =  option
@@ -459,35 +459,35 @@ let top_func () =
         (match opt with
          | None ->
              let pattern = G.PatUnderscore (fake "_") in
-             [G.For (t, G.ForEach (pattern, v2, v3), v4)]
+             [G.For (t, G.ForEach (pattern, v2, v3), v4) |> G.s]
          | Some (xs, _tokEqOrColonEqTODO) ->
              let pattern = G.PatTuple (xs |> List.map H.expr_to_pattern |> G.fake_bracket) in
-             [G.For (t, G.ForEach (pattern, v2, v3), v4)]
+             [G.For (t, G.ForEach (pattern, v2, v3), v4) |> G.s]
         )
     | Return (v1, v2) ->
         let v1 = tok v1 and v2 = option (list expr) v2 in
-        [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr), G.sc)]
+        [G.Return (v1, v2 |> Common.map_opt (list_to_tuple_or_expr), G.sc) |> G.s]
     | Break (v1, v2) ->
         let v1 = tok v1 and v2 = option ident v2 in
-        [G.Break (v1, H.opt_to_label_ident v2, G.sc)]
+        [G.Break (v1, H.opt_to_label_ident v2, G.sc) |> G.s]
     | Continue (v1, v2) ->
         let v1 = tok v1 and v2 = option ident v2 in
-        [G.Continue (v1, H.opt_to_label_ident v2, G.sc)]
+        [G.Continue (v1, H.opt_to_label_ident v2, G.sc) |> G.s]
     | Goto (v1, v2) ->
         let v1 = tok v1 and v2 = ident v2 in
-        [G.Goto (v1, v2)]
+        [G.Goto (v1, v2) |> G.s]
     | Fallthrough v1 ->
         let v1 = tok v1 in
-        [G.OtherStmt (G.OS_Fallthrough, [G.Tk v1])]
+        [G.OtherStmt (G.OS_Fallthrough, [G.Tk v1]) |> G.s]
     | Label (v1, v2) ->
         let v1 = ident v1 and v2 = stmt v2 in
-        [G.Label (v1, v2)]
+        [G.Label (v1, v2) |> G.s]
     | Go (v1, v2) ->
         let _v1 = tok v1 and (e, args) = call_expr v2 in
-        [G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))])]
+        [G.OtherStmt (G.OS_Go, [G.E (G.Call (e, args))]) |> G.s]
     | Defer (v1, v2) ->
         let _v1 = tok v1 and (e, args) = call_expr v2 in
-        [G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))])]
+        [G.OtherStmt (G.OS_Defer, [G.E (G.Call (e, args))]) |> G.s]
 
   and case_clause = function
     | CaseClause (v1, v2) ->
@@ -538,28 +538,28 @@ let top_func () =
         and v3 = option constant_expr v3
         in
         let ent = G.basic_entity v1 [G.attr G.Const (fake "const")] in
-        G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
+        G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 }) |> G.s
     | DVar (v1, v2, v3) ->
         let v1 = ident v1
         and v2 = option type_ v2
         and v3 = option expr v3
         in
         let ent = G.basic_entity v1 [G.attr G.Var (fake "var")] in
-        G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 })
+        G.DefStmt (ent, G.VarDef { G.vinit = v3; vtype = v2 }) |> G.s
     | DTypeAlias (v1, v2, v3) ->
         let v1 = ident v1 and _v2 = tok v2 and v3 = type_ v3 in
         let ent = G.basic_entity v1 [] in
-        G.DefStmt (ent, G.TypeDef { G.tbody = G.AliasType v3 })
+        G.DefStmt (ent, G.TypeDef { G.tbody = G.AliasType v3 }) |> G.s
     | DTypeDef (v1, v2) -> let v1 = ident v1 and v2 = type_ v2 in
         let ent = G.basic_entity v1 [] in
-        G.DefStmt (ent, G.TypeDef { G.tbody = G.NewType v2 })
+        G.DefStmt (ent, G.TypeDef { G.tbody = G.NewType v2 }) |> G.s
 
   and top_decl =
     function
     | DFunc ((t, v1, (v2, v3))) ->
         let v1 = ident v1 and (params, ret) = func_type v2 and v3 = stmt v3 in
         let ent = G.basic_entity v1 [] in
-        G.DefStmt (ent, G.FuncDef (mk_func_def (G.Function, t) params ret v3))
+        G.DefStmt (ent, G.FuncDef (mk_func_def (G.Function, t) params ret v3)) |> G.s
     | DMethod ((t, v1, v2, (v3, v4))) ->
         let v1 = ident v1
         and v2 = parameter v2
@@ -568,15 +568,15 @@ let top_func () =
         let def = mk_func_def (G.Method, t) params ret v4 in
         let receiver = G.OtherParam (G.OPO_Receiver, [G.Pa v2])
         in
-        G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams})
+        G.DefStmt (ent, G.FuncDef { def with G.fparams=receiver::def.G.fparams}) |> G.s
     | DTop v1 -> let v1 = decl v1 in v1
     | STop v1 -> stmt v1
     | Package (t1, id) ->
         let id = ident id in
-        G.DirectiveStmt (G.Package (t1, [id]))
+        G.DirectiveStmt (G.Package (t1, [id])) |> G.s
     | Import x ->
         let x = import x in
-        G.DirectiveStmt x
+        G.DirectiveStmt x |> G.s
 
   and import { i_path = i_path; i_kind = i_kind; i_tok } =
     let module_name = G.FileName (wrap string i_path) in
@@ -599,13 +599,13 @@ let top_func () =
   and program xs =
     anon_types := [];
     let xs = list top_decl xs in
-    let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x) in
+    let arg_types = !anon_types |> List.map (fun x -> G.DefStmt x |> G.s) in
     (* TODO? put after program and imports? *)
     arg_types @ xs
 
   and item_aux = function
     | ITop x -> [top_decl x]
-    | IImport x -> let x = import x in [G.DirectiveStmt x]
+    | IImport x -> let x = import x in [G.DirectiveStmt x |> G.s]
     | IStmt x -> stmt_aux x
 
   and item x  =
@@ -614,7 +614,7 @@ let top_func () =
   and partial = function
     | PartialDecl x ->
         let x = top_decl x in
-        (match x with
+        (match x.G.s with
          | G.DefStmt def -> G.PartialDef def
          | _ -> failwith "partial supported only for definitions"
         )
@@ -628,7 +628,7 @@ let top_func () =
       | S v1 -> let v1 = stmt v1 in G.S v1
       | T v1 -> let v1 = type_ v1 in G.T v1
       | Decl v1 -> let v1 = decl v1 in G.S v1
-      | I v1 -> let v1 = import v1 in G.S (G.DirectiveStmt v1)
+      | I v1 -> let v1 = import v1 in G.S (G.DirectiveStmt v1 |> G.s)
       | P v1 -> let v1 = program v1 in G.Pr v1
       | Ident v1 -> let v1 = ident v1 in G.I v1
       (* not used anymore, Items is now used for sgrep *)

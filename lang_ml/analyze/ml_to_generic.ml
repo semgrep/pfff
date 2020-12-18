@@ -41,6 +41,7 @@ let error = G.error
 (* TODO: each use of this is usually the sign of a todo to improve
  * AST_generic.ml or ast_ml.ml *)
 let fake = G.fake
+let s = G.s
 
 let add_attrs ent attrs =
   { ent with G.attrs = attrs }
@@ -191,13 +192,13 @@ and expr =
       let defs =
         v2 |> List.map (function
           | Left (ent, params, tret, expr) ->
-              G.DefStmt (ent, mk_var_or_func tlet params tret expr)
+              s (G.DefStmt (ent, mk_var_or_func tlet params tret expr))
           | Right (pat, e) ->
               let exp = G.LetPattern (pat, e) in
               G.exprstmt exp
         )
       in
-      let st = G.Block (G.fake_bracket (defs @ [G.exprstmt v3])) in
+      let st = s (G.Block (G.fake_bracket (defs @ [G.exprstmt v3]))) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
   | Fun (t, v1, v2) ->
       let v1 = list parameter v1
@@ -231,12 +232,12 @@ and expr =
       let catches = v2 |> List.map (fun (pat, e) ->
         fake "catch", pat, G.exprstmt e
       ) in
-      let st = G.Try (t, G.exprstmt v1, catches, None) in
+      let st = s (G.Try (t, G.exprstmt v1, catches, None)) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | While (t, v1, v2) ->
       let v1 = expr v1 and v2 = expr v2 in
-      let st = G.While (t, v1, G.exprstmt v2) in
+      let st = G.s (G.While (t, v1, G.exprstmt v2)) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | For (t, v1, v2, v3, v4, v5) ->
@@ -254,7 +255,7 @@ and expr =
                          G.fake_bracket [G.Arg n; G.Arg v4]) in
       let header = G.ForClassic ([G.ForInitVar (ent, var)],
                                  Some cond, Some next) in
-      let st = G.For (t, header, G.exprstmt v5) in
+      let st = G.s (G.For (t, header, G.exprstmt v5)) in
       G.OtherExpr (G.OE_StmtExpr, [G.S st])
 
   | ExprTodo (t, xs) ->
@@ -419,8 +420,8 @@ and type_def_kind =
                           (match v3 with
                            | Some tok -> [G.attr G.Mutable tok]
                            | None -> []) in
-                      G.FieldStmt (G.DefStmt
-                                     (ent, G.FieldDefColon { G.vinit = None; vtype = Some v2 }))
+                      G.FieldStmt (G.s (G.DefStmt
+                                          (ent, G.FieldDefColon { G.vinit = None; vtype = Some v2 })))
                    ))
           v1
       in G.AndType v1
@@ -461,14 +462,14 @@ and item { i; iattrs } =
       xs |> List.map (fun (ent, def) ->
         (* add attrs to all mutual type decls *)
         let ent = add_attrs ent attrs in
-        G.DefStmt (ent, G.TypeDef def)
+        G.DefStmt (ent, G.TypeDef def) |> G.s
       )
 
   | Exception (_t, v1, v2) ->
       let v1 = ident v1 and v2 = list type_ v2 in
       let ent = G.basic_entity v1 attrs in
       let def = G.Exception (v1, v2) in
-      [G.DefStmt (ent, G.TypeDef { G.tbody = def })]
+      [G.DefStmt (ent, G.TypeDef { G.tbody = def }) |> G.s]
   | External (t, v1, v2, v3) ->
       let v1 = ident v1
       and v2 = type_ v2
@@ -476,23 +477,23 @@ and item { i; iattrs } =
       let attrs = [G.KeywordAttr (G.Extern, t)] @ attrs in
       let ent = G.basic_entity v1 attrs in
       let def = G.Signature v2 in
-      [G.DefStmt (ent, def)]
+      [G.DefStmt (ent, def) |> G.s]
   | Open (t, v1) -> let v1 = module_name v1 in
       (* no attrs here *)
       let dir = G.ImportAll (t, G.DottedName v1, fake "*") in
-      [G.DirectiveStmt dir]
+      [G.DirectiveStmt dir |> G.s]
 
   | Val (_t, v1, v2) ->
       let v1 = ident v1 and v2 = type_ v2 in
       let ent = G.basic_entity v1 attrs in
       let def = G.Signature v2 in
-      [G.DefStmt (ent, def)]
+      [G.DefStmt (ent, def) |> G.s]
   | Let (tlet, v1, v2) ->
       let _v1 = rec_opt v1 and v2 = list let_binding v2 in
       v2 |> List.map (function
         | Left (ent, params, tret, expr) ->
             let ent = add_attrs ent attrs in
-            G.DefStmt (ent, mk_var_or_func tlet params tret expr)
+            G.DefStmt (ent, mk_var_or_func tlet params tret expr) |> G.s
         | Right (pat, e) ->
             (* TODO no attrs *)
             let exp = G.LetPattern (pat, e) in
@@ -501,7 +502,7 @@ and item { i; iattrs } =
 
   | Module (_t, v1) -> let (ent, def) = module_declaration v1 in
       let ent = add_attrs ent attrs in
-      [G.DefStmt (ent, G.ModuleDef def)]
+      [G.DefStmt (ent, G.ModuleDef def) |> G.s]
 
   | ItemTodo (t, xs) ->
       let t = todo_category t in
@@ -510,7 +511,7 @@ and item { i; iattrs } =
                     [G.TodoK t] @
                     List.map (fun x -> G.S x) xs @
                     List.map (fun x -> G.At x) attrs
-                   )]
+                   ) |> G.s]
 
 and mk_var_or_func tlet params tret expr =
   match params, expr with

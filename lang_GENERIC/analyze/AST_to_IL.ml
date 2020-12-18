@@ -19,6 +19,8 @@ open IL
 module G = AST_generic
 module H = AST_generic_helpers
 
+[@@@warning "-40-42"]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -539,7 +541,7 @@ and record env ((_tok, origfields, _) as record_def) =
   let fields =
     origfields
     |> List.map (function
-      | G.FieldStmt (G.DefStmt ({G. name=G.EId (id, _);tparams=[];_}, def_kind)) ->
+      | G.FieldStmt ({s=G.DefStmt ({G. name=G.EId (id, _);tparams=[];_}, def_kind);_}) ->
           let fdeforig =
             match def_kind with
             (* TODO: Consider what to do with vtype. *)
@@ -614,7 +616,7 @@ let for_var_or_expr_list env xs =
 (* Statement *)
 (*****************************************************************************)
 let rec stmt_aux env st =
-  match st with
+  match st.G.s with
   | G.ExprStmt (e, _) ->
       (* optimize? pass context to expr when no need for return value? *)
       let ss, _eIGNORE = expr_with_pre_stmts env e in

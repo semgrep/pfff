@@ -328,6 +328,11 @@ and id_info = {
 (*****************************************************************************)
 
 (*s: type [[AST_generic.expr]] *)
+(* todo? we could do like for stmt and have 'expr' and 'expr_kind', which
+ * would allow us to store more semantic information at each expr node,
+ * e.g., type information, or constant evaluation, or range, but it
+ * would be a bigger refactoring than for stmt.
+*)
 and expr =
   (* basic (atomic) values *)
   | L of literal
@@ -713,7 +718,19 @@ and other_expr_operator =
 (* Statement *)
 (*****************************************************************************)
 (*s: type [[AST_generic.stmt]] *)
-and stmt =
+and stmt = {
+  s: stmt_kind;
+  (* this can be used to hash more efficiently stmts, or in semgrep to
+   * quickly know if a stmt is a children of another stmt.
+  *)
+  mutable s_id: int;
+  (* todo? we could store a range: (tok * tok) to delimit the range of a stmt
+   * which would allow us to remove some of the extra 'tok' in stmt_kind.
+   * Indeed, the main use of those 'tok' is to accurately report a match range
+   * in semgrep.
+  *)
+}
+and stmt_kind =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
    * separate expr, instr, and stmt types *)
   | ExprStmt of expr * sc (* fake tok in Python, but also in JS/Go with ASI *)
@@ -1626,11 +1643,14 @@ let basic_entity id attrs =
   }
 (*e: function [[AST_generic.basic_entity]] *)
 
+let s skind = { s = skind; s_id = -1 }
+
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
   let entity = basic_entity id [] in
-  FieldStmt(DefStmt (entity, VarDef { vinit = vopt; vtype = typeopt}))
+  FieldStmt(s (DefStmt (entity, VarDef { vinit = vopt; vtype = typeopt})))
 (*e: function [[AST_generic.basic_field]] *)
+
 
 (*s: function [[AST_generic.attr]] *)
 let attr kwd tok =
@@ -1653,18 +1673,17 @@ let fake_bracket x = fake "(", x, fake ")"
 let unbracket (_, x, _) = x
 (*e: function [[AST_generic.unbracket]] *)
 let sc = Parse_info.fake_info ";"
-let exprstmt e = ExprStmt (e, sc)
+let exprstmt e = s (ExprStmt (e, sc))
 let fieldEllipsis t = FieldStmt (exprstmt (Ellipsis t))
-let empty_fbody = Block (fake_bracket [])
+let empty_fbody = s (Block (fake_bracket []))
 let empty_body = fake_bracket []
 
 (*s: function [[AST_generic.stmt1]] *)
-(* less: should use fake_bracket, but defined below *)
 let stmt1 xs =
   match xs with
-  | [] -> Block (Parse_info.fake_info "{", [], Parse_info.fake_info "}")
+  | [] -> s (Block (fake_bracket []))
   | [st] -> st
-  | xs -> Block (Parse_info.fake_info "{", xs, Parse_info.fake_info "}")
+  | xs -> s (Block (fake_bracket xs))
 (*e: function [[AST_generic.stmt1]] *)
 
 (*e: pfff/h_program-lang/AST_generic.ml *)

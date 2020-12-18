@@ -131,9 +131,9 @@ let special (x, tok) =
    TODO: see if this is an issue with other languages besides javascript.
 *)
 let as_block stmt =
-  match stmt with
-  | G.Block _ as block -> block
-  | other -> G.Block (G.fake_bracket [other])
+  match stmt.G.s with
+  | G.Block _ -> stmt
+  | _ -> G.Block (G.fake_bracket [stmt]) |> G.s
 
 let rec property_name =
   function
@@ -247,44 +247,44 @@ and stmt x =
   match x with
   | StmtTodo (v1, v2) ->
       let v2 = list any v2 in
-      G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2))
-  | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1
-  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt v1
-  | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1
-  | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t)
+      G.OtherStmt (G.OS_Todo, (G.TodoK v1)::(v2)) |> G.s
+  | M v1 -> let v1 = module_directive v1 in G.DirectiveStmt v1 |> G.s
+  | DefStmt v1 -> let v1 = definition v1 in G.DefStmt v1 |> G.s
+  | Block v1 -> let v1 = bracket (list stmt) v1 in G.Block v1 |> G.s
+  | ExprStmt (v1, t) -> let v1 = expr v1 in G.ExprStmt (v1, t) |> G.s
   | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = option stmt v3 in
-      G.If (t, v1, v2, v3)
+      G.If (t, v1, v2, v3) |> G.s
   | Do (t, v1, v2) -> let v1 = stmt v1 and v2 = expr v2 in
-      G.DoWhile (t, v1, v2)
+      G.DoWhile (t, v1, v2) |> G.s
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = stmt v2 in
-      G.While (t, v1, v2)
+      G.While (t, v1, v2) |> G.s
   | For (t, v1, v2) -> let v1 = for_header v1 and v2 = stmt v2 in
-      G.For (t, v1, v2)
+      G.For (t, v1, v2) |> G.s
   | Switch (v0, v1, v2) ->
       let v0 = info v0 in
       let v1 = expr v1
       and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x) in
-      G.Switch (v0, Some v1, v2)
+      G.Switch (v0, Some v1, v2) |> G.s
   | Continue (t, v1, sc) -> let v1 = option label v1 in
-      G.Continue (t, H.opt_to_label_ident v1, sc)
+      G.Continue (t, H.opt_to_label_ident v1, sc) |> G.s
   | Break (t, v1, sc) -> let v1 = option label v1 in
-      G.Break (t, H.opt_to_label_ident v1, sc)
+      G.Break (t, H.opt_to_label_ident v1, sc) |> G.s
   | Return (t, v1, sc) ->
       let v1 = option expr v1 in
-      G.Return (t, v1, sc)
+      G.Return (t, v1, sc) |> G.s
   | Label (v1, v2) -> let v1 = label v1 and v2 = stmt v2 in
-      G.Label (v1, v2)
-  | Throw (t, v1, sc) -> let v1 = expr v1 in G.Throw (t, v1, sc)
+      G.Label (v1, v2) |> G.s
+  | Throw (t, v1, sc) -> let v1 = expr v1 in G.Throw (t, v1, sc) |> G.s
   | Try (t, v1, v2, v3) ->
       let v1 = stmt v1
       and v2 = option catch_block v2
       and v3 = option tok_and_stmt v3 in
-      G.Try (t, v1, Common.opt_to_list v2, v3)
+      G.Try (t, v1, Common.opt_to_list v2, v3) |> G.s
   | With (_v1, v2, v3) ->
       let e = expr v2 in
       let v3 = stmt v3 in
-      G.OtherStmtWithStmt (G.OSWS_With, Some e, v3)
+      G.OtherStmtWithStmt (G.OSWS_With, Some e, v3) |> G.s
 
 and catch_block = function
   | BoundCatch (t, v1, v2) ->
@@ -505,7 +505,7 @@ and property x =
   match x with
   | Field v1 ->
       let ent, def = field_classic v1 in
-      G.FieldStmt (G.DefStmt (ent, def))
+      G.FieldStmt (G.DefStmt (ent, def) |> G.s)
   | FieldColon v1 ->
       let ent, def = field_classic v1 in
       let def =
@@ -515,7 +515,7 @@ and property x =
         | G.VarDef x -> G.FieldDefColon x
         | _ -> def
       in
-      G.FieldStmt (G.DefStmt (ent, def))
+      G.FieldStmt (G.DefStmt (ent, def) |> G.s)
 
   | FieldSpread (t, v1) ->
       let v1 = expr v1 in
@@ -529,7 +529,7 @@ and property x =
   | FieldTodo (v1, v2) ->
       let v2 = stmt v2 in
       (* hmm, should use OtherStmtWithStmt ? *)
-      G.FieldStmt (G.OtherStmt (G.OS_Todo, [G.TodoK v1; G.S v2]))
+      G.FieldStmt (G.OtherStmt (G.OS_Todo, [G.TodoK v1; G.S v2]) |> G.s)
 
 
 and toplevel x = stmt x

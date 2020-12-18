@@ -180,7 +180,7 @@ let short_string_of_node node =
 (* Converters *)
 (*****************************************************************************)
 let simple_node_of_stmt_opt stmt =
-  match stmt with
+  match stmt.s with
   | A.ExprStmt (e, _)      -> Some (ExprStmt e)
   | A.Assert (t, e1, e2, _sc) -> Some (Assert (t, e1, e2))
   | A.DefStmt x       -> Some (DefStmt x)
@@ -198,11 +198,11 @@ let simple_node_of_stmt_opt stmt =
     ) -> None
 
 let any_of_simple_node = function
-  | ExprStmt e      -> A.S (A.ExprStmt (e, A.sc))
-  | Assert (t, e1, e2) -> A.S (A.Assert (t, e1, e2, A.sc))
-  | DefStmt x       -> A.S (A.DefStmt x)
-  | DirectiveStmt x -> A.S (A.DirectiveStmt x)
-  | OtherStmt (a,b) -> A.S (A.OtherStmt (a,b))
+  | ExprStmt e      -> A.S (A.ExprStmt (e, A.sc) |> A.s)
+  | Assert (t, e1, e2) -> A.S (A.Assert (t, e1, e2, A.sc) |> A.s)
+  | DefStmt x       -> A.S (A.DefStmt x |> A.s)
+  | DirectiveStmt x -> A.S (A.DirectiveStmt x |> A.s)
+  | OtherStmt (a,b) -> A.S (A.OtherStmt (a,b) |> A.s)
   | Parameter x -> A.Pa x
 
 

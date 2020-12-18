@@ -511,9 +511,9 @@ and list_stmt1 xs =
    * in which case we remove the G.Block around it.
    * hacky ...
   *)
-  | [G.ExprStmt (G.Id ((s, _), _), _) as x] when H.is_metavar_name s
+  | [{G.s=G.ExprStmt (G.Id ((s, _), _), _);_} as x] when H.is_metavar_name s
     -> x
-  | xs -> G.Block (fb xs)
+  | xs -> G.Block (fb xs) |> G.s
 (*e: function [[Python_to_generic.list_stmt1]] *)
 
 
@@ -530,7 +530,7 @@ and stmt_aux x =
       let ent = G.basic_entity v1 v5 in
       let def = { G.fparams = v2; frettype = v3; fbody = v4;
                   fkind = G.Function, t } in
-      [G.DefStmt (ent, G.FuncDef def)]
+      [G.DefStmt (ent, G.FuncDef def) |> G.s]
   | ClassDef (v0, v1, v2, v3, v4) ->
       let v1 = name v1
       and v2 = list type_parent v2
@@ -542,7 +542,7 @@ and stmt_aux x =
                   cimplements = []; cmixins = [];
                   cbody = fb (v3 |> List.map(fun x ->G.FieldStmt x);)
                 } in
-      [G.DefStmt (ent, G.ClassDef def)]
+      [G.DefStmt (ent, G.ClassDef def) |> G.s]
 
 
   (* TODO: should turn some of those in G.LocalDef (G.VarDef ! ) *)
@@ -557,16 +557,16 @@ and stmt_aux x =
       let v1 = expr v1 and v2 = operator v2 and v3 = expr v3 in
       [G.exprstmt (G.AssignOp (v1, (v2, tok), v3))]
   | Return (t, v1) -> let v1 = option expr v1 in
-      [G.Return (t, v1, G.sc)]
+      [G.Return (t, v1, G.sc) |> G.s]
 
   | Delete (_t, v1) -> let v1 = list expr v1 in
-      [G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x))]
+      [G.OtherStmt (G.OS_Delete, v1 |> List.map (fun x -> G.E x)) |> G.s]
   | If (t, v1, v2, v3) ->
       let v1 = expr v1
       and v2 = list_stmt1 v2
       and v3 = option list_stmt1 v3
       in
-      [G.If (t, v1, v2, v3)]
+      [G.If (t, v1, v2, v3) |> G.s]
 
   | While (t, v1, v2, v3) ->
       let v1 = expr v1
@@ -574,10 +574,11 @@ and stmt_aux x =
       and v3 = list stmt v3
       in
       (match v3 with
-       | [] -> [G.While (t, v1, v2)]
+       | [] -> [G.While (t, v1, v2) |> G.s]
        | _ -> [G.Block (fb[
-         G.While (t, v1,v2);
-         G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x))])
+         G.While (t, v1,v2) |> G.s;
+         G.OtherStmt (G.OS_WhileOrElse, v3 |> List.map (fun x -> G.S x)) |> G.s]
+       ) |> G.s
        ]
       )
 
@@ -589,10 +590,11 @@ and stmt_aux x =
       in
       let header = G.ForEach (foreach, t2, ins) in
       (match orelse with
-       | [] -> [G.For (t, header, body)]
+       | [] -> [G.For (t, header, body) |> G.s]
        | _ -> [G.Block (fb [
-         G.For (t, header, body);
-         G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))])
+         G.For (t, header, body) |> G.s;
+         G.OtherStmt (G.OS_ForOrElse, orelse|> List.map (fun x -> G.S x))|>G.s
+       ]) |> G.s
        ]
       )
   (* TODO: unsugar in sequence? *)
@@ -606,33 +608,33 @@ and stmt_aux x =
         | None -> v1
         | Some e2 -> G.LetPattern (H.expr_to_pattern e2, v1)
       in
-      [G.OtherStmtWithStmt (G.OSWS_With, Some e, v3)]
+      [G.OtherStmtWithStmt (G.OSWS_With, Some e, v3) |> G.s]
 
   | Raise (t, v1) ->
       (match v1 with
        | Some (e, None) ->
            let e = expr e in
-           [G.Throw (t, e, G.sc)]
+           [G.Throw (t, e, G.sc) |> G.s]
        | Some (e, Some from) ->
            let e = expr e in
            let from = expr from in
-           let st = G.Throw (t, e, G.sc) in
-           [G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st])]
+           let st = G.Throw (t, e, G.sc) |> G.s in
+           [G.OtherStmt (G.OS_ThrowFrom, [G.E from; G.S st]) |> G.s]
        | None ->
-           [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t])]
+           [G.OtherStmt (G.OS_ThrowNothing, [G.Tk t]) |> G.s]
       )
   | RaisePython2 (t, e, v2, v3) ->
       let e = expr e in
-      let st = G.Throw (t, e, G.sc) in
+      let st = G.Throw (t, e, G.sc) |> G.s in
       (match (v2, v3) with
        | (Some args, Some loc) ->
            let args = expr args
            and loc = expr loc
            in
-           [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E loc; G.E args; G.S st])]
+           [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E loc; G.E args; G.S st]) |> G.s]
        | (Some args, None) ->
            let args = expr args in
-           [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E args; G.S st])]
+           [G.OtherStmt (G.OS_ThrowArgsLocation, [G.E args; G.S st]) |> G.s]
        | (None, _) ->
            [st]
       )
@@ -643,58 +645,59 @@ and stmt_aux x =
       and orelse = list stmt v3
       in
       (match orelse with
-       | [] -> [G.Try (t, v1, v2, None)]
+       | [] -> [G.Try (t, v1, v2, None) |> G.s]
        | _ -> [G.Block (fb[
-         G.Try (t, v1, v2, None);
-         G.OtherStmt (G.OS_TryOrElse, orelse |> List.map (fun x -> G.S x))
-       ])
+         G.Try (t, v1, v2, None) |> G.s;
+         G.OtherStmt (G.OS_TryOrElse, orelse |> List.map (fun x -> G.S x)) |> G.s
+       ]) |> G.s
        ]
       )
 
   | TryFinally (t, v1, t2, v2) ->
       let v1 = list_stmt1 v1 and v2 = list_stmt1 v2 in
       (* could lift down the Try in v1 *)
-      [G.Try (t, v1, [], Some (t2, v2))]
+      [G.Try (t, v1, [], Some (t2, v2)) |> G.s]
 
   | Assert (t, v1, v2) -> let v1 = expr v1 and v2 = option expr v2 in
-      [G.Assert (t, v1, v2, G.sc)]
+      [G.Assert (t, v1, v2, G.sc) |> G.s]
 
   | ImportAs (t, v1, v2) ->
       let mname = module_name v1 and nopt = option name v2 in
-      [G.DirectiveStmt (G.ImportAs (t, mname, nopt))]
+      [G.DirectiveStmt (G.ImportAs (t, mname, nopt)) |> G.s]
   | ImportAll (t, v1, v2) ->
       let mname = module_name v1 and v2 = info v2 in
-      [G.DirectiveStmt (G.ImportAll (t, mname, v2))]
+      [G.DirectiveStmt (G.ImportAll (t, mname, v2)) |> G.s]
 
   | ImportFrom (t, v1, v2) ->
       let v1 = module_name v1
       and v2 = list alias v2
       in
       List.map (fun (a, b) ->
-        G.DirectiveStmt (G.ImportFrom (t, v1, a, b))
+        G.DirectiveStmt (G.ImportFrom (t, v1, a, b)) |> G.s
       ) v2
 
   | Global (t, v1) | NonLocal (t, v1)
     -> let v1 = list name v1 in
       v1 |> List.map (fun x ->
         let ent = G.basic_entity x [] in
-        G.DefStmt (ent, G.UseOuterDecl t))
+        G.DefStmt (ent, G.UseOuterDecl t) |> G.s
+      )
 
   | ExprStmt v1 -> let v1 = expr v1 in
       [G.exprstmt v1]
 
   | Async (t, x) ->
       let x = stmt x in
-      (match x with
+      (match x.G.s with
        | G.DefStmt (ent, func) ->
            [G.DefStmt ({ ent with G.attrs = (G.attr G.Async t)
-                                            ::ent.G.attrs}, func)]
-       | _ -> [G.OtherStmt (G.OS_Async, [G.S x])]
+                                            ::ent.G.attrs}, func) |> G.s]
+       | _ -> [G.OtherStmt (G.OS_Async, [G.S x]) |> G.s]
       )
 
-  | Pass t -> [G.OtherStmt (G.OS_Pass, [G.Tk t])]
-  | Break t -> [G.Break (t, G.LNone, G.sc)]
-  | Continue t -> [G.Continue (t, G.LNone, G.sc)]
+  | Pass t -> [G.OtherStmt (G.OS_Pass, [G.Tk t]) |> G.s]
+  | Break t -> [G.Break (t, G.LNone, G.sc) |> G.s]
+  | Continue t -> [G.Continue (t, G.LNone, G.sc) |> G.s]
 
   (* python2: *)
   | Print (tok, _dest, vals, _nl) ->
@@ -772,7 +775,7 @@ let any =
   | Stmt v1 ->
       let v1 = stmt v1 in
       (* in Python Assign is a stmt but in the generic AST it's an expression*)
-      (match v1 with
+      (match v1.G.s with
        | G.ExprStmt (x,_t) -> G.E x
        | _ -> G.S v1
       )

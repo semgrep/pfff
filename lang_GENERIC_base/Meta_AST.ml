@@ -557,8 +557,9 @@ and vof_other_attribute_operator =
   | OA_AnnotThrow -> OCaml.VSum ("OA_AnnotThrow", [])
   | OA_Expr -> OCaml.VSum ("OA_Expr", [])
   | OA_Default -> OCaml.VSum ("OA_Default", [])
-and vof_stmt =
-  function
+and vof_stmt st =
+  (* todo: dump also the s_id? *)
+  match st.s with
   | DisjStmt (v1, v2) -> let v1 = vof_stmt v1 in let v2 = vof_stmt v2 in
       OCaml.VSum ("DisjStmt", [v1; v2])
   | ExprStmt (v1, t) ->

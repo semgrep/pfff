@@ -112,20 +112,20 @@ let for_var xs =
 let rec stmt_aux =
   function
   | Expr (v1, t) -> let v1 = expr v1 in
-      [G.ExprStmt (v1, t)]
+      [G.ExprStmt (v1, t) |> G.s]
   | Block v1 -> let v1 = bracket (list stmt) v1 in
-      [G.Block v1]
+      [G.Block v1 |> G.s]
   | If (t, v1, v2, v3) ->
       let v1 = expr v1 and v2 = stmt v2 and v3 = stmt v3 in
-      [G.If (t, v1, v2, Some (* TODO *) v3)]
+      [G.If (t, v1, v2, Some (* TODO *) v3) |> G.s]
   | Switch (t, v1, v2) ->
       let v1 = expr v1
       and v2 = list case v2 |> List.map (fun x -> G.CasesAndBody x) in
-      [G.Switch (t, Some v1, v2)]
+      [G.Switch (t, Some v1, v2) |> G.s]
   | While (t, v1, v2) -> let v1 = expr v1 and v2 = list stmt v2 in
-      [G.While (t, v1, G.stmt1 v2)]
+      [G.While (t, v1, G.stmt1 v2) |> G.s]
   | Do (t, v1, v2) -> let v1 = list stmt v1 and v2 = expr v2 in
-      [G.DoWhile (t, G.stmt1 v1, v2)]
+      [G.DoWhile (t, G.stmt1 v1, v2) |> G.s]
   | For (t, v1, v2, v3, v4) ->
       let v1 = list expr v1
       and v2 = list expr v2
@@ -136,44 +136,44 @@ let rec stmt_aux =
          for_var v1,
          list_expr_to_opt v2,
          list_expr_to_opt v3),
-              G.stmt1 v4)]
+              G.stmt1 v4) |> G.s]
 
   | Foreach (t, v1, t2, v2, v3) ->
       let v1 = expr v1
       and v2 = foreach_pattern v2
       and v3 = list stmt v3
       in
-      [G.For (t, G.ForEach (v2, t2, v1), G.stmt1 v3)]
+      [G.For (t, G.ForEach (v2, t2, v1), G.stmt1 v3) |> G.s]
   | Return (t, v1) -> let v1 = option expr v1 in
-      [G.Return (t, v1, G.sc)]
+      [G.Return (t, v1, G.sc) |> G.s]
   | Break (t, v1) ->
-      [G.Break (t, opt_expr_to_label_ident v1, G.sc)]
+      [G.Break (t, opt_expr_to_label_ident v1, G.sc) |> G.s]
   | Continue (t, v1) ->
-      [G.Continue (t, opt_expr_to_label_ident v1, G.sc)]
+      [G.Continue (t, opt_expr_to_label_ident v1, G.sc) |> G.s]
   | Throw (t, v1) -> let v1 = expr v1 in
-      [G.Throw (t, v1, G.sc)]
+      [G.Throw (t, v1, G.sc) |> G.s]
   | Try (t, v1, v2, v3) ->
       let v1 = list stmt v1
       and v2 = list catch v2
       and v3 = finally v3
       in
-      [G.Try (t, G.stmt1 v1, v2, v3)]
+      [G.Try (t, G.stmt1 v1, v2, v3) |> G.s]
 
   | ClassDef v1 -> let (ent, def) = class_def v1 in
-      [G.DefStmt (ent, G.ClassDef def)]
+      [G.DefStmt (ent, G.ClassDef def) |> G.s]
   | FuncDef v1 -> let (ent, def) = func_def v1 in
-      [G.DefStmt (ent, G.FuncDef def)]
+      [G.DefStmt (ent, G.FuncDef def) |> G.s]
   | ConstantDef v1 -> let (ent, def) = constant_def v1 in
-      [G.DefStmt (ent, G.VarDef def)]
+      [G.DefStmt (ent, G.VarDef def) |> G.s]
   | TypeDef v1 -> let (ent, def) = type_def v1 in
-      [G.DefStmt (ent, G.TypeDef def)]
+      [G.DefStmt (ent, G.TypeDef def) |> G.s]
   | NamespaceDef ((t, v1, (_t1, v2, t2))) ->
       let v1 = qualified_ident v1 and v2 = list stmt v2 in
-      [G.DirectiveStmt (G.Package (t, v1))] @ v2 @
-      [G.DirectiveStmt (G.PackageEnd t2)]
+      [G.DirectiveStmt (G.Package (t, v1)) |> G.s] @ v2 @
+      [G.DirectiveStmt (G.PackageEnd t2) |> G.s]
   | NamespaceUse (t, v1, v2) ->
       let v1 = qualified_ident v1 and v2 = option ident v2 in
-      [G.DirectiveStmt (G.ImportAs (t, G.DottedName v1, v2))]
+      [G.DirectiveStmt (G.ImportAs (t, G.DottedName v1, v2)) |> G.s]
 
   | StaticVars (t, v1) ->
       v1 |> list (fun (v1, v2) ->
@@ -181,7 +181,7 @@ let rec stmt_aux =
         let attr = [G.KeywordAttr (G.Static, t)] in
         let ent = G.basic_entity v1 attr in
         let def = { G.vinit = v2; vtype = None } in
-        G.DefStmt (ent, G.VarDef def)
+        G.DefStmt (ent, G.VarDef def) |> G.s
       )
 
   | Global (t, v1) ->
@@ -189,10 +189,10 @@ let rec stmt_aux =
         match e with
         | Id [id] ->
             let ent = G.basic_entity id [] in
-            G.DefStmt (ent, G.UseOuterDecl t)
+            G.DefStmt (ent, G.UseOuterDecl t) |> G.s
         | _ ->
             let e = expr e in
-            G.OtherStmt (G.OS_GlobalComplex, [G.E e])
+            G.OtherStmt (G.OS_GlobalComplex, [G.E e]) |> G.s
       )
 
 and stmt x =
@@ -539,7 +539,9 @@ and class_def {
               cimplements = implements;
               cmixins = uses;
               cbody = t1,
-                      fields |> List.map (fun def -> G.FieldStmt (G.DefStmt def)),
+                      fields |> List.map (fun def ->
+                        G.FieldStmt (G.DefStmt def |> G.s)
+                      ),
                       t2;
             } in
   ent, def

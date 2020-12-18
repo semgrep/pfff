@@ -25,7 +25,7 @@ let test_typing_generic file =
 let test_cfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
-    (match item with
+    (match item.s with
      | DefStmt (_ent, FuncDef def) ->
          (try
             let flow = Controlflow_build.cfg_of_func def in
@@ -50,7 +50,7 @@ module DataflowX = Dataflow.Make (struct
 let test_dfg_generic file =
   let ast = Parse_generic.parse_program file in
   ast |> List.iter (fun item ->
-    (match item with
+    (match item.s with
      | DefStmt (_ent, FuncDef def) ->
          let flow = Controlflow_build.cfg_of_func def in
          pr2 "Reaching definitions";
@@ -109,7 +109,7 @@ let test_cfg_il file =
   Naming_AST.resolve lang ast;
 
   ast |> List.iter (fun item ->
-    (match item with
+    (match item.s with
      | DefStmt (_ent, FuncDef def) ->
          let xs = AST_to_IL.stmt def.fbody in
          let cfg = CFG_build.cfg_of_stmts xs in
@@ -134,7 +134,7 @@ let test_dfg_tainting file =
   Naming_AST.resolve lang ast;
 
   ast |> List.iter (fun item ->
-    (match item with
+    (match item.s with
      | DefStmt (_ent, FuncDef def) ->
          let xs = AST_to_IL.stmt def.fbody in
          let flow = CFG_build.cfg_of_stmts xs in
