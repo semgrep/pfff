@@ -202,6 +202,7 @@ and literal = function
 
 and expr e =
   match e with
+  | This t -> G.IdSpecial (G.This, t)
   | ObjAccessEllipsis (v1, v2) ->
       let v1 = expr v1 in
       G.DotAccessEllipsis (v1, v2)
@@ -214,8 +215,8 @@ and expr e =
         "NameOrClassType should only appear in (ignored) annotations"
   | Literal v1 -> let v1 = literal v1 in
       G.L v1
-  | ClassLiteral v1 -> let v1 = typ v1 in
-      G.OtherExpr (G.OE_ClassLiteral, [G.T v1])
+  | ClassLiteral (v1, v2) -> let v1 = typ v1 in
+      G.OtherExpr (G.OE_ClassLiteral, [G.T v1; G.Tk v2])
   | NewClass ((v0, v1, (lp, v2, rp), v3)) ->
       let v1 = typ v1
       and v2 = list argument v2

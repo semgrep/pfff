@@ -600,9 +600,7 @@ let resolve2 lang prog =
                        error tok (spf "could not find '%s' in environment" s)
                   )
              )
-         (* todo: Java does not generate a special This! use Id *)
-         | DotAccess ((IdSpecial (This, _) | Id(("this", _), _)),
-                      _, EId (id, id_info)) ->
+         | DotAccess (IdSpecial (This, _), _, EId (id, id_info)) ->
              (match lookup_scope_opt id env with
               (* TODO: this is a v0 for doing naming and typing of fields.
                * we should really use a different lookup_scope_class, that

@@ -1,5 +1,12 @@
 (*s: pfff/lang_GENERIC/parsing/Meta_AST.mli *)
 
+(* Note that you probably should use AST_generic.show_any, which is
+ * auto-generated rather than this file to display debug information.
+ * We keep Meta_AST.ml just because we use it to generate the JSON
+ * from the OCaml.v type of the generic AST in semgrep (and use that
+ * JSON in the semgrep Web UI).
+*)
+
 (*s: signature [[Meta_AST.vof_any]] *)
 val vof_any: AST_generic.any -> OCaml.v
 (*e: signature [[Meta_AST.vof_any]] *)

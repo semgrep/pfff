@@ -38,7 +38,6 @@ module G = AST_generic
 
 (* todo? use a Ast.special? *)
 let super_ident ii = ("super", ii)
-let this_name1 ii = [], ("this", ii)
 let super_name1 ii = [], ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
@@ -420,7 +419,7 @@ primary:
 
 primary_no_new_array:
  | literal                            { $1 }
- | THIS                               { this $1 }
+ | THIS                               { This $1 }
  | "(" expression ")"                 { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
@@ -428,8 +427,8 @@ primary_no_new_array:
  | array_access                       { $1 }
  (* sgrep-ext: *)
  | typed_metavar       { $1 }
- (* javaext: ? *)
- | name "." THIS       { Name (name $1 @ [this_name1 $3]) }
+ (* just can use some reserved identifiers as field now? *)
+ | name "." THIS       { Name (name $1 @ [[], ("this", $3)]) }
  (* javaext: ? *)
  | class_literal       { $1 }
  (* javaext: ? *)
@@ -447,10 +446,10 @@ literal:
  | NULL    { Literal (Null $1) }
 
 class_literal:
- | primitive_type "." CLASS  { ClassLiteral $1 }
- | name           "." CLASS  { ClassLiteral (TClass (class_type ($1))) }
- | array_type     "." CLASS  { ClassLiteral $1 }
- | VOID           "." CLASS  { ClassLiteral (void_type $1) }
+ | primitive_type "." CLASS  { ClassLiteral ($1, $3) }
+ | name           "." CLASS  { ClassLiteral (TClass (class_type ($1)), $3) }
+ | array_type     "." CLASS  { ClassLiteral ($1, $3) }
+ | VOID           "." CLASS  { ClassLiteral (void_type $1, $3) }
 
 class_instance_creation_expression:
  | NEW name "(" listc0(argument) ")" class_body?
@@ -507,15 +506,13 @@ method_invocation:
         { match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
-              let (xs: identifier_ list) =
-                (match xs with
-                (* should be a "this" or "self" *)
-                | [] -> [Id ("this", snd x)]
-                | _ -> List.rev xs
-                )
-              in
-              Call (Dot (Name (name (xs)), Parse_info.fake_info ".", x),
-                     ($2,$3,$4))
+              let tok = snd x in
+              (match xs with
+              (* TODO: maybe we should not do this given we dont do it in
+               * tree-sitter. *)
+               | [] -> Call (Dot (This tok, tok, x), ($2,$3,$4))
+               | _ -> Call (Dot (Name (name (List.rev xs)),tok,x),($2,$3,$4))
+              )
           | _ ->
               pr2 "method_invocation pb";
               pr2_gen $1;
@@ -1167,7 +1164,7 @@ constructor_body:
 
 explicit_constructor_invocation:
  | THIS "(" listc0(argument) ")" ";"
-      { constructor_invocation [this_name1 $1] ($2,$3,$4) $5 }
+      { Expr (Call (This $1, ($2,$3,$4)), $5) }
  | SUPER "(" listc0(argument) ")" ";"
       { constructor_invocation [super_name1 $1] ($2,$3,$4) $5 }
  (* javaext: ? *)

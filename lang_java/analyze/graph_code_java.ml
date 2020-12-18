@@ -687,6 +687,7 @@ and catch env (_, (v, _uniontypes), st) =
 (* ---------------------------------------------------------------------- *)
 and expr env = function
   (* main dependency source! *)
+  | This _ -> ()
   | Name n ->
       if env.phase = Uses then begin
         let str = str_of_name n in
@@ -729,7 +730,7 @@ and expr env = function
   | NameOrClassType _ -> ()
   | Literal _ -> ()
 
-  | ClassLiteral t -> typ env t
+  | ClassLiteral (t, _) -> typ env t
   | NewClass (tok, t, (_, args, _), decls_opt) ->
       typ env t;
       exprs env args;

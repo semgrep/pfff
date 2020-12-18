@@ -293,9 +293,7 @@ let propagate2 lang prog =
               | _ -> ()
              );
 
-             (* todo: Java does not generate a special This! use Id *)
-         | DotAccess ((IdSpecial (This, _) | Id(("this", _), _)),
-                      _, EId (id, id_info)) ->
+         | DotAccess (IdSpecial (This, _), _, EId (id, id_info)) ->
              (match find_id env id id_info with
               | Some literal ->
                   id_info.id_const_literal := Some literal

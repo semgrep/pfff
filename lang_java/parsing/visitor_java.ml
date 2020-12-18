@@ -189,8 +189,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
       | Name v1 -> let v1 = v_name v1 in ()
       | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
+      | This v1 -> let v1 = v_tok v1 in ()
       | Literal v1 -> let v1 = v_literal v1 in ()
-      | ClassLiteral v1 -> let v1 = v_typ v1 in ()
+      | ClassLiteral (v1, v2) -> let v1 = v_typ v1 in v_tok v2
       | NewClass (v0, v1, v2, v3) ->
           let v0 = v_tok v0 in
           let v1 = v_typ v1

@@ -150,7 +150,7 @@ and name = (type_arguments * ident) list1
  * the use of type ... and ... below
 *)
 and expr =
-  (* Name is used for local variable, 'this' and 'super' special names,
+  (* Name is used for local variable, 'super' special name,
    * and statically computable entities such as Package1.subpackage.Class.
    * Field or method accesses should use Dot (see below). Unfortunately
    * the Java grammar is ambiguous and without contextual information,
@@ -160,13 +160,15 @@ and expr =
   *)
   | Name of name
 
+  | This of tok (* used in Dot but also can be in Call *)
+
   (* This is used only in the context of annotations *)
   | NameOrClassType of name_or_class_type
 
   | Literal of literal
 
   (* Xxx.class *)
-  | ClassLiteral of typ
+  | ClassLiteral of typ * tok (* 'class' *)
   (* tree-sitter-only: not that ident can be the special "new" *)
   | MethodRef of expr_or_type * tok (* :: *) * type_arguments * ident
 
@@ -574,8 +576,6 @@ let name_of_id id =
   Name ([[], id])
 
 (* TODO: use a special at some point *)
-let this tok  =
-  name_of_id ("this", tok)
 let super tok =
   name_of_id ("super", tok)
 let new_id tok =
