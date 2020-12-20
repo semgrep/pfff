@@ -152,6 +152,27 @@ let test_dfg_tainting file =
   )
 (*e: function [[Test_analyze_generic.test_dfg_tainting]] *)
 
+(* FIXME: redundant with test_constant_propagation *)
+let test_dfg_constness file =
+  let ast = Parse_generic.parse_program file in
+  let lang = List.hd (Lang.langs_of_filename file) in
+  Naming_AST.resolve lang ast;
+  let v = V.mk_visitor
+      { V.default_visitor with
+        V.kfunction_definition = (fun (_k, _) def ->
+          let xs = AST_to_IL.stmt def.fbody in
+          let flow = CFG_build.cfg_of_stmts xs in
+          pr2 "---------";
+          pr2 "Constness";
+          pr2 "---------";
+          let mapping = Dataflow_constness.fixpoint flow in
+          DataflowY.display_mapping flow mapping Dataflow_constness.string_of_constness;
+          let s = AST_generic.show_any (S def.fbody) in
+          pr2 s
+        );
+      } in
+  v (Pr ast)
+
 (*s: function [[Test_analyze_generic.actions]] *)
 let actions () = [
   "-typing_generic", " <file>",
@@ -170,6 +191,8 @@ let actions () = [
   Common.mk_action_1_arg test_cfg_il;
   "-dfg_tainting", " <file>",
   Common.mk_action_1_arg test_dfg_tainting;
+  "-dfg_constness", " <file>",
+  Common.mk_action_1_arg test_dfg_constness;
 ]
 (*e: function [[Test_analyze_generic.actions]] *)
 (*e: pfff/lang_GENERIC/analyze/Test_analyze_generic.ml *)

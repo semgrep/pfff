@@ -125,7 +125,7 @@ let _fresh_label _env tok =
 (*s: function [[AST_to_IL.fresh_lval]] *)
 let fresh_lval env tok =
   let var = fresh_var env tok in
-  { base = Var var; offset = NoOffset }
+  { base = Var var; offset = NoOffset; constness = ref None; }
 (*e: function [[AST_to_IL.fresh_lval]] *)
 
 (*s: function [[AST_to_IL.lval_of_id_info]] *)
@@ -138,13 +138,15 @@ let lval_of_id_info _env id id_info =
         -1
   in
   let var = id, sid in
-  { base = Var var; offset = NoOffset }
+  { base = Var var; offset = NoOffset; constness = id_info.id_const_literal; }
 (*e: function [[AST_to_IL.lval_of_id_info]] *)
-
 
 let lval_of_id_qualified env name id_info =
   let id, _ = name in
   lval_of_id_info env id id_info
+
+let lval_of_base base =
+  { base; offset = NoOffset; constness = ref None; }
 
 (*s: function [[AST_to_IL.label_of_label]] *)
 (* TODO: should do first pass on body to get all labels and assign
@@ -203,49 +205,44 @@ let rec lval env eorig =
       let lval = lval_of_id_qualified env name id_info in
       lval
 
+  (* TODO: Handle this.x *)
   | G.DotAccess (e1orig, tok, field) ->
-      let lval = lval env e1orig in
-      let base =
-        match lval.offset with
-        | NoOffset -> lval.base
-        | _ ->
-            let fresh = fresh_lval env tok in
-            let lvalexp = mk_e (Lvalue lval) e1orig in
-            add_instr env (mk_i (Assign (fresh, lvalexp)) e1orig);
-            fresh.base
-      in
-      let offset =
-        match field with
-        | G.EId (id, _idinfo) -> Dot id
-        | G.EName gname ->
-            let attr = expr env (H.id_of_name gname) in
-            Index attr
-        | G.EDynamic e2orig ->
-            let attr = expr env e2orig in
-            Index attr
-      in
-      { base; offset }
+      let base, base_constness = nested_lval env tok e1orig in
+      (match field with
+       | G.EId (id, idinfo) ->
+           { base; offset = Dot id; constness = idinfo.id_const_literal; }
+       | G.EName gname ->
+           let attr = expr env (H.id_of_name gname) in
+           { base; offset = Index attr; constness = base_constness; }
+       | G.EDynamic e2orig ->
+           let attr = expr env e2orig in
+           { base; offset = Index attr; constness = base_constness; }
+      )
 
   | G.ArrayAccess (e1orig, (_, e2orig, _)) ->
       let tok = G.fake "[]" in
-      let lval = lval env e1orig in
+      let base, constness = nested_lval env tok e1orig in
       let e2 = expr env e2orig in
-      let base =
-        match lval.offset with
-        | NoOffset -> lval.base
-        | _ ->
-            let fresh = fresh_lval env tok in
-            let lvalexp = mk_e (Lvalue lval) e1orig in
-            add_instr env (mk_i (Assign (fresh, lvalexp)) e1orig);
-            fresh.base
-      in
-      { base; offset = Index e2 }
+      { base; offset = Index e2; constness; }
 
   | G.DeRef (_, e1orig) ->
       let e1 = expr env e1orig in
-      { base = Mem e1; offset = NoOffset }
+      lval_of_base (Mem e1)
 
   | _ -> todo (G.E eorig)
+
+and nested_lval env tok eorig =
+  let lval = lval env eorig in
+  let base =
+    match lval.offset with
+    | NoOffset -> lval.base
+    | _ ->
+        let fresh = fresh_lval env tok in
+        let lvalexp = mk_e (Lvalue lval) eorig in
+        add_instr env (mk_i (Assign (fresh, lvalexp)) eorig);
+        fresh.base
+  in
+  (base, lval.constness)
 
 (*****************************************************************************)
 (* Pattern *)
@@ -287,7 +284,7 @@ and assign env lhs _tok rhs_exp eorig =
   | G.Tuple (tok1, lhss, tok2) -> (* E1, ..., En = RHS *)
       (* tmp = RHS*)
       let tmp = fresh_var env tok2 in
-      let tmp_lval = { base = Var tmp; offset = NoOffset } in
+      let tmp_lval = lval_of_base (Var tmp) in
       add_instr env (mk_i (Assign (tmp_lval, rhs_exp)) eorig);
       (* Ei = tmp[i] *)
       let tup_elems =
@@ -295,7 +292,7 @@ and assign env lhs _tok rhs_exp eorig =
         |> List.mapi (fun i lhs_i ->
           let index_i = Literal(G.Int(string_of_int i, tok1)) in
           let offset_i = Index ({e=index_i; eorig;}) in
-          let lval_i = { base=Var tmp; offset=offset_i; } in
+          let lval_i = { base=Var tmp; offset=offset_i; constness = ref None; } in
           assign env lhs_i tok1 ({e=Lvalue lval_i; eorig;}) eorig
         )
       in
@@ -431,7 +428,7 @@ and expr_aux env eorig =
         | G.Self -> Self | G.Parent -> Parent
         | _ -> error_any (G.E eorig) "not expected in var_special context"
       in
-      let lval = { base = VarSpecial (var_special, tok); offset = NoOffset } in
+      let lval = lval_of_base (VarSpecial (var_special, tok)) in
       mk_e (Lvalue lval) eorig
 
 

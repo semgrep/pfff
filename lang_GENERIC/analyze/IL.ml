@@ -127,6 +127,7 @@ type name = ident * G.sid
 type lval = {
   base: base;
   offset: offset;
+  constness: G.literal option ref; (* TODO: constness ref *)
   (* todo: ltype: typ; *)
 }
 (*e: type [[IL.lval]] *)
@@ -135,6 +136,7 @@ and base =
   | Var of name
   | VarSpecial of var_special wrap
   (* aka DeRef, e.g. *E in C *)
+  (* THINK: Mem of exp -> Deref of name *)
   | Mem of exp
   (*e: type [[IL.base]] *)
 
@@ -408,27 +410,41 @@ let exps_of_instr x =
   | TodoInstr _ -> []
 (*e: function [[IL.exps_of_instr]] *)
 
-(*s: function [[IL.rvars_of_exp]] *)
 (* opti: could use a set *)
-let rec rvars_of_exp e =
+let rec lvals_of_exp e =
   match e.e with
-  | Lvalue ({base=Var var;_}) -> [var]
-  | Lvalue _ -> []
+  | Lvalue lval -> [lval]
   | Literal _ -> []
-  | Cast (_, e) -> rvars_of_exp e
-  | Composite (_, (_, xs, _)) | Operator (_, xs) -> rvars_of_exps xs
-  | Record ys -> rvars_of_exps (ys |> List.map snd)
+  | Cast (_, e) -> lvals_of_exp e
+  | Composite (_, (_, xs, _)) | Operator (_, xs) -> lvals_of_exps xs
+  | Record ys -> lvals_of_exps (ys |> List.map snd)
   | TodoExp _ -> []
 
-and rvars_of_exps xs =
-  xs |> List.map (rvars_of_exp) |> List.flatten
-(*e: function [[IL.rvars_of_exp]] *)
+and lvals_of_exps xs =
+  xs |> List.map (lvals_of_exp) |> List.flatten
 
-(*s: function [[IL.rvars_of_instr]] *)
-let rvars_of_instr x =
+let lvals_of_instr x =
   let exps = exps_of_instr x in
-  rvars_of_exps exps
-(*e: function [[IL.rvars_of_instr]] *)
+  lvals_of_exps exps
+
+let rvars_of_instr x =
+  x
+  |> lvals_of_instr
+  |> Common.map_filter (function
+    | {base=Var var;_} -> Some var
+    | ___else___       -> None)
+
+let lvals_of_node = function
+  | Enter | Exit
+  | TrueNode | FalseNode
+  | NGoto _
+  | Join           -> []
+  | NInstr x       -> lvals_of_instr x
+  | NCond (_, e)
+  | NReturn (_, e)
+  | NThrow (_, e)  -> lvals_of_exp e
+  | NOther _
+  | NTodo _        -> []
 
 (*****************************************************************************)
 (* Helpers *)

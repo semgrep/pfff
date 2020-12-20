@@ -17,6 +17,9 @@ open AST_generic
 module H = AST_generic_helpers
 module V = Visitor_AST
 
+(* TODO: Check that all functionality provided by this module is a subset of
+   what Dataflow_constness provides; if so, then we could retire this one. *)
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
