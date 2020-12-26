@@ -17,6 +17,7 @@ type t =
   | Csharp
   | PHP
   | Kotlin
+  | Lua
   (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)

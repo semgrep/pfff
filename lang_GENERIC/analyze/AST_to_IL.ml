@@ -375,6 +375,7 @@ and expr_aux env eorig =
   | G.L lit -> mk_e (Literal lit) eorig
 
   | G.Id (_, _) | G.IdQualified (_, _)
+  | G.Next (_)
   | G.DotAccess (_, _, _) | G.ArrayAccess (_, _)
   | G.DeRef (_, _)
     ->
@@ -518,6 +519,7 @@ and call_special _env (x, tok) =
    | G.Defined
    | G.HashSplat
    | G.ForOf
+   | G.NextArrayIndex
      -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 
@@ -693,6 +695,14 @@ let rec stmt_aux env st =
       [mk_s (Loop(tok, cond, st @ next @ ss2))]
   | G.For (_, G.ForEllipsis _, _) ->
       sgrep_construct (G.S st)
+  | G.For (tok, G.ForIn (xs, e), st)
+    ->
+      let ss1 = for_var_or_expr_list env xs in
+      let st = stmt env st in
+      let ss2, cond = expr_with_pre_stmts env (List.nth e 0) (* TODO list *)
+      in
+      ss1 @ ss2 @
+      [mk_s (Loop(tok, cond, st @ ss2))]
 
   (* TODO: repeat env work of controlflow_build.ml *)
   | G.Continue _ | G.Break _

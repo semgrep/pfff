@@ -263,6 +263,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_expr v1 in ()
       | OtherExpr (v1, v2) ->
           let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
+      | Next (t) ->
+          let t = v_tok t in ()
     in
     vin.kexpr (k, all_functions) x
 
@@ -304,6 +306,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | New -> ()
     | Spread -> ()
     | HashSplat -> ()
+    | NextArrayIndex -> ()
     | EncodedString v1 -> let v1 = v_string v1 in ()
     | Op v1 -> let v1 = v_arithmetic_operator v1 in ()
     | IncrDecr (v1, v2) -> let v1 = v_incr_decr v1 and v2 = v_prepost v2 in ()
@@ -529,6 +532,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let t = v_tok t in
         let v1 = v_pattern v1 and v2 = v_expr v2 in ()
     | ForEllipsis t -> v_tok t
+    | ForIn (v1, v2) ->
+        let v1 = v_list v_for_var_or_expr v1
+        and v2 = v_list v_expr v2
+        in ()
 
   and v_for_var_or_expr =
     function

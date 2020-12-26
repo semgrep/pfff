@@ -152,6 +152,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
               | ForClassic _ -> raise Todo
               | ForEach (pat, _, e) -> F.ForeachHeader (pat, e)
               | ForEllipsis _ -> raise Todo
+              | ForIn _ -> raise Todo
              ), stmt
          | _ -> raise Impossible
         )

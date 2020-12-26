@@ -243,6 +243,9 @@ and vof_expr =
       and v2 = vof_tok v2
       and v3 = vof_type_ v3
       in OCaml.VSum ("TypedMetavar", [ v1; v2; v3 ])
+  | Next (t) ->
+      let t = vof_tok t in
+      OCaml.VSum ("Next", [ t ])
   | OtherExpr (v1, v2) ->
       let v1 = vof_other_expr_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -313,6 +316,7 @@ and vof_special =
   | IncrDecr v ->
       let v = vof_inc_dec v in
       OCaml.VSum ("IncrDecr", [ v])
+  | NextArrayIndex -> OCaml.VSum ("NextArrayIndex", [])
 
 and vof_interpolated_kind = function
   | FString -> OCaml.VSum ("FString", [])
@@ -377,6 +381,7 @@ and vof_arithmetic_operator =
   | Gt -> OCaml.VSum ("Gt", [])
   | GtE -> OCaml.VSum ("GtE", [])
   | Cmp -> OCaml.VSum ("Cmp", [])
+  | Length -> OCaml.VSum ("Length", [])
 
 and vof_arguments v = vof_bracket (OCaml.vof_list vof_argument) v
 and vof_argument =
@@ -534,6 +539,7 @@ and vof_keyword_attribute =
   | Setter -> OCaml.VSum ("Setter", [])
   | Optional -> OCaml.VSum ("Optional", [])
   | NotNull -> OCaml.VSum ("NotNull", [])
+  | LocalDef -> OCaml.VSum ("LocalDef", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
@@ -712,6 +718,10 @@ and vof_for_header =
   | ForEllipsis t ->
       let t = vof_tok t in
       OCaml.VSum ("ForEllipsis", [t])
+  | ForIn (v1, v2) ->
+      let v1 = OCaml.vof_list vof_for_var_or_expr v1
+      and v2 = OCaml.vof_list vof_expr v2
+      in OCaml.VSum ("ForIn", [ v1; v2 ])
 
 and vof_for_var_or_expr =
   function

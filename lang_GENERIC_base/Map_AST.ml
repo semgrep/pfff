@@ -242,6 +242,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = map_expr v1 in DeRef (t, v1)
       | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis v1
       | DeepEllipsis v1 -> let v1 = map_bracket map_expr v1 in DeepEllipsis v1
+      | Next (v1) -> let v1 = map_tok v1 in
+          Next (v1)
       | OtherExpr (v1, v2) ->
           let v1 = map_other_expr_operator v1
           and v2 = map_of_list map_any v2
@@ -280,7 +282,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and map_special x =
     match x with
     | ForOf | Defined | This | Super | Self | Parent | Eval | Typeof | Instanceof
-    | Sizeof | New | Spread | HashSplat
+    | Sizeof | New | Spread | HashSplat | NextArrayIndex
       -> x
     | Op v1 -> let v1 = map_arithmetic_operator v1 in Op v1
     | EncodedString v1 -> let v1 = map_of_string v1 in EncodedString v1
@@ -541,6 +543,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let t = map_tok t in
         let v1 = map_pattern v1 and v2 = map_expr v2 in ForEach (v1, t, v2)
     | ForEllipsis t -> let t = map_tok t in ForEllipsis t
+    | ForIn (v1, v2) ->
+        let v1 = map_of_list map_for_var_or_expr v1
+        and v2 = map_of_list map_expr v2
+        in ForIn (v1, v2)
 
   and map_for_var_or_expr =
     function

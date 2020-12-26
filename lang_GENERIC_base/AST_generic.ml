@@ -445,6 +445,9 @@ and expr =
   | Await of tok * expr
   (* Send/Recv of Go are currently in OtherExpr *)
 
+  (* Lua *)
+  | Next of tok
+
   | Cast of type_ (* TODO: bracket or colon *) * expr
   (* less: should be in statement *)
   | Seq of expr list (* at least 2 elements *)
@@ -505,6 +508,7 @@ and special =
   (* special vars *)
   | This | Super (* called 'base' in C# *)
   | Self | Parent (* different from This/Super? *)
+  | NextArrayIndex (* Lua *)
 
   (* special calls *)
   | Eval
@@ -574,6 +578,7 @@ and operator =
   | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
   | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
   | NotNullPostfix (* ! in Typescript, postfix operator *)
+  | Length (* Lua *)
   (* See https://en.wikipedia.org/wiki/Elvis_operator.
    * In PHP we currently generate a Conditional instead of a Binary Elvis.
    * It looks like the Nullish operator is quite similar to the Elvis
@@ -842,6 +847,9 @@ and for_header =
                expr (* pattern 'in' expr *)
   (* sgrep: *)
   | ForEllipsis of tok (* ... *)
+  (* Lua *)
+  | ForIn of for_var_or_expr list (* init *) *
+               expr list (* pattern 'in' expr *)
 (*e: type [[AST_generic.for_header]] *)
 
 (*s: type [[AST_generic.for_var_or_expr]] *)
@@ -1063,6 +1071,7 @@ and keyword_attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
+  | LocalDef (* Lua *)
   (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
