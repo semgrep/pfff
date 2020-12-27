@@ -188,7 +188,6 @@ let rec visit_expr hook lhs expr =
 
   | Yield (_, e, _is_yield_from) -> Common.do_option recr e
   | Await (_, e) -> recr e
-  | Next _ -> ()
 
   | Record xs ->
       xs |> unbracket |> List.iter (fun field ->

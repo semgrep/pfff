@@ -263,8 +263,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_expr v1 in ()
       | OtherExpr (v1, v2) ->
           let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
-      | Next (t) ->
-          let t = v_tok t in ()
     in
     vin.kexpr (k, all_functions) x
 

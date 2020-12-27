@@ -243,9 +243,6 @@ and vof_expr =
       and v2 = vof_tok v2
       and v3 = vof_type_ v3
       in OCaml.VSum ("TypedMetavar", [ v1; v2; v3 ])
-  | Next (t) ->
-      let t = vof_tok t in
-      OCaml.VSum ("Next", [ t ])
   | OtherExpr (v1, v2) ->
       let v1 = vof_other_expr_operator v1
       and v2 = OCaml.vof_list vof_any v2

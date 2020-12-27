@@ -375,7 +375,6 @@ and expr_aux env eorig =
   | G.L lit -> mk_e (Literal lit) eorig
 
   | G.Id (_, _) | G.IdQualified (_, _)
-  | G.Next (_)
   | G.DotAccess (_, _, _) | G.ArrayAccess (_, _)
   | G.DeRef (_, _)
     ->

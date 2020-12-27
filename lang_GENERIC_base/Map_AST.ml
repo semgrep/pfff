@@ -242,8 +242,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = map_expr v1 in DeRef (t, v1)
       | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis v1
       | DeepEllipsis v1 -> let v1 = map_bracket map_expr v1 in DeepEllipsis v1
-      | Next (v1) -> let v1 = map_tok v1 in
-          Next (v1)
       | OtherExpr (v1, v2) ->
           let v1 = map_other_expr_operator v1
           and v2 = map_of_list map_any v2

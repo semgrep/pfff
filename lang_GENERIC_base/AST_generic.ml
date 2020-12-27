@@ -445,9 +445,6 @@ and expr =
   | Await of tok * expr
   (* Send/Recv of Go are currently in OtherExpr *)
 
-  (* Lua *)
-  | Next of tok
-
   | Cast of type_ (* TODO: bracket or colon *) * expr
   (* less: should be in statement *)
   | Seq of expr list (* at least 2 elements *)
