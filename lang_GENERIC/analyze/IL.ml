@@ -342,6 +342,7 @@ and node_kind =
   | NInstr of instr
 
   | NCond   of tok * exp
+  | NGoto   of tok * label
   | NReturn of tok * exp
   | NThrow  of tok * exp
 
