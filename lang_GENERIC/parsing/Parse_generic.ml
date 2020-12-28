@@ -85,6 +85,8 @@ let parse_with_lang lang file =
       failwith "No C# parser in pfff; use the one in tree-sitter"
   | Lang.Kotlin ->
       failwith "No Kotlin parser in pfff; use the one in tree-sitter"
+  | Lang.Lua ->
+      failwith "No Lua parser in pfff; use the one in tree-sitter"
 
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
@@ -140,6 +142,8 @@ let parse_pattern lang str =
         failwith "No Kotlin parser in pfff; use the one in tree-sitter"
     | Lang.Cplusplus ->
         failwith "No C++ generic parser in pfff; use the one in tree-sitter"
+    | Lang.Lua ->
+        failwith "No Lua generic parser in pfff; use the one in tree-sitter"
   )
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

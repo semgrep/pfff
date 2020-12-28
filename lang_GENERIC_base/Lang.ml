@@ -47,6 +47,7 @@ type t =
   | Csharp
   | PHP
   | Kotlin
+  | Lua
   (*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
@@ -80,6 +81,7 @@ let list_of_lang = [
   "cs", Csharp;
   "php", PHP;
   "kt", Kotlin;
+  "lua", Lua;
 ]
 (*e: constant [[Lang.list_of_lang]] *)
 
@@ -112,6 +114,7 @@ let langs_of_filename filename =
   | FT.PL (FT.Csharp) -> [Csharp]
   | FT.PL (FT.Web (FT.Php _)) -> [PHP]
   | FT.PL (FT.Kotlin) -> [Kotlin]
+  | FT.PL (FT.Lua) -> [Lua]
   | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
@@ -132,6 +135,7 @@ let string_of_lang = function
   | Csharp -> "C#"
   | PHP -> "PHP"
   | Kotlin -> "Kotlin"
+  | Lua -> "Lua"
 (*e: function [[Lang.string_of_lang]] *)
 
 (*s: function [[Lang.ext_of_lang]] *)
@@ -150,6 +154,7 @@ let ext_of_lang = function
   | Csharp -> ["cs"]
   | PHP -> ["php"]
   | Kotlin -> ["kt"]
+  | Lua -> ["lua"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)
