@@ -276,7 +276,7 @@ let propagate2 lang prog =
                H.has_keyword_attr Final attrs
                (* TODO later? (!(stats.rvalue) = 1) *)
             then begin
-              id_info.id_const_literal := Some literal;
+              id_info.id_constness := Some (Lit literal);
               add_constant_env id (sid, literal) env;
             end;
             k x
@@ -292,14 +292,14 @@ let propagate2 lang prog =
          | Id (id, id_info)->
              (match find_id env id id_info with
               | Some literal ->
-                  id_info.id_const_literal := Some literal
+                  id_info.id_constness := Some (Lit literal)
               | _ -> ()
              );
 
          | DotAccess (IdSpecial (This, _), _, EId (id, id_info)) ->
              (match find_id env id id_info with
               | Some literal ->
-                  id_info.id_const_literal := Some literal
+                  id_info.id_constness := Some (Lit literal)
               | _ -> ()
              );
 
@@ -321,7 +321,7 @@ let propagate2 lang prog =
                      (lang = Lang.Python || lang = Lang.Ruby) &&
                      kind = Global
                   then begin
-                    id_info.id_const_literal := Some literal;
+                    id_info.id_constness := Some (Lit literal);
                     add_constant_env id (sid, literal) env;
                   end;
                   k x

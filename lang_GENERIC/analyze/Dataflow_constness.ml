@@ -24,17 +24,8 @@ module VarMap = Dataflow.VarMap
 (* Types *)
 (*****************************************************************************)
 
-(* The type of an unknown constant. *)
-type ctype =
-  | Cbool
-  | Cint
-  | Cstr
-  | Cany
-
-type constness = Lit of AST_generic.literal | Cst of ctype | Dyn
-
 (* map for each node/var whether a variable is constant *)
-type mapping = constness Dataflow.mapping
+type mapping = G.constness Dataflow.mapping
 
 module DataflowX = Dataflow.Make (struct
     type node = F.node
@@ -49,15 +40,15 @@ module DataflowX = Dataflow.Make (struct
 (*****************************************************************************)
 
 let string_of_ctype = function
-  | Cbool -> "bool"
-  | Cint  -> "int"
-  | Cstr  -> "str"
-  | Cany  -> "???"
+  | G.Cbool -> "bool"
+  | G.Cint  -> "int"
+  | G.Cstr  -> "str"
+  | G.Cany  -> "???"
 
 let string_of_constness = function
-  | Dyn   -> "dyn"
-  | Cst t -> Printf.sprintf "cst(%s)" (string_of_ctype t)
-  | Lit l ->
+  | G.NotCst -> "dyn"
+  | G.Cst t  -> Printf.sprintf "cst(%s)" (string_of_ctype t)
+  | G.Lit l  ->
       match l with
       | G.Bool (b, _)   -> Printf.sprintf "lit(%b)" b
       | G.Int (s, _)    -> Printf.sprintf "lit(%s)" s
@@ -85,50 +76,49 @@ let eq_literal l1 l2 =
 let eq_ctype t1 t2 = t1 = t2
 
 let ctype_of_literal = function
-  | G.Bool _   -> Cbool
-  | G.Int _    -> Cint
-  | G.String _ -> Cstr
-  | ___else___ -> Cany
+  | G.Bool _   -> G.Cbool
+  | G.Int _    -> G.Cint
+  | G.String _ -> G.Cstr
+  | ___else___ -> G.Cany
 
 let eq c1 c2 =
   match c1, c2 with
-  | Lit l1, Lit l2 -> eq_literal l1 l2
-  | Cst t1, Cst t2 -> eq_ctype t1 t2
-  | Dyn,    Dyn    -> true
-  | ___else___     -> false
+  | G.Lit l1, G.Lit l2 -> eq_literal l1 l2
+  | G.Cst t1, G.Cst t2 -> eq_ctype t1 t2
+  | G.NotCst, G.NotCst -> true
+  | ___else___         -> false
 
-let union_ctype t1 t2 = if eq_ctype t1 t2 then t1 else Cany
+let union_ctype t1 t2 = if eq_ctype t1 t2 then t1 else G.Cany
 
 let union c1 c2 =
   match c1, c2 with
-  | _ when eq c1 c2 -> c1
-  | _any,   Dyn
-  | Dyn,    _any    -> Dyn
-  | Lit l1, Lit l2  ->
+  | _ when eq c1 c2     -> c1
+  | _any,     G.NotCst
+  | G.NotCst,    _any   -> G.NotCst
+  | G.Lit l1, G.Lit l2  ->
       let t1 = ctype_of_literal l1
       and t2 = ctype_of_literal l2 in
-      Cst (union_ctype t1 t2)
-  | Lit l1, Cst t2
-  | Cst t2, Lit l1 ->
+      G.Cst (union_ctype t1 t2)
+  | G.Lit l1, G.Cst t2
+  | G.Cst t2, G.Lit l1 ->
       let t1 = ctype_of_literal l1 in
-      Cst (union_ctype t1 t2)
-  | Cst t1, Cst t2 ->
-      Cst (union_ctype t1 t2)
-(*
+      G.Cst (union_ctype t1 t2)
+  | G.Cst t1, G.Cst t2 ->
+      G.Cst (union_ctype t1 t2)
+
 let refine c1 c2 =
   match c1, c2 with
-  | _ when eq c1 c2 -> c1
-  | c,   Dyn
-  | Dyn,    c    -> c
-  | Lit _, Lit _
-  | Lit _, Cst _
-  | Cst _, Cst _ -> c1
-  | Cst _, Lit _ -> c2
+  | _ when eq c1 c2    -> c1
+  | c,        G.NotCst
+  | G.NotCst, c        -> c
+  | G.Lit _,  _
+  | G.Cst _,  G.Cst _ -> c1
+  | G.Cst _,  G.Lit _ -> c2
 
-let refine_constness c_ref c' =
+let refine_constness_ref c_ref c' =
   match !c_ref with
-  | None -> c_ref := Some c'
-  | Some c -> c_ref := Some (refine c1 c2) *)
+  | None   -> c_ref := Some c'
+  | Some c -> c_ref := Some (refine c c')
 
 (*****************************************************************************)
 (* Constness evaluation *)
@@ -157,93 +147,83 @@ let literal_of_string s =
 
 let eval_unop_bool op b =
   match op with
-  | G.Not -> Lit (literal_of_bool (not b))
-  | _else -> Cst Cbool
+  | G.Not -> G.Lit (literal_of_bool (not b))
+  | _else -> G.Cst G.Cbool
 
 let eval_binop_bool op b1 b2 =
   match op with
-  | G.Or  -> Lit (literal_of_bool (b1 || b2))
-  | G.And -> Lit (literal_of_bool (b1 && b2))
-  | _else -> Cst Cbool
+  | G.Or  -> G.Lit (literal_of_bool (b1 || b2))
+  | G.And -> G.Lit (literal_of_bool (b1 && b2))
+  | _else -> G.Cst G.Cbool
 
 let eval_unop_int op opt_i =
   match op, opt_i with
-  | G.Plus,  Some i -> Lit (literal_of_int i)
-  | G.Minus, Some i -> Lit (literal_of_int (-i))
-  | ___else____     -> Cst Cint
+  | G.Plus,  Some i -> G.Lit (literal_of_int i)
+  | G.Minus, Some i -> G.Lit (literal_of_int (-i))
+  | ___else____     -> G.Cst G.Cint
 
 let eval_binop_int op opt_i1 opt_i2 =
   match op, opt_i1, opt_i2 with
   (* TODO: Handle overflows and division by zero. *)
-  | G.Plus,  Some i1, Some i2 -> Lit (literal_of_int (i1 + i2))
-  | G.Minus, Some i1, Some i2 -> Lit (literal_of_int (i1 - i2))
-  | G.Mult,  Some i1, Some i2 -> Lit (literal_of_int (i1 * i2))
-  | G.Div,   Some i1, Some i2 -> Lit (literal_of_int (i1 / i2))
-  | ___else____     -> Cst Cint
+  | G.Plus,  Some i1, Some i2 -> G.Lit (literal_of_int (i1 + i2))
+  | G.Minus, Some i1, Some i2 -> G.Lit (literal_of_int (i1 - i2))
+  | G.Mult,  Some i1, Some i2 -> G.Lit (literal_of_int (i1 * i2))
+  | G.Div,   Some i1, Some i2 -> G.Lit (literal_of_int (i1 / i2))
+  | ___else____     -> G.Cst G.Cint
 
 let eval_binop_string op s1 s2 =
   match op with
   | G.Plus
-  | G.Concat -> Lit (literal_of_string (s1 ^ s2))
-  | __else__ -> Cst Cstr
+  | G.Concat -> G.Lit (literal_of_string (s1 ^ s2))
+  | __else__ -> G.Cst G.Cstr
 
-let rec eval (env :constness D.env) exp : constness =
+let rec eval (env :G.constness D.env) exp : G.constness =
   match exp.e with
   | Lvalue lval -> eval_lval env lval
-  | Literal li -> Lit li
+  | Literal li -> G.Lit li
   | Operator (op, args) -> eval_op env op args
   | Composite _
   | Record _
   | Cast _
   | TodoExp _
-    -> Dyn
+    -> G.NotCst
 
 and eval_lval env lval =
   match lval with
   | { base=Var x; offset=NoOffset; constness=_; } ->
       let opt_c = D.VarMap.find_opt (str_of_name x) env in
-      opt_c ||| Dyn
+      opt_c ||| G.NotCst
   | ___else___ ->
-      Dyn
+      G.NotCst
 
 and eval_op env op args =
   let cs = List.map (eval env) args in
   match fst op, cs with
   | G.Plus, [c1]             -> c1
-  | op,     [Lit (G.Bool (b, _))] -> eval_unop_bool op b
-  | op,     [Lit (G.Int _ as li)] -> eval_unop_int op (int_of_literal li)
-  | op,     [Lit (G.Bool (b1, _)); Lit (G.Bool (b2, _))] ->
+  | op,     [G.Lit (G.Bool (b, _))] -> eval_unop_bool op b
+  | op,     [G.Lit (G.Int _ as li)] -> eval_unop_int op (int_of_literal li)
+  | op,     [G.Lit (G.Bool (b1, _)); G.Lit (G.Bool (b2, _))] ->
       eval_binop_bool op b1 b2
-  | op,     [Lit (G.Int _ as li1); Lit (G.Int _ as li2)] ->
+  | op,     [G.Lit (G.Int _ as li1); G.Lit (G.Int _ as li2)] ->
       eval_binop_int op (int_of_literal li1) (int_of_literal li2)
-  | op,     [Lit (G.String (s1, _)); Lit (G.String (s2, _))] ->
+  | op,     [G.Lit (G.String (s1, _)); G.Lit (G.String (s2, _))] ->
       eval_binop_string op s1 s2
-  | _op,    [Cst _ as c1]    -> c1
-  | _op,    [Cst t1; Cst t2] -> Cst (union_ctype t1 t2)
-  | _op,    [Lit l1; Cst t2]
-  | _op,    [Cst t2; Lit l1] ->
+  | _op,    [G.Cst _ as c1]    -> c1
+  | _op,    [G.Cst t1; G.Cst t2] -> G.Cst (union_ctype t1 t2)
+  | _op,    [G.Lit l1; G.Cst t2]
+  | _op,    [G.Cst t2; G.Lit l1] ->
       let t1 = ctype_of_literal l1 in
-      Cst (union_ctype t1 t2)
-  | ___else___ -> Dyn
+      G.Cst (union_ctype t1 t2)
+  | ___else___ -> G.NotCst
 
 (*****************************************************************************)
 (* Transfer *)
 (*****************************************************************************)
 
-let literal_of_ctype = function
-  (* TODO: This is just a hack so that Semgrep's "..." can match it. *)
-  | Cstr  -> Some (literal_of_string "...")
-  | _else -> None
-
-let literal_of_constness = function
-  | Lit l -> Some l
-  | Cst t -> literal_of_ctype t
-  | Dyn   -> None
-
 let union_env =
   Dataflow.varmap_union union
 
-let (transfer: flow:F.cfg -> constness Dataflow.transfn) =
+let (transfer: flow:F.cfg -> G.constness Dataflow.transfn) =
   fun ~flow ->
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
@@ -258,10 +238,11 @@ let (transfer: flow:F.cfg -> constness Dataflow.transfn) =
   (* Set the constness of variables in the RHS according to in'. *)
   lvals_of_node node.n
   |> List.iter (function
+    (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
     | {base = Var var; constness; _} ->
         (match D.VarMap.find_opt (str_of_name var) in' with
-         | None   -> constness := None
-         | Some c -> constness := literal_of_constness c
+         | None   -> ()
+         | Some c -> refine_constness_ref constness c
         )
     | ___else___ -> ()
   );
@@ -275,16 +256,16 @@ let (transfer: flow:F.cfg -> constness Dataflow.transfn) =
       -> in'
     | NInstr instr ->
         match instr.i with
-        (* TODO: Handle base=Mem e case. *)
+        (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
         | Assign ({base=Var var; offset=NoOffset; constness;}, exp) ->
             let cexp = eval in' exp in
-            constness := literal_of_constness cexp;
+            constness := Some cexp;
             D.VarMap.add (str_of_name var) cexp in'
         | ___else___ ->
             let lvar_opt = IL.lvar_of_instr_opt instr in
             match lvar_opt with
             | None      -> in'
-            | Some lvar -> D.VarMap.add (str_of_name lvar) Dyn in'
+            | Some lvar -> D.VarMap.add (str_of_name lvar) G.NotCst in'
   in
 
   {D. in_env = in'; out_env = out'}

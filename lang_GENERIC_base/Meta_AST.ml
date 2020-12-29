@@ -77,11 +77,11 @@ and
   let bnd = ("name_qualifier", arg) in
   let bnds = bnd :: bnds in OCaml.VDict bnds
 and vof_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
-                  id_const_literal = v3;
+                  id_constness = v3;
                 } =
   let bnds = [] in
-  let arg = OCaml.vof_ref (OCaml.vof_option vof_literal) v3 in
-  let bnd = ("id_const_literal", arg) in
+  let arg = OCaml.vof_ref (OCaml.vof_option vof_constness) v3 in
+  let bnd = ("id_constness", arg) in
   let bnds = bnd :: bnds in
   let arg = OCaml.vof_ref (OCaml.vof_option vof_type_) v_id_type in
   let bnd = ("id_type", arg) in
@@ -281,6 +281,17 @@ and vof_literal =
       in OCaml.VSum ("Regexp", [ v1 ])
   | Null v1 -> let v1 = vof_tok v1 in OCaml.VSum ("Null", [ v1 ])
   | Undefined v1 -> let v1 = vof_tok v1 in OCaml.VSum ("Undefined", [ v1 ])
+and vof_const_type =
+  function
+  | Cbool -> OCaml.VSum ("Cbool", [])
+  | Cint  -> OCaml.VSum ("Cint",  [])
+  | Cstr  -> OCaml.VSum ("Cstr",  [])
+  | Cany  -> OCaml.VSum ("Cany",  [])
+and vof_constness =
+  function
+  | Lit v1 -> let v1 = vof_literal v1 in OCaml.VSum ("Lit", [ v1 ])
+  | Cst v1 -> let v1 = vof_const_type v1 in OCaml.VSum ("Cst", [ v1 ])
+  | NotCst -> OCaml.VSum ("NotCst", [])
 and vof_container_operator =
   function
   | Array -> OCaml.VSum ("Array", [])

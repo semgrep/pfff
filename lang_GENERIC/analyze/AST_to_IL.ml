@@ -138,7 +138,7 @@ let lval_of_id_info _env id id_info =
         -1
   in
   let var = id, sid in
-  { base = Var var; offset = NoOffset; constness = id_info.id_const_literal; }
+  { base = Var var; offset = NoOffset; constness = id_info.id_constness; }
 (*e: function [[AST_to_IL.lval_of_id_info]] *)
 
 let lval_of_id_qualified env name id_info =
@@ -210,7 +210,7 @@ let rec lval env eorig =
       let base, base_constness = nested_lval env tok e1orig in
       (match field with
        | G.EId (id, idinfo) ->
-           { base; offset = Dot id; constness = idinfo.id_const_literal; }
+           { base; offset = Dot id; constness = idinfo.id_constness; }
        | G.EName gname ->
            let attr = expr env (H.id_of_name gname) in
            { base; offset = Index attr; constness = base_constness; }

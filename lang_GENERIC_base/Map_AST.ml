@@ -116,14 +116,14 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     let v_name_qualifier = map_of_option map_qualifier v_name_qualifier
     in { name_qualifier = v_name_qualifier; name_typeargs = v_name_typeargs  }
   and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
-                    id_const_literal = v3
+                    id_constness = v3
                   } =
-    let v3 = map_of_ref (map_of_option map_literal) v3 in
+    let v3 = map_of_ref (map_of_option map_constness) v3 in
     let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
     let v_id_resolved =
       map_of_ref (map_of_option map_resolved_name) v_id_resolved
     in { id_resolved = v_id_resolved; id_type = v_id_type;
-         id_const_literal = v3
+         id_constness = v3
        }
 
 
@@ -271,6 +271,19 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Regexp v1 -> let v1 = map_wrap map_of_string v1 in Regexp v1
     | Null v1 -> let v1 = map_tok v1 in Null v1
     | Undefined v1 -> let v1 = map_tok v1 in Undefined v1
+
+  and map_const_type =
+    function
+    | Cbool -> Cbool
+    | Cint  -> Cint
+    | Cstr  -> Cstr
+    | Cany  -> Cany
+
+  and map_constness =
+    function
+    | Lit v1 -> let v1 = map_literal v1 in Lit v1
+    | Cst v1 -> let v1 = map_const_type v1 in Cst v1
+    | NotCst -> NotCst
 
   and map_container_operator =
     function | Array -> Array | List -> List | Set -> Set | Dict -> Dict

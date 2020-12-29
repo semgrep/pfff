@@ -127,7 +127,7 @@ type name = ident * G.sid
 type lval = {
   base: base;
   offset: offset;
-  constness: G.literal option ref; (* TODO: constness ref *)
+  constness: G.constness option ref; (* TODO: constness ref *)
   (* todo: ltype: typ; *)
 }
 (*e: type [[IL.lval]] *)

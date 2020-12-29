@@ -1,18 +1,7 @@
 
-type ctype =
-  | Cbool
-  | Cint
-  | Cstr
-  | Cany
+type mapping = AST_generic.constness Dataflow.mapping
 
-type constness =
-  | Lit of AST_generic.literal
-  | Cst of ctype
-  | Dyn
-
-type mapping = constness Dataflow.mapping
-
-val string_of_constness : constness -> string
+val string_of_constness : AST_generic.constness -> string
 
 val fixpoint : IL.cfg -> mapping
 
