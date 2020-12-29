@@ -106,14 +106,16 @@ let union c1 c2 =
   | G.Cst t1, G.Cst t2 ->
       G.Cst (union_ctype t1 t2)
 
+(* THINK: This assumes that analyses are sound... but they are not
+   (e.g. due to aliasing). *)
 let refine c1 c2 =
   match c1, c2 with
   | _ when eq c1 c2    -> c1
   | c,        G.NotCst
   | G.NotCst, c        -> c
   | G.Lit _,  _
-  | G.Cst _,  G.Cst _ -> c1
-  | G.Cst _,  G.Lit _ -> c2
+  | G.Cst _,  G.Cst _  -> c1
+  | G.Cst _,  G.Lit _  -> c2
 
 let refine_constness_ref c_ref c' =
   match !c_ref with
@@ -190,9 +192,14 @@ let rec eval (env :G.constness D.env) exp : G.constness =
 
 and eval_lval env lval =
   match lval with
-  | { base=Var x; offset=NoOffset; constness=_; } ->
+  | { base=Var x; offset=NoOffset; constness; } ->
       let opt_c = D.VarMap.find_opt (str_of_name x) env in
-      opt_c ||| G.NotCst
+      (match !constness, opt_c with
+       | None, None       -> G.NotCst
+       | Some c, None
+       | None, Some c     -> c
+       | Some c1, Some c2 -> refine c1 c2
+      )
   | ___else___ ->
       G.NotCst
 
@@ -235,18 +242,6 @@ let (transfer: flow:F.cfg -> G.constness Dataflow.transfn) =
   in
   let node = flow#nodes#assoc ni in
 
-  (* Set the constness of variables in the RHS according to in'. *)
-  lvals_of_node node.n
-  |> List.iter (function
-    (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
-    | {base = Var var; constness; _} ->
-        (match D.VarMap.find_opt (str_of_name var) in' with
-         | None   -> ()
-         | Some c -> refine_constness_ref constness c
-        )
-    | ___else___ -> ()
-  );
-
   (* Compute output mapping. *)
   let out' =
     match node.F.n with
@@ -257,9 +252,8 @@ let (transfer: flow:F.cfg -> G.constness Dataflow.transfn) =
     | NInstr instr ->
         match instr.i with
         (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
-        | Assign ({base=Var var; offset=NoOffset; constness;}, exp) ->
+        | Assign ({base=Var var; offset=NoOffset; constness=_;}, exp) ->
             let cexp = eval in' exp in
-            constness := Some cexp;
             D.VarMap.add (str_of_name var) cexp in'
         | ___else___ ->
             let lvar_opt = IL.lvar_of_instr_opt instr in
@@ -271,7 +265,7 @@ let (transfer: flow:F.cfg -> G.constness Dataflow.transfn) =
   {D. in_env = in'; out_env = out'}
 
 (*****************************************************************************)
-(* Entry points *)
+(* Entry point *)
 (*****************************************************************************)
 
 let (fixpoint: F.cfg -> mapping) = fun flow ->
@@ -283,16 +277,39 @@ let (fixpoint: F.cfg -> mapping) = fun flow ->
     ~forward:true
     ~flow
 
-let propagate_constants ast =
-  (* TODO: Handle constants defined in higher scopes. *)
-  let module V = Visitor_AST in
-  let v = V.mk_visitor
-      { V.default_visitor with
-        V.kfunction_definition = (fun (_k, _) def ->
-          let xs = AST_to_IL.stmt def.G.fbody in
-          let flow = CFG_build.cfg_of_stmts xs in
-          let mapping = fixpoint flow in
-          ignore(mapping)
-        );
-      } in
-  v (G.Pr ast)
+(* Set the constness of variables in the RHS according to in'. *)
+let update_constness (flow :F.cfg) mapping =
+
+  flow#nodes#keys
+  |> List.iter (fun ni ->
+
+    let ni_info = mapping.(ni) in
+
+    let node = flow#nodes#assoc ni in
+
+    lvals_of_node node.n
+    |> List.iter (function
+      | {base = Var var; constness; _} ->
+          (match D.VarMap.find_opt (str_of_name var) ni_info.D.in_env with
+           | None   -> ()
+           | Some c -> refine_constness_ref constness c
+          )
+      | ___else___ -> ()
+    );
+
+    match node.F.n with
+    | Enter | Exit | TrueNode | FalseNode | Join
+    | NCond _ | NGoto _ | NReturn _ | NThrow _ | NOther _
+    | NTodo _
+      -> ()
+    | NInstr instr ->
+        match instr.i with
+        (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
+        | Assign ({base=Var var; offset=NoOffset; constness;}, _exp) ->
+            (match D.VarMap.find_opt (str_of_name var) ni_info.D.in_env with
+             | None   -> ()
+             | Some c -> refine_constness_ref constness c
+            )
+        | ___else___ -> ()
+
+  )
