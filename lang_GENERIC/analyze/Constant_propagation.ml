@@ -17,17 +17,18 @@ open AST_generic
 module H = AST_generic_helpers
 module V = Visitor_AST
 
-(* TODO: Remove duplication between first and second pass, making first pass
-   as light as possible. *)
+(* TODO: Remove duplication between first and second pass, move towards
+   making the first pass as light as possible. *)
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* Two-pass constant propagation.
  *
- * 1. First pass is flow-insensitive and considers global constants.
- * 2. Second pass is flow-sensitive, uses and refines the outcome of the
- * first pass.
+ * 1. First pass is a basic flow-insensitive analysis but, crucially, it
+ * considers global and class-level constants.
+ * 2. Second pass is flow-sensitive, but intraprocedural and ignores the
+ * global scope, it uses and refines the outcome of the first pass.
  *
  * This is mainly to provide advanced features to semgrep such as the
  * constant propagation of literals.
@@ -47,7 +48,7 @@ module V = Visitor_AST
  * - ver1: this used to be in Naming_AST.ml but better to split, even though
  * things will be slightly slower because we will visit the same file
  * twice.
- * -ver2: added second flow-sensitive constant propagation pass.
+ * - ver2: added second flow-sensitive constant propagation pass.
 *)
 
 (*****************************************************************************)
@@ -254,7 +255,7 @@ and eval_op env op args =
 (* Entry point *)
 (*****************************************************************************)
 (* !Note that this assumes Naming_AST.resolve has been called before! *)
-let propagate2 lang prog =
+let propagate_basic lang prog =
   let env = default_env () in
 
   (* step1: first pass const analysis for languages without 'const/final' *)
@@ -344,6 +345,9 @@ let propagate2 lang prog =
   visitor (Pr prog);
   ()
 
+let propagate_basic a b = Common.profile_code "Constant_propagation.xxx" (fun () ->
+  propagate_basic a b)
+
 let propagate_dataflow ast =
   let v = V.mk_visitor
       { V.default_visitor with
@@ -355,7 +359,3 @@ let propagate_dataflow ast =
         );
       } in
   v (Pr ast)
-
-let propagate a b = Common.profile_code "Constant_propagation.xxx" (fun () ->
-  propagate2 a b
-)

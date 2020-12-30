@@ -235,34 +235,33 @@ let (transfer: flow:F.cfg -> G.constness Dataflow.transfn) =
   (* the transfer function to update the mapping at node index ni *)
   fun mapping ni ->
 
-  let in' =
+  let inp' = (* input mapping *)
     (flow#predecessors ni)#fold (fun acc (ni_pred, _) ->
       union_env acc mapping.(ni_pred).D.out_env
     ) VarMap.empty
   in
-  let node = flow#nodes#assoc ni in
 
-  (* Compute output mapping. *)
   let out' =
+    let node = flow#nodes#assoc ni in
     match node.F.n with
     | Enter | Exit | TrueNode | FalseNode | Join
     | NCond _ | NGoto _ | NReturn _ | NThrow _ | NOther _
     | NTodo _
-      -> in'
+      -> inp'
     | NInstr instr ->
         match instr.i with
         (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
         | Assign ({base=Var var; offset=NoOffset; constness=_;}, exp) ->
-            let cexp = eval in' exp in
-            D.VarMap.add (str_of_name var) cexp in'
-        | ___else___ ->
+            let cexp = eval inp' exp in
+            D.VarMap.add (str_of_name var) cexp inp'
+        | ___else___ -> (* assume non-constant *)
             let lvar_opt = IL.lvar_of_instr_opt instr in
             match lvar_opt with
-            | None      -> in'
-            | Some lvar -> D.VarMap.add (str_of_name lvar) G.NotCst in'
+            | None      -> inp'
+            | Some lvar -> D.VarMap.add (str_of_name lvar) G.NotCst inp'
   in
 
-  {D. in_env = in'; out_env = out'}
+  {D. in_env = inp'; out_env = out'}
 
 (*****************************************************************************)
 (* Entry point *)
@@ -277,7 +276,6 @@ let (fixpoint: F.cfg -> mapping) = fun flow ->
     ~forward:true
     ~flow
 
-(* Set the constness of variables in the RHS according to in'. *)
 let update_constness (flow :F.cfg) mapping =
 
   flow#nodes#keys
@@ -287,7 +285,8 @@ let update_constness (flow :F.cfg) mapping =
 
     let node = flow#nodes#assoc ni in
 
-    lvals_of_node node.n
+    (* Update RHS constness according to the input env. *)
+    rlvals_of_node node.n
     |> List.iter (function
       | {base = Var var; constness; _} ->
           (match D.VarMap.find_opt (str_of_name var) ni_info.D.in_env with
@@ -297,19 +296,12 @@ let update_constness (flow :F.cfg) mapping =
       | ___else___ -> ()
     );
 
-    match node.F.n with
-    | Enter | Exit | TrueNode | FalseNode | Join
-    | NCond _ | NGoto _ | NReturn _ | NThrow _ | NOther _
-    | NTodo _
-      -> ()
-    | NInstr instr ->
-        match instr.i with
-        (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
-        | Assign ({base=Var var; offset=NoOffset; constness;}, _exp) ->
-            (match D.VarMap.find_opt (str_of_name var) ni_info.D.in_env with
-             | None   -> ()
-             | Some c -> refine_constness_ref constness c
-            )
-        | ___else___ -> ()
-
+    (* Update LHS constness according to the output env. *)
+    match lval_of_node_opt node.n with
+    | None -> ()
+    | Some {base=Var var; offset=NoOffset; constness;} ->
+        (match D.VarMap.find_opt (str_of_name var) ni_info.D.in_env with
+         | None   -> ()
+         | Some c -> refine_constness_ref constness c)
+    | Some _ -> () (* TODO: Handle base=Mem _ and base=VarSpecial _ cases. *)
   )

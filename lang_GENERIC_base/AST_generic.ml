@@ -328,7 +328,7 @@ and id_info = {
    * meaning the same variable might have different id_constness value
    * depending where it is used.
   *)
-  id_constness: constness    option ref [@equal fun _a _b -> true];
+  id_constness: constness    option ref [@equal fun _a _b -> true]; (* THINK: Drop option? *)
 }
 (*e: type [[AST_generic.id_info]] *)
 
