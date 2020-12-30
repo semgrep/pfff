@@ -319,7 +319,7 @@ and id_info = {
   (* sgrep: this is for sgrep constant propagation hack.
    * todo? associate only with Id?
   *)
-  id_const_literal: literal option ref;
+  id_constness: constness    option ref;
 }
 (*e: type [[AST_generic.id_info]] *)
 
@@ -483,6 +483,15 @@ and literal =
   | Imag of string wrap (* Go, Python *) | Ratio of string wrap (* Ruby *)
   | Atom of string wrap (* Ruby *)
 (*e: type [[AST_generic.literal]] *)
+
+(* The type of an unknown constant. *)
+and const_type =
+  | Cbool
+  | Cint
+  | Cstr
+  | Cany
+
+and constness = Lit of literal | Cst of const_type | NotCst
 
 (*s: type [[AST_generic.container_operator]] *)
 and container_operator =
@@ -846,7 +855,7 @@ and for_header =
   | ForEllipsis of tok (* ... *)
   (* Lua *)
   | ForIn of for_var_or_expr list (* init *) *
-               expr list (* pattern 'in' expr *)
+             expr list (* pattern 'in' expr *)
 (*e: type [[AST_generic.for_header]] *)
 
 (*s: type [[AST_generic.for_var_or_expr]] *)
@@ -1069,7 +1078,7 @@ and keyword_attribute =
   | Ctor | Dtor
   | Getter | Setter
   | LocalDef (* Lua *)
-  (*e: type [[AST_generic.keyword_attribute]] *)
+(*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
 and other_attribute_operator =
@@ -1614,14 +1623,14 @@ let empty_var =
 (*s: function [[AST_generic.empty_id_info]] *)
 let empty_id_info () =
   { id_resolved = ref None; id_type = ref None;
-    id_const_literal = ref None;
+    id_constness = ref None;
   }
 (*e: function [[AST_generic.empty_id_info]] *)
 
 (*s: function [[AST_generic.basic_id_info]] *)
 let basic_id_info resolved =
   { id_resolved = ref (Some resolved); id_type = ref None;
-    id_const_literal = ref None;
+    id_constness = ref None;
   }
 (*e: function [[AST_generic.basic_id_info]] *)
 

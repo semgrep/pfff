@@ -17,10 +17,17 @@ open AST_generic
 module H = AST_generic_helpers
 module V = Visitor_AST
 
+(* TODO: Remove duplication between first and second pass, making first pass
+   as light as possible. *)
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Very basic constant propagation (no dataflow analysis involved).
+(* Two-pass constant propagation.
+ *
+ * 1. First pass is flow-insensitive and considers global constants.
+ * 2. Second pass is flow-sensitive, uses and refines the outcome of the
+ * first pass.
  *
  * This is mainly to provide advanced features to semgrep such as the
  * constant propagation of literals.
@@ -36,9 +43,11 @@ module V = Visitor_AST
  *  - we do a very basic const analysis where we check the variable
  *    is never assigned more than once.
  *
- * history: this used to be in Naming_AST.ml but better to split, even though
+ * history:
+ * - ver1: this used to be in Naming_AST.ml but better to split, even though
  * things will be slightly slower because we will visit the same file
  * twice.
+ * -ver2: added second flow-sensitive constant propagation pass.
 *)
 
 (*****************************************************************************)
@@ -273,7 +282,7 @@ let propagate2 lang prog =
                H.has_keyword_attr Final attrs
                (* TODO later? (!(stats.rvalue) = 1) *)
             then begin
-              id_info.id_const_literal := Some literal;
+              id_info.id_constness := Some (Lit literal);
               add_constant_env id (sid, literal) env;
             end;
             k x
@@ -289,14 +298,14 @@ let propagate2 lang prog =
          | Id (id, id_info)->
              (match find_id env id id_info with
               | Some literal ->
-                  id_info.id_const_literal := Some literal
+                  id_info.id_constness := Some (Lit literal)
               | _ -> ()
              );
 
          | DotAccess (IdSpecial (This, _), _, EId (id, id_info)) ->
              (match find_id env id id_info with
               | Some literal ->
-                  id_info.id_const_literal := Some literal
+                  id_info.id_constness := Some (Lit literal)
               | _ -> ()
              );
 
@@ -318,7 +327,7 @@ let propagate2 lang prog =
                      (lang = Lang.Python || lang = Lang.Ruby) &&
                      kind = Global
                   then begin
-                    id_info.id_const_literal := Some literal;
+                    id_info.id_constness := Some (Lit literal);
                     add_constant_env id (sid, literal) env;
                   end;
                   k x
@@ -335,5 +344,18 @@ let propagate2 lang prog =
   visitor (Pr prog);
   ()
 
+let propagate_dataflow ast =
+  let v = V.mk_visitor
+      { V.default_visitor with
+        V.kfunction_definition = (fun (_k, _) def ->
+          let xs = AST_to_IL.stmt def.fbody in
+          let flow = CFG_build.cfg_of_stmts xs in
+          let mapping = Dataflow_constness.fixpoint flow in
+          Dataflow_constness.update_constness flow mapping
+        );
+      } in
+  v (Pr ast)
+
 let propagate a b = Common.profile_code "Constant_propagation.xxx" (fun () ->
-  propagate2 a b)
+  propagate2 a b;
+  propagate_dataflow b)
