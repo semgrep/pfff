@@ -309,10 +309,13 @@ and assign env lhs _tok rhs_exp eorig =
  * to assign into, which would avoid creating useless fresh_var intermediates.
 *)
 and expr_aux env eorig =
+
   match eorig with
   | G.Call (G.IdSpecial (G.Op op, tok), args) ->
       let args = arguments env args in
       mk_e (Operator ((op, tok), args)) eorig
+  | G.Call (G.IdSpecial ((G.This | G.Super | G.Self | G.Parent), tok) as e, args) ->
+      call_generic env tok e args
   | G.Call (G.IdSpecial (G.IncrDecr (incdec, _prepostIGNORE), tok), args) ->
       (* in theory in expr() we should return each time a list of pre-instr
        * and a list of post-instrs to execute before and after the use
@@ -353,21 +356,8 @@ and expr_aux env eorig =
       add_instr env (mk_i (CallSpecial (Some lval, special, args)) eorig);
       mk_e (Lvalue lval) eorig
   | G.Call (e, args) ->
-      let e = expr env e in
-      (* In theory, instrs in args could have side effect on the value in 'e',
-       * but we will agglomerate all those instrs in the environment and
-       * the caller will call them in sequence (see expr_with_pre_instr).
-       * In theory, we should not execute those instrs before getting the
-       * value in 'e' in the caller, but for our static analysis purpose
-       * we should not care about those edge cases. That would require
-       * to return in expr multiple arguments and thread things around; Not
-       * worth it.
-      *)
-      let args = arguments env args in
       let tok = G.fake "call" in
-      let lval = fresh_lval env tok in
-      add_instr env (mk_i (Call (Some lval, e, args)) eorig);
-      mk_e (Lvalue lval) eorig
+      call_generic env tok e args
 
   | G.L lit -> mk_e (Literal lit) eorig
 
@@ -499,6 +489,23 @@ and expr_opt env = function
       let void = G.Unit (G.fake "void") in
       mk_e (Literal void) (G.L void)
   | Some e -> expr env e
+
+and call_generic env tok e args =
+  let eorig = G.Call (e, args) in
+  let e = expr env e in
+  (* In theory, instrs in args could have side effect on the value in 'e',
+  * but we will agglomerate all those instrs in the environment and
+  * the caller will call them in sequence (see expr_with_pre_instr).
+  * In theory, we should not execute those instrs before getting the
+  * value in 'e' in the caller, but for our static analysis purpose
+  * we should not care about those edge cases. That would require
+  * to return in expr multiple arguments and thread things around; Not
+  * worth it.
+  *)
+  let args = arguments env args in
+  let lval = fresh_lval env tok in
+  add_instr env (mk_i (Call (Some lval, e, args)) eorig);
+  mk_e (Lvalue lval) eorig
 
 and call_special _env (x, tok) =
   (match x with
