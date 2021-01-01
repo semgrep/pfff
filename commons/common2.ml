@@ -48,6 +48,9 @@ let fold_left_with_index f acc =
     | x::xs -> fold_lwi_aux (f acc x n) (n+1) xs
   in fold_lwi_aux acc 0
 
+let hd_opt = function
+  | []   -> None
+  | x::_ -> Some x
 
 let rec drop n xs =
   match (n,xs) with

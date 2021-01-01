@@ -30,6 +30,8 @@ module H = AST_generic_helpers
  *  - a lot ...
 *)
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -52,61 +54,58 @@ let empty_env () = {
 (*****************************************************************************)
 (* Error management *)
 (*****************************************************************************)
-(*s: function [[AST_to_IL.error]] *)
-let error tok s =
-  raise (Parse_info.Ast_builder_error (s, tok))
-(*e: function [[AST_to_IL.error]] *)
 
-(*s: function [[AST_to_IL.warning]] *)
-let warning tok s =
-  pr2 (spf "%s: %s" (Parse_info.string_of_info tok) s)
-(*e: function [[AST_to_IL.warning]] *)
+exception Fixme of fixme_kind * G.any
 
-(*s: function [[AST_to_IL.error_any]] *)
-let error_any any_generic msg =
-  let toks = Lib_AST.ii_of_any any_generic in
-  let s = AST_generic.show_any any_generic in
-  error (List.hd toks) (spf "%s: %s" msg s)
-(*e: function [[AST_to_IL.error_any]] *)
+(*s: function [[AST_to_IL.todo]] *)
+let todo any_generic =
+  raise (Fixme(ToDo, any_generic))
+(*e: function [[AST_to_IL.todo]] *)
 
 (*s: function [[AST_to_IL.sgrep_construct]] *)
 let sgrep_construct any_generic =
-  error_any any_generic "Sgrep Construct"
+  raise (Fixme(Sgrep_construct, any_generic))
 (*e: function [[AST_to_IL.sgrep_construct]] *)
-
-exception Todo of G.any
-
-(*s: function [[AST_to_IL.todo]] *)
-let todo gany =
-  raise (Todo gany)
-(*e: function [[AST_to_IL.todo]] *)
 
 (*s: function [[AST_to_IL.impossible]] *)
 let impossible any_generic =
-  error_any any_generic "Impossible Construct"
+  raise (Fixme(Impossible, any_generic))
 (*e: function [[AST_to_IL.impossible]] *)
 
+let locate opt_tok s =
+  match map_opt Parse_info.string_of_info opt_tok with
+  | Some loc -> spf "%s: %s" loc s
+  | None     -> s
+  | exception Parse_info.NoTokenLocation _ -> s
 
-let todo_warning gany =
+let log_warning opt_tok msg =
+  logger#warning "%s" (locate opt_tok msg)
+
+let log_error opt_tok msg =
+  logger#error "%s" (locate opt_tok msg)
+
+let log_fixme kind gany =
   let toks = Lib_AST.ii_of_any gany in
-  let msg = spf
-      "Unsupported construct may affect the accuracy of dataflow analyses" in
-  try
-    warning (List.hd toks) msg
-  with Parse_info.NoTokenLocation _ ->
-    pr2 msg
+  let opt_tok = Common2.hd_opt toks in
+  match kind with
+  | ToDo ->
+    log_warning opt_tok "Unsupported construct(s) may affect the accuracy of dataflow analyses"
+  | Sgrep_construct ->
+    log_error opt_tok "Cannot translate Semgrep construct(s) into IL"
+  | Impossible ->
+    log_error opt_tok "Impossible happened during AST-to-IL translation"
 
-let exp_todo gany eorig =
-  todo_warning (G.E eorig);
-  { e=TodoExp gany; eorig; }
+let fixme_exp kind gany eorig =
+  log_fixme kind (G.E eorig);
+  { e=FixmeExp(kind,gany); eorig; }
 
-let instr_todo gany eorig =
-  todo_warning (G.E eorig);
-  { i=TodoInstr gany; iorig=eorig; }
+let fixme_instr kind gany eorig =
+  log_fixme kind (G.E eorig);
+  { i=FixmeInstr(kind,gany); iorig=eorig; }
 
-let stmt_todo gany =
-  todo_warning gany;
-  [{ s=TodoStmt gany; }]
+let fixme_stmt kind gany =
+  log_fixme kind gany;
+  [{ s=FixmeStmt(kind,gany); }]
 
 
 (*****************************************************************************)
@@ -134,7 +133,9 @@ let lval_of_id_info _env id id_info =
     match !(id_info.G.id_resolved) with
     | Some (_resolved, sid) -> sid
     | None ->
-        warning (snd id) (spf "the ident '%s' is not resolved" (fst id));
+        let id_str, id_tok = id in
+        let msg = spf "the ident '%s' is not resolved" id_str in
+        log_warning (Some id_tok) msg;
         -1
   in
   let var = id, sid in
@@ -277,9 +278,9 @@ and assign env lhs _tok rhs_exp eorig =
           let lval = lval env lhs in
           add_instr env (mk_i (Assign (lval, rhs_exp)) eorig);
           mk_e (Lvalue lval) lhs
-        with Todo gany ->
-          add_instr env (instr_todo gany eorig);
-          exp_todo gany lhs
+        with Fixme(kind, any_generic) ->
+          add_instr env (fixme_instr kind any_generic eorig);
+          fixme_exp kind any_generic lhs
       end
   | G.Tuple (tok1, lhss, tok2) -> (* E1, ..., En = RHS *)
       (* tmp = RHS*)
@@ -299,8 +300,8 @@ and assign env lhs _tok rhs_exp eorig =
       (* (E1, ..., En) *)
       mk_e (Composite (CTuple, (tok1,tup_elems,tok2))) eorig
   | _ ->
-      add_instr env (instr_todo (G.E eorig) eorig);
-      exp_todo (G.E eorig) lhs
+      add_instr env (fixme_instr ToDo (G.E eorig) eorig);
+      fixme_exp ToDo (G.E eorig) lhs
 
 (*****************************************************************************)
 (* Expression *)
@@ -412,14 +413,18 @@ and expr_aux env eorig =
       mk_e (Lvalue lval) eorig
 
   | G.IdSpecial (spec, tok) ->
-      let var_special =
+      let opt_var_special =
         match spec with
-        | G.This -> This | G.Super -> Super
-        | G.Self -> Self | G.Parent -> Parent
-        | _ -> error_any (G.E eorig) "not expected in var_special context"
+        | G.This -> Some This | G.Super  -> Some Super
+        | G.Self -> Some Self | G.Parent -> Some Parent
+        | _ -> None
       in
-      let lval = lval_of_base (VarSpecial (var_special, tok)) in
-      mk_e (Lvalue lval) eorig
+      (match opt_var_special with
+      | Some var_special ->
+        let lval = lval_of_base (VarSpecial (var_special, tok)) in
+        mk_e (Lvalue lval) eorig
+      | None ->
+        impossible (G.E eorig))
 
 
 
@@ -482,7 +487,8 @@ and expr_aux env eorig =
 
 and expr env eorig =
   try expr_aux env eorig
-  with Todo gany -> exp_todo gany eorig
+  with Fixme(kind, any_generic) ->
+    fixme_exp kind any_generic eorig
 
 and expr_opt env = function
   | None ->
@@ -510,9 +516,9 @@ and call_generic env tok e args =
 and call_special _env (x, tok) =
   (match x with
    | G.Op _ | G.IncrDecr _ ->
-       raise Impossible (* should be intercepted before *)
+       impossible (G.E (G.IdSpecial (x, tok))) (* should be intercepted before *)
    | G.This | G.Super | G.Self | G.Parent ->
-       raise Impossible (* should be intercepted before *)
+       impossible (G.E (G.IdSpecial (x, tok))) (* should be intercepted before *)
    | G.Eval -> Eval
    | G.Typeof -> Typeof | G.Instanceof -> Instanceof | G.Sizeof -> Sizeof
    | G.New -> New
@@ -749,7 +755,7 @@ let rec stmt_aux env st =
 (*s: function [[AST_to_IL.stmt]] *)
 and stmt env st =
   try stmt_aux env st
-  with Todo gany -> stmt_todo gany
+  with Fixme(kind, any_generic) -> fixme_stmt kind any_generic
 (*e: function [[AST_to_IL.stmt]] *)
 
 (*****************************************************************************)

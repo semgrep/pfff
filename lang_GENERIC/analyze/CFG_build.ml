@@ -210,7 +210,7 @@ let rec cfg_stmt : state -> F.nodei option -> stmt -> cfg_stmt_result =
       state.g |> add_arc_opt (previ, newi);
       CfgFirstLast (newi, Some newi)
 
-  | TodoStmt _ -> cfg_todo state previ stmt
+  | FixmeStmt _ -> cfg_todo state previ stmt
 
 and cfg_todo state previ stmt =
   let newi = state.g#add_node { F.n = F.NTodo stmt } in

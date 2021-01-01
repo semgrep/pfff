@@ -187,7 +187,7 @@ let rec eval (env :G.constness D.env) exp : G.constness =
   | Composite _
   | Record _
   | Cast _
-  | TodoExp _
+  | FixmeExp _
     -> G.NotCst
 
 and eval_lval env lval =

@@ -118,6 +118,21 @@ type name = ident * G.sid
 (*e: type [[IL.name]] *)
 [@@deriving show] (* with tarzan *)
 
+
+(*****************************************************************************)
+(* Fixme constructs *)
+(*****************************************************************************)
+
+(* AST-to-IL translation is still a work in progress. When we encounter some
+ * that we cannot handle, we insert a [FixmeExp], [FixmeInstr], or [FixmeStmt].
+*)
+
+type fixme_kind =
+  | ToDo              (* some construct that we still don't support *)
+  | Sgrep_construct   (* some Sgrep construct shows up in the code, e.g. `...' *)
+  | Impossible        (* something we thought impossible happened *)
+[@@deriving show]
+
 (*****************************************************************************)
 (* Lvalue *)
 (*****************************************************************************)
@@ -196,8 +211,8 @@ and exp_kind =
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
   | Operator of G.operator wrap * exp list
-  | TodoExp of G.any (* some construct that we still don't support *)
-(*e: type [[IL.exp_kind]] *)
+  | FixmeExp of fixme_kind * G.any
+  (*e: type [[IL.exp_kind]] *)
 
 (*s: type [[IL.composite_kind]] *)
 and composite_kind =
@@ -233,8 +248,8 @@ and instr_kind =
   | AssignAnon of lval * anonymous_entity
   | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
-  | TodoInstr of G.any (* some construct that we still don't support *)
-(* todo: PhiSSA! *)
+  | FixmeInstr of fixme_kind * G.any
+  (* todo: PhiSSA! *)
 (*e: type [[IL.instr_kind]] *)
 
 (*s: type [[IL.call_special]] *)
@@ -302,8 +317,8 @@ and stmt_kind =
 
   | MiscStmt of other_stmt
 
-  | TodoStmt of G.any (* some construct that we still don't support *)
-(*e: type [[IL.stmt_kind]] *)
+  | FixmeStmt of fixme_kind * G.any
+  (*e: type [[IL.stmt_kind]] *)
 
 (*s: type [[IL.other_stmt]] *)
 and other_stmt =
@@ -393,7 +408,7 @@ let lval_of_instr_opt x =
   | Call (Some lval, _, _) | CallSpecial (Some lval, _, _) ->
       Some lval
   | Call _ | CallSpecial _ -> None
-  | TodoInstr _-> None
+  | FixmeInstr _-> None
 
 (*s: function [[IL.lvar_of_instr_opt]] *)
 let lvar_of_instr_opt x =
@@ -411,7 +426,7 @@ let exps_of_instr x =
   | AssignAnon _ -> []
   | Call (_, e1, args) -> e1::args
   | CallSpecial (_, _, args) -> args
-  | TodoInstr _ -> []
+  | FixmeInstr _ -> []
 (*e: function [[IL.exps_of_instr]] *)
 let rexps_of_instr x =
   match x.i with
@@ -419,7 +434,7 @@ let rexps_of_instr x =
   | AssignAnon _ -> []
   | Call (_, e1, args) -> e1::args
   | CallSpecial (_, _, args) -> args
-  | TodoInstr _ -> []
+  | FixmeInstr _ -> []
 
 (* opti: could use a set *)
 let rec lvals_of_exp e =
@@ -429,7 +444,7 @@ let rec lvals_of_exp e =
   | Cast (_, e) -> lvals_of_exp e
   | Composite (_, (_, xs, _)) | Operator (_, xs) -> lvals_of_exps xs
   | Record ys -> lvals_of_exps (ys |> List.map snd)
-  | TodoExp _ -> []
+  | FixmeExp _ -> []
 
 and lvals_of_exps xs =
   xs |> List.map (lvals_of_exp) |> List.flatten
