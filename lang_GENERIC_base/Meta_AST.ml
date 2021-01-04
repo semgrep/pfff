@@ -547,7 +547,6 @@ and vof_keyword_attribute =
   | Setter -> OCaml.VSum ("Setter", [])
   | Optional -> OCaml.VSum ("Optional", [])
   | NotNull -> OCaml.VSum ("NotNull", [])
-  | LocalDef -> OCaml.VSum ("LocalDef", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in

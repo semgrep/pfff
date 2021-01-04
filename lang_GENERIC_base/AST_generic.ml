@@ -1077,8 +1077,7 @@ and keyword_attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
-  | LocalDef (* Lua *)
-(*e: type [[AST_generic.keyword_attribute]] *)
+  (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
 and other_attribute_operator =
