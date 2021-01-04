@@ -32,6 +32,9 @@ module FT = File_type
  * base such analysis on graph_code_cmt.ml instead of this file.
 *)
 
+(* will color in red identifiers which were not tagged by the AST phase *)
+let debug_missing_tag = ref false
+
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
@@ -458,7 +461,8 @@ let visit_program
            | "failwith" | "raise" ->
                tag ii KeywordExn
            (* all the identifiers should have been tagged by now. *)
-           | _ when not is_lex_or_yacc_file -> tag_if_not_tagged ii Error
+           | _ when not is_lex_or_yacc_file && not !debug_missing_tag ->
+               tag_if_not_tagged ii Error
            | _ -> ()
           )
 
@@ -466,7 +470,8 @@ let visit_program
           (match s with
            | "Todo" -> tag ii BadSmell
            (* all the identifiers should have been tagged by now. *)
-           | _ when not is_lex_or_yacc_file -> tag_if_not_tagged ii Error
+           | _ when not is_lex_or_yacc_file && not !debug_missing_tag ->
+               tag_if_not_tagged ii Error
            | _ -> ()
           )
 
