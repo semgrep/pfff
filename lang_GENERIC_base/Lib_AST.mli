@@ -8,7 +8,8 @@
 val ii_of_any: AST_generic.any -> Parse_info.t list
 (*e: signature [[Lib_AST.ii_of_any]] *)
 
-(*s: signature [[Lib_AST.abstract_position_info_any]] *)
-val abstract_position_info_any: AST_generic.any -> AST_generic.any
-(*e: signature [[Lib_AST.abstract_position_info_any]] *)
+(** Abstract away position and constness for comparison
+ * with polymorphic operators.
+*)
+val abstract_for_comparison_any: AST_generic.any -> AST_generic.any
 (*e: pfff/lang_GENERIC/parsing/Lib_AST.mli *)

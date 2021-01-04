@@ -27,6 +27,7 @@ type visitor_in = {
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
 
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
+  kidinfo: (id_info -> id_info) * visitor_out -> id_info -> id_info;
 }
 
 and visitor_out = {
@@ -39,8 +40,9 @@ and visitor_out = {
 let default_visitor =
   {
     kexpr   = (fun (k,_) x -> k x);
-    kstmt = (fun (k,_) x -> k x);
-    kinfo = (fun (k,_) x -> k x);
+    kstmt   = (fun (k,_) x -> k x);
+    kinfo   = (fun (k,_) x -> k x);
+    kidinfo = (fun (k,_) x -> k x);
   }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -115,16 +117,22 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     let v_name_typeargs = map_of_option map_type_arguments v_name_typeargs in
     let v_name_qualifier = map_of_option map_qualifier v_name_qualifier
     in { name_qualifier = v_name_qualifier; name_typeargs = v_name_typeargs  }
-  and map_id_info { id_resolved = v_id_resolved; id_type = v_id_type;
-                    id_constness = v3
-                  } =
-    let v3 = map_of_ref (map_of_option map_constness) v3 in
-    let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
-    let v_id_resolved =
-      map_of_ref (map_of_option map_resolved_name) v_id_resolved
-    in { id_resolved = v_id_resolved; id_type = v_id_type;
-         id_constness = v3
-       }
+  and map_id_info v =
+    let k x =
+      match x with
+        { id_resolved = v_id_resolved; id_type = v_id_type;
+          id_constness = v3
+        } ->
+          let v3 = map_of_ref (map_of_option map_constness) v3 in
+          let v_id_type = map_of_ref (map_of_option map_type_) v_id_type in
+          let v_id_resolved =
+            map_of_ref (map_of_option map_resolved_name) v_id_resolved
+          in
+          { id_resolved = v_id_resolved; id_type = v_id_type;
+            id_constness = v3
+          }
+    in
+    vin.kidinfo (k, all_functions) v
 
 
   and map_xml {

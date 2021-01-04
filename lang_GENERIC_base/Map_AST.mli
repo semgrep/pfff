@@ -7,6 +7,7 @@ type visitor_in = {
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
 
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
+  kidinfo: (id_info -> id_info) * visitor_out -> id_info -> id_info;
 }
 (*e: type [[Map_AST.visitor_in]] *)
 
