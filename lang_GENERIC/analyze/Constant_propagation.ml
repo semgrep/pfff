@@ -357,5 +357,5 @@ let propagate_dataflow ast =
   v (Pr ast)
 
 let propagate a b = Common.profile_code "Constant_propagation.xxx" (fun () ->
-  propagate2 a b;
-  propagate_dataflow b)
+  propagate2 a b
+)
