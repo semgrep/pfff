@@ -42,26 +42,27 @@ let ii_of_any any =
 (*e: function [[Lib_AST.ii_of_any]] *)
 
 (*****************************************************************************)
-(* Abstract position *)
+(* Abstract position and constness for comparison *)
 (*****************************************************************************)
+
 (* update: you should now use AST_generic.equal_any which internally
  * does not care about position information.
 *)
 
-(*s: function [[Lib_AST.abstract_position_visitor]] *)
-let abstract_position_visitor recursor =
+let abstract_for_comparison_visitor recursor =
   let hooks = { M.default_visitor with
                 M.kinfo = (fun (_k, _) i ->
                   { i with Parse_info.token = Parse_info.Ab }
+                );
+                M.kidinfo = (fun (k, _) ii ->
+                  k { ii with AST_generic.id_constness = ref None }
                 )
               } in
   begin
     let vout = M.mk_visitor hooks in
     recursor vout;
   end
-(*e: function [[Lib_AST.abstract_position_visitor]] *)
-(*s: function [[Lib_AST.abstract_position_info_any]] *)
-let abstract_position_info_any x =
-  abstract_position_visitor (fun visitor -> visitor.M.vany x)
-(*e: function [[Lib_AST.abstract_position_info_any]] *)
+
+let abstract_for_comparison_any x =
+  abstract_for_comparison_visitor (fun visitor -> visitor.M.vany x)
 (*e: pfff/lang_GENERIC/parsing/Lib_AST.ml *)

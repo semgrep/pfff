@@ -1176,6 +1176,7 @@ val exn_to_real_unixexit : (unit -> 'a) -> 'a
 (* List *)
 (*****************************************************************************)
 
+val hd_opt : 'a list -> 'a option
 
 (* tail recursive efficient map (but that also reverse the element!) *)
 val map_eff_rev : ('a -> 'b) -> 'a list -> 'b list
