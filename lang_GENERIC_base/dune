@@ -6,5 +6,5 @@
    commons
    pfff-h_program-lang
  )
- (preprocess (pps ppx_deriving.show))
+ (preprocess (pps ppx_deriving.show ppx_deriving.eq))
 )

@@ -2,7 +2,7 @@
 (*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2019-2020 r2c
+ * Copyright (C) 2019-2021 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -31,7 +31,7 @@
  *  - PHP
  *  - OCaml
  *  - Ruby
- *  - TODO next: Csharp, Kotlin
+ *  - TODO next: Csharp, Kotlin, Lua
  *
  * rational: In the end, programming languages have a lot in Common.
  * Even though most interesting analysis are probably better done on a
@@ -152,12 +152,16 @@
 type tok = Parse_info.t
 (*e: type [[AST_generic.tok]] *)
 [@@deriving show] (* with tarzan *)
+(* sgrep: we do not care about position when comparing for equality 2 ASTs.
+ * related: Lib_AST.abstract_position_info_any and then use OCaml generic '='.
+*)
+let equal_tok _t1 _t2 = true
 
 (*s: type [[AST_generic.wrap]] *)
 (* a shortcut to annotate some information with position information *)
 type 'a wrap = 'a * tok
 (*e: type [[AST_generic.wrap]] *)
-[@@deriving show] (* with tarzan *)
+[@@deriving show, eq] (* with tarzan *)
 
 (*s: type [[AST_generic.bracket]] *)
 (* Use for round(), square[], curly{}, and angle<> brackets.
@@ -167,14 +171,14 @@ type 'a wrap = 'a * tok
 *)
 type 'a bracket = tok * 'a * tok
 (*e: type [[AST_generic.bracket]] *)
-[@@deriving show] (* with tarzan *)
+[@@deriving show, eq] (* with tarzan *)
 
 (* semicolon, a FakeTok in languages that do not require them (e.g., Python).
  * alt: tok option.
  * See the sc value aslo at the end of this file to build an sc.
 *)
 type sc = tok
-[@@deriving show] (* with tarzan *)
+[@@deriving show, eq] (* with tarzan *)
 
 (*****************************************************************************)
 (* Names *)
@@ -183,13 +187,13 @@ type sc = tok
 (*s: type [[AST_generic.ident]] *)
 type ident = string wrap
 (*e: type [[AST_generic.ident]] *)
-[@@deriving show]
+[@@deriving show, eq]
 
 (*s: type [[AST_generic.dotted_ident]] *)
 (* usually separated by a '.', but can be used also with '::' separators *)
 type dotted_ident = ident list (* at least 1 element *)
 (*e: type [[AST_generic.dotted_ident]] *)
-[@@deriving show] (* with tarzan *)
+[@@deriving show, eq] (* with tarzan *)
 
 (*s: type [[AST_generic.module_name]] *)
 (* module_name can also be used for a package name or a namespace *)
@@ -198,7 +202,7 @@ type module_name =
   (* in FileName the '/' is similar to the '.' in DottedName *)
   | FileName of string wrap   (* ex: Js import, C #include, Go import *)
 (*e: type [[AST_generic.module_name]] *)
-[@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }, eq] (* with tarzan *)
 
 (* A single unique id: sid (uid would be a better name, but it usually
  * means "user id" for people).
@@ -259,11 +263,11 @@ and resolved_name_kind =
   | Macro
   | EnumConstant
   (*e: type [[AST_generic.resolved_name_kind]] *)
-[@@deriving show { with_path = false }]  (* with tarzan *)
+[@@deriving show { with_path = false }, eq]  (* with tarzan *)
 
 (* an AST element not yet handled; works with the Xx_Todo and Todo in any *)
 type todo_kind = string wrap
-[@@deriving show]  (* with tarzan *)
+[@@deriving show, eq]  (* with tarzan *)
 
 (* Start of big mutually recursive types because of the use of 'any'
  * in OtherXxx *)
@@ -318,8 +322,12 @@ and id_info = {
   id_type:     type_         option ref; (* type checker (typing) *)
   (* sgrep: this is for sgrep constant propagation hack.
    * todo? associate only with Id?
+   * note that we do not use the constness for equality (hence the adhoc
+   * @equal below) because the constness analysis is now controlflow-sensitive
+   * meaning the same variable might have different id_constness value
+   * depending where it is used.
   *)
-  id_constness: constness    option ref;
+  id_constness: constness    option ref [@equal fun _a _b -> true];
 }
 (*e: type [[AST_generic.id_info]] *)
 
@@ -1566,7 +1574,7 @@ and any =
   | TodoK of todo_kind
   (*e: [[AST_generic.any]] other cases *)
 (*e: type [[AST_generic.any]] *)
-[@@deriving show { with_path = false }] (* with tarzan *)
+[@@deriving show { with_path = false }, eq] (* with tarzan *)
 
 (*s: constant [[AST_generic.special_multivardef_pattern]] *)
 (* In JS one can do 'var {x,y} = foo();'. We used to transpile that
