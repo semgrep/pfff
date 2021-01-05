@@ -73,10 +73,13 @@ let impossible any_generic =
 (*e: function [[AST_to_IL.impossible]] *)
 
 let locate opt_tok s =
-  match map_opt Parse_info.string_of_info opt_tok with
+  let opt_loc =
+    try map_opt Parse_info.string_of_info opt_tok
+    with Parse_info.NoTokenLocation _ -> None
+  in
+  match opt_loc with
   | Some loc -> spf "%s: %s" loc s
   | None     -> s
-  | exception Parse_info.NoTokenLocation _ -> s
 
 let log_warning opt_tok msg =
   logger#warning "%s" (locate opt_tok msg)
