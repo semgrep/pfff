@@ -840,7 +840,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | ImportAs (t, v1, v2) ->
         let t = map_tok t in
         let v1 = map_module_name v1
-        and v2 = map_of_option map_ident v2
+        and v2 = map_of_option map_ident_and_id_info v2
         in ImportAs (t, v1, v2)
     | ImportAll (t, v1, v2) ->
         let t = map_tok t in
@@ -863,8 +863,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let t = map_tok t in
         PackageEnd t
 
+  and map_ident_and_id_info (v1, v2) =
+    let v1 = map_ident v1 in
+    let v2 = map_id_info v2 in
+    (v1, v2)
+
   and map_alias (v1, v2) =
-    let v1 = map_ident v1 and v2 = map_of_option map_ident v2 in (v1, v2)
+    let v1 = map_ident v1 and v2 = map_of_option map_ident_and_id_info v2 in (v1, v2)
 
   and map_other_directive_operator x = x
 

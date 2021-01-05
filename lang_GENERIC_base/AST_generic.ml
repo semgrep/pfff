@@ -1491,7 +1491,8 @@ and directive =
 (*e: type [[AST_generic.directive]] *)
 
 (*s: type [[AST_generic.alias]] *)
-and alias = ident (* as name *)
+(* ... as name *)
+and alias = ident * id_info
 (*e: type [[AST_generic.alias]] *)
 
 (*s: type [[AST_generic.other_directive_operator]] *)

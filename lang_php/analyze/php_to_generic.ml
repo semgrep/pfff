@@ -172,7 +172,7 @@ let rec stmt_aux =
       [G.DirectiveStmt (G.Package (t, v1)) |> G.s] @ v2 @
       [G.DirectiveStmt (G.PackageEnd t2) |> G.s]
   | NamespaceUse (t, v1, v2) ->
-      let v1 = qualified_ident v1 and v2 = option ident v2 in
+      let v1 = qualified_ident v1 and v2 = option alias v2 in
       [G.DirectiveStmt (G.ImportAs (t, G.DottedName v1, v2)) |> G.s]
 
   | StaticVars (t, v1) ->
@@ -194,6 +194,10 @@ let rec stmt_aux =
             let e = expr e in
             G.OtherStmt (G.OS_GlobalComplex, [G.E e]) |> G.s
       )
+
+and alias x =
+  let x = ident x in
+  x, G.empty_id_info()
 
 and stmt x =
   G.stmt1 (stmt_aux x)

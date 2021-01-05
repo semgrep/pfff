@@ -832,7 +832,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_module_name v1 and _ = v_alias (v2, v3) in ()
       | ImportAs (t, v1, v2) ->
           let t = v_tok t in
-          let v1 = v_module_name v1 and v2 = v_option v_ident v2 in ()
+          let v1 = v_module_name v1 and v2 = v_option v_ident_and_id_info v2 in ()
       | ImportAll (t, v1, v2) ->
           let t = v_tok t in
           let v1 = v_module_name v1 and v2 = v_tok v2 in ()
@@ -849,8 +849,14 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
     in
     vin.kdir (k, all_functions) x
-  and v_alias (v1, v2) = let v1 = v_ident v1 and v2 = v_option v_ident v2 in ()
+  and v_alias (v1, v2) =
+    let v1 = v_ident v1
+    and v2 = v_option v_ident_and_id_info v2
+    in ()
   and v_other_directive_operator _ = ()
+
+  and v_ident_and_id_info (v1, v2) =
+    v_ident v1; v_id_info v2
 
   and v_program v = v_stmts v
   and v_any =
