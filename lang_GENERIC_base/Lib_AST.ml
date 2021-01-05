@@ -44,6 +44,10 @@ let ii_of_any any =
 (*****************************************************************************)
 (* Abstract position *)
 (*****************************************************************************)
+(* update: you should now use AST_generic.equal_any which internally
+ * does not care about position information.
+*)
+
 (*s: function [[Lib_AST.abstract_position_visitor]] *)
 let abstract_position_visitor recursor =
   let hooks = { M.default_visitor with

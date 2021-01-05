@@ -62,7 +62,7 @@ let str_of_name ((s, _tok), sid) =
 (* Constness *)
 (*****************************************************************************)
 
-(* TODO: Use Lib_AST.abstract_position_info_any (G.E (G.Literal l1)) and =*=. *)
+(* TODO: use the new AST_generic.eq_xxx functions from deriving eq *)
 let eq_literal l1 l2 =
   match l1, l2 with
   | G.Bool  (b1, _),  G.Bool  (b2, _)  -> b1 =:= b2
