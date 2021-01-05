@@ -31,7 +31,8 @@
  *  - PHP
  *  - OCaml
  *  - Ruby
- *  - TODO next: Csharp, Kotlin, Lua
+ *  - Lua
+ *  - TODO next: Csharp, Kotlin
  *
  * rational: In the end, programming languages have a lot in Common.
  * Even though most interesting analysis are probably better done on a
@@ -522,7 +523,7 @@ and special =
   (* special vars *)
   | This | Super (* called 'base' in C# *)
   | Self | Parent (* different from This/Super? *)
-  | NextArrayIndex (* Lua *)
+  | NextArrayIndex (* Lua, todo: just remove it, create Dict without key *)
 
   (* special calls *)
   | Eval
@@ -586,13 +587,13 @@ and operator =
   | NotPhysEq (* less: could be desugared to Not PhysEq *)
   | Lt | LtE | Gt | GtE  (* less: could be desugared to Or (Eq Lt) *)
   | Cmp (* <=>, PHP *)
-  (* todo: not really an arithmetic operator, maybe rename the type *)
-  | Concat (* '.' PHP *) | Append (* x[] = ... in PHP, just in AssignOp *)
+  | Concat (* '.' PHP, '..' Lua *)
+  | Append (* x[] = ... in PHP, just in AssignOp *)
   | RegexpMatch (* =~, Ruby (and Perl) *)
   | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
   | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
   | NotNullPostfix (* ! in Typescript, postfix operator *)
-  | Length (* Lua *)
+  | Length (* '#' in Lua *)
   (* See https://en.wikipedia.org/wiki/Elvis_operator.
    * In PHP we currently generate a Conditional instead of a Binary Elvis.
    * It looks like the Nullish operator is quite similar to the Elvis
@@ -776,6 +777,7 @@ and stmt_kind =
   | Continue of tok * label_ident * sc
   | Break    of tok * label_ident * sc
 
+  (* todo? remove stmt argument? more symetric to Goto *)
   | Label of label * stmt
   | Goto of tok * label
 
@@ -861,7 +863,7 @@ and for_header =
                expr (* pattern 'in' expr *)
   (* sgrep: *)
   | ForEllipsis of tok (* ... *)
-  (* Lua *)
+  (* Lua. todo: merge with ForEach? *)
   | ForIn of for_var_or_expr list (* init *) *
              expr list (* pattern 'in' expr *)
 (*e: type [[AST_generic.for_header]] *)
