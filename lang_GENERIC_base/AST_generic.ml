@@ -23,16 +23,14 @@
  * languages (e.g., semgrep).
  *
  * Right now this generic AST is mostly the factorized union of:
- *  - Python
+ *  - Python, Ruby, Lua
  *  - Javascript, JSON, and Typescript
- *  - Java
+ *  - PHP
+ *  - Java, CSharp
  *  - C (and some C++)
  *  - Go
- *  - PHP
  *  - OCaml
- *  - Ruby
- *  - Lua
- *  - TODO next: Csharp, Kotlin
+ *  - TODO next: Kotlin, Scala, Rust
  *
  * rational: In the end, programming languages have a lot in Common.
  * Even though most interesting analysis are probably better done on a
