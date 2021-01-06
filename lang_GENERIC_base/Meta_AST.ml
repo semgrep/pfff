@@ -1103,6 +1103,10 @@ and vof_class_kind_bis =
   | Interface -> OCaml.VSum ("Interface", [])
   | Trait -> OCaml.VSum ("Trait", [])
   | AtInterface -> OCaml.VSum ("AtInterface", [])
+and vof_ident_and_id_info (v1, v2) =
+  let v1 = vof_ident v1 in
+  let v2 = vof_id_info v2 in
+  OCaml.VTuple [v1; v2]
 and vof_directive =
   function
   | ImportFrom (t, v1, v2, v3) ->
@@ -1113,7 +1117,7 @@ and vof_directive =
   | ImportAs (t, v1, v2) ->
       let t = vof_tok t in
       let v1 = vof_module_name v1
-      and v2 = OCaml.vof_option vof_ident v2
+      and v2 = OCaml.vof_option vof_ident_and_id_info v2
       in OCaml.VSum ("ImportAs", [ t; v1; v2 ])
   | ImportAll (t, v1, v2) ->
       let t = vof_tok t in
@@ -1137,7 +1141,7 @@ and vof_directive =
       in OCaml.VSum ("OtherDirective", [ v1; v2 ])
 and vof_alias (v1, v2) =
   let v1 = vof_ident v1
-  and v2 = OCaml.vof_option vof_ident v2
+  and v2 = OCaml.vof_option vof_ident_and_id_info v2
   in v1, v2
 and vof_other_directive_operator =
   function

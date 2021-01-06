@@ -662,7 +662,7 @@ and stmt_aux x =
       [G.Assert (t, v1, v2, G.sc) |> G.s]
 
   | ImportAs (t, v1, v2) ->
-      let mname = module_name v1 and nopt = option name v2 in
+      let mname = module_name v1 and nopt = option ident_and_id_info v2 in
       [G.DirectiveStmt (G.ImportAs (t, mname, nopt)) |> G.s]
   | ImportAll (t, v1, v2) ->
       let mname = module_name v1 and v2 = info v2 in
@@ -709,6 +709,10 @@ and stmt_aux x =
       stmt_aux (ExprStmt (Call (id, fb [Arg e])))
 
 (*e: function [[Python_to_generic.stmt_aux]] *)
+
+and ident_and_id_info x =
+  let x = name x in
+  x, G.empty_id_info()
 
 (*s: function [[Python_to_generic.stmt]] *)
 and stmt x =
@@ -758,7 +762,7 @@ and decorator (t, v1, v2) =
 
 (*s: function [[Python_to_generic.alias]] *)
 and alias (v1, v2) =
-  let v1 = name v1 and v2 = option name v2 in
+  let v1 = name v1 and v2 = option ident_and_id_info v2 in
   v1, v2
 (*e: function [[Python_to_generic.alias]] *)
 

@@ -495,27 +495,30 @@ let resolve2 lang prog =
       (* sgrep: the import aliases *)
       V.kdir = (fun (k, _v) x ->
         (match x with
-         | ImportFrom (_, DottedName xs, id, Some alias) ->
+         | ImportFrom (_, DottedName xs, id, Some (alias, id_info)) ->
              (* for python *)
              let sid = H.gensym () in
              let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
+             set_resolved env id_info resolved;
              add_ident_imported_scope alias resolved env.names;
          | ImportFrom (_, DottedName xs, id, None) ->
              (* for python *)
              let sid = H.gensym () in
              let resolved = untyped_ent (ImportedEntity (xs @ [id]), sid) in
              add_ident_imported_scope id resolved env.names;
-         | ImportAs (_, DottedName xs, Some alias) ->
+         | ImportAs (_, DottedName xs, Some (alias, id_info)) ->
              (* for python *)
              let sid = H.gensym () in
              let resolved = untyped_ent (ImportedModule (DottedName xs), sid) in
+             set_resolved env id_info resolved;
              add_ident_imported_scope alias resolved env.names;
 
-         | ImportAs (_, FileName (s, tok), Some alias) ->
+         | ImportAs (_, FileName (s, tok), Some (alias, id_info)) ->
              (* for Go *)
              let sid = H.gensym () in
              let base = Filename.basename s, tok in
              let resolved = untyped_ent (ImportedModule (DottedName [base]), sid) in
+             set_resolved env id_info resolved;
              add_ident_imported_scope alias resolved env.names;
 
          | _ -> ()

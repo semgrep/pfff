@@ -534,16 +534,20 @@ and property x =
 
 and toplevel x = stmt x
 
+and alias v1 =
+  let v1 = name v1 in
+  v1, G.empty_id_info()
+
 and module_directive x =
   match x with
   | ReExportNamespace (v1, _v2, _v3, v4) ->
       let v4 = filename v4 in
       G.OtherDirective (G.OI_ReExportNamespace, [G.Tk v1; G.I v4])
   | Import (t, v1, v2, v3) ->
-      let v1 = name v1 and v2 = option name v2 and v3 = filename v3 in
+      let v1 = name v1 and v2 = option alias v2 and v3 = filename v3 in
       G.ImportFrom (t, G.FileName v3, v1, v2)
   | ModuleAlias (t, v1, v2) ->
-      let v1 = name v1 and v2 = filename v2 in
+      let v1 = alias v1 and v2 = filename v2 in
       G.ImportAs (t, G.FileName v2, Some v1)
   (* sgrep: we used to convert this in an OI_ImportEffect, but
    * we now want import "foo" to be used to match any form of import

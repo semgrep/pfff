@@ -592,7 +592,7 @@ let top_func () =
         *)
         G.ImportAs (itok, module_name, None)
     | ImportNamed v1 -> let v1 = ident v1 in
-        G.ImportAs (itok, module_name, Some v1)
+        G.ImportAs (itok, module_name, Some (v1, G.empty_id_info()))
     | ImportDot v1 -> let v1 = tok v1 in
         G.ImportAll (itok, module_name, v1)
 
