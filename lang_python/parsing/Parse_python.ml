@@ -192,15 +192,16 @@ let (program_of_string: string -> AST_python.program) = fun s ->
 (*s: function [[Parse_python.any_of_string]] *)
 (* for sgrep/spatch *)
 let any_of_string ?(parsing_mode=Python) s =
-  Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
-    let toks = tokens parsing_mode file in
-    let toks = Parsing_hacks_python.fix_tokens toks in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
-    (* -------------------------------------------------- *)
-    (* Call parser *)
-    (* -------------------------------------------------- *)
-    Parser_python.sgrep_spatch_pattern lexer lexbuf_fake
-  )
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str:s ~ext:"py" (fun file ->
+      let toks = tokens parsing_mode file in
+      let toks = Parsing_hacks_python.fix_tokens toks in
+      let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+      (* -------------------------------------------------- *)
+      (* Call parser *)
+      (* -------------------------------------------------- *)
+      Parser_python.sgrep_spatch_pattern lexer lexbuf_fake
+    ))
 (*e: function [[Parse_python.any_of_string]] *)
 
 

@@ -116,9 +116,10 @@ let parse_string (w : string) =
 
 (* for sgrep/spatch *)
 let any_of_string s =
-  Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
-    let toks = tokens file in
-    let toks = Parsing_hacks_java.fix_tokens toks in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
-    Parser_java.sgrep_spatch_pattern lexer lexbuf_fake
-  )
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
+      let toks = tokens file in
+      let toks = Parsing_hacks_java.fix_tokens toks in
+      let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+      Parser_java.sgrep_spatch_pattern lexer lexbuf_fake
+    ))

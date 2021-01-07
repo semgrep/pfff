@@ -37,15 +37,16 @@ let parse_program filename =
     raise (PI.Parsing_error (TH.info_of_tok cur))
 
 let any_of_string str =
-  Common2.with_tmp_file ~str ~ext:"json" (fun file ->
-    let toks = tokens file in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
-    (* bugfix: currently Parser_js.sgrep_spatch_pattern does not
-     * recognize full expression as a start, it uses
-     * assignment_expr_no_stmt because of possible ambiguities
-     * when seeing { } which can be a block or an object,
-     * so let's call directly Parser_js.json
-    *)
-    let e = Parser_js.json lexer lexbuf_fake in
-    Ast_json.E e
-  )
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str ~ext:"json" (fun file ->
+      let toks = tokens file in
+      let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
+      (* bugfix: currently Parser_js.sgrep_spatch_pattern does not
+       * recognize full expression as a start, it uses
+       * assignment_expr_no_stmt because of possible ambiguities
+       * when seeing { } which can be a block or an object,
+       * so let's call directly Parser_js.json
+      *)
+      let e = Parser_js.json lexer lexbuf_fake in
+      Ast_json.E e
+    ))

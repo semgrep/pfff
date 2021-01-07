@@ -106,19 +106,20 @@ let (program_of_string: string -> Ast_go.program) = fun s ->
 
 (* for sgrep/spatch *)
 let any_of_string s =
-  Common2.with_tmp_file ~str:s ~ext:"go" (fun file ->
-    let toks_orig = tokens file in
-    let toks = Common.exclude TH.is_comment_or_space toks_orig in
-    (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
-    let toks = Parsing_hacks_go.fix_tokens toks in
-    let tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_irrelevant in
-    (* -------------------------------------------------- *)
-    (* Call parser *)
-    (* -------------------------------------------------- *)
-    try
-      Parser_go.sgrep_spatch_pattern lexer lexbuf_fake
-    with Parsing.Parse_error ->
-      let cur = tr.PI.current in
-      pr2 ("parse error \n = " ^ error_msg_tok cur);
-      raise (PI.Parsing_error (TH.info_of_tok cur))
-  )
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str:s ~ext:"go" (fun file ->
+      let toks_orig = tokens file in
+      let toks = Common.exclude TH.is_comment_or_space toks_orig in
+      (* insert implicit SEMICOLON and replace some LBRACE with LBODY *)
+      let toks = Parsing_hacks_go.fix_tokens toks in
+      let tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_irrelevant in
+      (* -------------------------------------------------- *)
+      (* Call parser *)
+      (* -------------------------------------------------- *)
+      try
+        Parser_go.sgrep_spatch_pattern lexer lexbuf_fake
+      with Parsing.Parse_error ->
+        let cur = tr.PI.current in
+        pr2 ("parse error \n = " ^ error_msg_tok cur);
+        raise (PI.Parsing_error (TH.info_of_tok cur))
+    ))

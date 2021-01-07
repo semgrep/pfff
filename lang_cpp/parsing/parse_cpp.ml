@@ -498,26 +498,27 @@ let parse_program file =
 
 (* for sgrep/spatch *)
 let any_of_string lang s =
-  Common2.with_tmp_file ~str:s ~ext:"c" (fun file ->
-    let toks_orig = tokens file in
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str:s ~ext:"c" (fun file ->
+      let toks_orig = tokens file in
 
-    let toks =
-      try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
-      with Token_views_cpp.UnclosedSymbol s ->
-        pr2 s;
-        if !Flag_cpp.debug_cplusplus
-        then raise (Token_views_cpp.UnclosedSymbol s)
-        else toks_orig
-    in
+      let toks =
+        try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
+        with Token_views_cpp.UnclosedSymbol s ->
+          pr2 s;
+          if !Flag_cpp.debug_cplusplus
+          then raise (Token_views_cpp.UnclosedSymbol s)
+          else toks_orig
+      in
 
-    let tr = Parse_info.mk_tokens_state toks in
-    let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
+      let tr = Parse_info.mk_tokens_state toks in
+      let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
-    (* -------------------------------------------------- *)
-    (* Call parser *)
-    (* -------------------------------------------------- *)
-    Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
-  )
+      (* -------------------------------------------------- *)
+      (* Call parser *)
+      (* -------------------------------------------------- *)
+      Parser_cpp.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
+    ))
 
 (* experimental *)
 let parse_with_dypgen file =

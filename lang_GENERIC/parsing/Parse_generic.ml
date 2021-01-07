@@ -103,47 +103,45 @@ let parse_program file =
 
 (*s: function [[Parse_generic.parse_pattern]] *)
 let parse_pattern lang str =
-  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
-    match lang with
-    | Lang.Python | Lang.Python2 | Lang.Python3 ->
-        let parsing_mode = lang_to_python_parsing_mode lang in
-        let any = Parse_python.any_of_string ~parsing_mode str in
-        Python_to_generic.any any
-    (* abusing JS parser so no need extend tree-sitter grammar*)
-    | Lang.Typescript
-    | Lang.Javascript ->
-        let any = Parse_js.any_of_string str in
-        Js_to_generic.any any
-    | Lang.JSON ->
-        let any = Parse_json.any_of_string str in
-        Json_to_generic.any any
-    | Lang.C ->
-        let any = Parse_c.any_of_string str in
-        C_to_generic.any any
-    | Lang.Java ->
-        let any = Parse_java.any_of_string str in
-        Java_to_generic.any any
-    | Lang.Go ->
-        let any = Parse_go.any_of_string str in
-        Go_to_generic.any any
-    | Lang.OCaml ->
-        let any = Parse_ml.any_of_string str in
-        Ml_to_generic.any any
-    | Lang.Ruby ->
-        let any = Parse_ruby.any_of_string str in
-        Ruby_to_generic.any any
-    | Lang.PHP ->
-        let any_cst = Parse_php.any_of_string str in
-        let any = Ast_php_build.any any_cst in
-        Php_to_generic.any any
-    | Lang.Csharp ->
-        failwith "No C# parser in pfff; use the one in tree-sitter"
-    | Lang.Kotlin ->
-        failwith "No Kotlin parser in pfff; use the one in tree-sitter"
-    | Lang.Cplusplus ->
-        failwith "No C++ generic parser in pfff; use the one in tree-sitter"
-    | Lang.Lua ->
-        failwith "No Lua generic parser in pfff; use the one in tree-sitter"
-  )
+  match lang with
+  | Lang.Python | Lang.Python2 | Lang.Python3 ->
+      let parsing_mode = lang_to_python_parsing_mode lang in
+      let any = Parse_python.any_of_string ~parsing_mode str in
+      Python_to_generic.any any
+  (* abusing JS parser so no need extend tree-sitter grammar*)
+  | Lang.Typescript
+  | Lang.Javascript ->
+      let any = Parse_js.any_of_string str in
+      Js_to_generic.any any
+  | Lang.JSON ->
+      let any = Parse_json.any_of_string str in
+      Json_to_generic.any any
+  | Lang.C ->
+      let any = Parse_c.any_of_string str in
+      C_to_generic.any any
+  | Lang.Java ->
+      let any = Parse_java.any_of_string str in
+      Java_to_generic.any any
+  | Lang.Go ->
+      let any = Parse_go.any_of_string str in
+      Go_to_generic.any any
+  | Lang.OCaml ->
+      let any = Parse_ml.any_of_string str in
+      Ml_to_generic.any any
+  | Lang.Ruby ->
+      let any = Parse_ruby.any_of_string str in
+      Ruby_to_generic.any any
+  | Lang.PHP ->
+      let any_cst = Parse_php.any_of_string str in
+      let any = Ast_php_build.any any_cst in
+      Php_to_generic.any any
+  | Lang.Csharp ->
+      failwith "No C# parser in pfff; use the one in tree-sitter"
+  | Lang.Kotlin ->
+      failwith "No Kotlin parser in pfff; use the one in tree-sitter"
+  | Lang.Cplusplus ->
+      failwith "No C++ generic parser in pfff; use the one in tree-sitter"
+  | Lang.Lua ->
+      failwith "No Lua generic parser in pfff; use the one in tree-sitter"
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

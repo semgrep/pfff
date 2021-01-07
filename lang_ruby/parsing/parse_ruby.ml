@@ -166,30 +166,31 @@ let parse_program file =
 
 (* for semgrep *)
 let any_of_string str =
-  Common2.with_tmp_file ~str ~ext:"rb" (fun file ->
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str ~ext:"rb" (fun file ->
 
-    Common.with_open_infile file (fun chan ->
-      let _toks, lexbuf, lexer = mk_lexer file chan in
-      try
-        (* -------------------------------------------------- *)
-        (* Call parser *)
-        (* -------------------------------------------------- *)
-        let lst =
-          (* GLR parsing can be very time consuming *)
-          Common.timeout_function 10 (fun () ->
-            Parser_ruby.sgrep_spatch_pattern lexer lexbuf
-          )
-        in
+      Common.with_open_infile file (fun chan ->
+        let _toks, lexbuf, lexer = mk_lexer file chan in
+        try
+          (* -------------------------------------------------- *)
+          (* Call parser *)
+          (* -------------------------------------------------- *)
+          let lst =
+            (* GLR parsing can be very time consuming *)
+            Common.timeout_function 10 (fun () ->
+              Parser_ruby.sgrep_spatch_pattern lexer lexbuf
+            )
+          in
 
-        (* check for ambiguous parse trees *)
-        let l = List.map fst lst in
-        let l' = HH.uniq_list (fun a b -> if Ast_ruby.equal_any a b then 0 else -1) l in
-        HH.do_fail "any" l' Ast_ruby.show_any;
+          (* check for ambiguous parse trees *)
+          let l = List.map fst lst in
+          let l' = HH.uniq_list (fun a b -> if Ast_ruby.equal_any a b then 0 else -1) l in
+          HH.do_fail "any" l' Ast_ruby.show_any;
 
-        let ast = List.hd l' in
-        ast
-      with (Dyp.Syntax_error
-           | Failure _ | Stack.Empty | Common.Timeout
-           ) as exn ->
-          raise exn
-    ))
+          let ast = List.hd l' in
+          ast
+        with (Dyp.Syntax_error
+             | Failure _ | Stack.Empty | Common.Timeout
+             ) as exn ->
+            raise exn
+      )))

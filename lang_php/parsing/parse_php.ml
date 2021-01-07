@@ -219,12 +219,13 @@ let parse_program ?pp file =
 (*****************************************************************************)
 
 let any_of_string s =
-  Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
-    let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING file in
-    let toks = Parsing_hacks_php.fix_tokens toks in
-    let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks is_comment in
-    Parser_php.sgrep_spatch_pattern lexer lexbuf_fake
-  )
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str:s ~ext:"java" (fun file ->
+      let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING file in
+      let toks = Parsing_hacks_php.fix_tokens toks in
+      let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks is_comment in
+      Parser_php.sgrep_spatch_pattern lexer lexbuf_fake
+    ))
 
 (*
  * todo: obsolete now with parse_any ? just redirect to parse_any ?
