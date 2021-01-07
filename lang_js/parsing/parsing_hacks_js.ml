@@ -52,6 +52,7 @@ module F = Ast_fuzzy
 (* Helpers *)
 (*****************************************************************************)
 
+(*
 (* obsolete *)
 let is_toplevel_keyword = function
   | T.T_IMPORT _ | T.T_EXPORT _
@@ -86,6 +87,7 @@ let rparens_of_if toks =
     )
   );
   !rparens_if
+*)
 
 (* alt: could have instead a better Ast_fuzzy type instead of putting
  * everything in the Tok category?
@@ -196,10 +198,17 @@ let fix_tokens_ASI xs =
 
   let f = (fun prev x ->
     (match prev, x with
+     (* continue
+      * <newline>
+     *)
      | (T.T_CONTINUE _ | T.T_BREAK _), _
        when TH.line_of_tok x <> TH.line_of_tok prev ->
          push_sc_before_x x;
-         (* very conservative; should be any last(left_hand_side_expression)
+
+         (* x
+          * ++
+          *
+          * very conservative; should be any last(left_hand_side_expression)
           * but for that better to rely on ASI via parse-error recovery;
           * no ambiguity like for continue because
           *    if(true) x
@@ -214,6 +223,7 @@ let fix_tokens_ASI xs =
     Common.push x res;
   ) in
 
+(*
   (* obsolete *)
   let rparens_if = rparens_of_if xs in
   let hrparens_if = Common.hashset_of_list rparens_if in
@@ -319,6 +329,7 @@ let fix_tokens_ASI xs =
         Common.push x res;
   )
   in
+*)
   match xs with
   | [] -> []
   | x::_ ->
