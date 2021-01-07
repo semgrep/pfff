@@ -92,11 +92,11 @@ let log_fixme kind gany =
   let opt_tok = Common2.hd_opt toks in
   match kind with
   | ToDo ->
-    log_warning opt_tok "Unsupported construct(s) may affect the accuracy of dataflow analyses"
+      log_warning opt_tok "Unsupported construct(s) may affect the accuracy of dataflow analyses"
   | Sgrep_construct ->
-    log_error opt_tok "Cannot translate Semgrep construct(s) into IL"
+      log_error opt_tok "Cannot translate Semgrep construct(s) into IL"
   | Impossible ->
-    log_error opt_tok "Impossible happened during AST-to-IL translation"
+      log_error opt_tok "Impossible happened during AST-to-IL translation"
 
 let fixme_exp kind gany eorig =
   log_fixme kind (G.E eorig);
@@ -423,11 +423,11 @@ and expr_aux env eorig =
         | _ -> None
       in
       (match opt_var_special with
-      | Some var_special ->
-        let lval = lval_of_base (VarSpecial (var_special, tok)) in
-        mk_e (Lvalue lval) eorig
-      | None ->
-        impossible (G.E eorig))
+       | Some var_special ->
+           let lval = lval_of_base (VarSpecial (var_special, tok)) in
+           mk_e (Lvalue lval) eorig
+       | None ->
+           impossible (G.E eorig))
 
 
 
@@ -503,13 +503,13 @@ and call_generic env tok e args =
   let eorig = G.Call (e, args) in
   let e = expr env e in
   (* In theory, instrs in args could have side effect on the value in 'e',
-  * but we will agglomerate all those instrs in the environment and
-  * the caller will call them in sequence (see expr_with_pre_instr).
-  * In theory, we should not execute those instrs before getting the
-  * value in 'e' in the caller, but for our static analysis purpose
-  * we should not care about those edge cases. That would require
-  * to return in expr multiple arguments and thread things around; Not
-  * worth it.
+   * but we will agglomerate all those instrs in the environment and
+   * the caller will call them in sequence (see expr_with_pre_instr).
+   * In theory, we should not execute those instrs before getting the
+   * value in 'e' in the caller, but for our static analysis purpose
+   * we should not care about those edge cases. That would require
+   * to return in expr multiple arguments and thread things around; Not
+   * worth it.
   *)
   let args = arguments env args in
   let lval = fresh_lval env tok in
