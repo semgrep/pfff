@@ -1073,6 +1073,7 @@ and keyword_attribute =
   (* for class fields *)
   | Public | Private | Protected
   | Abstract | Final
+  | Over (* override *)
   (* for vars (JS) *)
   | Var | Let
   (* for fields (kinda types) *)
@@ -1081,7 +1082,8 @@ and keyword_attribute =
   | Optional (* Typescript '?' *) | NotNull (* Typescript '!' *)
   (* for functions *)
   | Generator (* '*' in JS *) | Async
-  | Recursive | MutuallyRecursive
+  | Recursive | MutuallyRecursive 
+  | Inline
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
