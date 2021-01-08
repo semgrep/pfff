@@ -22,6 +22,8 @@ module T = Parser_js
 module TH   = Token_helpers_js
 module F = Ast_fuzzy
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -192,7 +194,9 @@ let fix_tokens_ASI xs =
   in
 
   let push_sc_before_x x =
-    let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
+    let info = TH.info_of_tok x in
+    let fake = Ast.fakeInfoAttach info in
+    logger#debug "ASI: insertion fake ';' before %s" (PI.string_of_info info);
     Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
   in
 
@@ -218,6 +222,40 @@ let fix_tokens_ASI xs =
      | (T.T_ID _ | T.T_FALSE _ | T.T_TRUE _), (T.T_INCR _ | T.T_DECR _)
        when TH.line_of_tok x <> TH.line_of_tok prev ->
          push_sc_before_x x;
+
+         (* Note that we would like to insert a ';' for semgrep patterns like:
+          * xxxx()
+          * ...
+          *
+          * But we can't because we also have patterns like
+          *  if($X)
+          *     ...
+          * in which case we don't want the semicolon.
+          * We need to rely on the parse-error-based ASI to handle this.
+          *
+          * Note that we used to support ellipsis in method chaining in semgrep
+          * with a single '...' such as '$o.foo() ... .bar()' but when you wrote:
+          *   $APP = express()
+          *   ...
+          * without the semicolon, it was interpreted as a method chaining
+          *   $APP = express() ...
+          * where we accept any method calls after express().
+          * Before 0.35 we did not support this feature, so when the parser found
+          *   $APP = express()
+          *   ...
+          * it internally first generated a parse error, and the ASI kicked in,
+          * but after 0.35 we did not generate a parse error,
+          * because it was a valid semgrep pattern, and so we don't get ASI
+          * to trigger.
+          * The only way to fix it is to change the syntax for method chaining
+          * to require an extra dot, to disambiguate.
+          *
+          * old: does not work:
+          * | (T.T_RPAREN _ | T.T_ID _), T.T_DOTS _
+          * when TH.line_of_tok x <> TH.line_of_tok prev &&!Flag_parsing.sgrep_mode
+          * -> push_sc_before_x x;
+         *)
+
      | _ -> ()
     );
     Common.push x res;
