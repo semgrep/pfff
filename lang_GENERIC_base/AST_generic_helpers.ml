@@ -139,6 +139,7 @@ let is_boolean_operator = function
   | LSL | LSR | ASR (* L = logic, A = Arithmetic, SL = shift left *)
   | BitOr | BitXor | BitAnd | BitNot | BitClear (* unary *)
   | Range | Nullish | NotNullPostfix | Elvis | Length
+  | RangeInclusive
     -> false
   | And | Or | Xor | Not
   | Eq     | NotEq

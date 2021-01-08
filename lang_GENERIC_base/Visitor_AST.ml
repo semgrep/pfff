@@ -124,6 +124,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | QDots v -> v_dotted_ident v
     | QTop t -> v_tok t
     | QExpr (e, t) -> v_expr e; v_tok t
+    | QType ty -> v_type_ ty
 
   and v_module_name =
     function
@@ -196,6 +197,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
          * against nested XmlXml elements *)
         v_expr (Xml v1)
 
+  and v_lifetime v = v_ident v
+
 
   and v_expr x =
     let k x =
@@ -261,6 +264,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | DeRef (t, v1) ->
           let t = v_tok t in
           let v1 = v_expr v1 in ()
+      | Metavar t ->
+          let t = v_tok t in ()
+      | MacroInvocation (n, ts) ->
+          let n = v_name n in
+          let ts = v_list v_any ts in ()
+      | StmtExpr v1 -> let v1 = v_stmt v1 in ()
       | OtherExpr (v1, v2) ->
           let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
     in
@@ -373,6 +382,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
              v_wrap v_bool v1;
              v_type_ v2
         )
+    | TypeBinding (ident, ty) ->
+        let ident = v_ident ident in
+        let ty = v_type_ ty in ()
+    | TypeLiteral lit ->
+        let lit = v_literal lit in ()
+    | TypeLifetime lt ->
+        let lt = v_lifetime lt in ()
+    | TypeBlock expr ->
+        let expr = v_expr expr in ()
 
   and v_other_type_operator _ = ()
 
@@ -380,7 +398,14 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     let v1 = v_ident v1 and v2 = v_type_parameter_constraints v2 in ()
   and v_type_parameter_constraints v = v_list v_type_parameter_constraint v
   and v_type_parameter_constraint =
-    function | Extends v1 -> let v1 = v_type_ v1 in ()
+    function
+    | Extends v1 -> let v1 = v_type_ v1 in ()
+    | TyParamLifetime
+    | TyParamMetavar -> ()
+    | TyParamOptional (v1, v2) ->
+        let v1 = v_type_parameter v1
+        and v2 = v_type_ v2 in ()
+    | TyParamConst v1 -> let v1 = v_type_ v1 in ()
   and v_attribute x =
     let k x =
       match x with
@@ -577,6 +602,22 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
             (match v2 with
              | (v1, v2) -> let v1 = v_ident v1 and v2 = v_id_info v2 in ())
           in ()
+      | PatRange (v1, _, v2) -> let v1 = v_pattern v1 and v2 = v_pattern v2 in ()
+      | PatName v1 -> let v1 = v_expr v1 in ()
+      | PatTupleStruct (v1, v2) ->
+          let v1 = v_name v1 in
+          let v2 = v_bracket (v_list v_pattern) v2 in ()
+      | PatStruct (v1, v2) ->
+          let v1 = v_name v1 in
+          let v2 = v_bracket (v_list (fun (a, b) -> v_name a; v_option v_pattern b)) v2
+          in ()
+      | PatRemaining v1 -> let v1 = v_tok v1 in ()
+      | PatRef (v1, v2) -> let v1 = v_tok v1 and v2 = v_pattern v2 in ()
+      | PatSlice v1 -> let v1 = v_bracket (v_list v_pattern) v1 in ()
+      | PatCapture (v1, v2) -> let v1 = v_ident v1 and v2 = v_pattern v2 in ()
+      | PatBorrow (v1, v2) -> let v1 = v_list v_attribute v1 and v2 = v_pattern v2 in ()
+      | PatMutable (v1, v2) -> let v1 = v_list v_attribute v1 and v2 = v_pattern v2 in ()
+      | PatConstBlock v1 -> let v1 = v_expr v1 in ()
 
       | PatWhen (v1, v2) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
       | OtherPat (v1, v2) ->
@@ -710,6 +751,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           v_tok v1; v_parameter_classic v2
       | ParamPattern v1 -> let v1 = v_pattern v1 in ()
       | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
+      | ParamEllided v1 -> let v1 = v_tok v1 in ()
       | OtherParam (v1, v2) ->
           let v1 = v_other_parameter_operator v1 and v2 = v_list v_any v2 in ()
     in

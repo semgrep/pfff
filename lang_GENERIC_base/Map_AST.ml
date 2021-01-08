@@ -83,6 +83,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | QDots v -> QDots (map_dotted_ident v)
     | QTop t -> QTop (map_tok t)
     | QExpr (e, t) -> let e = map_expr e in let t = map_tok t in QExpr(e, t)
+    | QType ty -> let ty = map_type_ ty in QType(ty)
 
   and map_module_name =
     function
@@ -160,6 +161,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | XmlText v1 -> let v1 = map_wrap map_of_string v1 in XmlText v1
     | XmlExpr v1 -> let v1 = map_expr v1 in XmlExpr v1
     | XmlXml v1 -> let v1 = map_xml v1 in XmlXml v1
+
+  and map_lifetime v = map_ident v
 
   and map_expr x =
     let k x = match x with
@@ -250,6 +253,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = map_expr v1 in DeRef (t, v1)
       | Ellipsis v1 -> let v1 = map_tok v1 in Ellipsis v1
       | DeepEllipsis v1 -> let v1 = map_bracket map_expr v1 in DeepEllipsis v1
+      | Metavar t -> let t = map_tok t in Metavar t
+      | MacroInvocation (n, ts) ->
+          let n = map_name n in
+          let ts = map_of_list map_any ts
+          in MacroInvocation (n, ts)
+      | StmtExpr v1 -> let v1 = map_stmt v1 in StmtExpr v1
       | OtherExpr (v1, v2) ->
           let v1 = map_other_expr_operator v1
           and v2 = map_of_list map_any v2
@@ -400,6 +409,19 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           map_of_option (fun (v1, v2) -> map_wrap map_of_bool v1, map_type_ v2) v2
         in
         TypeWildcard (v1, v2)
+    | TypeBinding (ident, ty) ->
+        let ident = map_ident ident in
+        let ty = map_type_ ty in
+        TypeBinding (ident, ty)
+    | TypeLiteral lit ->
+        let lit = map_literal lit in
+        TypeLiteral lit
+    | TypeLifetime lt ->
+        let lt = map_lifetime lt in
+        TypeLifetime lt
+    | TypeBlock expr ->
+        let expr = map_expr expr in
+        TypeBlock expr
 
   and map_other_type_operator x = x
 
@@ -622,6 +644,39 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
            | (v1, v2) ->
                let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2))
         in PatAs (v1, v2)
+    | PatRange (v1, v2, v3) ->
+        let v1 = map_pattern v1 in
+        let v3 = map_pattern v3 in
+        PatRange (v1, v2, v3)
+    | PatName v1 -> let v1 = map_expr v1 in PatName v1
+    | PatTupleStruct (v1, v2) ->
+        let v1 = map_name v1 in
+        let v2 = map_bracket (map_of_list map_pattern) v2 in
+        PatTupleStruct (v1, v2)
+    | PatStruct (v1, v2) ->
+        let v1 = map_name v1 in
+        let v2 = map_bracket (map_of_list (fun (a, b) ->
+          (map_name a, map_of_option map_pattern b))) v2 in
+        PatStruct (v1, v2)
+    | PatRemaining v1 -> let v1 = map_tok v1 in PatRemaining v1
+    | PatRef (v1, v2) ->
+        let v1 = map_tok v1 in
+        let v2 = map_pattern v2 in
+        PatRef (v1, v2)
+    | PatSlice v1 -> let v1 = map_bracket (map_of_list map_pattern) v1 in PatSlice v1
+    | PatCapture (v1, v2) ->
+        let v1 = map_ident v1 in
+        let v2 = map_pattern v2 in
+        PatCapture (v1, v2)
+    | PatBorrow (v1, v2) ->
+        let v1 = map_of_list map_attribute v1 in
+        let v2 = map_pattern v2 in
+        PatBorrow (v1, v2)
+    | PatMutable (v1, v2) ->
+        let v1 = map_of_list map_attribute v1 in
+        let v2 = map_pattern v2 in
+        PatMutable (v1, v2)
+    | PatConstBlock v1 -> let v1 = map_expr v1 in PatConstBlock v1
 
     | PatWhen (v1, v2) ->
         let v1 = map_pattern v1 and v2 = map_expr v2 in PatWhen (v1, v2)
@@ -697,7 +752,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     map_of_list map_type_parameter_constraint v
 
   and map_type_parameter_constraint =
-    function | Extends v1 -> let v1 = map_type_ v1 in Extends v1
+    function
+    | Extends v1 -> let v1 = map_type_ v1 in Extends v1
+    | TyParamLifetime -> TyParamLifetime
+    | TyParamMetavar -> TyParamMetavar
+    | TyParamOptional (v1, v2) ->
+        let v1 = map_type_parameter v1
+        and v2 = map_type_ v2
+        in TyParamOptional (v1, v2)
+    | TyParamConst v1 -> let v1 = map_type_ v1 in TyParamConst v1
 
   and map_function_kind x = x
 
@@ -733,6 +796,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = map_parameter_classic v1 in ParamHashSplat (v0, v1)
     | ParamPattern v1 -> let v1 = map_pattern v1 in ParamPattern v1
     | ParamEllipsis v1 -> let v1 = map_tok v1 in ParamEllipsis v1
+    | ParamEllided v1 -> let v1 = map_tok v1 in ParamEllided v1
     | OtherParam (v1, v2) ->
         let v1 = map_other_parameter_operator v1
         and v2 = map_of_list map_any v2

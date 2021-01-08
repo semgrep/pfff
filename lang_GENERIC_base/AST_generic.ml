@@ -203,6 +203,11 @@ type module_name =
 (*e: type [[AST_generic.module_name]] *)
 [@@deriving show { with_path = false }, eq] (* with tarzan *)
 
+(*s: type [[AST_generic.lifetime]] *)
+type lifetime = ident
+(*e: type [[AST_generic.lifetime]] *)
+[@@deriving show, eq]
+
 (* A single unique id: sid (uid would be a better name, but it usually
  * means "user id" for people).
  *
@@ -286,6 +291,7 @@ and qualifier =
   | QTop of tok (* ::, Ruby, C++, also '`' abuse for PolyVariant in OCaml *)
   | QDots of dotted_ident (* Java, OCaml *)
   | QExpr of expr * tok (* Ruby *)
+  | QType of type_ (* Rust *)
 (*e: type [[AST_generic.qualifier]] *)
 
 (* This is used to represent field names, where sometimes the name
@@ -477,6 +483,14 @@ and expr =
   (*s: [[AST_generic.expr]] OtherXxx case *)
   (* TODO: other_expr_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token *)
+
+  | Metavar of tok (* Rust macros *)
+  | MacroInvocation of name * any list (* Rust macros *)
+  (* In Rust, many constructs like if/for/blocks can be used as expressions. *)
+  (* This gets really annoying because the final expression can be conditional. *)
+  (* For now, the last ExprStmt in such a block counts as the final expression. *)
+  | StmtExpr of stmt
+
   | OtherExpr of other_expr_operator * any list
   (*e: [[AST_generic.expr]] OtherXxx case *)
 (*e: type [[AST_generic.expr]] *)
@@ -590,6 +604,7 @@ and operator =
   | RegexpMatch (* =~, Ruby (and Perl) *)
   | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
   | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
+  | RangeInclusive (* ..=, Rust *)
   | NotNullPostfix (* ! in Typescript, postfix operator *)
   | Length (* '#' in Lua *)
   (* See https://en.wikipedia.org/wiki/Elvis_operator.
@@ -943,6 +958,19 @@ and pattern =
   | PatWhen  of pattern * expr
   | PatAs    of pattern * (ident * id_info)
 
+  (* Rust *)
+  | PatRange of pattern * operator * pattern
+  | PatName of expr
+  | PatTupleStruct of name * pattern list bracket (* at least 2 elements *)
+  | PatStruct of name * (name * pattern option) list bracket
+  | PatRemaining of tok (* .. *)
+  | PatRef of tok * pattern
+  | PatSlice of pattern list bracket
+  | PatCapture of ident * pattern
+  | PatBorrow of attribute list * pattern
+  | PatMutable of attribute list * pattern
+  | PatConstBlock of expr
+
   (* For Go also in switch x.(type) { case int: ... } *)
   | PatType of type_
   (* In catch for Java/PHP, and foreach in Java.
@@ -1038,6 +1066,10 @@ and type_argument =
   (* Java only *)
   | TypeWildcard of tok (* '?' *) *
                     (bool wrap (* extends|super, true=super *) * type_) option
+  | TypeBinding of ident * type_ (* Rust *)
+  | TypeLiteral of literal (* Rust *)
+  | TypeLifetime of lifetime (* Rust *)
+  | TypeBlock of expr (* Rust *)
   (*e: type [[AST_generic.type_argument]] *)
 (*s: type [[AST_generic.other_type_argument_operator]] *)
 (*e: type [[AST_generic.other_type_argument_operator]] *)
@@ -1085,6 +1117,8 @@ and keyword_attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
+  (* Rust *)
+  | Borrowed | Move
   (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
@@ -1199,7 +1233,20 @@ and type_parameter = ident * type_parameter_constraint list
 (*s: type [[AST_generic.type_parameter_constraint]] *)
 and type_parameter_constraint =
   | Extends of type_
+  (* Rust *)
+  | TyParamLifetime
+  | TyParamMetavar
+  | TyParamOptional of type_parameter * type_ (* type parameter + default type *)
+  | TyParamConst of type_
   (*e: type [[AST_generic.type_parameter_constraint]] *)
+
+(*s: type [[AST_generic.trait_bound]] *)
+and trait_bound =
+  | TraitBoundType of type_
+  | TraitBoundLifetime of lifetime
+  | TraitBoundHigherRanked of type_parameter list * type_
+  | TraitBoundRemoved of type_
+(*e: type [[AST_generic.trait_bound]] *)
 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -1258,6 +1305,7 @@ and parameter =
   | ParamEllipsis of tok
   (*e: [[AST_generic.parameter]] semgrep extension cases *)
   (*s: [[AST_generic.parameter]] OtherXxx case *)
+  | ParamEllided of tok (* Rust closures *)
   | OtherParam of other_parameter_operator * any list
   (*e: [[AST_generic.parameter]] OtherXxx case *)
 (*e: type [[AST_generic.parameter]] *)

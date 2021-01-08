@@ -235,7 +235,7 @@ let visit_program
                   tag_id id (Parameter Def);
               | None -> ()
              )
-         | ParamEllipsis _ | OtherParam _ -> ()
+         | ParamEllipsis _ | OtherParam _ | ParamEllided _ -> ()
         );
         k x
       );

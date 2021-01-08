@@ -60,6 +60,7 @@ let rec vof_qualifier = function
   | QExpr (v1, v2) -> let v1 = vof_expr v1 in
       let v2 = vof_tok v2 in
       OCaml.VSum ("QExpr", [v1; v2])
+  | QType t -> let t = vof_type_ t in (OCaml.VSum ("QType", [ t ]))
 
 and vof_name (v1, v2) =
   let v1 = vof_ident v1 and v2 = vof_name_info v2 in OCaml.VTuple [ v1; v2 ]
@@ -133,6 +134,8 @@ and vof_xml_body =
       in OCaml.VSum ("XmlText", [ v1 ])
   | XmlExpr v1 -> let v1 = vof_expr v1 in OCaml.VSum ("XmlExpr", [ v1 ])
   | XmlXml v1 -> let v1 = vof_xml v1 in OCaml.VSum ("XmlXml", [ v1 ])
+
+and vof_lifetime v = vof_ident v
 
 
 and vof_expr =
@@ -243,6 +246,12 @@ and vof_expr =
       and v2 = vof_tok v2
       and v3 = vof_type_ v3
       in OCaml.VSum ("TypedMetavar", [ v1; v2; v3 ])
+  | Metavar v1 -> let v1 = vof_tok v1 in OCaml.VSum ("Metavar", [ v1 ])
+  | MacroInvocation (n, ts) ->
+      let n = vof_name n in
+      let ts = OCaml.vof_list vof_any ts
+      in OCaml.VSum ("MacroInvocation", [ n; ts ])
+  | StmtExpr v1 -> let v1 = vof_stmt v1 in OCaml.VSum ("StmtExpr", [ v1 ])
   | OtherExpr (v1, v2) ->
       let v1 = vof_other_expr_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -390,6 +399,7 @@ and vof_arithmetic_operator =
   | GtE -> OCaml.VSum ("GtE", [])
   | Cmp -> OCaml.VSum ("Cmp", [])
   | Length -> OCaml.VSum ("Length", [])
+  | RangeInclusive -> OCaml.VSum ("RangeInclusive", [])
 
 and vof_arguments v = vof_bracket (OCaml.vof_list vof_argument) v
 and vof_argument =
@@ -514,6 +524,16 @@ and vof_type_argument =
         OCaml.VTuple [v1; v2]
       ) v2 in
       OCaml.VSum ("TypeWildcard", [ v1; v2 ])
+  | TypeBinding (ident, ty) ->
+      let ident = vof_ident ident in
+      let ty = vof_type_ ty in
+      OCaml.VSum ("TypeBinding", [ ident; ty ])
+  | TypeLiteral lit ->
+      let lit = vof_literal lit in OCaml.VSum ("TypeLiteral", [ lit ])
+  | TypeLifetime lt ->
+      let lt = vof_lifetime lt in OCaml.VSum ("TypeLifetime", [ lt ])
+  | TypeBlock expr ->
+      let expr = vof_expr expr in OCaml.VSum ("TypeBlock", [ expr ])
 and vof_other_type_operator =
   function
   | OT_Todo -> OCaml.VSum ("OT_Todo", [])
@@ -547,6 +567,8 @@ and vof_keyword_attribute =
   | Setter -> OCaml.VSum ("Setter", [])
   | Optional -> OCaml.VSum ("Optional", [])
   | NotNull -> OCaml.VSum ("NotNull", [])
+  | Borrowed -> OCaml.VSum ("Borrowed", [])
+  | Move -> OCaml.VSum ("Move", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
@@ -833,6 +855,40 @@ and vof_pattern =
       let v1 = vof_pattern v1
       and v2 = vof_pattern v2
       in OCaml.VSum ("DisjPat", [ v1; v2 ])
+  | PatRange (v1, v2, v3) ->
+      let v1 = vof_pattern v1
+      and v2 = vof_arithmetic_operator v2
+      and v3 = vof_pattern v3
+      in OCaml.VSum ("PatRange", [ v1; v2; v3 ])
+  | PatName v1 -> let v1 = vof_expr v1 in OCaml.VSum ("PatName", [ v1 ])
+  | PatTupleStruct (v1, v2) ->
+      let v1 = vof_name v1
+      and v2 = vof_bracket (OCaml.vof_list vof_pattern) v2
+      in OCaml.VSum ("PatTupleStruct", [ v1; v2 ])
+  | PatStruct (v1, v2) ->
+      let v1 = vof_name v1
+      and v2 = vof_bracket (OCaml.vof_list (fun (a, b) ->
+        OCaml.VTuple [vof_name a; OCaml.vof_option vof_pattern b])) v2
+        in OCaml.VSum ("PatStruct", [ v1; v2 ])
+  | PatRemaining v1 -> let v1 = vof_tok v1 in OCaml.VSum ("PatRemaining", [ v1 ])
+  | PatRef (v1, v2) ->
+      let v1 = vof_tok v1
+      and v2 = vof_pattern v2
+      in OCaml.VSum ("PatRef" , [ v1; v2 ])
+  | PatSlice v1 -> let v1 = vof_bracket (OCaml.vof_list vof_pattern) v1 in OCaml.VSum ("PatSlice", [ v1 ])
+  | PatCapture (v1, v2) ->
+      let v1 = vof_ident v1
+      and v2 = vof_pattern v2
+      in OCaml.VSum ("PatCapture", [ v1; v2 ])
+  | PatBorrow (v1, v2) ->
+      let v1 = OCaml.vof_list vof_attribute v1
+      and v2 = vof_pattern v2
+      in OCaml.VSum ("PatBorrow", [ v1; v2 ])
+  | PatMutable (v1, v2) ->
+      let v1 = OCaml.vof_list vof_attribute v1
+      and v2 = vof_pattern v2
+      in OCaml.VSum ("PatMutable", [ v1; v2 ])
+  | PatConstBlock v1 -> let v1 = vof_expr v1 in OCaml.VSum ("PatConstBlock", [ v1 ])
   | OtherPat (v1, v2) ->
       let v1 = vof_other_pattern_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -928,6 +984,13 @@ and vof_type_parameter_constraints v =
 and vof_type_parameter_constraint =
   function
   | Extends v1 -> let v1 = vof_type_ v1 in OCaml.VSum ("Extends", [ v1 ])
+    | TyParamLifetime -> OCaml.VSum ("TyParamLifetime", [])
+    | TyParamMetavar -> OCaml.VSum ("TyParamMetavar", [])
+    | TyParamOptional (v1, v2) ->
+        let v1 = vof_type_parameter v1
+        and v2 = vof_type_ v2
+        in OCaml.VSum ("TyParamOptional", [ v1; v2 ])
+    | TyParamConst v1 -> let v1 = vof_type_ v1 in OCaml.VSum ("TyParamConst", [ v1 ])
 
 and vof_function_kind = function
   | Function -> OCaml.VSum ("Function", [])
@@ -973,6 +1036,8 @@ and vof_parameter =
       let v1 = vof_pattern v1 in OCaml.VSum ("ParamPattern", [ v1 ])
   | ParamEllipsis v1 ->
       let v1 = vof_tok v1 in OCaml.VSum ("ParamEllipsis", [ v1 ])
+  | ParamEllided v1 ->
+      let v1 = vof_tok v1 in OCaml.VSum ("ParamEllided", [ v1 ])
   | OtherParam (v1, v2) ->
       let v1 = vof_other_parameter_operator v1
       and v2 = OCaml.vof_list vof_any v2

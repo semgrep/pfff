@@ -483,6 +483,12 @@ and expr_aux env eorig =
   | G.Ref (_, _)
     -> todo (G.E eorig)
 
+  | G.Metavar _
+  | G.MacroInvocation (_, _)
+    -> todo (G.E eorig)
+  | G.StmtExpr _
+    -> todo (G.E eorig) (* TODO: needs to be finished *)
+
   | G.Ellipsis _ | G.TypedMetavar (_, _, _)| G.DisjExpr (_, _)
   | G.DeepEllipsis _ | G.DotAccessEllipsis _
     -> sgrep_construct (G.E eorig)
