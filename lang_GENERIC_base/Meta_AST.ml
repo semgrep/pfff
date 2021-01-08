@@ -533,7 +533,7 @@ and vof_keyword_attribute =
   | Protected -> OCaml.VSum ("Protected", [])
   | Abstract -> OCaml.VSum ("Abstract", [])
   | Final -> OCaml.VSum ("Final", [])
-  | Over -> OCaml.VSum ("Over", [])
+  | Override -> OCaml.VSum ("Over", [])
   | Var -> OCaml.VSum ("Var", [])
   | Let -> OCaml.VSum ("Let", [])
   | Const -> OCaml.VSum ("Const", [])

@@ -1073,7 +1073,7 @@ and keyword_attribute =
   (* for class fields *)
   | Public | Private | Protected
   | Abstract | Final
-  | Over (* override *)
+  | Override (* override *)
   (* for vars (JS) *)
   | Var | Let
   (* for fields (kinda types) *)
