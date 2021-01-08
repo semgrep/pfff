@@ -57,15 +57,22 @@ let empty_env () = {
 
 exception Fixme of fixme_kind * G.any
 
-(*s: function [[AST_to_IL.todo]] *)
-let todo any_generic =
-  raise (Fixme(ToDo, any_generic))
-(*e: function [[AST_to_IL.todo]] *)
+(*s: function [[AST_to_IL.error]] *)
+(*e: function [[AST_to_IL.error]] *)
+(*s: function [[AST_to_IL.warning]] *)
+(*e: function [[AST_to_IL.warning]] *)
+(*s: function [[AST_to_IL.error_any]] *)
+(*e: function [[AST_to_IL.error_any]] *)
 
 (*s: function [[AST_to_IL.sgrep_construct]] *)
 let sgrep_construct any_generic =
   raise (Fixme(Sgrep_construct, any_generic))
 (*e: function [[AST_to_IL.sgrep_construct]] *)
+
+(*s: function [[AST_to_IL.todo]] *)
+let todo any_generic =
+  raise (Fixme(ToDo, any_generic))
+(*e: function [[AST_to_IL.todo]] *)
 
 (*s: function [[AST_to_IL.impossible]] *)
 let impossible any_generic =
