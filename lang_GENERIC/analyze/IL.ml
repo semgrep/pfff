@@ -2,7 +2,7 @@
 (*s: pad/r2c copyright *)
 (* Yoann Padioleau
  *
- * Copyright (C) 2019-2020 r2c
+ * Copyright (C) 2019-2021 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -55,6 +55,8 @@ module G = AST_generic
  * error reported on the IL can be mapped back to error on the original code
  * (source "maps"), or more importantly semantic information computed
  * on the IL (e.g., types, constness) can be mapped back to the generic AST.
+ * This is why you will see some 'eorig', 'iorig' fields below and the use of
+ * refs such as constness shared with the generic AST.
  *
  * history:
  *  - cst_php.ml (was actually called ast_php.ml)
@@ -211,6 +213,7 @@ and exp_kind =
   (* This could be put in call_special, but dumped IL are then less readable
    * (they are too many intermediate _tmp variables then) *)
   | Operator of G.operator wrap * exp list
+
   | FixmeExp of fixme_kind * G.any
   (*e: type [[IL.exp_kind]] *)
 
@@ -248,9 +251,10 @@ and instr_kind =
   | AssignAnon of lval * anonymous_entity
   | Call of lval option * exp (* less: enforce lval? *) * argument list
   | CallSpecial of lval option * call_special wrap * argument list
-  | FixmeInstr of fixme_kind * G.any
   (* todo: PhiSSA! *)
-(*e: type [[IL.instr_kind]] *)
+
+  | FixmeInstr of fixme_kind * G.any
+  (*e: type [[IL.instr_kind]] *)
 
 (*s: type [[IL.call_special]] *)
 and call_special =
