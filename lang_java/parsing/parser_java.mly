@@ -413,6 +413,9 @@ bound: list_sep(reference_type, AND) { $1 }
 typed_metavar: "(" type_ IDENTIFIER ")"
    { Flag_parsing.sgrep_guard (TypedMetavar($3, $2))  }
 
+(* Note that 'primary' does not include the simple identifier (Name) case.
+ * 'postfix_expression' does.
+ *)
 primary:
  | primary_no_new_array       { $1 }
  | array_creation_expression  { $1 }
@@ -526,8 +529,8 @@ method_invocation:
  | name "." SUPER "." identifier "(" listc0(argument) ")"
 	{ Call (Dot (Name (name $1 @ [super_name1 $3]), $2, $5), ($6,$7,$8))}
  (* sgrep-ext: *)
- | primary "..."
-	{ ObjAccessEllipsis ($1, $2) }
+ | primary "." "..."    { ObjAccessEllipsis ($1, $2) }
+ | name    "." "..."    { ObjAccessEllipsis (fix_name $1, $2) }
 
 
 argument: expression { $1 }
