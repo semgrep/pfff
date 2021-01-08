@@ -1082,7 +1082,7 @@ and keyword_attribute =
   | Optional (* Typescript '?' *) | NotNull (* Typescript '!' *)
   (* for functions *)
   | Generator (* '*' in JS *) | Async
-  | Recursive | MutuallyRecursive 
+  | Recursive | MutuallyRecursive
   | Inline
   (* for methods *)
   | Ctor | Dtor
