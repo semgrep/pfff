@@ -485,6 +485,8 @@ and expr_aux env eorig =
 
   | G.Metavar _
   | G.MacroInvocation (_, _)
+  | G.Borrow _
+  | G.TryExpr _
     -> todo (G.E eorig)
 
   | G.Ellipsis _ | G.TypedMetavar (_, _, _)| G.DisjExpr (_, _)
@@ -738,6 +740,10 @@ let rec stmt_aux env st =
       let ss, e = expr_with_pre_stmts_opt env eopt in
       ss @ [mk_s (Return (tok, e))]
 
+  | G.BreakAndReturn (tok, _, eopt, _) ->
+      let ss, e = expr_with_pre_stmts_opt env eopt in
+      ss @ [mk_s (Return (tok, e))]
+
   | G.Assert (tok, e, eopt, _) ->
       let ss1, e' = expr_with_pre_stmts env e in
       let ss2, eopt' = expr_with_pre_stmts_opt env eopt in
@@ -763,9 +769,7 @@ let rec stmt_aux env st =
       let vtrue = G.Bool (true, tok) in
       let e' = mk_e (Literal vtrue) (G.L vtrue) in
       [mk_s (Loop (tok, e', st))]
-  | G.ImplBlock (_, _, _, _, stmt1)
-  | G.TraitBlock (_, _, _, _, _, stmt1) ->
-      stmt env stmt1
+  | G.ImplBlock (_, _, _, _, xs) -> xs |> List.map (stmt env) |> List.flatten
   | G.LetStmt (_, _, _, _, _) ->
       todo (G.S st) (* TODO *)
 

@@ -258,6 +258,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let n = map_name n in
           let ts = map_bracket (map_of_list (map_of_list map_any)) ts
           in MacroInvocation (n, ts)
+      | Borrow (t, v1, v2) ->
+          let t = map_tok t in
+          let v1 = map_of_option map_attribute v1 in
+          let v2 = map_expr v2
+          in Borrow (t, v1, v2)
+      | TryExpr (t, v1) ->
+          let t = map_tok t in
+          let v1 = map_expr v1
+          in TryExpr (t, v1)
       | OtherExpr (v1, v2) ->
           let v1 = map_other_expr_operator v1
           and v2 = map_of_list map_any v2
@@ -386,15 +395,35 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | TyPointer (t, v1) ->
         let t = map_tok t in
         let v1 = map_type_ v1 in TyPointer (t, v1)
-    | TyDyn (t, v1) ->
-        let t = map_tok t in
-        let v1 = map_type_ v1 in TyDyn (t, v1)
     | TyTuple v1 -> let v1 = map_bracket (map_of_list map_type_) v1 in
         TyTuple v1
     | TyQuestion (v1, t) ->
         let t = map_tok t in
         let v1 = map_type_ v1 in
         TyQuestion (v1, t)
+    | TyDyn (t, v1) ->
+        let t = map_tok t in
+        let v1 = map_type_ v1 in TyDyn (t, v1)
+    | TyPointerConstMut (t, v1, v2) ->
+        let t = map_tok t in
+        let v1 = map_attribute v1 in
+        let v2 = map_type_ v2 in
+        TyPointerConstMut (t, v1, v2)
+    | TyQualified (v1, v2, v3) ->
+        let v1 = map_type_ v1 in
+        let v2 = map_tok v2 in
+        let v3 = map_type_ v3 in
+        TyQualified (v1, v2, v3)
+    | TyReference (t, v1, v2, v3) ->
+        let t = map_tok t in
+        let v1 = map_of_option map_lifetime v1 in
+        let v2 = map_of_option map_attribute v2 in
+        let v3 = map_type_ v3 in
+        TyReference (t, v1, v2, v3)
+    | TyAbstract (t, v1) ->
+        let t = map_tok t in
+        let v1 = map_type_ v1 in
+        TyAbstract (t, v1)
     | OtherType (v1, v2) ->
         let v1 = map_other_type_operator v1
         and v2 = map_of_list map_any v2
@@ -545,16 +574,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
             let v2 = map_of_list map_type_parameter v2 in
             let v3 = map_of_option map_type_ v3 in
             let v4 = map_of_option map_where_clause v4 in
-            let v5 = map_stmt v5 in
+            let v5 = map_of_list map_stmt v5 in
             ImplBlock (v1, v2, v3, v4, v5)
-        | TraitBlock (v1, v2, v3, v4, v5, v6) ->
-            let v1 = map_of_list map_attribute v1 in
-            let v2 = map_ident v2 in
-            let v3 = map_of_list map_type_parameter v3 in
-            let v4 = map_of_list map_trait_bound v4 in
-            let v5 = map_of_option map_where_clause v5 in
-            let v6 = map_stmt v6 in
-            TraitBlock (v1, v2, v3, v4, v5, v6)
         | LetStmt (v1, v2, v3, v4, v5) ->
             let v1 = map_of_list map_attribute v1
             and v2 = map_pattern v2
@@ -562,6 +583,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
             and v4 = map_of_option map_expr v4
             and v5 = map_tok v5
             in LetStmt (v1, v2, v3, v4, v5)
+        | BreakAndReturn (t, v1, v2, v3) ->
+            let t = map_tok t in
+            let v1 = map_label_ident v1 in
+            let v2 = map_of_option map_expr v2 in
+            let v3 = map_tok v3
+            in BreakAndReturn (t, v1, v2, v3)
         | OtherStmt (v1, v2) ->
             let v1 = map_other_stmt_operator v1
             and v2 = map_of_list map_any v2
@@ -755,6 +782,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | ModuleDef v1 -> let v1 = map_module_definition v1 in ModuleDef v1
     | MacroDef v1 -> let v1 = map_macro_definition v1 in MacroDef v1
     | RustMacroDef v1 -> let v1 = map_rust_macro_definition v1 in RustMacroDef v1
+    | TraitDef v1 -> let v1 = map_trait_definition v1 in TraitDef v1
     | Signature v1 -> let v1 = map_type_ v1 in Signature v1
     | UseOuterDecl v1 -> let v1 = map_tok v1 in UseOuterDecl v1
     | OtherDef (v1, v2) ->
@@ -801,15 +829,24 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let tok = map_tok tok in
         RustMacPatBinding (ident, tok)
     | RustMacPatToken tok -> let tok = map_tok tok in RustMacPatToken tok
-  and map_rust_macro_rule { pattern = v_pattern; body = v_body } =
-    let v_pattern = map_of_list map_rust_macro_pattern v_pattern in
-    let v_body = map_bracket (map_of_list map_any) v_body in
-    { pattern = v_pattern; body = v_body }
+  and map_rust_macro_rule { rules = v_rules; body = v_body } =
+    let v_rules = map_of_list map_rust_macro_pattern v_rules in
+    let v_body = map_bracket (map_of_list (map_of_list map_any)) v_body in
+    { rules = v_rules; body = v_body }
   and
     map_rust_macro_definition (lb, xs, rb) =
     (map_tok lb, map_of_list map_rust_macro_rule xs, map_tok rb)
 
-  and map_type_parameter (v1, v2) =
+  and map_trait_definition {
+    trtyparams = v1; trattrs = v2; trbounds = v3; trwhere = v4; trbody = v5;} =
+  let v1 = map_of_list map_type_parameter v1 in
+  let v2 = map_of_list map_attribute v2 in
+  let v3 = map_of_list map_trait_bound v3 in
+  let v4 = map_of_option map_where_clause v4 in
+  let v5 = map_of_list map_stmt v5 in
+  { trtyparams = v1; trattrs = v2; trbounds = v3; trwhere = v4; trbody = v5; }
+
+and map_type_parameter (v1, v2) =
     let v1 = map_ident v1 and v2 = map_type_parameter_constraints v2 in (v1, v2)
 
   and map_type_parameter_constraints v =
@@ -825,6 +862,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         and v2 = map_type_ v2
         in TyParamOptional (v1, v2)
     | TyParamConst v1 -> let v1 = map_type_ v1 in TyParamConst v1
+    | TyParamConstrained (v1, v2) ->
+        let v1 = map_type_constraint_target v1 in
+        let v2 = map_of_list map_trait_bound v2
+        in TyParamConstrained (v1, v2)
+
+  and map_type_constraint_target =
+    function
+    | TCT_Lifetime v1 -> let v1 = map_lifetime v1 in TCT_Lifetime v1
+    | TCT_Type v1 -> let v1 = map_type_ v1 in TCT_Type v1
 
   and map_trait_bound =
     function
@@ -972,6 +1018,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = map_ident v1 and v2 = map_of_option map_expr v2 in OrEnum (v1, v2)
     | OrUnion (v1, v2) ->
         let v1 = map_ident v1 and v2 = map_type_ v2 in OrUnion (v1, v2)
+    | OrEnumStruct (v1, v2) ->
+        let v1 = map_ident v1 and v2 = map_bracket (map_of_list map_field) v2 in OrEnumStruct (v1, v2)
     | OtherOr (v1, v2) ->
         let v1 = map_other_or_type_element_operator v1
         and v2 = map_of_list map_any v2
@@ -1050,6 +1098,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = map_bracket (map_of_list map_directive) v1
         and v2 = map_of_option map_expr v2
         in ImportList (v1, v2)
+    | ExternModule (t, v1, v2) ->
+        let t = map_tok t in
+        let v1 = map_module_name v1
+        and v2 = map_of_option map_ident_and_id_info v2
+        in ExternModule (t, v1, v2)
 
   and map_ident_and_id_info (v1, v2) =
     let v1 = map_ident v1 in

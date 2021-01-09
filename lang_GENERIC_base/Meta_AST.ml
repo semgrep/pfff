@@ -251,6 +251,15 @@ and vof_expr =
       let n = vof_name n in
       let ts = vof_bracket (OCaml.vof_list (OCaml.vof_list vof_any)) ts
       in OCaml.VSum ("MacroInvocation", [ n; ts ])
+  | Borrow (t, v1, v2) ->
+      let t = vof_tok t in
+      let v1 = OCaml.vof_option vof_attribute v1 in
+      let v2 = vof_expr v2
+      in OCaml.VSum ("Borrow", [ t; v1; v2 ])
+  | TryExpr (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_expr v1
+      in OCaml.VSum("TryExpr", [ t; v1  ])
   | OtherExpr (v1, v2) ->
       let v1 = vof_other_expr_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -501,15 +510,35 @@ and vof_type_ =
   | TyPointer (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_type_ v1 in OCaml.VSum ("TyPointer", [ t; v1 ])
-  | TyDyn (t, v1) ->
-      let t = vof_tok t in
-      let v1 = vof_type_ v1 in OCaml.VSum ("TyDyn", [ t; v1 ])
   | TyTuple v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_type_) v1
       in OCaml.VSum ("TyTuple", [ v1 ])
   | TyQuestion (v1, t) ->
       let t = vof_tok t in
       let v1 = vof_type_ v1 in OCaml.VSum ("TyQuestion", [ t; v1 ])
+  | TyDyn (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in OCaml.VSum ("TyDyn", [ t; v1 ])
+  | TyPointerConstMut (t, v1, v2) ->
+      let t = vof_tok t in
+      let v1 = vof_attribute v1 in
+      let v2 = vof_type_ v2 in
+      OCaml.VSum("TyPointerConstMut", [ t; v1; v2 ])
+  | TyQualified (v1, v2, v3) ->
+      let v1 = vof_type_ v1 in
+      let v2 = vof_tok v2 in
+      let v3 = vof_type_ v3 in
+      OCaml.VSum("TyQualified", [ v1; v2; v3 ])
+  | TyReference (t, v1, v2, v3) ->
+      let t = vof_tok t in
+      let v1 = OCaml.vof_option vof_lifetime v1 in
+      let v2 = OCaml.vof_option vof_attribute v2 in
+      let v3 = vof_type_ v3 in
+      OCaml.VSum("TyReference", [ t; v1; v2; v3 ])
+  | TyAbstract (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in
+      OCaml.VSum("TyAbstract", [ t; v1 ])
   | OtherType (v1, v2) ->
       let v1 = vof_other_type_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -574,6 +603,8 @@ and vof_keyword_attribute =
   | VisSuper -> OCaml.VSum ("VisSuper", [])
   | Module -> OCaml.VSum ("Module", [])
   | Unsafe -> OCaml.VSum ("Unsafe", [])
+  | StaticRef -> OCaml.VSum ("StaticRef", [])
+  | DefaultImpl -> OCaml.VSum ("DefaultImpl", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
@@ -597,6 +628,7 @@ and vof_other_attribute_operator =
   | OA_AnnotThrow -> OCaml.VSum ("OA_AnnotThrow", [])
   | OA_Expr -> OCaml.VSum ("OA_Expr", [])
   | OA_Default -> OCaml.VSum ("OA_Default", [])
+  | OA_ExternQuantified -> OCaml.VSum ("OA_ExternQuantified", [])
 and vof_stmt st =
   (* todo: dump also the s_id? *)
   match st.s with
@@ -705,16 +737,8 @@ and vof_stmt st =
       let v2 = OCaml.vof_list vof_type_parameter v2 in
       let v3 = OCaml.vof_option vof_type_ v3 in
       let v4 = OCaml.vof_option vof_where_clause v4 in
-      let v5 = vof_stmt v5 in
+      let v5 = OCaml.vof_list vof_stmt v5 in
       OCaml.VSum ("ImplBlock", [ v1; v2; v3; v4; v5 ])
-  | TraitBlock (v1, v2, v3, v4, v5, v6) ->
-      let v1 = OCaml.vof_list vof_attribute v1 in
-      let v2 = vof_ident v2 in
-      let v3 = OCaml.vof_list vof_type_parameter v3 in
-      let v4 = OCaml.vof_list vof_trait_bound v4 in
-      let v5 = OCaml.vof_option vof_where_clause v5 in
-      let v6 = vof_stmt v6 in
-      OCaml.VSum ("TraitBlock", [ v1; v2; v3; v4; v5; v6 ])
   | LetStmt (v1, v2, v3, v4, v5) ->
       let v1 = OCaml.vof_list vof_attribute v1 in
       let v2 = vof_pattern v2 in
@@ -722,6 +746,12 @@ and vof_stmt st =
       let v4 = OCaml.vof_option vof_expr v4 in
       let v5 = vof_tok v5
       in OCaml.VSum ("LetStmt", [ v1; v2; v3; v4; v5 ])
+  | BreakAndReturn (t, v1, v2, v3) ->
+      let t = vof_tok t in
+      let v1 = vof_label_ident v1 in
+      let v2 = OCaml.vof_option vof_expr v2 in
+      let v3 = vof_tok v3
+      in OCaml.VSum("BreakAndReturn", [ t; v1; v2; v3 ])
   | OtherStmtWithStmt (v1, v2, v3) ->
       let v1 = vof_other_stmt_with_stmt_operator v1
       and v2 = OCaml.vof_option vof_expr v2
@@ -982,6 +1012,8 @@ and vof_definition_kind =
       let v1 = vof_macro_definition v1 in OCaml.VSum ("MacroDef", [ v1 ])
   | RustMacroDef v1 ->
       let v1 = vof_rust_macro_definition v1 in OCaml.VSum ("RustMacroDef", [ v1 ])
+  | TraitDef v1 ->
+      let v1 = vof_trait_definition v1 in OCaml.VSum ("TraitDef", [ v1 ])
   | Signature v1 ->
       let v1 = vof_type_ v1 in OCaml.VSum ("Signature", [ v1 ])
   | UseOuterDecl v1 ->
@@ -1040,21 +1072,29 @@ and vof_rust_macro_pattern =
   | RustMacPatToken tok ->
       let tok = vof_tok tok in
       OCaml.VSum ("RustMacPatToken", [ tok ])
-and vof_rust_macro_rule { pattern = v_pattern; body = v_body } =
+and vof_rust_macro_rule { rules = v_rules; body = v_body } =
   let bnds = [] in
-  let arg = OCaml.vof_list vof_rust_macro_pattern v_pattern in
+  let arg = OCaml.vof_list vof_rust_macro_pattern v_rules in
   let bnd = ("pattern", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_bracket (OCaml.vof_list vof_any) v_body in
+  let arg = vof_bracket (OCaml.vof_list (OCaml.vof_list vof_any)) v_body in
   let bnd = ("body", arg) in
   let bnds = bnd :: bnds in OCaml.VDict bnds
 
-and
-  vof_rust_macro_definition (lb, xs, rb) =
+and vof_rust_macro_definition (lb, xs, rb) =
   let lb = vof_tok lb in
   let xs = OCaml.vof_list vof_rust_macro_rule xs in
   let rb = vof_tok rb in
   OCaml.VList [ lb; xs; rb ]
+
+and vof_trait_definition {
+  trtyparams = v1; trattrs = v2; trbounds = v3; trwhere = v4; trbody = v5;} =
+  let v1 = OCaml.vof_list vof_type_parameter v1 in
+  let v2 = OCaml.vof_list vof_attribute v2 in
+  let v3 = OCaml.vof_list vof_trait_bound v3 in
+  let v4 = OCaml.vof_option vof_where_clause v4 in
+  let v5 = OCaml.vof_list vof_stmt v5 in
+  OCaml.VList [ v1; v2; v3; v4; v5 ]
 
 and vof_type_parameter (v1, v2) =
   let v1 = vof_ident v1
@@ -1072,6 +1112,14 @@ and vof_type_parameter_constraint =
         and v2 = vof_type_ v2
         in OCaml.VSum ("TyParamOptional", [ v1; v2 ])
     | TyParamConst v1 -> let v1 = vof_type_ v1 in OCaml.VSum ("TyParamConst", [ v1 ])
+    | TyParamConstrained (v1, v2) ->
+        let v1 = vof_type_constraint_target v1 in
+        let v2 = OCaml.vof_list vof_trait_bound v2
+        in OCaml.VSum("TyParamConstrained", [ v1; v2 ])
+and vof_type_constraint_target =
+  function
+  | TCT_Lifetime v1 -> let v1 = vof_lifetime v1 in OCaml.VSum("TCT_Lifetime", [ v1 ])
+  | TCT_Type v1 -> let v1 = vof_type_ v1 in OCaml.VSum("TCT_Type", [ v1 ])
 
 and vof_trait_bound =
   function
@@ -1236,6 +1284,7 @@ and vof_type_definition_kind =
 and vof_other_type_kind_operator =
   function
   | OTKO_AbstractType -> OCaml.VSum ("OTKO_AbstractType", [])
+  | OTKO_AssociatedType -> OCaml.VSum ("OTKO_AssociatedType", [])
 and vof_or_type_element =
   function
   | OrConstructor (v1, v2) ->
@@ -1250,6 +1299,10 @@ and vof_or_type_element =
       let v1 = vof_ident v1
       and v2 = vof_type_ v2
       in OCaml.VSum ("OrUnion", [ v1; v2 ])
+  | OrEnumStruct (v1, v2) ->
+      let v1 = vof_ident v1
+      and v2 = vof_bracket (OCaml.vof_list vof_field) v2
+      in OCaml.VSum("OrEnumStruct", [ v1; v2 ])
   | OtherOr (v1, v2) ->
       let v1 = vof_other_or_type_element_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -1334,6 +1387,11 @@ and vof_directive =
       let v1 = vof_bracket (OCaml.vof_list vof_directive) v1
       and v2 = OCaml.vof_option vof_expr v2
       in OCaml.VSum("ImportList", [ v1; v2 ])
+  | ExternModule (t, v1, v2) ->
+      let t = vof_tok t in
+      let v1 = vof_module_name v1
+      and v2 = OCaml.vof_option vof_ident_and_id_info v2
+      in OCaml.VSum ("ExternModule", [ t; v1; v2 ])
   | OtherDirective (v1, v2) ->
       let v1 = vof_other_directive_operator v1
       and v2 = OCaml.vof_list vof_any v2

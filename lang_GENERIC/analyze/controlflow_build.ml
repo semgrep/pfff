@@ -394,6 +394,10 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        * this new node *)
       None
 
+  (* TODO *)
+  | BreakAndReturn (_, _, _, _) ->
+      None
+
   | Continue (_, _TODOlabelid, _) | Break (_, _TODOlabelid, _) ->
 
       let is_continue, node =
@@ -640,10 +644,11 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       cfg_stmt_list state previ [stmts1; stmts2]
 
   (* TODO? *)
-  | LoopStmt (_, st)
-  | ImplBlock (_, _, _, _, st)
-  | TraitBlock (_, _, _, _, _, st) ->
+  | LoopStmt (_, st) ->
       cfg_stmt_list state previ [st]
+
+  | ImplBlock (_, _, _, _, stmts) ->
+      cfg_stmt_list state previ stmts
 
   (* for dataflow purpose, such definitions are really the same than
    * an assignment. Liveness analysis does not make any difference between

@@ -269,6 +269,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | MacroInvocation (n, ts) ->
           let n = v_name n in
           let ts = v_bracket (v_list (v_list v_any)) ts in ()
+      | Borrow (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_option v_attribute v1
+          and v2 = v_expr v2 in ()
+      | TryExpr (t, v1) ->
+          let t = v_tok t in
+          let v1 = v_expr v1 in ()
       | OtherExpr (v1, v2) ->
           let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
     in
@@ -360,11 +367,27 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | TyPointer (t, v1) ->
           let t = v_tok t in
           let v1 = v_type_ v1 in ()
+      | TyTuple v1 -> let v1 = v_bracket (v_list v_type_) v1 in ()
+      | TyQuestion (v1, t) ->
+          let t = v_tok t in
+          let v1 = v_type_ v1 in ()
       | TyDyn (t, v1) ->
           let t = v_tok t in
           let v1 = v_type_ v1 in ()
-      | TyTuple v1 -> let v1 = v_bracket (v_list v_type_) v1 in ()
-      | TyQuestion (v1, t) ->
+      | TyPointerConstMut (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_attribute v1 in
+          let v2 = v_type_ v2 in ()
+      | TyQualified (v1, v2, v3) ->
+          let v1 = v_type_ v1 in
+          let v2 = v_tok v2 in
+          let v3 = v_type_ v3 in ()
+      | TyReference (t, v1, v2, v3) ->
+          let t = v_tok t in
+          let v1 = v_option v_lifetime v1 in
+          let v2 = v_option v_attribute v2 in
+          let v3 = v_type_ v3 in ()
+      | TyAbstract (t, v1) ->
           let t = v_tok t in
           let v1 = v_type_ v1 in ()
       | OtherType (v1, v2) ->
@@ -408,6 +431,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = v_type_parameter v1
         and v2 = v_type_ v2 in ()
     | TyParamConst v1 -> let v1 = v_type_ v1 in ()
+    | TyParamConstrained (v1, v2) ->
+        let v1 = v_type_constraint_target v1 in
+        let v2 = v_list v_trait_bound v2 in ()
+  and v_type_constraint_target =
+    function
+    | TCT_Lifetime v1 -> let v1 = v_lifetime v1 in ()
+    | TCT_Type v1 -> let v1 = v_type_ v1 in ()
   and v_attribute x =
     let k x =
       match x with
@@ -557,20 +587,18 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v2 = v_list v_type_parameter v2 in
           let v3 = v_option v_type_ v3 in
           let v4 = v_option v_where_clause v4 in
-          let v5 = v_stmt v5 in ()
-      | TraitBlock (v1, v2, v3, v4, v5, v6) ->
-          let v1 = v_list v_attribute v1 in
-          let v2 = v_ident v2 in
-          let v3 = v_list v_type_parameter v3 in
-          let v4 = v_list v_trait_bound v4 in
-          let v5 = v_option v_where_clause v5 in
-          let v6 = v_stmt v6 in ()
+          let v5 = v_list v_stmt v5 in ()
       | LetStmt (v1, v2, v3, v4, v5) ->
           let v1 = v_list v_attribute v1
           and v2 = v_pattern v2
           and v3 = v_option v_type_ v3
           and v4 = v_option v_expr v4
           and v5 = v_tok v5 in ()
+      | BreakAndReturn (t, v1, v2, v3) ->
+          let t = v_tok t in
+          let v1 = v_label_ident v1 in
+          let v2 = v_option v_expr v2 in
+          let v3 = v_tok v3 in ()
       | OtherStmtWithStmt (v1, v2, v3) ->
           let v1 = v_other_stmt_with_stmt_operator v1
           and v2 = v_option v_expr v2
@@ -783,6 +811,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | ModuleDef v1 -> let v1 = v_module_definition v1 in ()
     | MacroDef v1 -> let v1 = v_macro_definition v1 in ()
     | RustMacroDef v1 -> let v1 = v_rust_macro_definition v1 in ()
+    | TraitDef v1 -> let v1 = v_trait_definition v1 in ()
     | Signature v1 -> let v1 = v_type_ v1 in ()
     | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
     | OtherDef (v1, v2) ->
@@ -893,6 +922,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
     | OrEnum (v1, v2) -> let v1 = v_ident v1 and v2 = v_option v_expr v2 in ()
     | OrUnion (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
+    | OrEnumStruct (v1, v2) ->
+        let v1 = v_ident v1
+        and v2 = v_bracket (v_list v_field) v2 in ()
     | OtherOr (v1, v2) ->
         let v1 = v_other_or_type_element_operator v1
         and v2 = v_list v_any v2
@@ -948,14 +980,22 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let ident = v_ident ident in
         let tok = v_tok tok in ()
     | RustMacPatToken tok -> let tok = v_tok tok in ()
-  and v_rust_macro_rule { pattern = v_pattern; body = v_body } =
-    let v_pattern = v_list v_rust_macro_pattern v_pattern in
-    let v_body = v_bracket (v_list v_any) v_body in ()
+  and v_rust_macro_rule { rules = v_rules; body = v_body } =
+    let v_rules = v_list v_rust_macro_pattern v_rules in
+    let v_body = v_bracket (v_list (v_list v_any)) v_body in ()
   and
     v_rust_macro_definition (lb, xs, rb) =
     let lb = v_tok lb in
     let xs = v_list v_rust_macro_rule xs in
     let rb = v_tok rb in ()
+
+  and v_trait_definition {
+    trtyparams = v1; trattrs = v2; trbounds = v3; trwhere = v4; trbody = v5;} =
+    let v1 = v_list v_type_parameter v1 in
+    let v2 = v_list v_attribute v2 in
+    let v3 = v_list v_trait_bound v3 in
+    let v4 = v_option v_where_clause v4 in
+    let v5 = v_list v_stmt v5 in ()
 
   and v_directive x =
     let k x =
@@ -989,6 +1029,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | ImportList (v1, v2) ->
           let v1 = v_bracket (v_list v_directive) v1
           and v2 = v_option v_expr v2 in ()
+      | ExternModule (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_module_name v1 and v2 = v_option v_ident_and_id_info v2 in ()
       | OtherDirective (v1, v2) ->
           let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
     in

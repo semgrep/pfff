@@ -133,6 +133,8 @@ let rec visit_expr hook lhs expr =
 
   | DeRef (_, e) -> recr e
   | Ref (_, e) -> recr e
+  | Borrow (_, _, e) -> recr e
+  | TryExpr (_, e) -> recr e
 
   (* otherwise regular recurse (could use a visitor) *)
 

@@ -487,6 +487,8 @@ and expr =
   (* Rust *)
   | Metavar of tok (* Rust macros *)
   | MacroInvocation of name * any list list bracket (* Rust macros *)
+  | Borrow of tok (* & *) * attribute option (* mut *) * expr
+  | TryExpr of tok * expr
 
   | OtherExpr of other_expr_operator * any list
   (*e: [[AST_generic.expr]] OtherXxx case *)
@@ -818,18 +820,13 @@ and stmt_kind =
   | IfLet of tok (* 'if' or 'elif' *) * pattern * expr * stmt * stmt option
   | WhileLet of tok * pattern * expr * stmt
   | LoopStmt of tok * stmt
+  | LetStmt of attribute list * pattern * type_ option * expr option * sc
   | ImplBlock of attribute list
                  * type_parameter list
                  * type_ option (* trait *)
                  * where_clause option
-                 * stmt
-  | TraitBlock of attribute list
-                  * ident
-                  * type_parameter list
-                  * trait_bound list
-                  * where_clause option
-                  * stmt
-  | LetStmt of attribute list * pattern * type_ option * expr option * sc
+                 * stmt list
+  | BreakAndReturn of tok * label_ident * expr option * sc
 
   | OtherStmt of other_stmt_operator * any list
   (*e: [[AST_generic.stmt]] OtherXxx case *)
@@ -1068,6 +1065,10 @@ and type_ =
 
   (* Rust *)
   | TyDyn of tok (* dyn *) * type_
+  | TyPointerConstMut of tok * attribute (* const/mut *) * type_
+  | TyQualified of type_ * tok (* as *) * type_
+  | TyReference of tok * lifetime option * attribute option (* mut *) * type_
+  | TyAbstract of tok (* impl *) * type_
 
   (* sgrep-ext: *)
   | TyEllipsis of tok
@@ -1141,7 +1142,8 @@ and keyword_attribute =
   | Ctor | Dtor
   | Getter | Setter
   (* Rust *)
-  | Borrowed | Move | Unsafe
+  | Borrowed | Move | Unsafe | StaticRef
+  | DefaultImpl (* "default fn" (RFC 1210) *)
   (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
@@ -1149,6 +1151,8 @@ and other_attribute_operator =
   (* Java *)
   | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native | OA_Default
   | OA_AnnotThrow
+  (* Rust *)
+  | OA_ExternQuantified (* extern "C" { ... } *)
   (* Other *)
   | OA_Expr (* todo: Python/Rust, should transform in NamedAttr when can *)
 (*e: type [[AST_generic.other_attribute_operator]] *)
@@ -1242,6 +1246,9 @@ and definition_kind =
   *)
   | UseOuterDecl of tok (* 'global' or 'nonlocal' in Python, 'use' in PHP *)
 
+  (* Rust *)
+  | TraitDef of trait_definition
+
   | OtherDef of other_def_operator * any list
   (*e: [[AST_generic.definition_kind]] other cases *)
 
@@ -1262,7 +1269,14 @@ and type_parameter_constraint =
   | TyParamMetavar
   | TyParamOptional of type_parameter * type_ (* type parameter + default type *)
   | TyParamConst of type_
+  | TyParamConstrained of type_constraint_target * trait_bound list
   (*e: type [[AST_generic.type_parameter_constraint]] *)
+
+(*s: type [[AST_generic.type_parameter_constraint_target]] *)
+and type_constraint_target =
+  | TCT_Lifetime of lifetime
+  | TCT_Type of type_
+(*e: type [[AST_generic.type_parameter_constraint_target]] *)
 
 (* Rust *)
 
@@ -1438,6 +1452,8 @@ and or_type_element =
   | OrEnum of ident * expr option
   (* Java? *)
   | OrUnion of ident * type_
+  (* Rust *)
+  | OrEnumStruct of ident * field list bracket
 
   | OtherOr of other_or_type_element_operator * any list
   (*e: type [[AST_generic.or_type_element]] *)
@@ -1481,6 +1497,8 @@ and field =
 and other_type_kind_operator =
   (* OCaml *)
   | OTKO_AbstractType
+  (* Rust *)
+  | OTKO_AssociatedType (* found in trait definitions *)
   (*e: type [[AST_generic.other_type_kind_operator]] *)
 
 (* ------------------------------------------------------------------------- *)
@@ -1556,8 +1574,8 @@ and rust_macro_definition = rust_macro_rule list bracket
 
 (*s: type [[AST_generic.rust_macro_rule]] *)
 and rust_macro_rule = {
-  pattern: rust_macro_pattern list;
-  body: any list bracket;
+  rules: rust_macro_pattern list;
+  body: any list list bracket;
 }
 (*e: type [[AST_generic.rust_macro_rule]] *)
 
@@ -1569,6 +1587,19 @@ and rust_macro_pattern =
   | RustMacPatToken of tok
 (*e: type [[AST_generic.rust_macro_pattern]] *)
 
+(* ------------------------------------------------------------------------- *)
+(* Trait definition *)
+(* ------------------------------------------------------------------------- *)
+(* Used by Rust *)
+(*s: type [[AST_generic.trait_definition]] *)
+and trait_definition = {
+  trtyparams: type_parameter list;
+  trattrs: attribute list;
+  trbounds: trait_bound list;
+  trwhere: where_clause option;
+  trbody: stmt list
+}
+(*e: type [[AST_generic.trait_definition]] *)
 
 (*****************************************************************************)
 (* Directives (Module import/export, package) *)
@@ -1607,6 +1638,7 @@ and directive =
   | ImportFromExpr of tok * expr * alias option
   | ImportAllExpr of tok * expr option * tok
   | ImportList of directive list bracket * expr option (* scope *)
+  | ExternModule of tok * module_name * alias option (* extern crate *)
 (*e: type [[AST_generic.directive]] *)
 
 (*s: type [[AST_generic.alias]] *)
