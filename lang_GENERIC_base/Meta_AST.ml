@@ -251,7 +251,6 @@ and vof_expr =
       let n = vof_name n in
       let ts = OCaml.vof_list vof_any ts
       in OCaml.VSum ("MacroInvocation", [ n; ts ])
-  | StmtExpr v1 -> let v1 = vof_stmt v1 in OCaml.VSum ("StmtExpr", [ v1 ])
   | OtherExpr (v1, v2) ->
       let v1 = vof_other_expr_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -569,6 +568,8 @@ and vof_keyword_attribute =
   | NotNull -> OCaml.VSum ("NotNull", [])
   | Borrowed -> OCaml.VSum ("Borrowed", [])
   | Move -> OCaml.VSum ("Move", [])
+  | VisSuper -> OCaml.VSum ("VisSuper", [])
+  | Module -> OCaml.VSum ("Module", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
@@ -614,11 +615,24 @@ and vof_stmt st =
       and v2 = vof_stmt v2
       and v3 = OCaml.vof_option vof_stmt v3
       in OCaml.VSum ("If", [ t; v1; v2; v3 ])
+  | IfLet (t, v1, v2, v3, v4) ->
+      let t = vof_tok t in
+      let v1 = vof_pattern v1
+      and v2 = vof_expr v2
+      and v3 = vof_stmt v3
+      and v4 = OCaml.vof_option vof_stmt v4
+      in OCaml.VSum ("IfLet", [ t; v1; v2; v3; v4 ])
   | While (t, v1, v2) ->
       let t = vof_tok t in
       let v1 = vof_expr v1
       and v2 = vof_stmt v2
       in OCaml.VSum ("While", [ t; v1; v2 ])
+  | WhileLet (t, v1, v2, v3) ->
+      let t = vof_tok t in
+      let v1 = vof_pattern v1
+      and v2 = vof_expr v2
+      and v3 = vof_stmt v3
+      in OCaml.VSum ("WhileLet", [ t; v1; v2; v3 ])
   | DoWhile (t, v1, v2) ->
       let t = vof_tok t in
       let v1 = vof_stmt v1
@@ -678,6 +692,10 @@ and vof_stmt st =
       let v2 = OCaml.vof_option vof_expr v2 in
       let sc = vof_tok sc in
       OCaml.VSum ("Assert", [ t; v1; v2; sc ])
+  | LoopStmt (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_stmt v1 in
+      OCaml.VSum ("LoopStmt", [ t; v1 ])
   | OtherStmtWithStmt (v1, v2, v3) ->
       let v1 = vof_other_stmt_with_stmt_operator v1
       and v2 = OCaml.vof_option vof_expr v2
@@ -897,6 +915,7 @@ and vof_other_pattern_operator =
   function
   | OP_Todo -> OCaml.VSum ("OP_Todo", [])
   | OP_Expr -> OCaml.VSum ("OP_Expr", [])
+  | OP_MacroInvocation -> OCaml.VSum ("OP_MacroInvocation", [])
 and vof_definition (v1, v2) =
   let v1 = vof_entity v1
   and v2 = vof_definition_kind v2
@@ -934,6 +953,8 @@ and vof_definition_kind =
       let v1 = vof_module_definition v1 in OCaml.VSum ("ModuleDef", [ v1 ])
   | MacroDef v1 ->
       let v1 = vof_macro_definition v1 in OCaml.VSum ("MacroDef", [ v1 ])
+  | RustMacroDef v1 ->
+      let v1 = vof_rust_macro_definition v1 in OCaml.VSum ("RustMacroDef", [ v1 ])
   | Signature v1 ->
       let v1 = vof_type_ v1 in OCaml.VSum ("Signature", [ v1 ])
   | UseOuterDecl v1 ->
@@ -974,6 +995,39 @@ and
   let arg = OCaml.vof_list vof_ident v_macroparams in
   let bnd = ("macroparams", arg) in
   let bnds = bnd :: bnds in OCaml.VDict bnds
+
+and vof_rust_macro_pattern =
+  function
+  | RustMacPatTree pats ->
+      let pats = OCaml.vof_list vof_rust_macro_pattern pats in
+      OCaml.VSum ("RustMacPatTree", [ pats ])
+  | RustMacPatRepetition (pats, ident, tok) ->
+      let pats = vof_bracket (OCaml.vof_list vof_rust_macro_pattern) pats in
+      let ident = vof_ident ident in
+      let tok = vof_tok tok in
+      OCaml.VSum ("RustMacPatRepetition", [ pats; ident; tok ])
+  | RustMacPatBinding (ident, tok) ->
+      let ident = vof_ident ident in
+      let tok = vof_tok tok in
+      OCaml.VSum ("RustMacPatBinding", [ ident; tok ])
+  | RustMacPatToken tok ->
+      let tok = vof_tok tok in
+      OCaml.VSum ("RustMacPatToken", [ tok ])
+and vof_rust_macro_rule { pattern = v_pattern; body = v_body } =
+  let bnds = [] in
+  let arg = OCaml.vof_list vof_rust_macro_pattern v_pattern in
+  let bnd = ("pattern", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_bracket (OCaml.vof_list vof_any) v_body in
+  let bnd = ("body", arg) in
+  let bnds = bnd :: bnds in OCaml.VDict bnds
+
+and
+  vof_rust_macro_definition (lb, xs, rb) =
+  let lb = vof_tok lb in
+  let xs = OCaml.vof_list vof_rust_macro_rule xs in
+  let rb = vof_tok rb in
+  OCaml.VList [ lb; xs; rb ]
 
 and vof_type_parameter (v1, v2) =
   let v1 = vof_ident v1
@@ -1264,3 +1318,11 @@ and vof_any =
   | Pr v1 -> let v1 = vof_program v1 in OCaml.VSum ("Pr", [ v1 ])
   | Lbli v1 -> let v1 = vof_label_ident v1 in OCaml.VSum ("Lbli", [v1])
   | IoD v1 -> let v1 = vof_ident_or_dynamic v1 in OCaml.VSum ("IoD", [v1])
+  | MacTkTree v1 ->
+      let v1 = vof_bracket (OCaml.vof_list (OCaml.vof_list vof_any)) v1 in
+      OCaml.VSum ("MacTkTree", [ v1 ])
+  | MacTks (v1, v2, v3) ->
+      let v1 = vof_bracket (OCaml.vof_list (OCaml.vof_list vof_any)) v1 in
+      let v2 = OCaml.vof_option vof_ident v2 in
+      let v3 = vof_tok v3 in
+      OCaml.VSum ("MacTks", [ v1; v2; v3 ])

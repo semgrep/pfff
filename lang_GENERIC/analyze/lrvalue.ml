@@ -81,14 +81,6 @@ let rec visit_expr hook lhs expr =
   in
 
 
-  let recr_last_expr_stmt stmts =
-    (match List.rev stmts with
-     | x::_xs -> (match x.s with
-       | ExprStmt (expr, _) -> recr expr
-       | _ -> ())
-     | _ -> ())
-  in
-
   match expr with
   (* the leaf *)
 
@@ -215,26 +207,7 @@ let rec visit_expr hook lhs expr =
 
   | Seq xs -> List.iter recr xs
 
-  | StmtExpr stmt ->
-      (* This is a special case for Rust. *)
-
-      (* In Rust, you are able to use many constructs like if/for blocks that
-         would normally be statements as expressions, by placing an expression
-         as the last item of a block. This is a bit annoying since you have to
-         account for every construct in which you can put an expression as the
-         last item of a block. *)
-
-      (* Also, whether or not a semicolon is added to the final item in the
-         block affects whether or not it is treated as the overall expression of
-         the block, so we have to be careful that it is disambiguated correctly.
-         *)
-
-      (* TODO add the rest *)
-      (match stmt.s with
-      | Block (_, stmts, _) -> recr_last_expr_stmt stmts
-      | _ -> ())
-
-      (* we should not be called on a sgrep pattern *)
+  (* we should not be called on a sgrep pattern *)
   | TypedMetavar (_id, _, _t) -> raise Impossible
   | DisjExpr _ -> raise Impossible
   | DeepEllipsis _ | DotAccessEllipsis _ -> raise Impossible

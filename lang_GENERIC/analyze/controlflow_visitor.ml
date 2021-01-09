@@ -55,7 +55,9 @@ let mk_visitor vin =
 
     (* expr *)
     | F.IfHeader expr
+    | F.IfLetHeader (_, expr)
     | F.WhileHeader expr
+    | F.WhileLetHeader (_, expr)
     | F.DoWhileTail expr
     | F.SwitchHeader (Some expr)
     | F.Throw expr
@@ -87,7 +89,9 @@ let exprs_of_node node =
 
   (* expr *)
   | IfHeader expr
+  | IfLetHeader (_, expr)
   | WhileHeader expr
+  | WhileLetHeader (_, expr)
   | DoWhileTail expr
   | SwitchHeader (Some expr)
   | Throw expr

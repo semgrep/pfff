@@ -486,8 +486,6 @@ and expr_aux env eorig =
   | G.Metavar _
   | G.MacroInvocation (_, _)
     -> todo (G.E eorig)
-  | G.StmtExpr _
-    -> todo (G.E eorig) (* TODO: needs to be finished *)
 
   | G.Ellipsis _ | G.TypedMetavar (_, _, _)| G.DisjExpr (_, _)
   | G.DeepEllipsis _ | G.DotAccessEllipsis _
@@ -651,7 +649,8 @@ let rec stmt_aux env st =
 
   | G.Block xs -> xs |> G.unbracket |> List.map (stmt env) |> List.flatten
 
-  | G.If (tok, e, st1, st2) ->
+  | G.If (tok, e, st1, st2)
+  | G.IfLet (tok, _, e, st1, st2) ->
       let ss, e' = expr_with_pre_stmts env e in
       let st1 = stmt env st1 in
       let st2 = List.map (stmt env) (st2 |> Common.opt_to_list) |>List.flatten in
@@ -659,7 +658,8 @@ let rec stmt_aux env st =
 
   | G.Switch (_, _, _) -> todo (G.S st)
 
-  | G.While(tok, e, st) ->
+  | G.While(tok, e, st)
+  | G.WhileLet(tok, _, e, st) ->
       let ss, e' = expr_with_pre_stmts env e in
       let st = stmt env st in
       ss @ [mk_s (Loop (tok, e', st @ ss))]
@@ -757,6 +757,12 @@ let rec stmt_aux env st =
       let stmt1 = stmt env stmt1 in
       let stmt2 = stmt env stmt2 in
       stmt1 @ stmt2
+  | G.LoopStmt (tok, stmt1) ->
+      let st = stmt env stmt1 in
+      (* Always loops forever *)
+      let vtrue = G.Bool (true, tok) in
+      let e' = mk_e (Literal vtrue) (G.L vtrue) in
+      [mk_s (Loop (tok, e', st))]
 
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)

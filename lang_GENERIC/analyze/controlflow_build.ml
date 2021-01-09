@@ -138,7 +138,8 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
       cfg_stmt_list state previ stmts
 
   | For _
-  | While _ ->
+  | While _
+  | WhileLet _ ->
       (* previ -> newi ---> newfakethen -> ... -> finalthen -
        *             |---|-----------------------------------|
        *                 |-> newfakelse
@@ -147,6 +148,8 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
         (match stmt.s with
          | While (_, e, stmt) ->
              F.WhileHeader e, stmt
+         | WhileLet (_, pat, e, stmt) ->
+             F.WhileLetHeader (pat, e), stmt
          | For (_, forheader, stmt) ->
              (match forheader with
               | ForClassic _ -> raise Todo
@@ -316,6 +319,45 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
        * The lasti can be a Join when there is no return in either branch.
       *)
       let newi = state.g#add_node { F.n = F.IfHeader e;i=i() } in
+      state.g |> add_arc_opt (previ, newi);
+
+      let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+      let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
+      state.g |> add_arc (newi, newfakethen);
+      state.g |> add_arc (newi, newfakeelse);
+
+      let finalthen = cfg_stmt state (Some newfakethen) st_then in
+      let finalelse =
+        match st_else with
+        | None -> None
+        | Some st -> cfg_stmt state (Some newfakeelse) st
+      in
+
+      (match finalthen, finalelse with
+       | None, None ->
+           (* probably a return in both branches *)
+           None
+       | Some nodei, None
+       | None, Some nodei ->
+           Some nodei
+       | Some n1, Some n2 ->
+           let lasti = state.g#add_node { F.n = F.Join;i=None } in
+           state.g |> add_arc (n1, lasti);
+           state.g |> add_arc (n2, lasti);
+           Some lasti
+      )
+
+  | IfLet (_, pat, e, st_then, st_else) ->
+      (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
+       *                |                                     |
+       *                |->  newfakeelse -> ... -> finalelse -|
+       *
+       * Can generate either special nodes for elseif, or just consider
+       * elseif as syntactic sugar that translates into regular ifs, which
+       * is what I do for now.
+       * The lasti can be a Join when there is no return in either branch.
+      *)
+      let newi = state.g#add_node { F.n = F.IfLetHeader (pat, e);i=i() } in
       state.g |> add_arc_opt (previ, newi);
 
       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
@@ -627,6 +669,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
   | ExprStmt _
   | Assert _
   | DirectiveStmt _
+  | LoopStmt _
   | OtherStmt _
     -> cfg_simple_node state previ stmt
 

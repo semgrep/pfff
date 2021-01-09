@@ -10,7 +10,9 @@ and node_kind =
   | Join
 
   | IfHeader of expr
+  | IfLetHeader of pattern * expr
   | WhileHeader of expr
+  | WhileLetHeader of pattern * expr
   | DoHeader | DoWhileTail of expr
   | ForHeader (*TODO*) | ForeachHeader of pattern * expr
   | OtherStmtWithStmtHeader of other_stmt_with_stmt_operator * expr option

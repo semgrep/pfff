@@ -269,7 +269,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | MacroInvocation (n, ts) ->
           let n = v_name n in
           let ts = v_list v_any ts in ()
-      | StmtExpr v1 -> let v1 = v_stmt v1 in ()
       | OtherExpr (v1, v2) ->
           let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
     in
@@ -457,9 +456,22 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v2 = v_stmt v2
           and v3 = v_option v_stmt v3 in
           ()
+      | IfLet (t, v1, v2, v3, v4) ->
+          v_partial ~recurse:false (PartialIf (t, v2));
+          let t = v_tok t in
+          let v1 = v_pattern v1 in
+          let v2 = v_expr v2
+          and v3 = v_stmt v3
+          and v4 = v_option v_stmt v4 in
+          ()
       | While (t, v1, v2) ->
           let t = v_tok t in
           let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+      | WhileLet (t, v1, v2, v3) ->
+          let t = v_tok t in
+          let v1 = v_pattern v1
+          and v2 = v_expr v2
+          and v3 = v_stmt v3 in ()
       | DoWhile (t, v1, v2) ->
           let t = v_tok t in
           let v1 = v_stmt v1 and v2 = v_expr v2 in ()
@@ -506,6 +518,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let t = v_tok t in
           let v1 = v_expr v1 and v2 = v_option v_expr v2 in
           v_tok sc
+      | LoopStmt (t, v1) ->
+          let t = v_tok t in
+          let v1 = v_stmt v1 in ()
       | OtherStmtWithStmt (v1, v2, v3) ->
           let v1 = v_other_stmt_with_stmt_operator v1
           and v2 = v_option v_expr v2
@@ -717,6 +732,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | TypeDef v1 -> let v1 = v_type_definition v1 in ()
     | ModuleDef v1 -> let v1 = v_module_definition v1 in ()
     | MacroDef v1 -> let v1 = v_macro_definition v1 in ()
+    | RustMacroDef v1 -> let v1 = v_rust_macro_definition v1 in ()
     | Signature v1 -> let v1 = v_type_ v1 in ()
     | UseOuterDecl v1 -> let v1 = v_tok v1 in ()
     | OtherDef (v1, v2) ->
@@ -866,6 +882,27 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     let arg = v_list v_ident v_macroparams in
     let arg = v_list v_any v_macrobody in ()
 
+  and v_rust_macro_pattern =
+    function
+    | RustMacPatTree pats ->
+        let pats = v_list v_rust_macro_pattern pats in ()
+    | RustMacPatRepetition (pats, ident, tok) ->
+        let pats = v_bracket (v_list v_rust_macro_pattern) pats in
+        let ident = v_ident ident in
+        let tok = v_tok tok in ()
+    | RustMacPatBinding (ident, tok) ->
+        let ident = v_ident ident in
+        let tok = v_tok tok in ()
+    | RustMacPatToken tok -> let tok = v_tok tok in ()
+  and v_rust_macro_rule { pattern = v_pattern; body = v_body } =
+    let v_pattern = v_list v_rust_macro_pattern v_pattern in
+    let v_body = v_bracket (v_list v_any) v_body in ()
+  and
+    v_rust_macro_definition (lb, xs, rb) =
+    let lb = v_tok lb in
+    let xs = v_list v_rust_macro_rule xs in
+    let rb = v_tok rb in ()
+
   and v_directive x =
     let k x =
       match x with
@@ -928,6 +965,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Tk v1 -> let v1 = v_tok v1 in ()
     | Lbli v1 -> v_label_ident v1
     | IoD v1 -> v_ident_or_dynamic v1
+    | MacTkTree v1 ->
+        let v1 = v_bracket (v_list (v_list v_any)) v1 in ()
+    | MacTks (v1, v2, v3) ->
+      let v1 = v_bracket (v_list (v_list v_any)) v1 in
+      let v2 = v_option v_ident v2 in
+      let v3 = v_tok v3 in ()
 
 
   and all_functions x = v_any x

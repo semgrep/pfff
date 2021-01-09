@@ -484,12 +484,9 @@ and expr =
   (* TODO: other_expr_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token *)
 
+  (* Rust *)
   | Metavar of tok (* Rust macros *)
   | MacroInvocation of name * any list (* Rust macros *)
-  (* In Rust, many constructs like if/for/blocks can be used as expressions. *)
-  (* This gets really annoying because the final expression can be conditional. *)
-  (* For now, the last ExprStmt in such a block counts as the final expression. *)
-  | StmtExpr of stmt
 
   | OtherExpr of other_expr_operator * any list
   (*e: [[AST_generic.expr]] OtherXxx case *)
@@ -561,7 +558,7 @@ and special =
    * Used in a Container or Call argument context.
    * The corresponding constructor in a parameter context is ParamRest.
   *)
-  | Spread (* ...x in JS, *x in Python/Ruby *)
+  | Spread (* ...x in JS, *x in Python/Ruby, .. in Rust *)
   (* Similar to Spread, but for a var containing a hashtbl.
    * The corresponding constructor in a parameter context is ParamHashSplat.
   *)
@@ -816,6 +813,12 @@ and stmt_kind =
    * TODO: other_stmt_operator wrap, so enforce at least one token instead
    * of relying that the any list contains at least one token
   *)
+
+  (* Rust *)
+  | IfLet of tok (* 'if' or 'elif' *) * pattern * expr * stmt * stmt option
+  | WhileLet of tok * pattern * expr * stmt
+  | LoopStmt of tok * stmt
+
   | OtherStmt of other_stmt_operator * any list
   (*e: [[AST_generic.stmt]] OtherXxx case *)
 (*e: type [[AST_generic.stmt]] *)
@@ -919,6 +922,8 @@ and other_stmt_operator =
   | OS_GlobalComplex (* e.g., global $$x, argh *)
   (* Ruby *)
   | OS_Redo | OS_Retry
+  (* Rust *)
+  | OS_NoDefaultImpl
   (* Other *)
   | OS_Todo
   (*e: type [[AST_generic.other_stmt_operator]] *)
@@ -993,6 +998,7 @@ and other_pattern_operator =
   (* Other *)
   | OP_Expr (* todo: Python should transform via expr_to_pattern() below *)
   | OP_Todo
+  | OP_MacroInvocation (* Rust *)
 
 (*e: type [[AST_generic.other_pattern_operator]] *)
 
@@ -1105,6 +1111,8 @@ and keyword_attribute =
   (* for class fields *)
   | Public | Private | Protected
   | Abstract | Final
+  | VisSuper (* Rust "super" visibility *)
+  | Module (* Rust "crate" visibility *)
   (* for vars (JS) *)
   | Var | Let
   (* for fields (kinda types) *)
@@ -1127,7 +1135,7 @@ and other_attribute_operator =
   | OA_StrictFP | OA_Transient | OA_Synchronized | OA_Native | OA_Default
   | OA_AnnotThrow
   (* Other *)
-  | OA_Expr (* todo: Python, should transform in NamedAttr when can *)
+  | OA_Expr (* todo: Python/Rust, should transform in NamedAttr when can *)
 (*e: type [[AST_generic.other_attribute_operator]] *)
 
 (*****************************************************************************)
@@ -1206,6 +1214,7 @@ and definition_kind =
 
   | ModuleDef of module_definition
   | MacroDef of macro_definition
+  | RustMacroDef of rust_macro_definition (* Rust *)
   (*x: [[AST_generic.definition_kind]] other cases *)
   (* in a header file (e.g., .mli in OCaml or 'module sig') *)
   | Signature of type_
@@ -1240,6 +1249,8 @@ and type_parameter_constraint =
   | TyParamConst of type_
   (*e: type [[AST_generic.type_parameter_constraint]] *)
 
+(* Rust *)
+
 (*s: type [[AST_generic.trait_bound]] *)
 and trait_bound =
   | TraitBoundType of type_
@@ -1247,6 +1258,22 @@ and trait_bound =
   | TraitBoundHigherRanked of type_parameter list * type_
   | TraitBoundRemoved of type_
 (*e: type [[AST_generic.trait_bound]] *)
+
+(*s: type [[AST_generic.where_clause]] *)
+and where_clause = where_predicate list
+(*e: type [[AST_generic.where_clause]] *)
+
+(*s: type [[AST_generic.where_predicate]] *)
+and where_predicate = where_predicate_type * trait_bound list
+(*e: type [[AST_generic.where_predicate]] *)
+
+(*s: type [[AST_generic.where_predicate_type]] *)
+and where_predicate_type =
+  | WherePredLifetime of lifetime
+  | WherePredId of ident
+  | WherePredType of type_
+  | WherePredHigherRanked of type_parameter list * type_
+(*e: type [[AST_generic.where_predicate_type]] *)
 
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
@@ -1506,6 +1533,27 @@ and macro_definition = {
 }
 (*e: type [[AST_generic.macro_definition]] *)
 
+(* Used by Rust. Their macros are significantly more sophisticated than in C/C++. *)
+(*s: type [[AST_generic.rust_macro_definition]] *)
+and rust_macro_definition = rust_macro_rule list bracket
+(*e: type [[AST_generic.rust_macro_definition]] *)
+
+(*s: type [[AST_generic.rust_macro_rule]] *)
+and rust_macro_rule = {
+  pattern: rust_macro_pattern list;
+  body: any list bracket;
+}
+(*e: type [[AST_generic.rust_macro_rule]] *)
+
+(*s: type [[AST_generic.rust_macro_pattern]] *)
+and rust_macro_pattern =
+  | RustMacPatTree of rust_macro_pattern list
+  | RustMacPatRepetition of rust_macro_pattern list bracket * ident option * tok
+  | RustMacPatBinding of ident * tok
+  | RustMacPatToken of tok
+(*e: type [[AST_generic.rust_macro_pattern]] *)
+
+
 (*****************************************************************************)
 (* Directives (Module import/export, package) *)
 (*****************************************************************************)
@@ -1620,6 +1668,8 @@ and any =
   | Lbli of label_ident
   | IoD of ident_or_dynamic
   | Tk of tok
+  | MacTkTree of any list list bracket (* Rust *)
+  | MacTks of any list list bracket * ident option * tok (* Rust *)
   | TodoK of todo_kind
   (*e: [[AST_generic.any]] other cases *)
 (*e: type [[AST_generic.any]] *)

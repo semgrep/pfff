@@ -64,7 +64,9 @@ and node_kind =
   | Join
 
   | IfHeader of expr
+  | IfLetHeader of pattern * expr
   | WhileHeader of expr
+  | WhileLetHeader of pattern * expr
   | DoHeader
   | DoWhileTail of expr
   | ForHeader
@@ -140,7 +142,9 @@ let short_string_of_node_kind nkind =
   | Join -> "<join>"
 
   | IfHeader _ -> "if(...)"
+  | IfLetHeader _ -> "if let(...)"
   | WhileHeader _ -> "while(...)"
+  | WhileLetHeader _ -> "while let(...)"
   | DoHeader -> "do"
   | DoWhileTail _ -> "while(...);"
   | ForHeader -> "for(...)"
@@ -195,6 +199,7 @@ let simple_node_of_stmt_opt stmt =
     |A.WithUsingResource (_, _, _)
     |A.OtherStmtWithStmt _
     |A.DisjStmt _
+    |A.IfLet _ | A.WhileLet _ | A.LoopStmt _
     ) -> None
 
 let any_of_simple_node = function
