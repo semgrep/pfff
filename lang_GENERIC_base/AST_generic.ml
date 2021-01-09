@@ -486,7 +486,7 @@ and expr =
 
   (* Rust *)
   | Metavar of tok (* Rust macros *)
-  | MacroInvocation of name * any list (* Rust macros *)
+  | MacroInvocation of name * any list list bracket (* Rust macros *)
 
   | OtherExpr of other_expr_operator * any list
   (*e: [[AST_generic.expr]] OtherXxx case *)
@@ -818,6 +818,18 @@ and stmt_kind =
   | IfLet of tok (* 'if' or 'elif' *) * pattern * expr * stmt * stmt option
   | WhileLet of tok * pattern * expr * stmt
   | LoopStmt of tok * stmt
+  | ImplBlock of attribute list
+                 * type_parameter list
+                 * type_ option (* trait *)
+                 * where_clause option
+                 * stmt
+  | TraitBlock of attribute list
+                  * ident
+                  * type_parameter list
+                  * trait_bound list
+                  * where_clause option
+                  * stmt
+  | LetStmt of attribute list * pattern * type_ option * expr option * sc
 
   | OtherStmt of other_stmt_operator * any list
   (*e: [[AST_generic.stmt]] OtherXxx case *)
@@ -1054,6 +1066,9 @@ and type_ =
   *)
   | TyRecordAnon of tok (* 'struct/shape', fake in other *)* field list bracket
 
+  (* Rust *)
+  | TyDyn of tok (* dyn *) * type_
+
   (* sgrep-ext: *)
   | TyEllipsis of tok
   (*e: [[AST_generic.type_]] other cases *)
@@ -1126,7 +1141,7 @@ and keyword_attribute =
   | Ctor | Dtor
   | Getter | Setter
   (* Rust *)
-  | Borrowed | Move
+  | Borrowed | Move | Unsafe
   (*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
@@ -1333,6 +1348,7 @@ and parameter =
   (*e: [[AST_generic.parameter]] semgrep extension cases *)
   (*s: [[AST_generic.parameter]] OtherXxx case *)
   | ParamEllided of tok (* Rust closures *)
+  | ParamPatternTyped of pattern * type_ * attribute list (* Rust *)
   | OtherParam of other_parameter_operator * any list
   (*e: [[AST_generic.parameter]] OtherXxx case *)
 (*e: type [[AST_generic.parameter]] *)
@@ -1582,6 +1598,15 @@ and directive =
   (*s: [[AST_generic.directive]] OtherXxx cases *)
   | OtherDirective of other_directive_operator * any list
   (*e: [[AST_generic.directive]] OtherXxx cases *)
+
+  (* Rust has exprs in module paths. *)
+  (* TODO: according to https://doc.rust-lang.org/reference/paths.html#simple-paths *)
+  (* there are actually two types of paths in the grammar. This is different than *)
+  (* what is in tree-sitter-rust and the official working groups' grammar. *)
+  (* expr ought to be a dotted ident instead.*)
+  | ImportFromExpr of tok * expr * alias option
+  | ImportAllExpr of tok * expr option * tok
+  | ImportList of directive list bracket * expr option (* scope *)
 (*e: type [[AST_generic.directive]] *)
 
 (*s: type [[AST_generic.alias]] *)

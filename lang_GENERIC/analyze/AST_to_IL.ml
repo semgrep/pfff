@@ -763,6 +763,11 @@ let rec stmt_aux env st =
       let vtrue = G.Bool (true, tok) in
       let e' = mk_e (Literal vtrue) (G.L vtrue) in
       [mk_s (Loop (tok, e', st))]
+  | G.ImplBlock (_, _, _, _, stmt1)
+  | G.TraitBlock (_, _, _, _, _, stmt1) ->
+      stmt env stmt1
+  | G.LetStmt (_, _, _, _, _) ->
+      todo (G.S st) (* TODO *)
 
   | G.DisjStmt _ -> sgrep_construct (G.S st)
   | G.OtherStmt _ | G.OtherStmtWithStmt _ -> todo (G.S st)

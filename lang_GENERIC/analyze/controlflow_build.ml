@@ -639,6 +639,12 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
   | WithUsingResource (_, stmts1, stmts2) ->
       cfg_stmt_list state previ [stmts1; stmts2]
 
+  (* TODO? *)
+  | LoopStmt (_, st)
+  | ImplBlock (_, _, _, _, st)
+  | TraitBlock (_, _, _, _, _, st) ->
+      cfg_stmt_list state previ [st]
+
   (* for dataflow purpose, such definitions are really the same than
    * an assignment. Liveness analysis does not make any difference between
    * a definition and an assign.
@@ -669,7 +675,7 @@ let rec (cfg_stmt: state -> F.nodei option -> stmt -> F.nodei option) =
   | ExprStmt _
   | Assert _
   | DirectiveStmt _
-  | LoopStmt _
+  | LetStmt _
   | OtherStmt _
     -> cfg_simple_node state previ stmt
 

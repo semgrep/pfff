@@ -229,6 +229,10 @@ let visit_program
              tag_id id (Parameter Def);
              (* less: let kpattern do its job? *)
          | ParamPattern _ -> ()
+         | ParamPatternTyped (PatId (id, _idinfo), _, _) ->
+             tag_id id (Parameter Def);
+             (* less: let kpattern do its job? *)
+         | ParamPatternTyped _ -> ()
          | ParamClassic p | ParamRest (_, p) | ParamHashSplat (_, p) ->
              (match p.pname with
               | Some id ->

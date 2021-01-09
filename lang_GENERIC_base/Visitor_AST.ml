@@ -268,7 +268,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let t = v_tok t in ()
       | MacroInvocation (n, ts) ->
           let n = v_name n in
-          let ts = v_list v_any ts in ()
+          let ts = v_bracket (v_list (v_list v_any)) ts in ()
       | OtherExpr (v1, v2) ->
           let v1 = v_other_expr_operator v1 and v2 = v_list v_any v2 in ()
     in
@@ -360,6 +360,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | TyPointer (t, v1) ->
           let t = v_tok t in
           let v1 = v_type_ v1 in ()
+      | TyDyn (t, v1) ->
+          let t = v_tok t in
+          let v1 = v_type_ v1 in ()
       | TyTuple v1 -> let v1 = v_bracket (v_list v_type_) v1 in ()
       | TyQuestion (v1, t) ->
           let t = v_tok t in
@@ -417,6 +420,34 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_other_attribute_operator v1 and v2 = v_list v_any v2 in ()
     in
     vin.kattr (k, all_functions) x
+
+  and v_trait_bound =
+    function
+    | TraitBoundType v1 ->
+        let v1 = v_type_ v1 in ()
+    | TraitBoundLifetime v1 ->
+        let v1 = v_lifetime v1 in ()
+    | TraitBoundHigherRanked (v1, v2) ->
+        let v1 = v_list v_type_parameter v1 in
+        let v2 = v_type_ v2 in ()
+    | TraitBoundRemoved v1 ->
+        let v1 = v_type_ v1 in ()
+
+  and v_where_predicate_type =
+    function
+    | WherePredLifetime v1 ->
+        let v1 = v_lifetime v1 in ()
+    | WherePredId v1 ->
+        let v1 = v_ident v1 in ()
+    | WherePredType v1 ->
+        let v1 = v_type_ v1 in ()
+    | WherePredHigherRanked (v1, v2) ->
+        let v1 = v_list v_type_parameter v1 in
+        let v2 = v_type_ v2 in ()
+  and v_where_predicate (v1, v2) =
+    let v1 = v_where_predicate_type v1 in
+    let v2 = v_list v_trait_bound v2 in ()
+  and v_where_clause x = v_list v_where_predicate x
 
   and v_keyword_attribute _ = ()
   and v_other_attribute_operator _ = ()
@@ -521,6 +552,25 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | LoopStmt (t, v1) ->
           let t = v_tok t in
           let v1 = v_stmt v1 in ()
+      | ImplBlock (v1, v2, v3, v4, v5) ->
+          let v1 = v_list v_attribute v1 in
+          let v2 = v_list v_type_parameter v2 in
+          let v3 = v_option v_type_ v3 in
+          let v4 = v_option v_where_clause v4 in
+          let v5 = v_stmt v5 in ()
+      | TraitBlock (v1, v2, v3, v4, v5, v6) ->
+          let v1 = v_list v_attribute v1 in
+          let v2 = v_ident v2 in
+          let v3 = v_list v_type_parameter v3 in
+          let v4 = v_list v_trait_bound v4 in
+          let v5 = v_option v_where_clause v5 in
+          let v6 = v_stmt v6 in ()
+      | LetStmt (v1, v2, v3, v4, v5) ->
+          let v1 = v_list v_attribute v1
+          and v2 = v_pattern v2
+          and v3 = v_option v_type_ v3
+          and v4 = v_option v_expr v4
+          and v5 = v_tok v5 in ()
       | OtherStmtWithStmt (v1, v2, v3) ->
           let v1 = v_other_stmt_with_stmt_operator v1
           and v2 = v_option v_expr v2
@@ -766,6 +816,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | ParamRest (v1, v2) | ParamHashSplat (v1, v2) ->
           v_tok v1; v_parameter_classic v2
       | ParamPattern v1 -> let v1 = v_pattern v1 in ()
+      | ParamPatternTyped (v1, v2, v3) ->
+          let v1 = v_pattern v1
+          and v2 = v_type_ v2
+          and v3 = v_list v_attribute v3 in ()
       | ParamEllipsis v1 -> let v1 = v_tok v1 in ()
       | ParamEllided v1 -> let v1 = v_tok v1 in ()
       | OtherParam (v1, v2) ->
@@ -888,7 +942,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let pats = v_list v_rust_macro_pattern pats in ()
     | RustMacPatRepetition (pats, ident, tok) ->
         let pats = v_bracket (v_list v_rust_macro_pattern) pats in
-        let ident = v_ident ident in
+        let ident = v_option v_ident ident in
         let tok = v_tok tok in ()
     | RustMacPatBinding (ident, tok) ->
         let ident = v_ident ident in
@@ -924,6 +978,17 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Pragma (v1, v2) ->
           v_ident v1;
           v_list v_any v2
+      | ImportFromExpr (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_expr v1
+          and v2 = v_option v_ident_and_id_info v2 in ()
+      | ImportAllExpr (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_option v_expr v1
+          and v2 = v_tok v2 in ()
+      | ImportList (v1, v2) ->
+          let v1 = v_bracket (v_list v_directive) v1
+          and v2 = v_option v_expr v2 in ()
       | OtherDirective (v1, v2) ->
           let v1 = v_other_directive_operator v1 and v2 = v_list v_any v2 in ()
     in

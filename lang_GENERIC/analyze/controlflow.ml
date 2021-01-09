@@ -200,6 +200,7 @@ let simple_node_of_stmt_opt stmt =
     |A.OtherStmtWithStmt _
     |A.DisjStmt _
     |A.IfLet _ | A.WhileLet _ | A.LoopStmt _
+    |A.ImplBlock _ | A.TraitBlock _ | A.LetStmt _
     ) -> None
 
 let any_of_simple_node = function

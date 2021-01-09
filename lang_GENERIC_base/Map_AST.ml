@@ -256,7 +256,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Metavar t -> let t = map_tok t in Metavar t
       | MacroInvocation (n, ts) ->
           let n = map_name n in
-          let ts = map_of_list map_any ts
+          let ts = map_bracket (map_of_list (map_of_list map_any)) ts
           in MacroInvocation (n, ts)
       | OtherExpr (v1, v2) ->
           let v1 = map_other_expr_operator v1
@@ -386,6 +386,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | TyPointer (t, v1) ->
         let t = map_tok t in
         let v1 = map_type_ v1 in TyPointer (t, v1)
+    | TyDyn (t, v1) ->
+        let t = map_tok t in
+        let v1 = map_type_ v1 in TyDyn (t, v1)
     | TyTuple v1 -> let v1 = map_bracket (map_of_list map_type_) v1 in
         TyTuple v1
     | TyQuestion (v1, t) ->
@@ -537,6 +540,28 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         | LoopStmt (t, v1) ->
             let t = map_tok t in
             let v1 = map_stmt v1 in LoopStmt (t, v1)
+        | ImplBlock (v1, v2, v3, v4, v5) ->
+            let v1 = map_of_list map_attribute v1 in
+            let v2 = map_of_list map_type_parameter v2 in
+            let v3 = map_of_option map_type_ v3 in
+            let v4 = map_of_option map_where_clause v4 in
+            let v5 = map_stmt v5 in
+            ImplBlock (v1, v2, v3, v4, v5)
+        | TraitBlock (v1, v2, v3, v4, v5, v6) ->
+            let v1 = map_of_list map_attribute v1 in
+            let v2 = map_ident v2 in
+            let v3 = map_of_list map_type_parameter v3 in
+            let v4 = map_of_list map_trait_bound v4 in
+            let v5 = map_of_option map_where_clause v5 in
+            let v6 = map_stmt v6 in
+            TraitBlock (v1, v2, v3, v4, v5, v6)
+        | LetStmt (v1, v2, v3, v4, v5) ->
+            let v1 = map_of_list map_attribute v1
+            and v2 = map_pattern v2
+            and v3 = map_of_option map_type_ v3
+            and v4 = map_of_option map_expr v4
+            and v5 = map_tok v5
+            in LetStmt (v1, v2, v3, v4, v5)
         | OtherStmt (v1, v2) ->
             let v1 = map_other_stmt_operator v1
             and v2 = map_of_list map_any v2
@@ -801,6 +826,39 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         in TyParamOptional (v1, v2)
     | TyParamConst v1 -> let v1 = map_type_ v1 in TyParamConst v1
 
+  and map_trait_bound =
+    function
+    | TraitBoundType v1 ->
+        let v1 = map_type_ v1
+        in TraitBoundType v1
+    | TraitBoundLifetime v1 ->
+        let v1 = map_lifetime v1
+        in TraitBoundLifetime v1
+    | TraitBoundHigherRanked (v1, v2) ->
+        let v1 = map_of_list map_type_parameter v1 in
+        let v2 = map_type_ v2
+        in TraitBoundHigherRanked (v1, v2)
+    | TraitBoundRemoved v1 ->
+        let v1 = map_type_ v1
+        in TraitBoundRemoved v1
+
+  and map_where_predicate_type =
+    function
+    | WherePredLifetime v1 ->
+        let v1 = map_lifetime v1 in WherePredLifetime v1
+    | WherePredId v1 ->
+        let v1 = map_ident v1 in WherePredId v1
+    | WherePredType v1 ->
+        let v1 = map_type_ v1 in WherePredType v1
+    | WherePredHigherRanked (v1, v2) ->
+        let v1 = map_of_list map_type_parameter v1 in
+        let v2 = map_type_ v2
+        in WherePredHigherRanked (v1, v2)
+  and map_where_predicate (v1, v2) =
+    let v1 = map_where_predicate_type v1 in
+    let v2 = map_of_list map_trait_bound v2 in (v1, v2)
+  and map_where_clause x = map_of_list map_where_predicate x
+
   and map_function_kind x = x
 
   and
@@ -834,6 +892,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v0 = map_tok v0 in
         let v1 = map_parameter_classic v1 in ParamHashSplat (v0, v1)
     | ParamPattern v1 -> let v1 = map_pattern v1 in ParamPattern v1
+    | ParamPatternTyped (v1, v2, v3) ->
+        let v1 = map_pattern v1 in
+        let v2 = map_type_ v2 in
+        let v3 = map_of_list map_attribute v3
+        in ParamPatternTyped (v1, v2, v3)
     | ParamEllipsis v1 -> let v1 = map_tok v1 in ParamEllipsis v1
     | ParamEllided v1 -> let v1 = map_tok v1 in ParamEllided v1
     | OtherParam (v1, v2) ->
@@ -973,6 +1036,20 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | PackageEnd t ->
         let t = map_tok t in
         PackageEnd t
+    | ImportFromExpr (t, v1, v2) ->
+        let t = map_tok t in
+        let v1 = map_expr v1
+        and v2 = map_of_option map_ident_and_id_info v2
+        in ImportFromExpr (t, v1, v2)
+    | ImportAllExpr (t, v1, v2) ->
+        let t = map_tok t in
+        let v1 = map_of_option map_expr v1
+        and v2 = map_tok v2
+        in ImportAllExpr (t, v1, v2)
+    | ImportList (v1, v2) ->
+        let v1 = map_bracket (map_of_list map_directive) v1
+        and v2 = map_of_option map_expr v2
+        in ImportList (v1, v2)
 
   and map_ident_and_id_info (v1, v2) =
     let v1 = map_ident v1 in
