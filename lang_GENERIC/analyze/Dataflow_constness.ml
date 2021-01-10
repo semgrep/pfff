@@ -62,16 +62,7 @@ let str_of_name ((s, _tok), sid) =
 (* Constness *)
 (*****************************************************************************)
 
-(* TODO: use the new AST_generic.eq_xxx functions from deriving eq *)
-let eq_literal l1 l2 =
-  match l1, l2 with
-  | G.Bool  (b1, _),  G.Bool  (b2, _)  -> b1 =:= b2
-  | G.Int   (s1, _),  G.Int   (s2, _)
-  | G.Float (s1, _),  G.Float (s2, _)
-  | G.Char  (s1, _),  G.Char   (s2, _)
-  | G.String (s1, _), G.String (s2, _) -> s1 =$= s2
-  (* add more cases if needed *)
-  | ___else___ -> false
+let eq_literal l1 l2 = G.equal_literal l1 l2
 
 let eq_ctype t1 t2 = t1 = t2
 

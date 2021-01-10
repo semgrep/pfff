@@ -103,6 +103,7 @@ let test regexp =
       (* generic AST tests *)
       Unit_naming_generic.unittest;
       Unit_typing_generic.unittest;
+      Unit_dataflow.unittest;
     ]
   in
   let suite =
