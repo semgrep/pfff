@@ -48,6 +48,7 @@ type t =
   | PHP
   | Kotlin
   | Lua
+  | Rust
   (*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
@@ -82,6 +83,7 @@ let list_of_lang = [
   "php", PHP;
   "kt", Kotlin;
   "lua", Lua;
+  "rs", Rust;
 ]
 (*e: constant [[Lang.list_of_lang]] *)
 
@@ -115,6 +117,7 @@ let langs_of_filename filename =
   | FT.PL (FT.Web (FT.Php _)) -> [PHP]
   | FT.PL (FT.Kotlin) -> [Kotlin]
   | FT.PL (FT.Lua) -> [Lua]
+  | FT.PL (FT.Rust) -> [Rust]
   | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
@@ -136,6 +139,7 @@ let string_of_lang = function
   | PHP -> "PHP"
   | Kotlin -> "Kotlin"
   | Lua -> "Lua"
+  | Rust -> "Rust"
 (*e: function [[Lang.string_of_lang]] *)
 
 (*s: function [[Lang.ext_of_lang]] *)
@@ -155,6 +159,7 @@ let ext_of_lang = function
   | PHP -> ["php"]
   | Kotlin -> ["kt"]
   | Lua -> ["lua"]
+  | Rust -> ["rs"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)

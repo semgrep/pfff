@@ -18,6 +18,7 @@ type t =
   | PHP
   | Kotlin
   | Lua
+  | Rust
   (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)
