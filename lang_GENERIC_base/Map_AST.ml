@@ -83,6 +83,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | QDots v -> QDots (map_dotted_ident v)
     | QTop t -> QTop (map_tok t)
     | QExpr (e, t) -> let e = map_expr e in let t = map_tok t in QExpr(e, t)
+    | QType t -> let t = map_type_ t in QType t
 
   and map_module_name =
     function
@@ -301,7 +302,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and map_special x =
     match x with
     | ForOf | Defined | This | Super | Self | Parent | Eval | Typeof | Instanceof
-    | Sizeof | New | Spread | HashSplat | NextArrayIndex
+    | Sizeof | New | Spread | HashSplat | NextArrayIndex | Metavar
       -> x
     | Op v1 -> let v1 = map_arithmetic_operator v1 in Op v1
     | EncodedString v1 -> let v1 = map_of_string v1 in EncodedString v1
@@ -400,6 +401,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           map_of_option (fun (v1, v2) -> map_wrap map_of_bool v1, map_type_ v2) v2
         in
         TypeWildcard (v1, v2)
+    | TypeLifetime v1 -> let v1 = map_ident v1 in TypeLifetime v1
 
   and map_other_type_operator x = x
 
@@ -622,9 +624,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
            | (v1, v2) ->
                let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2))
         in PatAs (v1, v2)
-
     | PatWhen (v1, v2) ->
         let v1 = map_pattern v1 and v2 = map_expr v2 in PatWhen (v1, v2)
+    | PatPathExpr v1 -> let v1 = map_expr v1 in PatPathExpr v1
     | OtherPat (v1, v2) ->
         let v1 = map_other_pattern_operator v1
         and v2 = map_of_list map_any v2
@@ -806,6 +808,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = map_ident v1 and v2 = map_of_option map_expr v2 in OrEnum (v1, v2)
     | OrUnion (v1, v2) ->
         let v1 = map_ident v1 and v2 = map_type_ v2 in OrUnion (v1, v2)
+    | OrEnumStruct (v1, v2) ->
+        let v1 = map_ident v1 and v2 = map_bracket (map_of_list map_field) v2 in OrEnumStruct (v1, v2)
     | OtherOr (v1, v2) ->
         let v1 = map_other_or_type_element_operator v1
         and v2 = map_of_list map_any v2

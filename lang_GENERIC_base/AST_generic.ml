@@ -286,6 +286,7 @@ and qualifier =
   | QTop of tok (* ::, Ruby, C++, also '`' abuse for PolyVariant in OCaml *)
   | QDots of dotted_ident (* Java, OCaml *)
   | QExpr of expr * tok (* Ruby *)
+  | QType of type_ (* Rust trait disambiguation *)
 (*e: type [[AST_generic.qualifier]] *)
 
 (* This is used to represent field names, where sometimes the name
@@ -560,7 +561,9 @@ and special =
   | Op of operator
   (* less: should be lift up and transformed in Assign at stmt level *)
   | IncrDecr of (incr_decr * prefix_postfix)
-  (*e: type [[AST_generic.special]] *)
+
+  | Metavar (* Rust macros *)
+(*e: type [[AST_generic.special]] *)
 
 (* mostly binary operators.
  * less: could be divided in really Arith vs Logical (bool) operators,
@@ -590,6 +593,7 @@ and operator =
   | RegexpMatch (* =~, Ruby (and Perl) *)
   | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
   | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
+  | RangeInclusive (* '..=' in Rust *)
   | NotNullPostfix (* ! in Typescript, postfix operator *)
   | Length (* '#' in Lua *)
   (* See https://en.wikipedia.org/wiki/Elvis_operator.
@@ -957,6 +961,9 @@ and pattern =
   | DisjPat of pattern * pattern
   (*e: [[AST_generic.pattern]] semgrep extensions cases *)
 
+  (* Rust *)
+  | PatPathExpr of expr (* Qualified identifier with support for trait disambiguation *)
+
   | OtherPat of other_pattern_operator * any list
   (*e: type [[AST_generic.pattern]] *)
 
@@ -1038,6 +1045,8 @@ and type_argument =
   (* Java only *)
   | TypeWildcard of tok (* '?' *) *
                     (bool wrap (* extends|super, true=super *) * type_) option
+  (* Rust *)
+  | TypeLifetime of ident
   (*e: type [[AST_generic.type_argument]] *)
 (*s: type [[AST_generic.other_type_argument_operator]] *)
 (*e: type [[AST_generic.other_type_argument_operator]] *)
@@ -1087,7 +1096,11 @@ and keyword_attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
-  (*e: type [[AST_generic.keyword_attribute]] *)
+  (* Rust *)
+  | Unsafe
+  | Borrowed (* &T, &mut T *)
+  | DefaultImpl (* unstable, RFC 1210 *)
+(*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
 and other_attribute_operator =
@@ -1349,6 +1362,8 @@ and or_type_element =
   | OrEnum of ident * expr option
   (* Java? *)
   | OrUnion of ident * type_
+  (* Rust *)
+  | OrEnumStruct of ident * field list bracket
 
   | OtherOr of other_or_type_element_operator * any list
   (*e: type [[AST_generic.or_type_element]] *)

@@ -539,6 +539,7 @@ and call_special _env (x, tok) =
    | G.HashSplat
    | G.ForOf
    | G.NextArrayIndex
+   | G.Metavar
      -> todo (G.E (G.IdSpecial (x, tok)))
   ), tok
 

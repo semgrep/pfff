@@ -124,6 +124,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | QDots v -> v_dotted_ident v
     | QTop t -> v_tok t
     | QExpr (e, t) -> v_expr e; v_tok t
+    | QType ty -> v_type_ ty
 
   and v_module_name =
     function
@@ -305,6 +306,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Spread -> ()
     | HashSplat -> ()
     | NextArrayIndex -> ()
+    | Metavar -> ()
     | EncodedString v1 -> let v1 = v_string v1 in ()
     | Op v1 -> let v1 = v_arithmetic_operator v1 in ()
     | IncrDecr (v1, v2) -> let v1 = v_incr_decr v1 and v2 = v_prepost v2 in ()
@@ -373,6 +375,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
              v_wrap v_bool v1;
              v_type_ v2
         )
+    | TypeLifetime v1 -> let v1 = v_ident v1 in ()
 
   and v_other_type_operator _ = ()
 
@@ -579,6 +582,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           in ()
 
       | PatWhen (v1, v2) -> let v1 = v_pattern v1 and v2 = v_expr v2 in ()
+      | PatPathExpr v1 -> let v1 = v_expr v1 in ()
       | OtherPat (v1, v2) ->
           let v1 = v_other_pattern_operator v1 and v2 = v_list v_any v2 in ()
     in
@@ -781,6 +785,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let v1 = v_ident v1 and v2 = v_list v_type_ v2 in ()
     | OrEnum (v1, v2) -> let v1 = v_ident v1 and v2 = v_option v_expr v2 in ()
     | OrUnion (v1, v2) -> let v1 = v_ident v1 and v2 = v_type_ v2 in ()
+    | OrEnumStruct (v1, v2) ->
+        let v1 = v_ident v1
+        and v2 = v_bracket (v_list v_field) v2 in ()
     | OtherOr (v1, v2) ->
         let v1 = v_other_or_type_element_operator v1
         and v2 = v_list v_any v2
