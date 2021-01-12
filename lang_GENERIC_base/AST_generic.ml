@@ -1010,7 +1010,8 @@ and type_ =
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
   | TyAny of tok (* anonymous type, '_' in OCaml *)
 
-  | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
+  | TyPointer of tok * type_
+  | TyRef of tok * type_ (* C++/Rust *)
 
   | TyQuestion of type_ * tok (* a.k.a option type *)
 

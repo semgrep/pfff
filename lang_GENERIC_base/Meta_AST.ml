@@ -493,6 +493,9 @@ and vof_type_ =
   | TyPointer (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_type_ v1 in OCaml.VSum ("TyPointer", [ t; v1 ])
+  | TyRef (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in OCaml.VSum ("TyRef", [ t; v1 ])
   | TyTuple v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_type_) v1
       in OCaml.VSum ("TyTuple", [ v1 ])
