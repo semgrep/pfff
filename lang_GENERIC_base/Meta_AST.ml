@@ -493,6 +493,9 @@ and vof_type_ =
   | TyPointer (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_type_ v1 in OCaml.VSum ("TyPointer", [ t; v1 ])
+  | TyRef (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in OCaml.VSum ("TyRef", [ t; v1 ])
   | TyTuple v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_type_) v1
       in OCaml.VSum ("TyTuple", [ v1 ])
@@ -677,6 +680,9 @@ and vof_other_stmt_with_stmt_operator = function
   | OSWS_BEGIN -> OCaml.VSum ("OSWS_BEGIN", [])
   | OSWS_END -> OCaml.VSum ("OSWS_END", [])
   | OSWS_Else_in_try -> OCaml.VSum ("OSWS_Else_in_try", [])
+  | OSWS_UnsafeBlock -> OCaml.VSum ("OSWS_UnsafeBlock", [])
+  | OSWS_AsyncBlock -> OCaml.VSum ("OSWS_AsyncBlock", [])
+  | OSWS_ConstBlock -> OCaml.VSum ("OSWS_ConstBlock", [])
 
 
 and vof_label_ident =

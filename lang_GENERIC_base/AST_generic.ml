@@ -883,6 +883,8 @@ and other_stmt_with_stmt_operator =
   (* Ruby *)
   | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
   | OSWS_Else_in_try
+  (* Rust *)
+  | OSWS_UnsafeBlock | OSWS_AsyncBlock | OSWS_ConstBlock
   (*e: type [[AST_generic.other_stmt_with_stmt_operator]] *)
 
 (*s: type [[AST_generic.other_stmt_operator]] *)
@@ -1008,7 +1010,8 @@ and type_ =
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
   | TyAny of tok (* anonymous type, '_' in OCaml *)
 
-  | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
+  | TyPointer of tok * type_
+  | TyRef of tok * type_ (* C++/Rust *)
 
   | TyQuestion of type_ * tok (* a.k.a option type *)
 
