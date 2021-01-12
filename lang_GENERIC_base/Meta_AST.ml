@@ -677,6 +677,9 @@ and vof_other_stmt_with_stmt_operator = function
   | OSWS_BEGIN -> OCaml.VSum ("OSWS_BEGIN", [])
   | OSWS_END -> OCaml.VSum ("OSWS_END", [])
   | OSWS_Else_in_try -> OCaml.VSum ("OSWS_Else_in_try", [])
+  | OSWS_UnsafeBlock -> OCaml.VSum ("OSWS_UnsafeBlock", [])
+  | OSWS_AsyncBlock -> OCaml.VSum ("OSWS_AsyncBlock", [])
+  | OSWS_ConstBlock -> OCaml.VSum ("OSWS_ConstBlock", [])
 
 
 and vof_label_ident =

@@ -883,6 +883,8 @@ and other_stmt_with_stmt_operator =
   (* Ruby *)
   | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
   | OSWS_Else_in_try
+  (* Rust *)
+  | OSWS_UnsafeBlock | OSWS_AsyncBlock | OSWS_ConstBlock
   (*e: type [[AST_generic.other_stmt_with_stmt_operator]] *)
 
 (*s: type [[AST_generic.other_stmt_operator]] *)
