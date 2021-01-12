@@ -277,7 +277,7 @@ type name = ident * name_info
 (*s: type [[AST_generic.name_info]] *)
 and name_info = {
   name_qualifier: qualifier option;
-  name_typeargs: type_arguments option; (* Java *)
+  name_typeargs: type_arguments option; (* Java/Rust *)
 }
 (* todo: not enough in OCaml with functor and type args or C++ templates*)
 (*e: type [[AST_generic.name_info]] *)
@@ -286,7 +286,6 @@ and qualifier =
   | QTop of tok (* ::, Ruby, C++, also '`' abuse for PolyVariant in OCaml *)
   | QDots of dotted_ident (* Java, OCaml *)
   | QExpr of expr * tok (* Ruby *)
-  | QType of type_ (* Rust trait disambiguation *)
 (*e: type [[AST_generic.qualifier]] *)
 
 (* This is used to represent field names, where sometimes the name
@@ -562,7 +561,6 @@ and special =
   (* less: should be lift up and transformed in Assign at stmt level *)
   | IncrDecr of (incr_decr * prefix_postfix)
 
-  | Metavar (* Rust macros *)
 (*e: type [[AST_generic.special]] *)
 
 (* mostly binary operators.
@@ -925,6 +923,7 @@ and other_stmt_operator =
 and pattern =
   | PatLiteral of literal
   (* Or-Type, used also to match OCaml exceptions *)
+  (* Used with Rust path expressions, with an empty pattern list *)
   | PatConstructor of name * pattern list
   (* And-Type*)
   | PatRecord of (name * pattern) list bracket
@@ -960,9 +959,6 @@ and pattern =
   | PatEllipsis of tok
   | DisjPat of pattern * pattern
   (*e: [[AST_generic.pattern]] semgrep extensions cases *)
-
-  (* Rust *)
-  | PatPathExpr of expr (* Qualified identifier with support for trait disambiguation *)
 
   | OtherPat of other_pattern_operator * any list
   (*e: type [[AST_generic.pattern]] *)
@@ -1098,7 +1094,6 @@ and keyword_attribute =
   | Getter | Setter
   (* Rust *)
   | Unsafe
-  | Borrowed (* &T, &mut T *)
   | DefaultImpl (* unstable, RFC 1210 *)
 (*e: type [[AST_generic.keyword_attribute]] *)
 
@@ -1362,8 +1357,6 @@ and or_type_element =
   | OrEnum of ident * expr option
   (* Java? *)
   | OrUnion of ident * type_
-  (* Rust *)
-  | OrEnumStruct of ident * field list bracket
 
   | OtherOr of other_or_type_element_operator * any list
   (*e: type [[AST_generic.or_type_element]] *)

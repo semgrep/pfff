@@ -60,7 +60,6 @@ let rec vof_qualifier = function
   | QExpr (v1, v2) -> let v1 = vof_expr v1 in
       let v2 = vof_tok v2 in
       OCaml.VSum ("QExpr", [v1; v2])
-  | QType t -> let t = vof_type_ t in (OCaml.VSum ("QType", [ t ]))
 
 and vof_name (v1, v2) =
   let v1 = vof_ident v1 and v2 = vof_name_info v2 in OCaml.VTuple [ v1; v2 ]
@@ -326,7 +325,6 @@ and vof_special =
       let v = vof_inc_dec v in
       OCaml.VSum ("IncrDecr", [ v])
   | NextArrayIndex -> OCaml.VSum ("NextArrayIndex", [])
-  | Metavar -> OCaml.VSum ("Metavar", [])
 
 and vof_interpolated_kind = function
   | FString -> OCaml.VSum ("FString", [])
@@ -555,7 +553,6 @@ and vof_keyword_attribute =
   | Optional -> OCaml.VSum ("Optional", [])
   | NotNull -> OCaml.VSum ("NotNull", [])
   | Unsafe -> OCaml.VSum ("Unsafe", [])
-  | Borrowed -> OCaml.VSum ("Borrowed", [])
   | DefaultImpl -> OCaml.VSum ("DefaultImpl", [])
 
 and vof_attribute = function
@@ -843,7 +840,6 @@ and vof_pattern =
       let v1 = vof_pattern v1
       and v2 = vof_pattern v2
       in OCaml.VSum ("DisjPat", [ v1; v2 ])
-  | PatPathExpr v1 -> let v1 = vof_expr v1 in OCaml.VSum ("PatName", [ v1 ])
   | OtherPat (v1, v2) ->
       let v1 = vof_other_pattern_operator v1
       and v2 = OCaml.vof_list vof_any v2
@@ -1076,10 +1072,6 @@ and vof_or_type_element =
       let v1 = vof_ident v1
       and v2 = vof_type_ v2
       in OCaml.VSum ("OrUnion", [ v1; v2 ])
-  | OrEnumStruct (v1, v2) ->
-      let v1 = vof_ident v1
-      and v2 = vof_bracket (OCaml.vof_list vof_field) v2
-      in OCaml.VSum("OrEnumStruct", [ v1; v2 ])
   | OtherOr (v1, v2) ->
       let v1 = vof_other_or_type_element_operator v1
       and v2 = OCaml.vof_list vof_any v2
