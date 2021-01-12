@@ -277,7 +277,7 @@ type name = ident * name_info
 (*s: type [[AST_generic.name_info]] *)
 and name_info = {
   name_qualifier: qualifier option;
-  name_typeargs: type_arguments option; (* Java *)
+  name_typeargs: type_arguments option; (* Java/Rust *)
 }
 (* todo: not enough in OCaml with functor and type args or C++ templates*)
 (*e: type [[AST_generic.name_info]] *)
@@ -560,7 +560,8 @@ and special =
   | Op of operator
   (* less: should be lift up and transformed in Assign at stmt level *)
   | IncrDecr of (incr_decr * prefix_postfix)
-  (*e: type [[AST_generic.special]] *)
+
+(*e: type [[AST_generic.special]] *)
 
 (* mostly binary operators.
  * less: could be divided in really Arith vs Logical (bool) operators,
@@ -590,6 +591,7 @@ and operator =
   | RegexpMatch (* =~, Ruby (and Perl) *)
   | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
   | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
+  | RangeInclusive (* '..=' in Rust *)
   | NotNullPostfix (* ! in Typescript, postfix operator *)
   | Length (* '#' in Lua *)
   (* See https://en.wikipedia.org/wiki/Elvis_operator.
@@ -921,6 +923,7 @@ and other_stmt_operator =
 and pattern =
   | PatLiteral of literal
   (* Or-Type, used also to match OCaml exceptions *)
+  (* Used with Rust path expressions, with an empty pattern list *)
   | PatConstructor of name * pattern list
   (* And-Type*)
   | PatRecord of (name * pattern) list bracket
@@ -1038,6 +1041,8 @@ and type_argument =
   (* Java only *)
   | TypeWildcard of tok (* '?' *) *
                     (bool wrap (* extends|super, true=super *) * type_) option
+  (* Rust *)
+  | TypeLifetime of ident
   (*e: type [[AST_generic.type_argument]] *)
 (*s: type [[AST_generic.other_type_argument_operator]] *)
 (*e: type [[AST_generic.other_type_argument_operator]] *)
@@ -1087,7 +1092,10 @@ and keyword_attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
-  (*e: type [[AST_generic.keyword_attribute]] *)
+  (* Rust *)
+  | Unsafe
+  | DefaultImpl (* unstable, RFC 1210 *)
+(*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
 and other_attribute_operator =

@@ -356,6 +356,7 @@ and vof_arithmetic_operator =
   | NotNullPostfix -> OCaml.VSum ("NotNullPostfix", [])
   | Nullish -> OCaml.VSum ("Nullish", [])
   | Range -> OCaml.VSum ("Range", [])
+  | RangeInclusive -> OCaml.VSum ("RangeInclusive", [])
   | RegexpMatch -> OCaml.VSum ("RegexpMatch", [])
   | NotMatch -> OCaml.VSum ("NotMatch", [])
   | Concat -> OCaml.VSum ("Concat", [])
@@ -514,6 +515,8 @@ and vof_type_argument =
         OCaml.VTuple [v1; v2]
       ) v2 in
       OCaml.VSum ("TypeWildcard", [ v1; v2 ])
+  | TypeLifetime v1 ->
+      let v1 = vof_ident v1 in OCaml.VSum ("TypeLifetime", [ v1 ])
 and vof_other_type_operator =
   function
   | OT_Todo -> OCaml.VSum ("OT_Todo", [])
@@ -549,6 +552,8 @@ and vof_keyword_attribute =
   | Setter -> OCaml.VSum ("Setter", [])
   | Optional -> OCaml.VSum ("Optional", [])
   | NotNull -> OCaml.VSum ("NotNull", [])
+  | Unsafe -> OCaml.VSum ("Unsafe", [])
+  | DefaultImpl -> OCaml.VSum ("DefaultImpl", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in

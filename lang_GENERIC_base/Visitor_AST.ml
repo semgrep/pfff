@@ -373,6 +373,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
              v_wrap v_bool v1;
              v_type_ v2
         )
+    | TypeLifetime v1 -> let v1 = v_ident v1 in ()
 
   and v_other_type_operator _ = ()
 
