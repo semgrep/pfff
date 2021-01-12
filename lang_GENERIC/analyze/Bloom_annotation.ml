@@ -33,7 +33,9 @@ module B = Bloom_filter
  * for foo via a previous import.
  * The same is true for user-defined equivalences when a pattern contains
  * A DisjExpr, in which case we may need a set of Bloom filters for each
- * branch.
+ * branch. Another example are integer literals, which in OCaml
+ * can be written as 1000 or 1_000, so we want to do the bloom hasking
+ * on the integer final value, not the string.
  *
  * See also semgrep-core/matching/Rules_filter.ml
 *)
