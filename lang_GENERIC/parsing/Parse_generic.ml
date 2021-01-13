@@ -89,6 +89,8 @@ let parse_with_lang lang file =
       failwith "No Lua parser in pfff; use the one in tree-sitter"
   | Lang.Rust ->
       failwith "No Rust parser in pfff; use the one in tree-sitter"
+  | Lang.R ->
+      failwith "No R parser in pfff; use the one in tree-sitter"
 
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
@@ -147,5 +149,7 @@ let parse_pattern lang str =
       failwith "No Lua generic parser in pfff; use the one in tree-sitter"
   | Lang.Rust ->
       failwith "No Rust generic parser in pfff; use the one in tree-sitter"
+  | Lang.R ->
+      failwith "No R generic parser in pfff; use the one in tree-sitter"
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

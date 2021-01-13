@@ -19,6 +19,7 @@ type t =
   | Kotlin
   | Lua
   | Rust
+  | R
   (*e: type [[Lang.t]] *)
 
 (*s: signature [[Lang.lang_of_string_map]] *)
