@@ -141,6 +141,23 @@
 *)
 
 (*****************************************************************************)
+(* Accessories *)
+(*****************************************************************************)
+
+(* A set of metavariables. Access cost is O(log n). *)
+module String_set = struct
+  include Set.Make (String)
+
+  type string_list = string list
+  [@@deriving show]
+
+  let pp fmt x =
+    pp_string_list fmt (elements x)
+end
+
+type string_set = String_set.t
+
+(*****************************************************************************)
 (* Token (leaf) *)
 (*****************************************************************************)
 (*s: type [[AST_generic.tok]] *)
@@ -277,7 +294,7 @@ type name = ident * name_info
 (*s: type [[AST_generic.name_info]] *)
 and name_info = {
   name_qualifier: qualifier option;
-  name_typeargs: type_arguments option; (* Java *)
+  name_typeargs: type_arguments option; (* Java/Rust *)
 }
 (* todo: not enough in OCaml with functor and type args or C++ templates*)
 (*e: type [[AST_generic.name_info]] *)
@@ -560,7 +577,8 @@ and special =
   | Op of operator
   (* less: should be lift up and transformed in Assign at stmt level *)
   | IncrDecr of (incr_decr * prefix_postfix)
-  (*e: type [[AST_generic.special]] *)
+
+(*e: type [[AST_generic.special]] *)
 
 (* mostly binary operators.
  * less: could be divided in really Arith vs Logical (bool) operators,
@@ -590,6 +608,7 @@ and operator =
   | RegexpMatch (* =~, Ruby (and Perl) *)
   | NotMatch (* !~ Ruby less: could be desugared to Not RegexpMatch *)
   | Range (* .. or ..., Ruby, one arg can be nil for endless range *)
+  | RangeInclusive (* '..=' in Rust *)
   | NotNullPostfix (* ! in Typescript, postfix operator *)
   | Length (* '#' in Lua *)
   (* See https://en.wikipedia.org/wiki/Elvis_operator.
@@ -741,12 +760,23 @@ and stmt = {
   (* this can be used to hash more efficiently stmts, or in semgrep to
    * quickly know if a stmt is a children of another stmt.
   *)
-  mutable s_id: int;
+  mutable s_id: int [@equal fun _a _b -> true];
   (* todo? we could store a range: (tok * tok) to delimit the range of a stmt
    * which would allow us to remove some of the extra 'tok' in stmt_kind.
    * Indeed, the main use of those 'tok' is to accurately report a match range
    * in semgrep.
   *)
+
+  mutable s_backrefs: String_set.t option [@equal fun _a _b -> true];
+  (* set of metavariables referenced in the "rest of the pattern", as
+   * determined by matching order. This is used to determine which of the bound
+   * metavariables should be added to the cache key for this node.
+   * This field is set on pattern ASTs only, in a pass right after parsing
+   * and before matching.
+  *)
+
+  (* used in semgrep to skip some AST matching *)
+  mutable s_bf: Bloom_filter.t option [@equal fun _a _b -> true];
 }
 and stmt_kind =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
@@ -881,6 +911,8 @@ and other_stmt_with_stmt_operator =
   (* Ruby *)
   | OSWS_BEGIN | OSWS_END (* also in Awk, Perl? *)
   | OSWS_Else_in_try
+  (* Rust *)
+  | OSWS_UnsafeBlock | OSWS_AsyncBlock | OSWS_ConstBlock
   (*e: type [[AST_generic.other_stmt_with_stmt_operator]] *)
 
 (*s: type [[AST_generic.other_stmt_operator]] *)
@@ -921,6 +953,7 @@ and other_stmt_operator =
 and pattern =
   | PatLiteral of literal
   (* Or-Type, used also to match OCaml exceptions *)
+  (* Used with Rust path expressions, with an empty pattern list *)
   | PatConstructor of name * pattern list
   (* And-Type*)
   | PatRecord of (name * pattern) list bracket
@@ -1005,7 +1038,8 @@ and type_ =
   | TyVar of ident (* type variable in polymorphic types (not a typedef) *)
   | TyAny of tok (* anonymous type, '_' in OCaml *)
 
-  | TyPointer of tok * type_ (* | TODO TyRef of tok * type_ for C++ *)
+  | TyPointer of tok * type_
+  | TyRef of tok * type_ (* C++/Rust *)
 
   | TyQuestion of type_ * tok (* a.k.a option type *)
 
@@ -1038,6 +1072,8 @@ and type_argument =
   (* Java only *)
   | TypeWildcard of tok (* '?' *) *
                     (bool wrap (* extends|super, true=super *) * type_) option
+  (* Rust *)
+  | TypeLifetime of ident
   (*e: type [[AST_generic.type_argument]] *)
 (*s: type [[AST_generic.other_type_argument_operator]] *)
 (*e: type [[AST_generic.other_type_argument_operator]] *)
@@ -1087,7 +1123,10 @@ and keyword_attribute =
   (* for methods *)
   | Ctor | Dtor
   | Getter | Setter
-  (*e: type [[AST_generic.keyword_attribute]] *)
+  (* Rust *)
+  | Unsafe
+  | DefaultImpl (* unstable, RFC 1210 *)
+(*e: type [[AST_generic.keyword_attribute]] *)
 
 (*s: type [[AST_generic.other_attribute_operator]] *)
 and other_attribute_operator =
@@ -1668,7 +1707,7 @@ let basic_entity id attrs =
   }
 (*e: function [[AST_generic.basic_entity]] *)
 
-let s skind = { s = skind; s_id = -1 }
+let s skind = { s = skind; s_id = -1; s_bf = None; s_backrefs = None }
 
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =

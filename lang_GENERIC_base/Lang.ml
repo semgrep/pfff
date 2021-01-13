@@ -49,6 +49,7 @@ type t =
   | Kotlin
   | Lua
   | Rust
+  | R
   (*e: type [[Lang.t]] *)
 
 (*****************************************************************************)
@@ -84,6 +85,7 @@ let list_of_lang = [
   "kt", Kotlin;
   "lua", Lua;
   "rs", Rust;
+  "r", R;
 ]
 (*e: constant [[Lang.list_of_lang]] *)
 
@@ -118,6 +120,7 @@ let langs_of_filename filename =
   | FT.PL (FT.Kotlin) -> [Kotlin]
   | FT.PL (FT.Lua) -> [Lua]
   | FT.PL (FT.Rust) -> [Rust]
+  | FT.PL (FT.R) -> [R]
   | _ -> []
 (*e: function [[Lang.langs_of_filename]] *)
 
@@ -140,6 +143,7 @@ let string_of_lang = function
   | Kotlin -> "Kotlin"
   | Lua -> "Lua"
   | Rust -> "Rust"
+  | R -> "R"
 (*e: function [[Lang.string_of_lang]] *)
 
 (*s: function [[Lang.ext_of_lang]] *)
@@ -160,6 +164,7 @@ let ext_of_lang = function
   | Kotlin -> ["kt"]
   | Lua -> ["lua"]
   | Rust -> ["rs"]
+  | R -> ["r"; "R"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)

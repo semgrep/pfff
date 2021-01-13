@@ -356,6 +356,7 @@ and vof_arithmetic_operator =
   | NotNullPostfix -> OCaml.VSum ("NotNullPostfix", [])
   | Nullish -> OCaml.VSum ("Nullish", [])
   | Range -> OCaml.VSum ("Range", [])
+  | RangeInclusive -> OCaml.VSum ("RangeInclusive", [])
   | RegexpMatch -> OCaml.VSum ("RegexpMatch", [])
   | NotMatch -> OCaml.VSum ("NotMatch", [])
   | Concat -> OCaml.VSum ("Concat", [])
@@ -492,6 +493,9 @@ and vof_type_ =
   | TyPointer (t, v1) ->
       let t = vof_tok t in
       let v1 = vof_type_ v1 in OCaml.VSum ("TyPointer", [ t; v1 ])
+  | TyRef (t, v1) ->
+      let t = vof_tok t in
+      let v1 = vof_type_ v1 in OCaml.VSum ("TyRef", [ t; v1 ])
   | TyTuple v1 ->
       let v1 = vof_bracket (OCaml.vof_list vof_type_) v1
       in OCaml.VSum ("TyTuple", [ v1 ])
@@ -514,6 +518,8 @@ and vof_type_argument =
         OCaml.VTuple [v1; v2]
       ) v2 in
       OCaml.VSum ("TypeWildcard", [ v1; v2 ])
+  | TypeLifetime v1 ->
+      let v1 = vof_ident v1 in OCaml.VSum ("TypeLifetime", [ v1 ])
 and vof_other_type_operator =
   function
   | OT_Todo -> OCaml.VSum ("OT_Todo", [])
@@ -549,6 +555,8 @@ and vof_keyword_attribute =
   | Setter -> OCaml.VSum ("Setter", [])
   | Optional -> OCaml.VSum ("Optional", [])
   | NotNull -> OCaml.VSum ("NotNull", [])
+  | Unsafe -> OCaml.VSum ("Unsafe", [])
+  | DefaultImpl -> OCaml.VSum ("DefaultImpl", [])
 
 and vof_attribute = function
   | KeywordAttr x -> let v1 = vof_wrap vof_keyword_attribute x in
@@ -672,6 +680,9 @@ and vof_other_stmt_with_stmt_operator = function
   | OSWS_BEGIN -> OCaml.VSum ("OSWS_BEGIN", [])
   | OSWS_END -> OCaml.VSum ("OSWS_END", [])
   | OSWS_Else_in_try -> OCaml.VSum ("OSWS_Else_in_try", [])
+  | OSWS_UnsafeBlock -> OCaml.VSum ("OSWS_UnsafeBlock", [])
+  | OSWS_AsyncBlock -> OCaml.VSum ("OSWS_AsyncBlock", [])
+  | OSWS_ConstBlock -> OCaml.VSum ("OSWS_ConstBlock", [])
 
 
 and vof_label_ident =

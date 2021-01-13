@@ -36,6 +36,19 @@ module DataflowX = Dataflow.Make (struct
   end)
 
 (*****************************************************************************)
+(* Error management *)
+(*****************************************************************************)
+
+let warning tok s =
+  let opt_loc =
+    try Some (Parse_info.string_of_info tok)
+    with Parse_info.NoTokenLocation _ -> None
+  in
+  match opt_loc with
+  | Some loc -> pr2 (spf "%s: %s" loc s)
+  | None     -> pr2 s
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -62,16 +75,7 @@ let str_of_name ((s, _tok), sid) =
 (* Constness *)
 (*****************************************************************************)
 
-(* TODO: use the new AST_generic.eq_xxx functions from deriving eq *)
-let eq_literal l1 l2 =
-  match l1, l2 with
-  | G.Bool  (b1, _),  G.Bool  (b2, _)  -> b1 =:= b2
-  | G.Int   (s1, _),  G.Int   (s2, _)
-  | G.Float (s1, _),  G.Float (s2, _)
-  | G.Char  (s1, _),  G.Char   (s2, _)
-  | G.String (s1, _), G.String (s2, _) -> s1 =$= s2
-  (* add more cases if needed *)
-  | ___else___ -> false
+let eq_literal l1 l2 = G.equal_literal l1 l2
 
 let eq_ctype t1 t2 = t1 = t2
 
@@ -164,13 +168,48 @@ let eval_unop_int op opt_i =
   | G.Minus, Some i -> G.Lit (literal_of_int (-i))
   | ___else____     -> G.Cst G.Cint
 
-let eval_binop_int op opt_i1 opt_i2 =
+(* This reduces arithmetic "exceptions" to `G.Cst G.Cint`, it does NOT
+ * detect overflows for any other language than OCaml. Note that OCaml
+ * integers have just 63-bits in 64-bit architectures!
+*)
+let eval_binop_int tok op opt_i1 opt_i2 =
+  let sign i = i asr (Sys.int_size-1) in
   match op, opt_i1, opt_i2 with
-  (* TODO: Handle overflows and division by zero. *)
-  | G.Plus,  Some i1, Some i2 -> G.Lit (literal_of_int (i1 + i2))
-  | G.Minus, Some i1, Some i2 -> G.Lit (literal_of_int (i1 - i2))
-  | G.Mult,  Some i1, Some i2 -> G.Lit (literal_of_int (i1 * i2))
-  | G.Div,   Some i1, Some i2 -> G.Lit (literal_of_int (i1 / i2))
+  | G.Plus,  Some i1, Some i2 ->
+      let r = i1 + i2 in
+      if sign i1 = sign i2 && sign r <> sign i1 then
+        G.Cst G.Cint (* overflow *)
+      else
+        G.Lit (literal_of_int (i1 + i2))
+  | G.Minus, Some i1, Some i2 ->
+      let r = i1 - i2 in
+      if sign i1 <> sign i2 && sign r <> sign i1 then
+        G.Cst G.Cint (* overflow *)
+      else
+        G.Lit (literal_of_int (i1 + i2))
+  | G.Mult,  Some i1, Some i2 ->
+      let overflow =
+        i1 <> 0 && i2 <> 0 &&
+        ((i1 < 0 && i2 = min_int)       (* >max_int *)
+         || (i1 = min_int && i2 < 0)    (* >max_int *)
+         || (if sign i1 * sign i2 = 1 then
+               abs i1 > abs(max_int/i2) (* >max_int *)
+             else
+               abs i1 > abs(min_int/i2) (* <min_int *)
+            ))
+      in
+      if overflow then
+        G.Cst G.Cint
+      else
+        G.Lit (literal_of_int (i1 * i2))
+  | G.Div,   Some i1, Some i2 ->
+      if i1 = min_int && i2 = -1 then
+        G.Cst G.Cint (* = max_int+1, overflow *)
+      else
+        (try G.Lit (literal_of_int (i1 / i2))
+         with Division_by_zero ->
+           warning tok "Found division by zero";
+           G.Cst G.Cint)
   | ___else____     -> G.Cst G.Cint
 
 let eval_binop_string op s1 s2 =
@@ -203,16 +242,17 @@ and eval_lval env lval =
   | ___else___ ->
       G.NotCst
 
-and eval_op env op args =
+and eval_op env wop args =
+  let op, tok = wop in
   let cs = List.map (eval env) args in
-  match fst op, cs with
+  match op, cs with
   | G.Plus, [c1]             -> c1
   | op,     [G.Lit (G.Bool (b, _))] -> eval_unop_bool op b
   | op,     [G.Lit (G.Int _ as li)] -> eval_unop_int op (int_of_literal li)
   | op,     [G.Lit (G.Bool (b1, _)); G.Lit (G.Bool (b2, _))] ->
       eval_binop_bool op b1 b2
   | op,     [G.Lit (G.Int _ as li1); G.Lit (G.Int _ as li2)] ->
-      eval_binop_int op (int_of_literal li1) (int_of_literal li2)
+      eval_binop_int tok op (int_of_literal li1) (int_of_literal li2)
   | op,     [G.Lit (G.String (s1, _)); G.Lit (G.String (s2, _))] ->
       eval_binop_string op s1 s2
   | _op,    [G.Cst _ as c1]    -> c1

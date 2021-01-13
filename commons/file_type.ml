@@ -50,7 +50,7 @@ and pl_type =
   | ObjectiveC of string
   | Swift
 
-  | Perl | Python | Ruby | Lua
+  | Perl | Python | Ruby | Lua | R
 
   | Erlang
   | Go | Rust
@@ -167,7 +167,6 @@ let file_type_of_file2 file =
 
   | "c--" -> PL (MiscPL e)
   | "oz" -> PL (MiscPL e)
-  | "R" | "Rd" -> PL (MiscPL e)
 
   | "scala" -> PL (MiscPL e)
   | "groovy" -> PL (MiscPL e)
@@ -283,6 +282,8 @@ let file_type_of_file2 file =
   | "rs" -> PL Rust
   | "go" -> PL Go
   | "lua" -> PL Lua
+  | "r" | "R" -> PL R
+
 
   | _ when Common2.is_executable file -> Binary e
 

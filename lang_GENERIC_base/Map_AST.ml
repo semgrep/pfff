@@ -378,6 +378,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | TyPointer (t, v1) ->
         let t = map_tok t in
         let v1 = map_type_ v1 in TyPointer (t, v1)
+    | TyRef (t, v1) ->
+        let t = map_tok t in
+        let v1 = map_type_ v1 in TyRef (t, v1)
     | TyTuple v1 -> let v1 = map_bracket (map_of_list map_type_) v1 in
         TyTuple v1
     | TyQuestion (v1, t) ->
@@ -400,6 +403,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           map_of_option (fun (v1, v2) -> map_wrap map_of_bool v1, map_type_ v2) v2
         in
         TypeWildcard (v1, v2)
+    | TypeLifetime v1 -> let v1 = map_ident v1 in TypeLifetime v1
 
   and map_other_type_operator x = x
 
@@ -622,7 +626,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
            | (v1, v2) ->
                let v1 = map_ident v1 and v2 = map_id_info v2 in (v1, v2))
         in PatAs (v1, v2)
-
     | PatWhen (v1, v2) ->
         let v1 = map_pattern v1 and v2 = map_expr v2 in PatWhen (v1, v2)
     | OtherPat (v1, v2) ->
