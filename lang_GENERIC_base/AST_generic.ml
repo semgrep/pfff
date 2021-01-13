@@ -749,6 +749,8 @@ and stmt = {
    * Indeed, the main use of those 'tok' is to accurately report a match range
    * in semgrep.
   *)
+  (* used in semgrep to skip some AST matching *)
+  mutable s_bf: Bloom_filter.t option [@equal fun _a _b -> true];
 }
 and stmt_kind =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
@@ -1679,7 +1681,7 @@ let basic_entity id attrs =
   }
 (*e: function [[AST_generic.basic_entity]] *)
 
-let s skind = { s = skind; s_id = -1 }
+let s skind = { s = skind; s_id = -1; s_bf = None }
 
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
