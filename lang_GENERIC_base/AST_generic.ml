@@ -767,7 +767,7 @@ and stmt = {
    * in semgrep.
   *)
 
-mutable s_backrefs: String_set.t option;
+  mutable s_backrefs: String_set.t option;
   (* set of metavariables referenced in the "rest of the pattern", as
    * determined by matching order. This is used to determine which of the bound
    * metavariables should be added to the cache key for this node.
@@ -775,7 +775,7 @@ mutable s_backrefs: String_set.t option;
    * and before matching.
   *)
 
-(* used in semgrep to skip some AST matching *)
+  (* used in semgrep to skip some AST matching *)
   mutable s_bf: Bloom_filter.t option [@equal fun _a _b -> true];
 }
 and stmt_kind =

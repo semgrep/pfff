@@ -167,7 +167,6 @@ let file_type_of_file2 file =
 
   | "c--" -> PL (MiscPL e)
   | "oz" -> PL (MiscPL e)
-  | "R" | "Rd" -> PL (MiscPL e)
 
   | "scala" -> PL (MiscPL e)
   | "groovy" -> PL (MiscPL e)

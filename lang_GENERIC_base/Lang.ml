@@ -164,7 +164,7 @@ let ext_of_lang = function
   | Kotlin -> ["kt"]
   | Lua -> ["lua"]
   | Rust -> ["rs"]
-  | R -> ["r", "R"]
+  | R -> ["r"; "R"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)
