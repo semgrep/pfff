@@ -22,6 +22,10 @@ and error_kind =
   | AstGenericError of string
   | OtherParsingError of string
 
+  (* matching (semgrep) related *)
+  | MatchingError of string (* internal error, e.g., NoTokenLocation *)
+  | SemgrepMatchFound of (string (* check_id *) * string (* msg *))
+
   (* global analysis *)
   | Deadcode of entity
 
@@ -35,9 +39,6 @@ and error_kind =
   | UnusedAssign of string (* var name *)
   | UseOfUninitialized of string
   | CFGError of string
-
-  (* sgrep lint rules *)
-  | SgrepLint of (string (* check_id *) * string (* msg *))
 
   (* other *)
   | FatalError of string

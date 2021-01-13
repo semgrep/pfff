@@ -75,6 +75,10 @@ and error_kind =
   | AstGenericError of string
   | OtherParsingError of string
 
+  (* matching (semgrep) related *)
+  | MatchingError of string (* internal error, e.g., NoTokenLocation *)
+  | SemgrepMatchFound of (string (* check_id *) * string (* msg *))
+
   (* entities *)
   (* done while building the graph:
    *  - UndefinedEntity (UseOfUndefined)
@@ -125,8 +129,6 @@ and error_kind =
 
   (* lint *)
 
-  (* sgrep lint rules *)
-  | SgrepLint of (string (* check_id *) * string (* msg *))
 
   (* other *)
   | FatalError of string (* missing file, OCaml errors, etc. *)
@@ -171,7 +173,8 @@ let string_of_error_kind error_kind =
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name
         (Scope_code.string_of_scope scope)
-  | SgrepLint (_title, message) -> message
+  | SemgrepMatchFound (_title, message) -> message
+  | MatchingError (s) -> spf "matching internal error: %s" s
 
   | UnusedStatement -> spf "unreachable statement"
   | UnusedAssign s ->
@@ -215,7 +218,8 @@ let check_id_of_error_kind = function
   | CFGError _ -> "CFGError"
 
   (* sgrep lint rules *)
-  | SgrepLint (check_id, _) -> spf "sgrep-lint-<%s>" check_id
+  | SemgrepMatchFound (check_id, _) -> spf "sgrep-lint-<%s>" check_id
+  | MatchingError _ -> "MatchingError"
 
   (* other *)
   | FatalError _ -> "FatalError"
@@ -298,7 +302,7 @@ let rank_of_error err =
   (* we want to simplify interfaces as much as possible! *)
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
-  | SgrepLint _ -> Important
+  | SemgrepMatchFound _ -> Important
   | UnusedStatement | UnusedAssign _ | UseOfUninitialized _ -> Important
   | CFGError _ -> Important
 
@@ -308,6 +312,7 @@ let rank_of_error err =
     -> OnlyStrict
   (* usually a bug somewhere in my code *)
   | FatalError _ | Timeout _ | OutOfMemory _
+  | MatchingError _
     -> OnlyStrict
 
 
