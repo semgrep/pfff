@@ -575,7 +575,7 @@ and body_exn x =
             Some (t, st)
       in
       (match elseopt with
-       | None -> 
+       | None ->
            let try_ = G.Try (fake "try", body, catches, finally_opt) |> G.s in
            G.Block (fb [try_]) |> G.s
        | Some (_t, sts) ->
