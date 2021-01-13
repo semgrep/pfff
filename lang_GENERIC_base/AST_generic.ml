@@ -760,14 +760,14 @@ and stmt = {
   (* this can be used to hash more efficiently stmts, or in semgrep to
    * quickly know if a stmt is a children of another stmt.
   *)
-  mutable s_id: int;
+  mutable s_id: int [@equal fun _a _b -> true];
   (* todo? we could store a range: (tok * tok) to delimit the range of a stmt
    * which would allow us to remove some of the extra 'tok' in stmt_kind.
    * Indeed, the main use of those 'tok' is to accurately report a match range
    * in semgrep.
   *)
 
-  mutable s_backrefs: String_set.t option;
+  mutable s_backrefs: String_set.t option [@equal fun _a _b -> true];
   (* set of metavariables referenced in the "rest of the pattern", as
    * determined by matching order. This is used to determine which of the bound
    * metavariables should be added to the cache key for this node.
