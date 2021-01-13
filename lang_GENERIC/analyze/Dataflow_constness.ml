@@ -163,34 +163,34 @@ let eval_binop_int op opt_i1 opt_i2 =
   let sign i = i asr (Sys.int_size-1) in
   match op, opt_i1, opt_i2 with
   | G.Plus,  Some i1, Some i2 ->
-    let r = i1 + i2 in
-    if sign i1 = sign i2 && sign r <> sign i1 then
-      G.Cst G.Cint (* overflow *)
-    else
-      G.Lit (literal_of_int (i1 + i2))
-  | G.Minus, Some i1, Some i2 ->
-    let r = i1 - i2 in
-    if sign i1 <> sign i2 && sign r <> sign i1 then
-      G.Cst G.Cint (* overflow *)
-    else
-      G.Lit (literal_of_int (i1 + i2))
-  | G.Mult,  Some i1, Some i2 ->
-    (* Who knows, one day we may be running in 128-bit architectures... *)
-    if Sys.int_size < 64 then
-      let r = Int64.mul (Int64.of_int i1) (Int64.of_int i2) in
-      if Int64.compare (Int64.of_int min_int) r <= 0
-          && Int64.compare r (Int64.of_int max_int) <= 0 then
-        G.Lit (literal_of_int (Int64.to_int r))
-      else
+      let r = i1 + i2 in
+      if sign i1 = sign i2 && sign r <> sign i1 then
         G.Cst G.Cint (* overflow *)
-    else
-      G.Cst G.Cint
+      else
+        G.Lit (literal_of_int (i1 + i2))
+  | G.Minus, Some i1, Some i2 ->
+      let r = i1 - i2 in
+      if sign i1 <> sign i2 && sign r <> sign i1 then
+        G.Cst G.Cint (* overflow *)
+      else
+        G.Lit (literal_of_int (i1 + i2))
+  | G.Mult,  Some i1, Some i2 ->
+      (* Who knows, one day we may be running in 128-bit architectures... *)
+      if Sys.int_size < 64 then
+        let r = Int64.mul (Int64.of_int i1) (Int64.of_int i2) in
+        if Int64.compare (Int64.of_int min_int) r <= 0
+        && Int64.compare r (Int64.of_int max_int) <= 0 then
+          G.Lit (literal_of_int (Int64.to_int r))
+        else
+          G.Cst G.Cint (* overflow *)
+      else
+        G.Cst G.Cint
   | G.Div,   Some i1, Some i2 ->
-    if i1 = min_int && i2 = -1 then
-      G.Cst G.Cint (* = max_int+1, overflow *)
-    else
-      (try G.Lit (literal_of_int (i1 / i2))
-      with Division_by_zero -> G.Cst G.Cint)
+      if i1 = min_int && i2 = -1 then
+        G.Cst G.Cint (* = max_int+1, overflow *)
+      else
+        (try G.Lit (literal_of_int (i1 / i2))
+         with Division_by_zero -> G.Cst G.Cint)
   | ___else____     -> G.Cst G.Cint
 
 let eval_binop_string op s1 s2 =
