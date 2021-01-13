@@ -767,13 +767,16 @@ and stmt = {
    * in semgrep.
   *)
 
-  mutable s_backrefs: String_set.t option;
+mutable s_backrefs: String_set.t option;
   (* set of metavariables referenced in the "rest of the pattern", as
    * determined by matching order. This is used to determine which of the bound
    * metavariables should be added to the cache key for this node.
    * This field is set on pattern ASTs only, in a pass right after parsing
    * and before matching.
   *)
+
+(* used in semgrep to skip some AST matching *)
+  mutable s_bf: Bloom_filter.t option [@equal fun _a _b -> true];
 }
 and stmt_kind =
   (* See also IL.ml where Call/Assign/Seq are not in expr and where there are
@@ -1704,7 +1707,7 @@ let basic_entity id attrs =
   }
 (*e: function [[AST_generic.basic_entity]] *)
 
-let s skind = { s = skind; s_id = -1; s_backrefs = None }
+let s skind = { s = skind; s_id = -1; s_bf = None; s_backrefs = None }
 
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
