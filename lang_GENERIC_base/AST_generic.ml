@@ -152,16 +152,14 @@ let hash_fold_ref hash_fold_x acc x = hash_fold_x acc !x
 
 (* A set of metavariables. Access cost is O(log n). *)
 module String_set = struct
-  include Set.Make (String)
+  type t = string Set_.t
 
   type string_list = string list
   [@@deriving show]
 
   let pp fmt x =
-    pp_string_list fmt (elements x)
+    pp_string_list fmt (Set_.elements x)
 end
-
-type string_set = String_set.t
 
 (*****************************************************************************)
 (* Token (leaf) *)
