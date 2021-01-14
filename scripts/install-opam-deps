@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -n "$ocaml_version" ]]; then
-  opam switch "$ocaml_version"
+  opam switch create "$ocaml_version"
 fi
 
 eval $(opam env)
