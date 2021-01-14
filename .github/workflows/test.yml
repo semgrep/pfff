@@ -18,6 +18,7 @@ jobs:
       run: opam --version
     - name: Install pfff
       run: |
+        opam init
         ./scripts/install-opam-deps --ocaml-version 4.07.1
         opam install -y pfff
     - name: Run Tests
