@@ -61,6 +61,7 @@ packages="
   ocp-indent
   ounit2
   ppx_deriving
+  ppx_hash
   uucp
   uutf
   yojson
