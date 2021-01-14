@@ -250,6 +250,8 @@ and expr =
   (* unify Id and Var, finally *)
   | Var v1 -> let v1 = var v1 in
       G.Id (v1, G.empty_id_info())
+  | Metavar v1 -> let v1 = var v1 in
+      G.Id (v1, G.empty_id_info())
   | Array_get ((v1, (t1, Some v2, t2))) ->
       let v1 = expr v1 and v2 = expr v2 in
       G.ArrayAccess (v1, (t1, v2, t2))
@@ -263,10 +265,15 @@ and expr =
   | Obj_get (v1, t, Id [v2]) ->
       let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.EId (v2, G.empty_id_info()))
+  | Obj_get (v1, t, Metavar v2) ->
+      let v1 = expr v1 and v2 = ident v2 in
+      G.DotAccess (v1, t, G.EId (v2, G.empty_id_info()))
   | Obj_get (v1, t, v2) ->
       let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.EDynamic v2)
   | Class_get (v1, t, Id [v2]) -> let v1 = expr v1 and v2 = ident v2 in
+      G.DotAccess (v1, t, G.EId (v2, G.empty_id_info()))
+  | Class_get (v1, t, Metavar v2) -> let v1 = expr v1 and v2 = ident v2 in
       G.DotAccess (v1, t, G.EId (v2, G.empty_id_info()))
   | Class_get (v1, t, v2) -> let v1 = expr v1 and v2 = expr v2 in
       G.DotAccess (v1, t, G.EDynamic v2)

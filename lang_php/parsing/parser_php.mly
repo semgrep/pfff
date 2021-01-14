@@ -74,7 +74,10 @@ let mk_param s =
 let mk_var (s, tok) =
   match s with
   | "this" -> This tok
-  | _ -> IdVar (DName(s, tok))
+  | _ -> 
+    (* assume variable is a metavariable if it is all uppercase *)
+    if String.uppercase_ascii s = s then MetaVar (DName(s, tok))
+    else IdVar (DName(s, tok))
 
 let rec validate_parameter_list = function
   | [] -> ()

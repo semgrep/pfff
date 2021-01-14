@@ -210,6 +210,7 @@ and expr =
    * but also for globals, class variables, parameters, etc.
   *)
   | IdVar of dname
+  | MetaVar of dname (* sgrep-ext *)
   | This of tok
 
   | Call of expr * arguments
