@@ -46,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     *)
       error "Unsupported argument '$1'. Try '$progname --help'."
   esac
+  shift
 done
 
 if [[ -n "$ocaml_version" ]]; then
