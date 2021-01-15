@@ -701,6 +701,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and map_type_parameter_constraint =
     function | Extends v1 -> let v1 = map_type_ v1 in Extends v1
+             | HasConstructor t -> let t = map_tok t in HasConstructor t
 
   and map_function_kind x = x
 
