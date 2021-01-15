@@ -1240,6 +1240,7 @@ and type_parameter = ident * type_parameter_constraint list
 (*s: type [[AST_generic.type_parameter_constraint]] *)
 and type_parameter_constraint =
   | Extends of type_
+  | HasConstructor of tok
   (*e: type [[AST_generic.type_parameter_constraint]] *)
 
 (* ------------------------------------------------------------------------- *)
