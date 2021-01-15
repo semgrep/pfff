@@ -210,6 +210,11 @@ and expr =
    * but also for globals, class variables, parameters, etc.
   *)
   | IdVar of dname
+
+  (* In other languages, we simply hijack Id for this.
+   * However, because of the split between Id and IdVar, 
+   * it makes more sense to also separate out MetaVar 
+   *)
   | MetaVar of dname (* sgrep-ext *)
   | This of tok
 
