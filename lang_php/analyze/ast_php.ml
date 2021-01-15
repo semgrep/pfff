@@ -169,7 +169,6 @@ type expr =
    * The string contains the '$'.
   *)
   | Var of var
-  | Metavar of var (* sgrep-ext *)
 
   (* when None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option bracket

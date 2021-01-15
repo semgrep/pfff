@@ -904,7 +904,6 @@ and expr env x =
    * dependencies.
   *)
   | Var _ident -> ()
-  | Metavar _ident -> ()
 
   (* -------------------------------------------------- *)
   | Call (e, (_, es, _)) ->
