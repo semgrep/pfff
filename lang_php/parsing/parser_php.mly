@@ -75,8 +75,9 @@ let mk_var (s, tok) =
   match s with
   | "this" -> This tok
   | _ ->
-    (* assume variable is a metavariable if it is all uppercase *)
-    if String.uppercase_ascii s = s then MetaVar (DName(s, tok))
+    (* sgrep-ext: assume variable is a metavariable if it is all uppercase *)
+    if AST_generic_helpers.is_metavar_name ("$" ^ s) && !Flag_parsing.sgrep_mode 
+    then MetaVar (DName(s, tok))
     else IdVar (DName(s, tok))
 
 let rec validate_parameter_list = function
