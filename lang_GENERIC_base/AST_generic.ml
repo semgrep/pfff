@@ -147,6 +147,33 @@ open Ppx_hash_lib.Std.Hash.Builtin
 (* Accessories *)
 (*****************************************************************************)
 
+(*
+   Create a node ID that is guaranteed to be unique within an AST,
+   as long as the whole AST is created within the same process.
+
+   Such ID should not be expected to be unique across ASTs,
+   since ASTs can be loaded from an external cache, for example.
+*)
+module Node_ID :
+sig
+  type t = private int [@@deriving show, eq, hash]
+  val create : unit -> t
+end =
+struct
+  type t = int [@@deriving show, eq, hash]
+
+  let create =
+    let counter = ref 0 in
+    fun () ->
+      let id = !counter in
+      if id = -1 then
+        failwith "Node_ID.create: int overflow"
+      else (
+        incr counter;
+        id
+      )
+end
+
 (* ppx_hash refuses to hash mutable fields but we do it anyway. *)
 let hash_fold_ref hash_fold_x acc x = hash_fold_x acc !x
 
@@ -760,13 +787,19 @@ and other_expr_operator =
 (*****************************************************************************)
 (* Statement *)
 (*****************************************************************************)
+(*
+   Two statements are considered equal iff their ID ('s_id' field) is the
+   same. The 'equal_stmt' and 'hash_stmt' functions work accordingly.
+*)
 (*s: type [[AST_generic.stmt]] *)
 and stmt = {
-  s: stmt_kind;
-  (* this can be used to hash more efficiently stmts, or in semgrep to
-   * quickly know if a stmt is a children of another stmt.
+  s: stmt_kind [@equal fun _a _b -> true] [@hash.ignore];
+
+  (* this can be used to compare and hash more efficiently stmts,
+     or in semgrep to quickly know if a stmt is a children of another stmt.
   *)
-  mutable s_id: int [@equal fun _a _b -> true] [@hash.ignore];
+  s_id: Node_ID.t;
+
   (* todo? we could store a range: (tok * tok) to delimit the range of a stmt
    * which would allow us to remove some of the extra 'tok' in stmt_kind.
    * Indeed, the main use of those 'tok' is to accurately report a match range
@@ -1716,7 +1749,12 @@ let basic_entity id attrs =
   }
 (*e: function [[AST_generic.basic_entity]] *)
 
-let s skind = { s = skind; s_id = -1; s_bf = None; s_backrefs = None }
+let s skind = {
+  s = skind;
+  s_id = Node_ID.create ();
+  s_bf = None;
+  s_backrefs = None
+}
 
 (*s: function [[AST_generic.basic_field]] *)
 let basic_field id vopt typeopt =
