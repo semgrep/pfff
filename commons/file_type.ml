@@ -73,7 +73,9 @@ and webpl_type =
   | Php of string (* php or phpt or script *)
   | Js | Coffee | TypeScript | TSX
   | Css
-  | Html | Xml | Json
+  | Html | Xml
+  (* infra-as-code *)
+  | Json | Yaml
   | Sql
 
 and media_type =
@@ -198,6 +200,7 @@ let file_type_of_file2 file =
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
   | "json" -> PL (Web Json)
+  | "yml" | "yaml" -> PL (Web Yaml)
   | "sql" -> PL (Web Sql)
   | "sqlite" -> PL (Web Sql)
 

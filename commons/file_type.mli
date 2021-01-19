@@ -33,7 +33,7 @@ and webpl_type =
   | Php of string
   | Js | Coffee | TypeScript | TSX
   | Css
-  | Html | Xml | Json
+  | Html | Xml | Json | Yaml
   | Sql
 
 and media_type =
