@@ -10,6 +10,7 @@ type t =
   | Float of float
   | Bool of bool
   | Null
+[@@deriving show]
 
 let rec (to_yojson: t -> Y.t) = function
   | Object xs -> `Assoc (xs |> List.map (fun (s, t) -> s, to_yojson t))
