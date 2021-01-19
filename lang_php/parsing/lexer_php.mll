@@ -582,7 +582,7 @@ rule st_in_scripting = parse
      *)
     | "$" (LABEL as s) {
         let info = tokinfo lexbuf in
-        if AST_generic_helpers.is_metavar_name ("$" ^ s) && !Flag_parsing.sgrep_mode 
+        if AST_generic_helpers.is_metavar_name ("$" ^ s) && !Flag_parsing.sgrep_mode
         then T_IDENT (case_str ("$" ^ s), info)
         else T_VARIABLE(case_str s, info)
           }
