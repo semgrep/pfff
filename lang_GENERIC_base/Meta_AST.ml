@@ -941,6 +941,7 @@ and vof_type_parameter_constraints v =
 and vof_type_parameter_constraint =
   function
   | Extends v1 -> let v1 = vof_type_ v1 in OCaml.VSum ("Extends", [ v1 ])
+  | HasConstructor t -> let t = vof_tok t in OCaml.VSum ("HasConstructor", [ t ])
 
 and vof_function_kind = function
   | Function -> OCaml.VSum ("Function", [])

@@ -21,6 +21,7 @@ type t =
   | Rust
   | R
   (*e: type [[Lang.t]] *)
+val pp: Format.formatter -> t -> unit
 
 (*s: signature [[Lang.lang_of_string_map]] *)
 val lang_of_string_map: (string, t) Hashtbl.t

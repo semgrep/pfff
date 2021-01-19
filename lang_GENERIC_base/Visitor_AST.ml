@@ -385,6 +385,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_type_parameter_constraints v = v_list v_type_parameter_constraint v
   and v_type_parameter_constraint =
     function | Extends v1 -> let v1 = v_type_ v1 in ()
+             | HasConstructor t -> let t = v_tok t in ()
   and v_attribute x =
     let k x =
       match x with
