@@ -637,6 +637,9 @@ and class_stmt =
                 (tok (* ; *), trait_rule list brace) Common.either
   (* ?? *)
   | ClassType of type_def
+  (* semgrep-ext:  *)
+  | DeclEllipsis of tok
+
 and class_constant = ident * static_scalar_affect
 and class_variable = dname * static_scalar_affect option
 and class_var_modifier =
