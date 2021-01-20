@@ -748,7 +748,7 @@ and class_body env st (mets, flds) =
       met::mets, more_flds @ flds
 
   | ClassVariables _ | ClassConstants _ | UseTrait _
-  | ClassType _
+  | ClassType _ | DeclEllipsis _
     -> (mets, flds)
 
 and method_def env m =

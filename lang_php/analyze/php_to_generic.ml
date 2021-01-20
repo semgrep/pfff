@@ -242,6 +242,7 @@ and expr =
       G.L (G.Float v1)
   | String v1 -> let v1 = wrap string v1 in
       G.L (G.String v1)
+  | Id [v1] -> G.Id (v1, G.empty_id_info())
   | Id v1 -> let v1 = name_of_qualified_ident v1 in
       G.IdQualified (v1, G.empty_id_info ())
   | IdSpecial v1 ->

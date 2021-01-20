@@ -581,7 +581,10 @@ rule st_in_scripting = parse
      * later when we generate a Var or This.
      *)
     | "$" (LABEL as s) {
-        T_VARIABLE(case_str s, tokinfo lexbuf)
+        let info = tokinfo lexbuf in
+        if AST_generic_helpers.is_metavar_name ("$" ^ s) && !Flag_parsing.sgrep_mode
+        then T_IDENT (case_str ("$" ^ s), info)
+        else T_VARIABLE(case_str s, info)
           }
     | ("$" as dollar) "$" (LABEL as s) {
         let info = tokinfo lexbuf in

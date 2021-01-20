@@ -624,7 +624,8 @@ unticked_class_declaration:
  | class_entry_type  ident_class_name  type_params_opt
      extends_from   implements_list
      "{" member_declaration* "}"
-     { { c_type = $1; c_name = $2; c_extends = $4; c_tparams = $3;
+     {
+       { c_type = $1; c_name = $2; c_extends = $4; c_tparams = $3;
          c_implements = $5; c_body = $6, $7, $8;
          c_attrs = None;
          c_enum_type = None;
@@ -721,6 +722,8 @@ member_declaration:
  | T_USE class_name_list "{" trait_rule* "}"
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
 
+ (* semgrep-ext: *)
+ | "..." { Flag_parsing.sgrep_guard (DeclEllipsis $1) }
 
 enum_statement: class_constant_declaration ";"
      { ClassConstants([], $2, None, [Left $1], $2) }
@@ -1258,7 +1261,8 @@ ident:
  | T_TYPE      { PI.str_of_info $1, $1 }
  | T_SUPER     { PI.str_of_info $1, $1 }
 
-ident_class_name: ident          { Name $1 }
+ident_class_name:
+| ident          { Name $1 }
 
 (* ugly, php allows method names which should be IMHO reserved keywords *)
 ident_method_name:
