@@ -262,6 +262,10 @@ type ('a, 'b) either = Left of 'a | Right of 'b
 val pp_either: (Format.formatter -> 'a -> 'b) ->
   (Format.formatter -> 'c -> 'd) ->
   Format.formatter -> ('a, 'c) either -> unit
+val equal_either:
+  ('a -> 'a -> bool) ->
+  ('b -> 'b -> bool) ->
+  ('a, 'b) either -> ('a, 'b) either -> bool
 (*s: type [[Common.either3]] *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
 (*e: type [[Common.either3]] *)

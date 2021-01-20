@@ -659,6 +659,7 @@ let (|||) a b =
   | None -> b
 
 type ('a,'b) either = Left of 'a | Right of 'b
+[@@deriving eq]
 (* with sexp *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
 (* with sexp *)
