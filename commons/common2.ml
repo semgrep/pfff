@@ -3439,9 +3439,7 @@ let with_tmp_file ~(str: string) ~(ext: string) (f: string -> 'a) : 'a =
   write_file ~file:tmpfile str;
   Common.finalize (fun () ->
     f tmpfile
-  ) (fun() ->
-    Sys.remove tmpfile
-  )
+  ) (fun () -> Common.erase_this_temp_file tmpfile)
 
 
 let with_tmp_dir f =

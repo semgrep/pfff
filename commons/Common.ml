@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 1998-2013 Yoann Padioleau
+ * Copyright (C) 1998-2021 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -30,6 +30,8 @@ let debugger = ref false
  * node or on the browser.
 *)
 let jsoo = ref false
+
+let logger = Logging.get_logger [__MODULE__]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -1065,7 +1067,7 @@ let timeout_function_float ?(verbose=false) timeoutval = fun f ->
 
 (* creation of tmp files, a la gcc *)
 
-let _temp_files_created = ref ([] : filename list)
+let _temp_files_created = Hashtbl.create 101
 
 (* ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" *)
 let new_temp_file prefix suffix =
@@ -1076,24 +1078,24 @@ let new_temp_file prefix suffix =
   in
   let processid = i_to_s pid in
   let tmp_file = Filename.temp_file (prefix ^ "-" ^ processid ^ "-") suffix in
-  push tmp_file _temp_files_created;
+  Hashtbl.add _temp_files_created tmp_file ();
   tmp_file
 
 let save_tmp_files = ref false
 let erase_temp_files () =
   if not !save_tmp_files then begin
-    !_temp_files_created |> List.iter (fun s ->
-      (* pr2 ("erasing: " ^ s); *)
-      command2 ("rm -f " ^ s)
+    _temp_files_created |> Hashtbl.iter (fun s () ->
+      logger#info "erasing: %s" s;
+      Sys.remove s;
     );
-    _temp_files_created := []
+    Hashtbl.clear _temp_files_created;
   end
 
 let erase_this_temp_file f =
   if not !save_tmp_files then begin
-    _temp_files_created :=
-      List.filter (function x -> not (x =$= f)) !_temp_files_created;
-    command2 ("rm -f " ^ f)
+    Hashtbl.remove _temp_files_created f;
+    logger#info "erasing: %s" f;
+    Sys.remove f
   end
 
 (*###########################################################################*)

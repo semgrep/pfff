@@ -465,7 +465,7 @@ val profile_code2 : string -> (unit -> 'a) -> 'a
 (* creation of /tmp files, a la gcc
  * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c"
 *)
-val _temp_files_created : string list ref
+val _temp_files_created : (string, unit) Hashtbl.t
 (*e: signature [[Common._temp_files_created]] *)
 (*s: signature [[Common.save_tmp_files]] *)
 val save_tmp_files : bool ref
