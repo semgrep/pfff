@@ -38,18 +38,22 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript | Typescript | JSON
-  | Java
-  | Go
+  (* system *)
   | C | Cplusplus
-  | OCaml
-  | Ruby
-  | Csharp
-  | PHP
-  | Kotlin
-  | Lua
   | Rust
+  (* mainstream with Gc *)
+  | Javascript | Typescript
+  | Java | Kotlin
+  | Csharp
+  | Go
+  (* functional *)
+  | OCaml
+  (* scripting (Python is above) *)
+  | Ruby | PHP | Lua
+  (* data science *)
   | R
+  (* config files *)
+  | JSON | Yaml
   (*e: type [[Lang.t]] *)
 [@@deriving show]
 
@@ -87,6 +91,7 @@ let list_of_lang = [
   "lua", Lua;
   "rs", Rust;
   "r", R;
+  "yaml", Yaml;
 ]
 (*e: constant [[Lang.list_of_lang]] *)
 
@@ -115,6 +120,7 @@ let langs_of_filename filename =
   | FT.PL (FT.Java) -> [Java]
   | FT.PL (FT.Go) -> [Go]
   | FT.PL (FT.Web FT.Json) -> [JSON]
+  | FT.PL (FT.Web FT.Yaml) -> [Yaml]
   | FT.PL (FT.Ruby) -> [Ruby]
   | FT.PL (FT.Csharp) -> [Csharp]
   | FT.PL (FT.Web (FT.Php _)) -> [PHP]
@@ -145,6 +151,7 @@ let string_of_lang = function
   | Lua -> "Lua"
   | Rust -> "Rust"
   | R -> "R"
+  | Yaml -> "Yaml"
 (*e: function [[Lang.string_of_lang]] *)
 
 (*s: function [[Lang.ext_of_lang]] *)
@@ -166,6 +173,7 @@ let ext_of_lang = function
   | Lua -> ["lua"]
   | Rust -> ["rs"]
   | R -> ["r"; "R"]
+  | Yaml -> ["yaml";"yml"]
 (*e: function [[Lang.ext_of_lang]] *)
 
 (*s: function [[Lang.find_source]] *)

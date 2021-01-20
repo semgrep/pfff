@@ -91,6 +91,8 @@ let parse_with_lang lang file =
       failwith "No Rust parser in pfff; use the one in tree-sitter"
   | Lang.R ->
       failwith "No R parser in pfff; use the one in tree-sitter"
+  | Lang.Yaml ->
+      failwith "No Yaml parser yet, parsed only for semgrep in Parse_rule.ml"
 
 (*e: function [[Parse_generic.parse_with_lang]] *)
 
@@ -151,5 +153,7 @@ let parse_pattern lang str =
       failwith "No Rust generic parser in pfff; use the one in tree-sitter"
   | Lang.R ->
       failwith "No R generic parser in pfff; use the one in tree-sitter"
+  | Lang.Yaml ->
+      failwith "No Yaml parser yet, parsed only for semgrep in Parse_rule.ml"
 (*e: function [[Parse_generic.parse_pattern]] *)
 (*e: pfff/lang_GENERIC/parsing/Parse_generic.ml *)

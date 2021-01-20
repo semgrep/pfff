@@ -8,18 +8,22 @@ type t =
    * (no fallback) *)
   | Python2 | Python3
   (*e: [[Lang.t]] extra Python cases *)
-  | Javascript | Typescript | JSON
-  | Java
-  | Go
+  (* system *)
   | C | Cplusplus
-  | OCaml
-  | Ruby
-  | Csharp
-  | PHP
-  | Kotlin
-  | Lua
   | Rust
+  (* mainstream with Gc *)
+  | Javascript | Typescript
+  | Java | Kotlin
+  | Csharp
+  | Go
+  (* functional *)
+  | OCaml
+  (* scripting (Python is above) *)
+  | Ruby | PHP | Lua
+  (* data science *)
   | R
+  (* config files *)
+  | JSON | Yaml
   (*e: type [[Lang.t]] *)
 val pp: Format.formatter -> t -> unit
 
