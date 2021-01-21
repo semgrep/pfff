@@ -312,6 +312,7 @@ and expr =
   | DeepEllipsis of expr bracket
 
   | ExprTodo of tok
+  | TypedMetavar of ident * type_
 
 (* see check_variables_cpp.ml *)
 and ident_info = {

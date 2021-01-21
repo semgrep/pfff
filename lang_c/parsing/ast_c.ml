@@ -189,6 +189,7 @@ and expr =
   (* sgrep-ext: *)
   | Ellipses of tok
   | DeepEllipsis of expr bracket
+  | TypedMetavar of name * type_
 
 and argument =
   | Arg of expr

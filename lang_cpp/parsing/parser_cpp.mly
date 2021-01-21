@@ -525,6 +525,8 @@ pm_expr:
 cast_expr:
  | unary_expr                { $1 }
  | "(" type_id ")" cast_expr { Cast (($1, $2, $3), $4) }
+ (* sgrep-ext: *)
+ | "(" type_id TIdent ")" { Flag_parsing.sgrep_guard (TypedMetavar ($3, $2)) }
 
 unary_expr:
  | postfix_expr            { $1 }
