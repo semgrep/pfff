@@ -593,6 +593,8 @@ and expr env e =
       debug (Expr e); raise CplusplusConstruct
 
   | ParenExpr (_, e, _) -> expr env e
+  (* sgrep-ext: *)
+  | TypedMetavar (id, t) -> A.TypedMetavar (id, full_type env t)
 
 and constant _env x =
   match x with

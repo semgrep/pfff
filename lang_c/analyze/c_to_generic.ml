@@ -239,6 +239,10 @@ and expr =
   | GccConstructor (v1, v2) -> let v1 = type_ v1 and v2 = expr v2 in
       G.Call (G.IdSpecial (G.New, fake "new"),
               fb((G.ArgType v1)::([v2] |> List.map G.arg)))
+  | TypedMetavar (v1, v2) ->
+      let v1 = name v1 in
+      let v2 = type_ v2 in
+      G.TypedMetavar (v1, Parse_info.fake_info " ", v2)
 
 and argument v =
   match v with

@@ -170,7 +170,7 @@ let instrs_of_expr env e =
     | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
     | A.SizeOf _
     | A.GccConstructor _
-    | A.Ellipses _ | A.DeepEllipsis _
+    | A.Ellipses _ | A.DeepEllipsis _ | A.TypedMetavar _
       ->
         (* less: we could generate a special fresh_var that datalog would not
          * have to track? hmm but maybe the var is actually used

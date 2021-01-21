@@ -947,7 +947,7 @@ and expr env = function
       type_ env t;
       expr env e
   | Defined (_t, _id) -> ()
-  | Ellipses _ | DeepEllipsis _ -> ()
+  | Ellipses _ | DeepEllipsis _ | TypedMetavar _ -> ()
 
 
 and exprs env xs = xs |> List.iter (expr env)
