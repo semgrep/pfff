@@ -5,6 +5,7 @@ type file_type =
   | Binary of string
   | Text of string
   | Doc of string
+  | Config of config_type
   | Media of media_type
   | Archive of string
   | Other of string
@@ -12,7 +13,6 @@ type file_type =
 and pl_type =
   | ML of string | Haskell of string | Lisp of lisp_type | Skip
   | Prolog of string
-  | Makefile
   | Script of string
   | C of string | Cplusplus of string | Java | Kotlin | Csharp | ObjectiveC of string
   | Swift
@@ -27,13 +27,19 @@ and pl_type =
   | Thrift
   | MiscPL of string
 
+and config_type =
+  | Makefile
+  | Json
+  | Jsonnet
+  | Yaml
+
 and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
 and webpl_type =
   | Php of string
   | Js | Coffee | TypeScript | TSX
   | Css
-  | Html | Xml | Json | Yaml
+  | Html | Xml
   | Sql
 
 and media_type =
@@ -51,6 +57,9 @@ val is_syncweb_obj_file:
   Common.filename -> bool
 val is_json_filename:
   Common.filename -> bool
+
+val files_of_dirs_or_files:
+  (file_type -> bool) -> Common.filename list -> Common.filename list
 
 (* specialisations *)
 val webpl_type_of_file:

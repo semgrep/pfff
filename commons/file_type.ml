@@ -29,6 +29,7 @@ type file_type =
   | Binary of string
   | Text of string (* tex, txt, readme, noweb, org, etc *)
   | Doc  of string (* ps, pdf *)
+  | Config of config_type (* json, yaml, ini *)
   | Media of media_type
   | Archive of string (* tgz, rpm, etc *)
   | Other of string
@@ -42,7 +43,6 @@ and pl_type =
 
   | Prolog of string
 
-  | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
 
   | C of string | Cplusplus of string
@@ -67,6 +67,12 @@ and pl_type =
 
   | MiscPL of string
 
+and config_type =
+  | Makefile
+  | Json
+  | Jsonnet (* kinda pl_type *)
+  | Yaml
+
 and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
 and webpl_type =
@@ -74,8 +80,6 @@ and webpl_type =
   | Js | Coffee | TypeScript | TSX
   | Css
   | Html | Xml
-  (* infra-as-code *)
-  | Json | Yaml
   | Sql
 
 and media_type =
@@ -199,8 +203,9 @@ let file_type_of_file2 file =
   | "tsx" -> PL (Web TypeScript) (* Typescript with JSX enabled *)
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
-  | "json" -> PL (Web Json)
-  | "yml" | "yaml" -> PL (Web Yaml)
+  | "json" -> Config Json
+  | "jsonnet" -> Config Jsonnet
+  | "yml" | "yaml" -> Config Yaml
   | "sql" -> PL (Web Sql)
   | "sqlite" -> PL (Web Sql)
 
@@ -280,7 +285,7 @@ let file_type_of_file2 file =
 
 
   | "exe" -> Binary e
-  | "mk" -> PL Makefile
+  | "mk" -> Config Makefile
 
   | "rs" -> PL Rust
   | "go" -> PL Go
@@ -290,11 +295,11 @@ let file_type_of_file2 file =
 
   | _ when Common2.is_executable file -> Binary e
 
-  | _ when b = "Makefile" || b = "mkfile" || b = "Imakefile" -> PL Makefile
+  | _ when b = "Makefile" || b = "mkfile" || b = "Imakefile" -> Config Makefile
   | _ when b = "README" -> Text "txt"
 
   | _ when b = "TAGS" -> Binary e
-  | _ when b = "TARGETS" -> PL Makefile
+  | _ when b = "TARGETS" -> Config Makefile
   | _ when b = ".depend" -> Obj "depend"
   | _ when b = ".emacs" -> PL (Lisp (Elisp))
 
@@ -303,8 +308,6 @@ let file_type_of_file2 file =
 
 let file_type_of_file a =
   Common.profile_code "file_type_of_file" (fun () -> file_type_of_file2 a)
-
-
 
 (*****************************************************************************)
 (* Misc *)
@@ -348,3 +351,9 @@ let is_json_filename filename =
   | File_type.PL (File_type.Web (File_type.Json)) -> true
   | _ -> false
   *)
+
+let files_of_dirs_or_files p xs =
+  Common.files_of_dir_or_files_no_vcs_nofilter xs
+  |> List.filter (fun filename ->
+    p (file_type_of_file filename)
+  ) |> Common.sort
