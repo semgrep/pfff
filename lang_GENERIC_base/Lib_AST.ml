@@ -41,11 +41,14 @@ let ii_of_any any =
   extract_info_visitor (fun visitor -> visitor any)
 (*e: function [[Lib_AST.ii_of_any]] *)
 
+let range_of_tokens tokens =
+  List.filter Parse_info.is_origintok tokens
+  |> Parse_info.min_max_ii_by_pos
+
 let range_of_any any =
   let leftmost_token, rightmost_token =
     ii_of_any any
-    |> List.filter Parse_info.is_origintok
-    |> Parse_info.min_max_ii_by_pos
+    |> range_of_tokens
   in
   (Parse_info.token_location_of_info leftmost_token,
    Parse_info.token_location_of_info rightmost_token)

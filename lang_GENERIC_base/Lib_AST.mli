@@ -8,6 +8,9 @@
 val ii_of_any: AST_generic.any -> Parse_info.t list
 (*e: signature [[Lib_AST.ii_of_any]] *)
 
+val range_of_tokens:
+  Parse_info.t list -> Parse_info.t * Parse_info.t
+
 val range_of_any:
   AST_generic.any -> Parse_info.token_location * Parse_info.token_location
 
