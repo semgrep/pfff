@@ -875,7 +875,7 @@ primary_type2:
  | "[" listc(type_) "]" { TyTuple ($1, $2, $3) }
  (* not in Typescript grammar *)
  | T_STRING
-     { TyStringLiteral($1)
+     { TyLiteral (String $1)
        (* G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1);
                                 G.E (G.L (G.String $1))]) *)  }
 
@@ -1297,12 +1297,12 @@ primary_expr_no_braces:
  | id              { idexp_or_special $1 }
 
  | null_literal    { IdSpecial (Null, $1) }
- | boolean_literal { Bool $1 }
- | numeric_literal { Num $1 }
- | string_literal  { String $1 }
+ | boolean_literal { L (Bool $1) }
+ | numeric_literal { L (Num $1) }
+ | string_literal  { L (String $1) }
 
  (* marcel: this isn't an expansion of literal in ECMA-262... mistake? *)
- | regex_literal                { Regexp $1 }
+ | regex_literal                { L (Regexp $1) }
  | array_literal                { $1 }
 
  (* simple! ECMA mixes this rule with arrow parameters (bad) *)
@@ -1420,11 +1420,11 @@ xhp_attribute:
  | T_XHP_ATTR "=" xhp_attribute_value { XmlAttr ($1, $3) }
  | "{" "..." assignment_expr "}" { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
  (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
- | T_XHP_ATTR                         { XmlAttr ($1, Bool(true,PI.fake_info "true"))}
+ | T_XHP_ATTR                         { XmlAttr ($1, L (Bool(true,PI.fake_info "true")))}
  | "..."                              { XmlEllipsis $1 }
 
 xhp_attribute_value:
- | T_STRING           { String $1 }
+ | T_STRING           { L (String $1) }
  | "{" expr sc? "}"   { $2 }
  | "..."              { Ellipsis $1 }
 
@@ -1435,7 +1435,7 @@ xhp_attribute_value:
 template_literal: T_BACKQUOTE encaps* T_BACKQUOTE  { ($1, $2, $3) }
 
 encaps:
- | T_ENCAPSED_STRING        { String $1 }
+ | T_ENCAPSED_STRING        { L (String $1) }
  | T_DOLLARCURLY expr "}"   { $2 }
 
 (*----------------------------*)

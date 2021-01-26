@@ -146,10 +146,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           v_expr v1; v_tok v2; v_type_ v3
       | ExprTodo (v1, v2) -> v_todo_category v1; v_list v_expr v2
       | Xml v1 -> let v1 = v_xml v1 in ()
-      | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
-      | Num v1 -> let v1 = v_wrap v_string v1 in ()
-      | String v1 -> let v1 = v_wrap v_string v1 in ()
-      | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
+      | L x ->
+          (match x with
+           | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
+           | Num v1 -> let v1 = v_wrap v_string v1 in ()
+           | String v1 -> let v1 = v_wrap v_string v1 in ()
+           | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
+          )
       | Id v1 -> let v1 = v_name v1 in ()
       | IdSpecial v1 -> let v1 = v_wrap v_special v1 in ()
       | Assign (v1, v2, v3) ->

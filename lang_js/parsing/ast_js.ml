@@ -169,11 +169,7 @@ type property_name =
 (* Expressions *)
 (*****************************************************************************)
 and expr =
-  (* literals *)
-  | Bool of bool wrap
-  | Num of string wrap
-  | String of string wrap
-  | Regexp of string wrap
+  | L of literal
 
   | Id of ident
   | IdSpecial of special wrap
@@ -228,6 +224,12 @@ and expr =
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
   | ObjAccessEllipsis of expr * tok (* ... *)
+
+and literal =
+  | Bool of bool wrap
+  | Num of string wrap
+  | String of string wrap
+  | Regexp of string wrap
 
 and arguments = argument list bracket
 and argument = expr
@@ -329,14 +331,25 @@ and pattern = expr
 (* typescript-ext: old: was reusing AST_generic.type_ but can't anymore *)
 and type_ =
   | TyBuiltin of string wrap
+  (* todo: generics, * type_parameters list *)
   | TyName of dotted_ident
-  | TyOr of type_ * tok * type_
-  | TyAnd of type_ * tok * type_
+  (* fancy *)
+  | TyLiteral of literal
+
   | TyQuestion of tok * type_
   | TyArray of type_ * (tok * unit * tok)
   | TyTuple of (tok * type_ list * tok)
+  | TyFun of parameter list * type_ option
+
   | TyRecordAnon of (tok * unit * tok)
-  | TyStringLiteral of string wrap
+
+  | TyOr of type_ * tok * type_
+  | TyAnd of type_ * tok * type_
+
+  | TypeTodo of todo_category * any list
+
+and type_parameter = ident (* TODO: constraints *)
+and type_parameter_constraint = type_
 
 (*****************************************************************************)
 (* Attributes *)
