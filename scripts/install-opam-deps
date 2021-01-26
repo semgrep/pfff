@@ -11,6 +11,7 @@ usage() {
 Usage: $progname [OPTIONS]
 
 Install the prerequisites to build pfff, assuming opam is already installed.
+Must run from the root of the pfff source tree.
 
 Options:
   --help
@@ -45,27 +46,14 @@ while [[ $# -gt 0 ]]; do
     *)
       error "Unsupported argument '$1'. Try '$progname --help'."
   esac
+  shift
 done
 
 if [[ -n "$ocaml_version" ]]; then
-  opam switch "$ocaml_version"
+  opam switch create "$ocaml_version"
 fi
 
 eval $(opam env)
-
-packages="
-  ANSITerminal
-  grain_dypgen
-  menhir
-  ocamlgraph
-  ocp-indent
-  ounit2
-  ppx_deriving
-  uucp
-  uutf
-  yojson
-  easy_logging_yojson
-"
 
 # The docker images from the ocaml community ship with a stale (file://...)
 # opam repository and don't consult the live opam-repository hosted on github.
@@ -79,4 +67,4 @@ if ! (opam repo list | grep -q http); then
 fi
 
 opam update
-opam install $packages -y
+opam install --deps-only -y .
