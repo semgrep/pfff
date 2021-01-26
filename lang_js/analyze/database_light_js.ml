@@ -17,7 +17,6 @@ open Common
 
 module Ast = Ast_js
 module E = Entity_code
-module HC = Highlight_code
 module T = Parser_js
 module PI = Parse_info
 module Db = Database_code
@@ -63,7 +62,7 @@ let remove_quotes_if_present s =
   | _ -> s
 
 
-let mk_entity ~root ~hcomplete_name_of_info info categ =
+let _mk_entity ~root ~hcomplete_name_of_info info categ =
 
   let s = Parse_info.str_of_info info in
   (* when using frameworks like Javelin/JX, the defs are
@@ -130,31 +129,34 @@ let compute_database ?(verbose=false) files_or_dirs =
   files |> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);
 
-    let {Parse_info. ast; tokens =toks; _} = Parse_js.parse file in
+    let {Parse_info. ast = _; tokens = _toks; _} = Parse_js.parse file in
 
-    let hcomplete_name_of_info =
+    let _hcomplete_name_of_info =
       failwith "Class_pre_es6 in TODO_more"
       (* Class_pre_es6.extract_complete_name_of_info ast  *)
     in
 
-    let prefs = Highlight_code.default_highlighter_preferences in
+    (* highlighter no more in pfff
+        let prefs = Highlight_code.default_highlighter_preferences in
 
-    Highlight_js.visit_program
-      ~tag_hook:(fun info categ ->
+        Highlight_js.visit_program
+          ~tag_hook:(fun info categ ->
 
-        (* todo: use is_entity_def_category ? *)
-        match categ with
-        | HC.Entity (_kind, (HC.Def2 _) ) ->
-            Hashtbl.add hdefs_pos info true;
-            let e = mk_entity ~root ~hcomplete_name_of_info
-                info categ
-            in
-            Hashtbl.add hdefs e.Db.e_name e;
-        | _ -> ()
-      )
-      prefs
-      (ast, toks)
-    ;
+            (* todo: use is_entity_def_category ? *)
+            match categ with
+            | HC.Entity (_kind, (HC.Def2 _) ) ->
+                Hashtbl.add hdefs_pos info true;
+                let e = mk_entity ~root ~hcomplete_name_of_info
+                    info categ
+                in
+                Hashtbl.add hdefs e.Db.e_name e;
+            | _ -> ()
+          )
+          prefs
+          (ast, toks)
+        ;
+    *)
+    ()
   );
 
   (* step2: collecting uses *)

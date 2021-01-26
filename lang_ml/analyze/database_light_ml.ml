@@ -16,8 +16,6 @@ open Common
 
 module Flag = Flag_parsing
 module Db = Database_code
-module HC = Highlight_code
-module PI = Parse_info
 
 module T = Parser_ml
 
@@ -140,75 +138,78 @@ let compute_database ?(verbose=false) files_or_dirs =
   files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
-      let { Parse_info. ast; tokens = toks; _ } =
+      let { Parse_info. ast = _; tokens = _toks; _ } =
         parse file
       in
+      ()
+    ));
 
-      (* this is quite similar to what we do in tags_ml.ml *)
-      let prefs = Highlight_code.default_highlighter_preferences in
+  (* TODO highlighter no more in pfff
+        (* this is quite similar to what we do in tags_ml.ml *)
+        let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_ml.visit_program
-        ~lexer_based_tagger:true (* !! *)
-        ~tag_hook:(fun info categ ->
-          (* todo: use is_entity_def_category ? *)
-          match categ with
-          | HC.Entity (_, HC.Def2 _)
-          | HC.FunctionDecl _
-            ->
-              let s = PI.str_of_info info in
-              let l = PI.line_of_info info in
-              let c = PI.col_of_info info in
+        Highlight_ml.visit_program
+          ~lexer_based_tagger:true (* !! *)
+          ~tag_hook:(fun info categ ->
+            (* todo: use is_entity_def_category ? *)
+            match categ with
+            | HC.Entity (_, HC.Def2 _)
+            | HC.FunctionDecl _
+              ->
+                let s = PI.str_of_info info in
+                let l = PI.line_of_info info in
+                let c = PI.col_of_info info in
 
-              let file = Parse_info.file_of_info info |> Common.readable ~root
-              in
-
-              let module_name = Module_ml.module_name_of_filename file in
-
-              let fullpath = Parse_info.file_of_info info in
-
-              (* stuff in mli is ok only where there is no .ml, like
-               * for the externals/core/ stuff
-              *)
-              let (d,b,e) = Common2.dbe_of_filename fullpath in
-              if e = "ml" ||
-                 (e = "mli" && not (Sys.file_exists
-                                      (Common2.filename_of_dbe (d,b, "ml"))))
-              then begin
-
-                let entity = { Database_code.
-                               e_name = s;
-                               e_fullname = spf "%s.%s" module_name s;
-                               e_file = file;
-                               e_pos = { Common2.l = l; c };
-                               e_kind = Common2.some
-                                   (Db.entity_kind_of_highlight_category_def categ);
-                               (* filled in step 2 *)
-                               e_number_external_users = 0;
-                               e_good_examples_of_use = [];
-
-                               (* TODO once we have a real parser, can at least
-                                * set the UseGlobal property.
-                               *)
-                               e_properties = [];
-                             }
+                let file = Parse_info.file_of_info info |> Common.readable ~root
                 in
-                (* todo? could be more precise and add the Modulename.s
-                 * in the hash so that we don't need to call
-                 * Hashtbl.find_all but just Hashtbl.find later ?
+
+                let module_name = Module_ml.module_name_of_filename file in
+
+                let fullpath = Parse_info.file_of_info info in
+
+                (* stuff in mli is ok only where there is no .ml, like
+                 * for the externals/core/ stuff
                 *)
-                Hashtbl.add hdefs s entity;
+                let (d,b,e) = Common2.dbe_of_filename fullpath in
+                if e = "ml" ||
+                   (e = "mli" && not (Sys.file_exists
+                                        (Common2.filename_of_dbe (d,b, "ml"))))
+                then begin
 
-                Hashtbl.add hfile_to_entities file
-                  (entity_poor_id_of_entity entity);
-              end;
+                  let entity = { Database_code.
+                                 e_name = s;
+                                 e_fullname = spf "%s.%s" module_name s;
+                                 e_file = file;
+                                 e_pos = { Common2.l = l; c };
+                                 e_kind = Common2.some
+                                     (Db.entity_kind_of_highlight_category_def categ);
+                                 (* filled in step 2 *)
+                                 e_number_external_users = 0;
+                                 e_good_examples_of_use = [];
 
-          | _ -> ()
-        )
-        prefs
-        file
-        (ast, toks)
-    )
-  );
+                                 (* TODO once we have a real parser, can at least
+                                  * set the UseGlobal property.
+                                 *)
+                                 e_properties = [];
+                               }
+                  in
+                  (* todo? could be more precise and add the Modulename.s
+                   * in the hash so that we don't need to call
+                   * Hashtbl.find_all but just Hashtbl.find later ?
+                  *)
+                  Hashtbl.add hdefs s entity;
+
+                  Hashtbl.add hfile_to_entities file
+                    (entity_poor_id_of_entity entity);
+                end;
+
+            | _ -> ()
+          )
+          prefs
+          file
+          (ast, toks)
+      )
+  *)
 
   (* PHASE 2: collecting uses *)
   if verbose then pr2 (spf "PHASE 2: collecting uses");
