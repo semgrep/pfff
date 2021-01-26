@@ -201,9 +201,26 @@ let rec cfg_stmt : state -> F.nodei option -> stmt -> cfg_stmt_result =
        * this new node *)
       CfgFirstLast (newi, None)
 
-  | Try _
-  | Throw (_, _)
-    -> cfg_todo state previ stmt
+  | Try (try_st, catches, finally_st) ->
+      (* TODO: This is not a proper CFG for try-catch-finally... but
+       * it's probably "good enough" for now! *)
+      (* previ -> newi -> try --> catch1 -|
+       *                      |->  ...   -|
+       *                      |-> catchN -|
+       *                      |-----------|-> newfakefinally -> finally
+      *)
+      let newi = state.g#add_node { F.n = F.TrueNode } in
+      state.g |> add_arc_opt (previ, newi);
+      let finaltry = cfg_stmt_list state (Some newi) try_st in
+      let newfakefinally = state.g#add_node { F.n = F.TrueNode } in
+      state.g |> add_arc_opt (finaltry, newfakefinally);
+      catches |> List.iter (fun (_, catch_st) ->
+        let finalcatch = cfg_stmt_list state finaltry catch_st in
+        state.g |> add_arc_opt (finalcatch, newfakefinally)
+      );
+      let finalfinally = cfg_stmt_list state (Some newfakefinally) finally_st in
+      CfgFirstLast (newi, finalfinally)
+  | Throw (_, _) -> cfg_todo state previ stmt
 
   | MiscStmt x ->
       let newi = state.g#add_node { F.n = F.NOther x } in

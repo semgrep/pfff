@@ -163,6 +163,7 @@ let test_dfg_constness file =
           let flow = CFG_build.cfg_of_stmts xs in
           pr2 "Constness";
           let mapping = Dataflow_constness.fixpoint flow in
+          Dataflow_constness.update_constness flow mapping;
           DataflowY.display_mapping flow mapping Dataflow_constness.string_of_constness;
           let s = AST_generic.show_any (S def.fbody) in
           pr2 s

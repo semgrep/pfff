@@ -752,8 +752,23 @@ let rec stmt_aux env st =
   | G.Throw (tok, e, _) ->
       let ss, e = expr_with_pre_stmts env e in
       ss @ [mk_s (Throw (tok, e))]
-  | G.Try (_, _, _, _) ->
-      todo (G.S st)
+  | G.Try (_tok, try_st, catches, opt_finally) ->
+      let try_stmt = stmt env try_st in
+      let catches_stmt_rev =
+        List.fold_left (fun acc (ctok, pattern, catch_st) ->
+          (* TODO: Handle pattern properly. *)
+          let name = fresh_var env ctok in
+          let todo_pattern = fixme_stmt ToDo (G.P pattern) in
+          let catch_stmt = stmt env catch_st in
+          (name, todo_pattern@catch_stmt) :: acc)
+          [] catches
+      in
+      let finally_stmt =
+        match opt_finally with
+        | None                    -> []
+        | Some (_tok, finally_st) -> stmt env finally_st
+      in
+      [mk_s (Try (try_stmt, List.rev catches_stmt_rev, finally_stmt))]
   | G.WithUsingResource (_, stmt1, stmt2) ->
       let stmt1 = stmt env stmt1 in
       let stmt2 = stmt env stmt2 in
