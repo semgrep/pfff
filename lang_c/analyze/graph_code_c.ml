@@ -18,6 +18,7 @@ module Flag = Flag_parsing
 module E = Entity_code
 module G = Graph_code
 module P = Graph_code_prolog
+module PI = Parse_info
 
 open Ast_c
 module Ast = Ast_c
@@ -298,7 +299,7 @@ let find_existing_node_opt env name candidates last_resort =
 let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
 
-let unbracket = AST_generic.unbracket
+let unbracket = PI.unbracket
 
 (*****************************************************************************)
 (* For datalog *)

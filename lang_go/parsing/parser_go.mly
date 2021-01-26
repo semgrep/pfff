@@ -22,8 +22,9 @@
  *  at https://github.com/golang/go
  *)
 open Common
-open AST_generic (* for the arithmetic operator *)
+open AST_generic_ (* for the arithmetic operator *)
 open Ast_go
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Helpers *)
@@ -57,9 +58,9 @@ let mk_else elseifs else_ =
 
 let rec expr_to_type tok e =
   match e with
-  | Id (id, _) -> TName [id]
+  | Id (id) -> TName [id]
   | Deref (t, e) -> TPtr (t, expr_to_type tok e)
-  | Selector (Id (id1, _), _, id2) -> TName [id1;id2]
+  | Selector (Id (id1), _, id2) -> TName [id1;id2]
   | ParenType t -> t
   | _ -> error tok ("TODO: expr_to_type: " ^ Common.dump e)
 
@@ -160,7 +161,7 @@ let rev_and_fix_items xs =
 
 (* tokens with "values" (was LLITERAL before) *)
 %token  <string * Ast_go.tok> LINT LFLOAT  LIMAG  LRUNE LSTR
-%token  <AST_generic.operator * Ast_go.tok> LASOP
+%token  <AST_generic_.operator * Ast_go.tok> LASOP
 %token  <string * Ast_go.tok> LNAME
 
 (*-----------------------------------------*)
@@ -502,7 +503,7 @@ caseblock_list:
 caseblock:
 | case listsc(stmt)
     {
-      CaseClause ($1, Block (AST_generic.fake_bracket (List.rev $2)))
+      CaseClause ($1, Block (PI.fake_bracket (List.rev $2)))
       (*
         // If the last token read by the lexer was consumed
         // as part of the case, clear it (parser has cleared yychar).
@@ -604,7 +605,7 @@ pexpr:
 pexpr_no_paren:
 |   basic_literal { BasicLit $1 }
 
-|   name { Id ($1, ref None) }
+|   name { Id ($1) }
     (* sgrep-ext: *)
 |   "(" name ":" ntype ")" { TypedMetavar($2, $3, $4) }
     (* can be many things *)

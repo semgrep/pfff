@@ -18,6 +18,7 @@ open Ast_php
 module Ast = Ast_php
 module E = Entity_code
 module G = Graph_code
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -224,7 +225,7 @@ let normalize str =
   |> String.lowercase_ascii                   (* php is case insensitive *)
   |> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
-let fb = AST_generic.fake_bracket
+let fb = PI.fake_bracket
 
 (*****************************************************************************)
 (* Namespace *)

@@ -210,8 +210,8 @@ type expr =
   | Call of expr * expr list bracket
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Infix of AST_generic.incr_decr wrap * expr
-  | Postfix of AST_generic.incr_decr wrap * expr
+  | Infix of AST_generic_.incr_decr wrap * expr
+  | Postfix of AST_generic_.incr_decr wrap * expr
   | Binop of expr * binaryOp wrap * expr
   | Unop of unaryOp wrap * expr
   | Guil of expr list bracket
@@ -237,8 +237,8 @@ and special =
 and binaryOp =
   | BinaryConcat
   | CombinedComparison
-  | ArithOp of AST_generic.operator
-and unaryOp = AST_generic.operator
+  | ArithOp of AST_generic_.operator
+and unaryOp = AST_generic_.operator
 
 (* only Var, List, or Arrow, and apparently also Array_get is ok, so
  * basically any lvalue

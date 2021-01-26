@@ -16,7 +16,8 @@ open Common
 
 open Cst_php
 module A = Ast_php
-module G = AST_generic
+module PI = Parse_info
+module G = AST_generic_
 
 (*****************************************************************************)
 (* Prelude *)
@@ -42,7 +43,7 @@ let error tok s =
 let wrap tok = tok
 
 let fake s = Parse_info.fake_info s
-let fb = AST_generic.fake_bracket
+let fb = PI.fake_bracket
 
 let stmt1 xs =
   match xs with
@@ -110,7 +111,7 @@ and toplevels env xs =
            in
            let body = toplevels env xs in
            let rest = toplevels env rest in
-           A.NamespaceDef (t, qualified_ident env qi, G.fake_bracket body)::rest
+           A.NamespaceDef (t, qualified_ident env qi, PI.fake_bracket body)::rest
 
        | _ ->
            (toplevel env x) @ toplevels env xs
@@ -632,7 +633,7 @@ and short_lambda_def env def =
     f_return_type = None;
     f_body =
       (match def.sl_body with
-       | SLExpr e -> [A.Expr (expr env e, G.sc)]
+       | SLExpr e -> [A.Expr (expr env e, PI.sc)]
        | SLBody (_, body, _) -> List.fold_right (stmt_and_def env) body []
       );
     f_kind = (A.ShortLambda, sl_tok);
@@ -779,7 +780,7 @@ and method_def env m =
         A.Assign (A.Obj_get(A.IdSpecial(A.This,tok), fake ".",
                             A.Id [str_without_dollar, tok]),
                   fake "=",
-                  A.Var (str_with_dollar, tok)), G.sc)
+                  A.Var (str_with_dollar, tok)), PI.sc)
     )
   in
 
