@@ -13,13 +13,13 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install System Deps
-      run: sudo add-apt-repository ppa:avsm/ppa && sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial ocaml opam
+      run: sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial ocaml opam
     - name: debugging
       run: opam --version
     - name: Install pfff
       run: |
         opam init
-        ./scripts/install-opam-deps --ocaml-version 4.07.1
+        ./scripts/install-opam-deps --ocaml-version 4.09.1
         opam install -y pfff
     - name: Run Tests
       run: eval $(opam env); dune build && dune runtest -f
