@@ -126,6 +126,11 @@ let is_fake tok =
   | FakeTokStr _ -> true
   | _ -> false
 
+(* used to be in AST_generic.ml *)
+let fake_bracket x = fake_info "(", x, fake_info ")"
+let unbracket (_, x, _) = x
+let sc = fake_info ";"
+
 type token_kind =
   (* for the fuzzy parser and sgrep/spatch fuzzy AST *)
   | LPar | RPar

@@ -28,13 +28,14 @@
  *)
 %{
 open Common
-open AST_generic (* for the arithmetic operator *)
+open AST_generic_ (* for the arithmetic operator *)
 open Ast_java
-module G = AST_generic
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let empty_body = PI.fake_bracket []
 
 (* todo? use a Ast.special? *)
 let super_ident ii = ("super", ii)
@@ -180,7 +181,7 @@ let mk_stmt_or_stmts = function
 %token <Parse_info.t> COLONCOLON "::"		(* :: *)
 
 
-%token <(AST_generic.operator * Parse_info.t)> OPERATOR_EQ
+%token <(AST_generic_.operator * Parse_info.t)> OPERATOR_EQ
 	(* += -= *= /= &= |= ^= %= <<= >>= >>>= *)
 
 (* keywords tokens *)
@@ -547,29 +548,29 @@ postfix_expression:
  | post_decrement_expression  { $1 }
 
 post_increment_expression: postfix_expression INCR
-  { Postfix ($1, (AST_generic.Incr, $2)) }
+  { Postfix ($1, (Incr, $2)) }
 
 post_decrement_expression: postfix_expression DECR
-  { Postfix ($1, (AST_generic.Decr, $2)) }
+  { Postfix ($1, (Decr, $2)) }
 
 unary_expression:
  | pre_increment_expression  { $1 }
  | pre_decrement_expression  { $1 }
- | PLUS unary_expression     { Unary ((AST_generic.Plus,$1), $2) }
- | MINUS unary_expression    { Unary ((AST_generic.Minus,$1), $2) }
+ | PLUS unary_expression     { Unary ((Plus,$1), $2) }
+ | MINUS unary_expression    { Unary ((Minus,$1), $2) }
  | unary_expression_not_plus_minus  { $1 }
 
 pre_increment_expression: INCR unary_expression
-  { Prefix ((AST_generic.Incr, $1), $2) }
+  { Prefix ((Incr, $1), $2) }
 
 pre_decrement_expression: DECR unary_expression
-  { Prefix ((AST_generic.Decr, $1), $2) }
+  { Prefix ((Decr, $1), $2) }
 
 (* see conflicts.txt Cast note to understand the need of this rule *)
 unary_expression_not_plus_minus:
  | postfix_expression  { $1 }
- | COMPL unary_expression  { Unary ((AST_generic.BitNot,$1), $2) }
- | NOT unary_expression    { Unary ((AST_generic.Not,$1), $2) }
+ | COMPL unary_expression  { Unary ((BitNot,$1), $2) }
+ | NOT unary_expression    { Unary ((Not,$1), $2) }
  | cast_expression  { $1 }
 
 (* original rule:
@@ -723,7 +724,7 @@ variable_arity_parameter:
 
 (* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)
 lambda_body:
- | expression { Expr ($1, G.sc) }
+ | expression { Expr ($1, PI.sc) }
  | block      { $1 }
 
 (*----------------------------*)
@@ -771,7 +772,7 @@ statement:
  | while_statement  { $1 }
  | for_statement  { $1 }
  (* sgrep-ext: *)
- | "..." { Flag_parsing.sgrep_guard (Expr (Ellipsis $1, G.sc)) }
+ | "..." { Flag_parsing.sgrep_guard (Expr (Ellipsis $1, PI.sc)) }
 
 statement_without_trailing_substatement:
  | block  { $1 }
@@ -1040,7 +1041,7 @@ class_header:
   { { cl_name = $3; cl_kind = (ClassRegular, $2);
       cl_mods = $1; cl_tparams = $4;
       cl_extends = $5;  cl_impls = $6;
-      cl_body = G.empty_body ;
+      cl_body = empty_body ;
      } }
 
 super: EXTENDS type_ (* was class_type *)  { $2 }

@@ -58,7 +58,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
   files |> Console.progress ~show:verbose (fun k ->
     List.map (fun file ->
       k();
-      let (ast, toks) =
+      let (_ast, toks) =
         try
           Common.save_excursion Flag.show_parsing_error false(fun()->
             let res = Parse_ml.parse file in
@@ -73,15 +73,17 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       let h = Hashtbl.create 101 in
 
       (* computing the token attributes *)
-      let prefs = Highlight_code.default_highlighter_preferences in
+      let _prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_ml.visit_program
-        ~lexer_based_tagger:true (* !! *)
-        ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
-        prefs
-        file
-        (ast, toks)
-      ;
+      (* TODO highlighter not anymore in pfff
+            Highlight_ml.visit_program
+              ~lexer_based_tagger:true (* !! *)
+              ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
+              prefs
+              file
+              (ast, toks)
+            ;
+      *)
 
       (* processing the tokens in order *)
       toks |> List.iter (fun tok ->

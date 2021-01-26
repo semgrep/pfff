@@ -101,9 +101,10 @@ let test regexp =
       Unit_parsing_go.unittest;
 
       (* generic AST tests *)
-      Unit_naming_generic.unittest;
-      Unit_typing_generic.unittest;
-      Unit_dataflow.unittest;
+      (* Unit_naming_generic.unittest;
+         Unit_typing_generic.unittest;
+         Unit_dataflow.unittest;
+      *)
     ]
   in
   let suite =
@@ -292,8 +293,6 @@ let all_actions () =
   Test_analyze_ml.actions()@
   Test_analyze_cpp.actions()@
   Test_analyze_c.actions()@
-  Test_parsing_generic.actions()@
-  Test_analyze_generic.actions()@
   Test_program_lang.actions()@
 (*
  Builtins_php.actions()@

@@ -18,7 +18,6 @@ open Highlight_code
 module T = Parser_go
 module V = Visitor_go
 module E = Entity_code
-module G = AST_generic
 
 (*****************************************************************************)
 (* Prelude *)
@@ -106,7 +105,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
         tag_ident y categ
   in
 
-  Resolve_go.resolve program;
+  (* Resolve_go.resolve program; *)
 
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
@@ -170,7 +169,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                  (match x with
                                   | SimpleStmt (DShortVars (xs, _, _)) ->
                                       xs |> List.iter (function
-                                        | Id (id, _) ->
+                                        | Id (id) ->
                                             if !in_toplevel
                                             then tag_ident id (Entity (E.Global, def2))
                                             else tag_ident id (Local Def)
@@ -215,13 +214,16 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
                                V.kexpr = (fun (k, _) x ->
                                  (match x with
-                                  | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
-                                      tag_ident fld (Entity (E.Function, use2));
+                                  (* TODO
+                                                                    | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
+                                                                        tag_ident fld (Entity (E.Function, use2));
+                                  *)
                                   | Call (Selector (_, _, fld),_) ->
                                       tag_ident fld (Entity (E.Method, use2));
-                                  | Selector (Id (_m, {contents=_}), _, fld) ->
+                                  | Selector (Id (_m), _, fld) ->
                                       tag_ident fld (Entity (E.Field, use2));
-                                  | Id (id, resolved) ->
+                                  | Id (_id) -> ()
+(*
                                       (match !resolved with
                                        | None -> ()
                                        | Some x ->
@@ -237,6 +239,8 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                             | G.Macro | G.EnumConstant -> ()
                                            )
                                       )
+*)
+
                                   (* general case *)
                                   | _ -> ()
                                  );
@@ -245,7 +249,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
                                V.kinit = (fun (k, _) x ->
                                  (match x with
-                                  | InitKeyValue (InitExpr (Id (id, _)), _, _) ->
+                                  | InitKeyValue (InitExpr (Id (id)), _, _) ->
                                       tag_ident id (Entity (E.Field, use2))
                                   | _ -> ()
                                  );

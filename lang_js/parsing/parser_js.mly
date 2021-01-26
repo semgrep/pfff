@@ -16,9 +16,10 @@
  *)
 open Common
 
+open AST_generic_
 open Ast_js
-module G = AST_generic (* for operators, fake, and now also type_ *)
-module H = AST_generic_helpers
+module PI = Parse_info
+module H = AST_generic_
 
 (*************************************************************************)
 (* Prelude *)
@@ -57,7 +58,7 @@ module H = AST_generic_helpers
 (*************************************************************************)
 (* Helpers *)
 (*************************************************************************)
-let fb = G.fake_bracket
+let fb = PI.fake_bracket
 
 let sndopt = function
   | None -> None
@@ -93,12 +94,12 @@ let mk_FuncDef props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
 
 let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
   let c_attrs = props |> List.map attr in
-  Class ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body},
+  Class ({c_kind = H.Class, tok; c_extends; c_implements; c_attrs; c_body},
          idopt)
 
 let mk_ClassDef ?(attrs=[]) ?(props=[]) tok _generics (c_extends, c_implements) c_body =
   let c_attrs = (props |> List.map attr) @ attrs in
-  ClassDef ({c_kind = G.Class, tok; c_extends; c_implements; c_attrs; c_body})
+  ClassDef ({c_kind = H.Class, tok; c_extends; c_implements; c_attrs; c_body})
 
 let mk_Field ?(fld_type=None) ?(props=[]) fld_name eopt =
   let fld_attrs = props |> List.map attr in
@@ -115,7 +116,7 @@ let mk_def (idopt, defkind) =
   (* TODO: fun default_opt -> ... *)
   let name =
     match idopt with
-    | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, G.fake "")
+    | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, PI.fake_info "")
     | Some id -> id
   in
   basic_entity name, defkind
@@ -131,7 +132,7 @@ let mk_pattern binding_pattern init_opt =
 
 (* Javascript has implicit returns for arrows with expression body *)
 let mk_block_return e =
-  fb [Return (G.fake "return", Some e, G.sc)]
+  fb [Return (PI.fake_info "return", Some e, PI.sc)]
 
 let special spec tok xs =
   Apply (IdSpecial (spec, tok), fb xs)
@@ -785,7 +786,7 @@ method_get_set_star:
 interface_decl: T_INTERFACE binding_id generics? optl(interface_extends)
   object_type
    { let (t1, _xsTODO, t2) = $5 in
-      Some $2, ClassDef { c_kind = G.Interface, $1;
+      Some $2, ClassDef { c_kind = H.Interface, $1;
       c_extends = $4; c_implements = []; c_attrs = [];
       c_body = (t1, [], t2) } }
 
@@ -848,7 +849,7 @@ complex_annotation:
 (* can't use 'type'; generate syntax error in parser_js.ml *)
 type_:
  | primary_or_union_type { $1 }
- | "?" type_             { G.TyQuestion ($2, $1) }
+ | "?" type_             { TyQuestion ($1, $2) }
  | T_LPAREN_ARROW optl(param_type_list) ")" "->" type_
    { $5 (* TODO *) }
 
@@ -863,19 +864,20 @@ primary_or_intersect_type:
 (* I introduced those intermediate rules to remove ambiguities *)
 primary_type:
  | primary_type2        { $1 }
- | primary_type "[" "]" { G.TyArray (($2, None, $3), $1) }
+ | primary_type "[" "]" { TyArray ($1, ($2, (), $3)) }
 
 primary_type2:
- | predefined_type      { G.TyId ($1, G.empty_id_info()) }
+ | predefined_type      { TyName ([$1]) }
  | type_reference       { $1 }
  | object_type
     { let (t1, _xsTODO, t2) = $1 in
-      G.TyRecordAnon (G.fake "", (t1, [], t2)) }
- | "[" listc(type_) "]" { G.TyTuple ($1, $2, $3) }
+      TyRecordAnon ((t1, (), t2)) }
+ | "[" listc(type_) "]" { TyTuple ($1, $2, $3) }
  (* not in Typescript grammar *)
  | T_STRING
-     { G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1);
-                                G.E (G.L (G.String $1))]) }
+     { TyStringLiteral($1)
+       (* G.OtherType (G.OT_Todo, [G.TodoK ("LitType", snd $1);
+                                G.E (G.L (G.String $1))]) *)  }
 
 predefined_type:
  | T_ANY_TYPE      { "any", $1 }
@@ -890,8 +892,8 @@ predefined_type:
 type_reference: type_reference_aux
   { match $1 with
     (* TODO: could be TyApply if snd $1 is a Some *)
-    | [id] -> G.TyId (id, G.empty_id_info())
-    | ids ->  G.TyIdQualified (H.name_of_ids ids, G.empty_id_info())
+    | [id] -> TyName ([id])
+    | ids ->  TyName (ids)
   }
 
 (* was called nominal_type in Flow *)
@@ -909,10 +911,10 @@ module_name:
  | module_name "." T_ID { $1 @ [$3] }
 
 union_type: primary_or_union_type T_BIT_OR primary_type
-    { G.TyOr ($1, $2, $3) }
+    { TyOr ($1, $2, $3) }
 
 intersect_type: primary_or_intersect_type T_BIT_AND primary_type
-    { G.TyAnd ($1, $2, $3) }
+    { TyAnd ($1, $2, $3) }
 
 
 object_type: "{" type_member* "}"
@@ -1043,7 +1045,7 @@ stmt:
  | throw_stmt      { [$1] }
  | try_stmt        { [$1] }
  (* sgrep-ext: *)
- | "..." { [ExprStmt (Ellipsis $1, G.sc)] }
+ | "..." { [ExprStmt (Ellipsis $1, PI.sc)] }
 
 %inline
 stmt1: stmt { stmt1 $1 }
@@ -1175,25 +1177,25 @@ left_hand_side_expr_(x):
 post_in_expr(x):
  | pre_in_expr(x) { $1 }
 
- | post_in_expr(x) T_LESS_THAN post_in_expr(d1)          { bop G.Lt $1 $2 $3 }
- | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop G.Gt $1 $2 $3 }
- | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop G.LtE $1 $2 $3 }
- | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
+ | post_in_expr(x) T_LESS_THAN post_in_expr(d1)          { bop Lt $1 $2 $3 }
+ | post_in_expr(x) T_GREATER_THAN post_in_expr(d1)       { bop Gt $1 $2 $3 }
+ | post_in_expr(x) T_LESS_THAN_EQUAL post_in_expr(d1)    { bop LtE $1 $2 $3 }
+ | post_in_expr(x) T_GREATER_THAN_EQUAL post_in_expr(d1) { bop GtE $1 $2 $3 }
  | post_in_expr(x) T_INSTANCEOF post_in_expr(d1)
     { special Instanceof $2 [$1; $3] }
 
  (* also T_IN! *)
  | post_in_expr(x) T_IN post_in_expr(d1)             { special In $2 [$1; $3] }
 
- | post_in_expr(x) T_EQUAL post_in_expr(d1)          { bop G.Eq $1 $2 $3 }
- | post_in_expr(x) T_NOT_EQUAL post_in_expr(d1)      { bop G.NotEq $1 $2 $3 }
- | post_in_expr(x) T_STRICT_EQUAL post_in_expr(d1)   { bop G.PhysEq $1 $2 $3 }
- | post_in_expr(x) T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop G.NotPhysEq $1 $2 $3 }
- | post_in_expr(x) T_BIT_AND post_in_expr(d1)        { bop G.BitAnd $1 $2 $3 }
- | post_in_expr(x) T_BIT_XOR post_in_expr(d1)        { bop G.BitXor $1 $2 $3 }
- | post_in_expr(x) T_BIT_OR post_in_expr(d1)         { bop G.BitOr $1 $2 $3 }
- | post_in_expr(x) T_AND post_in_expr(d1)            { bop G.And $1 $2 $3 }
- | post_in_expr(x) T_OR post_in_expr(d1)             { bop G.Or $1 $2 $3 }
+ | post_in_expr(x) T_EQUAL post_in_expr(d1)          { bop Eq $1 $2 $3 }
+ | post_in_expr(x) T_NOT_EQUAL post_in_expr(d1)      { bop NotEq $1 $2 $3 }
+ | post_in_expr(x) T_STRICT_EQUAL post_in_expr(d1)   { bop PhysEq $1 $2 $3 }
+ | post_in_expr(x) T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop NotPhysEq $1 $2 $3 }
+ | post_in_expr(x) T_BIT_AND post_in_expr(d1)        { bop BitAnd $1 $2 $3 }
+ | post_in_expr(x) T_BIT_XOR post_in_expr(d1)        { bop BitXor $1 $2 $3 }
+ | post_in_expr(x) T_BIT_OR post_in_expr(d1)         { bop BitOr $1 $2 $3 }
+ | post_in_expr(x) T_AND post_in_expr(d1)            { bop And $1 $2 $3 }
+ | post_in_expr(x) T_OR post_in_expr(d1)             { bop Or $1 $2 $3 }
 
 
 (* called unary_expr and update_expr in ECMA *)
@@ -1201,36 +1203,36 @@ pre_in_expr(x):
  | left_hand_side_expr_(x)                     { $1 }
 
  | pre_in_expr(x) T_INCR (* %prec p_POSTFIX*)
-    { special (IncrDecr (G.Incr, G.Postfix)) $2 [$1] }
+    { special (IncrDecr (Incr, Postfix)) $2 [$1] }
  | pre_in_expr(x) T_DECR (* %prec p_POSTFIX*)
-    { special (IncrDecr (G.Decr, G.Postfix)) $2 [$1] }
+    { special (IncrDecr (Decr, Postfix)) $2 [$1] }
  | T_INCR pre_in_expr(d1)
-  { special (IncrDecr (G.Incr, G.Prefix)) $1 [$2] }
+  { special (IncrDecr (Incr, Prefix)) $1 [$2] }
  | T_DECR pre_in_expr(d1)
-  { special (IncrDecr (G.Decr, G.Prefix)) $1 [$2] }
+  { special (IncrDecr (Decr, Prefix)) $1 [$2] }
 
  | T_DELETE pre_in_expr(d1)                    { special Delete $1 [$2] }
  | T_VOID pre_in_expr(d1)                      { special Void $1 [$2] }
  | T_TYPEOF pre_in_expr(d1)                    { special Typeof $1 [$2] }
 
- | T_PLUS pre_in_expr(d1)                      { uop (ArithOp G.Plus) $1 $2 }
- | T_MINUS pre_in_expr(d1)                     { uop (ArithOp G.Minus) $1 $2}
- | T_BIT_NOT pre_in_expr(d1)                   { uop (ArithOp G.BitNot) $1 $2 }
- | T_NOT pre_in_expr(d1)                       { uop (ArithOp G.Not) $1 $2 }
+ | T_PLUS pre_in_expr(d1)                      { uop (ArithOp Plus) $1 $2 }
+ | T_MINUS pre_in_expr(d1)                     { uop (ArithOp Minus) $1 $2}
+ | T_BIT_NOT pre_in_expr(d1)                   { uop (ArithOp BitNot) $1 $2 }
+ | T_NOT pre_in_expr(d1)                       { uop (ArithOp Not) $1 $2 }
  (* es7: *)
  | T_AWAIT pre_in_expr(d1)                     { special Await $1 [$2] }
 
- | pre_in_expr(x) "*" pre_in_expr(d1)       { bop G.Mult $1 $2 $3 }
- | pre_in_expr(x) T_DIV pre_in_expr(d1)     { bop G.Div $1 $2 $3 }
- | pre_in_expr(x) T_MOD pre_in_expr(d1)     { bop G.Mod $1 $2 $3 }
- | pre_in_expr(x) T_PLUS pre_in_expr(d1)    { bop G.Plus $1 $2 $3 }
- | pre_in_expr(x) T_MINUS pre_in_expr(d1)   { bop G.Minus $1 $2 $3 }
- | pre_in_expr(x) T_LSHIFT pre_in_expr(d1)  { bop G.LSL $1 $2 $3 }
- | pre_in_expr(x) T_RSHIFT pre_in_expr(d1)  { bop G.LSR $1 $2 $3 }
- | pre_in_expr(x) T_RSHIFT3 pre_in_expr(d1) { bop G.ASR $1 $2 $3 }
+ | pre_in_expr(x) "*" pre_in_expr(d1)       { bop Mult $1 $2 $3 }
+ | pre_in_expr(x) T_DIV pre_in_expr(d1)     { bop Div $1 $2 $3 }
+ | pre_in_expr(x) T_MOD pre_in_expr(d1)     { bop Mod $1 $2 $3 }
+ | pre_in_expr(x) T_PLUS pre_in_expr(d1)    { bop Plus $1 $2 $3 }
+ | pre_in_expr(x) T_MINUS pre_in_expr(d1)   { bop Minus $1 $2 $3 }
+ | pre_in_expr(x) T_LSHIFT pre_in_expr(d1)  { bop LSL $1 $2 $3 }
+ | pre_in_expr(x) T_RSHIFT pre_in_expr(d1)  { bop LSR $1 $2 $3 }
+ | pre_in_expr(x) T_RSHIFT3 pre_in_expr(d1) { bop ASR $1 $2 $3 }
 
  (* es7: *)
- | pre_in_expr(x) T_EXPONENT pre_in_expr(d1) { bop G.Pow $1 $2 $3 }
+ | pre_in_expr(x) T_EXPONENT pre_in_expr(d1) { bop Pow $1 $2 $3 }
 
 
 call_expr(x):
@@ -1329,17 +1331,17 @@ string_literal: T_STRING { $1 }
 
 assignment_operator:
  | "="              { $1, None }
- | T_MULT_ASSIGN    { $1, Some G.Mult }
- | T_DIV_ASSIGN     { $1, Some G.Div }
- | T_MOD_ASSIGN     { $1, Some G.Mod  }
- | T_PLUS_ASSIGN    { $1, Some G.Plus  }
- | T_MINUS_ASSIGN   { $1, Some G.Minus }
- | T_LSHIFT_ASSIGN  { $1, Some G.LSL }
- | T_RSHIFT_ASSIGN  { $1, Some G.LSR }
- | T_RSHIFT3_ASSIGN { $1, Some G.ASR  }
- | T_BIT_AND_ASSIGN { $1, Some G.BitAnd }
- | T_BIT_XOR_ASSIGN { $1, Some G.BitXor }
- | T_BIT_OR_ASSIGN  { $1, Some G.BitOr }
+ | T_MULT_ASSIGN    { $1, Some Mult }
+ | T_DIV_ASSIGN     { $1, Some Div }
+ | T_MOD_ASSIGN     { $1, Some Mod  }
+ | T_PLUS_ASSIGN    { $1, Some Plus  }
+ | T_MINUS_ASSIGN   { $1, Some Minus }
+ | T_LSHIFT_ASSIGN  { $1, Some LSL }
+ | T_RSHIFT_ASSIGN  { $1, Some LSR }
+ | T_RSHIFT3_ASSIGN { $1, Some ASR  }
+ | T_BIT_AND_ASSIGN { $1, Some BitAnd }
+ | T_BIT_XOR_ASSIGN { $1, Some BitXor }
+ | T_BIT_OR_ASSIGN  { $1, Some BitOr }
 
 (*----------------------------*)
 (* array *)
@@ -1418,7 +1420,7 @@ xhp_attribute:
  | T_XHP_ATTR "=" xhp_attribute_value { XmlAttr ($1, $3) }
  | "{" "..." assignment_expr "}" { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
  (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
- | T_XHP_ATTR                         { XmlAttr ($1, Bool(true,G.fake "true"))}
+ | T_XHP_ATTR                         { XmlAttr ($1, Bool(true,PI.fake_info "true"))}
  | "..."                              { XmlEllipsis $1 }
 
 xhp_attribute_value:
@@ -1483,24 +1485,24 @@ conditional_expr_no_in:
 
 post_in_expr_no_in:
  | pre_in_expr(d1) { $1 }
- | post_in_expr_no_in T_LESS_THAN post_in_expr(d1)        { bop G.Lt $1 $2 $3 }
- | post_in_expr_no_in T_GREATER_THAN post_in_expr(d1)     { bop G.Gt $1 $2 $3 }
- | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)  { bop G.LtE $1 $2 $3 }
- | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop G.GtE $1 $2 $3 }
+ | post_in_expr_no_in T_LESS_THAN post_in_expr(d1)        { bop Lt $1 $2 $3 }
+ | post_in_expr_no_in T_GREATER_THAN post_in_expr(d1)     { bop Gt $1 $2 $3 }
+ | post_in_expr_no_in T_LESS_THAN_EQUAL post_in_expr(d1)  { bop LtE $1 $2 $3 }
+ | post_in_expr_no_in T_GREATER_THAN_EQUAL post_in_expr(d1) { bop GtE $1 $2 $3 }
  | post_in_expr_no_in T_INSTANCEOF post_in_expr(d1)
    { special Instanceof $2 [$1; $3] }
 
  (* no T_IN case *)
 
- | post_in_expr_no_in T_EQUAL post_in_expr(d1)         { bop G.Eq $1 $2 $3 }
- | post_in_expr_no_in T_NOT_EQUAL post_in_expr(d1)     { bop G.NotEq $1 $2 $3 }
- | post_in_expr_no_in T_STRICT_EQUAL post_in_expr(d1)  { bop G.PhysEq $1 $2 $3}
- | post_in_expr_no_in T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop G.NotPhysEq $1 $2 $3 }
- | post_in_expr_no_in T_BIT_AND post_in_expr(d1)       { bop G.BitAnd $1 $2 $3}
- | post_in_expr_no_in T_BIT_XOR post_in_expr(d1)       { bop G.BitXor $1 $2 $3}
- | post_in_expr_no_in T_BIT_OR post_in_expr(d1)        { bop G.BitOr $1 $2 $3 }
- | post_in_expr_no_in T_AND post_in_expr(d1)           { bop G.And $1 $2 $3 }
- | post_in_expr_no_in T_OR post_in_expr(d1)            { bop G.Or $1 $2 $3 }
+ | post_in_expr_no_in T_EQUAL post_in_expr(d1)         { bop Eq $1 $2 $3 }
+ | post_in_expr_no_in T_NOT_EQUAL post_in_expr(d1)     { bop NotEq $1 $2 $3 }
+ | post_in_expr_no_in T_STRICT_EQUAL post_in_expr(d1)  { bop PhysEq $1 $2 $3}
+ | post_in_expr_no_in T_STRICT_NOT_EQUAL post_in_expr(d1)   { bop NotPhysEq $1 $2 $3 }
+ | post_in_expr_no_in T_BIT_AND post_in_expr(d1)       { bop BitAnd $1 $2 $3}
+ | post_in_expr_no_in T_BIT_XOR post_in_expr(d1)       { bop BitXor $1 $2 $3}
+ | post_in_expr_no_in T_BIT_OR post_in_expr(d1)        { bop BitOr $1 $2 $3 }
+ | post_in_expr_no_in T_AND post_in_expr(d1)           { bop And $1 $2 $3 }
+ | post_in_expr_no_in T_OR post_in_expr(d1)            { bop Or $1 $2 $3 }
 
 (*----------------------------*)
 (* (no stmt, and no object literal like { v: 1 }) *)

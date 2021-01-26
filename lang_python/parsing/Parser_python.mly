@@ -30,6 +30,7 @@
  *)
 open Common
 open AST_python
+module PI = Parse_info
 
 (* intermediate helper type *)
 type single_or_tuple =
@@ -42,7 +43,7 @@ let cons e = function
 
 let tuple_expr = function
   | Single e -> e
-  | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
+  | Tup l -> Tuple (CompList (PI.fake_bracket l), Load)
 
 let to_list = function
   | Single e -> [e]
@@ -917,7 +918,7 @@ testlist_comp_or_expr:
   | tuple(namedexpr_or_star_expr)    {
     match $1 with
     | Single e -> e
-    | Tup l -> Tuple (CompList (AST_generic.fake_bracket l), Load)
+    | Tup l -> Tuple (CompList (PI.fake_bracket l), Load)
    }
 
 (* supports comp_for when used generically -- not inside atom_list
@@ -945,7 +946,7 @@ listcomp_for:
 
 list_for:
   or_test "," list_for_rest {
-    List (CompList (AST_generic.fake_bracket ($1::$3)), Load)
+    List (CompList (PI.fake_bracket ($1::$3)), Load)
   }
 
 list_for_rest:

@@ -82,7 +82,7 @@ let pfff_extra_actions () = [
 let all_actions () =
   pfff_extra_actions() @
   (*s: [[Main.all_actions]] concatenated actions *)
-  Test_parsing_generic.actions() @
+  (* Test_parsing_generic.actions() @ *)
   (*x: [[Main.all_actions]] concatenated actions *)
   Test_parsing_ml.actions()@
   Test_analyze_ml.actions()@
@@ -121,7 +121,7 @@ let all_actions () =
   (* beta *)
 
 
-  Test_analyze_generic.actions() @
+  (*  Test_analyze_generic.actions() @ *)
   (*
     Test_analyze_cpp.actions () ++
     Test_analyze_php.actions () ++
@@ -141,7 +141,7 @@ let options () = [
     lang := s;
     (*s: [[Main.options]] in [[-lang]] callback *)
     (* a big ugly *)
-    Test_parsing_generic.lang := s;
+    (* Test_parsing_generic.lang := s; *)
     (*e: [[Main.options]] in [[-lang]] callback *)
   ), (spf " <str> choose language (default = %s)" !lang);
   (*x: [[Main.options]] main cases *)

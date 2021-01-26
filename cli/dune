@@ -24,7 +24,8 @@
     pfff-lang_html
     pfff-lang_skip
     pfff-lang_FUZZY
-    pfff-lang_GENERIC pfff-lang_GENERIC-analyze
+; now in semgrep/
+;    pfff-lang_GENERIC pfff-lang_GENERIC-analyze
  )
  ; for ocamldebug
  (modes byte)

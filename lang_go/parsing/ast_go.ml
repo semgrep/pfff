@@ -126,7 +126,7 @@ and expr =
    * To disambiguate requires semantic information.
    * Selector (Name,'.', ident) can be many things.
   *)
-  | Id of ident * AST_generic.resolved_name option ref
+  | Id of ident (* * AST_generic.resolved_name option ref *)
 
   (* A Selector can be a
    *  - a field access of a struct
@@ -156,8 +156,8 @@ and expr =
   | Ref   of tok (* & *) * expr
   | Receive of tok * expr (* denote a channel *)
 
-  | Unary of         AST_generic.operator (* +/-/~/! *) wrap * expr
-  | Binary of expr * AST_generic.operator wrap * expr
+  | Unary of         AST_generic_.operator (* +/-/~/! *) wrap * expr
+  | Binary of expr * AST_generic_.operator wrap * expr
 
   (* x.(<type>), panic if false unless used as x, ok = x.(<type>) *)
   | TypeAssert of expr * type_
@@ -266,8 +266,8 @@ and simple =
    *  a,b = foo()
   *)
   | Assign of expr list (* lhs, pattern *) * tok * expr list (* rhs *)
-  | AssignOp of expr * AST_generic.operator wrap * expr
-  | IncDec of expr * AST_generic.incr_decr wrap * AST_generic.prefix_postfix
+  | AssignOp of expr * AST_generic_.operator wrap * expr
+  | IncDec of expr * AST_generic_.incr_decr wrap * AST_generic_.prefix_postfix
   (* declare or reassign, and special semantic when Receive operation *)
   | DShortVars of expr list * tok (* := *) * expr list
 
@@ -380,13 +380,13 @@ type any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let mk_Id id = Id (id, ref None)
+let mk_Id id = Id (id (*, ref None*))
 
 let stmt1 xs =
   match xs with
   | [] -> Empty
   | [st] -> st
-  | xs -> Block (AST_generic.fake_bracket xs)
+  | xs -> Block (Parse_info.fake_bracket xs)
 
 let item1 xs =
   match xs with

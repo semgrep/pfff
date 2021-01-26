@@ -21,6 +21,7 @@ module A2 = Cst_cpp
 module D = Datalog_code
 module G = Graph_code
 module E = Entity_code
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -187,8 +188,8 @@ let instrs_of_expr env e =
           in
           let access =
             match idxopt with
-            | Some e -> A.ArrayAccess(e1, AST_generic.fake_bracket e)
-            | None -> A.ArrayAccess(e1, AST_generic.fake_bracket (A.Int ("0", tok)))
+            | Some e -> A.ArrayAccess(e1, PI.fake_bracket e)
+            | None -> A.ArrayAccess(e1, PI.fake_bracket (A.Int ("0", tok)))
           in
           A.Assign(op, access, value)
         )
@@ -630,7 +631,7 @@ and facts_of_directive env def =
 and facts_of_definition env def =
   match def with
   | StructDef def ->
-      def.s_flds |> AST_generic.unbracket |> Common.map_filter (fun fld ->
+      def.s_flds |> PI.unbracket |> Common.map_filter (fun fld ->
         match fld.fld_name with
         (* todo: kencc ext field! *)
         | None -> None

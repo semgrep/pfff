@@ -204,10 +204,10 @@ and expr =
 
   | ArrayAccess of expr * expr bracket
 
-  | Unary of AST_generic.operator (* +/-/~/! *) wrap * expr
-  | Postfix of expr * AST_generic.incr_decr wrap
-  | Prefix of AST_generic.incr_decr wrap * expr
-  | Infix of expr * AST_generic.operator wrap * expr
+  | Unary of AST_generic_.operator (* +/-/~/! *) wrap * expr
+  | Postfix of expr * AST_generic_.incr_decr wrap
+  | Prefix of AST_generic_.incr_decr wrap * expr
+  | Infix of expr * AST_generic_.operator wrap * expr
 
   (* usually just a single typ, but can also have intersection type t1 & t2 *)
   | Cast of typ list1 bracket * expr
@@ -217,7 +217,7 @@ and expr =
   | Conditional of expr * expr * expr
   (* ugly java, like in C assignement is an expression not a statement :( *)
   | Assign of expr * tok * expr
-  | AssignOp of expr * AST_generic.operator wrap * expr
+  | AssignOp of expr * AST_generic_.operator wrap * expr
 
   (* javaext: 1.? *)
   | Lambda of parameters * tok (* -> *) * stmt
@@ -552,12 +552,12 @@ let rec canon_var mods t_opt v =
   | ArrayDecl v' ->
       (match t_opt with
        | None -> raise Common.Impossible
-       | Some t -> canon_var mods (Some (TArray (AST_generic.fake_bracket t))) v'
+       | Some t -> canon_var mods (Some (TArray (Parse_info.fake_bracket t))) v'
       )
 
 let method_header mods mtype (v, formals) throws =
   { m_var = canon_var mods (Some mtype) v; m_formals = formals;
-    m_throws = throws; m_body = EmptyStmt (AST_generic.fake ";") }
+    m_throws = throws; m_body = EmptyStmt (Parse_info.fake_info ";") }
 
 (* Return a list of field declarations in canonical form. *)
 let decls f = fun mods vtype vars ->

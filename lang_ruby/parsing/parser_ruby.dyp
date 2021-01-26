@@ -35,7 +35,7 @@ module S = Parser_ruby_helpers
 (* for merging *)
 module M = Parser_ruby_helpers
 (* for fake_xxx *)
-module G = AST_generic
+module PI = Parse_info
 
 (*************************************************************************)
 (*1 Dypgen merge directives *)
@@ -610,7 +610,7 @@ interp_code:
         let mk_block lst =
           match lst with
           | [x] -> x
-          | _ -> S (Block(G.fake_bracket lst))
+          | _ -> S (Block(PI.fake_bracket lst))
         in
           match ss with
           | [] -> tl

@@ -16,7 +16,7 @@ open Common
 
 open Cst_cpp
 module A = Ast_c
-module G = AST_generic
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -183,7 +183,7 @@ and declaration env x =
                                 f_name = x.A.v_name;
                                 f_type = ft;
                                 f_static = (storage =*= A.Static);
-                                f_body = G.fake_bracket [];
+                                f_body = PI.fake_bracket [];
                               }
               | _ -> A.VarDef x
             ))
@@ -362,7 +362,7 @@ and cpp_directive env x =
         match inc_kind with
         | Local -> "\"" ^ path ^ "\""
         | Standard -> "<" ^ path ^ ">"
-        | Weird when AST_generic_helpers.is_metavar_name path ->
+        | Weird when AST_generic_.is_metavar_name path ->
             path
         | Weird ->
             debug (Cpp x); raise Todo
@@ -428,7 +428,7 @@ and stmt env st =
 
   | ExprStatement (eopt, t) ->
       (match eopt with
-       | None -> A.Block (G.fake_bracket [])
+       | None -> A.Block (PI.fake_bracket [])
        | Some e -> A.ExprSt (expr env e, t)
       )
   | DeclStmt block_decl ->

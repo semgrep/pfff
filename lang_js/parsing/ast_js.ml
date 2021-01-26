@@ -90,7 +90,7 @@ type todo_category = string wrap
 [@@deriving show] (* with tarzan *)
 
 (* real or fake when ASI (automatic semicolon insertion) *)
-type sc = AST_generic.sc
+type sc = Parse_info.t
 [@@deriving show] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -135,9 +135,9 @@ type special =
 
   | UseStrict
 
-  | ArithOp of AST_generic.operator
+  | ArithOp of AST_generic_.operator
   (* less: should be in statement and unsugared in x+=1 or even x = x + 1 *)
-  | IncrDecr of (AST_generic.incr_decr * AST_generic.prefix_postfix)
+  | IncrDecr of (AST_generic_.incr_decr * AST_generic_.prefix_postfix)
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type label = string wrap
@@ -326,8 +326,17 @@ and pattern = expr
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* typescript-ext: (simpler to reuse AST_generic) *)
-and type_ = AST_generic.type_
+(* typescript-ext: old: was reusing AST_generic.type_ but can't anymore *)
+and type_ =
+  | TyBuiltin of string wrap
+  | TyName of dotted_ident
+  | TyOr of type_ * tok * type_
+  | TyAnd of type_ * tok * type_
+  | TyQuestion of tok * type_
+  | TyArray of type_ * (tok * unit * tok)
+  | TyTuple of (tok * type_ list * tok)
+  | TyRecordAnon of (tok * unit * tok)
+  | TyStringLiteral of string wrap
 
 (*****************************************************************************)
 (* Attributes *)
@@ -422,7 +431,7 @@ and parent = (expr, type_) Common.either
 
 and class_definition = {
   (* typescript-ext: Interface is now possible *)
-  c_kind: AST_generic.class_kind wrap;
+  c_kind: AST_generic_.class_kind wrap;
   (* typescript-ext: can have multiple parents *)
   c_extends: parent list;
   (* typescript-ext: interfaces *)
@@ -578,9 +587,9 @@ let idexp_or_special id =
 *)
 and stmt1 xs =
   match xs with
-  | [] -> Block (AST_generic.fake_bracket [])
+  | [] -> Block (Parse_info.fake_bracket [])
   | [x] -> x
-  | xs -> Block (AST_generic.fake_bracket xs)
+  | xs -> Block (Parse_info.fake_bracket xs)
 
 let basic_entity id =
   { name = id; attrs = [] }
@@ -604,7 +613,7 @@ let var_pattern_to_var v_kind pat tok init_opt =
   | Id id, None ->
       basic_entity id, {v_kind; v_init = None; v_type = None}
   | _ ->
-      let s = AST_generic.special_multivardef_pattern in
+      let s = AST_generic_.special_multivardef_pattern in
       let id = s, tok in
       let init =
         match init_opt with
