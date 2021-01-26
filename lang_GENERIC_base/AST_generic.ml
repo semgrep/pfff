@@ -171,7 +171,8 @@ end
 *)
 module Node_ID :
 sig
-  type t = private int [@@deriving show, eq, hash]
+  (* TODO: update the ml grammar in pfff to support 'private' type aliases *)
+  type t = (*private*) int [@@deriving show, eq, hash]
   val create : unit -> t
 end =
 struct
