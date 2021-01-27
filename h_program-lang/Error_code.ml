@@ -510,8 +510,10 @@ let (expected_error_lines_of_files:
           * don't check if they match. We are just happy to check for
           * correct lines error reporting.
          *)
-         if s =~ ".*ERROR:.*" || s =~ ".*MATCH:.*"
-         (* + 1 because the comment is one line before *)
+         if s =~ ".*ERROR:.*" ||
+            s =~ ".*MATCH:.*" ||
+            s =~ ".*ruleid:.*"
+            (* + 1 because the comment is one line before *)
          then Some (file, idx + 1)
          else None
       )
