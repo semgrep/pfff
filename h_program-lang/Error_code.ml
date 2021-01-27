@@ -512,7 +512,7 @@ let (expected_error_lines_of_files:
          *)
          if s =~ ".*ERROR:.*" ||
             s =~ ".*MATCH:.*" ||
-            s =~ ".*ruleid:.*"
+            s =~ ".*\\bruleid:.*" (* not tororuleid! *)
             (* + 1 because the comment is one line before *)
          then Some (file, idx + 1)
          else None
