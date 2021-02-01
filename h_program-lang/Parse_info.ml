@@ -15,6 +15,8 @@
 *)
 open Common
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -889,9 +891,10 @@ let print_regression_information ~ext xs newscore =
     pr2 "regression testing  information";
     pr2 "--------------------------------";
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common2.regression_testing newscore
-      (Filename.concat score_path
-         ("score_parsing__" ^str ^ ext ^ ".marshalled"))
+    let file = (Filename.concat score_path
+                  ("score_parsing__" ^str ^ ext ^ ".marshalled")) in
+    logger#debug "saving regression info in %s" file;
+    Common2.regression_testing newscore file
   );
   ()
 
