@@ -25,6 +25,7 @@ and error_kind =
   (* matching (semgrep) related *)
   | MatchingError of string (* internal error, e.g., NoTokenLocation *)
   | SemgrepMatchFound of (string (* check_id *) * string (* msg *))
+  | TooManyMatches of string (* can contain offending pattern *)
 
   (* global analysis *)
   | Deadcode of entity

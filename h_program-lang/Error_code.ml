@@ -78,6 +78,7 @@ and error_kind =
   (* matching (semgrep) related *)
   | MatchingError of string (* internal error, e.g., NoTokenLocation *)
   | SemgrepMatchFound of (string (* check_id *) * string (* msg *))
+  | TooManyMatches of string (* can contain offending pattern *)
 
   (* entities *)
   (* done while building the graph:
@@ -175,6 +176,7 @@ let string_of_error_kind error_kind =
         (Scope_code.string_of_scope scope)
   | SemgrepMatchFound (_title, message) -> message
   | MatchingError (s) -> spf "matching internal error: %s" s
+  | TooManyMatches s -> spf "too many matches: %s" s
 
   | UnusedStatement -> spf "unreachable statement"
   | UnusedAssign s ->
@@ -217,9 +219,10 @@ let check_id_of_error_kind = function
   | UseOfUninitialized _ -> "UseOfUninitialized"
   | CFGError _ -> "CFGError"
 
-  (* sgrep lint rules *)
+  (* semgrep *)
   | SemgrepMatchFound (check_id, _) -> spf "sgrep-lint-<%s>" check_id
   | MatchingError _ -> "MatchingError"
+  | TooManyMatches _ -> "TooManyMatches"
 
   (* other *)
   | FatalError _ -> "FatalError"
@@ -312,7 +315,7 @@ let rank_of_error err =
     -> OnlyStrict
   (* usually a bug somewhere in my code *)
   | FatalError _ | Timeout _ | OutOfMemory _
-  | MatchingError _
+  | MatchingError _ | TooManyMatches _
     -> OnlyStrict
 
 
