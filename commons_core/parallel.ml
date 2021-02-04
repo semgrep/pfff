@@ -36,6 +36,7 @@ let backtrace_when_exn = ref true
  * returns a futur
 *)
 let invoke2 f x =
+  flush_all (); (* avoid duplicate output *)
   let input, output = Unix.pipe() in
   match Unix.fork() with
   (* error, could not create process, well compute now then *)
