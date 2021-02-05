@@ -7,7 +7,7 @@ module Ast = Ast_ruby
 open Il_ruby_helpers
 module C = Il_ruby_helpers.Abbr
 module PI = Parse_info
-
+module Log = Ruby_log
 module CodePrinter = Il_ruby
 
 let tok_of _e =
