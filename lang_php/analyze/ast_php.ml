@@ -278,12 +278,11 @@ and stmt =
   | If of tok * expr * stmt * stmt
   | Switch of tok * expr * case list
 
-  (* pad: not sure why we use stmt list instead of just stmt like for If *)
-  | While of tok * expr * stmt list
-  | Do of tok * stmt list * expr
-  | For of tok * expr list * expr list * expr list * stmt list
+  | While of tok * expr * stmt
+  | Do of tok * stmt * expr
+  | For of tok * expr list * expr list * expr list * stmt
   (* 'foreach ($xs as $k)','... ($xs as $k => $v)', '... ($xs as list($...))'*)
-  | Foreach of tok * expr * tok * foreach_pattern * stmt list
+  | Foreach of tok * expr * tok * foreach_pattern * stmt
 
   | Return of tok * expr option
   | Break of tok * expr option | Continue of tok * expr option

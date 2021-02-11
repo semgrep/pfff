@@ -724,13 +724,13 @@ and stmt_bis env x =
       casel env xs
   | While (_, e, xs) | Do (_, xs, e) ->
       expr env e;
-      stmtl env xs
+      stmt env xs
   | For (_, es1, es2, es3, xs) ->
       exprl env (es1 @ es2 @ es3);
-      stmtl env xs
+      stmt env xs
   | Foreach (_, e1, _, e2, xs) ->
       exprl env [e1;e2];
-      stmtl env xs;
+      stmt env xs;
   | Return (_, eopt)  | Break (_, eopt) | Continue (_, eopt) ->
       Common2.opt (expr env) eopt
   | Throw (_, e) -> expr env e
