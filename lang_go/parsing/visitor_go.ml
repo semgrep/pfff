@@ -187,7 +187,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v2 = v_wrap v_arithmetic_operator v2
           and v3 = v_expr v3
           in ()
-      | TypeAssert (v1, v2) -> let v1 = v_expr v1 and v2 = v_type_ v2 in ()
+      | TypeAssert (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket v_type_ v2 in ()
       | TypeSwitchExpr (v1, v2) -> let v1 = v_expr v1 and v2 = v_tok v2 in ()
       | Ellipsis v1 -> let v1 = v_tok v1 in ()
       | TypedMetavar (v1, v2, v3) ->

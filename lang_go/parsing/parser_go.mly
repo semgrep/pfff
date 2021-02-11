@@ -612,7 +612,7 @@ pexpr_no_paren:
 |   pexpr "." sym { Selector ($1, $2, $3) }
 
 |   pexpr "." "(" expr_or_type ")"
-    { TypeAssert ($1, expr_or_type_to_type $2 $4) }
+    { TypeAssert ($1, ($3, expr_or_type_to_type $2 $4, $5)) }
     (* less: only inside a TypeSwitch, rewrite grammar? *)
 |   pexpr "." "(" LTYPE ")"
     { TypeSwitchExpr ($1, $3) }
