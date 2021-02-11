@@ -285,6 +285,14 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident (must be after "true"|"false" above) *)
   (* ----------------------------------------------------------------------- *)
+
+  (* semgrep: Note that Identifier accepts dollars in it. According to
+   * https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html
+   * identifiers can contain and start with a dollar (especially in
+   * generated code)
+   * old: if not !Flag_parsing.sgrep_mode
+   * then error ("identifier with dollar: "  ^ s) lexbuf;
+   *)
   | Identifier
     {
       let info = tokinfo lexbuf in
@@ -293,14 +301,6 @@ rule token = parse
       match Common2.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> f info
       | None -> IDENTIFIER (s, info)
-    }
-
-  (* sgrep-ext: *)
-  | '$' Identifier
-    { let s = tok lexbuf in
-      if not !Flag_parsing.sgrep_mode
-      then error ("identifier with dollar: "  ^ s) lexbuf;
-      IDENTIFIER (s, tokinfo lexbuf)
     }
 
   (* ----------------------------------------------------------------------- *)
