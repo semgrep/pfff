@@ -480,7 +480,7 @@ module_specifier:
 
 (* TODO *)
 export_decl:
- | T_EXPORT export_names       { [] (* $1, $2 *) }
+ | T_EXPORT export_names       { $2 $1 }
  | T_EXPORT variable_stmt
     { vars_to_stmts $2 (*$1, ExportDecl (St $2)*) }
  | T_EXPORT decl
@@ -496,9 +496,12 @@ export_decl:
 
 
 export_names:
- | "*"           from_clause sc { (*ReExportNamespace ($1, $2, $3)*)}
- | export_clause from_clause sc {  (*ReExportNames ($1, $2, $3)*) }
- | export_clause sc             {  (*ExportNames ($1, $2)*) }
+ | "*"           from_clause sc
+    { (fun t -> [M (ReExportNamespace (t, $1, fst $2, snd $2))]) }
+ | export_clause from_clause sc
+    { (fun _t -> []) (*TODO ReExportNames ($1, $2, $3)*) }
+ | export_clause sc
+    { (fun _t -> []) (*TODO ExportNames ($1, $2)*) }
 
 export_clause:
  | "{" "}"                              { ($1, [], $2) }
