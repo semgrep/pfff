@@ -197,7 +197,7 @@ and stmt env st acc =
       A.Expr (e, t) :: acc
   (* Why not just acc? because we abuse noop in the abstract interpreter? *)
   | EmptyStmt _ -> noop :: acc
-  | Block (_, stdl, _) -> List.fold_right (stmt_and_def env) stdl acc
+  | Block (lb, stdl, rb) -> A.Block (lb, List.fold_right (stmt_and_def env) stdl [], rb) :: acc
   | If (tok, (_, e, _), st, il, io) ->
       let e = expr env e in
       let st = stmt1 (stmt env st []) in
@@ -212,7 +212,7 @@ and stmt env st acc =
       let cst = colon_stmt env cst in
       A.While (tok, expr env e, cst) :: acc
   | Do (tok, st, _, (_, e, _), _) ->
-      A.Do (tok, stmt env st [], expr env e) :: acc
+      A.Do (tok, stmt1 (stmt env st []), expr env e) :: acc
   | For (tok, _, e1, _, e2, _, e3, _, st) ->
       let st = colon_stmt env st in
       let e1 = for_expr env e1 in
@@ -271,7 +271,7 @@ and stmt env st acc =
        | (_,[Common.Left((Name("ticks",_), (_,Sc(C(Int((("1"),_)))))))],_), _
          ->
            let cst = colon_stmt env colon_st in
-           cst @ acc
+           cst :: acc
 
        |  _ -> error tok "TODO: declare"
       )
@@ -835,8 +835,8 @@ and array_pair env = function
 and for_expr env el = List.map (expr env) (comma_list el)
 
 and colon_stmt env = function
-  | SingleStmt st -> stmt env st []
-  | ColonStmt (_, stl, _, _) -> List.fold_right (stmt_and_def env) stl []
+  | SingleStmt st -> stmt1 (stmt env st [])
+  | ColonStmt (_, stl, _, _) -> stmt1 (List.fold_right (stmt_and_def env) stl [])
 (*of tok (* : *) * stmt_and_def list * tok (* endxxx *) * tok (* ; *) *)
 
 and switch_case_list env = function
