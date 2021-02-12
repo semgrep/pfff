@@ -93,7 +93,10 @@ and any_aux env = function
   | Stmt2 st ->
       let st = stmt1 (stmt env st []) in
       A.Stmt st
-  | Toplevel x -> any_aux env (Toplevels [x])
+  | Toplevel x ->
+    (match toplevel env x with
+    | [st] -> A.Stmt st
+    | sts -> A.Program sts)
   | Toplevels x | Program x -> let x = toplevels env x in A.Program x
   | _ -> failwith "TODO: PHP"
 
