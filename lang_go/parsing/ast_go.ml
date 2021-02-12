@@ -160,7 +160,7 @@ and expr =
   | Binary of expr * AST_generic_.operator wrap * expr
 
   (* x.(<type>), panic if false unless used as x, ok = x.(<type>) *)
-  | TypeAssert of expr * type_
+  | TypeAssert of expr * type_ bracket
   (* x.(type)
    * less: can appear only in a TypeSwitch, so could be moved there *)
   | TypeSwitchExpr of expr * tok (* 'type' *)
