@@ -338,7 +338,7 @@ and type_ =
 
   | TyQuestion of tok * type_
   | TyArray of type_ * (tok * unit * tok)
-  | TyTuple of (tok * type_ list * tok)
+  | TyTuple of (tok * tuple_type_member list * tok)
   | TyFun of parameter list * type_ option
 
   | TyRecordAnon of (tok * unit * tok)
@@ -350,6 +350,11 @@ and type_ =
 
 and type_parameter = ident (* TODO: constraints *)
 and type_parameter_constraint = type_
+
+and tuple_type_member =
+  | TyTupMember of type_  (* simple tuple type element *)
+  | TyTupOpt of type_  (* optional tuple type element in typescript: string? *)
+  | TyTupRest of type_  (* rest tuple type element in typescript: ...string *)
 
 (*****************************************************************************)
 (* Attributes *)

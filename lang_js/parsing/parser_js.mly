@@ -875,7 +875,8 @@ primary_type2:
  | object_type
     { let (t1, _xsTODO, t2) = $1 in
       TyRecordAnon ((t1, (), t2)) }
- | "[" listc(type_) "]" { TyTuple ($1, $2, $3) }
+ | "[" listc(type_) "]" { let members = List.map (fun x -> TyTupMember x) $2 in
+                          TyTuple ($1, members, $3) }
  (* not in Typescript grammar *)
  | T_STRING
      { TyLiteral (String $1)
