@@ -352,9 +352,14 @@ and type_parameter = ident (* TODO: constraints *)
 and type_parameter_constraint = type_
 
 and tuple_type_member =
-  | TyTupMember of type_  (* simple tuple type element *)
-  | TyTupOpt of type_  (* optional tuple type element in typescript: string? *)
-  | TyTupRest of type_  (* rest tuple type element in typescript: ...string *)
+  (* simple tuple type element *)
+  | TyTupMember of type_
+
+  (* optional tuple type element in typescript: string? *)
+  | TyTupOpt of type_ * tok
+
+  (* rest tuple type element in typescript: ...string *)
+  | TyTupRest of tok * type_
 
 (*****************************************************************************)
 (* Attributes *)
