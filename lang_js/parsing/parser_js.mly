@@ -1311,6 +1311,7 @@ primary_expr_no_braces:
 
  (* simple! ECMA mixes this rule with arrow parameters (bad) *)
  | "(" expr ")" { $2 }
+ | "(" id ":" type_ ")" { TypedMetavar ($2, $3, $4) }
 
  (* xhp: do not put in 'expr', otherwise can't have xhp in function arg *)
  | xhp_html { Xml $1 }
