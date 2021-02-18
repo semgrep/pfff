@@ -161,7 +161,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Obj v1 -> let v1 = v_obj_ v1 in ()
       | Ellipsis v1 -> let v1 = v_tok v1 in ()
       | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
-      | TypedMetavar (v1, t, v2) -> 
+      | TypedMetavar (v1, t, v2) ->
           let v1 = v_ident v1 and v2 = v_type_ v2 in
           let t = v_tok t in
           ()
