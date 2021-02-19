@@ -534,6 +534,11 @@ rule token = parse
    * strange diff between decimal and octal constant semantic is not
    * understood too by refman :) refman:11.1.4, and ritchie.
    *)
+  (* this is also part of the case below, but we specialize it here to use the
+   * right int_of_string *)
+  | "0" (oct+ as n)
+     { TInt (int_of_string_opt( "0o" ^ n), tokinfo lexbuf) }
+
   | (( decimal | hexa | octal)
         ( ['u' 'U']
         | ['l' 'L']
@@ -542,11 +547,11 @@ rule token = parse
         | (['u' 'U'] ['l' 'L'] ['l' 'L'])
         | (['l' 'L'] ['l' 'L'])
         )?
-    ) as x { TInt (x, tokinfo lexbuf) }
+    ) as x { TInt (int_of_string_opt x, tokinfo lexbuf) }
 
-  | (real ['f' 'F']) as x { TFloat ((x, tokinfo lexbuf), CFloat) }
-  | (real ['l' 'L']) as x { TFloat ((x, tokinfo lexbuf), CLongDouble) }
-  | (real as x)           { TFloat ((x, tokinfo lexbuf), CDouble) }
+  | (real ['f' 'F']) as x { TFloat ((float_of_string_opt x, tokinfo lexbuf), CFloat) }
+  | (real ['l' 'L']) as x { TFloat ((float_of_string_opt x, tokinfo lexbuf), CLongDouble) }
+  | (real as x)           { TFloat ((float_of_string_opt x, tokinfo lexbuf), CDouble) }
 
   | ['0'] ['0'-'9']+
       { error (error_radix "octal" ^ tok lexbuf) lexbuf;

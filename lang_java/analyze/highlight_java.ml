@@ -211,7 +211,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
         tag ii String
     | T.TChar (_s, ii) ->
         tag ii String
-    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
+    | T.TFloat (_,ii) | T.TInt (_,ii) ->
         tag ii Number
 
     | T.TRUE ii | T.FALSE ii -> tag ii Boolean

@@ -272,8 +272,13 @@ rule token = parse
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
 
-  | IntegerLiteral       { TInt (tok lexbuf, tokinfo lexbuf) }
-  | FloatingPointLiteral { TFloat (tok lexbuf, tokinfo lexbuf) }
+  (* this is also part of IntegerLiteral, but we specialize it here to use the
+   * right int_of_string *)
+  | "0" (OctalDigits | Underscores OctalDigits) as n
+     { TInt (int_of_string_opt( "0o" ^ n), tokinfo lexbuf) }
+
+  | IntegerLiteral as n       { TInt (int_of_string_opt n, tokinfo lexbuf) }
+  | FloatingPointLiteral as n { TFloat (float_of_string_opt n, tokinfo lexbuf) }
   | CharacterLiteral     { TChar (tok lexbuf, tokinfo lexbuf) }
   | '"' ( (StringCharacter | EscapeSequence)* as s) '"'
    { TString (s, tokinfo lexbuf) }

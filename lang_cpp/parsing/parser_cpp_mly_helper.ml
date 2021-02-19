@@ -315,7 +315,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
       },
         (match ini_opt with
          | None -> None
-         | Some (EqInit(tokeq, InitExpr(C(Int ("0", iizero))))) ->
+         | Some (EqInit(tokeq, InitExpr(C(Int (Some 0, iizero))))) ->
              Some (tokeq, iizero)
          | _ ->
              raise (Semantic ("can't assign expression to method decl", semicolon))

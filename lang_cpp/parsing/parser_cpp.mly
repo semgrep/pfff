@@ -69,8 +69,8 @@ module PI = Parse_info
 (*-----------------------------------------*)
 (* The C tokens *)
 (*-----------------------------------------*)
-%token <string * Parse_info.t>                       TInt
-%token <(string * Parse_info.t) * Cst_cpp.floatType> TFloat
+%token <int option * Parse_info.t>                       TInt
+%token <(float option * Parse_info.t) * Cst_cpp.floatType> TFloat
 %token <(string * Parse_info.t) * Cst_cpp.isWchar>   TChar TString
 
 %token <string * Parse_info.t> TIdent
@@ -1836,7 +1836,7 @@ define_val:
  (* for statement-like macro with fixed number of arguments *)
  | Tdo statement Twhile "(" expr ")"
      { match $5 with
-       | (C (Int ("0", tok))) ->
+       | (C (Int (Some 0, tok))) ->
          DefineDoWhileZero ($1, $2, $3, ($4, tok, $6))
        | _ -> raise Parsing.Parse_error
      }

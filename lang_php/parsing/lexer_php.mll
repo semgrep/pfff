@@ -605,13 +605,10 @@ rule st_in_scripting = parse
           (* more? cf original lexer *)
           let s = tok lexbuf in
           let ii = tokinfo lexbuf in
-          try
-            let _ = int_of_string s in
-            T_LNUMBER(s, ii)
-          with Failure _ ->
-            T_DNUMBER(s, (*float_of_string s,*) ii)
+          T_LNUMBER (int_of_string_opt s, ii)
         }
-    | DNUM|EXPONENT_DNUM { T_DNUMBER(tok lexbuf, tokinfo lexbuf) }
+    | DNUM | EXPONENT_DNUM
+        { T_DNUMBER(float_of_string_opt ( tok lexbuf), tokinfo lexbuf) }
 
 
   (* ----------------------------------------------------------------------- *)

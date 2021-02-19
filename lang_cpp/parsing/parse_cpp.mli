@@ -24,9 +24,10 @@ val parse_fuzzy:
   Common.filename ->
   Ast_fuzzy.trees * (Parse_info.token_kind * Parse_info.t) list
 
-val parse_with_dypgen:
-  Common.filename -> Cst_cpp.program
-
+(* now in old_glr/
+   val parse_with_dypgen:
+   Common.filename -> Cst_cpp.program
+*)
 
 (* usually correspond to what is inside your macros.h *)
 val _defs : (string, Pp_token.define_body) Hashtbl.t

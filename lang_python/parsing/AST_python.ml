@@ -190,9 +190,9 @@ type expr =
 
 (*s: type [[AST_python.number]] *)
 and number =
-  | Int of string wrap
-  | LongInt of string wrap
-  | Float of string wrap
+  | Int of int option wrap
+  | LongInt of int option wrap
+  | Float of float option wrap
   | Imag of string wrap
   (*e: type [[AST_python.number]] *)
 

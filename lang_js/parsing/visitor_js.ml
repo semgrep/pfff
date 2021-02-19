@@ -44,6 +44,8 @@ let default_visitor =
     kinfo = (fun (k,_) x -> k x);
   }
 
+let v_id _ = ()
+
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   let rec v_info x =
@@ -149,7 +151,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | L x ->
           (match x with
            | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
-           | Num v1 -> let v1 = v_wrap v_string v1 in ()
+           | Num v1 -> let v1 = v_wrap v_id v1 in ()
            | String v1 -> let v1 = v_wrap v_string v1 in ()
            | Regexp v1 -> let v1 = v_wrap v_string v1 in ()
           )

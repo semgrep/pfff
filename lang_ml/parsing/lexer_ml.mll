@@ -333,7 +333,7 @@ rule token = parse
                        ( ['0'-'1'] | '_')*
    {
      let s = tok lexbuf in
-     TInt (s, tokinfo lexbuf)
+     TInt (int_of_string_opt s, tokinfo lexbuf)
    }
 
   | '-'?
@@ -342,7 +342,7 @@ rule token = parse
     ( ('e' |'E') ['+' '-']? digit (digit | '_')* )?
      {
      let s = tok lexbuf in
-     TFloat (s, tokinfo lexbuf)
+     TFloat (float_of_string_opt s, tokinfo lexbuf)
     }
 
 

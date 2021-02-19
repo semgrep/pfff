@@ -143,8 +143,8 @@ type name = qualified_ident
 *)
 type expr =
   (* booleans are really just Int in PHP :( *)
-  | Int of string wrap
-  | Double of string wrap
+  | Int of int option wrap
+  | Double of float option wrap
   (* PHP has no first-class functions so entities are sometimes passed
    * as strings so the string wrap below can actually correspond to a
    * 'Id name' sometimes. Some magic functions like param_post() also

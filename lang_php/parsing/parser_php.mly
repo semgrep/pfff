@@ -126,8 +126,9 @@ let mk_Toplevel x =
 (*-----------------------------------------*)
 (* The normal tokens *)
 (*-----------------------------------------*)
+%token <int option * Parse_info.t> T_LNUMBER
+%token <float option * Parse_info.t> T_DNUMBER
 %token <string * Parse_info.t>
- T_LNUMBER T_DNUMBER
  (* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident. *)
  T_IDENT T_VARIABLE
  T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML

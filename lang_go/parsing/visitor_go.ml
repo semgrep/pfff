@@ -60,7 +60,7 @@ let default_visitor = {
   kinfo = (fun (k,_) x -> k x);
 }
 
-
+let v_id _ = ()
 let v_arithmetic_operator _ = ()
 let v_incr_decr _ = ()
 let v_prefix_postfix _ = ()
@@ -204,8 +204,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_literal =
     function
-    | Int v1 -> let v1 = v_wrap v_string v1 in ()
-    | Float v1 -> let v1 = v_wrap v_string v1 in ()
+    | Int v1 -> let v1 = v_wrap v_id v1 in ()
+    | Float v1 -> let v1 = v_wrap v_id v1 in ()
     | Imag v1 -> let v1 = v_wrap v_string v1 in ()
     | Rune v1 -> let v1 = v_wrap v_string v1 in ()
     | String v1 -> let v1 = v_wrap v_string v1 in ()

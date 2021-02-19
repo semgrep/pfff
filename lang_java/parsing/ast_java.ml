@@ -229,8 +229,8 @@ and expr =
   | ObjAccessEllipsis of expr * tok (* ... *)
 
 and literal =
-  | Int of string wrap
-  | Float of string wrap
+  | Int of int option wrap
+  | Float of float option wrap
   | String of string wrap
   | Char of string wrap
   | Bool of bool wrap

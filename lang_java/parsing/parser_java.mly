@@ -133,7 +133,9 @@ let mk_stmt_or_stmts = function
 (*-----------------------------------------*)
 
 (* tokens with "values" *)
-%token <string * Parse_info.t> TInt TFloat TChar TString
+%token <int option * Parse_info.t> TInt
+%token <float option * Parse_info.t> TFloat
+%token <string * Parse_info.t> TChar TString
 
 %token <(string * Parse_info.t)> IDENTIFIER
 %token <(string * Parse_info.t)> PRIMITIVE_TYPE

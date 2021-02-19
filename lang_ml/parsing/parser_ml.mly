@@ -80,7 +80,9 @@ let topseqexpr v1 = mki (TopExpr (seq1 v1))
 (*-----------------------------------------*)
 
 (* tokens with "values" *)
-%token <string * Parse_info.t> TInt TFloat TChar TString
+%token <int option * Parse_info.t> TInt
+%token <float option * Parse_info.t> TFloat
+%token <string * Parse_info.t> TChar TString
 %token <string * Parse_info.t> TLowerIdent TUpperIdent
 %token <string * Parse_info.t> TLabelUse TLabelDecl TOptLabelUse TOptLabelDecl
 

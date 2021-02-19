@@ -60,6 +60,7 @@ let default_visitor = {
   kinfo = (fun (k,_) x -> k x);
 }
 
+let v_id _ = ()
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
@@ -171,8 +172,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_literal =
     function
     | Bool v1 -> let v1 = v_wrap v_bool v1 in ()
-    | Int v1 -> let v1 = v_wrap v_string v1 in ()
-    | Float v1 -> let v1 = v_wrap v_string v1 in ()
+    | Int v1 -> let v1 = v_wrap v_id v1 in ()
+    | Float v1 -> let v1 = v_wrap v_id v1 in ()
     | Char v1 -> let v1 = v_wrap v_string v1 in ()
     | String v1 -> let v1 = v_wrap v_string v1 in ()
     | Null v1 -> let v1 = v_tok v1 in ()

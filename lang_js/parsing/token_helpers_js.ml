@@ -61,7 +61,8 @@ let visitor_info_of_tok f = function
   | TComment ii -> TComment(f ii)
   | EOF ii -> EOF (f ii)
 
-  | T_NUMBER (s, ii) -> T_NUMBER (s, (f ii))
+  | T_INT (s, ii) -> T_INT (s, (f ii))
+  | T_FLOAT (s, ii) -> T_FLOAT (s, (f ii))
   | T_ID (s, ii) -> T_ID (s, f ii)
   | T_STRING (s, ii) -> T_STRING (s, (f ii))
   | T_REGEX (s, ii) -> T_REGEX (s, (f ii))
