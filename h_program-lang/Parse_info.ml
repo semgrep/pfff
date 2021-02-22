@@ -319,7 +319,14 @@ let string_of_token_location x =
 let string_of_info x =
   string_of_token_location (token_location_of_info x)
 
-let str_of_info  ii = (token_location_of_info ii).str
+let str_of_info  ii =
+  match ii.token  with
+  | OriginTok x -> x.str
+  | FakeTokStr (s, _) -> s
+  | ExpandedTok _ | Ab ->
+      raise (NoTokenLocation "str_of_info: Expanded or Ab")
+
+let _str_of_info ii = (token_location_of_info ii).str
 let file_of_info ii = (token_location_of_info ii).file
 let line_of_info ii = (token_location_of_info ii).line
 let col_of_info  ii = (token_location_of_info ii).column
