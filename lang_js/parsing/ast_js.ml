@@ -228,7 +228,7 @@ and expr =
 
 and literal =
   | Bool of bool wrap
-  | Num of string wrap
+  | Num of float option wrap
   | String of string wrap
   | Regexp of string wrap
 

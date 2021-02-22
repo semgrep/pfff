@@ -339,8 +339,8 @@ and action_macro =
  * integer only.
 *)
 and constant =
-  | Int    of (string wrap  (* * intType*))
-  | Float  of (string wrap * floatType)
+  | Int    of (int option wrap  (* * intType*))
+  | Float  of (float option wrap * floatType)
   | Char   of (string wrap * isWchar) (* normally it is equivalent to Int *)
   | String of (string wrap * isWchar)
 

@@ -136,6 +136,7 @@ let test_dump_cpp_fuzzy file =
   let s = OCaml.string_of_v v in
   pr2 s
 
+(*
 let test_parse_cpp_dyp xs =
   let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files xs
                |> Skip_code.filter_files_if_skip_list ~root:xs
@@ -157,6 +158,7 @@ let test_dump_cpp_dyp file =
   let ast = Parse_cpp.parse_with_dypgen file in
   let s = Cst_cpp.show_program ast in
   pr s
+*)
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -172,8 +174,10 @@ let actions () = [
   Common.mk_action_n_arg (test_parse_cpp ~lang:Flag_cpp.C);
   "-parse_cpp_cplusplus", "   <file or dir>",
   Common.mk_action_n_arg (test_parse_cpp ~lang:Flag_cpp.Cplusplus);
+(*
   "-parse_cpp_dyp", "   <file or dir>",
   Common.mk_action_n_arg (test_parse_cpp_dyp);
+*)
 
   "-dump_cpp", "   <file>",
   Common.mk_action_1_arg test_dump_cpp;
@@ -181,8 +185,10 @@ let actions () = [
   Common.mk_action_1_arg test_dump_cpp_full;
   "-dump_cpp_view", "   <file>",
   Common.mk_action_1_arg test_dump_cpp_view;
+(*
   "-dump_cpp_dyp", "   <file>",
   Common.mk_action_1_arg test_dump_cpp_dyp;
+*)
 
   "-parse_cpp_fuzzy", "   <files or dirs>",
   Common.mk_action_n_arg test_parse_cpp_fuzzy;

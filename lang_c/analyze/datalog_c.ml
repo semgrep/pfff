@@ -94,6 +94,9 @@ let loc_of env tok =
   (* lua datalog does not handle ':' *)
   else spf "line_%d_col_%d" line col
 
+let str_of t =
+  Parse_info.str_of_info t
+
 (* for int* x[10][10] we want to generate a list of Alloc and
  * we want to create fresh array each time
  * (we could use gensym for that though).
@@ -189,7 +192,7 @@ let instrs_of_expr env e =
           let access =
             match idxopt with
             | Some e -> A.ArrayAccess(e1, PI.fake_bracket e)
-            | None -> A.ArrayAccess(e1, PI.fake_bracket (A.Int ("0", tok)))
+            | None -> A.ArrayAccess(e1, PI.fake_bracket (A.Int (Some 0, tok)))
           in
           A.Assign(op, access, value)
         )
@@ -370,9 +373,9 @@ let instrs_of_expr env e =
     | A.SizeOf (_t, Left e) ->
         let instr = instr_of_expr e in
         Common.push instr instrs;
-        Int ("0_sizeof", tokwrap_of_expr e |> snd)
+        Int ((*"0_sizeof"*)None, tokwrap_of_expr e |> snd)
     | A.SizeOf (_t, Right t) ->
-        Int ("0_sizeof", tok_of_type t)
+        Int ((*"0_sizeof"*)None, tok_of_type t)
 
     (* can be in macro context, e.g. #define SEG (struct x) { ... } *)
     | A.GccConstructor (t, _eTODO) -> Alloc t
@@ -531,7 +534,7 @@ let facts_of_instr env = function
   | Assign (var, e) ->
       let dest = var_of_name env var in
       (match e with
-       | Int x -> [D.PointTo(dest, spf "_int__%s" (fst x))]
+       | Int x -> [D.PointTo(dest, spf "_int__%s" (str_of (snd x)))]
        | Float x -> [D.PointTo(dest, spf "_float__%s" (loc_of env (snd x)))]
        | String x -> [D.PointTo(dest, spf "_str__%s" (loc_of env (snd x)))]
 

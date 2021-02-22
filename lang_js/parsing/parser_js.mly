@@ -175,7 +175,8 @@ let mk_Encaps opt (t1, xs, _t2) =
 (*-----------------------------------------*)
 
 (* tokens with a value *)
-%token<string * Parse_info.t> T_NUMBER
+%token<int option * Parse_info.t> T_INT
+%token<float option * Parse_info.t> T_FLOAT
 %token<string * Parse_info.t> T_ID
 
 %token<string * Parse_info.t> T_STRING
@@ -944,7 +945,7 @@ type_member:
 property_name_typescript:
  | id    { PN $1 }
  | string_literal  { PN $1 }
- | numeric_literal { PN $1 }
+ | numeric_literal_as_string { PN $1 }
  | ident_keyword   { PN $1 }
 
 
@@ -1326,7 +1327,19 @@ boolean_literal:
  | T_FALSE { false, $1 }
 
 null_literal: T_NULL { $1 }
-numeric_literal: T_NUMBER { $1 }
+numeric_literal:
+  | T_INT
+   { (match fst $1 with
+     | None -> None
+     | Some i -> Some (float_of_int i)
+     ), snd $1
+   }
+  | T_FLOAT { $1 }
+numeric_literal_as_string: numeric_literal
+    { let t = snd $1 in
+      (Parse_info.str_of_info t, t)
+    }
+
 regex_literal: T_REGEX { $1 }
 string_literal: T_STRING { $1 }
 
@@ -1590,7 +1603,7 @@ method_name:
 property_name:
  | id              { PN $1 }
  | string_literal  { PN $1 }
- | numeric_literal { PN $1 }
+ | numeric_literal_as_string { PN $1 }
  | ident_keyword   { PN $1 }
  (* es6: *)
  | "[" assignment_expr "]" { PN_Computed ($2) }

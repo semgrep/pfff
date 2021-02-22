@@ -381,38 +381,38 @@ rule initial = parse
   | "0" ['X''x'] HEXA+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      T_NUMBER (s, info)
+      T_INT (int_of_string_opt s, info)
     }
   (* es6? *)
   | "0" ['B''b'] ['0'-'1']+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      T_NUMBER (s, info)
+      T_INT (int_of_string_opt s, info)
     }
   (* es6? *)
   | "0" ['O''o'] ['0'-'7']+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      T_NUMBER (s, info)
+      T_INT (int_of_string_opt s, info)
     }
 
-  | '0'['0'-'7']+ {
-      let s = tok lexbuf in
+  | '0' (['0'-'7']+ as n) {
+      let s = "0o" ^ n in
       let info = tokinfo lexbuf in
-      T_NUMBER (s, info)
+      T_INT (int_of_string_opt s, info)
     }
 
   | ['0'-'9']*'.'?['0'-'9']+['e''E']['-''+']?['0'-'9']+ (* {1,3} *) {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      T_NUMBER (s, info)
+      T_FLOAT (float_of_string_opt s, info)
     }
 
   | ['0'-'9']+'.'? |
     ['0'-'9']*'.'['0'-'9']+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      T_NUMBER (s, info)
+      T_FLOAT (float_of_string_opt s, info)
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -463,7 +463,7 @@ rule initial = parse
 
       match !_last_non_whitespace_like_token with
       | Some (
-            T_NUMBER _ | T_STRING _ | T_REGEX _
+            T_INT _ | T_FLOAT _ | T_STRING _ | T_REGEX _
           | T_FALSE _ | T_TRUE _ | T_NULL _
           | T_THIS _
           | T_INCR _ | T_DECR _

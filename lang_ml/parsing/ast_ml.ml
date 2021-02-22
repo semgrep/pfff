@@ -136,8 +136,8 @@ type expr =
  * 'true' (and 'false') as Constructor ("true").
 *)
 and literal =
-  | Int    of string wrap
-  | Float  of string wrap
+  | Int    of int option wrap
+  | Float  of float option wrap
   | Char   of string wrap
   | String of string wrap
 

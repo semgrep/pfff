@@ -69,8 +69,8 @@ type lvalue =
 (* ------------------------------------------------------------------------- *)
 (* see ast_minic.ml for more comments about this CIL-like AST *)
 type rvalue =
-  | Int of string wrap
-  | Float of string wrap
+  | Int of int option wrap
+  | Float of float option wrap
   | String of string wrap (* string or char *)
 
   | StaticCall of name * var list (* foo(...) *)

@@ -301,8 +301,8 @@ and scalar =
       tok  (* EOF; *)
 
 and constant =
-  | Int of string wrap (* decimal, hex, or binary int format *)
-  | Double of string wrap
+  | Int of int option wrap (* decimal, hex, or binary int format *)
+  | Double of float option wrap
   (* see also Guil for interpolated strings
    * The string does not contain the enclosing '"' or "'".
    * It does not contain either the possible 'b' prefix

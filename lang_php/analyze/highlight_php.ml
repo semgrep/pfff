@@ -801,7 +801,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
         then tag_string ~tag s ii
 
     (* should been handled in Constant *)
-    | T.T_DNUMBER _ii | T.T_LNUMBER _ii -> ()
+    | T.T_DNUMBER _ | T.T_LNUMBER _ -> ()
   );
 
   (* -------------------------------------------------------------------- *)

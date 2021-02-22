@@ -278,11 +278,15 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   (* literals *)
+  (* this is also part of int_lit, but we specialize it here to use the
+   * right int_of_string *)
+  | "0" (octal_digits as n) { LINT (int_of_string_opt( "0o" ^ n), tokinfo lexbuf) }
+
   | int_lit as n
-      { LINT (n, tokinfo lexbuf) }
+      { LINT (int_of_string_opt n, tokinfo lexbuf) }
 
   | float_lit as n
-      { LFLOAT (n, tokinfo lexbuf) }
+      { LFLOAT (float_of_string_opt n, tokinfo lexbuf) }
 
   | imaginary_lit as n
       { LIMAG (n, tokinfo lexbuf) }

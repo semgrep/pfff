@@ -445,12 +445,12 @@ and _token python2 state = parse
 
   (* literals *)
   | integer as n longintpostfix
-      { LONGINT (n, tokinfo lexbuf) }
+      { LONGINT (int_of_string_opt n, tokinfo lexbuf) }
   | integer as n
-      { INT (n, tokinfo lexbuf) }
+      { INT (int_of_string_opt n, tokinfo lexbuf) }
 
   | floatnumber as n
-      { FLOAT (n, tokinfo lexbuf) }
+      { FLOAT (float_of_string_opt n, tokinfo lexbuf) }
 
   | imagnumber as n
       { IMAG (n, tokinfo lexbuf) }

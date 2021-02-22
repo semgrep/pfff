@@ -101,8 +101,8 @@ let mk_str ii =
 
 (* tokens with "values" *)
 %token <string * AST_python.tok> NAME
-%token <string    * AST_python.tok> INT LONGINT
-%token <string  * AST_python.tok> FLOAT
+%token <int option    * AST_python.tok> INT LONGINT
+%token <float option  * AST_python.tok> FLOAT
 %token <string * AST_python.tok> IMAG
 %token <string * string * AST_python.tok> STR
 

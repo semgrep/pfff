@@ -34,7 +34,9 @@ module Semantic = Parser_cpp_mly_helper
  * See "Parsing C/C++ Code without Pre-Preprocessing - Yoann Padioleau, CC'09"
  * avalaible at http://padator.org/papers/yacfe-cc09.pdf
  *)
+(*
 let use_dypgen = false
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -338,12 +340,14 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     let was_define = ref false in
 
     let parse_toplevel tr lexbuf_fake =
+      Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
+(*
       if not use_dypgen
-      then Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
+      then
       else
         let (save1, save2, save3) = tr.PI.rest, tr.PI.current, tr.PI.passed in
-        try
           Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
+        try
         with _e ->
           tr.PI.rest <- save1; tr.PI.current <- save2; tr.PI.passed <- save3;
           (try
@@ -353,6 +357,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
              pr2 "no elements";
              raise Parsing.Parse_error
           )
+*)
     in
 
     let elem =
@@ -521,6 +526,7 @@ let any_of_string lang s =
     ))
 
 (* experimental *)
+(*
 let parse_with_dypgen file =
   (* -------------------------------------------------- *)
   (* call lexer and get all the tokens *)
@@ -551,3 +557,4 @@ let parse_with_dypgen file =
     |> List.hd |> fst
   with Dyp.Syntax_error ->
     raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current))
+*)
