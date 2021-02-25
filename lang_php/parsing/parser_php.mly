@@ -341,20 +341,20 @@ statement:
 
  | "{" inner_statement* "}"   { Block($1,$2,$3) }
 
- | T_IF "(" expr ")" statement elseif_list else_single
+ | T_IF "(" expr_or_dots ")" statement elseif_list else_single
      { If($1,($2,$3,$4),$5,$6,$7) }
- | T_IF "(" expr ")" ":"  inner_statement* new_elseif_list new_else_single
+ | T_IF "(" expr_or_dots ")" ":"  inner_statement* new_elseif_list new_else_single
      T_ENDIF ";"
      { IfColon($1,($2,$3,$4),$5,$6,$7,$8,$9,$10)  }
 
- | T_WHILE "(" expr  ")" while_statement
+ | T_WHILE "(" expr_or_dots  ")" while_statement
      { While($1,($2,$3,$4),$5) }
- | T_DO statement T_WHILE "(" expr ")" ";"
+ | T_DO statement T_WHILE "(" expr_or_dots ")" ";"
      { Do($1,$2,$3,($4,$5,$6),$7) }
  | T_FOR "(" for_expr ";"  for_expr ";" for_expr ")" for_statement
      { For($1,$2,$3,$4,$5,$6,$7,$8,$9) }
 
- | T_SWITCH "(" expr ")"    switch_case_list
+ | T_SWITCH "(" expr_or_dots ")"    switch_case_list
      { Switch($1,($2,$3,$4),$5) }
 
  | T_FOREACH "(" expr T_AS foreach_pattern ")" foreach_statement
@@ -365,7 +365,7 @@ statement:
  | T_BREAK    expr? ";" { Break($1,$2, $3) }
  | T_CONTINUE expr? ";" { Continue($1, $2, $3) }
 
- | T_RETURN expr? ";"  { Return ($1, $2, $3)}
+ | T_RETURN expr_or_dots? ";"  { Return ($1, $2, $3)}
 
  | T_TRY   "{" inner_statement* "}"
    T_CATCH "(" class_name  T_VARIABLE ")"
@@ -380,7 +380,7 @@ statement:
      { let try_block = ($2,$3,$4) in
        Try($1, try_block, [], [$5])
      }
- | T_THROW expr ";" { Throw($1,$2,$3) }
+ | T_THROW expr_or_dots ";" { Throw($1,$2,$3) }
 
  | T_ECHO listc(expr) ";"     { Echo($1,$2,$3) }
  | T_INLINE_HTML            { InlineHtml($1) }
@@ -469,11 +469,11 @@ declare_statement:
 
 elseif_list:
  | (*empty*) { [] }
- | elseif_list  T_ELSEIF "(" expr ")" statement { $1 @ [$2,($3,$4,$5),$6]}
+ | elseif_list  T_ELSEIF "(" expr_or_dots ")" statement { $1 @ [$2,($3,$4,$5),$6]}
 
 new_elseif_list:
  | (*empty*) { [] }
- | new_elseif_list    T_ELSEIF "(" expr ")" ":" inner_statement*
+ | new_elseif_list    T_ELSEIF "(" expr_or_dots ")" ":" inner_statement*
      { $1 @ [$2,($3,$4,$5),$6,$7] }
 
 (* classic dangling else ambiguity resolved by a %prec. See conflicts.txt*)
@@ -990,7 +990,9 @@ expr:
  | lambda_expr { $1 }
 
  (* php-facebook-ext: in hphp.y yield are at the statement level
-    * and are restricted to a few forms *)
+  * and are restricted to a few forms.
+  * TODO: can't use expr_or_dots here
+  *)
  | T_YIELD expr              { Yield ($1, ArrayExpr $2) }
  | T_YIELD expr "=>" expr { Yield ($1, ArrayArrowExpr ($2, $3, $4)) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
@@ -998,7 +1000,7 @@ expr:
  | T_AWAIT expr { Await ($1, $2) }
 
  | T_INCLUDE      expr             { Include($1,$2) }
- | T_INCLUDE_ONCE expr                 { IncludeOnce($1,$2) }
+ | T_INCLUDE_ONCE expr             { IncludeOnce($1,$2) }
  | T_REQUIRE      expr             { Require($1,$2) }
  | T_REQUIRE_ONCE expr             { RequireOnce($1,$2) }
 
@@ -1118,7 +1120,7 @@ array_pair:
 
 arguments: "(" function_call_argument_list ")" { ($1, $2, $3) }
 
-(* less: I would like that in primary_expr but it leads to many conflicts. *)
+(* TODO: we want ... in primary_expr, but it leads to many conflicts. *)
 (* semgrep-ext: *)
 expr_or_dots:
  | expr  { $1 }
