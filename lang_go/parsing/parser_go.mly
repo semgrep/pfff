@@ -942,7 +942,7 @@ fnbody:
 
 
 fnliteral: fnlitdcl lbrace listsc(stmt) "}"
-    { FuncLit ($1, stmt1 (rev_and_fix_stmts $3)) }
+    { FuncLit ($1, Block ($2, rev_and_fix_stmts $3, $4)) }
 
 fnlitdcl: fntype { $1 }
 
