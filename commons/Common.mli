@@ -91,6 +91,8 @@ val split : string (* sep regexp *) -> string -> string list
 (*s: type [[Common.filename]] *)
 type filename = string
 (*e: type [[Common.filename]] *)
+val pp_filename: Format.formatter -> filename -> unit
+val equal_filename: filename -> filename -> bool
 (*s: type [[Common.dirname]] *)
 type dirname = string
 (*e: type [[Common.dirname]] *)
@@ -141,6 +143,8 @@ val exclude : ('a -> bool) -> 'a list -> 'a list
 (*s: signature [[Common.sort]] *)
 val sort : 'a list -> 'a list
 (*e: signature [[Common.sort]] *)
+
+val uniq_by: ('a -> 'a -> bool) -> 'a list -> 'a list
 
 (*s: signature [[Common.map_filter]] *)
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list

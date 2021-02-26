@@ -69,6 +69,8 @@ type info_ = t
 (* for ppx_deriving *)
 val pp_full_token_info: bool ref
 val pp : Format.formatter -> t -> unit
+val pp_token_location: Format.formatter -> token_location -> unit
+val equal_token_location: token_location -> token_location -> bool
 
 (* mostly for the fuzzy AST builder *)
 (*s: type [[Parse_info.token_kind]] *)

@@ -786,6 +786,7 @@ let null_string s =
 (*****************************************************************************)
 
 type filename = string (* TODO could check that exist :) type sux *)
+[@@deriving show, eq]
 (* with sexp *)
 type dirname = string (* TODO could check that exist :) type sux *)
 (* with sexp *)
@@ -1282,6 +1283,16 @@ type 'a stack = 'a list
 (* Generic op *)
 (*****************************************************************************)
 let sort xs = List.sort compare xs
+
+(* maybe too slow? use an hash instead? *)
+let rec uniq_by eq xs =
+  match xs with
+  | [] -> []
+  | x::xs ->
+      (match List.find_opt (fun y -> eq x y) xs with
+       | Some _ -> uniq_by eq xs
+       | None -> x :: uniq_by eq xs
+      )
 
 (*###########################################################################*)
 (* Misc functions *)

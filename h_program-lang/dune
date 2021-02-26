@@ -8,6 +8,6 @@
    commons
    pfff-h_files-format pfff-config
  )
- (preprocess (pps ppx_deriving.show))
+ (preprocess (pps ppx_deriving.show ppx_deriving.eq))
 )
 (ocamllex archi_code_lexer)

@@ -36,7 +36,7 @@ type token_location = {
   line: int; column: int;
   file: string;
 }
-[@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false}, eq ] (* with tarzan *)
 
 let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN LOCATION";
