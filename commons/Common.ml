@@ -870,13 +870,15 @@ let cat file =
   in
   cat_aux [] () |> List.rev |> (fun x -> close_in chan; x)
 
-let read_file file =
+let read_file2 file =
   let ic = open_in file  in
   let size = in_channel_length ic in
   let buf = Bytes.create size in
   really_input ic buf 0 size;
   close_in ic;
   buf |> Bytes.to_string
+let read_file a =
+  profile_code "Common.read_file" (fun () -> read_file2 a)
 
 let write_file ~file s =
   let chan = open_out file in
