@@ -37,7 +37,7 @@ and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
 and webpl_type =
   | Php of string
-  | Js | Coffee | TypeScript | TSX
+  | Js | Coffee | TypeScript (* JSX/TSX are converted in Js/Typescript *)
   | Css
   | Html | Xml
   | Sql
