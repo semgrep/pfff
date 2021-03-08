@@ -265,6 +265,11 @@ let (dump : 'a -> string) = fun x ->
 
 let pr2_gen x = pr2 (dump x)
 
+(* to be used in pipe operations *)
+let before_return f v =
+  f v;
+  v
+
 (*****************************************************************************)
 (* Profiling *)
 (*****************************************************************************)
@@ -785,6 +790,7 @@ let null_string s =
 (* Filenames *)
 (*****************************************************************************)
 
+(* TODO: we should use strong types like in Li Haoyi filename Scala library! *)
 type filename = string (* TODO could check that exist :) type sux *)
 [@@deriving show, eq]
 (* with sexp *)
@@ -810,6 +816,7 @@ let filename_without_leading_path prj_path s =
     failwith
       (spf "cant find filename_without_project_path: %s  %s" prj_path s)
 
+(* TODO: we should use strong types like in Li Haoyi filename Scala library! *)
 let readable ~root s =
   if root = "/"
   then s

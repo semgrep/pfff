@@ -3506,6 +3506,14 @@ let unzip zs =
   List.fold_right (fun e (xs, ys)    ->
     (fst e::xs), (snd e::ys)) zs ([],[])
 
+(* Same as Common2.unzip or List.split but with triples. Tail-recursive. *)
+let unzip3 l =
+  let rec unzip aa bb cc = function
+    | (a, b, c) :: l -> unzip (a :: aa) (b :: bb) (c :: cc) l
+    | [] -> List.rev aa, List.rev bb, List.rev cc
+  in
+  unzip [] [] [] l
+
 
 let map_withkeep f xs =
   xs |> List.map (fun x -> f x, x)

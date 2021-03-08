@@ -38,6 +38,9 @@ val pr2_gen: 'a -> unit
 val dump: 'a -> string
 (*e: signature [[Common.dump]] *)
 
+(* to be used in pipes as in foo() |> before_return (fun v -> pr2_gen v)*)
+val before_return: ('a -> unit) -> 'a -> 'a
+
 (*s: exception [[Common.Todo]] *)
 exception Todo
 (*e: exception [[Common.Todo]] *)
@@ -489,7 +492,7 @@ val erase_this_temp_file : filename -> unit
 (*e: signature [[Common.erase_this_temp_file]] *)
 
 (*s: signature [[Common.fullpath]] *)
-(* val realpath: filename -> filename *)
+(* for realpath, see efuns_c library  *)
 val fullpath: filename -> filename
 (*e: signature [[Common.fullpath]] *)
 
