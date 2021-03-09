@@ -524,7 +524,8 @@ use_filename:
 (*************************************************************************)
 
 (* PHP 5.3 *)
-constant_declaration: T_CONST ioption(type_php)  ident TEQ static_scalar ";"
+constant_declaration:
+  T_CONST ioption(type_php) ident_constant_name TEQ static_scalar ";"
    { { cst_toks = ($1,$4,$6); cst_name = Name $3; cst_val = $5; cst_type = $2}}
 
 (*************************************************************************)
@@ -746,7 +747,8 @@ method_declaration:
         })
      }
 
-class_constant_declaration: ident TEQ static_scalar { ((Name $1), ($2,$3))}
+class_constant_declaration:
+  ident_constant_name TEQ static_scalar { ((Name $1), ($2,$3))}
 
 
 class_variable:
@@ -1051,6 +1053,7 @@ member_expr:
  | member_expr "->" "{" expr "}"
      { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
  | member_expr "::" primary_expr { ClassGet($1, $2, $3) }
+ (* TODO: member_expr "::" ident_keywords? to avoid ambiguities *)
  (* php 5.5 extension *)
  | member_expr "::" T_CLASS
      { ClassGet($1, $2, Id (XName [QI (Name("class", $3))])) }
@@ -1145,7 +1148,7 @@ encaps:
      { EncapsVar (mk_var $1)  }
  | T_VARIABLE "[" encaps_var_offset "]"
      { EncapsVar (ArrayGet (mk_var $1,($2,Some $3,$4)))}
- | T_VARIABLE "->" T_IDENT
+ | T_VARIABLE "->" ident_encaps
      { EncapsVar (ObjGet(mk_var $1, $2, Id (XName [QI (Name $3)])))}
 
  (* for ${beer}s. Note that this rule does not exist in the original PHP
@@ -1177,7 +1180,7 @@ encaps:
  | T_DOLLAR_OPEN_CURLY_BRACES expr "}" { EncapsExpr ($1, $2, $3) }
 
 encaps_var_offset:
- | T_IDENT  {
+ | ident_encaps  {
      (* It looks like an ident but as we are in encaps_var_offset,
       * PHP allows array access inside strings to omit the quote
       * around fieldname, so it's actually really a Constant (String)
@@ -1261,16 +1264,31 @@ exit_expr:
 (* Ident *)
 (*************************************************************************)
 
+(* ugly, PHP allows to use keywords for method/constant/classe names *)
+
 ident:
  | T_IDENT { $1 }
- | T_ENUM   { PI.str_of_info $1, $1 }
+
+ | T_ENUM      { PI.str_of_info $1, $1 }
  | T_TYPE      { PI.str_of_info $1, $1 }
  | T_SUPER     { PI.str_of_info $1, $1 }
+
+ident_encaps:
+ | T_IDENT { $1 }
+
+ident_in_name:
+ | ident { $1 }
+ | T_INSTANCEOF { PI.str_of_info $1, $1 }
+
+ident_constant_name:
+ | ident { $1 }
+ | T_LIST        { PI.str_of_info $1, $1 }
+ | T_LOGICAL_AND { PI.str_of_info $1, $1 }
+ | T_NEW         { PI.str_of_info $1, $1 }
 
 ident_class_name:
 | ident          { Name $1 }
 
-(* ugly, php allows method names which should be IMHO reserved keywords *)
 ident_method_name:
  | ident { $1 }
  | T_PARENT { "parent", $1 }
@@ -1312,8 +1330,8 @@ use_keyword:
   | T_FUNCTION { $1 }
 
 namespace_name:
- | ident                           { [QI (Name $1)] }
- | namespace_name TANTISLASH ident { $1 @ [QITok $2; QI (Name $3)] }
+ | ident_in_name                           { [QI (Name $1)] }
+ | namespace_name TANTISLASH ident_in_name { $1 @ [QITok $2; QI (Name $3)] }
 
 namespace_use_clause:
   TANTISLASH? namespace_name namespace_aliasing_clause?
