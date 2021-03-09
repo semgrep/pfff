@@ -182,7 +182,7 @@ let mk_Toplevel x =
  TCOLON ":" TCOMMA "," TDOT "." TBANG TTILDE TQUESTION "?"
  TOBRA "["
  TPLUS TMINUS TMUL TDIV TMOD TPOW
- TAND TOR TXOR
+ TAND TOR "|" TXOR
  TEQ
  (* now also used for types/generics, as in vector<int> *)
  TSMALLER "<" TGREATER ">"
@@ -372,12 +372,13 @@ statement:
  | T_RETURN expr_or_dots? ";"  { Return ($1, $2, $3)}
 
  | T_TRY   "{" inner_statement* "}"
-   T_CATCH "(" class_name  T_VARIABLE ")"
+   T_CATCH "(" list_sep2(class_name, "|")  T_VARIABLE ")"
      "{" inner_statement* "}"
      additional_catch* finally_clause?
      { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
-       let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
+       let t = List.hd $7 in (* TODO: return a list of types *)
+       let catch = ($5, ($6, (t, DName $8), $9), catch_block) in
        Try($1, try_block, [catch] @ $13, o2l $14)
      }
  | T_TRY "{" inner_statement* "}" finally_clause
@@ -927,7 +928,7 @@ expr:
  | expr TPOW expr   { Binary($1,(Arith Pow,$2),$3) }
 
  | expr TAND expr   { Binary($1,(Arith And,$2),$3) }
- | expr TOR expr    { Binary($1,(Arith Or,$2),$3) }
+ | expr "|" expr    { Binary($1,(Arith Or,$2),$3) }
  | expr TXOR expr   { Binary($1,(Arith Xor,$2),$3) }
  | expr T_SL expr   { Binary($1,(Arith DecLeft,$2),$3) }
  | expr T_SR expr   { Binary($1,(Arith DecRight,$2),$3) }

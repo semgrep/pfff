@@ -311,7 +311,9 @@ and case =
   | Case of tok * expr * stmt list
   | Default of tok * stmt list
 
-(* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
+(* catch(Exception $exn) { ... } => ("Exception", "$exn", [...])
+ * TODO: can now be a list of hint_type, Exn1 | Exn2 like in Java.
+*)
 and catch = tok * hint_type * var * stmt list
 and finally = tok * stmt list
 
