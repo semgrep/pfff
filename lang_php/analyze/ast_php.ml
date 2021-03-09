@@ -455,11 +455,12 @@ type any =
 let unwrap x = fst x
 let wrap_fake s = s, Parse_info.fake_info s
 
-(* builtin() is used for:
+(* TODO: replace builtin() by IdSpecial like I do in AST_generic.ml
+ * builtin() is used for:
  *  - 'eval', and implicitly generated eval/reflection like functions:
  *     "eval_var" (e.g. for echo $$x, echo ${"x"."y"}),
  *  - 'clone',
- *  - 'exit', 'yield', 'yield_break'
+ *  - 'exit', 'yield', 'yield_break' TODO 'yield_from?'
  *  - 'unset', 'isset', 'empty'
  *     http://php.net/manual/en/function.unset.php
  *     http://php.net/manual/en/function.empty.php

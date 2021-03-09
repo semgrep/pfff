@@ -784,7 +784,8 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.T_PRINT ii | T.T_ECHO ii -> tag ii Builtin
 
 
-    | T.T_YIELD ii | T.T_AWAIT ii | T.T_ASYNC ii -> tag ii Keyword
+    | T.T_YIELD ii  | T.T_FROM ii
+    | T.T_AWAIT ii | T.T_ASYNC ii -> tag ii Keyword
 
     (* should have been handled in field *)
     | T.T_STRING_VARNAME _ii -> ()

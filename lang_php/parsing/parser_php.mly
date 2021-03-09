@@ -212,7 +212,7 @@ let mk_Toplevel x =
 (*-----------------------------------------*)
 (* PHP language extensions: *)
 (*-----------------------------------------*)
-%token <Parse_info.t> T_YIELD T_AWAIT
+%token <Parse_info.t> T_YIELD T_FROM T_AWAIT
 %token <Parse_info.t> T_SUPER
 
 (* phpext: for hack and also for semgrep *)
@@ -235,6 +235,7 @@ let mk_Toplevel x =
 
 (* those are low priority, especially lower than ?: *)
 %nonassoc  T_YIELD
+%nonassoc  T_FROM
 %nonassoc  T_AWAIT
 
 %left T_ARROW
@@ -997,9 +998,11 @@ expr:
  (* php-facebook-ext: in hphp.y yield are at the statement level
   * and are restricted to a few forms.
   * TODO: can't use expr_or_dots here
+  * TODO: keep T_FROM in AST
   *)
  | T_YIELD expr              { Yield ($1, ArrayExpr $2) }
  | T_YIELD expr "=>" expr { Yield ($1, ArrayArrowExpr ($2, $3, $4)) }
+ | T_YIELD T_FROM expr              { Yield ($1, ArrayExpr $3) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
  (* php-facebook-ext: Just like yield, await is at the statement level *)
  | T_AWAIT expr { Await ($1, $2) }
@@ -1285,6 +1288,7 @@ ident_constant_name:
  | T_LIST        { PI.str_of_info $1, $1 }
  | T_LOGICAL_AND { PI.str_of_info $1, $1 }
  | T_NEW         { PI.str_of_info $1, $1 }
+ | T_FROM     { PI.str_of_info $1, $1 }
 
 ident_class_name:
 | ident          { Name $1 }
@@ -1298,6 +1302,7 @@ ident_method_name:
  | T_PUBLIC { "public", $1 }
  | T_DEFAULT { "default", $1 }
  | T_INSTANCEOF { "instanceof", $1 }
+ | T_FROM     { PI.str_of_info $1, $1 }
 
 (*************************************************************************)
 (* Namespace *)

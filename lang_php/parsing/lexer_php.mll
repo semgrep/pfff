@@ -175,15 +175,15 @@ let keyword_table = Common.hash_of_list [
   "__class__",  (fun ii -> T_CLASS_C ii);" __trait__", (fun ii ->T_TRAIT_C ii);
   "__namespace__", (fun ii -> T_NAMESPACE_C ii); (* was called T_NS_C *)
 
+  (* recent PHP extensions (some were php-facebook-ext: before) *)
+  "yield", (fun ii -> T_YIELD ii);
+  "from", (fun ii -> T_FROM ii);
+
   (* old: "__halt_compiler", (fun ii -> T_HALT_COMPILER ii); *)
 
   (* php-facebook-ext: *)
-  "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
   "await", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_AWAIT x));
-
-  (* php-facebook-ext: *)
   "type",    (fun ii -> lang_ext_or_t_ident ii (fun x -> T_TYPE x));
-
   (* for attribute declarations and Hack first class enums *)
   "enum", (fun ii -> T_ENUM ii);
 ]

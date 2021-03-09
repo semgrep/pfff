@@ -63,6 +63,7 @@ let token_kind_of_tok t =
 let visitor_info_of_tok f = function
   | LDots ii -> LDots (f ii)
   | RDots ii -> RDots (f ii)
+  | T_FROM ii -> T_FROM(f ii)
 
   | TUnknown ii -> TUnknown(f ii)
   | TSpaces ii -> TSpaces(f ii)
