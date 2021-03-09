@@ -438,6 +438,8 @@ val timeout_function: ?verbose:bool -> int -> (unit -> 'a) -> 'a
 (*e: signature [[Common.timeout_function]] *)
 val timeout_function_float :?verbose:bool -> float -> (unit -> 'a) -> 'a
 
+val with_time: (unit -> 'a) -> 'a * float
+
 (*s: type [[Common.prof]] *)
 type prof = ProfAll | ProfNone | ProfSome of string list
 (*e: type [[Common.prof]] *)

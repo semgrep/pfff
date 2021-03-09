@@ -274,6 +274,13 @@ let before_return f v =
 (* Profiling *)
 (*****************************************************************************)
 
+(* Report the time a function takes. *)
+let with_time f =
+  let t1 = Unix.gettimeofday () in
+  let res = f () in
+  let t2 = Unix.gettimeofday () in
+  (res, t2 -. t1)
+
 type prof = ProfAll | ProfNone | ProfSome of string list
 let profile = ref ProfNone
 let show_trace_profile = ref false
