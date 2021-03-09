@@ -1290,7 +1290,9 @@ enum_constant_bis:
  | identifier "{" method_declaration* "}"
     { $1, None, Some ($2, $3 |> List.map (fun x -> Method x) , $4) }
 
-enum_body_declarations: ";" class_body_declaration* { List.flatten $2 }
+enum_body_declarations:
+ | ";" class_body_declaration* { List.flatten $2 }
+ | "..." { [DeclEllipsis $1] }
 
 (*************************************************************************)
 (* Annotation type decl *)
