@@ -332,6 +332,9 @@ sgrep_spatch_pattern:
  | top_statement top_statement+ EOF { Toplevels ($1 @ List.flatten $2) }
  | ":" type_php                 EOF { Hint2 $2 }
 
+ (* partials *)
+ | T_IF "(" expr_or_dots ")"    EOF { Partial (PartialIf ($1, $3)) }
+
 (*************************************************************************)
 (* Statements *)
 (*************************************************************************)

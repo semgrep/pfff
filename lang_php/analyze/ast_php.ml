@@ -436,12 +436,16 @@ type program = stmt list
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+type partial =
+  | PartialIf of tok * expr
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 type any =
   | Program of program
   | Stmt of stmt
   | Expr2 of expr
   | Param of parameter
+  | Partial of partial
 [@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)

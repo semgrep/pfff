@@ -88,17 +88,49 @@ and any x =
   let env = empty_env () in
   any_aux env x
 
+and partial env = function
+  | PartialIf (t, e) ->
+      let e = expr env e in
+      A.PartialIf (t, e)
 and any_aux env = function
-  | Expr e -> let e = expr env e in A.Expr2 e
+  | Expr e ->
+      let e = expr env e in
+      A.Expr2 e
   | Stmt2 st ->
       let st = stmt1 (stmt env st []) in
       A.Stmt st
   | Toplevel x ->
       (match toplevel env x with
        | [st] -> A.Stmt st
-       | sts -> A.Program sts)
-  | Toplevels x | Program x -> let x = toplevels env x in A.Program x
-  | _ -> failwith "TODO: PHP"
+       | sts -> A.Program sts
+      )
+  | Toplevels x | Program x ->
+      let x = toplevels env x in
+      A.Program x
+  | Partial x -> A.Partial (partial env x)
+
+  | StmtAndDefs _
+
+  | Argument _
+  | Arguments _
+  | Parameter _
+  | Parameters _
+  | Body _
+
+  | ClassStmt _
+  | ClassConstant2 _
+  | ClassVariable _
+  | ListAssign _
+  | ColonStmt2 _
+  | Case2 _
+
+  | Info _
+  | InfoList _
+
+  | Ident2 _
+  | Hint2 _
+    -> failwith "TODO: PHP"
+
 
 and toplevels env xs =
   match xs with

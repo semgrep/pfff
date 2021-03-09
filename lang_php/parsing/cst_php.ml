@@ -755,6 +755,10 @@ and program = toplevel list
 (* Any *)
 (*****************************************************************************)
 
+type partial =
+  | PartialIf of tok * expr
+[@@deriving show { with_path = false }] (* with tarzan *)
+
 type any =
   | Expr of expr
   | Stmt2 of stmt
@@ -762,6 +766,7 @@ type any =
   | Toplevel of toplevel
   | Toplevels of toplevel list
   | Program of program
+  | Partial of partial
 
   | Argument of argument
   | Arguments of argument comma_list
