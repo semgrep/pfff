@@ -144,21 +144,24 @@ and identifier_ =
  * less: do a NameGeneric instead? the type_argument could then be
  *  only at the end?
 *)
-and name = (type_arguments * ident) list1
+and _name = (type_arguments * ident) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
 *)
 and expr =
-  (* Name is used for local variable, 'super' special name,
+  (* Name below was used for local variable, 'super' special name,
    * and statically computable entities such as Package1.subpackage.Class.
    * Field or method accesses should use Dot (see below). Unfortunately
    * the Java grammar is ambiguous and without contextual information,
    * there is no way to know whether x.y.z is an access to the field z
    * of field y of local variable x or the static field z of class y
    * in package x. See the note on Dot below.
+   * Hence the use of Id instead of Name
+   *
+   * old: | Name of name
   *)
-  | Name of name
+  | NameId of ident
 
   | This of tok (* used in Dot but also can be in Call *)
 
@@ -567,13 +570,14 @@ let decls f = fun mods vtype vars ->
   List.map dcl vars
 
 let constructor_invocation name args sc =
-  Expr (Call ((Name name), args), sc)
+  Expr (Call ((name), args), sc)
 
 let typ_of_qualified_id xs =
   TClass (xs |> List.map (fun id -> id, []))
 
 let name_of_id id =
-  Name ([[], id])
+  (*Name ([[], id]) *)
+  NameId id
 
 (* TODO: use a special at some point *)
 let super tok =

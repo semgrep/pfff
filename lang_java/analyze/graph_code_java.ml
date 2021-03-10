@@ -120,7 +120,7 @@ let parse ~show_parse_error file =
 let str_of_qualified_ident xs =
   xs |> List.map Ast.unwrap |> Common.join "."
 
-let str_of_name xs =
+let _str_of_name xs =
   xs |> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) |>
   Common.join "."
 
@@ -131,7 +131,7 @@ let p_or_l v =
   Ast.unwrap v.name, Ast.is_final v.mods
 
 (* TODO *)
-let long_ident_of_name xs = List.map snd xs
+let _long_ident_of_name xs = List.map snd xs
 (* TODO *)
 let long_ident_of_class_type xs = List.map fst xs
 
@@ -144,7 +144,7 @@ let nodeinfo ident =
 
 let looks_like_class_name s =
   s =~ "[A-Z]"
-let looks_like_enum_constant s =
+let _looks_like_enum_constant s =
   s =~ "^[A-Z_0-9]+$"
 
 let rec classname_and_info_of_typ t =
@@ -688,6 +688,8 @@ and catch env (_, (v, _uniontypes), st) =
 and expr env = function
   (* main dependency source! *)
   | This _ -> ()
+  | NameId _ -> failwith "TODO: look Name below"
+(*
   | Name n ->
       if env.phase = Uses then begin
         let str = str_of_name n in
@@ -727,6 +729,7 @@ and expr env = function
              )
         )
       end
+*)
   | NameOrClassType _ -> ()
   | Literal _ -> ()
 
