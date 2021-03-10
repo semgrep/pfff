@@ -148,10 +148,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_list1 _of_a = v_list _of_a
   and v_name v =
+    v_ident v
+(*
     v_list1
       (fun (v1, v2) ->
          let v1 = v_list v_type_argument v1 and v2 = v_ident v2 in ())
       v
+*)
   and v_name_or_class_type v = v_list v_identifier_ v
   and v_identifier_ =
     function
@@ -188,7 +191,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           v_ident v4
       | Ellipsis v1 -> let v1 = v_tok v1 in ()
       | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
-      | Name v1 -> let v1 = v_name v1 in ()
+      | NameId v1 -> let v1 = v_name v1 in ()
       | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
       | This v1 -> let v1 = v_tok v1 in ()
       | Literal v1 -> let v1 = v_literal v1 in ()

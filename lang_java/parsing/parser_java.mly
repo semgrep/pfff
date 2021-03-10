@@ -36,10 +36,10 @@ module PI = Parse_info
 (* Helpers *)
 (*****************************************************************************)
 let empty_body = PI.fake_bracket []
+let fake_dot = Parse_info.fake_info "."
 
 (* todo? use a Ast.special? *)
 let super_ident ii = ("super", ii)
-let super_name1 ii = [], ("super", ii)
 
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
@@ -55,19 +55,38 @@ let (class_type: name_or_class_type -> class_type) = fun xs ->
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
   )
 
-let (name: name_or_class_type -> name) = fun xs ->
-  xs |> List.map (function
-  | Id x -> [], x
-  | Id_then_TypeArgs (x, xs) ->
+let (name: name_or_class_type -> expr) = fun xs ->
+  let ys =
+    xs |> List.map (function
+     | Id x -> [], x
+     | Id_then_TypeArgs (x, xs) ->
       (* this is ok because of the ugly trick we do for Cast
        * where we transform a Name into a ref_type
        *)
-      xs, x
-  | TypeArgs_then_Id (xs, Id x) ->
-      xs, x
-  | TypeArgs_then_Id (_xs, _) ->
-      raise Parsing.Parse_error
-  )
+        xs, x
+     | TypeArgs_then_Id (xs, Id x) ->
+        xs, x
+     | TypeArgs_then_Id (_xs, _) ->
+        raise Parsing.Parse_error
+     )
+  in
+  (* TODO: we should not discard the type information *)
+  let ys = ys |> List.map snd in
+
+  (* x.y.z -> Dot (Dot (NameId x, y), z) *)
+  let ys = List.rev ys in
+  (* z.y.x -> Dot (Dot (NameId x, y), z) *)
+
+  let rec aux xs =
+    match xs with
+    | [] -> raise Impossible
+    | [x] -> NameId x
+    | [y;x] -> Dot (NameId x, fake_dot, y)
+    | z::xs ->
+        let e = aux xs in
+        Dot (e, fake_dot, z)
+  in
+  aux ys
 
 let fix_name arg =
    (* Ambiguity. It could be a field access (Dot) or a qualified
@@ -75,13 +94,16 @@ let fix_name arg =
     * more information.
     * The last dot has to be a Dot and not a Name at least,
     * but more elements of Name could be a Dot too.
+    * Hence the switch to just NameId instead of the code below
     *)
+   (*
    match List.rev arg with
    | (Id id)::x::xs ->
        Dot (Name (name (List.rev (x::xs))), Parse_info.fake_info ".", id)
    | _ ->
        Name (name arg)
-
+   *)
+   name arg
 
 let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
   xs |> List.map (function
@@ -92,6 +114,7 @@ let (qualified_ident: name_or_class_type -> qualified_ident) = fun xs ->
 
 
 let expr_to_typename expr =
+(*
     match expr with
     | Name name ->
         TClass (name |> List.map (fun (xs, id) -> id, xs))
@@ -102,6 +125,19 @@ let expr_to_typename expr =
         pr2 "cast_expression pb";
         pr2_gen expr;
         raise Todo
+*)
+  (* TODO: we lost the type information with the switch to NameId and Dot *)
+  let rec aux e =
+    match e with
+    | NameId id -> [id]
+    | Dot (e, _, id) -> aux e @ [id]
+    | _ ->
+        pr2 "cast_expression pb";
+        pr2_gen expr;
+        raise Todo
+   in
+   let xs = aux expr in
+   TClass (xs |> List.map (fun id -> id, []))
 
 let mk_stmt_or_stmts = function
   | [] -> AStmts []
@@ -434,7 +470,7 @@ primary_no_new_array:
  (* sgrep-ext: *)
  | typed_metavar       { $1 }
  (* just can use some reserved identifiers as field now? *)
- | name "." THIS       { Name (name $1 @ [[], ("this", $3)]) }
+ | name "." THIS       { Dot (name $1, $2, ("this", $3)) }
  (* javaext: ? *)
  | class_literal       { $1 }
  (* javaext: ? *)
@@ -465,7 +501,7 @@ class_instance_creation_expression:
    { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
  (* javaext: not in 2nd edition java language specification. *)
  | name "." NEW identifier "(" listc0(argument) ")" class_body?
-   { NewQualifiedClass ((Name (name $1)), $2, $3,TClass [$4,[]],($5,$6,$7),$8)}
+   { NewQualifiedClass (((name $1)), $2, $3,TClass [$4,[]],($5,$6,$7),$8)}
 
 (* A new array that cannot be accessed right away by appending [index]:
  * new String[2][1]  // a 2-dimensional array
@@ -493,13 +529,13 @@ dims:
 
 field_access:
  | primary "." identifier        { Dot ($1, $2, $3) }
- | SUPER   "." identifier        { Dot (Name [super_name1 $1], $2, $3) }
+ | SUPER   "." identifier        { Dot (NameId (super_ident $1), $2, $3) }
  (* javaext: ? *)
- | name "." SUPER "." identifier { Dot (Name (name $1@[super_name1 $3]),$2,$5)}
+ | name "." SUPER "." identifier { Dot (Dot (name $1,$2,super_ident $3),$2,$5)}
 
 array_access:
  | name                 "[" expression "]"
-    { ArrayAccess ((Name (name $1)),($2, $3, $4)) }
+    { ArrayAccess (((name $1)),($2, $3, $4)) }
  | primary_no_new_array "[" expression "]"
     { ArrayAccess ($1, ($2, $3, $4)) }
 
@@ -509,7 +545,8 @@ array_access:
 
 method_invocation:
  | name "(" listc0(argument) ")"
-        { match List.rev $1 with
+    { Call (name $1, ($2, $3, $4))
+         (* match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
               let tok = snd x in
@@ -523,14 +560,15 @@ method_invocation:
               pr2 "method_invocation pb";
               pr2_gen $1;
               raise Impossible
+         *)
         }
  | primary "." identifier "(" listc0(argument) ")"
 	{ Call ((Dot ($1, $2, $3)), ($4,$5,$6)) }
  | SUPER "." identifier "(" listc0(argument) ")"
-	{ Call ((Dot (Name [super_name1 $1], $2, $3)), ($4,$5,$6)) }
+	{ Call ((Dot (NameId (super_ident $1), $2, $3)), ($4,$5,$6)) }
  (* javaext: ? *)
  | name "." SUPER "." identifier "(" listc0(argument) ")"
-	{ Call (Dot (Name (name $1 @ [super_name1 $3]), $2, $5), ($6,$7,$8))}
+	{ Call (Dot (Dot (name $1, $2, super_ident $3), $4, $5), ($6,$7,$8))}
  (* sgrep-ext: *)
  | primary "." "..."    { ObjAccessEllipsis ($1, $2) }
  | name    "." "..."    { ObjAccessEllipsis (fix_name $1, $2) }
@@ -681,7 +719,7 @@ assignment_expression:
 assignment: left_hand_side assignment_operator expression  { $2 $1 $3 }
 
 left_hand_side:
- | name          { Name (name $1) }
+ | name          { (name $1) }
  | field_access  { $1 }
  | array_access  { $1 }
  (* sgrep-ext: *)
@@ -824,7 +862,7 @@ statement_expression:
  | method_invocation  { $1 }
  | class_instance_creation_expression  { $1 }
  (* sgrep-ext: to allow '$S;' in sgrep *)
- | IDENTIFIER    { Flag_parsing.sgrep_guard ((Name (name [Id $1])))  }
+ | IDENTIFIER    { Flag_parsing.sgrep_guard (((name [Id $1])))  }
  | typed_metavar { $1 }
 
 
@@ -1172,13 +1210,13 @@ explicit_constructor_invocation:
  | THIS "(" listc0(argument) ")" ";"
       { Expr (Call (This $1, ($2,$3,$4)), $5) }
  | SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation [super_name1 $1] ($2,$3,$4) $5 }
+      { constructor_invocation (NameId (super_ident $1)) ($2,$3,$4) $5 }
  (* javaext: ? *)
  | primary "." SUPER "(" listc0(argument) ")" ";"
       { Expr (Call ((Dot ($1, $2, super_ident $3)), ($4,$5,$6)), $7) }
  (* not in 2nd edition java language specification. *)
  | name "." SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation (name $1 @ [super_name1 $3]) ($4,$5,$6) $7 }
+      { constructor_invocation (Dot (name $1, $2, super_ident $3)) ($4,$5,$6) $7 }
 
 (*----------------------------*)
 (* Method parameter *)
