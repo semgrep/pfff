@@ -514,10 +514,10 @@ method_invocation:
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
               let tok = snd x in
               (match xs with
-              (* TODO: maybe we should not do this given we dont do it in
-               * tree-sitter. *)
-               | [] -> Call (Dot (This tok, tok, x), ($2,$3,$4))
-               | _ -> Call (Dot (Name (name (List.rev xs)),tok,x),($2,$3,$4))
+              (* old: I used to add an implicit this.x but we don't do that in
+               * tree-sitter, so better not do it either *)
+              | [] -> Call (Name (name $1), ($2, $3, $4))
+              | _ -> Call (Dot (Name (name (List.rev xs)),tok,x),($2,$3,$4))
               )
           | _ ->
               pr2 "method_invocation pb";
