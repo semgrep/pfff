@@ -13,4 +13,5 @@ type program = expr
 
 type any =
   | E of Ast_js.expr
+  | PartialSingleField of string Ast_js.wrap * Ast_js.tok * Ast_js.expr
 [@@deriving show { with_path = false }]

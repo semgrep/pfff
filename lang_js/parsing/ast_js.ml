@@ -558,6 +558,8 @@ and partial =
   | PartialTry of tok * stmt
   | PartialCatch of catch
   | PartialFinally of (tok * stmt)
+  (* partial field, used only in JSON semgrpe patterns for now *)
+  | PartialSingleField of string wrap (* an id or str *) * tok (* : *) * expr
 
 (* this is now mutually recursive with the previous types because of StmtTodo*)
 and any =

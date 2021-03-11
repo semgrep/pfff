@@ -315,6 +315,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 %start <Ast_js.any> sgrep_spatch_pattern
 (* for lang_json/ *)
 %start <Ast_js.expr> json
+%start <Ast_js.any> json_pattern
 
 (* just for better type error *)
 %type <Ast_js.stmt list> stmt item module_item
@@ -381,6 +382,17 @@ decl:
 (* less: could restrict to literals and collections *)
 json: expr EOF { $1 }
 
+json_pattern:
+  | expr EOF
+     { Expr $1 }
+  | property_name2 ":" binding_element ","? EOF
+     { Partial (PartialSingleField ($1, $2, $3)) }
+
+%inline
+property_name2:
+  | T_ID           { $1 }
+  | string_literal { $1 }
+
 (*************************************************************************)
 (* sgrep *)
 (*************************************************************************)
@@ -421,6 +433,11 @@ sgrep_spatch_pattern:
    { Partial (PartialCatch $1) }
  | finally EOF
    { Partial (PartialFinally $1) }
+  (* partial objects, like in json_pattern *)
+(* TODO additional s/r conflict
+  | property_name2 ":" binding_element ","? EOF
+     { raise Todo }
+*)
 
 (*************************************************************************)
 (* Namespace *)

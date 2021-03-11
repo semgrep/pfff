@@ -45,8 +45,12 @@ let any_of_string str =
        * recognize full expression as a start, it uses
        * assignment_expr_no_stmt because of possible ambiguities
        * when seeing { } which can be a block or an object,
-       * so let's call directly Parser_js.json
+       * so let's call directly Parser_js.json_pattern
       *)
-      let e = Parser_js.json lexer lexbuf_fake in
-      Ast_json.E e
+      match Parser_js.json_pattern lexer lexbuf_fake with
+      | Ast_js.Expr e ->
+          Ast_json.E e
+      | Ast_js.Partial (Ast_js.PartialSingleField (v1, v2, v3)) ->
+          Ast_json.PartialSingleField (v1, v2, v3)
+      | _ -> failwith "not a json expression"
     ))

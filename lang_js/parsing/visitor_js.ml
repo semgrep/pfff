@@ -426,6 +426,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | PartialIf (v1, v2) -> v_tok v1; v_expr v2
     | PartialTry (v1, v2) | PartialFinally (v1, v2) -> v_tok v1; v_stmt v2
     | PartialCatch (v1) -> v_catch_block v1
+    | PartialSingleField (v1, v2, v3) ->
+        v_wrap v_string v1; v_tok v2; v_expr v3
 
   and v_program v = v_list v_toplevel v
 
