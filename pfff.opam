@@ -42,5 +42,8 @@ depends: [
   "uucp"
   "ounit2"
   "ANSITerminal"
-  "easy_logging_yojson"
+  "easy_logging_yojson" { dev }
+]
+pin-depends: [
+  ["easy_logging_yojson.git" "git@github.com:aryx/easy_logging.git"]
 ]
