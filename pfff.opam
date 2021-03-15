@@ -42,7 +42,7 @@ depends: [
   "uucp"
   "ounit2"
   "ANSITerminal"
-  "easy_logging_yojson" { dev }
+  "easy_logging_yojson" { dev & >= "0.8.0" }
 ]
 pin-depends: [
   ["easy_logging_yojson.git" "git+https://github.com/aryx/easy_logging.git"]
