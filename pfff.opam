@@ -38,10 +38,15 @@ depends: [
   "grain_dypgen"
   "ppx_deriving"
   "ppx_hash"
-  "ppxlib"
+  "ppxlib" {= "0.15.0" }
   "uutf"
   "uucp"
   "ounit2"
   "ANSITerminal"
-  "easy_logging_yojson"
+  "easy_logging" { dev & >= "0.7.2" }
+  "easy_logging_yojson" { dev & >= "0.7.2" }
+]
+pin-depends: [
+  ["easy_logging.git" "git+https://github.com/aryx/easy_logging.git"]
+  ["easy_logging_yojson.git" "git+https://github.com/aryx/easy_logging.git"]
 ]
