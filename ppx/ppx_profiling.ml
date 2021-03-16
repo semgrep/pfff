@@ -14,6 +14,7 @@
 *)
 [@@@warning "-42"]
 
+(*
 open Migrate_parsetree
 open Ast_408
 let ocaml_version = Versions.ocaml_408
@@ -24,6 +25,7 @@ open Asttypes
 open Parsetree
 open Longident
 open Location
+*)
 
 (* update:
  * https://tarides.com/blog/2019-05-09-an-introduction-to-ocaml-ppx-ecosystem
@@ -79,6 +81,7 @@ open Location
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(*
 let rec nb_parameters body =
   match body with
   | {pexp_desc = Pexp_fun (_, _, _, body); _} -> 1 + nb_parameters body
@@ -103,11 +106,12 @@ let rec mk_args loc n =
 let module_name_of_filename s =
   let (_d, b, _e) = Common2.dbe_of_filename s in
   String.capitalize_ascii b
-
+*)
 (*****************************************************************************)
 (* Mapper *)
 (*****************************************************************************)
 
+(*
 let mapper _config _cookies =
   { default_mapper with
     structure = fun mapper xs ->
@@ -168,9 +172,11 @@ let mapper _config _cookies =
         | x -> [default_mapper.structure_item mapper x]
       ) |> List.concat
   }
-
+*)
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
+(*
 let () =
   Driver.register ~name:"ppx_profiling" ocaml_version mapper
+*)

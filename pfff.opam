@@ -36,6 +36,7 @@ depends: [
   "yojson"
   "menhir"
   "grain_dypgen"
+  "ppxlib"
   "ppx_deriving"
   "ppx_hash"
   "uutf"
