@@ -102,7 +102,7 @@ class type logger =
     (** {3 Other methods} *)
 
     method name: string
-    method internal_level : level
+    method real_level : level
 
     (** Sets the log level of the logger instance. *)
     method set_level : level  -> unit
