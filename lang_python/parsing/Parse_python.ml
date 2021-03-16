@@ -52,7 +52,7 @@ let error_msg_tok tok =
 (*****************************************************************************)
 
 (*s: function [[Parse_python.tokens2]] *)
-let tokens2 parsing_mode file =
+let tokens parsing_mode file =
   let state = Lexer.create () in
   let python2 = parsing_mode = Python2 in
   let token lexbuf =
@@ -91,10 +91,9 @@ let tokens2 parsing_mode file =
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 (*e: function [[Parse_python.tokens2]] *)
+[@@profiling]
 
 (*s: function [[Parse_python.tokens]] *)
-let tokens a b =
-  Common.profile_code "Parse_python.tokens" (fun () -> tokens2 a b)
 (*e: function [[Parse_python.tokens]] *)
 
 (*****************************************************************************)

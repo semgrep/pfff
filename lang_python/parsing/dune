@@ -7,7 +7,7 @@
    commons commons_core
    pfff-config pfff-h_program-lang
  )
- (preprocess (pps ppx_deriving.show))
+ (preprocess (pps ppx_deriving.show ppx_profiling))
 )
 (ocamllex Lexer_python)
 (menhir (modules Parser_python)

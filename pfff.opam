@@ -38,6 +38,7 @@ depends: [
   "grain_dypgen"
   "ppx_deriving"
   "ppx_hash"
+  "ppxlib"
   "uutf"
   "uucp"
   "ounit2"
