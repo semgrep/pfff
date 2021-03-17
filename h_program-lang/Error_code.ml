@@ -515,7 +515,9 @@ let (expected_error_lines_of_files:
          *)
          if s =~ ".*ERROR:.*" ||
             s =~ ".*MATCH:.*" ||
-            s =~ ".*\\bruleid:.*" (* not tororuleid! *)
+            (* for semgrep-rules: *)
+            s =~ ".*\\bruleid:.*" (* not tororuleid! *) ||
+            s =~ ".*\\btodook:.*" (* not ok:! *)
             (* + 1 because the comment is one line before *)
          then Some (file, idx + 1)
          else None
