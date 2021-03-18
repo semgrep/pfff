@@ -503,9 +503,12 @@ let annotation_at a =
 (* Helper functions to use in testing code *)
 (*****************************************************************************)
 
+let default_error_regexp = ".*\\(ERROR\\|MATCH\\):"
+
 let (expected_error_lines_of_files:
-       Common.filename list -> (Common.filename * int (* line *)) list) =
-  fun test_files ->
+       ?regexp:string ->
+     Common.filename list -> (Common.filename * int (* line *)) list) =
+  fun ?(regexp=default_error_regexp) test_files ->
   test_files |> List.map (fun file ->
     Common.cat file |> Common.index_list_1 |> Common.map_filter
       (fun (s, idx) ->
@@ -513,12 +516,8 @@ let (expected_error_lines_of_files:
           * don't check if they match. We are just happy to check for
           * correct lines error reporting.
          *)
-         if s =~ ".*ERROR:.*" ||
-            s =~ ".*MATCH:.*" ||
-            (* for semgrep-rules: *)
-            s =~ ".*\\bruleid:.*" (* not tororuleid! *) ||
-            s =~ ".*\\btodook:.*" (* not ok:! *)
-            (* + 1 because the comment is one line before *)
+         if s =~ regexp
+         (* + 1 because the comment is one line before *)
          then Some (file, idx + 1)
          else None
       )

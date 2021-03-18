@@ -186,7 +186,8 @@ val adjust_errors:
 (*s: signature [[Error_code.expected_error_lines_of_files]] *)
 (* extract all the lines with ERROR: comment in test files *)
 val expected_error_lines_of_files:
-  Common.filename list -> (Common.filename * int (* line with ERROR *)) list
+  ?regexp:string -> Common.filename list ->
+  (Common.filename * int (* line with ERROR *)) list
 (*e: signature [[Error_code.expected_error_lines_of_files]] *)
 
 (*s: signature [[Error_code.compare_actual_to_expected]] *)
