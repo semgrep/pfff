@@ -620,9 +620,9 @@ pexpr_no_paren:
     { TypeSwitchExpr ($1, $3) }
 
 |   pexpr "[" expr "]" { Index ($1, ($2, $3, $4)) }
-|   pexpr "[" expr? ":" expr? "]" { Slice ($1, ($3, $5, None)) }
+|   pexpr "[" expr? ":" expr? "]" { Slice ($1, ($2, ($3, $5, None), $6)) }
 |   pexpr "[" expr? ":" expr? ":" expr? "]"
-    { Slice ($1, ($3, $5, $7))
+    { Slice ($1, ($2, ($3, $5, $7), $6))
         (*if $5 == nil {
             Yyerror("middle index required in 3-index slice");
         }
