@@ -167,12 +167,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_expr v1
           and v2 =
             let v_tuple3 v =
-             match v with
-             | (v1, v2, v3) ->
-                 let v1 = v_option v_expr v1
-                 and v2 = v_option v_expr v2
-                 and v3 = v_option v_expr v3
-                 in ()
+              match v with
+              | (v1, v2, v3) ->
+                  let v1 = v_option v_expr v1
+                  and v2 = v_option v_expr v2
+                  and v3 = v_option v_expr v3
+                  in ()
             in
             v_bracket v_tuple3 v2
           in ()
