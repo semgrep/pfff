@@ -282,6 +282,8 @@ let vof_either3 _of_a _of_b _of_c =
   | Middle3 v1 -> let v1 = _of_b v1 in VSum ("Middle3", [ v1 ])
   | Right3 v1 -> let v1 = _of_c v1 in VSum ("Right3", [ v1 ])
 
+let vof_all3 of_a of_b of_c (a, b, c) =
+  VTuple [of_a a; of_b b; of_c c]
 
 
 let int_ofv = function
@@ -427,6 +429,8 @@ let map_of_either3 _of_a _of_b _of_c =
   | Middle3 v1 -> let v1 = _of_b v1 in Middle3 v1
   | Right3 v1 -> let v1 = _of_c v1 in Right3 v1
 
+let map_of_all3 of_a of_b of_c (a, b, c) =
+  (of_a a, of_b b, of_c c)
 
 (* this is subtle ... *)
 let (map_v: f:( k:(v -> v) -> v -> v) -> v -> v) =

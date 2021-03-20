@@ -70,6 +70,7 @@ val vof_ref    : ('a -> v) -> 'a ref -> v
 val vof_either    : ('a -> v) -> ('b -> v) -> ('a, 'b) Common.either -> v
 val vof_either3    : ('a -> v) -> ('b -> v) -> ('c -> v) ->
   ('a, 'b, 'c) Common.either3 -> v
+val vof_all3   : ('a -> v) -> ('b -> v) -> ('c -> v) -> 'a * 'b * 'c -> v
 (*e: signature [[OCaml.vof_xxx]] functions *)
 
 (*s: signature [[OCaml.xxx_ofv]] functions *)
@@ -131,6 +132,7 @@ val map_of_either:
 val map_of_either3:
   ('a -> 'b) -> ('c -> 'd) -> ('e -> 'f) ->
   ('a, 'c, 'e) Common.either3 -> ('b, 'd, 'f) Common.either3
+val map_of_all3: ('a -> 'b) -> ('c -> 'd) -> ('e -> 'f) -> 'a * 'c * 'e -> 'b * 'd * 'f
 (*e: signature [[OCaml.map_of_xxx]] functions *)
 
 (*s: signature [[OCaml.v_xxx]] functions *)

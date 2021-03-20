@@ -140,7 +140,7 @@ and expr =
   (* valid for TArray, TMap, Tptr, TName ("string") *)
   | Index of expr * index bracket
   (* low, high, max *)
-  | Slice of expr * (expr option * expr option * expr option)
+  | Slice of expr * (expr option * expr option * expr option) bracket
 
   | Call of call_expr
   (* note that some Call are really Cast, e.g., uint(1), but we need

@@ -166,12 +166,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Slice (v1, v2) ->
           let v1 = v_expr v1
           and v2 =
-            (match v2 with
-             | (v1, v2, v3) ->
-                 let v1 = v_option v_expr v1
-                 and v2 = v_option v_expr v2
-                 and v3 = v_option v_expr v3
-                 in ())
+            let v_tuple3 v =
+              match v with
+              | (v1, v2, v3) ->
+                  let v1 = v_option v_expr v1
+                  and v2 = v_option v_expr v2
+                  and v3 = v_option v_expr v3
+                  in ()
+            in
+            v_bracket v_tuple3 v2
           in ()
       | Call v1 -> let v1 = v_call_expr v1 in ()
       | Cast (v1, v2) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
