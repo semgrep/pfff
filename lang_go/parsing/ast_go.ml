@@ -358,6 +358,8 @@ type item =
 type partial =
   (* the stmt will be empty in function_ for DFunc and DMethod *)
   | PartialDecl of top_decl
+  | PartialInitBraces of init list bracket
+  | PartialSingleField of string wrap (* id *) * tok (*:*) * init
 
 [@@deriving show { with_path = false }]
 

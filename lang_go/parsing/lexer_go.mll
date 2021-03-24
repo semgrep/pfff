@@ -179,7 +179,6 @@ rule token = parse
   | '|'     { LPIPE (tokinfo lexbuf) }
   | '&'     { LAND (tokinfo lexbuf) }
   | '^'     { LHAT (tokinfo lexbuf) }
-  | '~'     { LTILDE (tokinfo lexbuf) }
   | '!'     { LBANG (tokinfo lexbuf) }
 
   | "<<"    { LLSH (tokinfo lexbuf) }  | ">>"    { LRSH (tokinfo lexbuf) }

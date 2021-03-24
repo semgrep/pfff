@@ -53,6 +53,8 @@ let token_kind_of_tok t =
 (*****************************************************************************)
 
 let visitor_info_of_tok f = function
+  | LBRACE_SEMGREP ii -> LBRACE_SEMGREP (f ii)
+  | LCOLON_SEMGREP ii -> LCOLON_SEMGREP (f ii)
 
   | TUnknown ii -> TUnknown (f ii)
   | EOF ii -> EOF (f ii)
@@ -134,7 +136,6 @@ let visitor_info_of_tok f = function
   | LLSH ii -> LLSH (f ii)
   | LRSH ii -> LRSH (f ii)
   | LBANG ii -> LBANG (f ii)
-  | LTILDE ii -> LTILDE (f ii)
 
 let info_of_tok tok =
   let res = ref None in
