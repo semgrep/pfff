@@ -242,9 +242,8 @@ and xml = {
   xml_body: xml_body list;
 }
 and xml_kind =
-  (* The tok in the ident contains also the leading '<' *)
-  | XmlClassic   of ident * tok (* '>' *) * tok (* '</foo>' *)
-  | XmlSingleton of ident * tok (* '/>', with xml_body = [] *)
+  | XmlClassic   of tok (*'<'*) * ident * tok (*'>'*) * tok (*'</foo>'*)
+  | XmlSingleton of tok (*'<'*) * ident * tok (* '/>', with xml_body = [] *)
   | XmlFragment of tok (* '<>' *) * tok (* '</>', with xml_attrs = [] *)
 and xml_attribute =
   | XmlAttr of ident * tok (* = *) * xml_attr_value

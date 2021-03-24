@@ -138,8 +138,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | XmlXml v1 -> let v1 = v_xml v1 in ()
 
   and v_xml_kind = function
-    | XmlClassic (v1, v2, v3) -> v_ident v1; v_tok v2; v_tok v3
-    | XmlSingleton (v1, v2) -> v_ident v1; v_tok v2
+    | XmlClassic (v0, v1, v2, v3) -> v_tok v0; v_ident v1; v_tok v2; v_tok v3
+    | XmlSingleton (v0, v1, v2) -> v_tok v0; v_ident v1; v_tok v2
     | XmlFragment (v1, v2) -> v_tok v1; v_tok v2
   and v_todo_category v1 = v_wrap v_string v1
 
