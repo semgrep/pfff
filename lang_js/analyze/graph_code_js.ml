@@ -593,7 +593,7 @@ and expr env e =
 and xml env x =
   (* TODO add_use_edge env ([x.xml_tag], E.Class); *)
   x.xml_attrs |> List.iter (function
-    | XmlAttr (_identTODO, xhp_attr) ->
+    | XmlAttr (_identTODO, _, xhp_attr) ->
         (* TODO add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field; *)
         expr env xhp_attr
     | XmlAttrExpr (_, e, _) -> expr env e
@@ -603,7 +603,7 @@ and xml env x =
 
 and xhp env = function
   | XmlText _s -> ()
-  | XmlExpr e -> expr env e
+  | XmlExpr e -> option (expr env) (unbracket e)
   | XmlXml x -> xml env x
 
 (* ---------------------------------------------------------------------- *)
