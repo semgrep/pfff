@@ -1066,7 +1066,9 @@ stmt:
  | switch_stmt     { [$1] }
  | throw_stmt      { [$1] }
  | try_stmt        { [$1] }
- (* sgrep-ext: *)
+ (* sgrep-ext:
+  * TODO add an sc? then remove the other ugly "..." and less conflicts?
+  *)
  | "..." { [ExprStmt (Ellipsis $1, PI.sc)] }
 
 %inline
@@ -1505,6 +1507,8 @@ arrow_body:
  | assignment_expr_no_stmt (* %prec LOW_PRIORITY_RULE *) { mk_block_return $1 }
  (* ugly *)
  | function_expr { mk_block_return $1 }
+ (* sgrep-ext: TODO should move in assignment_expr_no_stmt but s/r conflicts *)
+ | "..." { Flag_parsing.sgrep_guard (mk_block_return (Ellipsis $1)) }
 
 (*----------------------------*)
 (* no in *)
