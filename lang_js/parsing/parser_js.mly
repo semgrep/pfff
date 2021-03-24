@@ -1435,28 +1435,33 @@ argument:
 (*----------------------------*)
 (* XHP embeded html *)
 (*----------------------------*)
+(* less: we should split $1 in 2 tokens, like we do in tree-sitter-js *)
 xhp_html:
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_GT xhp_child* T_XHP_CLOSE_TAG
-     { { xml_tag = $1; xml_attrs = $2; xml_body = $4 } }
+     { { xml_kind = XmlClassic (snd $1, $1, $3, snd $5); xml_attrs=$2; xml_body=$4 } }
  | T_XHP_OPEN_TAG xhp_attribute* T_XHP_SLASH_GT
-     { { xml_tag = $1; xml_attrs = $2; xml_body = [] } }
+     { { xml_kind = XmlSingleton (snd $1, $1, $3); xml_attrs = $2; xml_body = [] } }
  (* reactjs-ext: https://reactjs.org/docs/fragments.html#short-syntax *)
  | T_XHP_SHORT_FRAGMENT xhp_child* T_XHP_CLOSE_TAG
-     { { xml_tag = ("", $1); xml_attrs = []; xml_body = $2 } }
+     { { xml_kind = XmlFragment ($1, snd $3); xml_attrs = []; xml_body = $2 } }
 
 xhp_child:
  | T_XHP_TEXT        { XmlText $1 }
  | xhp_html          { XmlXml $1 }
- | "{" expr sc? "}"  { XmlExpr ($2) }
+ | "{" expr sc? "}"  { XmlExpr ($1, Some $2, $4) }
  (* sometimes people use empty { } to put comment in it *)
- | "{" "}"           { XmlExpr (IdSpecial (Null, $1)) }
+ | "{" "}"           { XmlExpr ($1, None, $2) }
 
 xhp_attribute:
- | T_XHP_ATTR "=" xhp_attribute_value { XmlAttr ($1, $3) }
- | "{" "..." assignment_expr "}" { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
+ | T_XHP_ATTR "=" xhp_attribute_value
+    { XmlAttr ($1, $2, $3) }
+ | "{" "..." assignment_expr "}"
+    { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
  (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
- | T_XHP_ATTR                         { XmlAttr ($1, L (Bool(true,PI.fake_info "true")))}
- | "..."                              { XmlEllipsis $1 }
+ | T_XHP_ATTR
+    { XmlAttr ($1, PI.fake_info "=", L (Bool(true, snd $1))) }
+ | "..."
+    { XmlEllipsis $1 }
 
 xhp_attribute_value:
  | T_STRING           { L (String $1) }

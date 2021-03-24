@@ -237,21 +237,28 @@ and argument = expr
 
 (* transpiled: to regular Calls when Ast_js_build.transpile_xml *)
 and xml = {
-  xml_tag: ident; (* this can be "" for React "fragment", <>xxx</> *)
+  xml_kind: xml_kind;
   xml_attrs: xml_attribute list;
   xml_body: xml_body list;
 }
+and xml_kind =
+  | XmlClassic   of tok (*'<'*) * ident * tok (*'>'*) * tok (*'</foo>'*)
+  | XmlSingleton of tok (*'<'*) * ident * tok (* '/>', with xml_body = [] *)
+  | XmlFragment of tok (* '<>' *) * tok (* '</>', with xml_attrs = [] *)
 and xml_attribute =
-  | XmlAttr of ident * xml_attr_value
+  | XmlAttr of ident * tok (* = *) * xml_attr_value
   (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
   | XmlAttrExpr of expr bracket
   (* sgrep-ext: *)
   | XmlEllipsis of tok
+  (* either a String or a bracketed expr, but right now we just use expr *)
 and xml_attr_value = expr
 
 and xml_body =
+  (* sgrep-ext: can contain "..." *)
   | XmlText of string wrap
-  | XmlExpr of expr
+  (* this can be None when people abuse {} to put comments in it *)
+  | XmlExpr of expr option bracket
   | XmlXml of xml
 
 (*****************************************************************************)
