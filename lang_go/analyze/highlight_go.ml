@@ -339,7 +339,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
     | T.LASOP (_, ii) -> tag ii Punctuation
 
-    | T.LBRACE ii | T.LBODY ii
+    | T.LBRACE ii | T.LBODY ii | T.LBRACE_SEMGREP ii
     | T.RBRACE ii
     | T.LBRACKET ii | T.RBRACKET ii
     | T.LPAREN ii | T.RPAREN ii
@@ -355,7 +355,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LINC ii | T.LDEC ii
 
     | T.LANDAND ii | T.LOROR ii
-    | T.LAND ii | T.LPIPE ii | T.LHAT ii | T.LTILDE ii | T.LANDNOT ii
+    | T.LAND ii | T.LPIPE ii | T.LHAT ii | T.LANDNOT ii
 
     | T.LBANG ii
 
@@ -364,7 +364,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LLE ii | T.LGE ii
 
     | T.LDOT ii
-    | T.LCOLON ii
+    | T.LCOLON ii | T.LCOLON_SEMGREP ii
     | T.LCOMMA ii
     | T.LSEMICOLON ii
       ->

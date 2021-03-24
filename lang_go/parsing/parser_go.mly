@@ -206,7 +206,7 @@ let rev_and_fix_items xs =
   LEQEQ LNE
   LGE LGT LLE LLT
   LLSH LRSH
-  LBANG LTILDE
+  LBANG
   LCOMM "<-"
 
 (*-----------------------------------------*)
@@ -215,6 +215,9 @@ let rev_and_fix_items xs =
 %token <Ast_go.tok>
   LBODY (* LBRACE parsing hack *)
   LSEMICOLON ";" (* sometimes implicitely inserted, see Parsing_hacks_go.ml *)
+
+(* sgrep-ext: *)
+%token <Ast_go.tok> LBRACE_SEMGREP LCOLON_SEMGREP
 
 (*************************************************************************)
 (* Priorities *)
@@ -235,6 +238,7 @@ let rev_and_fix_items xs =
  // NotToken with lower precedence or PreferToToken with higher
  // and annotate the reducing rule accordingly.
  *)
+
 %left       NotParen
 %left       LPAREN
 
@@ -311,6 +315,15 @@ sgrep_spatch_pattern:
     }
  | item ";" item ";" item_list EOF
     { Items ($1 @ $3 @ rev_and_fix_items $5) }
+
+ (* partials! *)
+ | partial EOF { Partial $1 }
+
+partial:
+ | LBRACE_SEMGREP braced_keyval_list  "}" ";"?
+     { PartialInitBraces ($1, $2, $3) }
+ | LNAME LCOLON_SEMGREP complitexpr ";"?
+     { PartialSingleField ($1, $2, $3) }
 
 item:
  | stmt   { [IStmt $1] }
@@ -415,7 +428,7 @@ non_dcl_stmt:
 |   switch_stmt { $1 }
 |   select_stmt { $1 }
 
-|   labelname ":" stmt { Label ($1, $3) }
+|   labelname ":" stmt    { Label ($1, $3) }
 |   LGOTO new_name        { Goto ($1, $2) }
 
 |   LBREAK    new_name? { Break ($1, $2) }
@@ -733,14 +746,18 @@ sym:
  *  newname is used before declared
  *  oldname is used after declared
  *)
+%inline
 new_name: sym { $1 }
 
+%inline
 dcl_name: sym { $1 }
 
 name: sym %prec NotParen { $1 }
 
+%inline
 labelname: new_name { $1 }
 
+%inline
 typedclname:  sym
     { $1
         (*

@@ -41,6 +41,14 @@ type env_lbody =
 (* Helpers *)
 (*****************************************************************************)
 
+(* alt: could have instead a better Ast_fuzzy type instead of putting
+ * everything in the Tok category?
+*)
+let is_identifier horigin (info : Parse_info.t) =
+  match Hashtbl.find_opt horigin info with
+  | Some (T.LNAME _) -> true
+  | _ -> false
+
 (*****************************************************************************)
 (* ASI *)
 (*****************************************************************************)
@@ -88,6 +96,14 @@ let fix_tokens_asi xs =
 (*****************************************************************************)
 (* LBODY *)
 (*****************************************************************************)
+(* retagging:
+ *  - '{' when part of a composite literal
+ *  - '{' when composite literal in semgrep at toplevel
+ *  - ':' when part of a keyval in semgrep at toplevel
+ *
+ * This is similar to what we do in parsing_hacks_js.ml to overcome
+ * some shift/reduce limitations by cheating and inventing new tokens.
+*)
 let fix_tokens_lbody toks =
   try
     let trees = Lib_ast_fuzzy.mk_trees { Lib_ast_fuzzy.
@@ -95,7 +111,24 @@ let fix_tokens_lbody toks =
                                          kind = TH.token_kind_of_tok;
                                        } toks
     in
+    let horigin = toks |> List.map (fun t -> TH.info_of_tok t, t)
+                  |> Common.hash_of_list in
+
     let retag_lbrace = Hashtbl.create 101 in
+    let retag_lbrace_semgrep = Hashtbl.create 1 in
+    let retag_lcolon_semgrep = Hashtbl.create 1 in
+
+    (match trees with
+     (* TODO: check that actually a composite literal in it? *)
+     | F.Braces (t1, _body, _)::_ when !Flag_parsing.sgrep_mode ->
+         Hashtbl.add retag_lbrace_semgrep t1 true
+     (* no way it's a label *)
+     | F.Tok(_s, info)::F.Tok(":", t2)::_ when !Flag_parsing.sgrep_mode &&
+                                               is_identifier horigin info ->
+         Hashtbl.add retag_lcolon_semgrep t2 true
+
+     | _ -> ()
+    );
 
     let rec aux env trees =
       match trees with
@@ -188,6 +221,12 @@ let fix_tokens_lbody toks =
     toks |> List.map (function
       | T.LBRACE info when Hashtbl.mem retag_lbrace info ->
           T.LBODY info
+      | T.LBRACE info when Hashtbl.mem retag_lbrace info ->
+          T.LBODY info
+      | T.LBRACE info when Hashtbl.mem retag_lbrace_semgrep info ->
+          T.LBRACE_SEMGREP info
+      | T.LCOLON info when Hashtbl.mem retag_lcolon_semgrep info ->
+          T.LCOLON_SEMGREP info
       | x -> x
     )
 

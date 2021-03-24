@@ -402,6 +402,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_partial = function
     | PartialDecl v1 -> v_top_decl v1
+    | PartialInitBraces v1 -> let v1 = v_bracket (v_list v_init) v1 in ()
+    | PartialSingleField (v1, v2, v3) ->
+        v_ident v1;
+        v_tok v2;
+        v_init v3
 
   and v_any =
     function
