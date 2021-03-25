@@ -1256,7 +1256,9 @@ lambda_body:
 (* auxillary bis *)
 (*----------------------------*)
 
-dim_offset: expr? { $1 }
+dim_offset:
+ | expr? { $1 }
+ | "..." { Some (Ellipsis $1) }
 
 exit_expr:
  | (*empty*)    { None }
