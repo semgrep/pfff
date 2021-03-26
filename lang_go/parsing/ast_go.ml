@@ -227,11 +227,7 @@ and stmt =
   | Select of tok * comm_clause list
 
   (* note: no While or DoWhile, just For and Foreach (Range) *)
-  | For of tok * (simple option * expr option * simple option) * stmt
-  (* todo: should impose (expr * tok * expr option) for key/value *)
-  | Range of tok *
-             (expr list * tok (* = or := *)) option (* key/value pattern *) *
-             tok (* 'range' *) * expr * stmt
+  | For of tok * for_header * stmt
 
   | Return of tok * expr list option
   (* was put together in a Branch in ast.go, but better to split *)
@@ -244,6 +240,15 @@ and stmt =
 
   | Go    of tok * call_expr
   | Defer of tok * call_expr
+and for_header =
+  | ForClassic of simple option * expr option * simple option
+  (* todo: should impose (expr * tok * expr option) for key/value *)
+  | ForRange of
+      (expr list * tok (* = or := *)) option (* key/value pattern *) *
+      tok (* 'range' *) *
+      expr
+  (* sgrep-ext: *)
+  | ForEllipsis of tok
 
 (* todo: split in case_clause_expr and case_clause_type *)
 and case_clause =

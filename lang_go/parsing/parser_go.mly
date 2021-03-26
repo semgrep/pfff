@@ -479,18 +479,26 @@ else_:
 
 for_stmt:
  | LFOR simple_stmt? ";" simple_stmt? ";" simple_stmt? loop_body
-    { For ($1, ($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
- | LFOR simple_stmt? loop_body
-    { match $2 with
-      | None ->    For ($1, (None, None, None), $3)
-      | Some st -> For ($1, (None, Some (condition_of_stmt $1 st), None), $3)
+    { For ($1, ForClassic ($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
+ | LFOR simple_stmt loop_body
+    { let cond = condition_of_stmt $1 $2 in
+      let for_header =
+        match cond with
+        (* sgrep-ext: *)
+        | Ellipsis t -> ForEllipsis t
+        (* general case *)
+        | _ -> ForClassic (None, Some cond, None)
+      in
+      For ($1, for_header, $3)
     }
+ | LFOR              loop_body
+    { For ($1, ForClassic (None, None, None), $2) }
  | LFOR listc(expr) "="    LRANGE expr loop_body
-    { Range ($1, Some (List.rev $2, $3), $4, $5, $6)  }
+    { For ($1, ForRange (Some (List.rev $2, $3), $4, $5), $6)  }
  | LFOR listc(expr) ":=" LRANGE expr loop_body
-    { Range ($1, Some (List.rev $2, $3), $4, $5, $6) }
+    { For ($1, ForRange (Some (List.rev $2, $3), $4, $5), $6) }
  | LFOR                  LRANGE expr loop_body
-    { Range ($1, None, $2, $3, $4) }
+    { For ($1, ForRange (None, $2, $3), $4) }
 
 
 loop_body: LBODY listsc(stmt) "}" { Block ($1, rev_and_fix_stmts $2, $3) }

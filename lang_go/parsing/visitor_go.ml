@@ -21,6 +21,14 @@ open Ast_go
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* TODO: deprecated, avoid using this file. Convert to the generic AST
+ * and use Visitor_AST.ml.
+ *
+ * This file is currently used by the Go highlighter, but this code should
+ * migrate to the generic code highlighter. It also used by ii_of_any
+ * but this is just used in Go_to_generic. for error reporting and
+ * it could also be removed from there.
+*)
 
 (*****************************************************************************)
 (* Types *)
@@ -255,25 +263,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_tok v1 and v2 = v_list v_comm_clause v2 in ()
       | For (t, v1, v2) ->
           let t = v_tok t in
-          let v1 =
-            (match v1 with
-             | (v1, v2, v3) ->
-                 let v1 = v_option v_simple v1
-                 and v2 = v_option v_expr v2
-                 and v3 = v_option v_simple v3
-                 in ())
-          and v2 = v_stmt v2
-          in ()
-      | Range (t, v1, v2, v3, v4) ->
-          let t = v_tok t in
-          let v1 =
-            v_option
-              (fun (v1, v2) -> let v1 = v_list v_expr v1 and v2 = v_tok v2 in ())
-              v1
-          and v2 = v_tok v2
-          and v3 = v_expr v3
-          and v4 = v_stmt v4
-          in ()
+          let v1 = v_for_header v1 in
+          let v2 = v_stmt v2 in
+          ()
       | Return (v1, v2) ->
           let v1 = v_tok v1 and v2 = v_option (v_list v_expr) v2 in ()
       | Break (v1, v2) -> let v1 = v_tok v1 and v2 = v_option v_ident v2 in ()
@@ -286,6 +278,22 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Defer (v1, v2) -> let v1 = v_tok v1 and v2 = v_call_expr v2 in ()
     in
     vin.kstmt (k, all_functions) x
+
+  and v_for_header = function
+    | ForClassic (v1, v2, v3) ->
+        let v1 = v_option v_simple v1
+        and v2 = v_option v_expr v2
+        and v3 = v_option v_simple v3
+        in ()
+    | ForRange (v1, v2, v3) ->
+        let v1 =
+          v_option
+            (fun (v1, v2) -> let v1 = v_list v_expr v1 and v2 = v_tok v2 in ())
+            v1
+        and v2 = v_tok v2
+        and v3 = v_expr v3
+        in ()
+    | ForEllipsis v1 -> v_tok v1
 
   and v_simple = function
     | ExprStmt v1 -> let v1 = v_expr v1 in ()
