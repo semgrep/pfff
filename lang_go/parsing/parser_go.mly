@@ -526,7 +526,7 @@ caseblock_list:
 caseblock:
 | case listsc(stmt)
     {
-      CaseClause ($1, Block (PI.fake_bracket (List.rev $2)))
+      CaseClause ($1, stmt1 (rev_and_fix_stmts $2))
       (*
         // If the last token read by the lexer was consumed
         // as part of the case, clear it (parser has cleared yychar).
