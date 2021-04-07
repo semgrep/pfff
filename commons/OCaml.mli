@@ -123,10 +123,11 @@ val map_of_int: int -> int
 val map_of_float: float -> float
 val map_of_char: char -> char
 val map_of_string: string -> string
+
 val map_of_ref: ('a -> 'b) -> 'a ref -> 'b ref
 val map_of_ref_do_nothing_share_ref: ('a -> 'a) -> 'a ref -> 'a ref
 val map_of_option: ('a -> 'b) -> 'a option -> 'b option
-val map_of_list: ('a -> 'a) -> 'a list -> 'a list
+val map_of_list: ('a -> 'b) -> 'a list -> 'b list
 val map_of_either:
   ('a -> 'b) -> ('c -> 'd) -> ('a, 'c) Common.either -> ('b, 'd) Common.either
 val map_of_either3:
