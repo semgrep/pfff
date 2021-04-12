@@ -288,6 +288,9 @@ and cases = case list
 and for_control =
   | ForClassic of for_init * expr list (* TODO: expr option? *) * expr list
   | Foreach of var_definition * expr
+  (* sgrep-ext: *)
+  | ForEllipsis of tok
+
 and for_init =
   | ForInitVars of var_with_init list
   | ForInitExprs of expr list

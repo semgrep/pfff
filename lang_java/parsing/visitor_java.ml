@@ -355,6 +355,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_cases v = v_list v_case v
   and v_for_control =
     function
+    | ForEllipsis t -> v_tok t
     | ForClassic (v1, v2, v3) ->
         let v1 = v_for_init v1
         and v2 = v_list v_expr v2

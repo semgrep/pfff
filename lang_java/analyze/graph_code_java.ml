@@ -607,6 +607,7 @@ and stmt env = function
   | For (_, x, st) ->
       let env =
         match x with
+        | ForEllipsis _t -> env
         | Foreach (v, e) ->
             var env v;
             expr env e;

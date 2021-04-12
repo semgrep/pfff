@@ -906,6 +906,8 @@ for_control:
  (* javeext: ? *)
  | for_var_control
      { let (a, b) = $1 in Foreach (a, b) }
+ (* sgrep-ext: *)
+ | "..." { ForEllipsis $1 }
 
 for_init_opt:
  | (*empty*)  { ForInitExprs [] }
