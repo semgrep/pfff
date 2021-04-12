@@ -385,7 +385,7 @@ json: expr EOF { $1 }
 json_pattern:
   | expr EOF
      { Expr $1 }
-  | property_name2 ":" binding_element ","? EOF
+  | property_name2 ":" assignment_expr ","? EOF
      { Partial (PartialSingleField ($1, $2, $3)) }
 
 %inline
