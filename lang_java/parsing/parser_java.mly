@@ -907,7 +907,7 @@ for_control:
  | for_var_control
      { let (a, b) = $1 in Foreach (a, b) }
  (* sgrep-ext: *)
- | "..." { ForEllipsis $1 }
+ | "..." { Flag_parsing.sgrep_guard (ForEllipsis $1) }
 
 for_init_opt:
  | (*empty*)  { ForInitExprs [] }
