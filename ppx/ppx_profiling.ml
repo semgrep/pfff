@@ -120,6 +120,7 @@ let impl xs =
                        }
                       ])
       ; _} ->
+        (* Common.pr2 (Common.spf "profiling %s" fname); *)
         let nbparams = nb_parameters body in
         (* you can change the action name by specifying an explicit name
          * with [@@profiling "<explicit_name>"]
