@@ -10,8 +10,9 @@
 (* to report errors, regular position information *)
 type token_location = {
   str: string; (* the content of the "token" *)
-  charpos: int; (* byte position *)
-  line: int; column: int;
+  charpos: int; (* byte position, 0-based *)
+  line: int; (* 1-based *)
+  column: int; (* 0-based *)
   file: Common.filename;
 }
 (*e: type [[Parse_info.token_location]] *)
