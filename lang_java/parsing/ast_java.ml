@@ -409,6 +409,9 @@ and class_decl = {
   (* for interface this is actually the extends *)
   cl_impls: ref_type list;
 
+  (* javaext: for Record *)
+  cl_formals: parameters;
+
   (* javaext: the methods body used to be always empty for interface *)
   cl_body: class_body;
 }
@@ -418,6 +421,8 @@ and class_kind =
   (* @interface, a.k.a annotation type declaration *)
   (* java-ext: tree-sitter-only: *)
   | AtInterface
+  (* java-ext: *)
+  | Record
 
 (* Not all kind of decls. Restrictions are ?? *)
 and class_body = decls bracket

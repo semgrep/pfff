@@ -754,6 +754,7 @@ and expr env = function
              (* ?? *)
              cl_tparams = [];
              cl_mods = [];
+             cl_formals = [];
            }
            in
            class_decl env cdecl

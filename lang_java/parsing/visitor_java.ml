@@ -441,21 +441,24 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           cl_mods = v_cl_mods;
           cl_extends = v_cl_extends;
           cl_impls = v_cl_impls;
-          cl_body = v_cl_body
+          cl_body = v_cl_body;
+          cl_formals;
         } -> let arg = v_ident v_cl_name in
           let arg = v_class_kind v_cl_kind in
           let arg = v_list v_type_parameter v_cl_tparams in
           let arg = v_modifiers v_cl_mods in
           let arg = v_option v_typ v_cl_extends in
           let arg = v_list v_ref_type v_cl_impls in
-          let arg = v_class_body v_cl_body in ()
+          v_parameters cl_formals;
+          let arg = v_class_body v_cl_body in
+          ()
     in
     vin.kclass (k, all_functions) x
 
   and v_class_kind (x, t) =
     let v1 = v_tok t in
     match x with
-    | ClassRegular | Interface | AtInterface -> ()
+    | ClassRegular | Interface | AtInterface | Record -> ()
 
   and v_decl x =
     let k x = match x with

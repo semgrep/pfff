@@ -1082,7 +1082,7 @@ class_header:
  modifiers_opt CLASS identifier optl(type_parameters) super? optl(interfaces)
   { { cl_name = $3; cl_kind = (ClassRegular, $2);
       cl_mods = $1; cl_tparams = $4;
-      cl_extends = $5;  cl_impls = $6;
+      cl_extends = $5;  cl_impls = $6; cl_formals = [];
       cl_body = empty_body ;
      } }
 
@@ -1252,7 +1252,7 @@ interface_declaration:
  interface_body
   { { cl_name = $3; cl_kind = (Interface, $2);
       cl_mods = $1; cl_tparams = $4;
-      cl_extends = None; cl_impls = $5;
+      cl_extends = None; cl_impls = $5; cl_formals = [];
       cl_body = $6;
     } }
 
@@ -1341,7 +1341,8 @@ enum_body_declarations:
 annotation_type_declaration:
   modifiers_opt "@" INTERFACE identifier annotation_type_body
      { { cl_name = $4; cl_kind = (AtInterface, $2); cl_mods = $1; cl_tparams = [];
-         cl_extends = None; cl_impls = []; cl_body = $5
+         cl_extends = None; cl_impls = []; cl_formals = [];
+         cl_body = $5
        } }
 
 annotation_type_body: "{" annotation_type_element_declaration* "}"
