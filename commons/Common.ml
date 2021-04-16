@@ -1300,7 +1300,8 @@ type 'a stack = 'a list
 (*****************************************************************************)
 let sort xs = List.sort compare xs
 
-(* maybe too slow? use an hash instead? *)
+(* maybe too slow? use an hash instead to first group, and then in
+ * that group remove duplicates? *)
 let rec uniq_by eq xs =
   match xs with
   | [] -> []
@@ -1309,6 +1310,8 @@ let rec uniq_by eq xs =
        | Some _ -> uniq_by eq xs
        | None -> x :: uniq_by eq xs
       )
+let uniq_by a b =
+  profile_code "Common.uniq_by" (fun () -> uniq_by a b)
 
 (*###########################################################################*)
 (* Misc functions *)
