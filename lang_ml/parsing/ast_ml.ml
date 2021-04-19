@@ -132,14 +132,16 @@ type expr =
 
   | ExprTodo of todo_category * expr list
 
-(* note that '()' is represented as a Constructor ("()"), and
- * 'true' (and 'false') as Constructor ("true").
+(* Unit '()' used to be represented as a Constructor ("()"), and
+ * 'true' (and 'false') as Constructor ("true"), but not anymore
 *)
 and literal =
   | Int    of int option wrap
   | Float  of float option wrap
   | Char   of string wrap
   | String of string wrap
+  | Bool of bool wrap
+  | Unit of tok * tok (* () or begin/end *)
 
 and argument =
   | Arg of expr

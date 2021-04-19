@@ -414,6 +414,9 @@ ident:
  | TUpperIdent                                      { $1 }
  | TLowerIdent                                      { $1 }
 
+(* this is used in a constructor declaration context; I guess in some
+ * prelude files false and true are defined as type bool = false | true
+ *)
 constr_ident:
  | TUpperIdent     { $1 }
  | "(" ")"         { "()", $1 }
@@ -453,11 +456,11 @@ mod_ext_longident:
 
 
 constr_longident:
- | mod_longident   %prec below_DOT     { $1 }
- | "[" "]"                             { [], ("[]", $1) }
- | "(" ")"                             { [], ("()", $1) }
- | Tfalse                              { [], ("false", $1) }
- | Ttrue                               { [], ("true", $1) }
+ | mod_longident   %prec below_DOT     { Left $1 }
+ | "[" "]"                             { Left ([], ("[]", $1)) }
+ | "(" ")"                             { Right (Unit ($1, $2)) }
+ | Tfalse                              { Right (Bool (false, $1)) }
+ | Ttrue                               { Right (Bool (true, $1)) }
 
 type_longident: qualified(mod_ext_longident, TLowerIdent) { $1 }
 val_longident:  qualified(mod_longident, val_ident) { $1 }
@@ -501,7 +504,11 @@ expr:
  | Tfunction "|"? match_cases                { Function ($1, $3) }
 
  | expr_comma_list        %prec below_COMMA  { Tuple $1 }
- | constr_longident simple_expr              { Constructor ($1, Some $2) }
+ | constr_longident simple_expr
+     { match $1 with
+       | Left x -> Constructor (x, Some $2)
+       | Right _ -> failwith "Impossible, literal with constructor argument"
+     }
 
  | expr "::" expr            { Infix ($1, ("::", $2), $3)}
 
@@ -580,7 +587,10 @@ simple_expr:
  | val_longident     { Name $1 }
  (* this includes 'false' *)
  | constr_longident      %prec prec_constant_constructor
-      { Constructor ($1, None)}
+    { match $1 with
+      | Left x -> Constructor (x, None)
+      | Right lit -> L lit
+    }
 
  | simple_expr "." label_longident  { FieldAccess ($1, $2, $3) }
 
@@ -716,7 +726,10 @@ pattern:
  | simple_pattern   { $1 }
 
  | constr_longident pattern %prec prec_constr_appl
-     { PatConstructor ($1, Some $2) }
+     { match $1 with
+       | Left x -> PatConstructor (x, Some $2)
+       | Right _lit -> failwith "Impossible, literal with pattern argument"
+     }
  | pattern_comma_list       %prec below_COMMA     { PatTuple ($1) }
  | pattern "::" pattern                           { PatConsInfix ($1, $2, $3) }
 
@@ -733,7 +746,12 @@ pattern:
 
 simple_pattern:
  | val_ident %prec below_EQUAL      { PatVar ($1) }
- | constr_longident                 { PatConstructor ($1, None) }
+ | constr_longident
+     { match $1 with
+       | Left x -> PatConstructor (x, None)
+       | Right lit -> PatLiteral lit
+     }
+
  | "_"                              { PatUnderscore $1 }
  | signed_constant                  { PatLiteral $1 }
 
