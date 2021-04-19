@@ -429,6 +429,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Tk v1 -> v_tok v1
 
   and v_partial = function
+    | PartialFunOrFuncDef (v1, v2) -> v_tok v1; v_function_definition v2
     | PartialDef def -> v_def def
     | PartialIf (v1, v2) -> v_tok v1; v_expr v2
     | PartialTry (v1, v2) | PartialFinally (v1, v2) -> v_tok v1; v_stmt v2

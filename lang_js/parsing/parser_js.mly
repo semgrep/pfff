@@ -420,7 +420,10 @@ sgrep_spatch_pattern:
  | module_item module_item+ EOF  { Stmts (List.flatten ($1::$2)) }
 
  | T_FUNCTION "..." call_signature "{" function_body "}"
-   { failwith "TODO" }
+   { match mk_FuncDef [] (Function, $1) $3 ($4, $5, $6) with
+   | FuncDef def -> Partial (PartialFunOrFuncDef ($2, def))
+   | _ -> raise Impossible
+   }
 
  (* partials defs *)
  | T_FUNCTION id? call_signature EOF

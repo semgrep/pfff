@@ -567,6 +567,8 @@ and partial =
   | PartialFinally of (tok * stmt)
   (* partial object, used only in JSON semgrep patterns for now *)
   | PartialSingleField of string wrap (* an id or str *) * tok (* : *) * expr
+  (* not really a partial, but the partial machinery can help with that *)
+  | PartialFunOrFuncDef of tok (* ... *) * function_definition
 
 (* this is now mutually recursive with the previous types because of StmtTodo*)
 and any =
