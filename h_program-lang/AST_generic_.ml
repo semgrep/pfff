@@ -48,6 +48,13 @@ type class_kind =
   | Trait
 [@@deriving show]
 
+type function_kind =
+  | Function
+  | Method
+  | LambdaKind
+  | Arrow
+[@@deriving show]
+
 (* !!You should not use the function below!! You should use instead
  * Metavars_generic.is_metavar_name. If you use the function below,
  * it probably means you have an ugly dependency to semgrep that you

@@ -306,12 +306,14 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_var_kind = function | Var -> () | Let -> () | Const -> ()
 
   and v_function_definition { f_attrs = v_f_props; f_params = v_f_params;
-                              f_body = v_f_body; f_rettype } =
+                              f_body = v_f_body; f_rettype; f_kind } =
+    v_wrap v_function_kind f_kind;
     let arg = v_list v_attribute v_f_props in
     let arg = v_list v_parameter_binding v_f_params in
     let arg = v_stmt v_f_body in
     v_option v_type_ f_rettype;
     ()
+  and v_function_kind _ = ()
 
   and v_parameter_binding =
     function

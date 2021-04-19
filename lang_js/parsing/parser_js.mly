@@ -84,13 +84,13 @@ let fix_sgrep_module_item xs =
   | xs -> Stmts xs
 
 let mk_Fun ?(id=None) ?(attrs=[]) ?(props=[])
-  (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
+  f_kind (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
   let f_attrs = (props |> List.map attr) @ attrs in
-  Fun ({ f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
+  Fun ({ f_kind; f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }, id)
 
-let mk_FuncDef props (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
+let mk_FuncDef props f_kind (_generics,(_,f_params,_),f_rettype) (lc,xs,rc) =
   let f_attrs = props |> List.map attr in
-  FuncDef { f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }
+  FuncDef { f_kind; f_params; f_body = Block (lc, xs, rc); f_rettype; f_attrs }
 
 let mk_Class ?(props=[]) tok idopt _generics (c_extends, c_implements) c_body =
   let c_attrs = props |> List.map attr in
@@ -411,7 +411,7 @@ sgrep_spatch_pattern:
     T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation?
     "{" function_body "}" EOF
    { let sig_ = (None, ($2, $3, $4), $5) in
-     let fun_ = mk_Fun sig_ ($6, $7, $8) in
+     let fun_ = mk_Fun (Method, $2) sig_ ($6, $7, $8) in
      Property (mk_Field (PN $1) (Some fun_))
    }
 
@@ -419,9 +419,12 @@ sgrep_spatch_pattern:
  | module_item              EOF  { fix_sgrep_module_item $1 }
  | module_item module_item+ EOF  { Stmts (List.flatten ($1::$2)) }
 
+ | T_FUNCTION "..." call_signature "{" function_body "}"
+   { failwith "TODO" }
+
  (* partials defs *)
  | T_FUNCTION id? call_signature EOF
-   { Partial (PartialDef (mk_def ($2, mk_FuncDef [] $3 (fb [])))) }
+   { Partial (PartialDef (mk_def ($2, mk_FuncDef [] (Function,$1) $3 (fb[]))))}
  | T_CLASS binding_id? generics? class_heritage EOF
    { Partial (PartialDef (mk_def ($2, mk_ClassDef $1 $3 $4 (fb [])))) }
  (* partials stmts *)
@@ -638,11 +641,11 @@ binding_elision_element:
  *  T_EXPORT T_DEFAULT? but then many ambiguities.
  *)
 function_decl: T_FUNCTION id? call_signature "{" function_body "}"
-   { $2, mk_FuncDef [] $3 ($4, $5, $6) }
+   { $2, mk_FuncDef [] (Function, $1) $3 ($4, $5, $6) }
 
 (* the id is really optional here *)
 function_expr: T_FUNCTION id? call_signature  "{" function_body "}"
-   { mk_Fun ~id:$2 $3 ($4, $5, $6) }
+   { mk_Fun ~id:$2 (LambdaKind, $1) $3 ($4, $5, $6) }
 
 (* typescript-ext: generics? and annotation? *)
 call_signature: generics? "(" formal_parameter_list_opt ")"  annotation?
@@ -697,21 +700,21 @@ formal_parameter:
 (* generators *)
 (*----------------------------*)
 generator_decl: T_FUNCTION "*" id call_signature "{" function_body "}"
-   { Some $3, mk_FuncDef [Generator, $2] $4 ($5, $6, $7) }
+   { Some $3, mk_FuncDef [Generator, $2] (Function, $1) $4 ($5, $6, $7) }
 
 (* the id really is optional here *)
 generator_expr: T_FUNCTION "*" id? call_signature "{" function_body "}"
-   { mk_Fun ~id:$3 ~props:[Generator, $2] $4 ($5, $6, $7) }
+   { mk_Fun ~id:$3 ~props:[Generator, $2] (LambdaKind, $1) $4 ($5, $6, $7) }
 
 (*----------------------------*)
 (* asynchronous functions *)
 (*----------------------------*)
 async_decl: T_ASYNC T_FUNCTION id call_signature "{" function_body "}"
-   { Some $3, mk_FuncDef [Async, $1] $4 ($5, $6, $7) }
+   { Some $3, mk_FuncDef [Async, $1] (Function, $2) $4 ($5, $6, $7) }
 
 (* the id is really optional here *)
 async_function_expr: T_ASYNC T_FUNCTION id? call_signature "{"function_body"}"
-   { mk_Fun ~id:$3 ~props:[Async, $1] $4 ($5, $6, $7) }
+   { mk_Fun ~id:$3 ~props:[Async, $1] (LambdaKind, $2) $4 ($5, $6, $7) }
 
 (*************************************************************************)
 (* Class declaration *)
@@ -786,7 +789,7 @@ method_definition:
         (match $2 with None -> [] | Some t -> [KeywordAttr (Async, t)]) @
         (match $3 with None -> [] | Some x -> [KeywordAttr x])
       in
-      mk_Field $4 (Some (mk_Fun ~attrs $5 ($6, $7, $8))) }
+      mk_Field $4 (Some (mk_Fun ~attrs (Method, $6) $5 ($6, $7, $8))) }
 
 (* we used to enforce that T_GET had a call_signature with 0 param and
  * T_SET with 1 param, but not worth it (tree-sitter-js does not enforce it)
@@ -1488,16 +1491,16 @@ encaps:
 arrow_function:
  (* es7: *)
  | T_ASYNC id T_ARROW arrow_body
-     { mk_Fun ~props:[Async, $1] ((), fb [ParamClassic (mk_param $2)], None) $4 }
+     { mk_Fun ~props:[Async, $1] (Arrow, $3) ((), fb [ParamClassic (mk_param $2)], None) $4 }
  | id T_ARROW arrow_body
-     { mk_Fun ((), fb [ParamClassic (mk_param $1)], None) $3 }
+     { mk_Fun (Arrow, $2) ((), fb [ParamClassic (mk_param $1)], None) $3 }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
  (* es7: *)
  | T_ASYNC T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
-    { mk_Fun ~props:[Async, $1] ((), ($2, $3, $4), $5) $7 }
+    { mk_Fun ~props:[Async, $1] (Arrow, $6) ((), ($2, $3, $4), $5) $7 }
  | T_LPAREN_ARROW formal_parameter_list_opt ")" annotation? T_ARROW arrow_body
-    { mk_Fun ((), ($1, $2, $3), $4) $6 }
+    { mk_Fun (Arrow, $5) ((), ($1, $2, $3), $4) $6 }
 
 
 (* was called consise body in spec *)

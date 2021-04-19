@@ -429,7 +429,7 @@ and var_kind = Var | Let | Const
 and var = entity * variable_definition
 
 and function_definition = {
-  (* TODO: f_kind: Ast_generic.function_kind wrap *)
+  f_kind: AST_generic_.function_kind wrap;
   (* less: move that in entity? but some anon func have attributes too *)
   f_attrs: attribute list;
   f_params: parameter list;
