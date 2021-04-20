@@ -40,6 +40,7 @@ and pl_type =
   | Haskell of string
   | Lisp of lisp_type
   | Skip
+  | Scala
 
   | Prolog of string
 
@@ -114,6 +115,7 @@ let file_type_of_file2 file =
   | "lml"  -> PL (ML e)
 
   | "hs" | "lhs" -> PL (Haskell e)
+  | "scala" -> PL (Scala)
 
   | "erl" | "hrl" -> PL Erlang
 
@@ -174,7 +176,6 @@ let file_type_of_file2 file =
   | "c--" -> PL (MiscPL e)
   | "oz" -> PL (MiscPL e)
 
-  | "scala" -> PL (MiscPL e)
   | "groovy" -> PL (MiscPL e)
 
   | "sh" | "rc" | "csh" | "bash" -> PL (Script e)
