@@ -87,6 +87,7 @@ let all_actions () =
   Test_parsing_ml.actions()@
   Test_analyze_ml.actions()@
   Test_parsing_skip.actions()@
+  Test_parsing_scala.actions()@
 
   Test_parsing_php.actions()@
   Test_parsing_js.actions()@
