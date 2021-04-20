@@ -230,6 +230,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | InstanceOf (v1, v2) -> let v1 = v_expr v1 and v2 = v_ref_type v2 in ()
       | Conditional (v1, v2, v3) ->
           let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
+      | SwitchE (v0, v1, v2) ->
+          let v0 = v_info v0 in
+          let v1 = v_expr v1
+          and v2 =
+            v_list
+              (fun (v1, v2) -> let v1 = v_cases v1 and v2 = v_stmts v2 in ()) v2
+          in ()
       | AssignOp (v1, v2, v3) ->
           let v1 = v_expr v1 and v2 = v_wrap v_arith_op v2 and v3 = v_expr v3 in ()
       | Assign (v1, v2, v3) ->
