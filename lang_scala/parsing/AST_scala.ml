@@ -31,7 +31,7 @@ type tok = Parse_info.t
 [@@deriving show]
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * tok
+type 'a wrap = 'a * tok
 [@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
