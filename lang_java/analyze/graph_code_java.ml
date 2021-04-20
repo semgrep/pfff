@@ -787,6 +787,7 @@ and expr env = function
   | Postfix (e, _) | Prefix (_, e) | Unary (_, e) -> expr env e
   | Infix (e1, _op, e2) -> exprs env [e1;e2]
   | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
+  | SwitchE (_tok, e, _cases) -> expr env e
   | AssignOp (e1, _op, e2) -> exprs env [e1;e2]
   | Assign (e1, _tok, e2) -> exprs env [e1;e2]
   | TypedMetavar (_ident, _typ) -> ()

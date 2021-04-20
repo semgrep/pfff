@@ -212,6 +212,8 @@ and expr =
   | Prefix of AST_generic_.incr_decr wrap * expr
   | Infix of expr * AST_generic_.operator wrap * expr
 
+  | SwitchE of tok * expr * (cases * stmts) list (* TODO bracket *)
+
   (* usually just a single typ, but can also have intersection type t1 & t2 *)
   | Cast of typ list1 bracket * expr
 
