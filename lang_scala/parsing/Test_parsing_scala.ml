@@ -2,6 +2,8 @@ open Common
 
 module Flag = Flag_parsing
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
@@ -28,10 +30,11 @@ let test_parse xs =
   let stat_list = ref [] in
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
+    logger#info "processing %s" file;
     k();
 
     let { Parse_info.stat; _ } =
-      Common.save_excursion Flag.error_recovery true (fun () ->
+      Common.save_excursion Flag.error_recovery false (fun () ->
         Parse_scala.parse file
       )
     in

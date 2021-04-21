@@ -18,6 +18,9 @@
 (*****************************************************************************)
 (* An Abstract Syntax Tree for Scala.
  *
+ * TODO:
+ * - use the Tasty format?
+ *   https://github.com/lampepfl/dotty/blob/master/tasty/src/dotty/tools/tasty/TastyFormat.scala
 *)
 
 (*****************************************************************************)

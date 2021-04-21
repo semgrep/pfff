@@ -31,8 +31,20 @@ let error_msg_tok tok =
 (*****************************************************************************)
 
 let tokens file =
-  let token = Lexer_scala.token in
-  Parse_info.tokenize_all_and_adjust_pos
+  Lexer_scala.reset();
+  let token lexbuf =
+    let tok =
+      match Lexer_scala.current_mode() with
+      | Lexer_scala.ST_IN_CODE ->
+          Lexer_scala.token lexbuf
+      | Lexer_scala.ST_IN_INTERPOLATED_DOUBLE ->
+          Lexer_scala.in_interpolated_double lexbuf
+      | Lexer_scala.ST_IN_INTERPOLATED_TRIPLE ->
+          Lexer_scala.in_interpolated_triple lexbuf
+    in
+    tok
+  in
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
 [@@profiling]
 
@@ -57,12 +69,13 @@ let parse filename =
     { PI.ast = xs; tokens = toks; stat }
 
   with Parsing.Parse_error   ->
-
     let cur = tr.PI.current in
-    if not !Flag.error_recovery
-    then raise (PI.Parsing_error (TH.info_of_tok cur));
+    (* TODO, just tokenizing for now
+        if not !Flag.error_recovery
+        then raise (PI.Parsing_error (TH.info_of_tok cur));
+    *)
 
-    if !Flag.show_parsing_error
+    if !Flag.show_parsing_error && false (* TODO *)
     then begin
       pr2 ("parse error \n = " ^ error_msg_tok cur);
       let filelines = Common2.cat_array filename in

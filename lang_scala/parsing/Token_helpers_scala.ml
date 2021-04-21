@@ -25,7 +25,9 @@ let is_eof = function
   | _ -> false
 
 let is_comment = function
-  | Comment _ | Space _ | Nl _ -> true
+  | Comment _ | Space _ -> true
+  (* newline has a meaning in the parser, so should not skip *)
+  (* old: | Nl _ -> true *)
   | _ -> false
 
 let token_kind_of_tok t =
@@ -48,11 +50,19 @@ let token_kind_of_tok t =
 (*****************************************************************************)
 
 let visitor_info_of_tok f = function
-  | Varid (ii) -> Varid(f ii)
+  (* old:
+     | InterpolatedString(ii) -> InterpolatedString(f ii)
+     | InterpStart(ii) -> InterpStart(f ii)
+  *)
+  | T_INTERPOLATED_START(s, ii) -> T_INTERPOLATED_START(s, f ii)
+  | T_INTERPOLATED_END(ii) -> T_INTERPOLATED_END(f ii)
+  | T_INTERPOLATED_STRING(s, ii) -> T_INTERPOLATED_STRING(s, f ii)
+  | T_DOLLAR_LBRACE(ii) -> T_DOLLAR_LBRACE(f ii)
+  | Varid (s, ii) -> Varid(s, f ii)
   | Unknown(ii) -> Unknown(f ii)
   | UNDERSCORE(ii) -> UNDERSCORE(f ii)
   | TILDE(ii) -> TILDE(f ii)
-  | SymbolLiteral(ii) -> SymbolLiteral(f ii)
+  | SymbolLiteral(s, ii) -> SymbolLiteral(s, f ii)
   | StringLiteral(x, ii) -> StringLiteral(x, f ii)
   | Space(ii) -> Space(f ii)
   | STAR(ii) -> STAR(f ii)
@@ -111,10 +121,8 @@ let visitor_info_of_tok f = function
   | Kcatch(ii) -> Kcatch(f ii)
   | Kcase(ii) -> Kcase(f ii)
   | Kabstract(ii) -> Kabstract(f ii)
-  | InterpolatedString(ii) -> InterpolatedString(f ii)
-  | InterpStart(ii) -> InterpStart(f ii)
   | IntegerLiteral(x, ii) -> IntegerLiteral(x, f ii)
-  | Id(ii) -> Id(f ii)
+  | Id(s, ii) -> Id(s, f ii)
   | FloatingPointLiteral(x, ii) -> FloatingPointLiteral(x, f ii)
   | Ellipsis(ii) -> Ellipsis(f ii)
   | EQMORE(ii) -> EQMORE(f ii)
@@ -125,7 +133,7 @@ let visitor_info_of_tok f = function
   | CharacterLiteral(x, ii) -> CharacterLiteral(x, f ii)
   | COMMA(ii) -> COMMA(f ii)
   | COLON(ii) -> COLON(f ii)
-  | Boundvarid(ii) -> Boundvarid(f ii)
+  | Boundvarid(s, ii) -> Boundvarid(s, f ii)
   | BooleanLiteral(x, ii) -> BooleanLiteral(x, f ii)
   | BANG(ii) -> BANG(f ii)
   | AT(ii) -> AT(f ii)

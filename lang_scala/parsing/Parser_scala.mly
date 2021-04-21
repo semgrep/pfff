@@ -23,15 +23,31 @@
  * grammar) by semgrep -ebnf_to_menhir, and adapted to conform to what
  * menhir can do (hence the use of macros like list_sep, seq2, etc.).
  *
+ * TODO: Most of the rules are commented because the grammar as-is has
+ * a tons of reduce/reduce and shift/reduce conflicts; There are lots
+ * of ambiguities to fix, and also newline must be handled in a special
+ * way in the lexer for things to work.
+ *
+ * TODO: my bet is that for Scala, the best approach may be to just
+ * imitate what is in the Scala compiler and do a handwritten recursive
+ * descent parser.
+ *
  * reference:
  *  - https://scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html
  *
  * other sources:
- *  - dotty compiler source
- *  - scala compiler source
- *  - tree-sitter-scala
- *  - scalaparse from the fastparse Scala library
- *  - ANTLR v4 grammar for Scala
+ *  - dotty compiler source, =~ 4500 LOC recursive descent
+ *  - scala compiler source, =~ 3500 LOC recursive descent
+ *  - scalameta, =~ 8000 LOC, recursive descent
+ *  - tree-sitter-scala, only 65% parsing success right now, and
+ *    does not handle correctly newline, infix operators, and more stuff
+ *    probably
+ *  - scalaparse from the fastparse Scala library, only 700 LOC,
+ *    backtracking parser-combinator (LL(k)) very close to the grammar.
+ *    Possibly a great starting point, but seems unmaintained, and is
+ *    using complex implicit and a complex library (fastparse)
+ *  - ANTLR v4 grammar for Scala, short, but incorrect; does not correctly
+ *    handle newlines for example, which are tricky.
  *)
 
 (*************************************************************************)
@@ -65,10 +81,17 @@
 (*-----------------------------------------*)
 
 (* tokens with "values" *)
-%token <Parse_info.t> Id
-%token <Parse_info.t> Boundvarid
-%token <Parse_info.t> Varid
-%token <Parse_info.t> SymbolLiteral
+(* TODO ambiguous *)
+%token <string * Parse_info.t> Id
+%token <string * Parse_info.t> Boundvarid
+(* split of Id in multiple tokens *)
+%token <string * Parse_info.t> Varid
+(* TODO
+%token <string * Parse_info.t> Upperid
+%token <string * Parse_info.t> Op
+*)
+
+%token <string * Parse_info.t> SymbolLiteral
 
 %token <bool * Parse_info.t> BooleanLiteral
 %token <string * Parse_info.t> CharacterLiteral
@@ -76,8 +99,11 @@
 %token <int option * Parse_info.t> IntegerLiteral
 
 %token <string * Parse_info.t> StringLiteral
-%token <Parse_info.t> InterpStart
-%token <Parse_info.t> InterpolatedString
+(* like for JS/PHP/Python *)
+%token <string * Parse_info.t> T_INTERPOLATED_START
+%token <string * Parse_info.t> T_INTERPOLATED_STRING
+%token <Parse_info.t> T_INTERPOLATED_END
+%token <Parse_info.t> T_DOLLAR_LBRACE
 
 (* keywords tokens *)
 %token <Parse_info.t> Kabstract "abstract"

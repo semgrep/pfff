@@ -6,6 +6,8 @@
 open Common
 module J = JSON
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -29,6 +31,8 @@ module J = JSON
 (*s: constant [[Main.verbose]] *)
 let verbose = ref false
 (*e: constant [[Main.verbose]] *)
+
+let log_config_file = ref "log_config.json"
 
 (*s: constant [[Main.lang]] *)
 let lang = ref "c"
@@ -190,6 +194,12 @@ let main () =
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
+
+  if Sys.file_exists !log_config_file
+  then begin
+    Logging.load_config_file !log_config_file;
+    logger#info "loaded %s" !log_config_file;
+  end;
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
   Common.profile_code "Main total" (fun () ->

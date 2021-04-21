@@ -1,7 +1,7 @@
 {
 (* Yoann Padioleau
  *
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2021 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -37,95 +37,96 @@ let tok = Lexing.lexeme
 let tokinfo = Parse_info.tokinfo
 let error = Parse_info.lexical_error
 
+(* ---------------------------------------------------------------------- *)
+(* Lexer State *)
+(* ---------------------------------------------------------------------- *)
+(* note: mostly a copy paste of the trick used in the lexer for PHP *)
+
+type state_mode =
+  (* Regular Scala mode *)
+  | ST_IN_CODE
+
+  (* started with x", finished with " *)
+  | ST_IN_INTERPOLATED_DOUBLE
+  (* started with x""", finished with """ *)
+  | ST_IN_INTERPOLATED_TRIPLE
+
+let default_state = ST_IN_CODE
+
+let _mode_stack =
+  ref [default_state]
+
+let reset () =
+  _mode_stack := [default_state];
+  ()
+
+let rec current_mode () =
+  try
+    Common2.top !_mode_stack
+  with Failure("hd") ->
+    pr2("mode_stack is empty, defaulting to INITIAL");
+    reset();
+    current_mode ()
+
+let push_mode mode = Common.push mode _mode_stack
+let pop_mode () = ignore(Common2.pop2 _mode_stack)
+let set_mode mode = begin pop_mode(); push_mode mode; end
+
 }
 
 (*****************************************************************************)
 (* Regexp aliases *)
 (*****************************************************************************)
 
+let whiteSpace = [' ' '\t'] (* todo: also OA, OD? *)
+
+let upper = ['A'-'Z''$'] (* todo: and unicode category *)
+let lower = ['a'-'z''_'] (* todo: and unicode category L1 *)
+let letter = upper | lower (* todo: and unicode category Lo, Lt, Nl *)
+
+let digit = ['0'-'9']
+let hexDigit = digit | ['a'-'f''A'-'F']
+
+(* no paren, and no delim, no quotes, no $ or _, no / for /* ambiguity *)
+let opchar1 = ['+''-''*''%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
+let opchar2 = opchar1 | '/'
+let op = '/' | opchar1 opchar2*
+
+let idrest = (letter | digit)* ('_' | op)?
+
+let varid = lower idrest
+let boundvarid = varid | '`' varid '`'
+let plainid = upper idrest | varid | op
+
+let charNoBackQuoteOrNewline = [^'\n''`']
+let charNoQuoteOrNewline = [^'\n''\'']
+let charNoDoubleQuoteOrNewline = [^'\n''"']
+let charNoDoubleQuote = [^'"']
+
 let newline = ('\n' | "\r\n")
-let whitespace = [' ' '\t']
 
-(* todo: *)
-let unicode_digit = ['0'-'9']
-let unicode_letter = ['a'-'z' 'A'-'Z']
-let unicode_char = [^ '\n' '\r']
-let unicode_char_no_quote = [^ '\n' '\r' '\'' '\\']
-let unicode_char_no_double_quote = [^ '\n' '\r' '"' '\\']
-let unicode_char_no_backquote = [^ '\n' '\r' '`' ]
-
-let letter = unicode_letter | '_'
-
-let identifier = letter (letter | unicode_digit)*
-
-
-let decimal_digit = ['0'-'9']
-let binary_digit = ['0'-'1']
-let octal_digit = ['0'-'7']
-let hex_digit = ['0'-'9' 'a'-'f' 'A'-'F']
-
-let decimal_digits = decimal_digit ('_'? decimal_digit)*
-let binary_digits = binary_digit ('_'? binary_digit)*
-let octal_digits = octal_digit ('_'? octal_digit)*
-let hex_digits = hex_digit ('_'? hex_digit)*
-
-let decimal_lit = "0" | ['1'-'9'] ( '_'? decimal_digits)?
-let binary_lit = "0" ['b' 'B'] '_'? binary_digits
-let octal_lit = "0" ['o' 'O']? '_'? octal_digits
-let hex_lit = "0" ['x' 'X'] '_'? hex_digits
-
-let int_lit =
-   decimal_lit
- | binary_lit
- | octal_lit
- | hex_lit
-
-let decimal_exponent = ['e' 'E'] ['+' '-']? decimal_digits
-let decimal_float_lit =
-   decimal_digits '.' decimal_digits? decimal_exponent?
- | decimal_digits decimal_exponent
- | '.' decimal_digits decimal_exponent?
-
-let hex_mantissa =
-   '_'? hex_digits '.' hex_digits?
- | '_'? hex_digits
- | '.' hex_digits
-let hex_exponent = ['p' 'P'] ['+' '-']? decimal_digits
-let hex_float_lit = '0' ['x' 'X'] hex_mantissa hex_exponent
-
-let float_lit = decimal_float_lit | hex_float_lit
-
-let imaginary_lit = (decimal_digits | int_lit | float_lit) 'i'
-
-let escaped_char = '\\' ['a' 'b' 'f' 'n' 'r' 't' 't' 'v' '\\' '\'' '"']
-
-let little_u_value = '\\' 'u' hex_digit hex_digit hex_digit hex_digit
-let big_u_value =    '\\' 'U' hex_digit hex_digit hex_digit hex_digit
-                              hex_digit hex_digit hex_digit hex_digit
-
-(* the Go ref says just unicode_char, but this can not work, hence the
- * use of various xxx_no_yyy below
- *)
-let unicode_value_no_quote =
-  unicode_char_no_quote
-| little_u_value
-| big_u_value
-| escaped_char
-
-let unicode_value_no_double_quote =
-  unicode_char_no_double_quote
-| little_u_value
-| big_u_value
-| escaped_char
-
-let octal_byte_value = '\\' octal_digit octal_digit octal_digit
-let hex_byte_value = '\\' 'x' hex_digit hex_digit
-let byte_value = octal_byte_value | hex_byte_value
-
+let _charEscapeSeq = '\\' ['b''t''n''f''r''"''\'''\\']
 (* semgrep: we can use regexp in semgrep in strings and we want to
  * support any escape characters there, e.g. eval("=~/.*dev\.corp/")
  *)
-let semgrep_escapeseq = '\\' _
+let semgrepEscapeSeq = '\\' _
+
+let unicodeEscape = '\\' 'u'+ hexDigit hexDigit hexDigit hexDigit
+let escapeSeq = unicodeEscape | semgrepEscapeSeq
+
+let stringElement = charNoDoubleQuoteOrNewline | escapeSeq
+let multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
+
+let decimalNumeral = digit digit*
+let hexNumeral = '0' ['X''x'] hexDigit hexDigit*
+
+let integerLiteral = (decimalNumeral | hexNumeral) ['L''l']?
+
+(* note: old Scale spec was wrong and was using stringLiteral *)
+let id = plainid | '`' (charNoBackQuoteOrNewline | escapeSeq)+ '`'
+
+(* for interpolated strings *)
+let alphaid = upper idrest | varid
 
 (*****************************************************************************)
 (* Rule initial *)
@@ -146,23 +147,33 @@ rule token = parse
 
   (* don't keep the trailing \n; it will be in another token *)
   | "//" [^ '\r' '\n']* { Comment (tokinfo lexbuf) }
+  | whiteSpace+ { Space (tokinfo lexbuf) }
+
+  (* ----------------------------------------------------------------------- *)
+  (* Newline (treated specially in Scala, like in Python) *)
+  (* ----------------------------------------------------------------------- *)
+
   | newline     { Nl (tokinfo lexbuf) }
-  | whitespace+ { Space (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
 
+  (* paren *)
   | '(' { LPAREN (tokinfo lexbuf) }   | ')' { RPAREN (tokinfo lexbuf) }
   | '[' { LBRACKET (tokinfo lexbuf) } | ']' { RBRACKET (tokinfo lexbuf) }
-  | '{' { LBRACE (tokinfo lexbuf) }   | '}' { RBRACE (tokinfo lexbuf) }
+  | '{' { push_mode ST_IN_CODE; LBRACE (tokinfo lexbuf) }
+  | '}' { pop_mode ();          RBRACE (tokinfo lexbuf) }
 
+  (* delim *)
   | ';'     { SEMI (tokinfo lexbuf) }
   | ','     { COMMA (tokinfo lexbuf) }
   | '.'     { DOT (tokinfo lexbuf) }
+
   | ':'     { COLON (tokinfo lexbuf) }
   | '='     { EQ (tokinfo lexbuf) }
 
+  (* conflict with op? *)
   | '+'     { PLUS (tokinfo lexbuf) }
   | '-'     { MINUS (tokinfo lexbuf) }
   | '*'     { STAR (tokinfo lexbuf) }
@@ -192,9 +203,9 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   (* keywords *)
-  | identifier as id
+  | id as s
       { let t = tokinfo lexbuf in
-        match id with
+        match s with
         | "null" -> Knull t
 
         | "true" -> BooleanLiteral (true, t)
@@ -245,41 +256,49 @@ rule token = parse
         | "lazy"    -> Klazy t
         | "yield"    -> Kyield t
 
-        | _          -> Id t
+        | _          -> Id (s, t)
     }
 
   (* semgrep-ext: *)
-  | '$' identifier
+(*
+  | '$' id
     { let s = tok lexbuf in
       if not !Flag_parsing.sgrep_mode
       then error ("identifier with dollar: "  ^ s) lexbuf;
       Id (tokinfo lexbuf)
     }
+*)
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
-
   (* literals *)
-  (* this is also part of int_lit, but we specialize it here to use the
-   * right int_of_string *)
-  | "0" (octal_digits as n) { IntegerLiteral (int_of_string_opt( "0o" ^ n), tokinfo lexbuf) }
-
-  | int_lit as n
+  | integerLiteral as n
       { IntegerLiteral (int_of_string_opt n, tokinfo lexbuf) }
 
+(*
   | float_lit as n
       { FloatingPointLiteral (float_of_string_opt n, tokinfo lexbuf) }
+*)
 
   (* ----------------------------------------------------------------------- *)
   (* Chars/Strings *)
   (* ----------------------------------------------------------------------- *)
-  | '\'' ((unicode_value_no_quote | byte_value) as s) '\''
+
+  | "'" ((charNoBackQuoteOrNewline | escapeSeq) as s)  "'"
       { CharacterLiteral (s, tokinfo lexbuf) }
-  | '"' ((unicode_value_no_double_quote | byte_value)* as s) '"'
+  | '"' (stringElement* as s) '"'
       { StringLiteral (s, tokinfo lexbuf) }
-  | '"' ((unicode_value_no_double_quote | byte_value | semgrep_escapeseq)* as s) '"'
-      { Flag.sgrep_guard (StringLiteral (s, tokinfo lexbuf)) }
+  | "\"\"\"" (multiLineChars as s) "\"\"\""
+      { StringLiteral (s, tokinfo lexbuf) }
+
+  (* interpolated strings *)
+  | alphaid as s '"'
+   { push_mode ST_IN_INTERPOLATED_DOUBLE;
+     T_INTERPOLATED_START(s, tokinfo lexbuf) }
+  | alphaid as s "\"\"\""
+   { push_mode ST_IN_INTERPOLATED_TRIPLE;
+     T_INTERPOLATED_START(s, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* eof *)
@@ -289,6 +308,43 @@ rule token = parse
   | _ { error (spf "unrecognized symbol: %s" (tok lexbuf)) lexbuf;
         Unknown (tokinfo lexbuf)
       }
+
+(*****************************************************************************)
+(* String interpolation *)
+(*****************************************************************************)
+and in_interpolated_double = parse
+  | '"'  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
+
+  (* not in original spec *)
+  | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
+  | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
+  | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
+  | "$" id as s { Id (s, tokinfo lexbuf) }
+
+  | eof  { error "end of file in interpolated string" lexbuf;
+           pop_mode();
+           Unknown(tokinfo lexbuf) }
+  | _  {
+       error ("unrecognised symbol in interpolated string:"^tok lexbuf) lexbuf;
+       Unknown(tokinfo lexbuf)
+       }
+
+and in_interpolated_triple = parse
+  | "\"\"\""  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
+  | "\"" { T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf) }
+  (* not in original spec *)
+  | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
+  | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
+  | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
+  | "$" id as s { Id (s, tokinfo lexbuf) }
+
+  | eof  { error "end of file in interpolated2 string" lexbuf;
+           pop_mode();
+           Unknown(tokinfo lexbuf) }
+  | _  {
+       error("unrecognised symbol in interpolated2 string:"^tok lexbuf) lexbuf;
+       Unknown(tokinfo lexbuf)
+       }
 
 (*****************************************************************************)
 (* Rule comment *)
