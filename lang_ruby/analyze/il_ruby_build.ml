@@ -800,7 +800,7 @@ and construct_explicit_regexp acc pos re_interp mods : stmt acc * expr =
 and refactor_interp_string acc istr pos =
   let refactor_contents acc : Ast.interp -> stmt acc * expr = function
     | Ast.StrChars (s, _t) -> acc, ELit (String s)
-    | Ast.StrExpr ast_e ->
+    | Ast.StrExpr (_l, ast_e, _r) ->
         let acc, e = refactor_expr acc ast_e in
         make_call_expr acc (Some e) (ID_MethodName "to_s") [] None pos
   in
