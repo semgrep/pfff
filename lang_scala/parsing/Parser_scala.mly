@@ -81,15 +81,11 @@
 (*-----------------------------------------*)
 
 (* tokens with "values" *)
-(* TODO ambiguous *)
-%token <string * Parse_info.t> Id
-%token <string * Parse_info.t> Boundvarid
+(* old ambiguous, split in different Ids *)
+(* %token <string * Parse_info.t> Id Boundvarid Varid *)
 (* split of Id in multiple tokens *)
-%token <string * Parse_info.t> Varid
-(* TODO
-%token <string * Parse_info.t> Upperid
-%token <string * Parse_info.t> Op
-*)
+%token <string * Parse_info.t> ID_LOWER ID_UPPER ID_BACKQUOTED ID_DOLLAR
+%token <string * Parse_info.t> OP
 
 %token <string * Parse_info.t> SymbolLiteral
 

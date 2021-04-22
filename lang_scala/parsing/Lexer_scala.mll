@@ -26,6 +26,9 @@ module Flag = Flag_parsing
  *
  * reference:
  *    - https://scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html
+ *
+ * other sources:
+ *    - fastparse/scalaparse/.../Basic.scala
  *)
 
 (*****************************************************************************)
@@ -70,7 +73,6 @@ let rec current_mode () =
 
 let push_mode mode = Common.push mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
-let set_mode mode = begin pop_mode(); push_mode mode; end
 
 }
 
@@ -87,21 +89,26 @@ let letter = upper | lower (* todo: and unicode category Lo, Lt, Nl *)
 let digit = ['0'-'9']
 let hexDigit = digit | ['a'-'f''A'-'F']
 
-(* no paren, and no delim, no quotes, no $ or _, no / for /* ambiguity *)
-let opchar1 = ['+''-''*''%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
-let opchar2 = opchar1 | '/'
-let op = '/' | opchar1 opchar2*
+(* no paren, and no delim, no quotes, no $ or _ *)
+(* the _noxxx is to avoid ambiguity with /** comments *)
+let op_nodivstar =['+''-'      '%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
+let op_nodiv = op_nodivstar | '*'
+let opchar   = op_nodivstar | '*' | '/'
+let op = '/'
+       | op_nodiv
+       | op_nodiv op_nodivstar opchar*
 
 let idrest = (letter | digit)* ('_' | op)?
 
 let varid = lower idrest
-let boundvarid = varid | '`' varid '`'
+let _boundvarid = varid | '`' varid '`'
 let plainid = upper idrest | varid | op
 
-let charNoBackQuoteOrNewline = [^'\n''`']
-let charNoQuoteOrNewline = [^'\n''\'']
-let charNoDoubleQuoteOrNewline = [^'\n''"']
-let charNoDoubleQuote = [^'"']
+(* bugfix: also ...OrAntislash *)
+let charNoBackQuoteOrNewline   = [^'\n' '`'  '\\']
+let charNoQuoteOrNewline       = [^'\n' '\'' '\\']
+let charNoDoubleQuoteOrNewline = [^'\n' '"'  '\\']
+let charNoDoubleQuote =          [^'"' '\\']
 
 let newline = ('\n' | "\r\n")
 
@@ -115,15 +122,28 @@ let unicodeEscape = '\\' 'u'+ hexDigit hexDigit hexDigit hexDigit
 let escapeSeq = unicodeEscape | semgrepEscapeSeq
 
 let stringElement = charNoDoubleQuoteOrNewline | escapeSeq
-let multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
+let _multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
 
 let decimalNumeral = digit digit*
 let hexNumeral = '0' ['X''x'] hexDigit hexDigit*
-
 let integerLiteral = (decimalNumeral | hexNumeral) ['L''l']?
 
-(* note: old Scale spec was wrong and was using stringLiteral *)
+let exponentPart = ['E''e'] ['+''-']? digit digit*
+let floatType = ['F''f''D''d']
+let floatingPointLiteral =
+   digit digit* '.' digit digit* exponentPart? floatType?
+ |              '.' digit digit* exponentPart? floatType?
+ | digit digit*                  exponentPart  floatType?
+ | digit digit*                  exponentPart? floatType
+
+(* note: old Scala spec was wrong and was using stringLiteral *)
 let id = plainid | '`' (charNoBackQuoteOrNewline | escapeSeq)+ '`'
+
+(* split id in different tokens *)
+let id_lower = lower idrest
+let id_upper = upper idrest
+let id_backquoted1 = '`' varid '`'
+let id_backquoted2 = '`' (charNoBackQuoteOrNewline | escapeSeq)+ '`'
 
 (* for interpolated strings *)
 let alphaid = upper idrest | varid
@@ -203,7 +223,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   (* keywords *)
-  | id as s
+  | id_lower as s
       { let t = tokinfo lexbuf in
         match s with
         | "null" -> Knull t
@@ -236,6 +256,7 @@ rule token = parse
         | "super" -> Ksuper t
         | "this" -> Kthis t
         | "with" -> Kwith t
+        | "extends" -> Kextends t
 
         | "def"    -> Kdef t
         | "type"    -> Ktype t
@@ -256,18 +277,18 @@ rule token = parse
         | "lazy"    -> Klazy t
         | "yield"    -> Kyield t
 
-        | _          -> Id (s, t)
+        | _          -> ID_LOWER (s, t)
     }
 
-  (* semgrep-ext: *)
-(*
-  | '$' id
-    { let s = tok lexbuf in
-      if not !Flag_parsing.sgrep_mode
-      then error ("identifier with dollar: "  ^ s) lexbuf;
-      Id (tokinfo lexbuf)
-    }
-*)
+  (* semgrep-ext: but this is also a valid Scala identifier *)
+  | '$' ['A'-'Z']['A'-'Z''0'-'9''_']* as s
+    { ID_UPPER (s, tokinfo lexbuf) }
+
+  | id_upper as s { ID_UPPER (s, tokinfo lexbuf) }
+  | id_backquoted1 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
+  | id_backquoted2 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
+  | op as s       { OP (s, tokinfo lexbuf) }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -275,23 +296,29 @@ rule token = parse
   (* literals *)
   | integerLiteral as n
       { IntegerLiteral (int_of_string_opt n, tokinfo lexbuf) }
-
-(*
-  | float_lit as n
+  | floatingPointLiteral as n
       { FloatingPointLiteral (float_of_string_opt n, tokinfo lexbuf) }
-*)
 
   (* ----------------------------------------------------------------------- *)
   (* Chars/Strings *)
   (* ----------------------------------------------------------------------- *)
 
-  | "'" ((charNoBackQuoteOrNewline | escapeSeq) as s)  "'"
+  | "'" ((charNoQuoteOrNewline | escapeSeq) as s)  "'"
       { CharacterLiteral (s, tokinfo lexbuf) }
   | '"' (stringElement* as s) '"'
       { StringLiteral (s, tokinfo lexbuf) }
+  (* in spec but does not seem to work, see tests/parsing/triple_quote.scala*)
+(*
   | "\"\"\"" (multiLineChars as s) "\"\"\""
       { StringLiteral (s, tokinfo lexbuf) }
-
+*)
+  | "\"\"\"" {
+      let info = tokinfo lexbuf in
+      let buf = Buffer.create 127 in
+      string buf lexbuf;
+      let s = Buffer.contents buf in
+      StringLiteral(s, info |> PI.rewrap_str ("\"\"\"" ^ s ^ "\"\"\""))
+    }
   (* interpolated strings *)
   | alphaid as s '"'
    { push_mode ST_IN_INTERPOLATED_DOUBLE;
@@ -310,6 +337,28 @@ rule token = parse
       }
 
 (*****************************************************************************)
+(* Multi line triple strings *)
+(*****************************************************************************)
+
+and string buf = parse
+  (* bugfix: you can have 4 or 5 in a row! only last 3 matters *)
+  | "\"" "\"\"\"" {
+      Parse_info.yyback 3 lexbuf;
+      Buffer.add_string buf (tok lexbuf);
+  }
+  | "\"\"\""    { () }
+  (* noteopti: *)
+  | [^'"']+ as s { Buffer.add_string buf s; string buf lexbuf }
+  | '"'          { Buffer.add_string buf (tok lexbuf); string buf lexbuf }
+  | eof     { error "end of file in string" lexbuf }
+  | _  {
+      let s = tok lexbuf in
+      error ("unrecognised symbol in string:"^s) lexbuf;
+      Buffer.add_string buf s;
+      string buf lexbuf
+    }
+
+(*****************************************************************************)
 (* String interpolation *)
 (*****************************************************************************)
 and in_interpolated_double = parse
@@ -319,7 +368,7 @@ and in_interpolated_double = parse
   | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
-  | "$" id as s { Id (s, tokinfo lexbuf) }
+  | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated string" lexbuf;
            pop_mode();
@@ -330,13 +379,19 @@ and in_interpolated_double = parse
        }
 
 and in_interpolated_triple = parse
+  (* bugfix: you can have 4 or 5 in a row! only last 3 matters *)
+  | "\"" "\"\"\"" {
+      Parse_info.yyback 3 lexbuf;
+      T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf)
+  }
+
   | "\"\"\""  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
   | "\"" { T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf) }
   (* not in original spec *)
   | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
-  | "$" id as s { Id (s, tokinfo lexbuf) }
+  | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated2 string" lexbuf;
            pop_mode();
@@ -345,6 +400,7 @@ and in_interpolated_triple = parse
        error("unrecognised symbol in interpolated2 string:"^tok lexbuf) lexbuf;
        Unknown(tokinfo lexbuf)
        }
+
 
 (*****************************************************************************)
 (* Rule comment *)
