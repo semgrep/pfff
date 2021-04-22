@@ -26,6 +26,9 @@ module Flag = Flag_parsing
  *
  * reference:
  *    - https://scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html
+ *
+ * other sources:
+ *    - fastparse/scalaparse/.../Basic.scala
  *)
 
 (*****************************************************************************)
@@ -101,10 +104,11 @@ let varid = lower idrest
 let _boundvarid = varid | '`' varid '`'
 let plainid = upper idrest | varid | op
 
-let charNoBackQuoteOrNewline = [^'\n''`']
-let charNoQuoteOrNewline = [^'\n''\'']
-let charNoDoubleQuoteOrNewline = [^'\n''"']
-let charNoDoubleQuote = [^'"']
+(* bugfix: also ...OrAntislash *)
+let charNoBackQuoteOrNewline   = [^'\n' '`'  '\\']
+let charNoQuoteOrNewline       = [^'\n' '\'' '\\']
+let charNoDoubleQuoteOrNewline = [^'\n' '"'  '\\']
+let charNoDoubleQuote =          [^'"' '\\']
 
 let newline = ('\n' | "\r\n")
 
@@ -118,7 +122,7 @@ let unicodeEscape = '\\' 'u'+ hexDigit hexDigit hexDigit hexDigit
 let escapeSeq = unicodeEscape | semgrepEscapeSeq
 
 let stringElement = charNoDoubleQuoteOrNewline | escapeSeq
-let multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
+let _multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
 
 let decimalNumeral = digit digit*
 let hexNumeral = '0' ['X''x'] hexDigit hexDigit*
@@ -299,13 +303,22 @@ rule token = parse
   (* Chars/Strings *)
   (* ----------------------------------------------------------------------- *)
 
-  | "'" ((charNoBackQuoteOrNewline | escapeSeq) as s)  "'"
+  | "'" ((charNoQuoteOrNewline | escapeSeq) as s)  "'"
       { CharacterLiteral (s, tokinfo lexbuf) }
   | '"' (stringElement* as s) '"'
       { StringLiteral (s, tokinfo lexbuf) }
+  (* in spec but does not seem to work, see tests/parsing/triple_quote.scala*)
+(*
   | "\"\"\"" (multiLineChars as s) "\"\"\""
       { StringLiteral (s, tokinfo lexbuf) }
-
+*)
+  | "\"\"\"" {
+      let info = tokinfo lexbuf in
+      let buf = Buffer.create 127 in
+      string buf lexbuf;
+      let s = Buffer.contents buf in
+      StringLiteral(s, info |> PI.rewrap_str ("\"\"\"" ^ s ^ "\"\"\""))
+    }
   (* interpolated strings *)
   | alphaid as s '"'
    { push_mode ST_IN_INTERPOLATED_DOUBLE;
@@ -322,6 +335,28 @@ rule token = parse
   | _ { error (spf "unrecognized symbol: %s" (tok lexbuf)) lexbuf;
         Unknown (tokinfo lexbuf)
       }
+
+(*****************************************************************************)
+(* Multi line triple strings *)
+(*****************************************************************************)
+
+and string buf = parse
+  (* bugfix: you can have 4 or 5 in a row! only last 3 matters *)
+  | "\"" "\"\"\"" {
+      Parse_info.yyback 3 lexbuf;
+      Buffer.add_string buf (tok lexbuf);
+  }
+  | "\"\"\""    { () }
+  (* noteopti: *)
+  | [^'"']+ as s { Buffer.add_string buf s; string buf lexbuf }
+  | '"'          { Buffer.add_string buf (tok lexbuf); string buf lexbuf }
+  | eof     { error "end of file in string" lexbuf }
+  | _  {
+      let s = tok lexbuf in
+      error ("unrecognised symbol in string:"^s) lexbuf;
+      Buffer.add_string buf s;
+      string buf lexbuf
+    }
 
 (*****************************************************************************)
 (* String interpolation *)
@@ -344,6 +379,12 @@ and in_interpolated_double = parse
        }
 
 and in_interpolated_triple = parse
+  (* bugfix: you can have 4 or 5 in a row! only last 3 matters *)
+  | "\"" "\"\"\"" {
+      Parse_info.yyback 3 lexbuf;
+      T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf)
+  }
+
   | "\"\"\""  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
   | "\"" { T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf) }
   (* not in original spec *)
@@ -359,6 +400,7 @@ and in_interpolated_triple = parse
        error("unrecognised symbol in interpolated2 string:"^tok lexbuf) lexbuf;
        Unknown(tokinfo lexbuf)
        }
+
 
 (*****************************************************************************)
 (* Rule comment *)

@@ -1,0 +1,1 @@
+  val NotBackTick = NamedFunction(_ != '`')
