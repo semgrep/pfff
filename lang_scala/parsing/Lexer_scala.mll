@@ -70,7 +70,6 @@ let rec current_mode () =
 
 let push_mode mode = Common.push mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
-let set_mode mode = begin pop_mode(); push_mode mode; end
 
 }
 
@@ -87,15 +86,19 @@ let letter = upper | lower (* todo: and unicode category Lo, Lt, Nl *)
 let digit = ['0'-'9']
 let hexDigit = digit | ['a'-'f''A'-'F']
 
-(* no paren, and no delim, no quotes, no $ or _, no / for /* ambiguity *)
-let opchar1 = ['+''-''*''%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
-let opchar2 = opchar1 | '/'
-let op = '/' | opchar1 opchar2*
+(* no paren, and no delim, no quotes, no $ or _ *)
+(* the _noxxx is to avoid ambiguity with /** comments *)
+let op_nodivstar =['+''-'      '%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
+let op_nodiv = op_nodivstar | '*'
+let opchar   = op_nodivstar | '*' | '/'
+let op = '/'
+       | op_nodiv
+       | op_nodiv op_nodivstar opchar*
 
 let idrest = (letter | digit)* ('_' | op)?
 
 let varid = lower idrest
-let boundvarid = varid | '`' varid '`'
+let _boundvarid = varid | '`' varid '`'
 let plainid = upper idrest | varid | op
 
 let charNoBackQuoteOrNewline = [^'\n''`']
@@ -119,11 +122,24 @@ let multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
 
 let decimalNumeral = digit digit*
 let hexNumeral = '0' ['X''x'] hexDigit hexDigit*
-
 let integerLiteral = (decimalNumeral | hexNumeral) ['L''l']?
 
-(* note: old Scale spec was wrong and was using stringLiteral *)
+let exponentPart = ['E''e'] ['+''-']? digit digit*
+let floatType = ['F''f''D''d']
+let floatingPointLiteral =
+   digit digit* '.' digit digit* exponentPart? floatType?
+ |              '.' digit digit* exponentPart? floatType?
+ | digit digit*                  exponentPart  floatType?
+ | digit digit*                  exponentPart? floatType
+
+(* note: old Scala spec was wrong and was using stringLiteral *)
 let id = plainid | '`' (charNoBackQuoteOrNewline | escapeSeq)+ '`'
+
+(* split id in different tokens *)
+let id_lower = lower idrest
+let id_upper = upper idrest
+let id_backquoted1 = '`' varid '`'
+let id_backquoted2 = '`' (charNoBackQuoteOrNewline | escapeSeq)+ '`'
 
 (* for interpolated strings *)
 let alphaid = upper idrest | varid
@@ -203,7 +219,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   (* keywords *)
-  | id as s
+  | id_lower as s
       { let t = tokinfo lexbuf in
         match s with
         | "null" -> Knull t
@@ -236,6 +252,7 @@ rule token = parse
         | "super" -> Ksuper t
         | "this" -> Kthis t
         | "with" -> Kwith t
+        | "extends" -> Kextends t
 
         | "def"    -> Kdef t
         | "type"    -> Ktype t
@@ -256,18 +273,18 @@ rule token = parse
         | "lazy"    -> Klazy t
         | "yield"    -> Kyield t
 
-        | _          -> Id (s, t)
+        | _          -> ID_LOWER (s, t)
     }
 
-  (* semgrep-ext: *)
-(*
-  | '$' id
-    { let s = tok lexbuf in
-      if not !Flag_parsing.sgrep_mode
-      then error ("identifier with dollar: "  ^ s) lexbuf;
-      Id (tokinfo lexbuf)
-    }
-*)
+  (* semgrep-ext: but this is also a valid Scala identifier *)
+  | '$' ['A'-'Z']['A'-'Z''0'-'9''_']* as s
+    { ID_UPPER (s, tokinfo lexbuf) }
+
+  | id_upper as s { ID_UPPER (s, tokinfo lexbuf) }
+  | id_backquoted1 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
+  | id_backquoted2 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
+  | op as s       { OP (s, tokinfo lexbuf) }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -275,11 +292,8 @@ rule token = parse
   (* literals *)
   | integerLiteral as n
       { IntegerLiteral (int_of_string_opt n, tokinfo lexbuf) }
-
-(*
-  | float_lit as n
+  | floatingPointLiteral as n
       { FloatingPointLiteral (float_of_string_opt n, tokinfo lexbuf) }
-*)
 
   (* ----------------------------------------------------------------------- *)
   (* Chars/Strings *)
@@ -319,7 +333,7 @@ and in_interpolated_double = parse
   | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
-  | "$" id as s { Id (s, tokinfo lexbuf) }
+  | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated string" lexbuf;
            pop_mode();
@@ -336,7 +350,7 @@ and in_interpolated_triple = parse
   | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
-  | "$" id as s { Id (s, tokinfo lexbuf) }
+  | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated2 string" lexbuf;
            pop_mode();

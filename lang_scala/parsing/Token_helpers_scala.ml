@@ -50,6 +50,13 @@ let token_kind_of_tok t =
 (*****************************************************************************)
 
 let visitor_info_of_tok f = function
+  | Unknown(ii) -> Unknown(f ii)
+  | EOF(ii) -> EOF(f ii)
+
+  | Space(ii) -> Space(f ii)
+  | Nl(ii) -> Nl(f ii)
+  | Comment(ii) -> Comment(f ii)
+
   (* old:
      | InterpolatedString(ii) -> InterpolatedString(f ii)
      | InterpStart(ii) -> InterpStart(f ii)
@@ -58,32 +65,50 @@ let visitor_info_of_tok f = function
   | T_INTERPOLATED_END(ii) -> T_INTERPOLATED_END(f ii)
   | T_INTERPOLATED_STRING(s, ii) -> T_INTERPOLATED_STRING(s, f ii)
   | T_DOLLAR_LBRACE(ii) -> T_DOLLAR_LBRACE(f ii)
-  | Varid (s, ii) -> Varid(s, f ii)
-  | Unknown(ii) -> Unknown(f ii)
-  | UNDERSCORE(ii) -> UNDERSCORE(f ii)
-  | TILDE(ii) -> TILDE(f ii)
+
+  | ID_DOLLAR(s, ii) -> ID_DOLLAR(s, f ii)
+  | ID_LOWER(s, ii) -> ID_LOWER(s, f ii)
+  | ID_UPPER(s, ii) -> ID_UPPER(s, f ii)
+  | ID_BACKQUOTED(s, ii) -> ID_BACKQUOTED(s, f ii)
+  | OP(s, ii) -> OP(s, f ii)
+
+  | IntegerLiteral(x, ii) -> IntegerLiteral(x, f ii)
+  | FloatingPointLiteral(x, ii) -> FloatingPointLiteral(x, f ii)
+  | CharacterLiteral(x, ii) -> CharacterLiteral(x, f ii)
+  | BooleanLiteral(x, ii) -> BooleanLiteral(x, f ii)
   | SymbolLiteral(s, ii) -> SymbolLiteral(s, f ii)
   | StringLiteral(x, ii) -> StringLiteral(x, f ii)
-  | Space(ii) -> Space(f ii)
+
+  | UNDERSCORE(ii) -> UNDERSCORE(f ii)
+  | TILDE(ii) -> TILDE(f ii)
   | STAR(ii) -> STAR(f ii)
   | SHARP(ii) -> SHARP(f ii)
   | SEMI(ii) -> SEMI(f ii)
+
+  | LPAREN(ii) -> LPAREN(f ii)
+  | LBRACKET(ii) -> LBRACKET(f ii)
+  | LBRACE(ii) -> LBRACE(f ii)
   | RPAREN(ii) -> RPAREN(f ii)
-  | RDots(ii) -> RDots(f ii)
   | RBRACKET(ii) -> RBRACKET(f ii)
   | RBRACE(ii) -> RBRACE(f ii)
+  | RDots(ii) -> RDots(f ii)
+  | LDots(ii) -> LDots(f ii)
+
   | PLUS(ii) -> PLUS(f ii)
   | PIPE(ii) -> PIPE(f ii)
-  | Nl(ii) -> Nl(f ii)
   | MORECOLON(ii) -> MORECOLON(f ii)
   | MINUS(ii) -> MINUS(f ii)
-  | LPAREN(ii) -> LPAREN(f ii)
   | LESSPERCENT(ii) -> LESSPERCENT(f ii)
   | LESSMINUS(ii) -> LESSMINUS(f ii)
   | LESSCOLON(ii) -> LESSCOLON(f ii)
-  | LDots(ii) -> LDots(f ii)
-  | LBRACKET(ii) -> LBRACKET(f ii)
-  | LBRACE(ii) -> LBRACE(f ii)
+  | EQMORE(ii) -> EQMORE(f ii)
+  | EQ(ii) -> EQ(f ii)
+  | BANG(ii) -> BANG(f ii)
+  | AT(ii) -> AT(f ii)
+  | DOT(ii) -> DOT(f ii)
+  | COMMA(ii) -> COMMA(f ii)
+  | COLON(ii) -> COLON(f ii)
+
   | Kyield(ii) -> Kyield(f ii)
   | Kwith(ii) -> Kwith(f ii)
   | Kwhile(ii) -> Kwhile(f ii)
@@ -121,22 +146,11 @@ let visitor_info_of_tok f = function
   | Kcatch(ii) -> Kcatch(f ii)
   | Kcase(ii) -> Kcase(f ii)
   | Kabstract(ii) -> Kabstract(f ii)
-  | IntegerLiteral(x, ii) -> IntegerLiteral(x, f ii)
-  | Id(s, ii) -> Id(s, f ii)
-  | FloatingPointLiteral(x, ii) -> FloatingPointLiteral(x, f ii)
+
+
   | Ellipsis(ii) -> Ellipsis(f ii)
-  | EQMORE(ii) -> EQMORE(f ii)
-  | EQ(ii) -> EQ(f ii)
-  | EOF(ii) -> EOF(f ii)
-  | DOT(ii) -> DOT(f ii)
-  | Comment(ii) -> Comment(f ii)
-  | CharacterLiteral(x, ii) -> CharacterLiteral(x, f ii)
-  | COMMA(ii) -> COMMA(f ii)
-  | COLON(ii) -> COLON(f ii)
-  | Boundvarid(s, ii) -> Boundvarid(s, f ii)
-  | BooleanLiteral(x, ii) -> BooleanLiteral(x, f ii)
-  | BANG(ii) -> BANG(f ii)
-  | AT(ii) -> AT(f ii)
+
+
 
 let info_of_tok tok =
   let res = ref None in
