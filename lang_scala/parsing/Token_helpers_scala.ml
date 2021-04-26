@@ -50,21 +50,13 @@ let token_kind_of_tok t =
 (*****************************************************************************)
 
 let visitor_info_of_tok f = function
-  | Unknown(ii) -> Unknown(f ii)
-  | EOF(ii) -> EOF(f ii)
-
-  | Space(ii) -> Space(f ii)
-  | Nl(ii) -> Nl(f ii)
-  | Comment(ii) -> Comment(f ii)
-
+  (* tokens with values *)
   (* old:
      | InterpolatedString(ii) -> InterpolatedString(f ii)
      | InterpStart(ii) -> InterpStart(f ii)
   *)
   | T_INTERPOLATED_START(s, ii) -> T_INTERPOLATED_START(s, f ii)
-  | T_INTERPOLATED_END(ii) -> T_INTERPOLATED_END(f ii)
   | T_INTERPOLATED_STRING(s, ii) -> T_INTERPOLATED_STRING(s, f ii)
-  | T_DOLLAR_LBRACE(ii) -> T_DOLLAR_LBRACE(f ii)
 
   | ID_DOLLAR(s, ii) -> ID_DOLLAR(s, f ii)
   | ID_LOWER(s, ii) -> ID_LOWER(s, f ii)
@@ -78,6 +70,19 @@ let visitor_info_of_tok f = function
   | BooleanLiteral(x, ii) -> BooleanLiteral(x, f ii)
   | SymbolLiteral(s, ii) -> SymbolLiteral(s, f ii)
   | StringLiteral(x, ii) -> StringLiteral(x, f ii)
+
+  (* tokens without values *)
+  | T_INTERPOLATED_END(ii) -> T_INTERPOLATED_END(f ii)
+  | T_DOLLAR_LBRACE(ii) -> T_DOLLAR_LBRACE(f ii)
+
+  | Unknown(ii) -> Unknown(f ii)
+  | EOF(ii) -> EOF(f ii)
+
+  | Space(ii) -> Space(f ii)
+  | Nl(ii) -> Nl(f ii)
+  | NEWLINE (ii) -> NEWLINE (f ii)
+  | NEWLINES (ii) -> NEWLINES (f ii)
+  | Comment(ii) -> Comment(f ii)
 
   | UNDERSCORE(ii) -> UNDERSCORE(f ii)
   | TILDE(ii) -> TILDE(f ii)
@@ -147,7 +152,6 @@ let visitor_info_of_tok f = function
   | Kcase(ii) -> Kcase(f ii)
   | Kabstract(ii) -> Kabstract(f ii)
 
-
   | Ellipsis(ii) -> Ellipsis(f ii)
 
 
@@ -156,3 +160,46 @@ let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   Common2.some !res
+
+let abstract_info_tok tok =
+  visitor_info_of_tok (fun _ -> PI.abstract_info) tok
+
+(*****************************************************************************)
+(* More token Helpers for Parse_scala_recursive_descent.ml *)
+(*****************************************************************************)
+
+let isIdent = function
+  | ID_LOWER (s, info) | ID_UPPER(s, info) | ID_BACKQUOTED (s, info) ->
+      Some (s, info)
+  | _ -> None
+
+let isStatSep = function
+  | NEWLINE _ | NEWLINES _ | SEMI _ -> true
+  | _ -> false
+
+let isStatSeqEnd = function
+  | RBRACE _ | EOF _ -> true
+  | _ -> false
+
+let isAnnotation = function
+  | AT _ -> true
+  | _ -> false
+
+
+let isModifier = function
+  | Kabstract _ | Kfinal _ | Ksealed _ | Kprivate _
+  | Kprotected _ | Koverride _ | Kimplicit _ | Klazy _ -> true
+  | _ -> false
+
+let isLocalModifier = function
+  | Kabstract _ | Kfinal _ | Ksealed _ | Kimplicit _ | Klazy _ -> true
+  | _ -> false
+
+let isTemplateIntro = function
+  | Kobject _ | Kclass _  | Ktrait _  -> true
+  (*TODO | Kcaseobject | | Kcaseclass *) | Kcase _ -> true
+  | _ -> false
+
+let isDclIntro = function
+  | Kval _ | Kvar _ | Kdef _ | Ktype _ -> true
+  | _ -> false

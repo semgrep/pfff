@@ -133,6 +133,7 @@ val fake_token_location : token_location
 (*s: signature [[Parse_info.fake_info]] *)
 val fake_info : string -> t
 (*e: signature [[Parse_info.fake_info]] *)
+val abstract_info: t
 
 val fake_bracket: 'a -> t * 'a * t
 val unbracket: t * 'a * t -> 'a
