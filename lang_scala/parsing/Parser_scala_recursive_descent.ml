@@ -127,8 +127,18 @@ let accept t in_ =
 let inBraces t in_ =
   failwith "inBraces"
 
+(** {{{ { `sep` part } }}}. *)
+let separatedToken sep part in_ =
+  let ts = ref [] in
+  while in_.token =~= sep do
+    nextToken in_;
+    let x = part in_ in
+    ts += x;
+  done;
+  !ts
+
 (*****************************************************************************)
-(* Token categories  *)
+(* Newline management  *)
 (*****************************************************************************)
 
 (** {{{
@@ -145,9 +155,7 @@ let acceptStatSepOpt in_ =
   if not (TH.isStatSeqEnd in_.token)
   then acceptStatSep in_
 
-(*****************************************************************************)
-(* Newline management  *)
-(*****************************************************************************)
+
 let newLineOpt in_ =
   match in_.token with
   | NEWLINE _ -> nextToken in_
@@ -169,6 +177,10 @@ let ident in_ =
       (s, info)
   | None ->
       error "expecting ident" in_
+
+let identForType in_ =
+  let x = ident in_ in
+  x
 
 let selectors ~typeOK id in_ =
   failwith "selectors"
@@ -216,11 +228,120 @@ let importClause in_ =
   failwith "importClause"
 
 (*****************************************************************************)
+(* Parsing annotations/modifiers  *)
+(*****************************************************************************)
+
+(** {{{
+ *  AccessQualifier ::= `[` (Id | this) `]`
+ *  }}}
+*)
+let accessQualifierOpt mods in_ =
+  let result = mods in
+  (match in_.token with
+   | LBRACKET _ ->
+       nextToken in_;
+       (match in_.token with
+        | Kthis _ ->
+            nextToken in_;
+            (* Flags.Local?? *)
+        | _ ->
+            let x = identForType in_ in
+            ()
+       );
+       accept (RBRACKET ab) in_
+  );
+  result
+
+let addMods mods t in_ =
+  nextToken in_;
+  t::mods
+
+(** {{{
+ *  Modifiers ::= {Modifier}
+ *  Modifier  ::= LocalModifier
+ *              |  AccessModifier
+ *              |  override
+ *  }}}
+*)
+let modifiers in_ =
+  let rec loop mods =
+    match in_.token with
+    | Kprivate _ | Kprotected _ ->
+        let mods = addMods mods in_.token in_ in
+        let mods = accessQualifierOpt mods in_ in
+        loop mods
+    | Kabstract _ | Kfinal _ | Ksealed _ | Koverride _ | Kimplicit _ | Klazy _
+      ->
+        let mods = addMods mods in_.token in_ in
+        loop mods
+    | NEWLINE _ ->
+        nextToken in_;
+        loop mods
+    | _ -> mods
+  in
+  loop []
+
+
+let readAnnots part in_ =
+  separatedToken (AT ab) part in_
+
+(** {{{
+ *  Annotations       ::= {`@` SimpleType {ArgumentExprs}}
+ *  ConstrAnnotations ::= {`@` SimpleType ArgumentExprs}
+ *  }}}
+*)
+let annotationExpr in_ =
+  failwith "annotationExpr"
+
+let annotations ~skipNewLines in_ =
+  readAnnots (fun in_ ->
+    let t = annotationExpr in_ in
+    if skipNewLines then newLineOpt in_;
+    t
+  )
+
+(*****************************************************************************)
 (* Parsing definitions  *)
 (*****************************************************************************)
 
+(* ------------------------------------------------------------------------- *)
+(* Object *)
+(* ------------------------------------------------------------------------- *)
+let objectDef in_ =
+  failwith "objectDef"
+
+(* ------------------------------------------------------------------------- *)
+(* Class/trait *)
+(* ------------------------------------------------------------------------- *)
+let classDef in_ =
+  failwith "classDef"
+
+(* ------------------------------------------------------------------------- *)
+(* TmplDef *)
+(* ------------------------------------------------------------------------- *)
+
+(** {{{
+ *  TmplDef ::= [case] class ClassDef
+ *            |  [case] object ObjectDef
+ *            |  [override] trait TraitDef
+ *  }}}
+*)
+let tmplDef in_ =
+  match in_.token with
+  | Ktrait _ -> classDef in_
+  | Kclass _ -> classDef in_
+  (* Caseclass -> classDef in_ *)
+  | Kobject _ -> objectDef in_
+  (* Caseobject -> objectDef in_ *)
+  | _ -> error "expected start of definition" in_
+
+
+(** Hook for IDE, for top-level classes/objects. *)
 let topLevelTmplDef in_ =
-  failwith "topLevelTmplDef"
+  let _annots = annotations ~skipNewLines:true in_ in
+  let _mods = modifiers in_ in
+  let x = tmplDef in_ in
+  x
 
 let statSeq ?(errorMsg="illegal start of definition") stat in_ =
   let stats = ref [] in
