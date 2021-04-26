@@ -207,9 +207,24 @@ let pkgQualId in_ =
 (* Parsing types  *)
 (*****************************************************************************)
 
+let startAnnotType in_ =
+  (* TODO *)
+  ident in_
+
 (*****************************************************************************)
 (* Parsing expressions  *)
 (*****************************************************************************)
+
+(* ------------------------------------------------------------------------- *)
+(* Arguments *)
+(* ------------------------------------------------------------------------- *)
+let multipleArgumentExprs in_ =
+  failwith "multipleArgumentExprs"
+
+(* ------------------------------------------------------------------------- *)
+(* Infix expr *)
+(* ------------------------------------------------------------------------- *)
+
 
 (*****************************************************************************)
 (* Parsing patterns  *)
@@ -305,10 +320,107 @@ let annotations ~skipNewLines in_ =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
+(* "Template" *)
+(* ------------------------------------------------------------------------- *)
+
+let templateBody ~isPre in_ =
+  failwith "templateBody"
+
+(** {{{
+ *  ClassParents       ::= AnnotType {`(` [Exprs] `)`} {with AnnotType}
+ *  TraitParents       ::= AnnotType {with AnnotType}
+ *  }}}
+*)
+let templateParents in_ =
+  let parents = ref [] in
+  let readAppliedParent () =
+    let parent = startAnnotType in_ in
+    parents +=
+    (match in_.token with
+     | LPAREN _ ->
+         let _xs = multipleArgumentExprs in_ in
+         (* less: fold_left apply xs *)
+         parent
+     | _ -> parent
+    );
+  in
+  readAppliedParent ();
+  while in_.token =~= (Kwith ab) do
+    nextToken in_;
+    readAppliedParent ()
+  done;
+  !parents
+
+let templateBodyOpt ~parenMeansSyntaxError in_ =
+  failwith "templateBodyOpt"
+
+(** {{{
+ *  ClassTemplate ::= [EarlyDefs with] ClassParents [TemplateBody]
+ *  TraitTemplate ::= [EarlyDefs with] TraitParents [TemplateBody]
+ *  EarlyDefs     ::= `{` [EarlyDef {semi EarlyDef}] `}`
+ *  EarlyDef      ::= Annotations Modifiers PatDef
+ *  }}}
+*)
+let template in_ =
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  match in_.token with
+  | LBRACE _ ->
+      let (self, body) = templateBody ~isPre:true in_ in
+      (match in_.token with
+       | Kwith _ (* less: && self eq noSelfType *) ->
+           let _earlyDefs = body (* less: map ensureEarlyDef *) in
+           nextToken in_;
+           let parents = templateParents in_ in
+           let (self1, body1) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
+           (parents, self1, (* earlyDefs @ *) body1)
+       | _ ->
+           ([], self, body)
+      )
+  | _ ->
+      let parents = templateParents in_ in
+      let (self, body) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
+      (parents, self, body)
+
+
+(** {{{
+ *  ClassTemplateOpt ::= `extends` ClassTemplate | [[`extends`] TemplateBody]
+ *  TraitTemplateOpt ::= TraitExtends TraitTemplate | [[TraitExtends] TemplateBody]
+ *  TraitExtends     ::= `extends` | `<:` (deprecated)
+ *  }}}
+*)
+let templateOpt in_ =
+  let (parents, self, body) =
+    match in_.token with
+    | Kextends _ | LESSCOLON _ (* deprecated in 2.12.5 *) ->
+        nextToken in_;
+        template in_
+    | _ ->
+        newLineOptWhenFollowedBy (LBRACE ab) in_;
+        let (self, body) =
+          let parenMeansSyntaxError =
+            (*TODO mods.isTrait || name.isTermName *) true
+          in
+          templateBodyOpt ~parenMeansSyntaxError in_ in
+        [], self, body
+  in
+  ()
+
+
+(* ------------------------------------------------------------------------- *)
 (* Object *)
 (* ------------------------------------------------------------------------- *)
+
+(** {{{
+ *  ObjectDef       ::= Id ClassTemplateOpt
+ *  }}}
+*)
 let objectDef in_ =
-  failwith "objectDef"
+  nextToken in_; (* 'object' *)
+  let name = ident in_ in
+  let tmpl = templateOpt in_ in
+  tmpl
+
+
 
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)

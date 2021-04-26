@@ -168,6 +168,7 @@ let abstract_info_tok tok =
 (* More token Helpers for Parse_scala_recursive_descent.ml *)
 (*****************************************************************************)
 
+(* TODO: OP ? *)
 let isIdent = function
   | ID_LOWER (s, info) | ID_UPPER(s, info) | ID_BACKQUOTED (s, info) ->
       Some (s, info)
