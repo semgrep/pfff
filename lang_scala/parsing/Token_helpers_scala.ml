@@ -173,6 +173,22 @@ let isIdent = function
   | ID_LOWER (s, info) | ID_UPPER(s, info) | ID_BACKQUOTED (s, info) ->
       Some (s, info)
   | _ -> None
+let isIdentBool x =
+  isIdent x <> None
+
+let isLiteral = function
+  | IntegerLiteral(_)
+  | FloatingPointLiteral(_)
+  | CharacterLiteral(_)
+  | BooleanLiteral(_)
+  | SymbolLiteral(_)
+  | StringLiteral(_)
+  (* ?? *)
+  | T_INTERPOLATED_START _
+  | Knull _
+    -> true
+  | _ -> false
+
 
 let isStatSep = function
   | NEWLINE _ | NEWLINES _ | SEMI _ -> true
@@ -204,3 +220,17 @@ let isTemplateIntro = function
 let isDclIntro = function
   | Kval _ | Kvar _ | Kdef _ | Ktype _ -> true
   | _ -> false
+
+
+let isExprIntro x =
+  isIdentBool x || isLiteral x ||
+  (match x with
+   | Kthis _ | Ksuper _ | Kif _ | Kfor _ | Knew _
+   | Ktry _ | Kwhile _
+   | Kdo _ | Kreturn _ | Kthrow _
+   | UNDERSCORE _
+   | LPAREN _ | LBRACE  _
+     (* | XMLSTART  *)
+     -> true
+   | _ -> false
+  )

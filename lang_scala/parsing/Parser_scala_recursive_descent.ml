@@ -60,6 +60,12 @@ let mk_env toks =
 
 let ab = Parse_info.abstract_info
 
+(* TODO, use AST_scala something *)
+let noSelfType = ()
+
+type expr_ctx =
+  | InTemplate
+
 (*****************************************************************************)
 (* Error management  *)
 (*****************************************************************************)
@@ -215,6 +221,9 @@ let startAnnotType in_ =
 (* Parsing expressions  *)
 (*****************************************************************************)
 
+let expr ctx in_ =
+  failwith "expr"
+
 (* ------------------------------------------------------------------------- *)
 (* Arguments *)
 (* ------------------------------------------------------------------------- *)
@@ -320,11 +329,74 @@ let annotations ~skipNewLines in_ =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* "Template" *)
+(* Helpers *)
 (* ------------------------------------------------------------------------- *)
 
+let statSeq ?(errorMsg="illegal start of definition") stat in_ =
+  let stats = ref [] in
+  while not (TH.isStatSeqEnd in_.token) do
+    (match stat in_ with
+     | Some xs ->
+         stats ++= xs
+     | None ->
+         if TH.isStatSep in_.token
+         then ()
+         else error errorMsg in_
+    );
+    acceptStatSepOpt in_
+  done;
+  !stats
+
+(* ------------------------------------------------------------------------- *)
+(* "Template" *)
+(* ------------------------------------------------------------------------- *)
+let templateStats in_ =
+  failwith "templateStats"
+
+(** {{{
+ *  TemplateStatSeq  ::= [id [`:` Type] `=>`] TemplateStats
+ *  }}}
+ * @param isPre specifies whether in early initializer (true) or not (false)
+*)
+
+let templateStatSeq ~isPre in_ =
+  let self = ref noSelfType in
+  let firstOpt = ref None in
+  if (TH.isExprIntro in_.token) then begin
+    let first = expr InTemplate in_ in
+    (match in_.token with
+     | EQMORE _ ->
+         (* todo: self := ... *)
+         nextToken in_
+     | _ ->
+         firstOpt := Some first;
+         acceptStatSepOpt in_
+    )
+  end;
+  let xs = templateStats in_ in
+  !self, (* TODO !firstOpt @ *) xs
+
+(** {{{
+ *  TemplateBody ::= [nl] `{` TemplateStatSeq `}`
+ *  }}}
+ * @param isPre specifies whether in early initializer (true) or not (false)
+*)
+
 let templateBody ~isPre in_ =
-  failwith "templateBody"
+  let xs = inBraces (templateStatSeq ~isPre) in_ in
+  xs
+
+let templateBodyOpt ~parenMeansSyntaxError in_ =
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  match in_.token with
+  | LBRACE _ ->
+      templateBody ~isPre:false in_
+  | LPAREN _ ->
+      if parenMeansSyntaxError
+      then error "traits or objects may not have parameters" in_
+      else error "unexpected opening parenthesis" in_
+  | _ -> noSelfType, []
+
 
 (** {{{
  *  ClassParents       ::= AnnotType {`(` [Exprs] `)`} {with AnnotType}
@@ -350,9 +422,6 @@ let templateParents in_ =
     readAppliedParent ()
   done;
   !parents
-
-let templateBodyOpt ~parenMeansSyntaxError in_ =
-  failwith "templateBodyOpt"
 
 (** {{{
  *  ClassTemplate ::= [EarlyDefs with] ClassParents [TemplateBody]
@@ -454,21 +523,6 @@ let topLevelTmplDef in_ =
   let _mods = modifiers in_ in
   let x = tmplDef in_ in
   x
-
-let statSeq ?(errorMsg="illegal start of definition") stat in_ =
-  let stats = ref [] in
-  while not (TH.isStatSeqEnd in_.token) do
-    (match stat in_ with
-     | Some xs ->
-         stats ++= xs
-     | None ->
-         if TH.isStatSep in_.token
-         then ()
-         else error errorMsg in_
-    );
-    acceptStatSepOpt in_
-  done;
-  !stats
 
 (** {{{
  *  TopStatSeq ::= TopStat {semi TopStat}
