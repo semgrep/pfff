@@ -62,6 +62,7 @@ let ab = Parse_info.abstract_info
 
 (* TODO, use AST_scala something *)
 let noSelfType = ()
+let empty = ()
 
 type location =
   | Local
@@ -652,8 +653,78 @@ let packageObjectDef in_ =
 let packageOrPackageObject in_ =
   failwith "packageOrPackageObject"
 
+let wildImportSelector in_ =
+  (* AST: val selector = ImportSelector.wildAt(in.offset) *)
+  nextToken in_
+
+let importSelectors in_ =
+  failwith "importSelectors"
+
+(** {{{
+ *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
+ *  }}}
+*)
+let importExpr in_ =
+  let thisDotted _name in_ =
+    nextToken in_;
+    (* AST: val t = atPos(start)(This(name)) *)
+    let t = () in
+    accept (DOT ab) in_;
+    let result = selector t in_ in
+    accept (DOT ab) in_;
+    result
+  in
+  (** Walks down import `foo.bar.baz.{ ... }` until it ends at
+   * an underscore, a left brace, or an undotted identifier.
+  *)
+  let rec loop expr in_ =
+    let selectors =
+      match in_.token with
+      | UNDERSCORE _ -> [wildImportSelector in_] (* // import foo.bar._; *)
+      | LBRACE _ -> importSelectors in_  (* // import foo.bar.{ x, y, z } *)
+      | _ ->
+          let id = ident in_ in
+          (match in_.token with
+           | DOT _ ->
+               (* // import foo.bar.ident.<unknown> and so create a select node and recurse. *)
+               (* AST: (Select(expr, name)) *)
+               let t = expr in
+               nextToken in_;
+               loop t in_
+           | _ ->
+               (* // import foo.bar.Baz; *)
+               (* AST: List(makeImportSelector(name, nameOffset)) *)
+               []
+          )
+    in
+    (* // reaching here means we're done walking. *)
+    (* AST: Import(expr, selectors) *)
+    []
+  in
+  let start =
+    match in_.token with
+    | Kthis _ -> thisDotted empty in_
+    | _ ->
+        let id = ident in_ in
+        (match in_.token with
+         | DOT _ -> accept (DOT ab) in_
+         | x when not (TH.isStatSep x) -> accept (DOT ab) in_
+         | _ -> error ". expected" in_
+        );
+        (match in_.token with
+         | Kthis _ -> thisDotted (*id *)() in_
+         | _ -> (*id*) ()
+        )
+  in
+  loop start in_
+
+(** {{{
+ *  Import  ::= import ImportExpr {`,` ImportExpr}
+ *  }}}
+*)
 let importClause in_ =
-  failwith "importClause"
+  accept (Kimport ab) in_;
+  commaSeparated importExpr in_
 
 (*****************************************************************************)
 (* Parsing modifiers  *)
@@ -757,13 +828,13 @@ let templateStat in_ =
   match in_.token with
   | Kimport _ ->
       let x = importClause in_ in
-      Some x
+      Some ()
   | t when TH.isDefIntro t || TH.isModifier t || TH.isAnnotation t ->
       let x = nonLocalDefOrDcl in_ in
-      Some x
+      Some ()
   | t when TH.isExprIntro t ->
       let x = statement InTemplate in_ in
-      Some x
+      Some ()
   | _ -> None
 
 let templateStats in_ =
@@ -957,13 +1028,13 @@ let topStat in_ =
   | Kpackage _ ->
       skipToken in_;
       let x = packageOrPackageObject in_ in
-      Some x
+      Some ()
   | Kimport _ ->
       let x = importClause in_ in
-      Some x
+      Some ()
   | t when TH.isAnnotation t || TH.isTemplateIntro t || TH.isModifier t ->
       let x = topLevelTmplDef in_ in
-      Some x
+      Some ()
   | _ -> None
 
 let topStatSeq in_ =
