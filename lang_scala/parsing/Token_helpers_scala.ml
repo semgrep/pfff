@@ -168,7 +168,7 @@ let abstract_info_tok tok =
 (* More token Helpers for Parse_scala_recursive_descent.ml *)
 (*****************************************************************************)
 
-(* TODO: OP ? *)
+(* TODO: OP ? and STAR | ... ? *)
 let isIdent = function
   | ID_LOWER (s, info) | ID_UPPER(s, info) | ID_BACKQUOTED (s, info) ->
       Some (s, info)
@@ -234,3 +234,15 @@ let isExprIntro x =
      -> true
    | _ -> false
   )
+
+let isDefIntro x =
+  isTemplateIntro x || isDclIntro x
+
+let raw_isUnary _s =
+  Common.pr2_once "TODO: raw_isUnary";
+  false
+
+let isUnaryOp x =
+  match isIdent x with
+  | None -> false
+  | Some (s, _) -> raw_isUnary s
