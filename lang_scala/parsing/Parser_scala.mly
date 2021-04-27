@@ -75,6 +75,8 @@
 
 (* This is actually treated specially in Scala *)
 %token <Parse_info.t> Nl
+(* inserted after tokenizing *)
+%token <Parse_info.t> NEWLINE NEWLINES
 
 (*-----------------------------------------*)
 (* The normal tokens *)

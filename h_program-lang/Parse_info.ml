@@ -122,6 +122,8 @@ let fake_info str : token_mutable = {
   token = FakeTokStr (str, None);
   transfo = NoTransfo;
 }
+let abstract_info =
+  { token = Ab; transfo = NoTransfo }
 
 let is_fake tok =
   match tok.token with

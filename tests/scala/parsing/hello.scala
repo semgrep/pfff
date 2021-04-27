@@ -1,3 +1,5 @@
- object HelloWorld extends App {
+package hello
+
+object HelloWorld extends App {
    println("Hello, World!")
  }
