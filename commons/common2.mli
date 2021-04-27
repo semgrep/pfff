@@ -1188,6 +1188,7 @@ val zip : 'a list -> 'b list -> ('a * 'b) list
 val zip_safe : 'a list -> 'b list -> ('a * 'b) list
 val unzip : ('a * 'b) list -> 'a list * 'b list
 val unzip3: ('a * 'b * 'c) list -> 'a list * 'b list * 'c list
+val unzip4: ('a * 'b * 'c * 'd) list -> 'a list * 'b list * 'c list * 'd list
 
 val take : int -> 'a list -> 'a list
 val take_safe : int -> 'a list -> 'a list

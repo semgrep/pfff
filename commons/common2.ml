@@ -3514,6 +3514,14 @@ let unzip3 l =
   in
   unzip [] [] [] l
 
+(* Same as Common2.unzip3 but with four. Tail-recursive. *)
+let unzip4 l =
+  let rec unzip aa bb cc dd = function
+    | (a, b, c, d) :: l -> unzip (a :: aa) (b :: bb) (c :: cc) (d :: dd) l
+    | [] -> List.rev aa, List.rev bb, List.rev cc, List.rev dd
+  in
+  unzip [] [] [] [] l
+
 
 let map_withkeep f xs =
   xs |> List.map (fun x -> f x, x)
