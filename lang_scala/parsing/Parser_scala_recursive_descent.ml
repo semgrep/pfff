@@ -366,7 +366,7 @@ and parseOther location (in_: env) =
    | COLON _ ->
        skipToken in_;
        (match in_.token with
-        | UNDERSCORE _ ->
+        | USCORE _ ->
             skipToken in_;
             (match in_.token with
              | STAR _ (* todo was isIdent && name = "*" *) ->
@@ -395,7 +395,7 @@ and parseOther location (in_: env) =
   let lhsIsTypedParamList x =
     failwith "lhsIsTypedParamList"
   in
-  if (in_.token =~= (EQMORE ab) && location <> InTemplate &&
+  if (in_.token =~= (ARROW ab) && location <> InTemplate &&
       lhsIsTypedParamList !t) then begin
     skipToken in_;
     let x =
@@ -475,7 +475,7 @@ and simpleExpr in_ : unit =
     | Kthis _ | Ksuper _ ->
         let x = path ~thisOK:true ~typeOK:false in_ in
         ()
-    | UNDERSCORE _ ->
+    | USCORE _ ->
         let x = freshPlaceholder in_ in
         ()
     | LPAREN _ ->
@@ -542,7 +542,7 @@ and simpleExprRest ~canApply t in_ =
       let x = argumentExprs in_ in
       let app = t in
       simpleExprRest ~canApply:true app in_
-  | UNDERSCORE _ ->
+  | USCORE _ ->
       skipToken in_;
       t
   | _ -> t
@@ -680,7 +680,7 @@ let importExpr in_ =
   let rec loop expr in_ =
     let selectors =
       match in_.token with
-      | UNDERSCORE _ -> [wildImportSelector in_] (* // import foo.bar._; *)
+      | USCORE _ -> [wildImportSelector in_] (* // import foo.bar._; *)
       | LBRACE _ -> importSelectors in_  (* // import foo.bar.{ x, y, z } *)
       | _ ->
           let id = ident in_ in
@@ -852,7 +852,7 @@ let templateStatSeq ~isPre in_ =
   if (TH.isExprIntro in_.token) then begin
     let first = expr ~location:InTemplate in_ in
     (match in_.token with
-     | EQMORE _ ->
+     | ARROW _ ->
          (* todo: self := ... *)
          nextToken in_
      | _ ->
