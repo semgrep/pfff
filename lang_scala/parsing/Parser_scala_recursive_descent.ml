@@ -27,6 +27,11 @@ open Parser_scala
  * alt:
  *  - use Parser.scala of dotty?
  *  - use the one in scalameta?
+ *
+ * TODO:
+ *  - see the AST: tag for what Parsers.scala was doing to build an AST
+ * less:
+ *  - see the CHECK: flag for what Parsers.scala was statically checking
 *)
 
 (* ok with partial match for all those accept *)
@@ -203,8 +208,8 @@ let inParens f in_ =
 let inBrackets f in_ =
   inGroupers (LBRACKET ab) (RBRACKET ab) f in_
 
-let inBracesOrNil f in_ =
-  failwith "inBracesOrNil"
+(* less: do actual error recovery? *)
+let inBracesOrNil = inBraces
 
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
@@ -250,6 +255,14 @@ let ident in_ =
       (s, info)
   | None ->
       error "expecting ident" in_
+
+let wildcardOrIdent in_ =
+  match in_.token with
+  | USCORE ii ->
+      nextToken in_;
+      (* AST: nme.WILDCARD *)
+      ("_", ii)
+  | _ -> ident in_
 
 let identForType in_ =
   let x = ident in_ in
@@ -657,8 +670,33 @@ let wildImportSelector in_ =
   (* AST: val selector = ImportSelector.wildAt(in.offset) *)
   nextToken in_
 
+(** {{{
+ *  ImportSelector ::= Id [`=>` Id | `=>` `_`]
+ *  }}}
+*)
+let importSelector in_ =
+  let name = wildcardOrIdent in_ in
+  let rename =
+    match in_.token with
+    | ARROW _ ->
+        nextToken in_;
+        (* CHECK: "Wildcard import cannot be renamed" *)
+        wildcardOrIdent in_
+    (* AST: if name = nme.WILDCARD && !bbq => null *)
+    | _ -> name
+  in
+  (* AST: ImportSelector(name, start, rename, renameOffset) *)
+  ()
+
+
+(** {{{
+ *  ImportSelectors ::= `{` {ImportSelector `,`} (ImportSelector | `_`) `}`
+ *  }}}
+*)
 let importSelectors in_ =
-  failwith "importSelectors"
+  let selectors = inBracesOrNil (commaSeparated importSelector) in_ in
+  (* CHECK: "Wildcard import must be in last position" *)
+  selectors
 
 (** {{{
  *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
