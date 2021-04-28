@@ -614,7 +614,7 @@ interp_code:
         in
           match ss with
           | [] -> tl
-          | x::_ -> StrExpr (mk_block ss)::tl
+          | x::_ -> StrExpr (fake "#{", mk_block ss, fake "}")::tl
       }
 
   | T_INTERP_END<s,pos>

@@ -264,7 +264,7 @@ and string_kind =
 (* interpolated strings (a.k.a encapsulated/template strings) *)
 and interp =
   | StrChars of string wrap
-  | StrExpr of expr
+  | StrExpr of expr bracket
 
 (* ------------------------------------------------------------------------- *)
 (* Method name *)
