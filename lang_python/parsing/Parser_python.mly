@@ -758,11 +758,11 @@ interpolated:
   | FSTRING_LBRACE interpolant fstring_print_spec "}" { InterpolatedString ($2::$3) }
 
 fstring_print_spec:
-  | fstring_format_clause { $1 }
+  |     fstring_format_clause { $1 }
   | "=" fstring_format_clause { mk_str $1::$2 }
 
 fstring_format_clause:
-  | { [] }
+  | (*empty*) { [] }
   | fstring_format_delimeter format_specifier { mk_str $1::$2 }
 
 fstring_format_delimeter:
@@ -796,13 +796,15 @@ format_token:
   | INT   { mk_str (snd $1) }
   | FLOAT { mk_str (snd $1) }
   | NAME  { mk_str (snd $1) }
+  | MOD { mk_str $1 } (* for dates *)
   | LT { mk_str $1 } | GT { mk_str $1 }
   | BITXOR { mk_str $1 }
   | ADD  { mk_str $1 } | SUB { mk_str $1 }
-  | MOD { mk_str $1 } | DIV { mk_str $1 }
+  | DIV { mk_str $1 }
   | "."   { mk_str $1 }
   | "=" { mk_str $1 }
   | "," { mk_str $1 }
+  | ":" { mk_str $1 }
 
   | "{" test "}" { $2 }
 
