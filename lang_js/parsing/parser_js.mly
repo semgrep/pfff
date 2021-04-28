@@ -1475,6 +1475,8 @@ xhp_attribute_value:
  | T_STRING           { L (String $1) }
  | "{" expr sc? "}"   { $2 }
  | "..."              { Ellipsis $1 }
+ (* sgrep-ext: only metavariable actually *)
+ | T_XHP_ATTR { Flag_parsing.sgrep_guard (idexp $1) }
 
 (*----------------------------*)
 (* interpolated strings *)
