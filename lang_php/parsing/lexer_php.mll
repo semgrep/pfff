@@ -596,6 +596,9 @@ rule st_in_scripting = parse
         push_token (T_VARIABLE(case_str s, lblinfo));
         TDOLLAR dollarinfo
                   }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (T_IDENT (tok lexbuf, tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

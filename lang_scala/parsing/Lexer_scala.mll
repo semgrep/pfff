@@ -290,6 +290,10 @@ rule token = parse
   (* semgrep-ext: but this is also a valid Scala identifier *)
   | '$' ['A'-'Z']['A'-'Z''0'-'9''_']* as s
     { ID_UPPER (s, tokinfo lexbuf) }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (ID_UPPER (tok lexbuf, tokinfo lexbuf)) }
+
 
   | id_upper as s { ID_UPPER (s, tokinfo lexbuf) }
   | id_backquoted1 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }

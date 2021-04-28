@@ -467,6 +467,9 @@ and top_lexer state = parse
   | ('@' id)  as id {S.end_state state; T_INST_VAR(id, (tk lexbuf))}
 
   | '$'  { dollar state lexbuf }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (T_GLOBAL_VAR (str lexbuf, tk lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

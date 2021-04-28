@@ -499,6 +499,10 @@ rule token = parse
         then error ("identifier with dollar: "  ^ s) lexbuf;
         TIdent (s, tokinfo lexbuf)
       }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (TIdent (tok lexbuf, tokinfo lexbuf)) }
+
 
   (* ----------------------------------------------------------------------- *)
   (* C constant *)

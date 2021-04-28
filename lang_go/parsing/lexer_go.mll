@@ -274,6 +274,10 @@ rule token = parse
       then error ("identifier with dollar: "  ^ s) lexbuf;
       LNAME (s, tokinfo lexbuf)
     }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (LNAME (tok lexbuf, tokinfo lexbuf)) }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

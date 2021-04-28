@@ -138,6 +138,7 @@ let _WhiteSpace = SP | HT | FF (* | LineTerminator -- handled separately *)
 let EndOfLineComment = "//" InputCharacter* LineTerminator
 (* let Comment = TraditionalComment | EndOfLineComment *)
 
+(* sgrep-ext: $ is actually a valid letter in Java *)
 let Letter = ['A'-'Z' 'a'-'z' '_' '$']
 let Digit = ['0'-'9']
 
@@ -307,6 +308,9 @@ rule token = parse
       | Some f -> f info
       | None -> IDENTIFIER (s, info)
     }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (IDENTIFIER (tok lexbuf, tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
   (* Symbols *)

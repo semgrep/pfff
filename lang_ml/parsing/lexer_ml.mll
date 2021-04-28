@@ -298,12 +298,12 @@ rule token = parse
       | None -> TLowerIdent (s, info)
     }
   (* sgrep-ext: *)
-  | '$' (upperletter | '_') (upperletter | '_' | digit)* {
-      let s = tok lexbuf in
-      if not !Flag_parsing.sgrep_mode
-      then error ("identifier with dollar: "  ^ s) lexbuf;
-      TLowerIdent (s, tokinfo lexbuf)
-   }
+  | '$' (upperletter | '_') (upperletter | '_' | digit)*
+     { Flag.sgrep_guard (TLowerIdent (tok lexbuf, tokinfo lexbuf)) }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag.sgrep_guard (TLowerIdent (tok lexbuf, tokinfo lexbuf)) }
+
 
   | upperident {
       let s = tok lexbuf in

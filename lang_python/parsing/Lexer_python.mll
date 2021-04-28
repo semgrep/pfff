@@ -433,11 +433,11 @@ and _token python2 state = parse
 
   (* sgrep-ext: *)
   | '$' identifier
-    { let s = tok lexbuf in
-      if not !Flag_parsing.sgrep_mode
-      then error ("identifier with dollar: "  ^ s) lexbuf;
-      NAME (s, tokinfo lexbuf)
-    }
+    { Flag_parsing.sgrep_guard (NAME (tok lexbuf, tokinfo lexbuf)) }
+  (* sgrep-ext: *)
+  | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
+     { Flag_parsing.sgrep_guard (NAME (tok lexbuf, tokinfo lexbuf)) }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
