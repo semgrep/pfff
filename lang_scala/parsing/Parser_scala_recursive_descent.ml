@@ -27,6 +27,11 @@ open Parser_scala
  * alt:
  *  - use Parser.scala of dotty?
  *  - use the one in scalameta?
+ *
+ * TODO:
+ *  - see the AST: tag for what Parsers.scala was doing to build an AST
+ * less:
+ *  - see the CHECK: flag for what Parsers.scala was statically checking
 *)
 
 (* ok with partial match for all those accept *)
@@ -62,6 +67,7 @@ let ab = Parse_info.abstract_info
 
 (* TODO, use AST_scala something *)
 let noSelfType = ()
+let empty = ()
 
 type location =
   | Local
@@ -202,8 +208,8 @@ let inParens f in_ =
 let inBrackets f in_ =
   inGroupers (LBRACKET ab) (RBRACKET ab) f in_
 
-let inBracesOrNil f in_ =
-  failwith "inBracesOrNil"
+(* less: do actual error recovery? *)
+let inBracesOrNil = inBraces
 
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
@@ -249,6 +255,14 @@ let ident in_ =
       (s, info)
   | None ->
       error "expecting ident" in_
+
+let wildcardOrIdent in_ =
+  match in_.token with
+  | USCORE ii ->
+      nextToken in_;
+      (* AST: nme.WILDCARD *)
+      ("_", ii)
+  | _ -> ident in_
 
 let identForType in_ =
   let x = ident in_ in
@@ -357,7 +371,7 @@ and expr0 (location: location) (in_: env) =
 and parseOther location (in_: env) =
   let t = ref (postfixExpr in_) in
   (match in_.token with
-   | EQ _ ->
+   | EQUALS _ ->
        skipToken in_;
        (* ??? parsing that depends on built AST!! if Ident | Select | Apply *)
        let e = expr in_ in
@@ -365,7 +379,7 @@ and parseOther location (in_: env) =
    | COLON _ ->
        skipToken in_;
        (match in_.token with
-        | UNDERSCORE _ ->
+        | USCORE _ ->
             skipToken in_;
             (match in_.token with
              | STAR _ (* todo was isIdent && name = "*" *) ->
@@ -394,7 +408,7 @@ and parseOther location (in_: env) =
   let lhsIsTypedParamList x =
     failwith "lhsIsTypedParamList"
   in
-  if (in_.token =~= (EQMORE ab) && location <> InTemplate &&
+  if (in_.token =~= (ARROW ab) && location <> InTemplate &&
       lhsIsTypedParamList !t) then begin
     skipToken in_;
     let x =
@@ -474,7 +488,7 @@ and simpleExpr in_ : unit =
     | Kthis _ | Ksuper _ ->
         let x = path ~thisOK:true ~typeOK:false in_ in
         ()
-    | UNDERSCORE _ ->
+    | USCORE _ ->
         let x = freshPlaceholder in_ in
         ()
     | LPAREN _ ->
@@ -541,7 +555,7 @@ and simpleExprRest ~canApply t in_ =
       let x = argumentExprs in_ in
       let app = t in
       simpleExprRest ~canApply:true app in_
-  | UNDERSCORE _ ->
+  | USCORE _ ->
       skipToken in_;
       t
   | _ -> t
@@ -652,8 +666,103 @@ let packageObjectDef in_ =
 let packageOrPackageObject in_ =
   failwith "packageOrPackageObject"
 
+let wildImportSelector in_ =
+  (* AST: val selector = ImportSelector.wildAt(in.offset) *)
+  nextToken in_
+
+(** {{{
+ *  ImportSelector ::= Id [`=>` Id | `=>` `_`]
+ *  }}}
+*)
+let importSelector in_ =
+  let name = wildcardOrIdent in_ in
+  let rename =
+    match in_.token with
+    | ARROW _ ->
+        nextToken in_;
+        (* CHECK: "Wildcard import cannot be renamed" *)
+        wildcardOrIdent in_
+    (* AST: if name = nme.WILDCARD && !bbq => null *)
+    | _ -> name
+  in
+  (* AST: ImportSelector(name, start, rename, renameOffset) *)
+  ()
+
+
+(** {{{
+ *  ImportSelectors ::= `{` {ImportSelector `,`} (ImportSelector | `_`) `}`
+ *  }}}
+*)
+let importSelectors in_ =
+  let selectors = inBracesOrNil (commaSeparated importSelector) in_ in
+  (* CHECK: "Wildcard import must be in last position" *)
+  selectors
+
+(** {{{
+ *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
+ *  }}}
+*)
+let importExpr in_ =
+  let thisDotted _name in_ =
+    nextToken in_;
+    (* AST: val t = atPos(start)(This(name)) *)
+    let t = () in
+    accept (DOT ab) in_;
+    let result = selector t in_ in
+    accept (DOT ab) in_;
+    result
+  in
+  (** Walks down import `foo.bar.baz.{ ... }` until it ends at
+   * an underscore, a left brace, or an undotted identifier.
+  *)
+  let rec loop expr in_ =
+    let selectors =
+      match in_.token with
+      | USCORE _ -> [wildImportSelector in_] (* // import foo.bar._; *)
+      | LBRACE _ -> importSelectors in_  (* // import foo.bar.{ x, y, z } *)
+      | _ ->
+          let id = ident in_ in
+          (match in_.token with
+           | DOT _ ->
+               (* // import foo.bar.ident.<unknown> and so create a select node and recurse. *)
+               (* AST: (Select(expr, name)) *)
+               let t = expr in
+               nextToken in_;
+               loop t in_
+           | _ ->
+               (* // import foo.bar.Baz; *)
+               (* AST: List(makeImportSelector(name, nameOffset)) *)
+               []
+          )
+    in
+    (* // reaching here means we're done walking. *)
+    (* AST: Import(expr, selectors) *)
+    []
+  in
+  let start =
+    match in_.token with
+    | Kthis _ -> thisDotted empty in_
+    | _ ->
+        let id = ident in_ in
+        (match in_.token with
+         | DOT _ -> accept (DOT ab) in_
+         | x when not (TH.isStatSep x) -> accept (DOT ab) in_
+         | _ -> error ". expected" in_
+        );
+        (match in_.token with
+         | Kthis _ -> thisDotted (*id *)() in_
+         | _ -> (*id*) ()
+        )
+  in
+  loop start in_
+
+(** {{{
+ *  Import  ::= import ImportExpr {`,` ImportExpr}
+ *  }}}
+*)
 let importClause in_ =
-  failwith "importClause"
+  accept (Kimport ab) in_;
+  commaSeparated importExpr in_
 
 (*****************************************************************************)
 (* Parsing modifiers  *)
@@ -757,13 +866,13 @@ let templateStat in_ =
   match in_.token with
   | Kimport _ ->
       let x = importClause in_ in
-      Some x
+      Some ()
   | t when TH.isDefIntro t || TH.isModifier t || TH.isAnnotation t ->
       let x = nonLocalDefOrDcl in_ in
-      Some x
+      Some ()
   | t when TH.isExprIntro t ->
       let x = statement InTemplate in_ in
-      Some x
+      Some ()
   | _ -> None
 
 let templateStats in_ =
@@ -781,7 +890,7 @@ let templateStatSeq ~isPre in_ =
   if (TH.isExprIntro in_.token) then begin
     let first = expr ~location:InTemplate in_ in
     (match in_.token with
-     | EQMORE _ ->
+     | ARROW _ ->
          (* todo: self := ... *)
          nextToken in_
      | _ ->
@@ -957,13 +1066,13 @@ let topStat in_ =
   | Kpackage _ ->
       skipToken in_;
       let x = packageOrPackageObject in_ in
-      Some x
+      Some ()
   | Kimport _ ->
       let x = importClause in_ in
-      Some x
+      Some ()
   | t when TH.isAnnotation t || TH.isTemplateIntro t || TH.isModifier t ->
       let x = topLevelTmplDef in_ in
-      Some x
+      Some ()
   | _ -> None
 
 let topStatSeq in_ =

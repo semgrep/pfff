@@ -151,7 +151,7 @@
 %token <Parse_info.t> COMMA ","
 %token <Parse_info.t> DOT "."
 %token <Parse_info.t> COLON ":"
-%token <Parse_info.t> EQ "="
+%token <Parse_info.t> EQUALS "="
 
 (* operators *)
 %token <Parse_info.t> PLUS "+"
@@ -162,12 +162,12 @@
 %token <Parse_info.t> SHARP "#"
 %token <Parse_info.t> TILDE "~"
 %token <Parse_info.t> PIPE "|"
-%token <Parse_info.t> UNDERSCORE "_"
+%token <Parse_info.t> USCORE "_"
 
 %token <Parse_info.t> LESSPERCENT "<%"
 %token <Parse_info.t> LESSMINUS "<-"
 %token <Parse_info.t> LESSCOLON "<:"
-%token <Parse_info.t> EQMORE "=>"
+%token <Parse_info.t> ARROW "=>"
 %token <Parse_info.t> MORECOLON ">:"
 %token <Parse_info.t> AT "@"
 

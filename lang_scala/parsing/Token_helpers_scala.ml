@@ -84,7 +84,7 @@ let visitor_info_of_tok f = function
   | NEWLINES (ii) -> NEWLINES (f ii)
   | Comment(ii) -> Comment(f ii)
 
-  | UNDERSCORE(ii) -> UNDERSCORE(f ii)
+  | USCORE(ii) -> USCORE(f ii)
   | TILDE(ii) -> TILDE(f ii)
   | STAR(ii) -> STAR(f ii)
   | SHARP(ii) -> SHARP(f ii)
@@ -106,8 +106,8 @@ let visitor_info_of_tok f = function
   | LESSPERCENT(ii) -> LESSPERCENT(f ii)
   | LESSMINUS(ii) -> LESSMINUS(f ii)
   | LESSCOLON(ii) -> LESSCOLON(f ii)
-  | EQMORE(ii) -> EQMORE(f ii)
-  | EQ(ii) -> EQ(f ii)
+  | ARROW(ii) -> ARROW(f ii)
+  | EQUALS(ii) -> EQUALS(f ii)
   | BANG(ii) -> BANG(f ii)
   | AT(ii) -> AT(f ii)
   | DOT(ii) -> DOT(f ii)
@@ -228,7 +228,7 @@ let isExprIntro x =
    | Kthis _ | Ksuper _ | Kif _ | Kfor _ | Knew _
    | Ktry _ | Kwhile _
    | Kdo _ | Kreturn _ | Kthrow _
-   | UNDERSCORE _
+   | USCORE _
    | LPAREN _ | LBRACE  _
      (* | XMLSTART  *)
      -> true

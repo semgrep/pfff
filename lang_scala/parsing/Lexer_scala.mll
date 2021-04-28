@@ -29,6 +29,13 @@ module Flag = Flag_parsing
  *
  * other sources:
  *    - fastparse/scalaparse/.../Basic.scala
+ *
+ * TODO:
+ *  - NEWLINES
+ *  - CASECLASS CASEOBJECT
+ *  - MACRO
+ *  - scala3: THEN
+ *  - less: XMLSTART
  *)
 
 (*****************************************************************************)
@@ -191,7 +198,7 @@ rule token = parse
   | '.'     { DOT (tokinfo lexbuf) }
 
   | ':'     { COLON (tokinfo lexbuf) }
-  | '='     { EQ (tokinfo lexbuf) }
+  | '='     { EQUALS (tokinfo lexbuf) }
 
   (* conflict with op? *)
   | '+'     { PLUS (tokinfo lexbuf) }
@@ -202,12 +209,12 @@ rule token = parse
   | '#'     { SHARP (tokinfo lexbuf) }
   | '~'     { TILDE (tokinfo lexbuf) }
   | '|'     { PIPE (tokinfo lexbuf) }
-  | '_'     { UNDERSCORE (tokinfo lexbuf) }
+  | '_'     { USCORE (tokinfo lexbuf) }
 
   | "<%"    { LESSPERCENT (tokinfo lexbuf) }
   | "<-"    { LESSMINUS (tokinfo lexbuf) }
   | "<:"    { LESSCOLON (tokinfo lexbuf) }
-  | "=>"    { EQMORE (tokinfo lexbuf) }
+  | "=>"    { ARROW (tokinfo lexbuf) }
   | ">:"    { MORECOLON (tokinfo lexbuf) }
 
   | "@"    { AT (tokinfo lexbuf) }
