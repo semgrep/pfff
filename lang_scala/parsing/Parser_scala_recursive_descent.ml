@@ -358,7 +358,7 @@ and expr0 (location: location) (in_: env) =
 and parseOther location (in_: env) =
   let t = ref (postfixExpr in_) in
   (match in_.token with
-   | EQ _ ->
+   | EQUALS _ ->
        skipToken in_;
        (* ??? parsing that depends on built AST!! if Ident | Select | Apply *)
        let e = expr in_ in

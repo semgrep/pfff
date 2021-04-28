@@ -198,7 +198,7 @@ rule token = parse
   | '.'     { DOT (tokinfo lexbuf) }
 
   | ':'     { COLON (tokinfo lexbuf) }
-  | '='     { EQ (tokinfo lexbuf) }
+  | '='     { EQUALS (tokinfo lexbuf) }
 
   (* conflict with op? *)
   | '+'     { PLUS (tokinfo lexbuf) }

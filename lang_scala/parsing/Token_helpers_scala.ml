@@ -107,7 +107,7 @@ let visitor_info_of_tok f = function
   | LESSMINUS(ii) -> LESSMINUS(f ii)
   | LESSCOLON(ii) -> LESSCOLON(f ii)
   | ARROW(ii) -> ARROW(f ii)
-  | EQ(ii) -> EQ(f ii)
+  | EQUALS(ii) -> EQUALS(f ii)
   | BANG(ii) -> BANG(f ii)
   | AT(ii) -> AT(f ii)
   | DOT(ii) -> DOT(f ii)

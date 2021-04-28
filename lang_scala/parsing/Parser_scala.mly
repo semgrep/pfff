@@ -151,7 +151,7 @@
 %token <Parse_info.t> COMMA ","
 %token <Parse_info.t> DOT "."
 %token <Parse_info.t> COLON ":"
-%token <Parse_info.t> EQ "="
+%token <Parse_info.t> EQUALS "="
 
 (* operators *)
 %token <Parse_info.t> PLUS "+"
