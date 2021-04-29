@@ -166,7 +166,7 @@
 
 %token <Parse_info.t> LESSPERCENT "<%"
 %token <Parse_info.t> LESSMINUS "<-"
-%token <Parse_info.t> LESSCOLON "<:"
+%token <Parse_info.t> SUBTYPE "<:"
 %token <Parse_info.t> ARROW "=>"
 %token <Parse_info.t> MORECOLON ">:"
 %token <Parse_info.t> AT "@"

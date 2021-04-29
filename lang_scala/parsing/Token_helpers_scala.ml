@@ -105,7 +105,7 @@ let visitor_info_of_tok f = function
   | MINUS(ii) -> MINUS(f ii)
   | LESSPERCENT(ii) -> LESSPERCENT(f ii)
   | LESSMINUS(ii) -> LESSMINUS(f ii)
-  | LESSCOLON(ii) -> LESSCOLON(f ii)
+  | SUBTYPE(ii) -> SUBTYPE(f ii)
   | ARROW(ii) -> ARROW(f ii)
   | EQUALS(ii) -> EQUALS(f ii)
   | BANG(ii) -> BANG(f ii)
@@ -168,9 +168,12 @@ let abstract_info_tok tok =
 (* More token Helpers for Parse_scala_recursive_descent.ml *)
 (*****************************************************************************)
 
-(* TODO: OP ? and STAR | ... ? *)
+(* TODO: and STAR | ... ? *)
 let isIdent = function
-  | ID_LOWER (s, info) | ID_UPPER(s, info) | ID_BACKQUOTED (s, info) ->
+  | ID_LOWER (s, info) | ID_UPPER(s, info)
+  | ID_BACKQUOTED (s, info)
+  | OP (s, info)
+    ->
       Some (s, info)
   | _ -> None
 let isIdentBool x =

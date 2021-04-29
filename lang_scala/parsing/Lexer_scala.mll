@@ -213,7 +213,7 @@ rule token = parse
 
   | "<%"    { LESSPERCENT (tokinfo lexbuf) }
   | "<-"    { LESSMINUS (tokinfo lexbuf) }
-  | "<:"    { LESSCOLON (tokinfo lexbuf) }
+  | "<:"    { SUBTYPE (tokinfo lexbuf) }
   | "=>"    { ARROW (tokinfo lexbuf) }
   | ">:"    { MORECOLON (tokinfo lexbuf) }
 
