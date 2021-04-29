@@ -136,7 +136,8 @@ let rec nextToken in_ =
       )
 
 let nextTokenAllow next in_ =
-  failwith "nextTokenAllow"
+  pr2_once "nextTokenAllow: TODO";
+  nextToken in_
 
 (* was called in.next.token *)
 let rec next_next_token in_ =
@@ -351,15 +352,28 @@ let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 (* Parsing types  *)
 (*****************************************************************************)
 
+let typ in_ =
+  pr2_once "typ: TODO";
+  ident in_
+
 let startAnnotType in_ =
-  (* TODO *)
+  pr2_once "startAnnotType: TODO";
   ident in_
 
 let typeOrInfixType location in_ =
   failwith "typeOrInfixType"
 
+(** {{{
+ *  TypedOpt ::= [`:` Type]
+ *  }}}
+*)
 let typedOpt in_ =
-  failwith "typedOpt"
+  match in_.token with
+  | COLON _ ->
+      nextToken in_;
+      let t = typ in_ in
+      Some t
+  | _ -> None (* AST: TypeTree *)
 
 (*****************************************************************************)
 (* Parsing patterns  *)
@@ -708,7 +722,7 @@ and block in_ =
   failwith "block"
 
 and blockExpr in_ =
-  failwith "block"
+  failwith "blockExpr"
 
 (*****************************************************************************)
 (* Parsing annotations  *)
@@ -908,19 +922,144 @@ let modifiers in_ =
 (* ------------------------------------------------------------------------- *)
 (* Parameter *)
 (* ------------------------------------------------------------------------- *)
+
+(** {{{
+ *  ParamType ::= Type | `=>` Type | Type `*`
+ *  }}}
+*)
+let paramType ?(repeatedParameterOK=true) in_ =
+  match in_.token with
+  | ARROW _ ->
+      nextToken in_;
+      let t = typ in_ in
+      (* AST: byNameApplication *)
+      ()
+  | _ ->
+      let t = typ in_ in
+      if (TH.isRawStar in_.token)
+      then begin
+        nextToken in_;
+        (* CHECK: if (!repeatedParameterOK)
+         * "repeated parameters are only allowed in method signatures" *)
+        (* AST: repeatedApplication t *)
+        ()
+      end
+      else () (* AST: t *)
+
+(** {{{
+ *  ParamClauses      ::= {ParamClause} [[nl] `(` implicit Params `)`]
+ *  ParamClause       ::= [nl] `(` [Params] `)`
+ *  Params            ::= Param {`,` Param}
+ *  Param             ::= {Annotation} Id [`:` ParamType] [`=` Expr]
+ *  ClassParamClauses ::= {ClassParamClause} [[nl] `(` implicit ClassParams `)`]
+ *  ClassParamClause  ::= [nl] `(` [ClassParams] `)`
+ *  ClassParams       ::= ClassParam {`,` ClassParam}
+ *  ClassParam        ::= {Annotation}  [{Modifier} (`val` | `var`)] Id [`:` ParamType] [`=` Expr]
+ *  }}}
+*)
+
+
+let param owner implicitmod caseParam in_ =
+  let annots = annotations ~skipNewLines:false in_ in
+  let mods = ref [] (* AST: PARAM *) in
+  (* AST: crazy?: if owner.isTypeName ... modifiers () *)
+  let name = ident in_ in
+  let bynamemod = ref 0 in
+  let tpt =
+    accept (COLON ab) in_;
+    if in_.token =~= (ARROW ab) then begin
+      (* CHECK: if owner.isTypeName && !mods.isLocalToThis
+       * "var/val parameters may not be call-by-name" *)
+      bynamemod := 1 (* AST: Flags.BYNAMEPARAM *)
+    end;
+    paramType in_
+  in
+  let default =
+    match in_.token with
+    | EQUALS _ ->
+        nextToken in_;
+        (* AST: mods |= FLAGS.DEFAULTPARAM *)
+        expr in_
+    | _ ->
+        (* AST: emptyTree *)
+        ()
+  in
+  (* AST: ValDef((mods | implicitmod | bynamemod) with annots, name.toTermName, tpt, default) *)
+  ()
+
+
 (* CHECK: "no by-name parameter type allowed here" *)
 (* CHECK: "no * parameter type allowed here" *)
 (* AST: convert tree to parameter *)
 (* CHECK: Tuples cannot be directly destructured in method ... *)
 (* CHECK: "identifier expected" *)
-let paramClauses ~ofCaseClass name contextBoundBuf in_ =
-  failwith "paramClauses"
+let paramClauses ~ofCaseClass owner contextBoundBuf in_ =
+  let vds = ref [] in
+  let caseParam = ref ofCaseClass in
+  let paramClause in_ =
+    if in_.token =~= (RPAREN ab)
+    then []
+    else
+      let implicitmod =
+        match in_.token with
+        | Kimplicit _ ->
+            nextToken in_;
+            (* AST: Flags.IMPLICIT *)
+            1
+        | _ ->
+            0
+      in
+      commaSeparated (param owner implicitmod !caseParam) in_
+  in
+  newLineOptWhenFollowedBy (LPAREN ab) in_;
+  while in_.token =~= (LPAREN ab) do
+    let x = inParens paramClause in_ in
+    vds += x;
+    caseParam := false;
+    newLineOptWhenFollowedBy (LPAREN ab) in_;
+  done;
+  if ofCaseClass then begin
+    (* AST: name(), elliptical(), *)
+    (* CHECK: "case classes must have a parameter list" *)
+    (* CHECK: "case classes must have a non-implicit parameter list" *)
+    ()
+  end;
+  (* CHECK: "an implicit parameter section must be last" *)
+  (* CHECK: "multiple implicit parameter sections are not allowed" *)
+  (* CHECK: "parameter sections are effectively implicit" *)
+  let result = !vds in
+  (* AST: if owner is CONSTRUCTOR && ... *)
+  (* CHECK: "no type parameters allowed here" *)
+  (* CHECK: "auxiliary constructor needs non-implicit parameter list" *)
+  (* AST: addEvidentParams (owner, result, contextBounds) *)
+  []
 
 (* ------------------------------------------------------------------------- *)
 (* Type Parameter *)
 (* ------------------------------------------------------------------------- *)
-let typeParamClauseOpt name contextBoundBuf in_ =
-  failwith "typeParamClauseOpt"
+(** {{{
+ *  TypeParamClauseOpt    ::= [TypeParamClause]
+ *  TypeParamClause       ::= `[` VariantTypeParam {`,` VariantTypeParam} `]`]
+ *  VariantTypeParam      ::= {Annotation} [`+` | `-`] TypeParam
+ *  FunTypeParamClauseOpt ::= [FunTypeParamClause]
+ *  FunTypeParamClause    ::= `[` TypeParam {`,` TypeParam} `]`]
+ *  TypeParam             ::= Id TypeParamClauseOpt TypeBounds {`<%` Type} {`:` Type}
+ *  }}}
+*)
+let typeParamClauseOpt owner contextBoundBuf in_ =
+  let typeParam ms in_ =
+    failwith "typeParam" in
+  newLineOptWhenFollowedBy (LBRACKET ab) in_;
+  match in_.token with
+  | LBRACKET _ ->
+      let x = inBrackets (fun in_ ->
+        let annots = annotations ~skipNewLines:true in_ in
+        let mods = (* AST: NoMods withannotation annots *) [] in
+        commaSeparated (typeParam mods) in_
+      )
+      in
+      Some x
+  | _ -> None
 
 (* ------------------------------------------------------------------------- *)
 (* Def *)

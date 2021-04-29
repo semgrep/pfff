@@ -179,6 +179,21 @@ let isIdent = function
 let isIdentBool x =
   isIdent x <> None
 
+let isRawIdent = function
+  | ID_LOWER (s, info) | ID_UPPER (s, info) | OP (s, info)
+    (* TODO: and STAR | ... ? *)
+    -> Some (s, info)
+  | _ -> None
+
+let isRawStar x =
+  match isRawIdent x with
+  | Some (s, _) -> s = "*" (* AST: raw.STAR *)
+  | _ -> false
+let isRawBar x =
+  match isRawIdent x with
+  | Some (s, _) -> s = "|" (* AST: raw.STAR *)
+  | _ -> false
+
 let isLiteral = function
   | IntegerLiteral(_)
   | FloatingPointLiteral(_)
@@ -223,7 +238,6 @@ let isTemplateIntro = function
 let isDclIntro = function
   | Kval _ | Kvar _ | Kdef _ | Ktype _ -> true
   | _ -> false
-
 
 let isExprIntro x =
   isIdentBool x || isLiteral x ||

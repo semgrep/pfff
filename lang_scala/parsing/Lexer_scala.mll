@@ -105,7 +105,7 @@ let op = '/'
        | op_nodiv
        | op_nodiv op_nodivstar opchar*
 
-let idrest = (letter | digit)* ('_' | op)?
+let idrest = (letter | digit)* ('_' op)?
 
 let varid = lower idrest
 let _boundvarid = varid | '`' varid '`'
