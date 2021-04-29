@@ -347,6 +347,8 @@ let path ~thisOK ~typeOK in_ =
 *)
 let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
+let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
+let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Parsing types  *)
@@ -718,11 +720,31 @@ and parseThrow in_ =
 and statement (location: location) (in_: env) =
   expr ~location in_
 
-and block in_ =
-  failwith "block"
+(** {{{
+ *  Block ::= BlockStatSeq
+ *  }}}
+ *  @note  Return tree does not carry position.
+*)
 
+and block in_ =
+  let xs = !blockStatSeq_ in_ in
+  (* AST: makeBlock(xs) *)
+  ()
+
+(** {{{
+  *  BlockExpr ::= `{` (CaseClauses | Block) `}`
+  *  }}}
+*)
 and blockExpr in_ =
-  failwith "blockExpr"
+  inBraces (fun in_ ->
+    match in_.token with
+    | Kcase _ ->
+        let xs = caseClauses in_ in
+        (* AST: Match(EmptyTree, xs *)
+        ()
+    | _ -> block in_
+  ) in_
+
 
 (*****************************************************************************)
 (* Parsing annotations  *)
@@ -913,6 +935,20 @@ let modifiers in_ =
   in
   (* AST: NoMods *)
   loop []
+
+(** {{{
+ *  LocalModifiers ::= {LocalModifier}
+ *  LocalModifier  ::= abstract | final | sealed | implicit | lazy
+ *  }}}
+*)
+let localModifiers in_ =
+  let rec loop mods in_ =
+    if TH.isLocalModifier in_.token then
+      let mods = addMod mods in_.token in_ in
+      loop mods in_
+    else mods
+  in
+  loop [] in_
 
 
 (*****************************************************************************)
@@ -1154,8 +1190,21 @@ let nonLocalDefOrDcl in_ =
   (* AST: mods withAnnotations annots *)
   defOrDcl mods in_
 
+let localDef implicitMod in_ =
+  let annots = annotations ~skipNewLines:true in_ in
+  let mods = localModifiers in_ in
+  (* AST: let mods = mods | implicitMod withAnnotations annots *)
+  (* crazy? parsing depends on AST *)
+  let defs =
+    (* TODO !(mods hasFlag ~(Flags.IMPLICIT | Flags.LAZY))) *)
+    defOrDcl mods in_
+    (* TODO: else tmplDef mods in_ *)
+  in
+  defs
+(* AST: if RBRACE | CASE defs :+ literalUnit *)
+
 (*****************************************************************************)
-(* Parsing Template (classes/traits/objects)  *)
+(* Parsing XxxStat and XxxStats  *)
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
@@ -1178,7 +1227,60 @@ let statSeq ?(errorMsg="illegal start of definition") stat in_ =
   !stats
 
 (* ------------------------------------------------------------------------- *)
-(* "Template" *)
+(* BlockStat *)
+(* ------------------------------------------------------------------------- *)
+(** {{{
+  *  BlockStatSeq ::= { BlockStat semi } [ResultExpr]
+  *  BlockStat    ::= Import
+  *                 | Annotations [implicit] [lazy] Def
+  *                 | Annotations LocalModifiers TmplDef
+  *                 | Expr1
+  *                 |
+  *  }}}
+*)
+
+let blockStatSeq in_ =
+  let acceptStatSepOptOrEndCase in_ =
+    if not (TH.isCaseDefEnd in_.token)
+    then acceptStatSepOpt in_
+  in
+  let stats = ref [] in
+  while not (TH.isStatSeqEnd in_.token) && not (TH.isCaseDefEnd in_.token) do
+    match in_.token with
+    | Kimport _ ->
+        let xs = importClause in_ in
+        stats ++= xs;
+        acceptStatSepOptOrEndCase in_
+    | t when TH.isDefIntro t || TH.isLocalModifier t || TH.isAnnotation t ->
+        (match in_.token with
+         | Kimplicit _ ->
+             skipToken in_;
+             let xs =
+               if TH.isIdentBool in_.token
+               then implicitClosure InBlock in_
+               else localDef ()(*AST: Flags.IMPLICIT*) in_
+             in
+             stats ++= xs
+         | _ ->
+             let xs = localDef () in_ in
+             stats ++= xs
+        );
+        acceptStatSepOptOrEndCase in_
+    | t when TH.isExprIntro t ->
+        let x = statement InBlock in_ in
+        stats += x;
+        acceptStatSepOptOrEndCase in_
+    | t when TH.isStatSep t ->
+        nextToken in_
+    | t when TH.isModifier t ->
+        error "no modifiers allowed here" in_
+    | _ ->
+        error "illegal start of statement" in_
+  done;
+  !stats
+
+(* ------------------------------------------------------------------------- *)
+(* TemplateStat *)
 (* ------------------------------------------------------------------------- *)
 
 (** {{{
@@ -1206,6 +1308,44 @@ let templateStat in_ =
 
 let templateStats in_ =
   statSeq templateStat in_
+
+(* ------------------------------------------------------------------------- *)
+(* TopStat *)
+(* ------------------------------------------------------------------------- *)
+
+(** {{{
+ *  TopStatSeq ::= TopStat {semi TopStat}
+ *  TopStat ::= Annotations Modifiers TmplDef
+ *            | Packaging
+ *            | package object ObjectDef
+ *            | Import
+ *            |
+ *  }}}
+*)
+let topStat in_ =
+  match in_.token with
+  | Kpackage _ ->
+      skipToken in_;
+      let x = packageOrPackageObject in_ in
+      Some () (* AST: x::Nil *)
+  | Kimport _ ->
+      let x = importClause in_ in
+      Some () (* AST: x *)
+  | t when TH.isAnnotation t || TH.isTemplateIntro t || TH.isModifier t ->
+      let x = !topLevelTmplDef_ in_ in
+      Some () (* x :: Nil *)
+  | _ -> None
+
+let topStatSeq in_ =
+  statSeq ~errorMsg:"expected class or object definition" topStat in_
+
+(*****************************************************************************)
+(* Parsing Template (classes/traits/objects)  *)
+(*****************************************************************************)
+
+(* ------------------------------------------------------------------------- *)
+(* "Template" *)
+(* ------------------------------------------------------------------------- *)
 
 (** {{{
  *  TemplateStatSeq  ::= [id [`:` Type] `=>`] TemplateStats
@@ -1352,7 +1492,7 @@ let objectDef mods (* isPackageObject=false *) in_ =
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
 (* ------------------------------------------------------------------------- *)
-let classDef in_ =
+let classDef mods in_ =
   failwith "classDef"
 
 (* ------------------------------------------------------------------------- *)
@@ -1366,9 +1506,10 @@ let classDef in_ =
  *  }}}
 *)
 let tmplDef mods in_ =
+  (* CHECK: "classes cannot be lazy" *)
   match in_.token with
-  | Ktrait _ -> classDef in_
-  | Kclass _ -> classDef in_
+  | Ktrait _ -> classDef mods (* AST: | TRAIT | ABSTRACT *) in_
+  | Kclass _ -> classDef mods in_
   (* Caseclass -> classDef in_ *)
   | Kobject _ -> objectDef mods in_
   (* Caseobject -> objectDef in_ *)
@@ -1386,32 +1527,6 @@ let topLevelTmplDef in_ =
   let x = tmplDef mods in_ in
   x
 
-(** {{{
- *  TopStatSeq ::= TopStat {semi TopStat}
- *  TopStat ::= Annotations Modifiers TmplDef
- *            | Packaging
- *            | package object ObjectDef
- *            | Import
- *            |
- *  }}}
-*)
-let topStat in_ =
-  match in_.token with
-  | Kpackage _ ->
-      skipToken in_;
-      let x = packageOrPackageObject in_ in
-      Some () (* AST: x::Nil *)
-  | Kimport _ ->
-      let x = importClause in_ in
-      Some () (* AST: x *)
-  | t when TH.isAnnotation t || TH.isTemplateIntro t || TH.isModifier t ->
-      let x = topLevelTmplDef in_ in
-      Some () (* x :: Nil *)
-  | _ -> None
-
-let topStatSeq in_ =
-  statSeq ~errorMsg:"expected class or object definition" topStat in_
-
 (*****************************************************************************)
 (* Entry point  *)
 (*****************************************************************************)
@@ -1420,6 +1535,9 @@ let topStatSeq in_ =
 let _ =
   template_ := template;
   tmplDef_ := tmplDef;
+  blockStatSeq_ := blockStatSeq;
+  topLevelTmplDef_ := topLevelTmplDef;
+
   ()
 
 (** {{{

@@ -222,12 +222,14 @@ let isAnnotation = function
 
 
 let isModifier = function
-  | Kabstract _ | Kfinal _ | Ksealed _ | Kprivate _
-  | Kprotected _ | Koverride _ | Kimplicit _ | Klazy _ -> true
+  | Kabstract _ | Kfinal _ | Ksealed _
+  | Kprivate _  | Kprotected _ | Koverride _
+  | Kimplicit _ | Klazy _ -> true
   | _ -> false
 
 let isLocalModifier = function
-  | Kabstract _ | Kfinal _ | Ksealed _ | Kimplicit _ | Klazy _ -> true
+  | Kabstract _ | Kfinal _ | Ksealed _
+  | Kimplicit _ | Klazy _ -> true
   | _ -> false
 
 let isTemplateIntro = function
@@ -254,6 +256,10 @@ let isExprIntro x =
 
 let isDefIntro x =
   isTemplateIntro x || isDclIntro x
+
+let isCaseDefEnd = function
+  | RBRACE _ | Kcase _ | EOF _ -> true
+  | _ -> false
 
 let raw_isUnary _s =
   Common.pr2_once "TODO: raw_isUnary";
