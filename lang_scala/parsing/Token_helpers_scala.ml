@@ -249,3 +249,11 @@ let isUnaryOp x =
   match isIdent x with
   | None -> false
   | Some (s, _) -> raw_isUnary s
+
+(* TODO? correct? *)
+let nme_MACROkw = "macro"
+
+let isMacro x =
+  match isIdent x with
+  | None -> false
+  | Some (s, _) -> s = nme_MACROkw

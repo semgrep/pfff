@@ -135,6 +135,9 @@ let rec nextToken in_ =
            in_.token <- other;
       )
 
+let nextTokenAllow next in_ =
+  failwith "nextTokenAllow"
+
 (* was called in.next.token *)
 let rec next_next_token in_ =
   match in_.rest with
@@ -278,6 +281,17 @@ let ident in_ =
   | None ->
       error "expecting ident" in_
 
+let rawIdent in_ =
+  (* AST: in.name *)
+  let s = "" in
+  nextToken in_;
+  "", Parse_info.fake_info "RAW"
+
+let identOrMacro in_ =
+  if (TH.isMacro in_.token)
+  then ident in_
+  else rawIdent in_
+
 let wildcardOrIdent in_ =
   match in_.token with
   | USCORE ii ->
@@ -331,6 +345,7 @@ let path ~thisOK ~typeOK in_ =
  * to reduce those set of mutual dependencies
 *)
 let template_ = ref (fun _ -> failwith "forward ref not set")
+let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Parsing types  *)
@@ -343,12 +358,18 @@ let startAnnotType in_ =
 let typeOrInfixType location in_ =
   failwith "typeOrInfixType"
 
+let typedOpt in_ =
+  failwith "typedOpt"
+
 (*****************************************************************************)
 (* Parsing patterns  *)
 (*****************************************************************************)
 
 let caseClauses in_ =
   failwith "caseClauses"
+
+let patDefOrDcl mods in_ =
+  failwith "patDefOrDcl"
 
 (*****************************************************************************)
 (* Parsing expressions  *)
@@ -433,10 +454,10 @@ and parseOther location (in_: env) =
        ()
    | _ -> ()
   );
-  (* // AST: disambiguate between self types "x: Int =>" and orphan function
-   * // literals "(x: Int) => ???"
-   * // "(this: Int) =>" is parsed as an erroneous function literal but emits
-   * // special guidance on what's probably intended.
+  (* AST: disambiguate between self types "x: Int =>" and orphan function
+   * literals "(x: Int) => ???"
+   * "(this: Int) =>" is parsed as an erroneous function literal but emits
+   * special guidance on what's probably intended.
   *)
   (* crazy: another parsing depending on the AST! crazy *)
   let lhsIsTypedParamList x =
@@ -772,24 +793,24 @@ let importExpr in_ =
   let rec loop expr in_ =
     let selectors =
       match in_.token with
-      | USCORE _ -> [wildImportSelector in_] (* // import foo.bar._; *)
-      | LBRACE _ -> importSelectors in_  (* // import foo.bar.{ x, y, z } *)
+      | USCORE _ -> [wildImportSelector in_] (* import foo.bar._; *)
+      | LBRACE _ -> importSelectors in_  (* import foo.bar.{ x, y, z } *)
       | _ ->
           let name = ident in_ in
           (match in_.token with
            | DOT _ ->
-               (* // import foo.bar.ident.<unknown> and so create a select node and recurse. *)
+               (* import foo.bar.ident.<unknown> and so create a select node and recurse. *)
                (* AST: (Select(expr, name)) *)
                let t = expr in
                nextToken in_;
                loop t in_
            | _ ->
-               (* // import foo.bar.Baz; *)
+               (* import foo.bar.Baz; *)
                (* AST: List(makeImportSelector(name, nameOffset)) *)
                []
           )
     in
-    (* // reaching here means we're done walking. *)
+    (* reaching here means we're done walking. *)
     (* AST: Import(expr, selectors) *)
     []
   in
@@ -892,16 +913,107 @@ let modifiers in_ =
 (* AST: convert tree to parameter *)
 (* CHECK: Tuples cannot be directly destructured in method ... *)
 (* CHECK: "identifier expected" *)
+let paramClauses ~ofCaseClass name contextBoundBuf in_ =
+  failwith "paramClauses"
+
+(* ------------------------------------------------------------------------- *)
+(* Type Parameter *)
+(* ------------------------------------------------------------------------- *)
+let typeParamClauseOpt name contextBoundBuf in_ =
+  failwith "typeParamClauseOpt"
 
 (* ------------------------------------------------------------------------- *)
 (* Def *)
 (* ------------------------------------------------------------------------- *)
 
+(** {{{
+ *  FunDef ::= FunSig [`:` Type] `=` [`macro`] Expr
+ *          |  FunSig [nl] `{` Block `}`
+ *          |  `this` ParamClause ParamClauses
+ *                 (`=` ConstrExpr | [nl] ConstrBlock)
+ *  FunDcl ::= FunSig [`:` Type]
+ *  FunSig ::= id [FunTypeParamClause] ParamClauses
+ *  }}}
+*)
+let funDefRest mods name in_ =
+  let newmods = ref mods in
+  (* contextBoundBuf is for context bounded type parameters of the form
+   * [T : B] or [T : => B]; it contains the equivalent implicit parameter type,
+   * i.e. (B[T] or T => B)
+  *)
+  let contextBoundBuf = [] in
+  let tparams = typeParamClauseOpt name contextBoundBuf in_ in
+  let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  let restype = (* AST: fromWithinReturnType *) typedOpt in_ in
+
+  let rhs =
+    match in_.token with
+    | t when TH.isStatSep t || t =~= (RBRACE ab) ->
+        (* CHECK: if restype = None then deprecated missing type, use : Unit *)
+        (* AST: EmptyTree, newmods |= DEFERRED *)
+        ()
+    | LBRACE _ when restype = None ->
+        (* CHECK: missing type *)
+        blockExpr in_
+    | EQUALS _ ->
+        nextTokenAllow TH.nme_MACROkw in_;
+        if (TH.isMacro in_.token) then begin
+          nextToken in_;
+          (* AST: newmmods |= MACRO *)
+        end;
+        expr in_
+    | _ -> accept (EQUALS ab) in_ (* generate error message *)
+  in
+  (* AST: DefDef(newmods, name.toTermName, tparams, vparamss, restype, rhs) *)
+  (* CHECK: "unary prefix operator definition with empty parameter list ..."*)
+  ()
+
+let funDefOrDcl mods in_ =
+  nextToken in_;
+  match in_.token with
+  | Kthis _ ->
+      failwith "funDefOrDcl this"
+  | _ ->
+      let name = identOrMacro in_ in
+      funDefRest mods name in_
+
+(*****************************************************************************)
+(* Parsing types definitions or declarations  *)
+(*****************************************************************************)
+let typeDefOrDcl mods in_ =
+  failwith "typeDefOrDcl"
+
 (*****************************************************************************)
 (* Parsing Def or Dcl  *)
 (*****************************************************************************)
+
+(** {{{
+ *  Def    ::= val PatDef
+ *           | var PatDef
+ *           | def FunDef
+ *           | type [nl] TypeDef
+ *           | TmplDef
+ *  Dcl    ::= val PatDcl
+ *           | var PatDcl
+ *           | def FunDcl
+ *           | type [nl] TypeDcl
+ *  }}}
+*)
+let defOrDcl mods in_ =
+  (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
+  match in_.token with
+  | Kval _ -> patDefOrDcl mods (* AST: and VAL *) in_
+  | Kvar _ -> patDefOrDcl mods (* AST: and VAR and Mutable *) in_
+  | Kdef _ -> funDefOrDcl mods (* AST: and DEF *) in_
+  | Ktype _ -> typeDefOrDcl mods (* AST: and TYPE *) in_
+  | _ -> !tmplDef_ mods in_
+
 let nonLocalDefOrDcl in_ =
-  failwith "nonLocalDefOrDcl"
+  let annots = annotations ~skipNewLines:true in_ in
+  let mods = modifiers in_ in
+  (* AST: mods withAnnotations annots *)
+  defOrDcl mods in_
 
 (*****************************************************************************)
 (* Parsing Template (classes/traits/objects)  *)
@@ -1168,6 +1280,7 @@ let topStatSeq in_ =
 (* set the forward reference *)
 let _ =
   template_ := template;
+  tmplDef_ := tmplDef;
   ()
 
 (** {{{

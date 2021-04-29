@@ -4,7 +4,11 @@
 
 import math._
 
-def mathFunction(num: Int) = {
-  val numSquare = num*num
-  (cbrt(numSquare) + log(numSquare)).toInt
+object Foo {
+
+  def mathFunction(num: Int) = {
+    val numSquare = num*num
+      (cbrt(numSquare) + log(numSquare)).toInt
+  }
+
 }

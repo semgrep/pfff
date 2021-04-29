@@ -284,6 +284,8 @@ rule token = parse
         | "lazy"    -> Klazy t
         | "yield"    -> Kyield t
 
+        (* missing? "macro"? *)
+
         | _          -> ID_LOWER (s, t)
     }
 
