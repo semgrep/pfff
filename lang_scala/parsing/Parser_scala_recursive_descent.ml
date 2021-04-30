@@ -25,8 +25,13 @@ open Parser_scala
  * compiler source, to OCaml.
  *
  * alt:
- *  - use Parsers.scala of dotty?
- *  - use the one in scalameta?
+ *  - use Parsers.scala of dotty? longer source, and most code out there
+ *    is still Scala2 code, so better for semgrep to use Scala 2 first.
+ *  - use the one in scalameta? The code looks cleaner, but it handles
+ *    more constructs because it handles also Scala3 (so it needs to manage
+ *    indent/outdent). It might have been a better basis though, because on
+ *    a second look (thx to Nathan) the code is far cleaner than Parsers.scala
+ *    in the Scala 2 compiler source.
  *
  * Note that parsing Scala is difficult. See the crazy: tag in this file.
  *
@@ -43,14 +48,11 @@ open Parser_scala
  *       CHECK: "unbound placeholder paramter"
  *       CHECK: "unbound wildcard type"
  *  - error recovery (skipping parens, braces, etc.)
- *  - advanced error diagnosis: lots of variants, deprecationWarning,
- *    syntaxError, expecting X but got Y, etc.
+ *  - advanced error diagnosis: lots of variants (deprecationWarning,
+ *    syntaxError, expecting X but got Y, etc)
  *  - position/offset management (just use position info in the token, easier)
  *
 *)
-
-(* ok with partial match for all those accept *)
-[@@@warning "-8"]
 
 (* TODO: temporary *)
 [@@@warning "-39-21-27-26-37-32"]
@@ -196,7 +198,8 @@ let newLineOptWhenFollowedBy token in_ =
   | _ -> ()
 
 let newLineOptWhenFollowing token in_ =
-  failwith "newLineOptWhenFollowing"
+  pr2_once "newLineOptWhenFollowing: TODO";
+  newLineOpt in_
 
 (* ------------------------------------------------------------------------- *)
 (* Trailing commas  *)
@@ -208,6 +211,13 @@ let skipTrailingComma right in_ =
       failwith "skipTrailingComma"
   | _ ->
       ()
+
+(* ------------------------------------------------------------------------- *)
+(* noSeq  *)
+(* ------------------------------------------------------------------------- *)
+let noSeq f in_ =
+  pr2_once "noSeq: TODO";
+  f in_
 
 (*****************************************************************************)
 (* Grammar helpers  *)
@@ -311,7 +321,9 @@ let selectors ~typeOK id in_ =
   failwith "selectors"
 
 let selector t in_ =
-  failwith "selector"
+  let id = ident in_ in
+  (* AST: Select(t, id) *)
+  ()
 
 (** {{{
  *   QualId ::= Id {`.` Id}
@@ -381,11 +393,33 @@ let typedOpt in_ =
 (* Parsing patterns  *)
 (*****************************************************************************)
 
+(** {{{
+ *  Pattern3    ::= SimplePattern
+ *                |  SimplePattern {Id [nl] SimplePattern}
+ *  }}}
+*)
+let pattern3 in_ =
+  pr2_once "pattern3: TODO";
+  ident in_
+
+(** {{{
+ *  Pattern2    ::=  id  `@` Pattern3
+ *                |  `_` `@` Pattern3
+ *                |   Pattern3
+ *  }}}
+*)
+let pattern2 in_ =
+  let x = pattern3 in_ in
+  match in_.token with
+  | AT _ -> (* TODO: case p @ Ident(name) *)
+      nextToken in_;
+      let body = pattern3 in_ in
+      (* AST: Bind(name, body), if WILDCARD then ... *)
+      body
+  | _ -> x
+
 let caseClauses in_ =
   failwith "caseClauses"
-
-let patDefOrDcl mods in_ =
-  failwith "patDefOrDcl"
 
 (*****************************************************************************)
 (* Parsing expressions  *)
@@ -900,6 +934,7 @@ let accessQualifierOpt mods in_ =
             ()
        );
        accept (RBRACKET ab) in_
+   | _ -> ()
   );
   !result
 
@@ -1162,6 +1197,41 @@ let typeDefOrDcl mods in_ =
 (*****************************************************************************)
 (* Parsing Def or Dcl  *)
 (*****************************************************************************)
+
+(** {{{
+  *  PatDef ::= Pattern2 {`,` Pattern2} [`:` Type] `=` Expr
+  *  ValDcl ::= Id {`,` Id} `:` Type
+  *  VarDef ::= PatDef | Id {`,` Id} `:` Type `=` `_`
+  *  }}}
+*)
+let patDefOrDcl mods in_ =
+  let newmods = ref mods in
+  nextToken in_;
+  let lhs =
+    commaSeparated (fun in_ ->
+      let x = noSeq pattern2 in_ in
+      stripParens x
+    ) in_ in
+  let tp = typedOpt in_ in
+  let rhs =
+    match in_.token with
+    | EQUALS _ ->
+        nextToken in_;
+        let e = expr in_ in
+        (* CHECK: "default initialization prohibited for literal-typed vars"*)
+        (* AST: newmods |= DEFAULTINIT *)
+        Some e
+    | _ ->
+        (* CHECK: if tp.isEmpty then accept EQUALS (* raise error *) *)
+        (* AST: newmods |= DEFERRED *)
+        None (* AST: EmptyTree *)
+  in
+  (* CHECK: ensureNonOverlapping *)
+  (* CHECK: "lazy values may not be abstract" *)
+  (* CHECK: "pattern definition may not be abstract" *)
+  (* AST: mkDefs (...) *)
+  ()
+
 
 (** {{{
  *  Def    ::= val PatDef

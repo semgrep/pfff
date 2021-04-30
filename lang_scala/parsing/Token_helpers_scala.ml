@@ -175,7 +175,11 @@ let isIdent = function
   | OP (s, info)
     ->
       Some (s, info)
+  | STAR info -> Some ("*", info)
+  | PLUS info -> Some ("+", info)
+  | MINUS info -> Some ("-", info)
   | _ -> None
+
 let isIdentBool x =
   isIdent x <> None
 

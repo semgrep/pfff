@@ -200,7 +200,9 @@ rule token = parse
   | ':'     { COLON (tokinfo lexbuf) }
   | '='     { EQUALS (tokinfo lexbuf) }
 
-  (* conflict with op? *)
+  (* Those characters can be part of an operator. Conflict with op?
+   * Only 'paren' and 'delim' above can't be part of an operator.
+  *)
   | '+'     { PLUS (tokinfo lexbuf) }
   | '-'     { MINUS (tokinfo lexbuf) }
   | '*'     { STAR (tokinfo lexbuf) }
@@ -209,6 +211,7 @@ rule token = parse
   | '#'     { SHARP (tokinfo lexbuf) }
   | '~'     { TILDE (tokinfo lexbuf) }
   | '|'     { PIPE (tokinfo lexbuf) }
+
   | '_'     { USCORE (tokinfo lexbuf) }
 
   | "<%"    { LESSPERCENT (tokinfo lexbuf) }
