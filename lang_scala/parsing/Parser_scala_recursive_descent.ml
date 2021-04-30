@@ -57,7 +57,7 @@ let logger = Logging.get_logger [__MODULE__]
 *)
 
 (* TODO: temporary *)
-[@@@warning "-27-26-37-32"]
+[@@@warning "-27-26"]
 
 let debug_lexer = ref true
 
@@ -122,40 +122,47 @@ let (+=) aref x =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* Token lookahead *)
+(* Newline management part2  *)
 (* ------------------------------------------------------------------------- *)
+let adjustSepRegions lastToken in_ =
+  pr2_once "adjustSepRegions"
 
-let rec nextToken in_ =
+(* ------------------------------------------------------------------------- *)
+(* fetchToken *)
+(* ------------------------------------------------------------------------- *)
+let rec fetchToken in_ =
   match in_.rest with
-  | [] -> failwith "nextToken: no more tokens"
+  | [] -> failwith "fetchToken: no more tokens"
   | x::xs ->
       if !debug_lexer
       then pr2_gen x;
       in_.rest <- xs;
+
       (match x with
        | Space _ | Comment _ ->
-           nextToken in_
-       (* TODO: lots of condition on when to do that *)
+           fetchToken in_
        | Nl x ->
-           in_.token <- NEWLINE x
+           fetchToken in_
 
        | other ->
            in_.token <- other;
       )
 
+(* ------------------------------------------------------------------------- *)
+(* nextToken *)
+(* ------------------------------------------------------------------------- *)
+
+let nextToken in_ =
+  let lastToken = in_.token in
+  adjustSepRegions lastToken in_;
+  (* TODO: if inStringInterpolation fetchStringPart else *)
+  fetchToken in_;
+  (* TODO: lots of conditions to possibly reinsert newline *)
+  ()
+
 let nextTokenAllow next in_ =
   pr2 "nextTokenAllow: TODO";
   nextToken in_
-
-(* was called in.next.token *)
-let (*rec*) next_next_token in_ =
-  match in_.rest with
-  | [] -> failwith "in_next_token: no more tokens"
-  (* TODO: also skip spacing and stuff? *)
-  | x::xs -> x
-
-let lookingAhead f in_ =
-  failwith "lookingAhead"
 
 let skipToken in_ =
   nextToken in_
@@ -173,12 +180,27 @@ let accept t in_ =
    | _ -> nextToken in_
   )
 
+(* ------------------------------------------------------------------------- *)
+(* looking Ahead *)
+(* ------------------------------------------------------------------------- *)
+
+(* was called in.next.token *)
+let (*rec*) next_next_token in_ =
+  match in_.rest with
+  | [] -> failwith "in_next_token: no more tokens"
+  (* TODO: also skip spacing and stuff? *)
+  | x::xs -> x
+
+let lookingAhead f in_ =
+  failwith "lookingAhead"
+
+
 (*****************************************************************************)
 (* Special parsing  *)
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* Newline management  *)
+(* Newline management part2  *)
 (* ------------------------------------------------------------------------- *)
 
 (** {{{
@@ -255,6 +277,7 @@ let inBracesOrNil = inBraces
 
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
+  logger#info "%s(%s): %s" "separatedTopen" (Common.dump sep) (tokstr in_);
   let ts = ref [] in
   while in_.token =~= sep do
     nextToken in_;
@@ -381,7 +404,7 @@ let pkgQualId in_ =
  *  }}}
 *)
 let path ~thisOK ~typeOK in_ =
-  logger#info "%s: %s thisOK:%b, typeOK:%b" "path" (tokstr in_) thisOK typeOK;
+  logger#info "%s(thisOK:%b, typeOK:%b): %s" "path" thisOK typeOK (tokstr in_);
   let t = ref () in
   match in_.token with
   | Kthis _ -> failwith "path.this"
@@ -505,6 +528,7 @@ and types in_ =
 (* ------------------------------------------------------------------------- *)
 
 let typ x = outPattern typ x
+let exprSimpleType x = outPattern simpleType x
 
 let typeOrInfixType location in_ =
   failwith "typeOrInfixType"
@@ -564,7 +588,7 @@ let caseClauses in_ =
 (* ------------------------------------------------------------------------- *)
 (* Outside ??? *)
 (* ------------------------------------------------------------------------- *)
-let pattern in_ =
+let _pattern in_ =
   noSeq pattern in_
 
 (*****************************************************************************)
@@ -598,7 +622,7 @@ let rec expr ?(location=Local) (in_: env) =
   expr0 location in_
 
 and expr0 (location: location) (in_: env) =
-  logger#info "%s: %s (location = %s)" "expr0" (show_location location) (tokstr in_) ;
+  logger#info "%s(location = %s): %s " "expr0" (show_location location) (tokstr in_) ;
   match in_.token with
   | Kif _ -> parseIf in_
   | Ktry _ -> parseTry in_
@@ -772,6 +796,8 @@ and simpleExpr in_ : unit =
  *  }}}
 *)
 and literal ?(isNegated=false) ?(inPattern=false) in_ =
+  logger#info "%s(isNegated:%b, inPattern:%b): %s" "literal"
+    isNegated inPattern (tokstr in_);
   let finish value_ =
     (* AST: newLiteral(value) *)
     nextToken in_;
@@ -842,7 +868,12 @@ and freshPlaceholder in_ =
 (* Arguments *)
 (* ------------------------------------------------------------------------- *)
 and multipleArgumentExprs in_ =
-  failwith "multipleArgumentExprs"
+  match in_.token with
+  | LPAREN _ ->
+      let x = argumentExprs in_ in
+      let xs = multipleArgumentExprs in_ in
+      x::xs
+  | _ -> []
 
 (** {{{
  *  ArgumentExprs ::= `(` [Exprs] `)`
@@ -941,14 +972,21 @@ and readAnnots part in_ =
  *  }}}
 *)
 and annotationExpr in_ =
-  failwith "annotationExpr"
+  let t = exprSimpleType in_ in
+  if in_.token =~= (LPAREN ab)
+  then
+    let xs = multipleArgumentExprs in_ in
+    (* AST: New (t, xs) *)
+    ()
+  else () (* AST: New(t, Nil) *)
 
 and annotations ~skipNewLines in_ =
+  logger#info "%s(skipNewLines:%b): %s " "annotations" skipNewLines (tokstr in_);
   readAnnots (fun in_ ->
     let t = annotationExpr in_ in
     if skipNewLines then newLineOpt in_;
     t
-  )
+  ) in_
 
 
 (** {{{
@@ -1425,12 +1463,14 @@ let defOrDcl mods in_ =
   | _ -> !tmplDef_ mods in_
 
 let nonLocalDefOrDcl in_ =
+  logger#info "%s: %s" "nonLocalDefOrDcl" (tokstr in_);
   let annots = annotations ~skipNewLines:true in_ in
   let mods = modifiers in_ in
   (* AST: mods withAnnotations annots *)
   defOrDcl mods in_
 
 let localDef implicitMod in_ =
+  logger#info "%s: %s" "localDef" (tokstr in_);
   let annots = annotations ~skipNewLines:true in_ in
   let mods = localModifiers in_ in
   (* AST: let mods = mods | implicitMod withAnnotations annots *)
