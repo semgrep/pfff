@@ -87,7 +87,7 @@ let visitor_info_of_tok f = function
   | USCORE(ii) -> USCORE(f ii)
   | TILDE(ii) -> TILDE(f ii)
   | STAR(ii) -> STAR(f ii)
-  | SHARP(ii) -> SHARP(f ii)
+  | HASH(ii) -> HASH(f ii)
   | SEMI(ii) -> SEMI(f ii)
 
   | LPAREN(ii) -> LPAREN(f ii)
@@ -211,6 +211,11 @@ let isLiteral = function
     -> true
   | _ -> false
 
+let isNumericLit = function
+  | IntegerLiteral(_)
+  | FloatingPointLiteral(_)
+    -> true
+  | _ -> false
 
 let isStatSep = function
   | NEWLINE _ | NEWLINES _ | SEMI _ -> true
@@ -223,7 +228,6 @@ let isStatSeqEnd = function
 let isAnnotation = function
   | AT _ -> true
   | _ -> false
-
 
 let isModifier = function
   | Kabstract _ | Kfinal _ | Ksealed _
@@ -281,3 +285,8 @@ let isMacro x =
   match isIdent x with
   | None -> false
   | Some (s, _) -> s = nme_MACROkw
+
+let isWildcardType = function
+  (* TODO: scala3 also accept '?' *)
+  | USCORE _ -> true
+  | _ -> false

@@ -208,7 +208,7 @@ rule token = parse
   | '*'     { STAR (tokinfo lexbuf) }
 
   | '!'     { BANG (tokinfo lexbuf) }
-  | '#'     { SHARP (tokinfo lexbuf) }
+  | '#'     { HASH (tokinfo lexbuf) }
   | '~'     { TILDE (tokinfo lexbuf) }
   | '|'     { PIPE (tokinfo lexbuf) }
 

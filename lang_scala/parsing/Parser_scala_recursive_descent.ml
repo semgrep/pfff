@@ -16,6 +16,8 @@ module T = Parser_scala
 module TH = Token_helpers_scala
 open Parser_scala
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -55,7 +57,7 @@ open Parser_scala
 *)
 
 (* TODO: temporary *)
-[@@@warning "-39-21-27-26-37-32"]
+[@@@warning "-27-26-37-32"]
 
 let debug_lexer = ref true
 
@@ -70,6 +72,9 @@ type env = {
   (* not in Scala implementation *)
   mutable rest: T.token list;
 }
+let tokstr env =
+  let info = TH.info_of_tok env.token in
+  Parse_info.str_of_info info
 
 let mk_env toks =
   match toks with
@@ -90,6 +95,7 @@ type location =
   | Local
   | InBlock
   | InTemplate
+[@@deriving show]
 
 (*****************************************************************************)
 (* Error management  *)
@@ -138,15 +144,18 @@ let rec nextToken in_ =
       )
 
 let nextTokenAllow next in_ =
-  pr2_once "nextTokenAllow: TODO";
+  pr2 "nextTokenAllow: TODO";
   nextToken in_
 
 (* was called in.next.token *)
-let rec next_next_token in_ =
+let (*rec*) next_next_token in_ =
   match in_.rest with
   | [] -> failwith "in_next_token: no more tokens"
   (* TODO: also skip spacing and stuff? *)
   | x::xs -> x
+
+let lookingAhead f in_ =
+  failwith "lookingAhead"
 
 let skipToken in_ =
   nextToken in_
@@ -198,7 +207,7 @@ let newLineOptWhenFollowedBy token in_ =
   | _ -> ()
 
 let newLineOptWhenFollowing token in_ =
-  pr2_once "newLineOptWhenFollowing: TODO";
+  pr2 "newLineOptWhenFollowing: TODO";
   newLineOpt in_
 
 (* ------------------------------------------------------------------------- *)
@@ -213,10 +222,14 @@ let skipTrailingComma right in_ =
       ()
 
 (* ------------------------------------------------------------------------- *)
-(* noSeq  *)
+(* Context sensitive parsing  *)
 (* ------------------------------------------------------------------------- *)
 let noSeq f in_ =
-  pr2_once "noSeq: TODO";
+  pr2 "noSeq: TODO";
+  f in_
+
+let outPattern f in_ =
+  pr2 "outPattern: TODO";
   f in_
 
 (*****************************************************************************)
@@ -317,13 +330,25 @@ let identForType in_ =
   (* AST: x.toTypeName *)
   x
 
-let selectors ~typeOK id in_ =
-  failwith "selectors"
-
 let selector t in_ =
   let id = ident in_ in
   (* AST: Select(t, id) *)
   ()
+
+let rec selectors ~typeOK t in_ =
+  match in_.token with
+  | Ktype _ when typeOK ->
+      nextToken in_;
+      (* AST: SingletonTypeTree(t) *)
+  | _ ->
+      let t1 = selector t in_ in
+      if in_.token =~= (DOT ab)
+      then begin
+        skipToken in_;
+        selectors ~typeOK t1 in_
+      end
+      else t1
+
 
 (** {{{
  *   QualId ::= Id {`.` Id}
@@ -332,6 +357,7 @@ let selector t in_ =
 let qualId in_ =
   (* AST: Ident(id) *)
   let id = ident in_ in
+  let id = () in (* TODO: AST Ident?) *)
   match in_.token with
   | DOT _ ->
       skipToken in_;
@@ -347,9 +373,32 @@ let pkgQualId in_ =
   pkg
 
 
+
+(** {{{
+ *  Path       ::= StableId
+ *              |  [Ident `.`] this
+ *  AnnotType ::= Path [`.` type]
+ *  }}}
+*)
 let path ~thisOK ~typeOK in_ =
-  pr2_once "TODO: path";
-  ident in_
+  logger#info "%s: %s thisOK:%b, typeOK:%b" "path" (tokstr in_) thisOK typeOK;
+  let t = ref () in
+  match in_.token with
+  | Kthis _ -> failwith "path.this"
+  | Ksuper _ -> failwith "path.super"
+  | _ ->
+      let name = ident in_ in
+      (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
+      if in_.token =~= (DOT ab) then begin
+        skipToken in_;
+        match in_.token with
+        | Kthis _ -> failwith "path.this 2"
+        | Ksuper _ -> failwith "path.super 2"
+        | _ ->
+            let x = selectors ~typeOK !t in_ in
+            t := x
+      end;
+      !t
 
 (*****************************************************************************)
 (* Forward references  *)
@@ -357,22 +406,105 @@ let path ~thisOK ~typeOK in_ =
 (* alt: have all functions mutually recursive, but it feels cleaner
  * to reduce those set of mutual dependencies
 *)
+(* less: move after types? after expr? *)
 let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
+(* less: for types, maybe could move literal up *)
+let literal_  =
+  ref (fun ?(isNegated=false) ?(inPattern=false) _ ->
+    failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Parsing types  *)
 (*****************************************************************************)
 
+let wildcardType in_ =
+  failwith "wildcardType"
+
+(* ------------------------------------------------------------------------- *)
+(* TODO: in PatternContextSensitive *)
+(* ------------------------------------------------------------------------- *)
+
 let typ in_ =
-  pr2_once "typ: TODO";
+  pr2 "typ: TODO";
   ident in_
 
-let startAnnotType in_ =
-  pr2_once "startAnnotType: TODO";
-  ident in_
+(** {{{
+ *  SimpleType       ::=  SimpleType TypeArgs
+ *                     |  SimpleType `#` Id
+ *                     |  StableId
+ *                     |  Path `.` type
+ *                     |  Literal
+ *                     |  `(` Types `)`
+ *                     |  WildcardType
+ *  }}}
+*)
+let rec simpleType in_ =
+  logger#info "%s: %s" "simpleType" (tokstr in_);
+  match in_.token with
+  | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
+      let x = !literal_ in_ in
+      (* AST: SingletonTypeTree(x) *)
+      ()
+  | MINUS _ when lookingAhead TH.isNumericLit in_ ->
+      nextToken in_;
+      let x = !literal_ ~isNegated:true in_ in
+      (* AST: SingletonTypeTree(x) *)
+      ()
+  | _ ->
+      let start =
+        match in_.token with
+        | LPAREN _ ->
+            (* CHECK: "Illegal literal type (), use Unit instead" *)
+            let xs = inParens types in_ in
+            (* AST: makeSafeTupleType *)
+            ()
+        | t when TH.isWildcardType t ->
+            skipToken in_;
+            wildcardType in_
+        | _ ->
+            let x = path ~thisOK:false ~typeOK:true in_ in
+            (* AST: convertToTypeId if not SingletonTypeTree *)
+            ()
+      in
+      simpleTypeRest start in_
+
+and simpleTypeRest t in_ =
+  match in_.token with
+  | HASH _ ->
+      let x = typeProjection t in_ in
+      simpleTypeRest x in_
+  | LBRACKET _ ->
+      let xs = typeArgs in_ in
+      let x = () in (* AST: AppliedTypeTree(t, xs) *)
+      simpleTypeRest x in_
+  | _ -> t
+
+and typeProjection t in_ =
+  failwith "typeProjection"
+
+(** {{{
+ *  TypeArgs    ::= `[` ArgType {`,` ArgType} `]`
+ *  }}}
+*)
+and typeArgs in_ =
+  inBrackets types in_
+
+(** {{{
+ *  Types ::= Type {`,` Type}
+ *  }}}
+*)
+and types in_ =
+  failwith "types"
+
+
+(* ------------------------------------------------------------------------- *)
+(* Outside PatternContextSensitive *)
+(* ------------------------------------------------------------------------- *)
+
+let typ x = outPattern typ x
 
 let typeOrInfixType location in_ =
   failwith "typeOrInfixType"
@@ -393,13 +525,21 @@ let typedOpt in_ =
 (* Parsing patterns  *)
 (*****************************************************************************)
 
+(* ------------------------------------------------------------------------- *)
+(* Inside ??? *)
+(* ------------------------------------------------------------------------- *)
+
+let pattern in_ =
+  logger#info "%s: %s" "pattern" (tokstr in_);
+  failwith "pattern"
+
 (** {{{
  *  Pattern3    ::= SimplePattern
  *                |  SimplePattern {Id [nl] SimplePattern}
  *  }}}
 *)
 let pattern3 in_ =
-  pr2_once "pattern3: TODO";
+  pr2 "pattern3: TODO";
   ident in_
 
 (** {{{
@@ -420,6 +560,12 @@ let pattern2 in_ =
 
 let caseClauses in_ =
   failwith "caseClauses"
+
+(* ------------------------------------------------------------------------- *)
+(* Outside ??? *)
+(* ------------------------------------------------------------------------- *)
+let pattern in_ =
+  noSeq pattern in_
 
 (*****************************************************************************)
 (* Parsing expressions  *)
@@ -452,6 +598,7 @@ let rec expr ?(location=Local) (in_: env) =
   expr0 location in_
 
 and expr0 (location: location) (in_: env) =
+  logger#info "%s: %s (location = %s)" "expr0" (show_location location) (tokstr in_) ;
   match in_.token with
   | Kif _ -> parseIf in_
   | Ktry _ -> parseTry in_
@@ -584,6 +731,7 @@ and prefixExpr in_ : unit =
  *  }}}
 *)
 and simpleExpr in_ : unit =
+  logger#info "%s: %s" "simpleExpr" (tokstr in_);
   let canApply = ref true in
   let t =
     match in_.token with
@@ -801,6 +949,26 @@ and annotations ~skipNewLines in_ =
     if skipNewLines then newLineOpt in_;
     t
   )
+
+
+(** {{{
+ *  AnnotType        ::=  SimpleType {Annotation}
+ *  }}}
+*)
+let annotTypeRest t in_ =
+  let xs = annotations ~skipNewLines:false in
+  (* AST: fold around t makeAnnotated *)
+  t
+
+(* TODO? was in PatternContextSensitive trait *)
+let annotType in_ =
+  (* CHECK: placeholderTypeBoundary *)
+  let x = simpleType in_ in
+  annotTypeRest x in_
+
+
+let startAnnotType in_ =
+  outPattern annotType in_
 
 (*****************************************************************************)
 (* Parsing directives  *)
@@ -1031,6 +1199,7 @@ let paramType ?(repeatedParameterOK=true) in_ =
 
 
 let param owner implicitmod caseParam in_ =
+  logger#info "%s: %s" "param" (tokstr in_);
   let annots = annotations ~skipNewLines:false in_ in
   let mods = ref [] (* AST: PARAM *) in
   (* AST: crazy?: if owner.isTypeName ... modifiers () *)
@@ -1246,6 +1415,7 @@ let patDefOrDcl mods in_ =
  *  }}}
 *)
 let defOrDcl mods in_ =
+  logger#info "%s: %s" "defOrDcl" (tokstr in_);
   (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
   match in_.token with
   | Kval _ -> patDefOrDcl mods (* AST: and VAL *) in_
@@ -1496,6 +1666,7 @@ let templateParents in_ =
  *  }}}
 *)
 let template in_ =
+  logger#info "%s: %s" "template" (tokstr in_);
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   match in_.token with
   | LBRACE _ ->
@@ -1607,7 +1778,7 @@ let _ =
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
-
+  literal_ := literal;
   ()
 
 (** {{{
@@ -1660,7 +1831,7 @@ let compilationUnit in_ =
     !ts
   in
   let xs = topstats in_ in
-  (* AST:  case ... makeEmptyPAckage ... *)
+  (* AST:  case ... makeEmptyPackage ... *)
   ()
 
 let parse toks =

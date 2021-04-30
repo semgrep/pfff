@@ -1,6 +1,9 @@
 package app
+
 import scalatags.Text.all._
+
 object MinimalApplication extends cask.MainRoutes {
+
   val bootstrap = "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.css"
 
   @cask.get("/")

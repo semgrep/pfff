@@ -159,7 +159,7 @@
 %token <Parse_info.t> STAR "*"
 
 %token <Parse_info.t> BANG "!"
-%token <Parse_info.t> SHARP "#"
+%token <Parse_info.t> HASH "#"
 %token <Parse_info.t> TILDE "~"
 %token <Parse_info.t> PIPE "|"
 %token <Parse_info.t> USCORE "_"
