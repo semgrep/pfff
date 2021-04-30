@@ -214,11 +214,11 @@ rule token = parse
 
   | '_'     { USCORE (tokinfo lexbuf) }
 
-  | "<%"    { LESSPERCENT (tokinfo lexbuf) }
-  | "<-"    { LESSMINUS (tokinfo lexbuf) }
-  | "<:"    { SUBTYPE (tokinfo lexbuf) }
+  | "<%"    { VIEWBOUND (tokinfo lexbuf) }
+  | "<-"    { LARROW (tokinfo lexbuf) }
   | "=>"    { ARROW (tokinfo lexbuf) }
-  | ">:"    { MORECOLON (tokinfo lexbuf) }
+  | "<:"    { SUBTYPE (tokinfo lexbuf) }
+  | ">:"    { SUPERTYPE (tokinfo lexbuf) }
 
   | "@"    { AT (tokinfo lexbuf) }
 

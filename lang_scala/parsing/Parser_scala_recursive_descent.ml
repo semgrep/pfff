@@ -36,6 +36,8 @@ let logger = Logging.get_logger [__MODULE__]
  *    in the Scala 2 compiler source.
  *
  * Note that parsing Scala is difficult. See the crazy: tag in this file.
+ * See also the newline: tag to see all the places where newlines are handled
+ * in a special way.
  *
  * TODO:
  *  - see the AST: tag for what Parsers.scala was doing to build an AST
@@ -60,6 +62,7 @@ let logger = Logging.get_logger [__MODULE__]
 [@@@warning "-27-26"]
 
 let debug_lexer = ref true
+let debug_newline = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -71,6 +74,9 @@ type env = {
 
   (* not in Scala implementation *)
   mutable rest: T.token list;
+  mutable passed: T.token list;
+
+  mutable last_nl: Parse_info.t option;
 }
 let tokstr env =
   let info = TH.info_of_tok env.token in
@@ -78,11 +84,15 @@ let tokstr env =
 
 let mk_env toks =
   match toks with
-  | [] -> failwith "empty list of tokens, impossible, should at least get EOF"
+  | [] ->
+      (* should at least get EOF from the lexer *)
+      raise Impossible
   | x::xs ->
       { token = x;
         (* assume we will call first nextToken on it *)
         rest = (x::xs);
+        passed = [];
+        last_nl = None;
       }
 
 let ab = Parse_info.abstract_info
@@ -122,42 +132,114 @@ let (+=) aref x =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* Newline management part2  *)
+(* newline: Newline management part1  *)
 (* ------------------------------------------------------------------------- *)
 let adjustSepRegions lastToken in_ =
   pr2_once "adjustSepRegions"
 
+(* newline: pad: I've added the ~newlines param to differentiante adding
+ * a NEWLINE or NEWLINES *)
+let insertNL ?(newlines=false) in_ =
+  logger#info "%s: %s" "insertNL" (tokstr in_);
+  logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
+  match in_.last_nl with
+  | None -> failwith "no last newline to insert back"
+  | Some x ->
+      in_.rest <- in_.token::in_.rest;
+      in_.token <- if newlines then NEWLINES x else NEWLINE x;
+      ()
+
+(** Is current token first one after a newline? *)
+let afterLineEnd in_ =
+  let rec loop passed =
+    match passed with
+    | x::xs ->
+        (match x with
+         | Nl _ | NEWLINE _ | NEWLINES _ -> true
+         | Space _ | Comment _ -> loop xs
+         | _ ->
+             if !debug_newline
+             then logger#info "%s: false because %s" "afterLineEnd" (Common.dump x);
+             false
+        )
+    | [] -> false
+  in
+  loop in_.passed
+  |> (fun b ->
+    if !debug_newline
+    then logger#info "%s: %s, result = %b" "afterLineEnd" (tokstr in_) b;
+    b)
+
+(* ------------------------------------------------------------------------- *)
+(* Lexing tricks *)
+(* ------------------------------------------------------------------------- *)
+let postProcessToken in_ =
+  pr2_once "postProcessToken";
+  ()
+
 (* ------------------------------------------------------------------------- *)
 (* fetchToken *)
 (* ------------------------------------------------------------------------- *)
-let rec fetchToken in_ =
-  match in_.rest with
-  | [] -> failwith "fetchToken: no more tokens"
-  | x::xs ->
-      if !debug_lexer
-      then pr2_gen x;
-      in_.rest <- xs;
+let fetchToken in_ =
 
-      (match x with
-       | Space _ | Comment _ ->
-           fetchToken in_
-       | Nl x ->
-           fetchToken in_
+  let rec loop aux =
+    match in_.rest with
+    | [] -> failwith "fetchToken: no more tokens"
+    | x::xs ->
+        if !debug_lexer then pr2_gen x;
 
-       | other ->
-           in_.token <- other;
-      )
+        in_.rest <- xs;
+
+        (match x with
+         | Space _ | Comment _ ->
+             loop (x::aux)
+         (* pad: the newline is skipped here, but reinserted conditionally in
+          * insertNL() *)
+         | Nl info ->
+             in_.last_nl <- Some info;
+             loop (x::aux)
+
+         (* those tokens are inserted post tokenization *)
+         | NEWLINE _ | NEWLINES _ ->
+             raise Impossible
+
+         | other ->
+             in_.passed <- aux @ in_.passed;
+             in_.token <- other;
+        )
+  in
+  loop [in_.token]
 
 (* ------------------------------------------------------------------------- *)
 (* nextToken *)
 (* ------------------------------------------------------------------------- *)
-
 let nextToken in_ =
   let lastToken = in_.token in
   adjustSepRegions lastToken in_;
   (* TODO: if inStringInterpolation fetchStringPart else *)
   fetchToken in_;
-  (* TODO: lots of conditions to possibly reinsert newline *)
+  (* Insert NEWLINE or NEWLINES if
+   * - we are after a newline
+   * - we are within a { ... } or on toplevel (wrt sepRegions)
+   * - the current token can start a statement and the one before can end it
+   * insert NEWLINES if we are past a blank line, NEWLINE otherwise
+  *)
+  (* newline: *)
+  if afterLineEnd in_ &&
+     TH.inLastOfStat lastToken &&
+     TH.inFirstOfStat in_.token &&
+     (* TODO: sepRegions stuff *)
+     (* TODO: not applyBracePatch *)
+     true
+  then begin
+    match () with
+    (* TODO: | _ when pastBlankLine in_ -> insertNL ~newlines:true in_ *)
+    (* TODO  | _ when TH.isLeadingInfixOperator *)
+    (* CHECK: scala3: "Line starts with an operator that in future" *)
+    | _ ->
+        insertNL in_
+  end;
+  postProcessToken in_;
   ()
 
 let nextTokenAllow next in_ =
@@ -200,7 +282,7 @@ let lookingAhead f in_ =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* Newline management part2  *)
+(* newline: Newline management part2  *)
 (* ------------------------------------------------------------------------- *)
 
 (** {{{
@@ -209,6 +291,7 @@ let lookingAhead f in_ =
  *  }}}
 *)
 let acceptStatSep in_ =
+  logger#info "%s: %s" "acceptStatSep" (tokstr in_);
   match in_.token with
   | NEWLINE _ | NEWLINES _ -> nextToken in_
   | _ -> accept (SEMI ab) in_
@@ -266,10 +349,13 @@ let inGroupers left right body in_ =
   res
 
 let inBraces f in_ =
+  logger#info "%s: %s" "inBraces" (tokstr in_);
   inGroupers (LBRACE ab) (RBRACE ab) f in_
 let inParens f in_ =
+  logger#info "%s: %s" "inParens" (tokstr in_);
   inGroupers (LPAREN ab) (RPAREN ab) f in_
 let inBrackets f in_ =
+  logger#info "%s: %s" "inBrackets" (tokstr in_);
   inGroupers (LBRACKET ab) (RBRACKET ab) f in_
 
 (* less: do actual error recovery? *)
@@ -824,6 +910,7 @@ and interpolatedString ~inPattern in_ =
   failwith "interpolatedString"
 
 and simpleExprRest ~canApply t in_ =
+  logger#info "%s(canApply:%b): %s" "simpleExprRest" canApply (tokstr in_);
   (* crazy: again parsing depending on AST *)
   if canApply then newLineOptWhenFollowedBy (LBRACE ab) in_;
 
@@ -1054,6 +1141,7 @@ let importSelectors in_ =
  *  }}}
 *)
 let importExpr in_ =
+  logger#info "%s: %s" "importExpr" (tokstr in_);
   let thisDotted _name in_ =
     nextToken in_;
     (* AST: val t = This(name) *)
@@ -1849,6 +1937,7 @@ let compilationUnit in_ =
                | EOF _ ->
                    let pack = () (* AST: makePackaging(pkg, []) *) in
                    ts += pack
+               (* newline: needed here otherwise parsed as package def *)
                | x when TH.isStatSep x ->
                    nextToken in_;
                    let xs = topstats in_ in
