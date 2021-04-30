@@ -11,4 +11,4 @@ commons commons_core
 )
 (ocamllex Lexer_scala)
 (menhir (modules Parser_scala)
-        (flags --unused-tokens --explain --fixed-exception))
+        (flags --unused-tokens --explain --fixed-exception --external-tokens Token_scala))

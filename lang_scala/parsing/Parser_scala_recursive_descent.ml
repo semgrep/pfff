@@ -12,9 +12,9 @@
  * file license.txt for more details.
 *)
 open Common
-module T = Parser_scala
+module T = Token_scala
 module TH = Token_helpers_scala
-open Parser_scala
+open Token_scala
 
 let logger = Logging.get_logger [__MODULE__]
 
@@ -78,9 +78,6 @@ type env = {
 
   mutable last_nl: Parse_info.t option;
 }
-let tokstr env =
-  let info = TH.info_of_tok env.token in
-  Parse_info.str_of_info info
 
 let mk_env toks =
   match toks with
@@ -108,6 +105,16 @@ type location =
 [@@deriving show]
 
 (*****************************************************************************)
+(* Dumpers  *)
+(*****************************************************************************)
+let tokstr env =
+  let info = TH.info_of_tok env.token in
+  Parse_info.str_of_info info
+
+let dump_token tok =
+  T.show tok
+
+(*****************************************************************************)
 (* Error management  *)
 (*****************************************************************************)
 let error x in_ =
@@ -126,6 +133,8 @@ let (++=) aref xs =
 
 let (+=) aref x =
   ()
+
+
 
 (*****************************************************************************)
 (* Token helpers  *)
@@ -159,7 +168,7 @@ let afterLineEnd in_ =
          | Space _ | Comment _ -> loop xs
          | _ ->
              if !debug_newline
-             then logger#info "%s: false because %s" "afterLineEnd" (Common.dump x);
+             then logger#info "%s: false because %s" "afterLineEnd" (dump_token x);
              false
         )
     | [] -> false
@@ -186,7 +195,7 @@ let fetchToken in_ =
     match in_.rest with
     | [] -> failwith "fetchToken: no more tokens"
     | x::xs ->
-        if !debug_lexer then pr2_gen x;
+        if !debug_lexer then logger#info "fetchToken: %s" (dump_token x);
 
         in_.rest <- xs;
 
@@ -256,7 +265,7 @@ let init in_ =
  * not there *)
 let accept t in_ =
   if not (in_.token =~= t)
-  then error (spf "was expecting: %s" (Common.dump t)) in_;
+  then error (spf "was expecting: %s" (dump_token t)) in_;
   (match t with
    | EOF _ -> ()
    | _ -> nextToken in_
@@ -363,7 +372,7 @@ let inBracesOrNil = inBraces
 
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
-  logger#info "%s(%s): %s" "separatedTopen" (Common.dump sep) (tokstr in_);
+  logger#info "%s(%s): %s" "separatedTopen" (dump_token sep) (tokstr in_);
   let ts = ref [] in
   while in_.token =~= sep do
     nextToken in_;

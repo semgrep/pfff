@@ -13,7 +13,7 @@
  * license.txt for more details.
 *)
 
-open Parser_scala
+open Token_scala
 module PI = Parse_info
 
 let logger = Logging.get_logger [__MODULE__]
