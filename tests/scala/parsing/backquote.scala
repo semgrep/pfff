@@ -15,7 +15,7 @@ object MinimalApplication extends cask.MainRoutes {
           h1("Scala Chat!"),
           div(
             p(b("alice"), " ", "Hello World!"),
-            p(b("bob"), " ", "I am cow, hear me moo"),
+            p(b("bob"), " ", "I am cow, hear me moo") // there was a trailing comma here before
           ),
           div(
             input(`type` := "text", placeholder := "User name"),
