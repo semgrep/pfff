@@ -16,7 +16,7 @@ module T = Token_scala
 module TH = Token_helpers_scala
 open Token_scala
 
-let logger = Logging.get_logger [__MODULE__]
+let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -61,7 +61,7 @@ let logger = Logging.get_logger [__MODULE__]
 (* TODO: temporary *)
 [@@@warning "-27-26"]
 
-let debug_lexer = ref true
+let debug_lexer = ref false
 let debug_newline = ref false
 
 (*****************************************************************************)
@@ -77,6 +77,8 @@ type env = {
   mutable passed: T.token list;
 
   mutable last_nl: Parse_info.t option;
+  (* for logging *)
+  mutable depth: int;
 }
 
 let mk_env toks =
@@ -90,6 +92,7 @@ let mk_env toks =
         rest = (x::xs);
         passed = [];
         last_nl = None;
+        depth = 0;
       }
 
 let ab = Parse_info.abstract_info
@@ -102,23 +105,30 @@ type location =
   | Local
   | InBlock
   | InTemplate
-[@@deriving show]
+[@@deriving show {with_path = false}]
 
 (*****************************************************************************)
-(* Dumpers  *)
+(* Logging/Dumpers  *)
 (*****************************************************************************)
-let tokstr env =
-  let info = TH.info_of_tok env.token in
-  Parse_info.str_of_info info
-
 let dump_token tok =
   T.show tok
+
+let n_dash n = Common2.repeat "-" n |> Common.join ""
+
+let with_logging funcname f in_ =
+  let save = in_.depth in
+  in_.depth <- in_.depth + 1;
+  let depth = n_dash in_.depth in
+  logger#info "%s>%s: %s" depth funcname (dump_token in_.token);
+  let res = f () in (* less: pass in_ ? *)
+  in_.depth <- save;
+  res
 
 (*****************************************************************************)
 (* Error management  *)
 (*****************************************************************************)
 let error x in_ =
-  pr2_gen in_.token;
+  pr2 (dump_token in_.token);
   failwith x
 
 (*****************************************************************************)
@@ -149,8 +159,10 @@ let adjustSepRegions lastToken in_ =
 (* newline: pad: I've added the ~newlines param to differentiante adding
  * a NEWLINE or NEWLINES *)
 let insertNL ?(newlines=false) in_ =
-  logger#info "%s: %s" "insertNL" (tokstr in_);
-  logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
+  if !debug_newline then begin
+    logger#info "%s: %s" "insertNL" (dump_token in_.token);
+    logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
+  end;
   match in_.last_nl with
   | None -> failwith "no last newline to insert back"
   | Some x ->
@@ -176,7 +188,7 @@ let afterLineEnd in_ =
   loop in_.passed
   |> (fun b ->
     if !debug_newline
-    then logger#info "%s: %s, result = %b" "afterLineEnd" (tokstr in_) b;
+    then logger#info "%s: %s, result = %b" "afterLineEnd" (dump_token in_.token) b;
     b)
 
 (* ------------------------------------------------------------------------- *)
@@ -300,10 +312,11 @@ let lookingAhead f in_ =
  *  }}}
 *)
 let acceptStatSep in_ =
-  logger#info "%s: %s" "acceptStatSep" (tokstr in_);
-  match in_.token with
-  | NEWLINE _ | NEWLINES _ -> nextToken in_
-  | _ -> accept (SEMI ab) in_
+  in_ |> with_logging "acceptStatSep" (fun () ->
+    match in_.token with
+    | NEWLINE _ | NEWLINES _ -> nextToken in_
+    | _ -> accept (SEMI ab) in_
+  )
 
 let acceptStatSepOpt in_ =
   if not (TH.isStatSeqEnd in_.token)
@@ -358,28 +371,32 @@ let inGroupers left right body in_ =
   res
 
 let inBraces f in_ =
-  logger#info "%s: %s" "inBraces" (tokstr in_);
-  inGroupers (LBRACE ab) (RBRACE ab) f in_
+  in_ |> with_logging "inBraces" (fun () ->
+    inGroupers (LBRACE ab) (RBRACE ab) f in_
+  )
 let inParens f in_ =
-  logger#info "%s: %s" "inParens" (tokstr in_);
-  inGroupers (LPAREN ab) (RPAREN ab) f in_
+  in_ |> with_logging "inParens" (fun () ->
+    inGroupers (LPAREN ab) (RPAREN ab) f in_
+  )
 let inBrackets f in_ =
-  logger#info "%s: %s" "inBrackets" (tokstr in_);
-  inGroupers (LBRACKET ab) (RBRACKET ab) f in_
+  in_ |> with_logging "inBrackets" (fun () ->
+    inGroupers (LBRACKET ab) (RBRACKET ab) f in_
+  )
 
 (* less: do actual error recovery? *)
 let inBracesOrNil = inBraces
 
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
-  logger#info "%s(%s): %s" "separatedTopen" (dump_token sep) (tokstr in_);
-  let ts = ref [] in
-  while in_.token =~= sep do
-    nextToken in_;
-    let x = part in_ in
-    ts += x;
-  done;
-  !ts
+  in_ |> with_logging (spf "separatedTopen(%s)" (dump_token sep)) (fun () ->
+    let ts = ref [] in
+    while in_.token =~= sep do
+      nextToken in_;
+      let x = part in_ in
+      ts += x;
+    done;
+    !ts
+  )
 
 (** {{{ { `sep` part } }}}. *)
 let tokenSeparated separator part in_ =
@@ -499,25 +516,25 @@ let pkgQualId in_ =
  *  }}}
 *)
 let path ~thisOK ~typeOK in_ =
-  logger#info "%s(thisOK:%b, typeOK:%b): %s" "path" thisOK typeOK (tokstr in_);
-  let t = ref () in
-  match in_.token with
-  | Kthis _ -> failwith "path.this"
-  | Ksuper _ -> failwith "path.super"
-  | _ ->
-      let name = ident in_ in
-      (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
-      if in_.token =~= (DOT ab) then begin
-        skipToken in_;
-        match in_.token with
-        | Kthis _ -> failwith "path.this 2"
-        | Ksuper _ -> failwith "path.super 2"
-        | _ ->
-            let x = selectors ~typeOK !t in_ in
-            t := x
-      end;
-      !t
-
+  in_ |> with_logging (spf "path(thisOK:%b, typeOK:%b)" thisOK typeOK) (fun()->
+    let t = ref () in
+    match in_.token with
+    | Kthis _ -> failwith "path.this"
+    | Ksuper _ -> failwith "path.super"
+    | _ ->
+        let name = ident in_ in
+        (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
+        if in_.token =~= (DOT ab) then begin
+          skipToken in_;
+          match in_.token with
+          | Kthis _ -> failwith "path.this 2"
+          | Ksuper _ -> failwith "path.super 2"
+          | _ ->
+              let x = selectors ~typeOK !t in_ in
+              t := x
+        end;
+        !t
+  )
 (*****************************************************************************)
 (* Forward references  *)
 (*****************************************************************************)
@@ -560,34 +577,35 @@ let typ in_ =
  *  }}}
 *)
 let rec simpleType in_ =
-  logger#info "%s: %s" "simpleType" (tokstr in_);
-  match in_.token with
-  | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
-      let x = !literal_ in_ in
-      (* AST: SingletonTypeTree(x) *)
-      ()
-  | MINUS _ when lookingAhead TH.isNumericLit in_ ->
-      nextToken in_;
-      let x = !literal_ ~isNegated:true in_ in
-      (* AST: SingletonTypeTree(x) *)
-      ()
-  | _ ->
-      let start =
-        match in_.token with
-        | LPAREN _ ->
-            (* CHECK: "Illegal literal type (), use Unit instead" *)
-            let xs = inParens types in_ in
-            (* AST: makeSafeTupleType *)
-            ()
-        | t when TH.isWildcardType t ->
-            skipToken in_;
-            wildcardType in_
-        | _ ->
-            let x = path ~thisOK:false ~typeOK:true in_ in
-            (* AST: convertToTypeId if not SingletonTypeTree *)
-            ()
-      in
-      simpleTypeRest start in_
+  in_ |> with_logging "simpleType" (fun () ->
+    match in_.token with
+    | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
+        let x = !literal_ in_ in
+        (* AST: SingletonTypeTree(x) *)
+        ()
+    | MINUS _ when lookingAhead TH.isNumericLit in_ ->
+        nextToken in_;
+        let x = !literal_ ~isNegated:true in_ in
+        (* AST: SingletonTypeTree(x) *)
+        ()
+    | _ ->
+        let start =
+          match in_.token with
+          | LPAREN _ ->
+              (* CHECK: "Illegal literal type (), use Unit instead" *)
+              let xs = inParens types in_ in
+              (* AST: makeSafeTupleType *)
+              ()
+          | t when TH.isWildcardType t ->
+              skipToken in_;
+              wildcardType in_
+          | _ ->
+              let x = path ~thisOK:false ~typeOK:true in_ in
+              (* AST: convertToTypeId if not SingletonTypeTree *)
+              ()
+        in
+        simpleTypeRest start in_
+  )
 
 and simpleTypeRest t in_ =
   match in_.token with
@@ -649,8 +667,9 @@ let typedOpt in_ =
 (* ------------------------------------------------------------------------- *)
 
 let pattern in_ =
-  logger#info "%s: %s" "pattern" (tokstr in_);
-  failwith "pattern"
+  in_ |> with_logging "pattern" (fun () ->
+    failwith "pattern"
+  )
 
 (** {{{
  *  Pattern3    ::= SimplePattern
@@ -717,20 +736,21 @@ let rec expr ?(location=Local) (in_: env) =
   expr0 location in_
 
 and expr0 (location: location) (in_: env) =
-  logger#info "%s(location = %s): %s " "expr0" (show_location location) (tokstr in_) ;
-  match in_.token with
-  | Kif _ -> parseIf in_
-  | Ktry _ -> parseTry in_
-  | Kwhile _ -> parseWhile in_
-  | Kdo _ -> parseDo in_
-  | Kfor _ -> parseFor in_
-  | Kreturn _ -> parseReturn in_
-  | Kthrow _ -> parseThrow in_
-  | Kimplicit _ ->
-      skipToken in_;
-      implicitClosure location in_
-  | _ ->
-      parseOther location in_
+  in_ |> with_logging(spf "expr0(location = %s)"(show_location location))(fun() ->
+    match in_.token with
+    | Kif _ -> parseIf in_
+    | Ktry _ -> parseTry in_
+    | Kwhile _ -> parseWhile in_
+    | Kdo _ -> parseDo in_
+    | Kfor _ -> parseFor in_
+    | Kreturn _ -> parseReturn in_
+    | Kthrow _ -> parseThrow in_
+    | Kimplicit _ ->
+        skipToken in_;
+        implicitClosure location in_
+    | _ ->
+        parseOther location in_
+  )
 
 and parseOther location (in_: env) =
   let t = ref (postfixExpr in_) in
@@ -802,29 +822,54 @@ and parseOther location (in_: env) =
  *  }}}
 *)
 and postfixExpr in_ : unit =
-  (* TODO: AST: opstack, reduce *)
-  let rec loop top in_ =
-    if not (TH.isIdentBool in_.token)
-    then top
-    else begin
-      (* isIdentBool is true; remember that operators are identifiers and
-       * that Scala allows any identifier in infix position
-      *)
-      (* AST: pushOpInfo(reduceExprStack(base, top)) *)
-      newLineOptWhenFollowing (TH.isExprIntro) in_;
-      if TH.isExprIntro in_.token then begin
-        let res = prefixExpr in_ in
-        match res with
-        (*| None -> (* AST: reduceExprStack(base, top) *) None
-          | Some *) next ->
-            loop next in_
-      end
-      else (* AST: finishPostfixOp(base, popOpInfo()) *) ()
-    end
+  in_ |> with_logging "postfixExpr" (fun () ->
+    (* TODO: AST: opstack, reduce *)
+    let rec loop top in_ =
+      in_ |> with_logging "postfixExpr:loop" (fun () ->
+        if not (TH.isIdentBool in_.token)
+        then
+          in_ |> with_logging "postfixExpr:loop: noIdentBool, stop" (fun () ->
+            top
+          )
+        else begin
+          (* isIdentBool is true; remember that operators are identifiers and
+           * that Scala allows any identifier in infix position
+          *)
+          (* AST: pushOpInfo(reduceExprStack(base, top)) *)
+          pushOpInfo top in_;
+          newLineOptWhenFollowing (TH.isExprIntro) in_;
+          if TH.isExprIntro in_.token then begin
+            let res = prefixExpr in_ in
+            match res with
+            (*| None -> (* AST: reduceExprStack(base, top) *) None
+              | Some *) next ->
+                loop next in_
+          end
+          else
+            in_ |> with_logging "postfixExpr:loop: noExprIntro, stop" (fun () ->
+              (* AST: finishPostfixOp(base, popOpInfo()) *)
+              ()
+            )
+        end
+      )
+    in
+    let res = prefixExpr in_ in
+    (* AST: reduceExprStack (res) *)
+    loop res in_
+  )
+
+and pushOpInfo top in_ =
+  let x = ident in_ in
+  let targs =
+    if in_.token =~= (LBRACKET ab)
+    then exprTypeArgs in_
+    else () (* AST: Nil *)
   in
-  let res = prefixExpr in_ in
-  (* AST: reduceExprStack (res) *)
-  loop res in_
+  (* AST: OpInfo(top, name, targs) *)
+  ()
+
+and exprTypeArgs in_ =
+  failwith "exprTypeArgs"
 
 (** {{{
  *  PrefixExpr   ::= [`-` | `+` | `~` | `!`] SimpleExpr
@@ -850,39 +895,81 @@ and prefixExpr in_ : unit =
  *  }}}
 *)
 and simpleExpr in_ : unit =
-  logger#info "%s: %s" "simpleExpr" (tokstr in_);
-  let canApply = ref true in
-  let t =
+  in_ |> with_logging "simpleExpr" (fun () ->
+    let canApply = ref true in
+    let t =
+      match in_.token with
+      | x when TH.isLiteral x ->
+          let x = literal in_ in
+          ()
+      (* less: XMLSTART *)
+      | x when TH.isIdentBool x ->
+          let x = path ~thisOK:true ~typeOK:false in_ in
+          ()
+      | Kthis _ | Ksuper _ ->
+          let x = path ~thisOK:true ~typeOK:false in_ in
+          ()
+      | USCORE _ ->
+          let x = freshPlaceholder in_ in
+          ()
+      | LPAREN _ ->
+          let x = makeParens (commaSeparated expr) in_ in
+          ()
+      | LBRACE _ ->
+          canApply := false;
+          let x = blockExpr in_ in
+          ()
+      | Knew _ ->
+          canApply := false;
+          skipToken in_;
+          let (parents, self, stats) = !template_ in_ in
+          (* AST: gen.mkNew(parents, self, stats) *)
+          ()
+      | _ -> error "illegal start of simple expression" in_
+    in
+    simpleExprRest ~canApply:!canApply t in_
+  )
+
+and simpleExprRest ~canApply t in_ =
+  in_ |> with_logging (spf "simpleExprRest(canApply:%b)" canApply) (fun () ->
+    (* crazy: again parsing depending on AST *)
+    if canApply then newLineOptWhenFollowedBy (LBRACE ab) in_;
+
+    let paren_or_brace () =
+      let x = argumentExprs in_ in
+      let app =
+        (* AST: look for anonymous function application like (f _)(x) and
+         *      translate to (f _).apply(x), bug #460
+         * AST: let sel = ... Select(stripParens(t, nme.apply) in
+         *      Apply(sel, x)
+        *)
+
+        t
+      in
+      simpleExprRest ~canApply:true app in_
+    in
     match in_.token with
-    | x when TH.isLiteral x ->
-        let x = literal in_ in
-        ()
-    (* less: XMLSTART *)
-    | x when TH.isIdentBool x ->
-        let x = path ~thisOK:true ~typeOK:false in_ in
-        ()
-    | Kthis _ | Ksuper _ ->
-        let x = path ~thisOK:true ~typeOK:false in_ in
-        ()
+    | DOT _ ->
+        nextToken in_;
+        let x = selector t in_ in
+        let x = stripParens t in
+        simpleExprRest ~canApply:true x in_
+    | LBRACKET _ ->
+        (* crazy: parsing depending on built AST: Ident(_) | Select(_, _) | Apply(_, _) | Literal(_) *)
+        failwith "simpleExprRest: LBRACKET"
+
+    | LPAREN _ -> paren_or_brace ()
+    | LBRACE _ when canApply -> paren_or_brace ()
     | USCORE _ ->
-        let x = freshPlaceholder in_ in
-        ()
-    | LPAREN _ ->
-        let x = makeParens (commaSeparated expr) in_ in
-        ()
-    | LBRACE _ ->
-        canApply := false;
-        let x = blockExpr in_ in
-        ()
-    | Knew _ ->
-        canApply := false;
         skipToken in_;
-        let (parents, self, stats) = !template_ in_ in
-        (* AST: gen.mkNew(parents, self, stats) *)
-        ()
-    | _ -> error "illegal start of simple expression" in_
-  in
-  simpleExprRest ~canApply:!canApply t in_
+        (* AST: MethodValue(stripParens(t)) *)
+        t
+    | _ ->
+        in_ |> with_logging "simpleExprRest: nothing to consume" (fun () ->
+          t
+        )
+  )
+
 
 (** {{{
  *  SimpleExpr    ::= literal
@@ -891,68 +978,34 @@ and simpleExpr in_ : unit =
  *  }}}
 *)
 and literal ?(isNegated=false) ?(inPattern=false) in_ =
-  logger#info "%s(isNegated:%b, inPattern:%b): %s" "literal"
-    isNegated inPattern (tokstr in_);
-  let finish value_ =
-    (* AST: newLiteral(value) *)
-    nextToken in_;
-    value_
-  in
-  match in_.token with
-  | T_INTERPOLATED_START _ ->
-      (* AST: if not inPattern then withPlaceholders(...) *)
-      interpolatedString ~inPattern in_
-  (* CHECK: unsupported in Scala3, deprecated in 2.13.0 *)
-  (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
-  | SymbolLiteral(s, ii) -> finish ()
+  in_ |> with_logging (spf "literal(isNegated:%b, inPattern:%b)"
+                         isNegated inPattern) (fun () ->
+    let finish value_ =
+      (* AST: newLiteral(value) *)
+      nextToken in_;
+      value_
+    in
+    match in_.token with
+    | T_INTERPOLATED_START _ ->
+        (* AST: if not inPattern then withPlaceholders(...) *)
+        interpolatedString ~inPattern in_
+    (* CHECK: unsupported in Scala3, deprecated in 2.13.0 *)
+    (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
+    | SymbolLiteral(s, ii) -> finish ()
 
-  | CharacterLiteral(x, ii) -> finish () (* AST: incharVal *)
-  | IntegerLiteral(x, ii) -> finish () (* AST: in.intVal(isNegated) *)
-  | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated) *)
+    | CharacterLiteral(x, ii) -> finish () (* AST: incharVal *)
+    | IntegerLiteral(x, ii) -> finish () (* AST: in.intVal(isNegated) *)
+    | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated) *)
 
-  | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
-  | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
-  | Knull _ -> finish () (* AST: null *)
-  | _ -> error "illegal literal" in_
+    | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
+    | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
+    | Knull _ -> finish () (* AST: null *)
+    | _ -> error "illegal literal" in_
+  )
 
 and interpolatedString ~inPattern in_ =
   failwith "interpolatedString"
 
-and simpleExprRest ~canApply t in_ =
-  logger#info "%s(canApply:%b): %s" "simpleExprRest" canApply (tokstr in_);
-  (* crazy: again parsing depending on AST *)
-  if canApply then newLineOptWhenFollowedBy (LBRACE ab) in_;
-
-  let paren_or_brace () =
-    let x = argumentExprs in_ in
-    let app =
-      (* AST: look for anonymous function application like (f _)(x) and
-       *      translate to (f _).apply(x), bug #460
-       * AST: let sel = ... Select(stripParens(t, nme.apply) in
-       *      Apply(sel, x)
-      *)
-
-      t
-    in
-    simpleExprRest ~canApply:true app in_
-  in
-  match in_.token with
-  | DOT _ ->
-      nextToken in_;
-      let x = selector t in_ in
-      let x = stripParens t in
-      simpleExprRest ~canApply:true x in_
-  | LBRACKET _ ->
-      (* crazy: parsing depending on built AST: Ident(_) | Select(_, _) | Apply(_, _) | Literal(_) *)
-      failwith "simpleExprRest: LBRACKET"
-
-  | LPAREN _ -> paren_or_brace ()
-  | LBRACE _ when canApply -> paren_or_brace ()
-  | USCORE _ ->
-      skipToken in_;
-      (* AST: MethodValue(stripParens(t)) *)
-      t
-  | _ -> t
 
 (* AST: *)
 and freshPlaceholder in_ =
@@ -964,12 +1017,14 @@ and freshPlaceholder in_ =
 (* Arguments *)
 (* ------------------------------------------------------------------------- *)
 and multipleArgumentExprs in_ =
-  match in_.token with
-  | LPAREN _ ->
-      let x = argumentExprs in_ in
-      let xs = multipleArgumentExprs in_ in
-      x::xs
-  | _ -> []
+  in_ |> with_logging "multipleArgumentExprs" (fun () ->
+    match in_.token with
+    | LPAREN _ ->
+        let x = argumentExprs in_ in
+        let xs = multipleArgumentExprs in_ in
+        x::xs
+    | _ -> []
+  )
 
 (** {{{
  *  ArgumentExprs ::= `(` [Exprs] `)`
@@ -977,20 +1032,22 @@ and multipleArgumentExprs in_ =
  *  }}}
 *)
 and argumentExprs in_ : unit list =
-  let args in_ =
-    (* AST: if isIdent then assignmentToMaybeNamedArg *)
-    commaSeparated expr in_
-  in
-  match in_.token with
-  | LBRACE _ -> [blockExpr in_]
-  | LPAREN _ ->
-      (* less: could use makeParens *)
-      inParens (fun in_ ->
-        match in_.token with
-        | RPAREN _ -> []
-        | _ -> args in_
-      ) in_
-  | _ -> []
+  in_ |> with_logging "argumentExprs" (fun () ->
+    let args in_ =
+      (* AST: if isIdent then assignmentToMaybeNamedArg *)
+      commaSeparated expr in_
+    in
+    match in_.token with
+    | LBRACE _ -> [blockExpr in_]
+    | LPAREN _ ->
+        (* less: could use makeParens *)
+        inParens (fun in_ ->
+          match in_.token with
+          | RPAREN _ -> []
+          | _ -> args in_
+        ) in_
+    | _ -> []
+  )
 
 (* ------------------------------------------------------------------------- *)
 (* Infix expr *)
@@ -1077,12 +1134,13 @@ and annotationExpr in_ =
   else () (* AST: New(t, Nil) *)
 
 and annotations ~skipNewLines in_ =
-  logger#info "%s(skipNewLines:%b): %s " "annotations" skipNewLines (tokstr in_);
-  readAnnots (fun in_ ->
-    let t = annotationExpr in_ in
-    if skipNewLines then newLineOpt in_;
-    t
-  ) in_
+  in_ |> with_logging (spf "annotations(skipNewLines:%b)" skipNewLines)(fun()->
+    readAnnots (fun in_ ->
+      let t = annotationExpr in_ in
+      if skipNewLines then newLineOpt in_;
+      t
+    ) in_
+  )
 
 
 (** {{{
@@ -1150,60 +1208,61 @@ let importSelectors in_ =
  *  }}}
 *)
 let importExpr in_ =
-  logger#info "%s: %s" "importExpr" (tokstr in_);
-  let thisDotted _name in_ =
-    nextToken in_;
-    (* AST: val t = This(name) *)
-    let t = () in
-    accept (DOT ab) in_;
-    let result = selector t in_ in
-    accept (DOT ab) in_;
-    result
-  in
-  (** Walks down import `foo.bar.baz.{ ... }` until it ends at
-   * an underscore, a left brace, or an undotted identifier.
-  *)
-  let rec loop expr in_ =
-    let selectors =
+  in_ |> with_logging "importExpr" (fun () ->
+    let thisDotted _name in_ =
+      nextToken in_;
+      (* AST: val t = This(name) *)
+      let t = () in
+      accept (DOT ab) in_;
+      let result = selector t in_ in
+      accept (DOT ab) in_;
+      result
+    in
+    (** Walks down import `foo.bar.baz.{ ... }` until it ends at
+     * an underscore, a left brace, or an undotted identifier.
+    *)
+    let rec loop expr in_ =
+      let selectors =
+        match in_.token with
+        | USCORE _ -> [wildImportSelector in_] (* import foo.bar._; *)
+        | LBRACE _ -> importSelectors in_  (* import foo.bar.{ x, y, z } *)
+        | _ ->
+            let name = ident in_ in
+            (match in_.token with
+             | DOT _ ->
+                 (* import foo.bar.ident.<unknown> and so create a select node and recurse. *)
+                 (* AST: (Select(expr, name)) *)
+                 let t = expr in
+                 nextToken in_;
+                 loop t in_
+             | _ ->
+                 (* import foo.bar.Baz; *)
+                 (* AST: List(makeImportSelector(name, nameOffset)) *)
+                 []
+            )
+      in
+      (* reaching here means we're done walking. *)
+      (* AST: Import(expr, selectors) *)
+      []
+    in
+    let start =
       match in_.token with
-      | USCORE _ -> [wildImportSelector in_] (* import foo.bar._; *)
-      | LBRACE _ -> importSelectors in_  (* import foo.bar.{ x, y, z } *)
+      | Kthis _ -> thisDotted empty in_
       | _ ->
-          let name = ident in_ in
+          (* AST: Ident() *)
+          let id = ident in_ in
           (match in_.token with
-           | DOT _ ->
-               (* import foo.bar.ident.<unknown> and so create a select node and recurse. *)
-               (* AST: (Select(expr, name)) *)
-               let t = expr in
-               nextToken in_;
-               loop t in_
-           | _ ->
-               (* import foo.bar.Baz; *)
-               (* AST: List(makeImportSelector(name, nameOffset)) *)
-               []
+           | DOT _ -> accept (DOT ab) in_
+           | x when not (TH.isStatSep x) -> accept (DOT ab) in_
+           | _ -> error ". expected" in_
+          );
+          (match in_.token with
+           | Kthis _ -> thisDotted (* AST: id.name.toTypeName*) id in_
+           | _ -> (*id*) ()
           )
     in
-    (* reaching here means we're done walking. *)
-    (* AST: Import(expr, selectors) *)
-    []
-  in
-  let start =
-    match in_.token with
-    | Kthis _ -> thisDotted empty in_
-    | _ ->
-        (* AST: Ident() *)
-        let id = ident in_ in
-        (match in_.token with
-         | DOT _ -> accept (DOT ab) in_
-         | x when not (TH.isStatSep x) -> accept (DOT ab) in_
-         | _ -> error ". expected" in_
-        );
-        (match in_.token with
-         | Kthis _ -> thisDotted (* AST: id.name.toTypeName*) id in_
-         | _ -> (*id*) ()
-        )
-  in
-  loop start in_
+    loop start in_
+  )
 
 (** {{{
  *  Import  ::= import ImportExpr {`,` ImportExpr}
@@ -1334,34 +1393,34 @@ let paramType ?(repeatedParameterOK=true) in_ =
 
 
 let param owner implicitmod caseParam in_ =
-  logger#info "%s: %s" "param" (tokstr in_);
-  let annots = annotations ~skipNewLines:false in_ in
-  let mods = ref [] (* AST: PARAM *) in
-  (* AST: crazy?: if owner.isTypeName ... modifiers () *)
-  let name = ident in_ in
-  let bynamemod = ref 0 in
-  let tpt =
-    accept (COLON ab) in_;
-    if in_.token =~= (ARROW ab) then begin
-      (* CHECK: if owner.isTypeName && !mods.isLocalToThis
-       * "var/val parameters may not be call-by-name" *)
-      bynamemod := 1 (* AST: Flags.BYNAMEPARAM *)
-    end;
-    paramType in_
-  in
-  let default =
-    match in_.token with
-    | EQUALS _ ->
-        nextToken in_;
-        (* AST: mods |= FLAGS.DEFAULTPARAM *)
-        expr in_
-    | _ ->
-        (* AST: emptyTree *)
-        ()
-  in
-  (* AST: ValDef((mods | implicitmod | bynamemod) with annots, name.toTermName, tpt, default) *)
-  ()
-
+  in_ |> with_logging "param" (fun () ->
+    let annots = annotations ~skipNewLines:false in_ in
+    let mods = ref [] (* AST: PARAM *) in
+    (* AST: crazy?: if owner.isTypeName ... modifiers () *)
+    let name = ident in_ in
+    let bynamemod = ref 0 in
+    let tpt =
+      accept (COLON ab) in_;
+      if in_.token =~= (ARROW ab) then begin
+        (* CHECK: if owner.isTypeName && !mods.isLocalToThis
+         * "var/val parameters may not be call-by-name" *)
+        bynamemod := 1 (* AST: Flags.BYNAMEPARAM *)
+      end;
+      paramType in_
+    in
+    let default =
+      match in_.token with
+      | EQUALS _ ->
+          nextToken in_;
+          (* AST: mods |= FLAGS.DEFAULTPARAM *)
+          expr in_
+      | _ ->
+          (* AST: emptyTree *)
+          ()
+    in
+    (* AST: ValDef((mods | implicitmod | bynamemod) with annots, name.toTermName, tpt, default) *)
+    ()
+  )
 
 (* CHECK: "no by-name parameter type allowed here" *)
 (* CHECK: "no * parameter type allowed here" *)
@@ -1550,35 +1609,38 @@ let patDefOrDcl mods in_ =
  *  }}}
 *)
 let defOrDcl mods in_ =
-  logger#info "%s: %s" "defOrDcl" (tokstr in_);
-  (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
-  match in_.token with
-  | Kval _ -> patDefOrDcl mods (* AST: and VAL *) in_
-  | Kvar _ -> patDefOrDcl mods (* AST: and VAR and Mutable *) in_
-  | Kdef _ -> funDefOrDcl mods (* AST: and DEF *) in_
-  | Ktype _ -> typeDefOrDcl mods (* AST: and TYPE *) in_
-  | _ -> !tmplDef_ mods in_
+  in_ |> with_logging "defOrDcl" (fun () ->
+    (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
+    match in_.token with
+    | Kval _ -> patDefOrDcl mods (* AST: and VAL *) in_
+    | Kvar _ -> patDefOrDcl mods (* AST: and VAR and Mutable *) in_
+    | Kdef _ -> funDefOrDcl mods (* AST: and DEF *) in_
+    | Ktype _ -> typeDefOrDcl mods (* AST: and TYPE *) in_
+    | _ -> !tmplDef_ mods in_
+  )
 
 let nonLocalDefOrDcl in_ =
-  logger#info "%s: %s" "nonLocalDefOrDcl" (tokstr in_);
-  let annots = annotations ~skipNewLines:true in_ in
-  let mods = modifiers in_ in
-  (* AST: mods withAnnotations annots *)
-  defOrDcl mods in_
+  in_ |> with_logging "nonLocalDefOrDcl" (fun () ->
+    let annots = annotations ~skipNewLines:true in_ in
+    let mods = modifiers in_ in
+    (* AST: mods withAnnotations annots *)
+    defOrDcl mods in_
+  )
 
 let localDef implicitMod in_ =
-  logger#info "%s: %s" "localDef" (tokstr in_);
-  let annots = annotations ~skipNewLines:true in_ in
-  let mods = localModifiers in_ in
-  (* AST: let mods = mods | implicitMod withAnnotations annots *)
-  (* crazy? parsing depends on AST *)
-  let defs =
-    (* TODO !(mods hasFlag ~(Flags.IMPLICIT | Flags.LAZY))) *)
-    defOrDcl mods in_
-    (* TODO: else tmplDef mods in_ *)
-  in
-  defs
-(* AST: if RBRACE | CASE defs :+ literalUnit *)
+  in_ |> with_logging "localDef" (fun () ->
+    let annots = annotations ~skipNewLines:true in_ in
+    let mods = localModifiers in_ in
+    (* AST: let mods = mods | implicitMod withAnnotations annots *)
+    (* crazy? parsing depends on AST *)
+    let defs =
+      (* TODO !(mods hasFlag ~(Flags.IMPLICIT | Flags.LAZY))) *)
+      defOrDcl mods in_
+      (* TODO: else tmplDef mods in_ *)
+    in
+    defs
+    (* AST: if RBRACE | CASE defs :+ literalUnit *)
+  )
 
 (*****************************************************************************)
 (* Parsing XxxStat and XxxStats  *)
@@ -1803,27 +1865,27 @@ let templateParents in_ =
  *  }}}
 *)
 let template in_ =
-  logger#info "%s: %s" "template" (tokstr in_);
-  newLineOptWhenFollowedBy (LBRACE ab) in_;
-  match in_.token with
-  | LBRACE _ ->
-      let (self, body) = templateBody ~isPre:true in_ in
-      (match in_.token with
-       | Kwith _ (* crazy? && self eq noSelfType *) ->
-           (* CHECK: "use traint parameters instead" when scala3 *)
-           let _earlyDefs = body (* CHECK: map ensureEarlyDef AST: filter *) in
-           nextToken in_;
-           let parents = templateParents in_ in
-           let (self1, body1) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
-           (parents, self1, (* AST: earlyDefs @ *) body1)
-       | _ ->
-           ([], self, body)
-      )
-  | _ ->
-      let parents = templateParents in_ in
-      let (self, body) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
-      (parents, self, body)
-
+  in_ |> with_logging "template" (fun () ->
+    newLineOptWhenFollowedBy (LBRACE ab) in_;
+    match in_.token with
+    | LBRACE _ ->
+        let (self, body) = templateBody ~isPre:true in_ in
+        (match in_.token with
+         | Kwith _ (* crazy? && self eq noSelfType *) ->
+             (* CHECK: "use traint parameters instead" when scala3 *)
+             let _earlyDefs = body (* CHECK: map ensureEarlyDef AST: filter *) in
+             nextToken in_;
+             let parents = templateParents in_ in
+             let (self1, body1) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
+             (parents, self1, (* AST: earlyDefs @ *) body1)
+         | _ ->
+             ([], self, body)
+        )
+    | _ ->
+        let parents = templateParents in_ in
+        let (self, body) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
+        (parents, self, body)
+  )
 
 (** {{{
  *  ClassTemplateOpt ::= `extends` ClassTemplate | [[`extends`] TemplateBody]
