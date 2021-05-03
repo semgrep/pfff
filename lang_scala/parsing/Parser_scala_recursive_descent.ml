@@ -94,6 +94,9 @@ let mk_env toks =
         last_nl = None;
         depth = 0;
       }
+(* https://stackoverflow.com/questions/47688111/copy-construction-in-ocaml*)
+let copy_env env =
+  { env with token = env.token }
 
 let ab = Parse_info.abstract_info
 
@@ -299,8 +302,13 @@ let (*rec*) next_next_token in_ =
   (* TODO: also skip spacing and stuff? *)
   | x::xs -> Some x
 
-let lookingAhead f in_ =
-  failwith "lookingAhead"
+let lookingAhead body in_ =
+  (* CHECK: allowLeadingInfixOperators *)
+  let in_' = copy_env in_ in
+  nextToken in_';
+  let res = body in_' in
+  res
+
 
 
 (*****************************************************************************)
@@ -350,10 +358,13 @@ let newLineOptWhenFollowing token in_ =
  * inGroupers.
 *)
 
-let isTrailingComma in_ =
-  pr2 "isTrailingComma:TODO";
-  (*in_.token =~= (COMMA ab) && true*)
-  false
+(* used by parser to distinguish pattern P(_*, p) from trailing comma.
+ * EOF is accepted for REPL, which can't look ahead past the current line.
+*)
+let isTrailingComma right in_ =
+  in_.token =~= (COMMA ab) && lookingAhead (fun in_ ->
+    afterLineEnd in_ && in_.token =~= right (* REPL: || token =~= EOF *)
+  ) in_
 
 (* advance past COMMA NEWLINE RBRACE (to whichever token is the matching
  * close bracket)
@@ -361,8 +372,14 @@ let isTrailingComma in_ =
 (* supposed to return a boolean *)
 let skipTrailingComma right in_ =
   match in_.token with
-  | COMMA _ ->
-      failwith "skipTrailingComma"
+  | COMMA _ when isTrailingComma right in_ ->
+      (* SIP-27 Trailing Comma (multi-line only) support
+       * If a comma is followed by a new line & then a closing paren,
+       * bracket or brace
+       * then it is a trailing comma and is ignored
+      *)
+      (* pad: why not skipToken? don't want side effects in nextToken? *)
+      fetchToken in_
   | _ ->
       ()
 
@@ -426,7 +443,9 @@ let tokenSeparated separator part in_ =
     ts += x;
     let done_ = ref (not (in_.token =~= separator)) in
     while not !done_  do
-      let skippable = separator =~= (COMMA ab) && isTrailingComma in_ in
+      let skippable = separator =~= (COMMA ab) &&
+                      (* TODO: in.sepRegions nonEmpty and head *)
+                      isTrailingComma (RPAREN ab) in_ in
       if not skippable then begin
         nextToken in_;
         let x = part in_ in
@@ -617,7 +636,7 @@ let rec simpleType in_ =
         let x = !literal_ in_ in
         (* AST: SingletonTypeTree(x) *)
         ()
-    | MINUS _ when lookingAhead TH.isNumericLit in_ ->
+    | MINUS _ when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
         nextToken in_;
         let x = !literal_ ~isNegated:true in_ in
         (* AST: SingletonTypeTree(x) *)
