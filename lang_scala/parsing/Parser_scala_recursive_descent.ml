@@ -55,7 +55,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
  *  - advanced error diagnosis: lots of variants (deprecationWarning,
  *    syntaxError, expecting X but got Y, etc)
  *  - position/offset management (just use position info in the token, easier)
- *
+ *  - hooks for Scaladoc or IDEs
 *)
 
 (* TODO: temporary *)
@@ -153,6 +153,10 @@ let (+=) aref x =
 (* ------------------------------------------------------------------------- *)
 (* newline: Newline management part1  *)
 (* ------------------------------------------------------------------------- *)
+(* pad: newlines are skipped in fetchToken but reinserted in insertNL
+ * in certain complex conditions.
+*)
+
 let adjustSepRegions lastToken in_ =
   pr2_once "adjustSepRegions"
 
@@ -234,6 +238,7 @@ let fetchToken in_ =
 (* ------------------------------------------------------------------------- *)
 (* nextToken *)
 (* ------------------------------------------------------------------------- *)
+(** Consume and discard the next token. *)
 let nextToken in_ =
   let lastToken = in_.token in
   adjustSepRegions lastToken in_;
@@ -340,6 +345,19 @@ let newLineOptWhenFollowing token in_ =
 (* ------------------------------------------------------------------------- *)
 (* Trailing commas  *)
 (* ------------------------------------------------------------------------- *)
+(* pad: trailing commas are _detected_ in separatedToken to not cause
+ * separatedToken to call part another time, but they are _skipped_ in
+ * inGroupers.
+*)
+
+let isTrailingComma in_ =
+  pr2 "isTrailingComma:TODO";
+  (*in_.token =~= (COMMA ab) && true*)
+  false
+
+(* advance past COMMA NEWLINE RBRACE (to whichever token is the matching
+ * close bracket)
+*)
 (* supposed to return a boolean *)
 let skipTrailingComma right in_ =
   match in_.token with
@@ -348,9 +366,6 @@ let skipTrailingComma right in_ =
   | _ ->
       ()
 
-let _isTrailingComma in_ =
-  pr2 "isTrailingComma:TODO";
-  in_.token =~= (COMMA ab) && true
 
 (* ------------------------------------------------------------------------- *)
 (* Context sensitive parsing  *)
@@ -403,29 +418,31 @@ let separatedToken sep part in_ =
     !ts
   )
 
-(** {{{ { `sep` part } }}}. *)
+(** {{{ part { `sep` part } }}}. *)
 let tokenSeparated separator part in_ =
-  let ts = ref [] in
-  let x = part in_ in
-  ts += x;
-(*
-  let done_ = ref (in_.token =~= separator) in
-  while not !done_  do
-    let skippable = separator =~= (COMMA ab) && isTrailingComma in_ in
-    if not skippable then begin
-      nextToken in_;
-      let x = part in_ in
-      ts += x
-    end;
-    done_ := (in_.token =~= separator) || skippable;
-  done;
-*)
-  while in_.token =~= separator do
-    nextToken in_;
+  in_ |> with_logging (spf "tokenSeparated(%s)" (dump_token separator)) (fun () ->
+    let ts = ref [] in
     let x = part in_ in
     ts += x;
-  done;
-  !ts
+    let done_ = ref (not (in_.token =~= separator)) in
+    while not !done_  do
+      let skippable = separator =~= (COMMA ab) && isTrailingComma in_ in
+      if not skippable then begin
+        nextToken in_;
+        let x = part in_ in
+        ts += x
+      end;
+      done_ := not (in_.token =~= separator) || skippable;
+    done;
+    !ts
+    (* old:
+       while in_.token =~= separator do
+        nextToken in_;
+        let x = part in_ in
+        ts += x
+       done
+    *)
+  )
 
 (* AST: Creates an actual Parens node (only used during parsing.) *)
 let makeParens body in_ =
