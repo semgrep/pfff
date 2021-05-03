@@ -1,1 +1,3 @@
-    def Escape[_: P] = "\\" ~/ CharIn("""btnfr'\\"]""")
+object Foo {
+  def Escape[_: P] = "\\" ~/ CharIn("""btnfr'\\"]""")
+}

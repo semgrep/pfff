@@ -615,9 +615,46 @@ let wildcardType in_ =
 (* TODO: in PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
 
-let typ in_ =
-  pr2 "typ: TODO";
-  ident in_
+(** {{{
+ *  Type ::= InfixType `=>` Type
+ *         | `(` [`=>` Type] `)` `=>` Type
+ *         | InfixType [ExistentialClause]
+ *  ExistentialClause ::= forSome `{` ExistentialDcl {semi ExistentialDcl} `}`
+ *  ExistentialDcl    ::= type TypeDcl | val ValDcl
+ *  }}}
+*)
+let rec typ in_ =
+  in_ |> with_logging "typ" (fun () ->
+    (* CHECK: placeholderTypeBoundary *)
+    let t =
+      match in_.token with
+      | LPAREN _ -> tupleInfixType in_
+      | _ -> infixType (* AST: InfixMode.FirstOp *) in_
+    in
+    match in_.token with
+    | ARROW _ ->
+        skipToken in_;
+        let t2 = typ in_ in
+        (* AST: makeFunctionTypeTree t t2 *)
+        ()
+    | KforSome _ ->
+        skipToken in_;
+        makeExistentialTypeTree t in_
+    | _ -> t
+  )
+
+and infixType in_ =
+  in_ |> with_logging "infixType" (fun () ->
+    pr2 "infixType:TODO";
+    simpleType in_
+  )
+
+and tupleInfixType in_ =
+  failwith "tupleInfixType"
+
+and makeExistentialTypeTree t in_ =
+  failwith "makeExistentialTypeTree"
+
 
 (** {{{
  *  SimpleType       ::=  SimpleType TypeArgs
@@ -629,7 +666,7 @@ let typ in_ =
  *                     |  WildcardType
  *  }}}
 *)
-let rec simpleType in_ =
+and simpleType in_ =
   in_ |> with_logging "simpleType" (fun () ->
     match in_.token with
     | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
@@ -681,13 +718,35 @@ and typeProjection t in_ =
 and typeArgs in_ =
   inBrackets types in_
 
+
+
 (** {{{
  *  Types ::= Type {`,` Type}
  *  }}}
 *)
 and types in_ =
-  failwith "types"
+  commaSeparated argType in_
 
+(*
+and functionTypes in_ =
+  commaSeparated functionArgType in_
+*)
+
+(* ------------------------------------------------------------------------- *)
+(* Abstract in PatternContextSensitive *)
+(* ------------------------------------------------------------------------- *)
+(** {{{
+ *  ArgType       ::=  Type
+ *  }}}
+*)
+and argType in_ =
+  pr2 "argType: TODO";
+  typ in_
+
+(*
+and functionArgType in_ =
+  failwith "functionArgType"
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Outside PatternContextSensitive *)
