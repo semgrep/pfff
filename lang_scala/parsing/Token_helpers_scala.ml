@@ -13,8 +13,10 @@
  * license.txt for more details.
 *)
 
-open Parser_scala
+open Token_scala
 module PI = Parse_info
+
+let logger = Logging.get_logger [__MODULE__]
 
 (*****************************************************************************)
 (* Token Helpers *)
@@ -87,7 +89,7 @@ let visitor_info_of_tok f = function
   | USCORE(ii) -> USCORE(f ii)
   | TILDE(ii) -> TILDE(f ii)
   | STAR(ii) -> STAR(f ii)
-  | SHARP(ii) -> SHARP(f ii)
+  | HASH(ii) -> HASH(f ii)
   | SEMI(ii) -> SEMI(f ii)
 
   | LPAREN(ii) -> LPAREN(f ii)
@@ -101,11 +103,11 @@ let visitor_info_of_tok f = function
 
   | PLUS(ii) -> PLUS(f ii)
   | PIPE(ii) -> PIPE(f ii)
-  | MORECOLON(ii) -> MORECOLON(f ii)
+  | SUPERTYPE(ii) -> SUPERTYPE(f ii)
   | MINUS(ii) -> MINUS(f ii)
-  | LESSPERCENT(ii) -> LESSPERCENT(f ii)
-  | LESSMINUS(ii) -> LESSMINUS(f ii)
-  | LESSCOLON(ii) -> LESSCOLON(f ii)
+  | VIEWBOUND(ii) -> VIEWBOUND(f ii)
+  | LARROW(ii) -> LARROW(f ii)
+  | SUBTYPE(ii) -> SUBTYPE(f ii)
   | ARROW(ii) -> ARROW(f ii)
   | EQUALS(ii) -> EQUALS(f ii)
   | BANG(ii) -> BANG(f ii)
@@ -168,13 +170,88 @@ let abstract_info_tok tok =
 (* More token Helpers for Parse_scala_recursive_descent.ml *)
 (*****************************************************************************)
 
-(* TODO: OP ? and STAR | ... ? *)
+(* ------------------------------------------------------------------------- *)
+(* Just used in the tokenizer (for lexing tricks for newline) *)
+(* ------------------------------------------------------------------------- *)
+
+(** Can token start a statement? *)
+let inFirstOfStat x =
+  match x with
+  | EOF _
+  | Kcatch _ | Kelse _ | Kextends _ | Kfinally _
+  | KforSome _ | Kmatch _ | Kwith _ | Kyield _
+  | COMMA _ | SEMI _
+  | NEWLINE _ | NEWLINES _
+  | DOT _ | COLON _ | EQUALS _ | ARROW _
+  | LARROW _
+  | SUBTYPE _  | VIEWBOUND _ | SUPERTYPE _
+  | HASH _
+  | RPAREN _ | RBRACKET _ | RBRACE _
+  | LBRACKET _ ->
+      false
+  | _ ->
+      logger#info "inFirstOfStat: true for %s" (Common.dump x);
+      true
+
+(** Can token end a statement? *)
+let inLastOfStat x =
+  match x with
+  | CharacterLiteral _ | IntegerLiteral _ | FloatingPointLiteral _
+  | StringLiteral _
+  | SymbolLiteral _
+
+  (* less: use isIdent? *)
+  | ID_LOWER _ | ID_UPPER _ | ID_BACKQUOTED _
+  | OP _ | STAR _ | PLUS _ | MINUS _
+
+  | Kthis _
+  | Knull _
+  | BooleanLiteral _
+  | Kreturn _
+  | USCORE _
+  | Ktype _
+  (* less: | XMLSTART  *)
+  | RPAREN _ | RBRACKET _ | RBRACE _ ->
+      logger#info "inLastOfStat: true for %s" (Common.dump x);
+      true
+  | _ -> false
+
+(* ------------------------------------------------------------------------- *)
+(* Used in the parser *)
+(* ------------------------------------------------------------------------- *)
+
 let isIdent = function
-  | ID_LOWER (s, info) | ID_UPPER(s, info) | ID_BACKQUOTED (s, info) ->
+  | ID_LOWER (s, info) | ID_UPPER(s, info)
+  | ID_BACKQUOTED (s, info)
+  | OP (s, info)
+    ->
       Some (s, info)
+  (* need that?? *)
+  | STAR info -> Some ("*", info)
+  | PLUS info -> Some ("+", info)
+  | MINUS info -> Some ("-", info)
   | _ -> None
+
 let isIdentBool x =
   isIdent x <> None
+
+let isRawIdent = function
+  | ID_LOWER (s, info) | ID_UPPER (s, info) | OP (s, info)
+    (* TODO: and STAR | ... ? *)
+    -> Some (s, info)
+  | _ -> None
+
+let isRawStar x =
+  match isRawIdent x with
+  | Some (s, _) -> s = "*" (* AST: raw.STAR *)
+  (* TODO: or just | STAR _ -> true *)
+  | _ -> false
+
+let isRawBar x =
+  match isRawIdent x with
+  | Some (s, _) -> s = "|" (* AST: raw.STAR *)
+  (* TODO: or just | PIPE _ -> true *)
+  | _ -> false
 
 let isLiteral = function
   | IntegerLiteral(_)
@@ -189,6 +266,11 @@ let isLiteral = function
     -> true
   | _ -> false
 
+let isNumericLit = function
+  | IntegerLiteral(_)
+  | FloatingPointLiteral(_)
+    -> true
+  | _ -> false
 
 let isStatSep = function
   | NEWLINE _ | NEWLINES _ | SEMI _ -> true
@@ -202,14 +284,15 @@ let isAnnotation = function
   | AT _ -> true
   | _ -> false
 
-
 let isModifier = function
-  | Kabstract _ | Kfinal _ | Ksealed _ | Kprivate _
-  | Kprotected _ | Koverride _ | Kimplicit _ | Klazy _ -> true
+  | Kabstract _ | Kfinal _ | Ksealed _
+  | Kprivate _  | Kprotected _ | Koverride _
+  | Kimplicit _ | Klazy _ -> true
   | _ -> false
 
 let isLocalModifier = function
-  | Kabstract _ | Kfinal _ | Ksealed _ | Kimplicit _ | Klazy _ -> true
+  | Kabstract _ | Kfinal _ | Ksealed _
+  | Kimplicit _ | Klazy _ -> true
   | _ -> false
 
 let isTemplateIntro = function
@@ -220,7 +303,6 @@ let isTemplateIntro = function
 let isDclIntro = function
   | Kval _ | Kvar _ | Kdef _ | Ktype _ -> true
   | _ -> false
-
 
 let isExprIntro x =
   isIdentBool x || isLiteral x ||
@@ -238,6 +320,10 @@ let isExprIntro x =
 let isDefIntro x =
   isTemplateIntro x || isDclIntro x
 
+let isCaseDefEnd = function
+  | RBRACE _ | Kcase _ | EOF _ -> true
+  | _ -> false
+
 let raw_isUnary _s =
   Common.pr2_once "TODO: raw_isUnary";
   false
@@ -246,3 +332,16 @@ let isUnaryOp x =
   match isIdent x with
   | None -> false
   | Some (s, _) -> raw_isUnary s
+
+(* TODO? correct? *)
+let nme_MACROkw = "macro"
+
+let isMacro x =
+  match isIdent x with
+  | None -> false
+  | Some (s, _) -> s = nme_MACROkw
+
+let isWildcardType = function
+  (* TODO: scala3 also accept '?' *)
+  | USCORE _ -> true
+  | _ -> false

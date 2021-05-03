@@ -1,3 +1,4 @@
+object Foo {
   def pointsTo(): Map[ADeclaration, Set[AstNode]] = {
     val solution = solver.solution()
     val unifications = solver.unifications()
@@ -6,3 +7,4 @@
       s"{ ${s.mkString(",")} }"
     }.mkString(", ")}")
   }
+}

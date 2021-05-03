@@ -15,7 +15,7 @@
  *)
 open Common
 
-open Parser_scala
+open Token_scala
 module PI = Parse_info
 module Flag = Flag_parsing
 
@@ -105,7 +105,7 @@ let op = '/'
        | op_nodiv
        | op_nodiv op_nodivstar opchar*
 
-let idrest = (letter | digit)* ('_' | op)?
+let idrest = (letter | digit)* ('_' op)?
 
 let varid = lower idrest
 let _boundvarid = varid | '`' varid '`'
@@ -200,22 +200,25 @@ rule token = parse
   | ':'     { COLON (tokinfo lexbuf) }
   | '='     { EQUALS (tokinfo lexbuf) }
 
-  (* conflict with op? *)
+  (* Those characters can be part of an operator. Conflict with op?
+   * Only 'paren' and 'delim' above can't be part of an operator.
+  *)
   | '+'     { PLUS (tokinfo lexbuf) }
   | '-'     { MINUS (tokinfo lexbuf) }
   | '*'     { STAR (tokinfo lexbuf) }
 
   | '!'     { BANG (tokinfo lexbuf) }
-  | '#'     { SHARP (tokinfo lexbuf) }
+  | '#'     { HASH (tokinfo lexbuf) }
   | '~'     { TILDE (tokinfo lexbuf) }
   | '|'     { PIPE (tokinfo lexbuf) }
+
   | '_'     { USCORE (tokinfo lexbuf) }
 
-  | "<%"    { LESSPERCENT (tokinfo lexbuf) }
-  | "<-"    { LESSMINUS (tokinfo lexbuf) }
-  | "<:"    { LESSCOLON (tokinfo lexbuf) }
+  | "<%"    { VIEWBOUND (tokinfo lexbuf) }
+  | "<-"    { LARROW (tokinfo lexbuf) }
   | "=>"    { ARROW (tokinfo lexbuf) }
-  | ">:"    { MORECOLON (tokinfo lexbuf) }
+  | "<:"    { SUBTYPE (tokinfo lexbuf) }
+  | ">:"    { SUPERTYPE (tokinfo lexbuf) }
 
   | "@"    { AT (tokinfo lexbuf) }
 
@@ -283,6 +286,8 @@ rule token = parse
         | "implicit"    -> Kimplicit t
         | "lazy"    -> Klazy t
         | "yield"    -> Kyield t
+
+        (* missing? "macro"? *)
 
         | _          -> ID_LOWER (s, t)
     }
