@@ -290,9 +290,9 @@ let accept t in_ =
 (* was called in.next.token *)
 let (*rec*) next_next_token in_ =
   match in_.rest with
-  | [] -> failwith "in_next_token: no more tokens"
+  | [] -> None
   (* TODO: also skip spacing and stuff? *)
-  | x::xs -> x
+  | x::xs -> Some x
 
 let lookingAhead f in_ =
   failwith "lookingAhead"
@@ -330,7 +330,7 @@ let newLineOpt in_ =
 
 let newLineOptWhenFollowedBy token in_ =
   match in_.token, next_next_token in_ with
-  | NEWLINE _, x when x =~= token -> newLineOpt in_
+  | NEWLINE _, Some x when x =~= token -> newLineOpt in_
   | _ -> ()
 
 let newLineOptWhenFollowing token in_ =
@@ -347,6 +347,10 @@ let skipTrailingComma right in_ =
       failwith "skipTrailingComma"
   | _ ->
       ()
+
+let _isTrailingComma in_ =
+  pr2 "isTrailingComma:TODO";
+  in_.token =~= (COMMA ab) && true
 
 (* ------------------------------------------------------------------------- *)
 (* Context sensitive parsing  *)
@@ -388,6 +392,7 @@ let inBracesOrNil = inBraces
 
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
+  (* CHECK: "separator cannot be a comma" *)
   in_ |> with_logging (spf "separatedTopen(%s)" (dump_token sep)) (fun () ->
     let ts = ref [] in
     while in_.token =~= sep do
@@ -403,10 +408,22 @@ let tokenSeparated separator part in_ =
   let ts = ref [] in
   let x = part in_ in
   ts += x;
+(*
+  let done_ = ref (in_.token =~= separator) in
+  while not !done_  do
+    let skippable = separator =~= (COMMA ab) && isTrailingComma in_ in
+    if not skippable then begin
+      nextToken in_;
+      let x = part in_ in
+      ts += x
+    end;
+    done_ := (in_.token =~= separator) || skippable;
+  done;
+*)
   while in_.token =~= separator do
     nextToken in_;
     let x = part in_ in
-    ts += x
+    ts += x;
   done;
   !ts
 

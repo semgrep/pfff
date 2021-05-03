@@ -79,6 +79,7 @@ let test regexp =
       (* non PHP related tests *)
 
       Unit_parsing_ml.unittest;
+      Unit_parsing_scala.unittest;
       (* TODO path issue when run outside of pfff (e.g., in semgrep-core)
             Unit_analyze_ml.unittest;
       *)
