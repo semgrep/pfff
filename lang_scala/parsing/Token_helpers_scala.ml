@@ -220,13 +220,13 @@ let inLastOfStat x =
 (* Used in the parser *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: and STAR | ... ? *)
 let isIdent = function
   | ID_LOWER (s, info) | ID_UPPER(s, info)
   | ID_BACKQUOTED (s, info)
   | OP (s, info)
     ->
       Some (s, info)
+  (* need that?? *)
   | STAR info -> Some ("*", info)
   | PLUS info -> Some ("+", info)
   | MINUS info -> Some ("-", info)
@@ -244,10 +244,13 @@ let isRawIdent = function
 let isRawStar x =
   match isRawIdent x with
   | Some (s, _) -> s = "*" (* AST: raw.STAR *)
+  (* TODO: or just | STAR _ -> true *)
   | _ -> false
+
 let isRawBar x =
   match isRawIdent x with
   | Some (s, _) -> s = "|" (* AST: raw.STAR *)
+  (* TODO: or just | PIPE _ -> true *)
   | _ -> false
 
 let isLiteral = function

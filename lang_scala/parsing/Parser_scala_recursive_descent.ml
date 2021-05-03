@@ -480,6 +480,9 @@ let stripParens x =
 let commaSeparated part in_ =
   tokenSeparated (COMMA ab) part in_
 
+let caseSeparated part in_ =
+  separatedToken (Kcase ab) part in_
+
 (*****************************************************************************)
 (* Parsing names  *)
 (*****************************************************************************)
@@ -588,6 +591,16 @@ let path ~thisOK ~typeOK in_ =
         end;
         !t
   )
+
+(** {{{
+ *  StableId ::= Id
+ *            |  Path `.` Id
+ *            |  [id `.`] super [`[` id `]`]`.` id
+ *  }}}
+*)
+let stableId in_ =
+  path ~thisOK:false ~typeOK:false in_
+
 (*****************************************************************************)
 (* Forward references  *)
 (*****************************************************************************)
@@ -599,10 +612,63 @@ let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
-(* less: for types, maybe could move literal up *)
-let literal_  =
-  ref (fun ?(isNegated=false) ?(inPattern=false) _ ->
-    failwith "forward ref not set")
+
+(*****************************************************************************)
+(* Literal  *)
+(*****************************************************************************)
+
+let interpolatedString ~inPattern in_ =
+  failwith "interpolatedString"
+
+(** {{{
+ *  SimpleExpr    ::= literal
+ *                  | symbol
+ *                  | null
+ *  }}}
+*)
+let literal ?(isNegated=false) ?(inPattern=false) in_ =
+  in_ |> with_logging (spf "literal(isNegated:%b, inPattern:%b)"
+                         isNegated inPattern) (fun () ->
+    let finish value_ =
+      (* AST: newLiteral(value) *)
+      nextToken in_;
+      value_
+    in
+    match in_.token with
+    | T_INTERPOLATED_START _ ->
+        (* AST: if not inPattern then withPlaceholders(...) *)
+        interpolatedString ~inPattern in_
+    (* CHECK: unsupported in Scala3, deprecated in 2.13.0 *)
+    (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
+    | SymbolLiteral(s, ii) -> finish ()
+
+    | CharacterLiteral(x, ii) -> finish () (* AST: incharVal *)
+    | IntegerLiteral(x, ii) -> finish () (* AST: in.intVal(isNegated) *)
+    | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated) *)
+
+    | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
+    | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
+    | Knull _ -> finish () (* AST: null *)
+    | _ -> error "illegal literal" in_
+  )
+
+(*****************************************************************************)
+(* Infix Expr/Types/pattern management  *)
+(*****************************************************************************)
+
+let exprTypeArgs in_ =
+  failwith "exprTypeArgs"
+
+let pushOpInfo top in_ =
+  let x = ident in_ in
+  let targs =
+    if in_.token =~= (LBRACKET ab)
+    then exprTypeArgs in_
+    else () (* AST: Nil *)
+  in
+  (* AST: OpInfo(top, name, targs) *)
+  ()
+
 
 (*****************************************************************************)
 (* Parsing types  *)
@@ -643,6 +709,7 @@ let rec typ in_ =
     | _ -> t
   )
 
+(* pad: similar to infixExpr *)
 and infixType in_ =
   in_ |> with_logging "infixType" (fun () ->
     pr2 "infixType:TODO";
@@ -670,12 +737,12 @@ and simpleType in_ =
   in_ |> with_logging "simpleType" (fun () ->
     match in_.token with
     | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
-        let x = !literal_ in_ in
+        let x = literal in_ in
         (* AST: SingletonTypeTree(x) *)
         ()
     | MINUS _ when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
         nextToken in_;
-        let x = !literal_ ~isNegated:true in_ in
+        let x = literal ~isNegated:true in_ in
         (* AST: SingletonTypeTree(x) *)
         ()
     | _ ->
@@ -775,22 +842,50 @@ let typedOpt in_ =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* Inside ??? *)
+(* Inside SeqContextSensitive *)
 (* ------------------------------------------------------------------------- *)
+(* TODO: functionArgType, argType different here *)
 
-let pattern in_ =
+(** {{{
+ *  Pattern  ::=  Pattern1 { `|` Pattern1 }
+ *  SeqPattern ::= SeqPattern1 { `|` SeqPattern1 }
+ *  }}}
+*)
+let rec pattern in_ =
   in_ |> with_logging "pattern" (fun () ->
-    failwith "pattern"
+    let rec loop () =
+      let p = pattern1 in_ in
+      p::
+      (if TH.isRawBar in_.token
+       then begin
+         nextToken in_;
+         loop ()
+       end else []
+      )
+    in
+    let res = loop () in
+    (* AST: makeAlternative if many elements *)
+    ()
   )
 
 (** {{{
- *  Pattern3    ::= SimplePattern
- *                |  SimplePattern {Id [nl] SimplePattern}
+ *  Pattern1    ::= boundvarid `:` TypePat
+ *                |  `_` `:` TypePat
+ *                |  Pattern2
+ *  SeqPattern1 ::= boundvarid `:` TypePat
+ *                |  `_` `:` TypePat
+ *                |  [SeqPattern2]
  *  }}}
 *)
-let pattern3 in_ =
-  pr2 "pattern3: TODO";
-  ident in_
+and pattern1 in_ =
+  let p = pattern2 in_ in
+  (* crazy? parsing depending on what was parsed *)
+  (match in_.token with
+   | COLON _ ->
+       failwith "pattern1: after COLON, call compoundType?"
+   (* CHECK: "Pattern variables must start with a lower-case letter." *)
+   | _ -> p
+  )
 
 (** {{{
  *  Pattern2    ::=  id  `@` Pattern3
@@ -798,23 +893,119 @@ let pattern3 in_ =
  *                |   Pattern3
  *  }}}
 *)
-let pattern2 in_ =
+and pattern2 in_ =
   let x = pattern3 in_ in
   match in_.token with
-  | AT _ -> (* TODO: case p @ Ident(name) *)
+  | AT _ -> (* crazy? TODO: case p @ Ident(name) *)
       nextToken in_;
       let body = pattern3 in_ in
       (* AST: Bind(name, body), if WILDCARD then ... *)
       body
   | _ -> x
 
-let caseClauses in_ =
-  failwith "caseClauses"
+(** {{{
+ *  Pattern3    ::= SimplePattern
+ *                |  SimplePattern {Id [nl] SimplePattern}
+ *  }}}
+*)
+(* pad: similar to infixExpr/infixType, rename infixPattern? *)
+and pattern3 in_ =
+  in_ |> with_logging "pattern3" (fun () ->
+    (* CHECK: badPattern3 *)
+    let top = simplePattern in_ in
+    (* AST: let base = opstack *)
+    (* TODO: checkWildStar *)
+    let rec loop top in_ =
+      in_ |> with_logging "pattern3: loop" (fun () ->
+        (* AST: let next = reducePatternStack(base, top) *)
+        let next = () in
+        if TH.isIdentBool in_.token && not (TH.isRawBar in_.token) then begin
+          pushOpInfo next in_;
+          (* no postfixPattern, so always go for right part of infix op *)
+          let x = simplePattern in_ in
+          loop x in_
+        end else
+          in_ |> with_logging "pattern3: loop noIsIdent stop" (fun () ->
+            top
+          )
+      )
+    in
+    pr2 "checkWildStar:TODO, orElse";
+    let x = loop top in_ in
+    (* AST: stripParens(x) *)
+    ()
+  )
+
+
+
+(** {{{
+ *  Patterns ::= Pattern { `,` Pattern }
+ *  SeqPatterns ::= SeqPattern { `,` SeqPattern }
+ *  }}}
+*)
+and patterns in_ =
+  commaSeparated pattern in_
 
 (* ------------------------------------------------------------------------- *)
-(* Outside ??? *)
+(* Outside SeqContextSensitive *)
 (* ------------------------------------------------------------------------- *)
-let _pattern in_ =
+
+(** {{{
+ *  SimplePattern    ::= varid
+ *                    |  `_`
+ *                    |  literal
+ *                    |  XmlPattern
+ *                    |  StableId  /[TypeArgs]/ [`(` [Patterns] `)`]
+ *                    |  StableId  [`(` [Patterns] `)`]
+ *                    |  StableId  [`(` [Patterns] `,` [varid `@`] `_` `*` `)`]
+ *                    |  `(` [Patterns] `)`
+ *  }}}
+ *
+ * XXX: Hook for IDE
+*)
+and simplePattern in_ =
+  in_ |> with_logging "simplePattern" (fun () ->
+    match in_.token with
+    | MINUS _ ->
+        (* less: literal isNegated:true inPattern:true *)
+        failwith "simplePattern: MINUS"
+    | x when TH.isIdentBool x || x =~= (Kthis ab) ->
+        let t = stableId in_ in
+        (* less: if t = Ident("-") literal isNegated:true inPattern:true *)
+        let typeAppliedTree =
+          match in_.token with
+          | LBRACKET _ ->
+              let xs = typeArgs in_ in
+              (* AST: AppliedTypeTree(convertToTypeId(t), xs) *)
+              t
+          | _ -> t
+        in
+        (match in_.token with
+         | LPAREN _ ->
+             let xs = argumentPatterns in_ in
+             (* AST: Apply(typeAppliedTree, t) *)
+             ()
+         | _ -> (* AST: typeAppliedTree *) ()
+        )
+    | USCORE _ ->
+        nextToken in_;
+        (* AST: Ident(nme.WILDCARD) *)
+        ()
+    | LPAREN _ ->
+        let xs = makeParens (noSeq patterns) in_ in
+        ()
+    | x when TH.isLiteral x ->
+        let x = literal ~inPattern:true in_ in
+        ()
+    (* less: XMLSTART *)
+    | _ ->
+        error "illegal start of simple pattern" in_
+  )
+
+and argumentPatterns in_ =
+  failwith "argumentPatterns"
+
+let pattern in_ =
   noSeq pattern in_
 
 (*****************************************************************************)
@@ -970,19 +1161,6 @@ and postfixExpr in_ : unit =
     loop res in_
   )
 
-and pushOpInfo top in_ =
-  let x = ident in_ in
-  let targs =
-    if in_.token =~= (LBRACKET ab)
-    then exprTypeArgs in_
-    else () (* AST: Nil *)
-  in
-  (* AST: OpInfo(top, name, targs) *)
-  ()
-
-and exprTypeArgs in_ =
-  failwith "exprTypeArgs"
-
 (** {{{
  *  PrefixExpr   ::= [`-` | `+` | `~` | `!`] SimpleExpr
  *  }}}
@@ -1083,40 +1261,6 @@ and simpleExprRest ~canApply t in_ =
   )
 
 
-(** {{{
- *  SimpleExpr    ::= literal
- *                  | symbol
- *                  | null
- *  }}}
-*)
-and literal ?(isNegated=false) ?(inPattern=false) in_ =
-  in_ |> with_logging (spf "literal(isNegated:%b, inPattern:%b)"
-                         isNegated inPattern) (fun () ->
-    let finish value_ =
-      (* AST: newLiteral(value) *)
-      nextToken in_;
-      value_
-    in
-    match in_.token with
-    | T_INTERPOLATED_START _ ->
-        (* AST: if not inPattern then withPlaceholders(...) *)
-        interpolatedString ~inPattern in_
-    (* CHECK: unsupported in Scala3, deprecated in 2.13.0 *)
-    (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
-    | SymbolLiteral(s, ii) -> finish ()
-
-    | CharacterLiteral(x, ii) -> finish () (* AST: incharVal *)
-    | IntegerLiteral(x, ii) -> finish () (* AST: in.intVal(isNegated) *)
-    | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated) *)
-
-    | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
-    | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
-    | Knull _ -> finish () (* AST: null *)
-    | _ -> error "illegal literal" in_
-  )
-
-and interpolatedString ~inPattern in_ =
-  failwith "interpolatedString"
 
 
 (* AST: *)
@@ -1162,8 +1306,44 @@ and argumentExprs in_ : unit list =
   )
 
 (* ------------------------------------------------------------------------- *)
-(* Infix expr *)
+(* Case clauses *)
 (* ------------------------------------------------------------------------- *)
+
+(** {{{
+ *  Guard ::= if PostfixExpr
+ *  }}}
+*)
+and guard in_ =
+  if in_.token =~= (Kif ab)
+  then begin
+    nextToken in_;
+    let x = postfixExpr in_ in
+    (* AST: stripParens(x) *)
+    ()
+  end
+  else () (* AST: Nil *)
+
+and caseBlock in_ =
+  accept (ARROW ab) in_;
+  let x = block in_ in
+  ()
+
+and caseClause in_ =
+  let p = pattern in_ in
+  let g = guard in_ in
+  let b = caseBlock in_ in
+  (* AST: makeCaseDef *)
+  ()
+
+(** {{{
+ *  CaseClauses ::= CaseClause {CaseClause}
+ *  CaseClause  ::= case Pattern [Guard] `=>` Block
+ *  }}}
+*)
+and caseClauses in_ =
+  (* CHECK: empty cases *)
+  let xs = caseSeparated caseClause in_ in
+  xs
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
@@ -2089,7 +2269,6 @@ let _ =
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
-  literal_ := literal;
   ()
 
 (** {{{
