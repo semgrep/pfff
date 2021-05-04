@@ -722,9 +722,30 @@ and infixType in_ =
     simpleType in_
   )
 
+(* () must be () => R; (types) could be tuple or (types) => R *)
 and tupleInfixType in_ =
-  failwith "tupleInfixType"
-
+  in_ |> with_logging "tupleInfixType" (fun () ->
+    if not (in_.token =~= (LPAREN ab))
+    then error "first token must be a left parenthesis" in_;
+    let ts =
+      inParens (fun in_ ->
+        match in_.token with
+        | RPAREN _ -> []
+        | _ -> functionTypes in_
+      ) in_ in
+    (match in_.token with
+     | ARROW _ ->
+         skipToken in_;
+         let t = typ in_ in
+         (* AST: makeSafeFunctionType(ts, t) *)
+         ()
+     (* CHECK: if is.isEmpty "Illegal literal type (), use Unit instead" *)
+     | _ ->
+         (* CHECK: ts foreach checkNotByNameOrVarargs *)
+         let tuple = (* AST: makeSafeTupleType(ts) *) () in
+         failwith "tupleInfixType"
+    )
+  )
 and makeExistentialTypeTree t in_ =
   failwith "makeExistentialTypeTree"
 
@@ -800,10 +821,8 @@ and typeArgs in_ =
 and types in_ =
   commaSeparated argType in_
 
-(*
 and functionTypes in_ =
   commaSeparated functionArgType in_
-*)
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -813,13 +832,12 @@ and functionTypes in_ =
  *  }}}
 *)
 and argType in_ =
-  pr2 "argType: TODO";
+  pr2 "argType: TODO typ() and wildcard or typ()";
   typ in_
 
-(*
 and functionArgType in_ =
-  failwith "functionArgType"
-*)
+  pr2 "functionArgType TODO argType or paramType";
+  argType in_
 
 (* ------------------------------------------------------------------------- *)
 (* Outside PatternContextSensitive *)
@@ -1174,7 +1192,20 @@ and postfixExpr in_ : unit =
 and prefixExpr in_ : unit =
   match in_.token with
   | t when TH.isUnaryOp t ->
-      failwith "prefixExpr:unaryOp"
+      if lookingAhead (fun in_ -> TH.isExprIntro in_.token) in_
+      then begin
+        let uname = rawIdent in_ in (* AST: toUnaryName ... *)
+        match t, in_.token with
+        | MINUS _, x when TH.isNumericLit x  (* uname == nme.UNARY_- ... *)->
+            (* start at the -, not the number *)
+            let x = literal ~isNegated:true in_ in
+            simpleExprRest ~canApply:true x  in_
+        | _ ->
+            let x = simpleExpr in_ in
+            (* AST: Select(stripParens(x), uname) *)
+            ()
+      end
+      else simpleExpr in_
   | _ -> simpleExpr in_
 
 (** {{{
@@ -1394,7 +1425,12 @@ and parseTry in_ =
   failwith "parseTry"
 
 and parseWhile in_ =
-  failwith "parseWhile"
+  skipToken in_;
+  let cond = condExpr in_ in
+  newLinesOpt in_;
+  let body = expr in_ in
+  (* AST: makeWhile(cond, body) *)
+  ()
 
 and parseDo in_ =
   failwith "parseDo"

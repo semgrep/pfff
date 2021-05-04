@@ -324,6 +324,7 @@ let isCaseDefEnd = function
   | RBRACE _ | Kcase _ | EOF _ -> true
   | _ -> false
 
+(*
 let raw_isUnary _s =
   Common.pr2_once "TODO: raw_isUnary";
   false
@@ -332,6 +333,10 @@ let isUnaryOp x =
   match isIdent x with
   | None -> false
   | Some (s, _) -> raw_isUnary s
+*)
+let isUnaryOp = function
+  | MINUS _ | PLUS _ | TILDE _ | BANG _ -> true
+  | _ -> false
 
 (* TODO? correct? *)
 let nme_MACROkw = "macro"
