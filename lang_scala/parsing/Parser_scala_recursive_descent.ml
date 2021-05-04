@@ -63,6 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
+let debug_parser = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -120,20 +121,32 @@ let dump_token tok =
 let n_dash n = Common2.repeat "-" n |> Common.join ""
 
 let with_logging funcname f in_ =
-  let save = in_.depth in
-  in_.depth <- in_.depth + 1;
-  let depth = n_dash in_.depth in
-  logger#info "%s>%s: %s" depth funcname (dump_token in_.token);
-  let res = f () in (* less: pass in_ ? *)
-  in_.depth <- save;
-  res
+  if !debug_parser then begin
+    let save = in_.depth in
+    in_.depth <- in_.depth + 1;
+    let depth = n_dash in_.depth in
+    logger#info "%s>%s: %s" depth funcname (dump_token in_.token);
+    let res = f () in (* less: pass in_ ? *)
+    in_.depth <- save;
+    res
+  end
+  else f ()
 
 (*****************************************************************************)
 (* Error management  *)
 (*****************************************************************************)
 let error x in_ =
-  pr2 (dump_token in_.token);
-  failwith x
+  let tok = in_.token in
+  pr2 (dump_token tok);
+  pr2 x;
+  let info = TH.info_of_tok tok in
+  raise (Parse_info.Parsing_error info)
+
+let todo x in_ =
+  error ("TODO:" ^x) in_
+let warning s =
+  if !debug_parser
+  then pr2 s
 
 (*****************************************************************************)
 (* Helpers  *)
@@ -172,7 +185,7 @@ let insertNL ?(newlines=false) in_ =
     logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
   end;
   match in_.last_nl with
-  | None -> failwith "no last newline to insert back"
+  | None -> todo "no last newline to insert back" in_
   | Some x ->
       in_.rest <- in_.token::in_.rest;
       in_.token <- if newlines then NEWLINES x else NEWLINE x;
@@ -213,7 +226,7 @@ let fetchToken in_ =
 
   let rec loop aux =
     match in_.rest with
-    | [] -> failwith "fetchToken: no more tokens"
+    | [] -> todo "fetchToken: no more tokens" in_
     | x::xs ->
         if !debug_lexer then logger#info "fetchToken: %s" (dump_token x);
 
@@ -273,7 +286,7 @@ let nextToken in_ =
   ()
 
 let nextTokenAllow next in_ =
-  pr2 "nextTokenAllow: TODO";
+  warning "nextTokenAllow: TODO";
   nextToken in_
 
 let skipToken in_ =
@@ -354,7 +367,7 @@ let newLineOptWhenFollowedBy token in_ =
   | _ -> ()
 
 let newLineOptWhenFollowing token in_ =
-  pr2 "newLineOptWhenFollowing: TODO";
+  warning "newLineOptWhenFollowing: TODO";
   newLineOpt in_
 
 (* ------------------------------------------------------------------------- *)
@@ -395,11 +408,11 @@ let skipTrailingComma right in_ =
 (* Context sensitive parsing  *)
 (* ------------------------------------------------------------------------- *)
 let noSeq f in_ =
-  pr2 "noSeq: TODO";
+  warning "noSeq: TODO";
   f in_
 
 let outPattern f in_ =
-  pr2 "outPattern: TODO";
+  warning "outPattern: TODO";
   f in_
 
 (*****************************************************************************)
@@ -582,16 +595,16 @@ let path ~thisOK ~typeOK in_ =
   in_ |> with_logging (spf "path(thisOK:%b, typeOK:%b)" thisOK typeOK) (fun()->
     let t = ref () in
     match in_.token with
-    | Kthis _ -> failwith "path.this"
-    | Ksuper _ -> failwith "path.super"
+    | Kthis _ -> todo "path.this" in_
+    | Ksuper _ -> todo "path.super" in_
     | _ ->
         let name = ident in_ in
         (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
         if in_.token =~= (DOT ab) then begin
           skipToken in_;
           match in_.token with
-          | Kthis _ -> failwith "path.this 2"
-          | Ksuper _ -> failwith "path.super 2"
+          | Kthis _ -> todo "path.this 2" in_
+          | Ksuper _ -> todo "path.super 2" in_
           | _ ->
               let x = selectors ~typeOK !t in_ in
               t := x
@@ -626,7 +639,7 @@ let exprTypeArgs_ = ref (fun _ -> failwith "forward ref not set")
 (*****************************************************************************)
 
 let interpolatedString ~inPattern in_ =
-  failwith "interpolatedString"
+  todo "interpolatedString" in_
 
 (** {{{
  *  SimpleExpr    ::= literal
@@ -715,7 +728,7 @@ let rec typ in_ =
 (* pad: similar to infixExpr *)
 and infixType in_ =
   in_ |> with_logging "infixType" (fun () ->
-    pr2 "infixType:TODO";
+    warning "infixType:TODO";
     simpleType in_
   )
 
@@ -740,11 +753,11 @@ and tupleInfixType in_ =
      | _ ->
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
          let tuple = (* AST: makeSafeTupleType(ts) *) () in
-         failwith "tupleInfixType"
+         todo "tupleInfixType" in_
     )
   )
 and makeExistentialTypeTree t in_ =
-  failwith "makeExistentialTypeTree"
+  todo "makeExistentialTypeTree" in_
 
 
 (** {{{
@@ -800,7 +813,7 @@ and simpleTypeRest t in_ =
   | _ -> t
 
 and typeProjection t in_ =
-  failwith "typeProjection"
+  todo "typeProjection" in_
 
 (** {{{
  *  TypeArgs    ::= `[` ArgType {`,` ArgType} `]`
@@ -829,11 +842,11 @@ and functionTypes in_ =
  *  }}}
 *)
 and argType in_ =
-  pr2 "argType: TODO typ() and wildcard or typ()";
+  warning "argType: TODO typ() and wildcard or typ()";
   typ in_
 
 and functionArgType in_ =
-  pr2 "functionArgType TODO argType or paramType";
+  warning "functionArgType TODO argType or paramType";
   argType in_
 
 (* ------------------------------------------------------------------------- *)
@@ -876,7 +889,7 @@ let typ x = outPattern typ x
 let exprSimpleType x = outPattern simpleType x
 
 let typeOrInfixType location in_ =
-  failwith "typeOrInfixType"
+  todo "typeOrInfixType" in_
 
 (** {{{
  *  TypedOpt ::= [`:` Type]
@@ -936,7 +949,7 @@ and pattern1 in_ =
   (* crazy? parsing depending on what was parsed *)
   (match in_.token with
    | COLON _ ->
-       failwith "pattern1: after COLON, call compoundType?"
+       todo "pattern1: after COLON, call compoundType?" in_
    (* CHECK: "Pattern variables must start with a lower-case letter." *)
    | _ -> p
   )
@@ -984,7 +997,7 @@ and pattern3 in_ =
           )
       )
     in
-    pr2 "checkWildStar:TODO, orElse";
+    warning "checkWildStar:TODO, orElse";
     let x = loop top in_ in
     (* AST: stripParens(x) *)
     ()
@@ -1022,7 +1035,7 @@ and simplePattern in_ =
     match in_.token with
     | MINUS _ ->
         (* less: literal isNegated:true inPattern:true *)
-        failwith "simplePattern: MINUS"
+        todo "simplePattern: MINUS" in_
     | x when TH.isIdentBool x || x =~= (Kthis ab) ->
         let t = stableId in_ in
         (* less: if t = Ident("-") literal isNegated:true inPattern:true *)
@@ -1057,7 +1070,7 @@ and simplePattern in_ =
   )
 
 and argumentPatterns in_ =
-  failwith "argumentPatterns"
+  todo "argumentPatterns" in_
 
 let pattern in_ =
   noSeq pattern in_
@@ -1155,7 +1168,7 @@ and parseOther location (in_: env) =
   (* crazy: another parsing depending on the AST! crazy *)
   let lhsIsTypedParamList x =
     (* CHECK: "self-type annotation may not be in parentheses" *)
-    failwith "lhsIsTypedParamList"
+    todo "lhsIsTypedParamList" in_
   in
   if (in_.token =~= (ARROW ab) && location <> InTemplate &&
       lhsIsTypedParamList !t) then begin
@@ -1424,7 +1437,7 @@ and caseClauses in_ =
 (* Misc *)
 (* ------------------------------------------------------------------------- *)
 and implicitClosure location in_ =
-  failwith "implicitClosure"
+  todo "implicitClosure" in_
 
 (*****************************************************************************)
 (* Parsing statements  *)
@@ -1460,13 +1473,13 @@ and parseWhile in_ =
   ()
 
 and parseDo in_ =
-  failwith "parseDo"
+  todo "parseDo" in_
 
 and parseFor in_ =
-  failwith "parseFor"
+  todo "parseFor" in_
 
 and parseReturn in_ =
-  failwith "parseReturn"
+  todo "parseReturn" in_
 
 and parseTry in_ =
   skipToken in_;
@@ -1494,7 +1507,7 @@ and parseTry in_ =
 
 
 and parseThrow in_ =
-  failwith "parseThrow"
+  todo "parseThrow" in_
 
 and statement (location: location) (in_: env) =
   expr ~location in_
@@ -1579,10 +1592,10 @@ let startAnnotType in_ =
 (* Parsing directives  *)
 (*****************************************************************************)
 let packageObjectDef in_ =
-  failwith "packageObjectDef"
+  todo "packageObjectDef" in_
 
 let packageOrPackageObject in_ =
-  failwith "packageOrPackageObject"
+  todo "packageOrPackageObject" in_
 
 let wildImportSelector in_ =
   (* AST: val selector = ImportSelector.wildAt(in.offset) *)
@@ -1895,7 +1908,7 @@ let paramClauses ~ofCaseClass owner contextBoundBuf in_ =
 *)
 let typeParamClauseOpt owner contextBoundBuf in_ =
   let typeParam ms in_ =
-    failwith "typeParam" in
+    todo "typeParam" in_ in
   newLineOptWhenFollowedBy (LBRACKET ab) in_;
   match in_.token with
   | LBRACKET _ ->
@@ -1959,7 +1972,7 @@ let funDefOrDcl mods in_ =
   nextToken in_;
   match in_.token with
   | Kthis _ ->
-      failwith "funDefOrDcl this"
+      todo "funDefOrDcl this" in_
   | _ ->
       let name = identOrMacro in_ in
       funDefRest mods name in_
@@ -1968,7 +1981,7 @@ let funDefOrDcl mods in_ =
 (* Parsing types definitions or declarations  *)
 (*****************************************************************************)
 let typeDefOrDcl mods in_ =
-  failwith "typeDefOrDcl"
+  todo "typeDefOrDcl" in_
 
 (*****************************************************************************)
 (* Parsing Def or Dcl  *)
@@ -2346,7 +2359,7 @@ let objectDef mods (* isPackageObject=false *) in_ =
 (* Class/trait *)
 (* ------------------------------------------------------------------------- *)
 let classDef mods in_ =
-  failwith "classDef"
+  todo "classDef" in_
 
 (* ------------------------------------------------------------------------- *)
 (* TmplDef *)
