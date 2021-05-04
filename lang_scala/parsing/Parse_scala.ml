@@ -75,13 +75,7 @@ let parse filename =
     let xs = Parser_scala_recursive_descent.parse toks in
     { PI.ast = xs; tokens = toks; stat }
 
-  with PI.Parsing_error cur   ->
-    (* let cur = tr.PI.current in *)
-    (* TODO, just tokenizing for now
-        if not !Flag.error_recovery
-        then raise (PI.Parsing_error (TH.info_of_tok cur));
-    *)
-
+  with PI.Parsing_error cur when !Flag.error_recovery   ->
     if !Flag.show_parsing_error
     then begin
       pr2 ("parse error \n = " ^ (Parse_info.error_message_info cur));

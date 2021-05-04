@@ -830,6 +830,15 @@ and types in_ =
 and functionTypes in_ =
   commaSeparated functionArgType in_
 
+(** {{{
+ *  CompoundType ::= AnnotType {with AnnotType} [Refinement]
+ *                |  Refinement
+ *  }}}
+*)
+and compoundType in_ =
+  warning "compoundType:TODO";
+  typ in_
+
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
@@ -942,10 +951,14 @@ let rec pattern in_ =
 *)
 and pattern1 in_ =
   let p = pattern2 in_ in
-  (* crazy? parsing depending on what was parsed *)
+  (* crazy? depending whether Ident(name) && if nme.isVariableName(name)? *)
   (match in_.token with
    | COLON _ ->
-       todo "pattern1: after COLON, call compoundType?" in_
+       (* AST: p.removeAttachment[BackquotedIdentifierAttachment.type] *)
+       skipToken in_;
+       let x = compoundType in_ in
+       (* AST: Typed(p, x) *)
+       ()
    (* CHECK: "Pattern variables must start with a lower-case letter." *)
    | _ -> p
   )
@@ -1357,38 +1370,38 @@ and freshPlaceholder in_ =
 (* ------------------------------------------------------------------------- *)
 
 and interpolatedString ~inPattern in_ =
-  (* AST: let interpolater = in.name.encoded *)
-  nextToken in_;
-  let partsBuf = ref [] in
-  let exprsBuf = ref [] in
+  (* AST: let interpolater = in.name.encoded,  *)
+  (* AST: let partsBuf = ref [] in let exprsBuf = ref [] in *)
+  nextToken in_; (* T_INTERPOLATED_START(s,info) *)
   while TH.is_stringpart in_.token do
     let x = literal in_ in
     if inPattern
-    then todo "interpolatedString: inPattern" in_
+    then todo "interpolatedString: inPattern (dropAnyBraces(pattern))" in_
     else
       match in_.token with
       (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
        * introduces a new token for $xxx.
-       * TODO? the original code also allow this, but ID_DOLLAR should cover
+       * TODO? the original code also allow 'this', but ID_DOLLAR should cover
        * that?
       *)
       | ID_DOLLAR (s, ii) ->
           let x = ident in_ in
           () (* AST: Ident(x) *)
-      (* again not in original code, but the way Lexer_scala.mll is written
-       * we can have multiple consecutive StringLiteral *)
-      | StringLiteral _ -> ()
+      (* actually a ${, but using LBRACE allows to reuse blockExpr *)
       | LBRACE _ ->
           let x = expr in_ in
           (* AST: x *)
           ()
+      (* pad: not in original code, but the way Lexer_scala.mll is written
+       * we can have multiple consecutive StringLiteral *)
+      | StringLiteral _ -> ()
       | _ ->
           error "error in interpolated string: identifier or block expected"
             in_
   done;
   (* pad: not in original code *)
   accept (T_INTERPOLATED_END ab) in_;
-  (* AST: *)
+  (* AST: InterpolatedString(...) *)
   ()
 
 

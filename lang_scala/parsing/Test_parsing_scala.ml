@@ -34,7 +34,7 @@ let test_parse xs =
     k();
 
     let { Parse_info.stat; _ } =
-      Common.save_excursion Flag.error_recovery false (fun () ->
+      Common.save_excursion Flag.error_recovery true (fun () ->
         Parse_scala.parse file
       )
     in
