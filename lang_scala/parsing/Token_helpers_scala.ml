@@ -230,6 +230,10 @@ let isIdent = function
   | STAR info -> Some ("*", info)
   | PLUS info -> Some ("+", info)
   | MINUS info -> Some ("-", info)
+  | BANG info -> Some ("!", info)
+  | TILDE info -> Some ("~", info)
+  (* TODO? HASH PIPE *)
+
   | _ -> None
 
 let isIdentBool x =

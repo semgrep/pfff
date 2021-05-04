@@ -680,9 +680,6 @@ let pushOpInfo top in_ =
 (* Parsing types  *)
 (*****************************************************************************)
 
-let wildcardType in_ =
-  failwith "wildcardType"
-
 (* ------------------------------------------------------------------------- *)
 (* TODO: in PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
@@ -840,6 +837,38 @@ and functionArgType in_ =
   argType in_
 
 (* ------------------------------------------------------------------------- *)
+(* Outside PatternContextSensitive but mutually recursive *)
+(* ------------------------------------------------------------------------- *)
+
+(** {{{
+ *  WildcardType ::= `_` TypeBounds
+ *  }}}
+*)
+and wildcardType in_ =
+  (* AST: freshTypeName("_$"), Ident(...) *)
+  let bounds = typeBounds in_ in
+  (* AST: makeSyntheticTypeParam(pname, bounds) *)
+  (* CHECK: placeholderTypes = ... *)
+  ()
+
+(** {{{
+ *  TypeBounds ::= [`>:` Type] [`<:` Type]
+ *  }}}
+*)
+and typeBounds in_ =
+  (* CHECK: checkNoEscapingPlaceholders *)
+  let lo = bound (SUPERTYPE ab) in_ in
+  let hi = bound (SUBTYPE ab) in_ in
+  (* AST: TypeBoundsTree(lo, hi) *)
+  ()
+
+and bound tok in_ =
+  if in_.token =~= tok then begin
+    nextToken in_;
+    typ in_
+  end else () (* AST: EmptyTree *)
+
+(* ------------------------------------------------------------------------- *)
 (* Outside PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
 
@@ -860,6 +889,7 @@ let typedOpt in_ =
       let t = typ in_ in
       Some t
   | _ -> None (* AST: TypeTree *)
+
 
 (*****************************************************************************)
 (* Parsing patterns  *)
@@ -1421,9 +1451,6 @@ and condExpr in_ =
   (* AST: if isWildcard(r) *)
   r
 
-and parseTry in_ =
-  failwith "parseTry"
-
 and parseWhile in_ =
   skipToken in_;
   let cond = condExpr in_ in
@@ -1440,6 +1467,31 @@ and parseFor in_ =
 
 and parseReturn in_ =
   failwith "parseReturn"
+
+and parseTry in_ =
+  skipToken in_;
+  let body = expr in_ in
+  let handlers =
+    if in_.token =~= (Kcatch ab)
+    then begin
+      nextToken in_;
+      let e = expr in_ in
+      (* AST: makeMatchFromExpr(e) *)
+      ()
+    end
+    else () (* Nil *)
+  in
+  let finalizer =
+    match in_.token with
+    | Kfinally _ ->
+        nextToken in_;
+        expr in_
+    | _ ->
+        () (* AST: EmptyTree *)
+  in
+  (* AST: Try(body, handler, finalizer) *)
+  ()
+
 
 and parseThrow in_ =
   failwith "parseThrow"
