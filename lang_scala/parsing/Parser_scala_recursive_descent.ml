@@ -100,9 +100,10 @@ let copy_env env =
 
 let ab = Parse_info.abstract_info
 
-(* TODO, use AST_scala something *)
+(* AST: use AST_scala something *)
 let noSelfType = ()
 let empty = ()
+let literalUnit = ()
 
 type location =
   | Local
@@ -340,6 +341,12 @@ let newLineOpt in_ =
   match in_.token with
   | NEWLINE _ -> nextToken in_
   | _ -> ()
+
+let newLinesOpt in_ =
+  match in_.token with
+  | NEWLINE _ | NEWLINES _ -> nextToken in_
+  | _ -> ()
+
 
 let newLineOptWhenFollowedBy token in_ =
   match in_.token, next_next_token in_ with
@@ -612,6 +619,7 @@ let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
+let exprTypeArgs_ = ref (fun _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Literal  *)
@@ -656,14 +664,12 @@ let literal ?(isNegated=false) ?(inPattern=false) in_ =
 (* Infix Expr/Types/pattern management  *)
 (*****************************************************************************)
 
-let exprTypeArgs in_ =
-  failwith "exprTypeArgs"
-
 let pushOpInfo top in_ =
   let x = ident in_ in
   let targs =
     if in_.token =~= (LBRACKET ab)
-    then exprTypeArgs in_
+    then let xs = !exprTypeArgs_ in_ in
+      () (* AST: xs *)
     else () (* AST: Nil *)
   in
   (* AST: OpInfo(top, name, targs) *)
@@ -1245,8 +1251,15 @@ and simpleExprRest ~canApply t in_ =
         let x = stripParens t in
         simpleExprRest ~canApply:true x in_
     | LBRACKET _ ->
+        let t1 = t in (* AST: stripParens(t) *)
         (* crazy: parsing depending on built AST: Ident(_) | Select(_, _) | Apply(_, _) | Literal(_) *)
-        failwith "simpleExprRest: LBRACKET"
+        let app = ref t1 in
+        while in_.token =~= (LBRACKET ab) do
+          let xs = exprTypeArgs in_ in
+          (* AST: app := TypeApply(app, xs) *)
+          ()
+        done;
+        simpleExprRest ~canApply:true !app in_
 
     | LPAREN _ -> paren_or_brace ()
     | LBRACE _ when canApply -> paren_or_brace ()
@@ -1260,7 +1273,8 @@ and simpleExprRest ~canApply t in_ =
         )
   )
 
-
+and exprTypeArgs in_ =
+  outPattern typeArgs in_
 
 
 (* AST: *)
@@ -1355,7 +1369,26 @@ and implicitClosure location in_ =
 (* Parsing statements  *)
 (*****************************************************************************)
 and parseIf in_ =
-  failwith "parseIf"
+  skipToken in_;
+  let cond = condExpr in_ in
+  newLinesOpt in_;
+  let thenp = expr in_ in
+  let elsep =
+    if in_.token =~= (Kelse ab) then begin
+      nextToken in_;
+      expr in_
+    end
+    else literalUnit
+  in
+  (* AST: If(cond, thenp, elsep) *)
+  ()
+
+and condExpr in_ =
+  accept (LPAREN ab) in_;
+  let r = expr in_ in
+  accept (RPAREN ab) in_;
+  (* AST: if isWildcard(r) *)
+  r
 
 and parseTry in_ =
   failwith "parseTry"
@@ -2269,6 +2302,7 @@ let _ =
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
+  exprTypeArgs_ := exprTypeArgs;
   ()
 
 (** {{{
