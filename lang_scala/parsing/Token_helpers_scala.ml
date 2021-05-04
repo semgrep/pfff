@@ -224,6 +224,8 @@ let isIdent = function
   | ID_LOWER (s, info) | ID_UPPER(s, info)
   | ID_BACKQUOTED (s, info)
   | OP (s, info)
+  (* when in interpolated string *)
+  | ID_DOLLAR (s, info)
     ->
       Some (s, info)
   (* need that?? *)
@@ -353,4 +355,11 @@ let isMacro x =
 let isWildcardType = function
   (* TODO: scala3 also accept '?' *)
   | USCORE _ -> true
+  | _ -> false
+
+let is_stringpart = function
+  | StringLiteral _
+  | ID_DOLLAR _
+  | LBRACE _
+    -> true
   | _ -> false

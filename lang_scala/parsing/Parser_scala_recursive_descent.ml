@@ -63,7 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref false
+let debug_parser = ref true
 
 (*****************************************************************************)
 (* Types  *)
@@ -633,13 +633,11 @@ let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let exprTypeArgs_ = ref (fun _ -> failwith "forward ref not set")
+let interpolatedString_ = ref (fun ~inPattern _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Literal  *)
 (*****************************************************************************)
-
-let interpolatedString ~inPattern in_ =
-  todo "interpolatedString" in_
 
 (** {{{
  *  SimpleExpr    ::= literal
@@ -658,8 +656,8 @@ let literal ?(isNegated=false) ?(inPattern=false) in_ =
     match in_.token with
     | T_INTERPOLATED_START _ ->
         (* AST: if not inPattern then withPlaceholders(...) *)
-        interpolatedString ~inPattern in_
-    (* CHECK: unsupported in Scala3, deprecated in 2.13.0 *)
+        !interpolatedString_ ~inPattern in_
+    (* scala3: unsupported, deprecated in 2.13.0 *)
     (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
     | SymbolLiteral(s, ii) -> finish ()
 
@@ -668,6 +666,7 @@ let literal ?(isNegated=false) ?(inPattern=false) in_ =
     | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated) *)
 
     | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
+
     | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
     | Knull _ -> finish () (* AST: null *)
     | _ -> error "illegal literal" in_
@@ -687,7 +686,6 @@ let pushOpInfo top in_ =
   in
   (* AST: OpInfo(top, name, targs) *)
   ()
-
 
 (*****************************************************************************)
 (* Parsing types  *)
@@ -821,8 +819,6 @@ and typeProjection t in_ =
 *)
 and typeArgs in_ =
   inBrackets types in_
-
-
 
 (** {{{
  *  Types ::= Type {`,` Type}
@@ -1003,8 +999,6 @@ and pattern3 in_ =
     ()
   )
 
-
-
 (** {{{
  *  Patterns ::= Pattern { `,` Pattern }
  *  SeqPatterns ::= SeqPattern { `,` SeqPattern }
@@ -1064,7 +1058,7 @@ and simplePattern in_ =
     | x when TH.isLiteral x ->
         let x = literal ~inPattern:true in_ in
         ()
-    (* less: XMLSTART *)
+    (* scala3: deprecated XMLSTART *)
     | _ ->
         error "illegal start of simple pattern" in_
   )
@@ -1272,7 +1266,7 @@ and simpleExpr in_ : unit =
       | x when TH.isLiteral x ->
           let x = literal in_ in
           ()
-      (* less: XMLSTART *)
+      (* scala3: deprecated XMLSTART *)
       | x when TH.isIdentBool x ->
           let x = path ~thisOK:true ~typeOK:false in_ in
           ()
@@ -1347,6 +1341,8 @@ and simpleExprRest ~canApply t in_ =
         )
   )
 
+(* and literal is now at the top because it's also used by SimplePattern *)
+
 and exprTypeArgs in_ =
   outPattern typeArgs in_
 
@@ -1354,6 +1350,45 @@ and exprTypeArgs in_ =
 (* AST: *)
 and freshPlaceholder in_ =
   nextToken in_;
+  ()
+
+(* ------------------------------------------------------------------------- *)
+(* Interpolated strings *)
+(* ------------------------------------------------------------------------- *)
+
+and interpolatedString ~inPattern in_ =
+  (* AST: let interpolater = in.name.encoded *)
+  nextToken in_;
+  let partsBuf = ref [] in
+  let exprsBuf = ref [] in
+  while TH.is_stringpart in_.token do
+    let x = literal in_ in
+    if inPattern
+    then todo "interpolatedString: inPattern" in_
+    else
+      match in_.token with
+      (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
+       * introduces a new token for $xxx.
+       * TODO? the original code also allow this, but ID_DOLLAR should cover
+       * that?
+      *)
+      | ID_DOLLAR (s, ii) ->
+          let x = ident in_ in
+          () (* AST: Ident(x) *)
+      (* again not in original code, but the way Lexer_scala.mll is written
+       * we can have multiple consecutive StringLiteral *)
+      | StringLiteral _ -> ()
+      | LBRACE _ ->
+          let x = expr in_ in
+          (* AST: x *)
+          ()
+      | _ ->
+          error "error in interpolated string: identifier or block expected"
+            in_
+  done;
+  (* pad: not in original code *)
+  accept (T_INTERPOLATED_END ab) in_;
+  (* AST: *)
   ()
 
 
@@ -1537,7 +1572,6 @@ and blockExpr in_ =
     | _ -> block in_
   ) in_
 
-
 (*****************************************************************************)
 (* Parsing annotations  *)
 (*****************************************************************************)
@@ -1591,6 +1625,7 @@ let startAnnotType in_ =
 (*****************************************************************************)
 (* Parsing directives  *)
 (*****************************************************************************)
+(* scala3: deprecated *)
 let packageObjectDef in_ =
   todo "packageObjectDef" in_
 
@@ -2339,7 +2374,6 @@ let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
   *)
   ()
 
-
 (* ------------------------------------------------------------------------- *)
 (* Object *)
 (* ------------------------------------------------------------------------- *)
@@ -2404,6 +2438,7 @@ let _ =
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
   exprTypeArgs_ := exprTypeArgs;
+  interpolatedString_ := interpolatedString;
   ()
 
 (** {{{

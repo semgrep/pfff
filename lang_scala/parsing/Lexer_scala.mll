@@ -381,9 +381,9 @@ and in_interpolated_double = parse
   | '"'  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
 
   (* not in original spec *)
-  | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
-  | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
-  | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
+  | escapeSeq as s { StringLiteral (s, tokinfo lexbuf) }
+  | [^'"''$''\\']+ as s { StringLiteral (s, tokinfo lexbuf) }
+  | "${" { push_mode ST_IN_CODE; LBRACE (tokinfo lexbuf) }
   | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated string" lexbuf;
@@ -398,15 +398,15 @@ and in_interpolated_triple = parse
   (* bugfix: you can have 4 or 5 in a row! only last 3 matters *)
   | "\"" "\"\"\"" {
       Parse_info.yyback 3 lexbuf;
-      T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf)
+      StringLiteral (tok lexbuf, tokinfo lexbuf)
   }
 
   | "\"\"\""  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
-  | "\"" { T_INTERPOLATED_STRING (tok lexbuf, tokinfo lexbuf) }
+  | "\"" { StringLiteral (tok lexbuf, tokinfo lexbuf) }
   (* not in original spec *)
-  | escapeSeq as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
-  | [^'"''$''\\']+ as s { T_INTERPOLATED_STRING (s, tokinfo lexbuf) }
-  | "${" { push_mode ST_IN_CODE; T_DOLLAR_LBRACE (tokinfo lexbuf) }
+  | escapeSeq as s { StringLiteral (s, tokinfo lexbuf) }
+  | [^'"''$''\\']+ as s { StringLiteral (s, tokinfo lexbuf) }
+  | "${" { push_mode ST_IN_CODE; LBRACE (tokinfo lexbuf) }
   | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated2 string" lexbuf;
