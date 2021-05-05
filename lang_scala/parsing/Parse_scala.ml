@@ -75,17 +75,18 @@ let parse filename =
     let xs = Parser_scala_recursive_descent.parse toks in
     { PI.ast = xs; tokens = toks; stat }
 
-  with PI.Parsing_error cur when !Flag.error_recovery   ->
-    if !Flag.show_parsing_error
-    then begin
-      pr2 ("parse error \n = " ^ (Parse_info.error_message_info cur));
-      let filelines = Common2.cat_array filename in
-      let checkpoint2 = Common.cat filename |> List.length in
-      let line_error = PI.line_of_info cur in
-      Parse_info.print_bad line_error (0, checkpoint2) filelines;
-    end;
-    stat.PI.error_line_count <- stat.PI.total_line_count;
-    { PI.ast = (); tokens = toks; stat }
+  with PI.Parsing_error cur when !Flag.error_recovery
+                              && not !Parser_scala_recursive_descent.debug_parser    ->
+      if !Flag.show_parsing_error
+      then begin
+        pr2 ("parse error \n = " ^ (Parse_info.error_message_info cur));
+        let filelines = Common2.cat_array filename in
+        let checkpoint2 = Common.cat filename |> List.length in
+        let line_error = PI.line_of_info cur in
+        Parse_info.print_bad line_error (0, checkpoint2) filelines;
+      end;
+      stat.PI.error_line_count <- stat.PI.total_line_count;
+      { PI.ast = (); tokens = toks; stat }
 [@@profiling]
 
 let parse_program file =

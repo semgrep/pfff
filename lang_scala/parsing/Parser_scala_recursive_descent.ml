@@ -118,7 +118,7 @@ type location =
 let dump_token tok =
   T.show tok
 
-let n_dash n = Common2.repeat "-" n |> Common.join ""
+let n_dash n = Common2.repeat "--" n |> Common.join ""
 
 let with_logging funcname f in_ =
   if !debug_parser then begin
@@ -1130,67 +1130,66 @@ and expr0 (location: location) (in_: env) =
   )
 
 and parseOther location (in_: env) =
-  let t = ref (postfixExpr in_) in
-  (match in_.token with
-   | EQUALS _ ->
-       skipToken in_;
-       (* crazy: parsing that depends on built AST!!
-        * AST: if Ident | Select | Apply *)
-       let e = expr in_ in
-       () (* AST: mkAssign(t, e) *)
-   | COLON _ ->
-       t := stripParens !t;
-       skipToken in_;
-       (match in_.token with
-        | USCORE _ ->
-            skipToken in_;
-            (match in_.token with
-             | STAR _ (* TODO: was isIdent && name = "*" *) ->
-                 nextToken in_
-             (* AST: t = Typed(t, Ident(WILDCARD_STAR)) *)
-             | _ -> error "* expected" in_
-            )
-        | x when TH.isAnnotation x ->
-            let ts = annotations ~skipNewLines:false in_ in
-            (* AST: fold around t makeAnnotated *)
-            ()
-        | _ ->
-            let tpt = typeOrInfixType location in_ in
-            (* AST: if isWildcard(t) ... *)
-            (* AST: Typed(t, tpt) *)
-            ()
-       )
-   | Kmatch _ ->
-       skipToken in_;
-       let _xs = inBracesOrNil caseClauses in_ in
-       (* AST: t:= Match(stripParens(t)) *)
-       ()
-   | _ -> ()
-  );
-  (* AST: disambiguate between self types "x: Int =>" and orphan function
-   * literals "(x: Int) => ???"
-   * "(this: Int) =>" is parsed as an erroneous function literal but emits
-   * special guidance on what's probably intended.
-  *)
-  (* crazy: another parsing depending on the AST! crazy *)
-  let lhsIsTypedParamList x =
-    (* CHECK: "self-type annotation may not be in parentheses" *)
-    todo "lhsIsTypedParamList" in_
-  in
-  if (in_.token =~= (ARROW ab) && location <> InTemplate &&
-      lhsIsTypedParamList !t) then begin
-    skipToken in_;
-    let x =
-      match location with
-      | InBlock -> expr in_
-      | _ -> block in_
+  in_ |> with_logging (spf "parseOther(location = %s)"
+                         (show_location location))(fun() ->
+    let t = ref (postfixExpr in_) in
+    (match in_.token with
+     | EQUALS _ ->
+         skipToken in_;
+         (* crazy: parsing that depends on built AST!!
+          * AST: if Ident | Select | Apply *)
+         let e = expr in_ in
+         () (* AST: mkAssign(t, e) *)
+     | COLON _ ->
+         t := stripParens !t;
+         skipToken in_;
+         (match in_.token with
+          | USCORE _ ->
+              skipToken in_;
+              (match in_.token with
+               | STAR _ (* TODO: was isIdent && name = "*" *) ->
+                   nextToken in_
+               (* AST: t = Typed(t, Ident(WILDCARD_STAR)) *)
+               | _ -> error "* expected" in_
+              )
+          | x when TH.isAnnotation x ->
+              let ts = annotations ~skipNewLines:false in_ in
+              (* AST: fold around t makeAnnotated *)
+              ()
+          | _ ->
+              let tpt = typeOrInfixType location in_ in
+              (* AST: if isWildcard(t) ... *)
+              (* AST: Typed(t, tpt) *)
+              ()
+         )
+     | Kmatch _ ->
+         skipToken in_;
+         let _xs = inBracesOrNil caseClauses in_ in
+         (* AST: t:= Match(stripParens(t)) *)
+         ()
+     | _ -> ()
+    );
+    (* AST: disambiguate between self types "x: Int =>" and orphan function
+     * literals "(x: Int) => ???"
+     * "(this: Int) =>" is parsed as an erroneous function literal but emits
+     * special guidance on what's probably intended.
+    *)
+    (* crazy: another parsing depending on the AST! crazy *)
+    let lhsIsTypedParamList x =
+      (* CHECK: "self-type annotation may not be in parentheses" *)
+      warning "lhsIsTypedParamList";
+      false
     in
-    (* AST: Function(convertToParams(t), x) *)
-    ()
-  end;
-  (* AST: stripParens(t) *)
-  !t
-
+    if in_.token =~= (ARROW ab) &&
+       (location <> InTemplate || lhsIsTypedParamList !t) then begin
+      skipToken in_;
+      let x = if location <> InBlock then expr in_ else block in_ in
+      (* AST: Function(convertToParams(t), x) *)
+      ()
+    end;
+    (* AST: stripParens(t) *)
+    !t
+  )
 
 (** {{{
  *  PostfixExpr   ::= InfixExpr [Id [nl]]
@@ -1567,9 +1566,11 @@ and statement (location: location) (in_: env) =
 *)
 
 and block in_ =
-  let xs = !blockStatSeq_ in_ in
-  (* AST: makeBlock(xs) *)
-  ()
+  in_ |> with_logging "block" (fun () ->
+    let xs = !blockStatSeq_ in_ in
+    (* AST: makeBlock(xs) *)
+    ()
+  )
 
 (** {{{
   *  BlockExpr ::= `{` (CaseClauses | Block) `}`
