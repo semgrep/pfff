@@ -63,7 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref true
+let debug_parser = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -95,6 +95,7 @@ let mk_env toks =
         last_nl = None;
         depth = 0;
       }
+
 (* https://stackoverflow.com/questions/47688111/copy-construction-in-ocaml*)
 let copy_env env =
   { env with token = env.token }
@@ -118,7 +119,8 @@ type location =
 let dump_token tok =
   T.show tok
 
-let n_dash n = Common2.repeat "--" n |> Common.join ""
+let n_dash n =
+  Common2.repeat "--" n |> Common.join ""
 
 let with_logging funcname f in_ =
   if !debug_parser then begin
@@ -160,8 +162,6 @@ let (++=) aref xs =
 
 let (+=) aref x =
   ()
-
-
 
 (*****************************************************************************)
 (* Token helpers  *)
@@ -323,8 +323,6 @@ let lookingAhead body in_ =
   let res = body in_' in
   res
 
-
-
 (*****************************************************************************)
 (* Special parsing  *)
 (*****************************************************************************)
@@ -402,7 +400,6 @@ let skipTrailingComma right in_ =
       fetchToken in_
   | _ ->
       ()
-
 
 (* ------------------------------------------------------------------------- *)
 (* Context sensitive parsing  *)
@@ -636,7 +633,6 @@ let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
-
 
 (*****************************************************************************)
 (* Literal  *)
@@ -1227,7 +1223,7 @@ and postfixExpr in_ : unit =
                 loop next in_
           end
           else
-            in_ |> with_logging "postfixExpr:loop: noExprIntro, stop" (fun () ->
+            in_ |> with_logging "postfixExpr:loop: noExprIntro, stop" (fun()->
               (* AST: finishPostfixOp(base, popOpInfo()) *)
               ()
             )
@@ -1363,7 +1359,6 @@ and simpleExprRest ~canApply t in_ =
 and exprTypeArgs in_ =
   outPattern typeArgs in_
 
-
 (* AST: *)
 and freshPlaceholder in_ =
   nextToken in_;
@@ -1407,7 +1402,6 @@ and interpolatedString ~inPattern in_ =
   accept (T_INTERPOLATED_END ab) in_;
   (* AST: InterpolatedString(...) *)
   ()
-
 
 (* ------------------------------------------------------------------------- *)
 (* Arguments *)
@@ -1649,7 +1643,6 @@ let annotType in_ =
   let x = simpleType in_ in
   annotTypeRest x in_
 
-
 let startAnnotType in_ =
   outPattern annotType in_
 
@@ -1684,7 +1677,6 @@ let importSelector in_ =
   in
   (* AST: ImportSelector(name, start, rename, renameOffset) *)
   ()
-
 
 (** {{{
  *  ImportSelectors ::= `{` {ImportSelector `,`} (ImportSelector | `_`) `}`
