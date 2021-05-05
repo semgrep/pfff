@@ -63,7 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref false
+let debug_parser = ref true
 
 (*****************************************************************************)
 (* Types  *)
@@ -1408,6 +1408,7 @@ and interpolatedString ~inPattern in_ =
 (* ------------------------------------------------------------------------- *)
 (* Arguments *)
 (* ------------------------------------------------------------------------- *)
+(* A succession of argument lists. *)
 and multipleArgumentExprs in_ =
   in_ |> with_logging "multipleArgumentExprs" (fun () ->
     match in_.token with
@@ -1527,7 +1528,15 @@ and parseFor in_ =
   todo "parseFor" in_
 
 and parseReturn in_ =
-  todo "parseReturn" in_
+  skipToken in_;
+  let x =
+    if TH.isExprIntro in_.token
+    then expr in_
+    else literalUnit
+  in
+  (* AST: Return(x) *)
+  ()
+
 
 and parseTry in_ =
   skipToken in_;
@@ -1993,7 +2002,7 @@ let funDefRest mods name in_ =
    * [T : B] or [T : => B]; it contains the equivalent implicit parameter type,
    * i.e. (B[T] or T => B)
   *)
-  let contextBoundBuf = [] in
+  let contextBoundBuf = ref [] in
   let tparams = typeParamClauseOpt name contextBoundBuf in_ in
   let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
   newLineOptWhenFollowedBy (LBRACE ab) in_;
@@ -2410,8 +2419,66 @@ let objectDef mods (* isPackageObject=false *) in_ =
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
 (* ------------------------------------------------------------------------- *)
-let classDef mods in_ =
-  todo "classDef" in_
+let constructorAnnotations in_ =
+  in_ |> with_logging "constructorAnnotations" (fun () ->
+    readAnnots (fun in_ ->
+      let t = exprSimpleType in_ in
+      let es = argumentExprs in_ in
+      (* AST: New(t, List(es)) *)
+      ()
+    ) in_
+  )
+
+(** {{{
+ *  AccessModifier ::= (private | protected) [AccessQualifier]
+ *  }}}
+*)
+let accessModifierOpt in_ =
+  (* AST: normalizeModifiers *)
+  match in_.token with
+  | Kprivate _ | Kprotected _ ->
+      nextToken in_;
+      let mods = [] (* AST: flagToken(in_.token) *) in
+      accessQualifierOpt mods in_
+  | _ -> [] (* AST: NoMods *)
+
+(** {{{
+ *  ClassDef ::= Id [TypeParamClause] ConstrAnnotations
+ *               [AccessModifier] ClassParamClauses RequiresTypeOpt ClassTemplateOpt
+ *  TraitDef ::= Id [TypeParamClause] RequiresTypeOpt TraitTemplateOpt
+ *  }}}
+*)
+
+(* pad: I added isTrait and isCase instead of abusing mods *)
+let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
+  nextToken in_;
+  let name = identForType in_ in
+  (* AST: savingClassContextBounds *)
+  let contextBoundBuf = ref [] in
+  let tparams = typeParamClauseOpt name contextBoundBuf in_ in
+  let classContextBounds = !contextBoundBuf in
+  (* CHECK: "traits cannot have type parameters with context bounds" *)
+  let constrAnnots =
+    if not isTrait then constructorAnnotations in_ else [] in
+  let constrMods, vparamss =
+    if isTrait
+    then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
+    else begin
+      let constrMods =
+        accessModifierOpt in_ in
+      let vparamss =
+        paramClauses ~ofCaseClass:isCase name classContextBounds in_ in
+      constrMods, vparamss
+    end
+  in
+  let tmpl =
+    templateOpt mods (* AST: name ... constrMods withAnnotations...*) in_ in
+  (* AST: gen.mkClassDef(mods, name, tparams, template) *)
+  (* CHECK: Context bounds generate implicit parameters (part of the template)
+   *  with types from tparams: we need to ensure these don't overlap
+   * ensureNonOverlapping(template, tparams)
+  *)
+  ()
 
 (* ------------------------------------------------------------------------- *)
 (* TmplDef *)
@@ -2426,10 +2493,10 @@ let classDef mods in_ =
 let tmplDef mods in_ =
   (* CHECK: "classes cannot be lazy" *)
   match in_.token with
-  | Ktrait _ -> classDef mods (* AST: | TRAIT | ABSTRACT *) in_
+  | Ktrait _ -> classDef ~isTrait:true mods (* AST: | TRAIT | ABSTRACT *) in_
   | Kclass _ -> classDef mods in_
-  (* Caseclass -> classDef in_ *)
   | Kobject _ -> objectDef mods in_
+  (* Caseclass -> classDef in_ *)
   (* Caseobject -> objectDef in_ *)
   | _ -> error "expected start of definition" in_
 
