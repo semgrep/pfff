@@ -1051,9 +1051,13 @@ and patterns in_ =
 and simplePattern in_ =
   in_ |> with_logging "simplePattern" (fun () ->
     match in_.token with
+    (* pad: the code was written in a very different way by doing that
+     * below, given isIdentBool will say yes for MINUS
+    *)
     | MINUS _ ->
-        (* less: literal isNegated:true inPattern:true *)
-        todo "simplePattern: MINUS" in_
+        nextToken in_;
+        let x = literal ~isNegated:true ~inPattern:true in_ in
+        ()
     | x when TH.isIdentBool x || x =~= (Kthis ab) ->
         let t = stableId in_ in
         (* less: if t = Ident("-") literal isNegated:true inPattern:true *)
