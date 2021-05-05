@@ -602,7 +602,15 @@ let path ~thisOK ~typeOK in_ =
   in_ |> with_logging (spf "path(thisOK:%b, typeOK:%b)" thisOK typeOK) (fun()->
     let t = ref () in
     match in_.token with
-    | Kthis _ -> todo "path.this" in_
+    | Kthis _ ->
+        nextToken in_;
+        (* AST: t := This(tpnme.Empty) *)
+        if not thisOK || in_.token =~= (DOT ab) then begin
+          accept (DOT ab) in_;
+          let x = selectors !t ~typeOK in_ in
+          () (* AST: t = x *)
+        end
+
     | Ksuper _ -> todo "path.super" in_
     | _ ->
         let name = ident in_ in
@@ -1549,7 +1557,23 @@ and parseDo in_ =
   todo "parseDo" in_
 
 and parseFor in_ =
-  todo "parseFor" in_
+  skipToken in_;
+  let enums =
+    if in_.token =~= (LBRACE ab)
+    then inBraces enumerators in_
+    else inParens enumerators in_
+  in
+  newLinesOpt in_;
+  match in_.token with
+  | Kyield _ ->
+      nextToken in_;
+      let e = expr in_ in
+      (* AST: gen.mkFor(enums, gen.Yield(expr())) *)
+      ()
+  | _ ->
+      let e = expr in_ in
+      (* AST: gen.mkFor(enums, expr()) *)
+      ()
 
 and parseReturn in_ =
   skipToken in_;
@@ -1622,6 +1646,21 @@ and blockExpr in_ =
         ()
     | _ -> block in_
   ) in_
+
+(* ------------------------------------------------------------------------- *)
+(* enumerators *)
+(* ------------------------------------------------------------------------- *)
+(** {{{
+ *  Enumerators ::= Generator {semi Enumerator}
+ *  Enumerator  ::=  Generator
+ *                |  Guard
+ *                |  Pattern1 `=` Expr
+ *  }}}
+*)
+and enumerators in_ =
+  in_ |> with_logging "enumerators" (fun () ->
+    todo "enumerators" in_
+  )
 
 (*****************************************************************************)
 (* Parsing annotations  *)
