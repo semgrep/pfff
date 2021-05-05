@@ -234,7 +234,8 @@ let isIdent = function
   | MINUS info -> Some ("-", info)
   | BANG info -> Some ("!", info)
   | TILDE info -> Some ("~", info)
-  (* TODO? HASH PIPE *)
+  | PIPE info -> Some ("|", info)
+  (* TODO? HASH *)
 
   | _ -> None
 

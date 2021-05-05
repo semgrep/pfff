@@ -404,8 +404,18 @@ let skipTrailingComma right in_ =
 (* ------------------------------------------------------------------------- *)
 (* Context sensitive parsing  *)
 (* ------------------------------------------------------------------------- *)
+(* The implementation for parsing inside of patterns at points where
+ * sequences are disallowed.
+*)
 let noSeq f in_ =
   warning "noSeq: TODO";
+  f in_
+
+(* The implementation for parsing inside of patterns at points where
+ * sequences are allowed.
+*)
+let seqOK f in_ =
+  warning "seqOK: TODO";
   f in_
 
 let outPattern f in_ =
@@ -1078,7 +1088,18 @@ and simplePattern in_ =
   )
 
 and argumentPatterns in_ =
-  todo "argumentPatterns" in_
+  in_ |> with_logging "argumentPatterns" (fun () ->
+    let xs = inParens (fun in_ ->
+      if in_.token =~= (RPAREN ab)
+      then []
+      else seqPatterns in_
+    ) in_
+    in
+    () (* AST: xs *)
+  )
+
+and seqPatterns in_ =
+  seqOK patterns in_
 
 let pattern in_ =
   noSeq pattern in_
@@ -2405,7 +2426,8 @@ let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
  *  ObjectDef       ::= Id ClassTemplateOpt
  *  }}}
 *)
-let objectDef mods (* isPackageObject=false *) in_ =
+(* pad: I've added isCase, it was passed via mods in the original code *)
+let objectDef ?(isCase=false) mods (* isPackageObject=false *) in_ =
   in_ |> with_logging "objectDef" (fun () ->
     nextToken in_; (* 'object' *)
     let name = ident in_ in
@@ -2496,8 +2518,17 @@ let tmplDef mods in_ =
   | Ktrait _ -> classDef ~isTrait:true mods (* AST: | TRAIT | ABSTRACT *) in_
   | Kclass _ -> classDef mods in_
   | Kobject _ -> objectDef mods in_
-  (* Caseclass -> classDef in_ *)
-  (* Caseobject -> objectDef in_ *)
+  (* pad: was done via a lexing trick in postProcessToken in the original
+   * code; not sure you needed that
+  *)
+  | Kcase _ ->
+      nextToken in_;
+      (match in_.token with
+       | Kclass _ -> classDef ~isCase:true mods in_
+       | Kobject _ -> objectDef ~isCase:true mods in_
+       (* pad: my error message *)
+       | _ -> error "expecting class or object after a case" in_
+      )
   | _ -> error "expected start of definition" in_
 
 (*****************************************************************************)
