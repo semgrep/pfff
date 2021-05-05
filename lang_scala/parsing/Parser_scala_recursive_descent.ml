@@ -63,7 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref true
+let debug_parser = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -751,7 +751,8 @@ and tupleInfixType in_ =
      | _ ->
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
          let tuple = (* AST: makeSafeTupleType(ts) *) () in
-         todo "tupleInfixType" in_
+         warning "tupleInfixType:TODO infixTypeRest(compoundTypeRest(...))";
+         ()
     )
   )
 and makeExistentialTypeTree t in_ =
@@ -1554,7 +1555,10 @@ and parseTry in_ =
 
 
 and parseThrow in_ =
-  todo "parseThrow" in_
+  skipToken in_;
+  let e = expr in_ in
+  (* AST: Throw(e) *)
+  ()
 
 and statement (location: location) (in_: env) =
   expr ~location in_
