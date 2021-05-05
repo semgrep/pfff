@@ -63,7 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref false
+let debug_parser = ref true
 
 (*****************************************************************************)
 (* Types  *)
@@ -148,7 +148,7 @@ let todo x in_ =
   error ("TODO:" ^x) in_
 let warning s =
   if !debug_parser
-  then pr2 s
+  then pr2 ("WARNING: " ^ s)
 
 (*****************************************************************************)
 (* Helpers  *)
@@ -1415,6 +1415,7 @@ and interpolatedString ~inPattern in_ =
       (* pad: not in original code, but the way Lexer_scala.mll is written
        * we can have multiple consecutive StringLiteral *)
       | StringLiteral _ -> ()
+      | T_INTERPOLATED_END _ -> ()
       | _ ->
           error "error in interpolated string: identifier or block expected"
             in_
@@ -1986,19 +1987,25 @@ let paramClauses ~ofCaseClass owner contextBoundBuf in_ =
  *  }}}
 *)
 let typeParamClauseOpt owner contextBoundBuf in_ =
-  let typeParam ms in_ =
-    todo "typeParam" in_ in
-  newLineOptWhenFollowedBy (LBRACKET ab) in_;
-  match in_.token with
-  | LBRACKET _ ->
-      let x = inBrackets (fun in_ ->
-        let annots = annotations ~skipNewLines:true in_ in
-        let mods = (* AST: NoMods withannotation annots *) [] in
-        commaSeparated (typeParam mods) in_
-      )
-      in
-      Some x
-  | _ -> None
+  in_ |> with_logging "typeParamClauseOpt" (fun () ->
+
+    let typeParam ms in_ =
+      warning "typeParam";
+      let x = ident in_ in
+      ()
+    in
+    newLineOptWhenFollowedBy (LBRACKET ab) in_;
+    match in_.token with
+    | LBRACKET _ ->
+        let x = inBrackets (fun in_ ->
+          let annots = annotations ~skipNewLines:true in_ in
+          let mods = (* AST: NoMods withannotation annots *) [] in
+          commaSeparated (typeParam mods) in_
+        ) in_
+        in
+        Some x
+    | _ -> None
+  )
 
 (* ------------------------------------------------------------------------- *)
 (* Def *)
@@ -2014,47 +2021,51 @@ let typeParamClauseOpt owner contextBoundBuf in_ =
  *  }}}
 *)
 let funDefRest mods name in_ =
-  let newmods = ref mods in
-  (* contextBoundBuf is for context bounded type parameters of the form
-   * [T : B] or [T : => B]; it contains the equivalent implicit parameter type,
-   * i.e. (B[T] or T => B)
-  *)
-  let contextBoundBuf = ref [] in
-  let tparams = typeParamClauseOpt name contextBoundBuf in_ in
-  let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
-  newLineOptWhenFollowedBy (LBRACE ab) in_;
-  let restype = (* AST: fromWithinReturnType *) typedOpt in_ in
+  in_ |> with_logging "funDefRest" (fun () ->
+    let newmods = ref mods in
+    (* contextBoundBuf is for context bounded type parameters of the form
+     * [T : B] or [T : => B]; it contains the equivalent implicit parameter type,
+     * i.e. (B[T] or T => B)
+    *)
+    let contextBoundBuf = ref [] in
+    let tparams = typeParamClauseOpt name contextBoundBuf in_ in
+    let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
+    newLineOptWhenFollowedBy (LBRACE ab) in_;
+    let restype = (* AST: fromWithinReturnType *) typedOpt in_ in
 
-  let rhs =
-    match in_.token with
-    | t when TH.isStatSep t || t =~= (RBRACE ab) ->
-        (* CHECK: if restype = None then deprecated missing type, use : Unit *)
-        (* AST: EmptyTree, newmods |= DEFERRED *)
-        ()
-    | LBRACE _ when restype = None ->
-        (* CHECK: missing type *)
-        blockExpr in_
-    | EQUALS _ ->
-        nextTokenAllow TH.nme_MACROkw in_;
-        if (TH.isMacro in_.token) then begin
-          nextToken in_;
-          (* AST: newmmods |= MACRO *)
-        end;
-        expr in_
-    | _ -> accept (EQUALS ab) in_ (* generate error message *)
-  in
-  (* AST: DefDef(newmods, name.toTermName, tparams, vparamss, restype, rhs) *)
-  (* CHECK: "unary prefix operator definition with empty parameter list ..."*)
-  ()
+    let rhs =
+      match in_.token with
+      | t when TH.isStatSep t || t =~= (RBRACE ab) ->
+          (* CHECK: if restype = None then deprecated missing type, use : Unit *)
+          (* AST: EmptyTree, newmods |= DEFERRED *)
+          ()
+      | LBRACE _ when restype = None ->
+          (* CHECK: missing type *)
+          blockExpr in_
+      | EQUALS _ ->
+          nextTokenAllow TH.nme_MACROkw in_;
+          if (TH.isMacro in_.token) then begin
+            nextToken in_;
+            (* AST: newmmods |= MACRO *)
+          end;
+          expr in_
+      | _ -> accept (EQUALS ab) in_ (* generate error message *)
+    in
+    (* AST: DefDef(newmods, name.toTermName, tparams, vparamss, restype, rhs) *)
+    (* CHECK: "unary prefix operator definition with empty parameter list ..."*)
+    ()
+  )
 
 let funDefOrDcl mods in_ =
-  nextToken in_;
-  match in_.token with
-  | Kthis _ ->
-      todo "funDefOrDcl this" in_
-  | _ ->
-      let name = identOrMacro in_ in
-      funDefRest mods name in_
+  in_ |> with_logging "funDefOrDcl" (fun () ->
+    nextToken in_;
+    match in_.token with
+    | Kthis _ ->
+        todo "funDefOrDcl this" in_
+    | _ ->
+        let name = identOrMacro in_ in
+        funDefRest mods name in_
+  )
 
 (*****************************************************************************)
 (* Parsing types definitions or declarations  *)
