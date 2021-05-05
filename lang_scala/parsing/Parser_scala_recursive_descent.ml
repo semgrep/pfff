@@ -627,13 +627,16 @@ let stableId in_ =
 (* alt: have all functions mutually recursive, but it feels cleaner
  * to reduce those set of mutual dependencies
 *)
-(* less: move after types? after expr? *)
+let interpolatedString_ =
+  ref (fun ~inPattern _ -> failwith "forward ref not set")
+let exprTypeArgs_ =
+  ref (fun _ -> failwith "forward ref not set")
+
 let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
-let exprTypeArgs_ = ref (fun _ -> failwith "forward ref not set")
-let interpolatedString_ = ref (fun ~inPattern _ -> failwith "forward ref not set")
+
 
 (*****************************************************************************)
 (* Literal  *)
@@ -663,12 +666,13 @@ let literal ?(isNegated=false) ?(inPattern=false) in_ =
 
     | CharacterLiteral(x, ii) -> finish () (* AST: incharVal *)
     | IntegerLiteral(x, ii) -> finish () (* AST: in.intVal(isNegated) *)
-    | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated) *)
+    | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated)*)
 
     | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
 
     | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
     | Knull _ -> finish () (* AST: null *)
+
     | _ -> error "illegal literal" in_
   )
 
@@ -2410,11 +2414,13 @@ let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
  *  }}}
 *)
 let objectDef mods (* isPackageObject=false *) in_ =
-  nextToken in_; (* 'object' *)
-  let name = ident in_ in
-  let tmpl = templateOpt mods (* AST: if isPackageObject ... *) in_ in
-  (* AST: ModuleDef (mods, name.toTermName, template) *)
-  tmpl
+  in_ |> with_logging "objectDef" (fun () ->
+    nextToken in_; (* 'object' *)
+    let name = ident in_ in
+    let tmpl = templateOpt mods (* AST: if isPackageObject ... *) in_ in
+    (* AST: ModuleDef (mods, name.toTermName, template) *)
+    tmpl
+  )
 
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
@@ -2451,34 +2457,36 @@ let accessModifierOpt in_ =
 
 (* pad: I added isTrait and isCase instead of abusing mods *)
 let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
-  nextToken in_;
-  let name = identForType in_ in
-  (* AST: savingClassContextBounds *)
-  let contextBoundBuf = ref [] in
-  let tparams = typeParamClauseOpt name contextBoundBuf in_ in
-  let classContextBounds = !contextBoundBuf in
-  (* CHECK: "traits cannot have type parameters with context bounds" *)
-  let constrAnnots =
-    if not isTrait then constructorAnnotations in_ else [] in
-  let constrMods, vparamss =
-    if isTrait
-    then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
-    else begin
-      let constrMods =
-        accessModifierOpt in_ in
-      let vparamss =
-        paramClauses ~ofCaseClass:isCase name classContextBounds in_ in
-      constrMods, vparamss
-    end
-  in
-  let tmpl =
-    templateOpt mods (* AST: name ... constrMods withAnnotations...*) in_ in
-  (* AST: gen.mkClassDef(mods, name, tparams, template) *)
-  (* CHECK: Context bounds generate implicit parameters (part of the template)
-   *  with types from tparams: we need to ensure these don't overlap
-   * ensureNonOverlapping(template, tparams)
-  *)
-  ()
+  in_ |> with_logging "classDef" (fun () ->
+    nextToken in_;
+    let name = identForType in_ in
+    (* AST: savingClassContextBounds *)
+    let contextBoundBuf = ref [] in
+    let tparams = typeParamClauseOpt name contextBoundBuf in_ in
+    let classContextBounds = !contextBoundBuf in
+    (* CHECK: "traits cannot have type parameters with context bounds" *)
+    let constrAnnots =
+      if not isTrait then constructorAnnotations in_ else [] in
+    let constrMods, vparamss =
+      if isTrait
+      then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
+      else begin
+        let constrMods =
+          accessModifierOpt in_ in
+        let vparamss =
+          paramClauses ~ofCaseClass:isCase name classContextBounds in_ in
+        constrMods, vparamss
+      end
+    in
+    let tmpl =
+      templateOpt mods (* AST: name ... constrMods withAnnotations...*) in_ in
+    (* AST: gen.mkClassDef(mods, name, tparams, template) *)
+    (* CHECK: Context bounds generate implicit parameters (part of the template)
+     *  with types from tparams: we need to ensure these don't overlap
+     * ensureNonOverlapping(template, tparams)
+    *)
+    ()
+  )
 
 (* ------------------------------------------------------------------------- *)
 (* TmplDef *)
