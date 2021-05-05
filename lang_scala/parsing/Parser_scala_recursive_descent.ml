@@ -63,7 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
 let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref true
+let debug_parser = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -1986,13 +1986,47 @@ let paramClauses ~ofCaseClass owner contextBoundBuf in_ =
  *  TypeParam             ::= Id TypeParamClauseOpt TypeBounds {`<%` Type} {`:` Type}
  *  }}}
 *)
-let typeParamClauseOpt owner contextBoundBuf in_ =
+let rec typeParamClauseOpt owner contextBoundBuf in_ =
   in_ |> with_logging "typeParamClauseOpt" (fun () ->
 
     let typeParam ms in_ =
-      warning "typeParam";
-      let x = ident in_ in
-      ()
+      let mods = ref ms in (* AST: ms | Flags.PARAM *)
+      (match in_.token with
+       (* TODO? is supposed to be only if isTypeName owner *)
+       | PLUS _ ->
+           nextToken in_;
+           (* AST: mods |= Flags.COVARIANT *)
+       | MINUS _ ->
+           nextToken in_;
+           (* AST: mods |= Flags.CONTRAVARIANT *)
+       | _ -> ()
+      );
+      let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
+      let param =
+        let tparams = typeParamClauseOpt pname None in
+        let xs = typeBounds in_ in
+        (* AST: TypeDef(mods, pname, tparams, xs) *)
+        ()
+      in
+      if contextBoundBuf <> None
+      then begin
+        while in_.token =~= (VIEWBOUND ab) do
+          (* CHECK: scala3: "view bounds are unsupported" *)
+          skipToken in_;
+          let t = typ in_ in
+          (* AST: contextBoundBuf +=
+           *  makeFunctionTypeTree(List(Ident(pname)), t)
+          *)
+          ()
+        done;
+        while in_.token =~= (COLON ab) do
+          skipToken in_;
+          let t = typ in_ in
+          (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
+          ()
+        done
+      end;
+      param
     in
     newLineOptWhenFollowedBy (LBRACKET ab) in_;
     match in_.token with
@@ -2028,7 +2062,7 @@ let funDefRest mods name in_ =
      * i.e. (B[T] or T => B)
     *)
     let contextBoundBuf = ref [] in
-    let tparams = typeParamClauseOpt name contextBoundBuf in_ in
+    let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     let restype = (* AST: fromWithinReturnType *) typedOpt in_ in
@@ -2070,8 +2104,32 @@ let funDefOrDcl mods in_ =
 (*****************************************************************************)
 (* Parsing types definitions or declarations  *)
 (*****************************************************************************)
+(** {{{
+ *  TypeDef ::= type Id [TypeParamClause] `=` Type
+ *            | FunSig `=` Expr
+ *  TypeDcl ::= type Id [TypeParamClause] TypeBounds
+ *  }}}
+*)
 let typeDefOrDcl mods in_ =
-  todo "typeDefOrDcl" in_
+  nextToken in_;
+  newLinesOpt in_;
+  let name = identForType in_ in
+  (* a type alias as well as an abstract type may declare type parameters *)
+  let tparams = typeParamClauseOpt name (None) in_ in
+  match in_.token with
+  | EQUALS _ ->
+      nextToken in_;
+      let t = typ in_ in
+      (* AST: TypeDef(mods, name, tparams, t) *)
+      ()
+  | SEMI _ | NEWLINE _ | NEWLINES _
+  | SUPERTYPE _ | SUBTYPE _
+  | RBRACE _ | EOF _ ->
+      let xs = typeBounds in_ in
+      (* AST: TypeDef(mods | Flags.DEFERRED, name, tparams, typeBounds()) *)
+      ()
+
+  | _ -> error "`=`, `>:`, or `<:` expected" in_
 
 (*****************************************************************************)
 (* Parsing Def or Dcl  *)
@@ -2487,7 +2545,7 @@ let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
     let name = identForType in_ in
     (* AST: savingClassContextBounds *)
     let contextBoundBuf = ref [] in
-    let tparams = typeParamClauseOpt name contextBoundBuf in_ in
+    let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let classContextBounds = !contextBoundBuf in
     (* CHECK: "traits cannot have type parameters with context bounds" *)
     let constrAnnots =
