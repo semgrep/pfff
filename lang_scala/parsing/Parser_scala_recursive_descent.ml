@@ -1483,14 +1483,16 @@ and argumentExprs in_ : unit list =
  *  }}}
 *)
 and guard in_ =
-  if in_.token =~= (Kif ab)
-  then begin
-    nextToken in_;
-    let x = postfixExpr in_ in
-    (* AST: stripParens(x) *)
-    ()
-  end
-  else () (* AST: Nil *)
+  in_ |> with_logging "guard" (fun () ->
+    if in_.token =~= (Kif ab)
+    then begin
+      nextToken in_;
+      let x = postfixExpr in_ in
+      (* AST: stripParens(x) *)
+      ()
+    end
+    else () (* AST: Nil *)
+  )
 
 and caseBlock in_ =
   accept (ARROW ab) in_;
@@ -1648,7 +1650,7 @@ and blockExpr in_ =
   ) in_
 
 (* ------------------------------------------------------------------------- *)
-(* enumerators *)
+(* Enumerator/generator *)
 (* ------------------------------------------------------------------------- *)
 (** {{{
  *  Enumerators ::= Generator {semi Enumerator}
@@ -1659,7 +1661,64 @@ and blockExpr in_ =
 *)
 and enumerators in_ =
   in_ |> with_logging "enumerators" (fun () ->
-    todo "enumerators" in_
+    let enums = ref [] in
+    let xs = enumerator ~isFirst:true in_ in
+    enums ++= xs;
+    while TH.isStatSep in_.token do
+      nextToken in_;
+      let xs = enumerator ~isFirst:false in_ in
+      enums ++= xs;
+    done;
+    !enums
+  )
+and enumerator ~isFirst ?(allowNestedIf=true) in_ =
+  in_ |> with_logging "enumerator" (fun () ->
+    let rec loop () =
+      if not (in_.token =~= (Kif ab))
+      then () (* AST: Nil *)
+      else
+        let g = guard in_ in
+        let xs = loop () in
+        (* AST: makeFilter (g)::xs *)
+        ()
+    in
+    match in_.token with
+    | Kif _ when not isFirst -> loop ()
+    | _ -> generator ~eqOK:(not isFirst) ~allowNestedIf in_
+  )
+
+(** {{{
+ *  Generator ::= Pattern1 (`<-` | `=`) Expr [Guard]
+ *  }}}
+*)
+and generator ~eqOK ~allowNestedIf in_ =
+  in_ |> with_logging "generator" (fun () ->
+    let hasVal = in_.token =~= (Kval ab) in
+    if hasVal then nextToken in_;
+    let pat = noSeq pattern1 in_ in
+    let hasEq = in_.token =~= (EQUALS ab) in
+    (* CHECK: scala3: "`val` keyword in for comprehension is" *)
+    (if hasEq && eqOK
+     then nextToken in_
+     else accept (LARROW ab) in_
+    );
+    let rhs = expr in_ in
+    let rec loop () =
+      if not (in_.token =~= (Kif ab))
+      then () (* AST: Nil *)
+      else
+        let g = guard in_ in
+        let xs = loop () in
+        (* AST: makeFilter(g)::xs *)
+        ()
+    in
+    let tail =
+      if allowNestedIf
+      then loop ()
+      else () (* AST: Nil *)
+    in
+    (* AST: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
+    ()
   )
 
 (*****************************************************************************)
