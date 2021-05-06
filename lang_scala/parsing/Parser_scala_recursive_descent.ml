@@ -129,6 +129,7 @@ let with_logging funcname f in_ =
     let depth = n_dash in_.depth in
     logger#info "%s>%s: %s" depth funcname (dump_token in_.token);
     let res = f () in (* less: pass in_ ? *)
+    logger#info "%s<%s: %s" depth funcname (dump_token in_.token);
     in_.depth <- save;
     res
   end
@@ -937,15 +938,24 @@ and bound tok in_ =
 (* Outside PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
 
+(* These are default entry points into the pattern context sensitive methods:
+ *  they are all initiated from non-pattern context.
+*)
 let typ x =
   outPattern typ x
-let exprSimpleType x =
-  outPattern simpleType x
+let startInfixType x =
+  outPattern (infixType (* InfixMode.FirstOp *)) x
 let startAnnotType in_ =
   outPattern annotType in_
+let exprSimpleType x =
+  outPattern simpleType x
 
 let typeOrInfixType location in_ =
-  todo "typeOrInfixType" in_
+  in_ |> with_logging "typeOrInfixType" (fun () ->
+    if location = Local
+    then typ in_
+    else startInfixType in_
+  )
 
 (** {{{
  *  TypedOpt ::= [`:` Type]
@@ -1206,6 +1216,10 @@ and parseOther location (in_: env) =
           * AST: if Ident | Select | Apply *)
          let e = expr in_ in
          () (* AST: mkAssign(t, e) *)
+     (* pad: we may actually be inside a binding, and not an expression here,
+      * for example in 'foo((x: Path) => (...))' we can have parsed
+      * x and seeing the colon.
+     *)
      | COLON _ ->
          t := stripParens !t;
          skipToken in_;
@@ -1354,6 +1368,9 @@ and simpleExpr in_ : unit =
       | USCORE _ ->
           let x = freshPlaceholder in_ in
           ()
+      (* pad: this may actually be a binding, not a tuple of
+       * expressions when part of a short lambda (arrow).
+      *)
       | LPAREN _ ->
           let x = makeParens (commaSeparated expr) in_ in
           ()
@@ -2129,43 +2146,45 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
   in_ |> with_logging "typeParamClauseOpt" (fun () ->
 
     let typeParam ms in_ =
-      let mods = ref ms in (* AST: ms | Flags.PARAM *)
-      (match in_.token with
-       (* TODO? is supposed to be only if isTypeName owner *)
-       | PLUS _ ->
-           nextToken in_;
-           (* AST: mods |= Flags.COVARIANT *)
-       | MINUS _ ->
-           nextToken in_;
-           (* AST: mods |= Flags.CONTRAVARIANT *)
-       | _ -> ()
-      );
-      let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
-      let param =
-        let tparams = typeParamClauseOpt pname None in
-        let xs = typeBounds in_ in
-        (* AST: TypeDef(mods, pname, tparams, xs) *)
-        ()
-      in
-      if contextBoundBuf <> None
-      then begin
-        while in_.token =~= (VIEWBOUND ab) do
-          (* CHECK: scala3: "view bounds are unsupported" *)
-          skipToken in_;
-          let t = typ in_ in
-          (* AST: contextBoundBuf +=
-           *  makeFunctionTypeTree(List(Ident(pname)), t)
-          *)
+      in_ |> with_logging "typeParam" (fun () ->
+        let mods = ref ms in (* AST: ms | Flags.PARAM *)
+        (match in_.token with
+         (* TODO? is supposed to be only if isTypeName owner *)
+         | PLUS _ ->
+             nextToken in_;
+             (* AST: mods |= Flags.COVARIANT *)
+         | MINUS _ ->
+             nextToken in_;
+             (* AST: mods |= Flags.CONTRAVARIANT *)
+         | _ -> ()
+        );
+        let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
+        let param =
+          let tparams = typeParamClauseOpt pname None in_ in
+          let xs = typeBounds in_ in
+          (* AST: TypeDef(mods, pname, tparams, xs) *)
           ()
-        done;
-        while in_.token =~= (COLON ab) do
-          skipToken in_;
-          let t = typ in_ in
-          (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
-          ()
-        done
-      end;
-      param
+        in
+        if contextBoundBuf <> None
+        then begin
+          while in_.token =~= (VIEWBOUND ab) do
+            (* CHECK: scala3: "view bounds are unsupported" *)
+            skipToken in_;
+            let t = typ in_ in
+            (* AST: contextBoundBuf +=
+             *  makeFunctionTypeTree(List(Ident(pname)), t)
+            *)
+            ()
+          done;
+          while in_.token =~= (COLON ab) do
+            skipToken in_;
+            let t = typ in_ in
+            (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
+            ()
+          done
+        end;
+        param
+      )
     in
     newLineOptWhenFollowedBy (LBRACKET ab) in_;
     match in_.token with
