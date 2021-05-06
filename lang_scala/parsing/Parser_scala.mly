@@ -99,9 +99,7 @@
 %token <string * Parse_info.t> StringLiteral
 (* like for JS/PHP/Python *)
 %token <string * Parse_info.t> T_INTERPOLATED_START
-%token <string * Parse_info.t> T_INTERPOLATED_STRING
 %token <Parse_info.t> T_INTERPOLATED_END
-%token <Parse_info.t> T_DOLLAR_LBRACE
 
 (* keywords tokens *)
 %token <Parse_info.t> Kabstract "abstract"

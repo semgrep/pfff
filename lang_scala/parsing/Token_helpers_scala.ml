@@ -224,12 +224,19 @@ let isIdent = function
   | ID_LOWER (s, info) | ID_UPPER(s, info)
   | ID_BACKQUOTED (s, info)
   | OP (s, info)
+  (* when in interpolated string *)
+  | ID_DOLLAR (s, info)
     ->
       Some (s, info)
   (* need that?? *)
   | STAR info -> Some ("*", info)
   | PLUS info -> Some ("+", info)
   | MINUS info -> Some ("-", info)
+  | BANG info -> Some ("!", info)
+  | TILDE info -> Some ("~", info)
+  | PIPE info -> Some ("|", info)
+  (* TODO? HASH *)
+
   | _ -> None
 
 let isIdentBool x =
@@ -324,6 +331,7 @@ let isCaseDefEnd = function
   | RBRACE _ | Kcase _ | EOF _ -> true
   | _ -> false
 
+(*
 let raw_isUnary _s =
   Common.pr2_once "TODO: raw_isUnary";
   false
@@ -332,6 +340,10 @@ let isUnaryOp x =
   match isIdent x with
   | None -> false
   | Some (s, _) -> raw_isUnary s
+*)
+let isUnaryOp = function
+  | MINUS _ | PLUS _ | TILDE _ | BANG _ -> true
+  | _ -> false
 
 (* TODO? correct? *)
 let nme_MACROkw = "macro"
@@ -344,4 +356,11 @@ let isMacro x =
 let isWildcardType = function
   (* TODO: scala3 also accept '?' *)
   | USCORE _ -> true
+  | _ -> false
+
+let is_stringpart = function
+  | StringLiteral _
+  | ID_DOLLAR _
+  | LBRACE _
+    -> true
   | _ -> false
