@@ -76,7 +76,7 @@ let parse filename =
     { PI.ast = xs; tokens = toks; stat }
 
   with PI.Parsing_error cur when !Flag.error_recovery
-                              && not !Parser_scala_recursive_descent.debug_parser    ->
+                              && not !Flag.debug_parser    ->
       if !Flag.show_parsing_error
       then begin
         pr2 ("parse error \n = " ^ (Parse_info.error_message_info cur));

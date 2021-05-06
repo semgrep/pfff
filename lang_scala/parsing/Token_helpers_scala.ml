@@ -197,7 +197,7 @@ let inFirstOfStat x =
 let inLastOfStat x =
   match x with
   | CharacterLiteral _ | IntegerLiteral _ | FloatingPointLiteral _
-  | StringLiteral _
+  | StringLiteral _ | T_INTERPOLATED_END _
   | SymbolLiteral _
 
   (* less: use isIdent? *)

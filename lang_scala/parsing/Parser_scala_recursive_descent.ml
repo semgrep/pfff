@@ -14,6 +14,8 @@
 open Common
 module T = Token_scala
 module TH = Token_helpers_scala
+module Flag = Flag_parsing
+
 open Token_scala
 
 let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
@@ -61,9 +63,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 (* TODO: temporary *)
 [@@@warning "-27-26"]
 
-let debug_lexer = ref false
 let debug_newline = ref false
-let debug_parser = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -123,7 +123,7 @@ let n_dash n =
   Common2.repeat "--" n |> Common.join ""
 
 let with_logging funcname f in_ =
-  if !debug_parser then begin
+  if !Flag.debug_parser then begin
     let save = in_.depth in
     in_.depth <- in_.depth + 1;
     let depth = n_dash in_.depth in
@@ -147,7 +147,7 @@ let error x in_ =
 let todo x in_ =
   error ("TODO:" ^x) in_
 let warning s =
-  if !debug_parser
+  if !Flag.debug_parser
   then pr2 ("WARNING: " ^ s)
 
 (*****************************************************************************)
@@ -228,7 +228,7 @@ let fetchToken in_ =
     match in_.rest with
     | [] -> todo "fetchToken: no more tokens" in_
     | x::xs ->
-        if !debug_lexer then logger#info "fetchToken: %s" (dump_token x);
+        if !Flag.debug_lexer then logger#info "fetchToken: %s" (dump_token x);
 
         in_.rest <- xs;
 
@@ -2004,7 +2004,23 @@ let param owner implicitmod caseParam in_ =
   in_ |> with_logging "param" (fun () ->
     let annots = annotations ~skipNewLines:false in_ in
     let mods = ref [] (* AST: PARAM *) in
-    (* AST: crazy?: if owner.isTypeName ... modifiers () *)
+    (* crazy?: if owner.isTypeName *)
+    begin
+      let xs = modifiers in_ in
+      (* AST: mods = xs |= Flags.PARAMACCESSOR *)
+      (* CHECK: "lazy modifier not allowed here. " *)
+      (match in_.token with
+       | Kval _ |  Kvar _ ->
+           nextToken in_;
+           (* AST: if (v == VAR) mods |= Flags.MUTABLE *)
+       | _ ->
+           (* CHECK: if (mods.flags != Flags.PARAMACCESSOR) accept(VAL) *)
+           (* AST: if (!caseParam) mods |= Flags.PrivateLocal *)
+           ()
+      );
+      (* AST: if (caseParam) mods |= Flags.CASEACCESSOR *)
+    end;
+
     let name = ident in_ in
     let bynamemod = ref 0 in
     let tpt =
