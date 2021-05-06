@@ -361,6 +361,8 @@ and string buf = parse
   | "\"" "\"\"\"" {
       Parse_info.yyback 3 lexbuf;
       Buffer.add_string buf (tok lexbuf);
+      (* bugfix: this is not the end! need to recurse *)
+      string buf lexbuf
   }
   | "\"\"\""    { () }
   (* noteopti: *)

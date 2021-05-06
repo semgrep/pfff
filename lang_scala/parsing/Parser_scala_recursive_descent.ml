@@ -106,6 +106,7 @@ let ab = Parse_info.abstract_info
 let noSelfType = ()
 let empty = ()
 let literalUnit = ()
+let noMods = []
 
 type location =
   | Local
@@ -662,6 +663,7 @@ let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
+let packageOrPackageObject_ = ref (fun _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Literal  *)
@@ -1636,7 +1638,14 @@ and parseWhile in_ =
   ()
 
 and parseDo in_ =
-  todo "parseDo" in_
+  skipToken in_;
+  let lname = () (* AST: freshTermName(nme.DO_WHILE_PREFIX) *) in
+  let body = expr in_ in
+  if TH.isStatSep in_.token then nextToken in_;
+  accept (Kwhile ab) in_;
+  let cond = condExpr in_ in
+  (* AST: makeDoWhile(lname.toTermName, body, cond) *)
+  ()
 
 and parseFor in_ =
   skipToken in_;
@@ -1839,12 +1848,6 @@ let annotTypeRest t in_ =
 (*****************************************************************************)
 (* Parsing directives  *)
 (*****************************************************************************)
-(* scala3: deprecated *)
-let packageObjectDef in_ =
-  todo "packageObjectDef" in_
-
-let packageOrPackageObject in_ =
-  todo "packageOrPackageObject" in_
 
 let wildImportSelector in_ =
   (* AST: val selector = ImportSelector.wildAt(in.offset) *)
@@ -2527,7 +2530,7 @@ let topStat in_ =
   match in_.token with
   | Kpackage _ ->
       skipToken in_;
-      let x = packageOrPackageObject in_ in
+      let x = !packageOrPackageObject_ in_ in
       Some () (* AST: x::Nil *)
   | Kimport _ ->
       let x = importClause in_ in
@@ -2684,7 +2687,7 @@ let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
  *  }}}
 *)
 (* pad: I've added isCase, it was passed via mods in the original code *)
-let objectDef ?(isCase=false) mods (* isPackageObject=false *) in_ =
+let objectDef ?(isCase=false) ?(isPackageObject=false) mods in_ =
   in_ |> with_logging "objectDef" (fun () ->
     nextToken in_; (* 'object' *)
     let name = ident in_ in
@@ -2692,6 +2695,38 @@ let objectDef ?(isCase=false) mods (* isPackageObject=false *) in_ =
     (* AST: ModuleDef (mods, name.toTermName, template) *)
     tmpl
   )
+
+(* ------------------------------------------------------------------------- *)
+(* Package object *)
+(* ------------------------------------------------------------------------- *)
+
+(** Create a tree representing a package object, converting
+ *  {{{
+ *    package object foo { ... }
+ *  }}}
+ *  to
+ *  {{{
+ *    package foo {
+ *      object `package` { ... }
+ *    }
+ *  }}}
+*)
+(* scala3: deprecated *)
+let packageObjectDef in_ =
+  let defn = objectDef noMods ~isPackageObject:true in_ in
+  (* AST: gen.mkPackageObject(defn, pidPos, pkgPos) *)
+  ()
+
+let packageOrPackageObject in_ =
+  if in_.token =~= (Kobject ab) then
+    let x = packageObjectDef in_ in
+    (* AST: joinComment(x::Nil).head *)
+    ()
+  else
+    let x = pkgQualId in_ in
+    let body = inBracesOrNil topStatSeq in_ in
+    (* AST: makePackaging(x, body) *)
+    ()
 
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
@@ -2810,6 +2845,7 @@ let _ =
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
+  packageOrPackageObject_ := packageOrPackageObject;
 
   exprTypeArgs_ := exprTypeArgs;
   interpolatedString_ := interpolatedString;
