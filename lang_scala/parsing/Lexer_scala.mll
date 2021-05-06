@@ -222,6 +222,18 @@ rule token = parse
 
   | "@"    { AT (tokinfo lexbuf) }
 
+  (* unicode space characters (like in Lexer_js.mll)
+   * Note that OCaml supports now unicode characters as \u{00a0} in strings
+   * but this does not seem to work in ocamllex, hence the hardcoding of
+   * the actual UTF8 bytes below (use scripts/unicode.ml and hexl-mode in
+   * Emacs to get those byte values).
+   * The right solution would be to switch to a unicode-aware lexer generator,
+   * like ulex or sedlex.
+   * related: Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
+   * but this code below will trigger only if unicode_hack is set to false.
+   *)
+  | "\xe2\x87\x92"    { ARROW (tokinfo lexbuf) }
+
   (* semgrep-ext: *)
   | "..."   { Ellipsis (tokinfo lexbuf) }
   (* semgrep-ext: *)
