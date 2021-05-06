@@ -244,21 +244,25 @@ let isIdentBool x =
 
 let isRawIdent = function
   | ID_LOWER (s, info) | ID_UPPER (s, info) | OP (s, info)
-    (* TODO: and STAR | ... ? *)
+    (* less: and STAR | ... ? maybe not actually *)
     -> Some (s, info)
   | _ -> None
 
 let isRawStar x =
-  match isRawIdent x with
-  | Some (s, _) -> s = "*" (* AST: raw.STAR *)
-  (* TODO: or just | STAR _ -> true *)
-  | _ -> false
+  (* pad: in original code
+     match isRawIdent x with
+     | Some (s, _) -> s = "*" (* AST: raw.STAR *)
+     | _ -> false
+  *)
+  match x with STAR _ -> true | _ -> false
 
 let isRawBar x =
-  match isRawIdent x with
-  | Some (s, _) -> s = "|" (* AST: raw.STAR *)
-  (* TODO: or just | PIPE _ -> true *)
-  | _ -> false
+  (* pad: in original code
+     match isRawIdent x with
+     | Some (s, _) -> s = "|" (* AST: raw.STAR *)
+     | _ -> false
+  *)
+  match x with PIPE _ -> true | _ -> false
 
 let isLiteral = function
   | IntegerLiteral(_)
@@ -358,6 +362,7 @@ let isWildcardType = function
   | USCORE _ -> true
   | _ -> false
 
+(* pad: not in original code, hence the _ instead of camlCase *)
 let is_stringpart = function
   | StringLiteral _
   | ID_DOLLAR _

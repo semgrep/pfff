@@ -113,6 +113,10 @@ type location =
   | InTemplate
 [@@deriving show {with_path = false}]
 
+type mode =
+  | FirstOp
+[@@deriving show {with_path = false}]
+
 (*****************************************************************************)
 (* Logging/Dumpers  *)
 (*****************************************************************************)
@@ -734,7 +738,7 @@ let rec typ in_ =
     let t =
       match in_.token with
       | LPAREN _ -> tupleInfixType in_
-      | _ -> infixType (* AST: InfixMode.FirstOp *) in_
+      | _ -> infixType FirstOp in_
     in
     match in_.token with
     | ARROW _ ->
@@ -748,11 +752,22 @@ let rec typ in_ =
     | _ -> t
   )
 
+(** {{{
+ *  InfixType ::= CompoundType {id [nl] CompoundType}
+ *  }}}
+*)
 (* pad: similar to infixExpr *)
-and infixType in_ =
-  in_ |> with_logging "infixType" (fun () ->
-    warning "infixType:TODO";
-    simpleType in_
+and infixType mode in_ =
+  in_ |> with_logging (spf "infixType(%s)" (show_mode mode)) (fun () ->
+    (* CHECK: placeholderTypeBoundary *)
+    let x = compoundType in_ in
+    infixTypeRest x in_
+  )
+
+and infixTypeRest top in_ =
+  in_ |> with_logging "infixTypeRest" (fun () ->
+    warning "infixTypeRest";
+    top
   )
 
 (* () must be () => R; (types) could be tuple or (types) => R *)
@@ -944,7 +959,7 @@ and bound tok in_ =
 let typ x =
   outPattern typ x
 let startInfixType x =
-  outPattern (infixType (* InfixMode.FirstOp *)) x
+  outPattern (infixType FirstOp) x
 let startAnnotType in_ =
   outPattern annotType in_
 let exprSimpleType x =
@@ -1051,7 +1066,16 @@ and pattern3 in_ =
     (* CHECK: badPattern3 *)
     let top = simplePattern in_ in
     (* AST: let base = opstack *)
-    (* TODO: checkWildStar *)
+    let checkWildStar in_ =
+      warning "checkWildStar, incomplete";
+      (* crazy: if top = USCORE && sequenceOK && peekingAhead ... *)
+      if in_.token =~= (STAR ab)
+      then begin
+        nextToken in_;
+        Some ()
+      end
+      else None
+    in
     let rec loop top in_ =
       in_ |> with_logging "pattern3: loop" (fun () ->
         (* AST: let next = reducePatternStack(base, top) *)
@@ -1067,10 +1091,14 @@ and pattern3 in_ =
           )
       )
     in
-    warning "checkWildStar:TODO, orElse";
-    let x = loop top in_ in
-    (* AST: stripParens(x) *)
-    ()
+    (match checkWildStar in_ with
+     | None ->
+         let x = loop top in_ in
+         (* AST: stripParens(x) *)
+         ()
+     | Some x ->
+         () (* AST: x *)
+    )
   )
 
 (** {{{
@@ -2007,23 +2035,25 @@ let localModifiers in_ =
  *  }}}
 *)
 let paramType ?(repeatedParameterOK=true) in_ =
-  match in_.token with
-  | ARROW _ ->
-      nextToken in_;
-      let t = typ in_ in
-      (* AST: byNameApplication *)
-      ()
-  | _ ->
-      let t = typ in_ in
-      if (TH.isRawStar in_.token)
-      then begin
+  in_ |> with_logging "paramType" (fun () ->
+    match in_.token with
+    | ARROW _ ->
         nextToken in_;
-        (* CHECK: if (!repeatedParameterOK)
-         * "repeated parameters are only allowed in method signatures" *)
-        (* AST: repeatedApplication t *)
+        let t = typ in_ in
+        (* AST: byNameApplication *)
         ()
-      end
-      else () (* AST: t *)
+    | _ ->
+        let t = typ in_ in
+        if (TH.isRawStar in_.token)
+        then begin
+          nextToken in_;
+          (* CHECK: if (!repeatedParameterOK)
+           * "repeated parameters are only allowed in method signatures" *)
+          (* AST: repeatedApplication t *)
+          ()
+        end
+        else () (* AST: t *)
+  )
 
 (** {{{
  *  ParamClauses      ::= {ParamClause} [[nl] `(` implicit Params `)`]
