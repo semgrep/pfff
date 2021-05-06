@@ -602,6 +602,16 @@ let pkgQualId in_ =
 
 
 (** {{{
+ *   MixinQualifier ::= `[` Id `]`
+ *   }}}
+*)
+let mixinQualifierOpt in_ =
+  if in_.token =~= (LBRACKET ab)
+  then let xs = inBrackets identForType in_ in ()
+  else () (* AST: tpnme.EMPTY *)
+
+
+(** {{{
  *  Path       ::= StableId
  *              |  [Ident `.`] this
  *  AnnotType ::= Path [`.` type]
@@ -620,15 +630,50 @@ let path ~thisOK ~typeOK in_ =
           () (* AST: t = x *)
         end
 
-    | Ksuper _ -> todo "path.super" in_
+    | Ksuper _ ->
+        nextToken in_;
+        let x = mixinQualifierOpt in_ in
+        (* AST: t := Super(This(tpnme.EMPTY), x *)
+        accept (DOT ab) in_;
+        let x = selector !t in_ in
+        if in_.token =~= (DOT ab)
+        then begin
+          skipToken in_;
+          let x = selectors !t ~typeOK in_ in
+          (* AST: t = x *)
+          ()
+        end;
+        () (* AST: t = x *)
     | _ ->
         let name = ident in_ in
         (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
         if in_.token =~= (DOT ab) then begin
           skipToken in_;
           match in_.token with
-          | Kthis _ -> todo "path.this 2" in_
-          | Ksuper _ -> todo "path.super 2" in_
+          | Kthis _ ->
+              nextToken in_;
+              (* AST: t = This(name.toTypeName) *)
+              if not thisOK || in_.token =~= (DOT ab) then begin
+                accept (DOT ab) in_;
+                let xs = selectors !t ~typeOK in_ in
+                (* AST: t = xs *)
+                ()
+              end
+          | Ksuper _ ->
+              (* pad: factorize with above Ksuper case *)
+              nextToken in_;
+              let x = mixinQualifierOpt in_ in
+              (* AST: Super(This(name.toTypeName), x) *)
+              accept (DOT ab) in_;
+              let x = selector !t in_ in
+              if in_.token =~= (DOT ab)
+              then begin
+                skipToken in_;
+                let x = selectors !t ~typeOK in_ in
+                (* AST: t = x *)
+                ()
+              end;
+              () (* AST: t = x *)
           | _ ->
               let x = selectors ~typeOK !t in_ in
               t := x
