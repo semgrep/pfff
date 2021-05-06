@@ -418,6 +418,9 @@ let seqOK f in_ =
   warning "seqOK: TODO";
   f in_
 
+(* The implementation of the context sensitive methods for parsing
+ * outside of patterns.
+*)
 let outPattern f in_ =
   warning "outPattern: TODO";
   f in_
@@ -647,6 +650,9 @@ let interpolatedString_ =
 let exprTypeArgs_ =
   ref (fun _ -> failwith "forward ref not set")
 
+let annotTypeRest_ =
+  ref (fun _ -> failwith "forward ref not set")
+
 let template_ = ref (fun _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
@@ -855,8 +861,30 @@ and functionTypes in_ =
  *  }}}
 *)
 and compoundType in_ =
-  warning "compoundType:TODO";
-  typ in_
+  (* pad: can't call typ() here, which allows function type 'int => float'
+   * because this is used in a pattern context as in case p: ... =>
+   * where the arrow mark the start of the caseBlock, not a type.
+  *)
+  let t =
+    if in_.token =~= (LBRACE ab)
+    then () (* AST: scalaAnyRefConstr *)
+    else annotType in_
+  in
+  compoundTypeRest t in_
+
+and compoundTypeRest t in_ =
+  warning "compoundTypeRest";
+  t
+
+(** {{{
+ *  AnnotType        ::=  SimpleType {Annotation}
+ *  }}}
+*)
+(* was in PatternContextSensitive trait *)
+and annotType in_ =
+  (* CHECK: placeholderTypeBoundary *)
+  let x = simpleType in_ in
+  !annotTypeRest_ x in_
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -909,8 +937,12 @@ and bound tok in_ =
 (* Outside PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
 
-let typ x = outPattern typ x
-let exprSimpleType x = outPattern simpleType x
+let typ x =
+  outPattern typ x
+let exprSimpleType x =
+  outPattern simpleType x
+let startAnnotType in_ =
+  outPattern annotType in_
 
 let typeOrInfixType location in_ =
   todo "typeOrInfixType" in_
@@ -1406,31 +1438,34 @@ and interpolatedString ~inPattern in_ =
   (* AST: let partsBuf = ref [] in let exprsBuf = ref [] in *)
   nextToken in_; (* T_INTERPOLATED_START(s,info) *)
   while TH.is_stringpart in_.token do
-    let x = literal in_ in
-    if inPattern
-    then todo "interpolatedString: inPattern (dropAnyBraces(pattern))" in_
-    else
-      match in_.token with
-      (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
-       * introduces a new token for $xxx.
-       * TODO? the original code also allow 'this', but ID_DOLLAR should cover
-       * that?
-      *)
-      | ID_DOLLAR (s, ii) ->
-          let x = ident in_ in
-          () (* AST: Ident(x) *)
-      (* actually a ${, but using LBRACE allows to reuse blockExpr *)
-      | LBRACE _ ->
-          let x = expr in_ in
-          (* AST: x *)
-          ()
-      (* pad: not in original code, but the way Lexer_scala.mll is written
-       * we can have multiple consecutive StringLiteral *)
-      | StringLiteral _ -> ()
-      | T_INTERPOLATED_END _ -> ()
-      | _ ->
-          error "error in interpolated string: identifier or block expected"
-            in_
+    (* pad: in original code, but the interpolated string can start with
+     * a non string literal like $f, so I've commented this code.
+     * let x = literal in_ in
+     * if inPattern
+     * then todo "interpolatedString: inPattern (dropAnyBraces(pattern))" in_
+     * else
+    *)
+    match in_.token with
+    (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
+     * introduces a new token for $xxx.
+     * TODO? the original code also allow 'this', but ID_DOLLAR should cover
+     * that?
+    *)
+    | ID_DOLLAR (s, ii) ->
+        let x = ident in_ in
+        () (* AST: Ident(x) *)
+    (* actually a ${, but using LBRACE allows to reuse blockExpr *)
+    | LBRACE _ ->
+        let x = expr in_ in
+        (* AST: x *)
+        ()
+    (* pad: not in original code, but the way Lexer_scala.mll is written
+     * we can have multiple consecutive StringLiteral *)
+    | StringLiteral _ ->
+        nextToken in_
+    | _ ->
+        error "error in interpolated string: identifier or block expected"
+          in_
   done;
   (* pad: not in original code *)
   accept (T_INTERPOLATED_END ab) in_;
@@ -1751,24 +1786,10 @@ and annotations ~skipNewLines in_ =
     ) in_
   )
 
-
-(** {{{
- *  AnnotType        ::=  SimpleType {Annotation}
- *  }}}
-*)
 let annotTypeRest t in_ =
   let xs = annotations ~skipNewLines:false in
   (* AST: fold around t makeAnnotated *)
   t
-
-(* TODO? was in PatternContextSensitive trait *)
-let annotType in_ =
-  (* CHECK: placeholderTypeBoundary *)
-  let x = simpleType in_ in
-  annotTypeRest x in_
-
-let startAnnotType in_ =
-  outPattern annotType in_
 
 (*****************************************************************************)
 (* Parsing directives  *)
@@ -2740,8 +2761,11 @@ let _ =
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
+
   exprTypeArgs_ := exprTypeArgs;
   interpolatedString_ := interpolatedString;
+
+  annotTypeRest_ := annotTypeRest;
   ()
 
 (** {{{
