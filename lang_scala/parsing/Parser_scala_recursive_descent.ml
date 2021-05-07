@@ -798,6 +798,7 @@ let annotTypeRest_ =
   ref (fun _ -> failwith "forward ref not set")
 
 let template_ = ref (fun _ -> failwith "forward ref not set")
+let defOrDcl_ = ref (fun _ _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
@@ -896,7 +897,8 @@ let rec typ in_ =
  *  InfixType ::= CompoundType {id [nl] CompoundType}
  *  }}}
 *)
-(* pad: similar to infixExpr *)
+(* pad: similar to infixExpr, but seems very rarely used in Scala projects.
+*)
 and infixType mode in_ =
   in_ |> with_logging (spf "infixType(%s)" (show_mode mode)) (fun () ->
     (* CHECK: placeholderTypeBoundary *)
@@ -1024,8 +1026,23 @@ and compoundType in_ =
   compoundTypeRest t in_
 
 and compoundTypeRest t in_ =
-  warning "compoundTypeRest";
-  t
+  let ts = ref [] in
+  while in_.token =~= (Kwith ab) do
+    nextToken in_;
+    let x = annotType in_ in
+    ts += x;
+  done;
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  let types = !ts in
+  let hasRefinement = (in_.token =~= (LBRACE ab)) in
+  let refinements =
+    if hasRefinement
+    then refinement in_
+    else []
+  in
+  (* CHECK: "Detected apparent refinement of Unit" *)
+  (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
+  ()
 
 (** {{{
  *  AnnotType        ::=  SimpleType {Annotation}
@@ -1049,6 +1066,41 @@ and typeProjection t in_ =
   let name = identForType in_ in
   (* AST: SelectFromTypeTree(t, name) *)
   ()
+
+(** {{{
+ *  Refinement ::= [nl] `{` RefineStat {semi RefineStat} `}`
+ *  }}}
+*)
+and refinement in_ =
+  inBraces refineStatSeq in_
+
+(** {{{
+ *  RefineStatSeq    ::= RefineStat {semi RefineStat}
+ *  RefineStat       ::= Dcl
+ *                     | type TypeDef
+ *                     |
+ *  }}}
+*)
+and refineStatSeq in_ =
+  (* CHECK: checkNoEscapingPlaceholders *)
+  (* less: pad: reuse statSeq? *)
+  let stats = ref [] in
+  while not (TH.isStatSeqEnd in_.token) do
+    let xs = refineStat in_ in
+    stats ++= xs;
+    if not (in_.token =~= (RBRACE ab))
+    then acceptStatSep in_;
+  done;
+  !stats
+
+and refineStat in_ =
+  match in_.token with
+  | t when TH.isDclIntro t ->
+      let xs = !defOrDcl_ noMods in_ in
+      []
+  | t when not (TH.isStatSep t) ->
+      error "illegal start of declaration" in_
+  | _ -> []
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -3063,6 +3115,7 @@ let topLevelTmplDef in_ =
 (* set the forward reference *)
 let _ =
   template_ := template;
+  defOrDcl_ := defOrDcl;
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
