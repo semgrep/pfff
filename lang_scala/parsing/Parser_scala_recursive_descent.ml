@@ -141,6 +141,8 @@ type location =
 (* to correctly handle infix operators (in expressions, patterns, and types)*)
 type mode =
   | FirstOp
+  | LeftOp
+  | RightOp
 [@@deriving show {with_path = false}]
 
 (*****************************************************************************)
@@ -903,13 +905,52 @@ and infixType mode in_ =
   in_ |> with_logging (spf "infixType(%s)" (show_mode mode)) (fun () ->
     (* CHECK: placeholderTypeBoundary *)
     let x = compoundType in_ in
-    infixTypeRest x in_
+    infixTypeRest x mode in_
   )
 
-and infixTypeRest top in_ =
+and infixTypeRest t mode in_ =
   in_ |> with_logging "infixTypeRest" (fun () ->
-    warning "infixTypeRest";
-    top
+    (* Detect postfix star for repeated args.
+     * Only RPAREN can follow, but accept COMMA and EQUALS for error's sake.
+     * Take RBRACE as a paren typo.
+    *)
+    let checkRepeatedParam in_ =
+      if TH.isRawStar in_.token
+      then
+        lookingAhead (fun in_ ->
+          match in_.token with
+          | RPAREN _ | COMMA _ | EQUALS _ | RBRACE _ -> Some t
+          | _ -> None
+        ) in_
+      else None
+    in
+    let asInfix in_ =
+      (* AST: let leftAssoc = nme.isLeftAssoc(in.name) *)
+      let leftAssoc = false in
+      warning ("InfixTypeRest: leftAssoc??");
+      (* AST: if (mode != InfixMode.FirstOp) checkAssoc ... *)
+      let tycon = identForType in_ in
+      newLineOptWhenFollowing TH.isTypeIntroToken in_;
+      (* AST: let mkOp t1 = AppliedTypeTree(tycon, List(t, t1)) *)
+      if leftAssoc
+      then
+        let x = compoundType in_ in
+        (* AST: mkOp(x) *)
+        infixTypeRest x LeftOp in_
+      else
+        let x = infixType RightOp in_ in
+        (* AST: mkOp(x) *)
+        ()
+    in
+    if TH.isIdentBool in_.token
+    then
+      (match checkRepeatedParam in_ with
+       | None ->
+           asInfix in_
+       | Some x ->
+           x
+      )
+    else t
   )
 
 (* () must be () => R; (types) could be tuple or (types) => R *)

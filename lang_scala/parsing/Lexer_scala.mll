@@ -31,9 +31,7 @@ module Flag = Flag_parsing
  *    - fastparse/scalaparse/.../Basic.scala
  *
  * TODO:
- *  - NEWLINES
- *  - still? CASECLASS CASEOBJECT
- *  - MACRO
+ *  - MACRO?
  *  - scala3: THEN
  *  - less: XMLSTART
  *)

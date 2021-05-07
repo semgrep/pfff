@@ -200,7 +200,7 @@ let inLastOfStat x =
   | StringLiteral _ | T_INTERPOLATED_END _
   | SymbolLiteral _
 
-  (* less: use isIdent? *)
+  (* coupling: less: use isIdent? *)
   | ID_LOWER _ | ID_UPPER _ | ID_BACKQUOTED _
   | OP _
   | STAR _ | PLUS _ | MINUS _ | BANG _ | TILDE _ | PIPE _
@@ -265,6 +265,10 @@ let isRawBar x =
   *)
   match x with PIPE _ -> true | _ -> false
 
+(* ------------------------------------------------------------------------- *)
+(* Literals *)
+(* ------------------------------------------------------------------------- *)
+
 let isLiteral = function
   | IntegerLiteral(_)
   | FloatingPointLiteral(_)
@@ -278,11 +282,19 @@ let isLiteral = function
     -> true
   | _ -> false
 
+let isNull = function
+  | Knull _ -> true
+  | _ -> false
+
 let isNumericLit = function
   | IntegerLiteral(_)
   | FloatingPointLiteral(_)
     -> true
   | _ -> false
+
+(* ------------------------------------------------------------------------- *)
+(* Statement separators *)
+(* ------------------------------------------------------------------------- *)
 
 let isStatSep = function
   | NEWLINE _ | NEWLINES _ | SEMI _ -> true
@@ -291,6 +303,10 @@ let isStatSep = function
 let isStatSeqEnd = function
   | RBRACE _ | EOF _ -> true
   | _ -> false
+
+(* ------------------------------------------------------------------------- *)
+(* modifiers *)
+(* ------------------------------------------------------------------------- *)
 
 let isAnnotation = function
   | AT _ -> true
@@ -306,6 +322,11 @@ let isLocalModifier = function
   | Kabstract _ | Kfinal _ | Ksealed _
   | Kimplicit _ | Klazy _ -> true
   | _ -> false
+
+
+(* ------------------------------------------------------------------------- *)
+(* Construct Intro *)
+(* ------------------------------------------------------------------------- *)
 
 let isTemplateIntro = function
   | Kobject _ | Kclass _  | Ktrait _  -> true
@@ -331,6 +352,20 @@ let isExprIntro x =
 
 let isDefIntro x =
   isTemplateIntro x || isDclIntro x
+
+let isTypeIntroToken x =
+  (isLiteral x && not (isNull x)) ||
+  (* pad: was IDENTIFIER | BACKQUOTED_IDENT *)
+  isIdentBool x ||
+  (match x with
+   | Kthis _ | Ksuper _ | USCORE _ | LPAREN _ | AT _ -> true
+   | _ -> false
+  )
+
+
+(* ------------------------------------------------------------------------- *)
+(* Misc *)
+(* ------------------------------------------------------------------------- *)
 
 let isCaseDefEnd = function
   | RBRACE _ | Kcase _ | EOF _ -> true
