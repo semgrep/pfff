@@ -76,6 +76,19 @@ type env = {
   (* imitating the Scala implementation *)
   mutable token: T.token;
 
+  (** a stack of tokens which indicates whether line-ends can be statement
+   *  separators also used for keeping track of nesting levels.
+   *  We keep track of the closing symbol of a region. This can be
+   *  RPAREN    if region starts with '('
+   *  RBRACKET  if region starts with '['
+   *  RBRACE    if region starts with '{'
+   *  ARROW     if region starts with 'case'
+   *  STRINGLIT if region is a string interpolation expression starting
+   *   with '${' (the STRINGLIT appears twice in succession on the stack iff
+   *              the expression is a multiline string literal).
+  *)
+  mutable sepRegions: T.token list;
+
   (* not in Scala implementation *)
   mutable rest: T.token list;
   mutable passed: T.token list;
@@ -99,6 +112,7 @@ let mk_env toks =
         passed = [];
         last_nl = None;
         depth = 0;
+        sepRegions = [];
       }
 
 (* We sometimes need to lookahead tokens, and call fetchToken and revert;
@@ -191,8 +205,33 @@ let (+=) aref x =
  * in certain complex conditions.
 *)
 
+(** Adapt sepRegions according to last token *)
 let adjustSepRegions lastToken in_ =
-  pr2_once "adjustSepRegions"
+  let newRegions =
+    match lastToken, in_.sepRegions with
+    | LPAREN info, xs -> (RPAREN info)::xs
+    | LBRACKET info, xs -> (RBRACKET info)::xs
+    | LBRACE info, xs -> (RBRACE info)::xs
+    (* TODO Kcase info, xs -> (ARROW info)::xs
+       pad: but need lookahead if object or class after
+    *)
+    (* pad: the original code does something different for RBRACE,
+     * I think for error recovery, and it does not raise an
+     * error for mismatch.
+    *)
+    | (RPAREN _ | RBRACKET _ | RBRACE _), [] ->
+        (* stricter: original code just does nothing *)
+        error "unmatched closing token" in_
+    | (RPAREN _ | RBRACKET _ | RBRACE _) as x, y::ys ->
+        if x =~= y
+        then ys
+        else
+          (* stricter: original code just does nothing *)
+          error "unmatched closing token" in_
+    | _, xs -> xs
+  in
+  in_.sepRegions <- newRegions;
+  ()
 
 (* newline: pad: I've added the ~newlines param to differentiante adding
  * a NEWLINE or NEWLINES *)
@@ -288,7 +327,7 @@ let nextToken in_ =
   if afterLineEnd in_ &&
      TH.inLastOfStat lastToken &&
      TH.inFirstOfStat in_.token &&
-     (* TODO: sepRegions stuff *)
+     (match in_.sepRegions with [] | (RBRACE _)::_ -> true | _ -> false) &&
      (* TODO: not applyBracePatch *)
      true
   then begin

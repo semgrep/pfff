@@ -98,12 +98,13 @@ let hexDigit = digit | ['a'-'f''A'-'F']
 
 (* no paren, and no delim, no quotes, no $ or _ *)
 (* the _noxxx is to avoid ambiguity with /** comments *)
-let op_nodivstar =['+''-'      '%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
+let op_nodivstar =['+''-'    '%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
 let op_nodiv = op_nodivstar | '*'
+let op_nostar = op_nodivstar | '/'
 let opchar   = op_nodivstar | '*' | '/'
 let op = '/'
-       | op_nodiv
-       | op_nodiv op_nodivstar opchar*
+       | '/'      op_nostar opchar*
+       | op_nodiv opchar*
 
 let idrest = (letter | digit)* ('_' op)?
 
@@ -207,20 +208,27 @@ rule token = parse
    * different tokens for those, but accept them also as identifier
    * in Token_helpers_scala.isIdent().
   *)
+  (* op and used for type variance and used for prefixExpr *)
   | '+'     { PLUS (tokinfo lexbuf) }
   | '-'     { MINUS (tokinfo lexbuf) }
+  (* used for sequences *)
   | '*'     { STAR (tokinfo lexbuf) }
-
-  | '!'     { BANG (tokinfo lexbuf) }
+  (* type projection *)
   | '#'     { HASH (tokinfo lexbuf) }
-  | '~'     { TILDE (tokinfo lexbuf) }
+  (* Or patterns *)
   | '|'     { PIPE (tokinfo lexbuf) }
 
+  (* prefixExpr *)
+  | '!'     { BANG (tokinfo lexbuf) }
+  | '~'     { TILDE (tokinfo lexbuf) }
+  (* wildcard *)
   | '_'     { USCORE (tokinfo lexbuf) }
+  (* generators *)
+  | "<-"    { LARROW (tokinfo lexbuf) }
+  (* case body and short lambdas *)
+  | "=>"    { ARROW (tokinfo lexbuf) }
 
   | "<%"    { VIEWBOUND (tokinfo lexbuf) }
-  | "<-"    { LARROW (tokinfo lexbuf) }
-  | "=>"    { ARROW (tokinfo lexbuf) }
   | "<:"    { SUBTYPE (tokinfo lexbuf) }
   | ">:"    { SUPERTYPE (tokinfo lexbuf) }
 

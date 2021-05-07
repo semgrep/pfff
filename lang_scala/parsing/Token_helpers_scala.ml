@@ -202,7 +202,8 @@ let inLastOfStat x =
 
   (* less: use isIdent? *)
   | ID_LOWER _ | ID_UPPER _ | ID_BACKQUOTED _
-  | OP _ | STAR _ | PLUS _ | MINUS _
+  | OP _
+  | STAR _ | PLUS _ | MINUS _ | BANG _ | TILDE _ | PIPE _
 
   | Kthis _
   | Knull _
