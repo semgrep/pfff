@@ -1804,8 +1804,27 @@ and caseClauses in_ =
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
 (* ------------------------------------------------------------------------- *)
+(** {{{
+ *  Expr ::= implicit Id `=>` Expr
+ *  }}}
+*)
 and implicitClosure location in_ =
-  todo "implicitClosure" in_
+  let expr0 =
+    let id = ident in_ in
+    if in_.token =~= (COLON ab)
+    then begin
+      nextToken in_;
+      let t = typeOrInfixType location in_ in
+      (* AST: Typed(Ident(id, t)) *)
+      ()
+    end else () (* AST: Ident(id) *)
+  in
+  (* AST: convertToParam expr0; copyValDef(param0, mods|Flags.IMPLICIT)  *)
+  let param = expr0 in
+  accept (ARROW ab) in_;
+  let x = if location <> InBlock then expr in_ else block in_ in
+  (* AST: Function(List(param), x) *)
+  ()
 
 (*****************************************************************************)
 (* Parsing statements (which are expressions in Scala) *)
