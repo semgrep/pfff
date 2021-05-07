@@ -199,22 +199,63 @@ let (+=) aref x =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
+(* looking ahead part 1 *)
+(* ------------------------------------------------------------------------- *)
+
+(* was called in.next.token *)
+let rec in_next_token xs =
+  match xs with
+  | [] -> None
+  | x::xs ->
+      (match x with
+       | Space _  | Comment _ -> in_next_token xs
+       | _ ->  Some x
+      )
+
+(* ------------------------------------------------------------------------- *)
 (* newline: Newline management part1  *)
 (* ------------------------------------------------------------------------- *)
 (* pad: newlines are skipped in fetchToken but reinserted in insertNL
  * in certain complex conditions.
 *)
 
-(** Adapt sepRegions according to last token *)
+(** Adapt sepRegions according to last token.
+  * pad: called just at the beginning of nextToken so
+  * in_.token = lastToken
+*)
 let adjustSepRegions lastToken in_ =
   let newRegions =
     match lastToken, in_.sepRegions with
     | LPAREN info, xs -> (RPAREN info)::xs
     | LBRACKET info, xs -> (RBRACKET info)::xs
     | LBRACE info, xs -> (RBRACE info)::xs
-    (* TODO Kcase info, xs -> (ARROW info)::xs
-       pad: but need lookahead if object or class after
-    *)
+
+    | Kcase info, xs ->
+        (* pad: the original code generate different tokens for
+         * 'case object' and 'case class' in postProcessToken, I guess
+         * to simplify code here. Instead I lookahead here and have
+         * a simpler postProcessToken.
+        *)
+
+        (* ugly: if 'case' is the first token of the file, it will actually
+         * still be in in_.rest because of the way mk_env currently works.
+         * so we double check this initial condition here with =*=
+         * (on purpose not =~=)
+        *)
+        let rest =
+          match in_.rest with
+          | x::xs when x =*= lastToken -> xs
+          | xs -> xs
+        in
+        (match in_next_token (rest) with
+         | Some (Kobject _ | Kclass _) -> xs
+         | Some x ->
+             if !debug_newline
+             then logger#info "found case for arrow, next = %s" (T.show x);
+             (ARROW info)::xs
+         | None -> xs
+        )
+
     (* pad: the original code does something different for RBRACE,
      * I think for error recovery, and it does not raise an
      * error for mismatch.
@@ -228,6 +269,11 @@ let adjustSepRegions lastToken in_ =
         else
           (* stricter: original code just does nothing *)
           error "unmatched closing token" in_
+    (* pad: not that an arrow can also be used outside of a case, so
+     * here we dont raise an error if we don't find a match.
+    *)
+    | ARROW _ as x, y::ys when x =~= y ->
+        ys
     | _, xs -> xs
   in
   in_.sepRegions <- newRegions;
@@ -362,16 +408,8 @@ let accept t in_ =
   )
 
 (* ------------------------------------------------------------------------- *)
-(* looking Ahead *)
+(* looking ahead part 2 *)
 (* ------------------------------------------------------------------------- *)
-
-(* was called in.next.token *)
-let (*rec*) in_next_token in_ =
-  match in_.rest with
-  | [] -> None
-  | x::xs ->
-      warning "in_next_token: also skip spaces?";
-      Some x
 
 let lookingAhead body in_ =
   (* CHECK: allowLeadingInfixOperators *)
@@ -415,11 +453,11 @@ let newLinesOpt in_ =
   | _ -> ()
 
 let newLineOptWhenFollowedBy token in_ =
-  match in_.token, in_next_token in_ with
+  match in_.token, in_next_token in_.rest with
   | NEWLINE _, Some x when x =~= token -> newLineOpt in_
   | _ -> ()
 let newLineOptWhenFollowing ftok in_ =
-  match in_.token, in_next_token in_ with
+  match in_.token, in_next_token in_.rest with
   | NEWLINE _, Some x when ftok x -> newLineOpt in_
   | _ -> ()
 
