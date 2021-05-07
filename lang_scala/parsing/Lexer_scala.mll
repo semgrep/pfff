@@ -32,7 +32,7 @@ module Flag = Flag_parsing
  *
  * TODO:
  *  - NEWLINES
- *  - CASECLASS CASEOBJECT
+ *  - still? CASECLASS CASEOBJECT
  *  - MACRO
  *  - scala3: THEN
  *  - less: XMLSTART
@@ -179,7 +179,6 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Newline (treated specially in Scala, like in Python) *)
   (* ----------------------------------------------------------------------- *)
-
   | newline     { Nl (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
@@ -202,6 +201,11 @@ rule token = parse
 
   (* Those characters can be part of an operator. Conflict with op?
    * Only 'paren' and 'delim' above can't be part of an operator.
+   * In the original Scala parser, those operators were agglomerated
+   * in the IDENTIFIER category, but then there was lots of code like
+   * isRawStar, isRawPipe, etc which was annoying, so here I generate
+   * different tokens for those, but accept them also as identifier
+   * in Token_helpers_scala.isIdent().
   *)
   | '+'     { PLUS (tokinfo lexbuf) }
   | '-'     { MINUS (tokinfo lexbuf) }
@@ -222,7 +226,7 @@ rule token = parse
 
   | "@"    { AT (tokinfo lexbuf) }
 
-  (* unicode space characters (like in Lexer_js.mll)
+  (* Unicode space characters (like in Lexer_js.mll) special handling.
    * Note that OCaml supports now unicode characters as \u{00a0} in strings
    * but this does not seem to work in ocamllex, hence the hardcoding of
    * the actual UTF8 bytes below (use scripts/unicode.ml and hexl-mode in
@@ -232,6 +236,7 @@ rule token = parse
    * related: Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
    * but this code below will trigger only if unicode_hack is set to false.
    *)
+  (* an arrow *)
   | "\xe2\x87\x92"    { ARROW (tokinfo lexbuf) }
 
   (* semgrep-ext: *)
@@ -311,12 +316,11 @@ rule token = parse
   | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
      { Flag.sgrep_guard (ID_UPPER (tok lexbuf, tokinfo lexbuf)) }
 
-
-  | id_upper as s { ID_UPPER (s, tokinfo lexbuf) }
   | id_backquoted1 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
   | id_backquoted2 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
-  | op as s       { OP (s, tokinfo lexbuf) }
-
+  (* this was all agglomerated as an IDENTIFIER in original code *)
+  | id_upper as s       { ID_UPPER (s, tokinfo lexbuf) }
+  | op as s             { OP (s, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -373,7 +377,7 @@ and string buf = parse
   | "\"" "\"\"\"" {
       Parse_info.yyback 3 lexbuf;
       Buffer.add_string buf (tok lexbuf);
-      (* bugfix: this is not the end! need to recurse *)
+      (* bugfix: this is not the end! We need to recurse with string() again *)
       string buf lexbuf
   }
   | "\"\"\""    { () }
@@ -430,7 +434,6 @@ and in_interpolated_triple = parse
        error("unrecognised symbol in interpolated2 string:"^tok lexbuf) lexbuf;
        Unknown(tokinfo lexbuf)
        }
-
 
 (*****************************************************************************)
 (* Rule comment *)

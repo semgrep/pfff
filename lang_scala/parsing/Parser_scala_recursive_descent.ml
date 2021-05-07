@@ -17,6 +17,7 @@ module TH = Token_helpers_scala
 module Flag = Flag_parsing
 
 open Token_scala
+(*open AST_scala*)
 
 let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
@@ -25,12 +26,13 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 (*****************************************************************************)
 (* A recursive-descent Scala parser.
  *
- * This is mostly a port of Parsers.scala, found in the Scala 2 nsc
- * compiler source, to OCaml.
+ * This is mostly an OCaml port of the Scala2 parser found in
+ * https://github.com/scala/scala/src/compiler/scala/tools/nsc/ast/parser/Parsers.scala
  *
  * alt:
- *  - use Parsers.scala of dotty? longer source, and most code out there
- *    is still Scala2 code, so better for semgrep to use Scala 2 first.
+ *  - use Parsers.scala of dotty? but the source is longer, and most of
+ *    the code out there is still Scala2 code, so it's better for semgrep
+ *    to focus on Scala 2 first.
  *  - use the one in scalameta? The code looks cleaner, but it handles
  *    more constructs because it handles also Scala3 (so it needs to manage
  *    indent/outdent). It might have been a better basis though, because on
@@ -63,6 +65,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 (* TODO: temporary *)
 [@@@warning "-27-26"]
 
+(* See also Flag_parsing.debug_parser and Flag_parsing.debug_lexer *)
 let debug_newline = ref false
 
 (*****************************************************************************)
@@ -77,7 +80,9 @@ type env = {
   mutable rest: T.token list;
   mutable passed: T.token list;
 
+  (* newline: last newline token *)
   mutable last_nl: Parse_info.t option;
+
   (* for logging *)
   mutable depth: int;
 }
@@ -85,21 +90,25 @@ type env = {
 let mk_env toks =
   match toks with
   | [] ->
-      (* should at least get EOF from the lexer *)
+      (* we should at least get an EOF token from the lexer *)
       raise Impossible
   | x::xs ->
       { token = x;
-        (* assume we will call first nextToken on it *)
+        (* this assumes we will call first nextToken on it *)
         rest = (x::xs);
         passed = [];
         last_nl = None;
         depth = 0;
       }
 
-(* https://stackoverflow.com/questions/47688111/copy-construction-in-ocaml*)
+(* We sometimes need to lookahead tokens, and call fetchToken and revert;
+ * To do that we copy the environment to run fetchToken on a fresh copy. See
+ * https://stackoverflow.com/questions/47688111/copy-construction-in-ocaml
+*)
 let copy_env env =
   { env with token = env.token }
 
+(* Trick to use = (called =~= below) to compare tokens *)
 let ab = Parse_info.abstract_info
 
 (* AST: use AST_scala something *)
@@ -108,12 +117,14 @@ let empty = ()
 let literalUnit = ()
 let noMods = []
 
+(* crazy? context-sensitive parsing? *)
 type location =
   | Local
   | InBlock
   | InTemplate
 [@@deriving show {with_path = false}]
 
+(* to correctly handle infix operators (in expressions, patterns, and types)*)
 type mode =
   | FirstOp
 [@@deriving show {with_path = false}]
@@ -121,9 +132,6 @@ type mode =
 (*****************************************************************************)
 (* Logging/Dumpers  *)
 (*****************************************************************************)
-let dump_token tok =
-  T.show tok
-
 let n_dash n =
   Common2.repeat "--" n |> Common.join ""
 
@@ -132,9 +140,9 @@ let with_logging funcname f in_ =
     let save = in_.depth in
     in_.depth <- in_.depth + 1;
     let depth = n_dash in_.depth in
-    logger#info "%s>%s: %s" depth funcname (dump_token in_.token);
+    logger#info "%s>%s: %s" depth funcname (T.show in_.token);
     let res = f () in (* less: pass in_ ? *)
-    logger#info "%s<%s: %s" depth funcname (dump_token in_.token);
+    logger#info "%s<%s: %s" depth funcname (T.show in_.token);
     in_.depth <- save;
     res
   end
@@ -145,9 +153,11 @@ let with_logging funcname f in_ =
 (*****************************************************************************)
 let error x in_ =
   let tok = in_.token in
-  pr2 (dump_token tok);
-  pr2 x;
   let info = TH.info_of_tok tok in
+  if !Flag.debug_parser then begin
+    pr2 (T.show tok);
+    pr2 x;
+  end;
   raise (Parse_info.Parsing_error info)
 
 let todo x in_ =
@@ -159,10 +169,11 @@ let warning s =
 (*****************************************************************************)
 (* Helpers  *)
 (*****************************************************************************)
-(* todo: assert t1 is not a token with value (s, info) *)
+(* less: assert t1 is not a token with value (s, info) *)
 let (=~=) t1 t2 =
   (TH.abstract_info_tok t1 =*= TH.abstract_info_tok t2)
 
+(* to imitate Parsers.scala *)
 let (++=) aref xs =
   ()
 
@@ -187,7 +198,7 @@ let adjustSepRegions lastToken in_ =
  * a NEWLINE or NEWLINES *)
 let insertNL ?(newlines=false) in_ =
   if !debug_newline then begin
-    logger#info "%s: %s" "insertNL" (dump_token in_.token);
+    logger#info "%s: %s" "insertNL" (T.show in_.token);
     logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
   end;
   match in_.last_nl with
@@ -207,7 +218,7 @@ let afterLineEnd in_ =
          | Space _ | Comment _ -> loop xs
          | _ ->
              if !debug_newline
-             then logger#info "%s: false because %s" "afterLineEnd" (dump_token x);
+             then logger#info "%s: false because %s" "afterLineEnd" (T.show x);
              false
         )
     | [] -> false
@@ -215,7 +226,7 @@ let afterLineEnd in_ =
   loop in_.passed
   |> (fun b ->
     if !debug_newline
-    then logger#info "%s: %s, result = %b" "afterLineEnd" (dump_token in_.token) b;
+    then logger#info "%s: %s, result = %b" "afterLineEnd" (T.show in_.token) b;
     b)
 
 (* ------------------------------------------------------------------------- *)
@@ -234,7 +245,7 @@ let fetchToken in_ =
     match in_.rest with
     | [] -> todo "fetchToken: no more tokens" in_
     | x::xs ->
-        if !Flag.debug_lexer then logger#info "fetchToken: %s" (dump_token x);
+        if !Flag.debug_lexer then logger#info "fetchToken: %s" (T.show x);
 
         in_.rest <- xs;
 
@@ -305,7 +316,7 @@ let init in_ =
  * not there *)
 let accept t in_ =
   if not (in_.token =~= t)
-  then error (spf "was expecting: %s" (dump_token t)) in_;
+  then error (spf "was expecting: %s" (T.show t)) in_;
   (match t with
    | EOF _ -> ()
    | _ -> nextToken in_
@@ -319,8 +330,9 @@ let accept t in_ =
 let (*rec*) next_next_token in_ =
   match in_.rest with
   | [] -> None
-  (* TODO: also skip spacing and stuff? *)
-  | x::xs -> Some x
+  | x::xs ->
+      warning "next_next_token: also skip spaces?";
+      Some x
 
 let lookingAhead body in_ =
   (* CHECK: allowLeadingInfixOperators *)
@@ -358,18 +370,15 @@ let newLineOpt in_ =
   match in_.token with
   | NEWLINE _ -> nextToken in_
   | _ -> ()
-
 let newLinesOpt in_ =
   match in_.token with
   | NEWLINE _ | NEWLINES _ -> nextToken in_
   | _ -> ()
 
-
 let newLineOptWhenFollowedBy token in_ =
   match in_.token, next_next_token in_ with
   | NEWLINE _, Some x when x =~= token -> newLineOpt in_
   | _ -> ()
-
 let newLineOptWhenFollowing token in_ =
   warning "newLineOptWhenFollowing: TODO";
   newLineOpt in_
@@ -382,8 +391,8 @@ let newLineOptWhenFollowing token in_ =
  * inGroupers.
 *)
 
-(* used by parser to distinguish pattern P(_*, p) from trailing comma.
- * EOF is accepted for REPL, which can't look ahead past the current line.
+(** used by parser to distinguish pattern P(_*, p) from trailing comma.
+ *  EOF is accepted for REPL, which can't look ahead past the current line.
 *)
 let isTrailingComma right in_ =
   in_.token =~= (COMMA ab) && lookingAhead (fun in_ ->
@@ -393,7 +402,7 @@ let isTrailingComma right in_ =
 (* advance past COMMA NEWLINE RBRACE (to whichever token is the matching
  * close bracket)
 *)
-(* supposed to return a boolean *)
+(* pad: this was returning a boolean in the original code *)
 let skipTrailingComma right in_ =
   match in_.token with
   | COMMA _ when isTrailingComma right in_ ->
@@ -461,7 +470,7 @@ let inBracesOrNil = inBraces
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
   (* CHECK: "separator cannot be a comma" *)
-  in_ |> with_logging (spf "separatedTopen(%s)" (dump_token sep)) (fun () ->
+  in_ |> with_logging (spf "separatedTopen(%s)" (T.show sep)) (fun () ->
     let ts = ref [] in
     while in_.token =~= sep do
       nextToken in_;
@@ -473,7 +482,7 @@ let separatedToken sep part in_ =
 
 (** {{{ part { `sep` part } }}}. *)
 let tokenSeparated separator part in_ =
-  in_ |> with_logging (spf "tokenSeparated(%s)" (dump_token separator)) (fun () ->
+  in_ |> with_logging (spf "tokenSeparated(%s)" (T.show separator)) (fun () ->
     let ts = ref [] in
     let x = part in_ in
     ts += x;
@@ -490,13 +499,6 @@ let tokenSeparated separator part in_ =
       done_ := not (in_.token =~= separator) || skippable;
     done;
     !ts
-    (* old:
-       while in_.token =~= separator do
-        nextToken in_;
-        let x = part in_ in
-        ts += x
-       done
-    *)
   )
 
 (* AST: Creates an actual Parens node (only used during parsing.) *)
@@ -522,6 +524,10 @@ let caseSeparated part in_ =
 (*****************************************************************************)
 (* Parsing names  *)
 (*****************************************************************************)
+
+(* ------------------------------------------------------------------------- *)
+(* Idents *)
+(* ------------------------------------------------------------------------- *)
 
 (* AST: Assumed to be TermNames *)
 let ident in_ =
@@ -557,6 +563,10 @@ let identForType in_ =
   (* AST: x.toTypeName *)
   x
 
+(* ------------------------------------------------------------------------- *)
+(* Selectors *)
+(* ------------------------------------------------------------------------- *)
+
 let selector t in_ =
   let id = ident in_ in
   (* AST: Select(t, id) *)
@@ -576,6 +586,9 @@ let rec selectors ~typeOK t in_ =
       end
       else t1
 
+(* ------------------------------------------------------------------------- *)
+(* Paths *)
+(* ------------------------------------------------------------------------- *)
 
 (** {{{
  *   QualId ::= Id {`.` Id}
@@ -598,7 +611,6 @@ let pkgQualId in_ =
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   (* AST: adjust currentPackage *)
   pkg
-
 
 
 (** {{{
@@ -693,8 +705,11 @@ let stableId in_ =
 (*****************************************************************************)
 (* Forward references  *)
 (*****************************************************************************)
-(* alt: have all functions mutually recursive, but it feels cleaner
- * to reduce those set of mutual dependencies
+(* The Scala constructs are mutually recursive, like in most languages.
+ * We should use a long list of let rec xxx ... and yyy  ... but
+ * but it helps a bit to structure the parser to reduce those set of
+ * mutual dependencies by using forward references.
+ * alt: have all functions mutually recursive
 *)
 let interpolatedString_ =
   ref (fun ~inPattern _ -> failwith "forward ref not set")
@@ -842,8 +857,6 @@ and tupleInfixType in_ =
          ()
     )
   )
-and makeExistentialTypeTree t in_ =
-  todo "makeExistentialTypeTree" in_
 
 
 (** {{{
@@ -898,9 +911,6 @@ and simpleTypeRest t in_ =
       simpleTypeRest x in_
   | _ -> t
 
-and typeProjection t in_ =
-  todo "typeProjection" in_
-
 (** {{{
  *  TypeArgs    ::= `[` ArgType {`,` ArgType} `]`
  *  }}}
@@ -948,6 +958,15 @@ and annotType in_ =
   (* CHECK: placeholderTypeBoundary *)
   let x = simpleType in_ in
   !annotTypeRest_ x in_
+
+(* ------------------------------------------------------------------------- *)
+(* Still in PatternContextSensitive, but more obscure type constructs *)
+(* ------------------------------------------------------------------------- *)
+and makeExistentialTypeTree t in_ =
+  todo "makeExistentialTypeTree" in_
+
+and typeProjection t in_ =
+  todo "typeProjection" in_
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -1030,7 +1049,6 @@ let typedOpt in_ =
       let t = typ in_ in
       Some t
   | _ -> None (* AST: TypeTree *)
-
 
 (*****************************************************************************)
 (* Parsing patterns  *)
@@ -1226,6 +1244,10 @@ and argumentPatterns in_ =
     in
     () (* AST: xs *)
   )
+
+(* ------------------------------------------------------------------------- *)
+(* Context sensitive choices *)
+(* ------------------------------------------------------------------------- *)
 
 and seqPatterns in_ =
   seqOK patterns in_
@@ -1511,7 +1533,9 @@ and simpleExprRest ~canApply t in_ =
         )
   )
 
-(* and literal is now at the top because it's also used by SimplePattern *)
+(* and literal in_ = ...
+ *  is now at the top because it's also used by SimplePattern
+*)
 
 and exprTypeArgs in_ =
   outPattern typeArgs in_
@@ -1650,7 +1674,7 @@ and implicitClosure location in_ =
   todo "implicitClosure" in_
 
 (*****************************************************************************)
-(* Parsing statements  *)
+(* Parsing statements (which are expressions in Scala) *)
 (*****************************************************************************)
 and parseIf in_ =
   skipToken in_;
@@ -2069,7 +2093,6 @@ let localModifiers in_ =
   in
   loop [] in_
 
-
 (*****************************************************************************)
 (* Parsing Methods/Functions  *)
 (*****************************************************************************)
@@ -2114,8 +2137,6 @@ let paramType ?(repeatedParameterOK=true) in_ =
  *  ClassParam        ::= {Annotation}  [{Modifier} (`val` | `var`)] Id [`:` ParamType] [`=` Expr]
  *  }}}
 *)
-
-
 let param owner implicitmod caseParam in_ =
   in_ |> with_logging "param" (fun () ->
     let annots = annotations ~skipNewLines:false in_ in
@@ -2640,7 +2661,6 @@ let templateBodyOpt ~parenMeansSyntaxError in_ =
       then error "traits or objects may not have parameters" in_
       else error "unexpected opening parenthesis" in_
   | _ -> noSelfType, []
-
 
 (** {{{
  *  ClassParents       ::= AnnotType {`(` [Exprs] `)`} {with AnnotType}
