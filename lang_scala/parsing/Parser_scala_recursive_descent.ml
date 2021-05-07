@@ -327,11 +327,11 @@ let accept t in_ =
 (* ------------------------------------------------------------------------- *)
 
 (* was called in.next.token *)
-let (*rec*) next_next_token in_ =
+let (*rec*) in_next_token in_ =
   match in_.rest with
   | [] -> None
   | x::xs ->
-      warning "next_next_token: also skip spaces?";
+      warning "in_next_token: also skip spaces?";
       Some x
 
 let lookingAhead body in_ =
@@ -376,12 +376,13 @@ let newLinesOpt in_ =
   | _ -> ()
 
 let newLineOptWhenFollowedBy token in_ =
-  match in_.token, next_next_token in_ with
+  match in_.token, in_next_token in_ with
   | NEWLINE _, Some x when x =~= token -> newLineOpt in_
   | _ -> ()
-let newLineOptWhenFollowing token in_ =
-  warning "newLineOptWhenFollowing: TODO";
-  newLineOpt in_
+let newLineOptWhenFollowing ftok in_ =
+  match in_.token, in_next_token in_ with
+  | NEWLINE _, Some x when ftok x -> newLineOpt in_
+  | _ -> ()
 
 (* ------------------------------------------------------------------------- *)
 (* Trailing commas  *)
@@ -965,8 +966,12 @@ and annotType in_ =
 and makeExistentialTypeTree t in_ =
   todo "makeExistentialTypeTree" in_
 
+(* pad: https://stackoverflow.com/questions/6676048/why-does-one-select-scala-type-members-with-a-hash-instead-of-a-dot *)
 and typeProjection t in_ =
-  todo "typeProjection" in_
+  skipToken in_;
+  let name = identForType in_ in
+  (* AST: SelectFromTypeTree(t, name) *)
+  ()
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -2299,6 +2304,62 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
   )
 
 (* ------------------------------------------------------------------------- *)
+(* Constructor body (as in 'def this(...) = { <body> }') *)
+(* ------------------------------------------------------------------------- *)
+(** {{{
+ *  SelfInvocation  ::= this ArgumentExprs {ArgumentExprs}
+ *  }}}
+*)
+let selfInvocation vparamss in_ =
+  accept (Kthis ab) in_;
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  let xs = argumentExprs in_ in
+  let t = ref () in
+  (* AST: t = Apply(Ident(nme.CONSTRUCTOR), xs) *)
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  while (match in_.token with LPAREN _ | LBRACE _ -> true | _ -> false) do
+    let xs = argumentExprs in_ in
+    (* AST: t = Apply(t, xs) *)
+    newLineOptWhenFollowedBy (LBRACE ab) in_;
+  done;
+  (* AST: if classContextBounds is empty then t else
+   *  Apply(t, vparamss.last.map(vp => Ident(vp.name)))
+  *)
+  ()
+
+(** {{{
+ *  ConstrBlock    ::=  `{` SelfInvocation {semi BlockStat} `}`
+ *  }}}
+*)
+let constrBlock vparamss in_ =
+  skipToken in_;
+  let x = selfInvocation vparamss in_ in
+  let xs =
+    if TH.isStatSep in_.token then begin
+      nextToken in_;
+      !blockStatSeq_ in_
+    end
+    else [](* AST: Nil *)
+  in
+  let stats = x::xs in
+  accept (RBRACE ab) in_;
+  (* AST: Block(stats, literalUnit) *)
+  ()
+
+(** {{{
+ *  ConstrExpr      ::=  SelfInvocation
+ *                    |  ConstrBlock
+ *  }}}
+*)
+let constrExpr vparamss in_ =
+  if in_.token =~= (LBRACE ab)
+  then constrBlock vparamss in_
+  else
+    let x = selfInvocation vparamss in_ in
+    (* AST: Block(x :: Nil, literalUnit) *)
+    ()
+
+(* ------------------------------------------------------------------------- *)
 (* Def *)
 (* ------------------------------------------------------------------------- *)
 
@@ -2352,7 +2413,25 @@ let funDefOrDcl mods in_ =
     nextToken in_;
     match in_.token with
     | Kthis _ ->
-        todo "funDefOrDcl this" in_
+        skipToken in_;
+        let classcontextBoundBuf = ref [] in (* AST: TODO? *)
+        let name = () (* AST: nme.CONSTRUCTOR *) in
+        (* pad: quite similar to funDefRest *)
+        let vparamss =
+          paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
+        newLineOptWhenFollowedBy (LBRACE ab) in_;
+        let rhs =
+          match in_.token with
+          | LBRACE _ ->
+              (* CHECK: "procedure syntax is deprecated for constructors" *)
+              constrBlock vparamss in_
+          | _ ->
+              accept (EQUALS ab) in_;
+              constrExpr vparamss in_
+        in
+        (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
+        ()
+
     | _ ->
         let name = identOrMacro in_ in
         funDefRest mods name in_
