@@ -13,6 +13,7 @@ let exn_when_lexical_error = ref true
 let error_recovery = ref false
 
 let debug_lexer   = ref false
+let debug_parser   = ref false
 
 let show_parsing_error = ref true
 
@@ -27,6 +28,7 @@ let cmdline_flags_verbose () = [
 ]
 let cmdline_flags_debugging () = [
   "-debug_lexer",        Arg.Set  debug_lexer , " ";
+  "-debug_parser",        Arg.Set  debug_parser , " ";
 ]
 
 let sgrep_guard v =

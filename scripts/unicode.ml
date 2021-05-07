@@ -14,4 +14,7 @@ let _ =
   (* 09 0D 0A 20 *)
   let s="4:\t\r\n " in
   print_string s;
+
+  let s="5:\u{21D2}" in
+  print_string s;
   ()

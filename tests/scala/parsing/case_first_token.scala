@@ -1,4 +1,3 @@
-
 case class Shellable(value: Seq[String])
 object Shellable{
   /*

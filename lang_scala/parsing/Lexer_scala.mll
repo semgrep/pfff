@@ -31,9 +31,7 @@ module Flag = Flag_parsing
  *    - fastparse/scalaparse/.../Basic.scala
  *
  * TODO:
- *  - NEWLINES
- *  - CASECLASS CASEOBJECT
- *  - MACRO
+ *  - MACRO?
  *  - scala3: THEN
  *  - less: XMLSTART
  *)
@@ -98,12 +96,13 @@ let hexDigit = digit | ['a'-'f''A'-'F']
 
 (* no paren, and no delim, no quotes, no $ or _ *)
 (* the _noxxx is to avoid ambiguity with /** comments *)
-let op_nodivstar =['+''-'      '%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
+let op_nodivstar =['+''-'    '%' ':''=''!''#''~''?''\\''@' '|''&''^' '<''>' ]
 let op_nodiv = op_nodivstar | '*'
+let op_nostar = op_nodivstar | '/'
 let opchar   = op_nodivstar | '*' | '/'
 let op = '/'
-       | op_nodiv
-       | op_nodiv op_nodivstar opchar*
+       | '/'      op_nostar opchar*
+       | op_nodiv opchar*
 
 let idrest = (letter | digit)* ('_' op)?
 
@@ -179,7 +178,6 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Newline (treated specially in Scala, like in Python) *)
   (* ----------------------------------------------------------------------- *)
-
   | newline     { Nl (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
@@ -202,25 +200,55 @@ rule token = parse
 
   (* Those characters can be part of an operator. Conflict with op?
    * Only 'paren' and 'delim' above can't be part of an operator.
+   * In the original Scala parser, those operators were agglomerated
+   * in the IDENTIFIER category, but then there was lots of code like
+   * isRawStar, isRawPipe, etc which was annoying, so here I generate
+   * different tokens for those, but accept them also as identifier
+   * in Token_helpers_scala.isIdent().
   *)
+  (* op and used for type variance and used for prefixExpr *)
   | '+'     { PLUS (tokinfo lexbuf) }
   | '-'     { MINUS (tokinfo lexbuf) }
+  (* used for sequences *)
   | '*'     { STAR (tokinfo lexbuf) }
-
-  | '!'     { BANG (tokinfo lexbuf) }
+  (* type projection *)
   | '#'     { HASH (tokinfo lexbuf) }
-  | '~'     { TILDE (tokinfo lexbuf) }
+  (* Or patterns *)
   | '|'     { PIPE (tokinfo lexbuf) }
 
+  (* prefixExpr *)
+  | '!'     { BANG (tokinfo lexbuf) }
+  | '~'     { TILDE (tokinfo lexbuf) }
+  (* wildcard *)
   | '_'     { USCORE (tokinfo lexbuf) }
+  (* generators *)
+  | "<-"    { LARROW (tokinfo lexbuf) }
+  (* case body and short lambdas *)
+  | "=>"    { ARROW (tokinfo lexbuf) }
 
   | "<%"    { VIEWBOUND (tokinfo lexbuf) }
-  | "<-"    { LARROW (tokinfo lexbuf) }
-  | "=>"    { ARROW (tokinfo lexbuf) }
   | "<:"    { SUBTYPE (tokinfo lexbuf) }
   | ">:"    { SUPERTYPE (tokinfo lexbuf) }
 
   | "@"    { AT (tokinfo lexbuf) }
+
+  (* Unicode space characters (like in Lexer_js.mll) special handling.
+   * Note that OCaml supports now unicode characters as \u{00a0} in strings
+   * but this does not seem to work in ocamllex, hence the hardcoding of
+   * the actual UTF8 bytes below (use scripts/unicode.ml and hexl-mode in
+   * Emacs to get those byte values).
+   * The right solution would be to switch to a unicode-aware lexer generator,
+   * like ulex or sedlex.
+   * related: Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
+   * but this code below will trigger only if unicode_hack is set to false.
+   *)
+  (* an arrow *)
+  | "\xe2\x87\x92"    { ARROW (tokinfo lexbuf) }
+  (* a dot, found in sbt source *)
+  | "\xe2\x88\x99"    { OP (tok lexbuf, tokinfo lexbuf) }
+  (* a lambda, found in sbt source *)
+  | "\xce\xbb" { ID_LOWER (tok lexbuf, tokinfo lexbuf) }
+
 
   (* semgrep-ext: *)
   | "..."   { Ellipsis (tokinfo lexbuf) }
@@ -299,12 +327,11 @@ rule token = parse
   | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
      { Flag.sgrep_guard (ID_UPPER (tok lexbuf, tokinfo lexbuf)) }
 
-
-  | id_upper as s { ID_UPPER (s, tokinfo lexbuf) }
   | id_backquoted1 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
   | id_backquoted2 as s { ID_BACKQUOTED (s, tokinfo lexbuf) }
-  | op as s       { OP (s, tokinfo lexbuf) }
-
+  (* this was all agglomerated as an IDENTIFIER in original code *)
+  | id_upper as s       { ID_UPPER (s, tokinfo lexbuf) }
+  | op as s             { OP (s, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -361,6 +388,8 @@ and string buf = parse
   | "\"" "\"\"\"" {
       Parse_info.yyback 3 lexbuf;
       Buffer.add_string buf (tok lexbuf);
+      (* bugfix: this is not the end! We need to recurse with string() again *)
+      string buf lexbuf
   }
   | "\"\"\""    { () }
   (* noteopti: *)
@@ -416,7 +445,6 @@ and in_interpolated_triple = parse
        error("unrecognised symbol in interpolated2 string:"^tok lexbuf) lexbuf;
        Unknown(tokinfo lexbuf)
        }
-
 
 (*****************************************************************************)
 (* Rule comment *)

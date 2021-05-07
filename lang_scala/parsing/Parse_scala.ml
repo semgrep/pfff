@@ -47,7 +47,8 @@ let tokens file =
     in
     tok
   in
-  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
+  (* set to false to parse correctly arrows *)
+  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:false
     file token TH.visitor_info_of_tok TH.is_eof
 [@@profiling]
 
@@ -76,7 +77,7 @@ let parse filename =
     { PI.ast = xs; tokens = toks; stat }
 
   with PI.Parsing_error cur when !Flag.error_recovery
-                              && not !Parser_scala_recursive_descent.debug_parser    ->
+                              && not !Flag.debug_parser    ->
       if !Flag.show_parsing_error
       then begin
         pr2 ("parse error \n = " ^ (Parse_info.error_message_info cur));

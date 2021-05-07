@@ -14,7 +14,10 @@
 open Common
 module T = Token_scala
 module TH = Token_helpers_scala
+module Flag = Flag_parsing
+
 open Token_scala
+(*open AST_scala*)
 
 let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
@@ -23,12 +26,13 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 (*****************************************************************************)
 (* A recursive-descent Scala parser.
  *
- * This is mostly a port of Parsers.scala, found in the Scala 2 nsc
- * compiler source, to OCaml.
+ * This is mostly an OCaml port of the Scala2 parser found in
+ * https://github.com/scala/scala/src/compiler/scala/tools/nsc/ast/parser/Parsers.scala
  *
  * alt:
- *  - use Parsers.scala of dotty? longer source, and most code out there
- *    is still Scala2 code, so better for semgrep to use Scala 2 first.
+ *  - use Parsers.scala of dotty? but the source is longer, and most of
+ *    the code out there is still Scala2 code, so it's better for semgrep
+ *    to focus on Scala 2 first.
  *  - use the one in scalameta? The code looks cleaner, but it handles
  *    more constructs because it handles also Scala3 (so it needs to manage
  *    indent/outdent). It might have been a better basis though, because on
@@ -61,9 +65,8 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 (* TODO: temporary *)
 [@@@warning "-27-26"]
 
-let debug_lexer = ref false
+(* See also Flag_parsing.debug_parser and Flag_parsing.debug_lexer *)
 let debug_newline = ref false
-let debug_parser = ref false
 
 (*****************************************************************************)
 (* Types  *)
@@ -73,11 +76,26 @@ type env = {
   (* imitating the Scala implementation *)
   mutable token: T.token;
 
+  (** a stack of tokens which indicates whether line-ends can be statement
+   *  separators also used for keeping track of nesting levels.
+   *  We keep track of the closing symbol of a region. This can be
+   *  RPAREN    if region starts with '('
+   *  RBRACKET  if region starts with '['
+   *  RBRACE    if region starts with '{'
+   *  ARROW     if region starts with 'case'
+   *  STRINGLIT if region is a string interpolation expression starting
+   *   with '${' (the STRINGLIT appears twice in succession on the stack iff
+   *              the expression is a multiline string literal).
+  *)
+  mutable sepRegions: T.token list;
+
   (* not in Scala implementation *)
   mutable rest: T.token list;
   mutable passed: T.token list;
 
+  (* newline: last newline token *)
   mutable last_nl: Parse_info.t option;
+
   (* for logging *)
   mutable depth: int;
 }
@@ -85,50 +103,62 @@ type env = {
 let mk_env toks =
   match toks with
   | [] ->
-      (* should at least get EOF from the lexer *)
+      (* we should at least get an EOF token from the lexer *)
       raise Impossible
   | x::xs ->
       { token = x;
-        (* assume we will call first nextToken on it *)
+        (* this assumes we will call first nextToken on it *)
         rest = (x::xs);
         passed = [];
         last_nl = None;
         depth = 0;
+        sepRegions = [];
       }
 
-(* https://stackoverflow.com/questions/47688111/copy-construction-in-ocaml*)
+(* We sometimes need to lookahead tokens, and call fetchToken and revert;
+ * To do that we copy the environment to run fetchToken on a fresh copy. See
+ * https://stackoverflow.com/questions/47688111/copy-construction-in-ocaml
+*)
 let copy_env env =
   { env with token = env.token }
 
+(* Trick to use = (called =~= below) to compare tokens *)
 let ab = Parse_info.abstract_info
 
 (* AST: use AST_scala something *)
 let noSelfType = ()
 let empty = ()
 let literalUnit = ()
+let noMods = []
 
+(* crazy? context-sensitive parsing? *)
 type location =
   | Local
   | InBlock
   | InTemplate
 [@@deriving show {with_path = false}]
 
+(* to correctly handle infix operators (in expressions, patterns, and types)*)
+type mode =
+  | FirstOp
+  | LeftOp
+  | RightOp
+[@@deriving show {with_path = false}]
+
 (*****************************************************************************)
 (* Logging/Dumpers  *)
 (*****************************************************************************)
-let dump_token tok =
-  T.show tok
-
 let n_dash n =
   Common2.repeat "--" n |> Common.join ""
 
 let with_logging funcname f in_ =
-  if !debug_parser then begin
+  if !Flag.debug_parser then begin
     let save = in_.depth in
     in_.depth <- in_.depth + 1;
     let depth = n_dash in_.depth in
-    logger#info "%s>%s: %s" depth funcname (dump_token in_.token);
+    logger#info "%s>%s: %s" depth funcname (T.show in_.token);
     let res = f () in (* less: pass in_ ? *)
+    logger#info "%s<%s: %s" depth funcname (T.show in_.token);
     in_.depth <- save;
     res
   end
@@ -139,24 +169,27 @@ let with_logging funcname f in_ =
 (*****************************************************************************)
 let error x in_ =
   let tok = in_.token in
-  pr2 (dump_token tok);
-  pr2 x;
   let info = TH.info_of_tok tok in
+  if !Flag.debug_parser then begin
+    pr2 (T.show tok);
+    pr2 x;
+  end;
   raise (Parse_info.Parsing_error info)
 
 let todo x in_ =
   error ("TODO:" ^x) in_
 let warning s =
-  if !debug_parser
+  if !Flag.debug_parser
   then pr2 ("WARNING: " ^ s)
 
 (*****************************************************************************)
 (* Helpers  *)
 (*****************************************************************************)
-(* todo: assert t1 is not a token with value (s, info) *)
+(* less: assert t1 is not a token with value (s, info) *)
 let (=~=) t1 t2 =
   (TH.abstract_info_tok t1 =*= TH.abstract_info_tok t2)
 
+(* to imitate Parsers.scala *)
 let (++=) aref xs =
   ()
 
@@ -168,20 +201,91 @@ let (+=) aref x =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
+(* looking ahead part 1 *)
+(* ------------------------------------------------------------------------- *)
+
+(* was called in.next.token *)
+let rec in_next_token xs =
+  match xs with
+  | [] -> None
+  | x::xs ->
+      (match x with
+       | Space _  | Comment _ -> in_next_token xs
+       | _ ->  Some x
+      )
+
+(* ------------------------------------------------------------------------- *)
 (* newline: Newline management part1  *)
 (* ------------------------------------------------------------------------- *)
 (* pad: newlines are skipped in fetchToken but reinserted in insertNL
  * in certain complex conditions.
 *)
 
+(** Adapt sepRegions according to last token.
+  * pad: called just at the beginning of nextToken so
+  * in_.token = lastToken
+*)
 let adjustSepRegions lastToken in_ =
-  pr2_once "adjustSepRegions"
+  let newRegions =
+    match lastToken, in_.sepRegions with
+    | LPAREN info, xs -> (RPAREN info)::xs
+    | LBRACKET info, xs -> (RBRACKET info)::xs
+    | LBRACE info, xs -> (RBRACE info)::xs
+
+    | Kcase info, xs ->
+        (* pad: the original code generate different tokens for
+         * 'case object' and 'case class' in postProcessToken, I guess
+         * to simplify code here. Instead I lookahead here and have
+         * a simpler postProcessToken.
+        *)
+
+        (* ugly: if 'case' is the first token of the file, it will actually
+         * still be in in_.rest because of the way mk_env currently works.
+         * so we double check this initial condition here with =*=
+         * (on purpose not =~=)
+        *)
+        let rest =
+          match in_.rest with
+          | x::xs when x =*= lastToken -> xs
+          | xs -> xs
+        in
+        (match in_next_token (rest) with
+         | Some (Kobject _ | Kclass _) -> xs
+         | Some x ->
+             if !debug_newline
+             then logger#info "found case for arrow, next = %s" (T.show x);
+             (ARROW info)::xs
+         | None -> xs
+        )
+
+    (* pad: the original code does something different for RBRACE,
+     * I think for error recovery, and it does not raise an
+     * error for mismatch.
+    *)
+    | (RPAREN _ | RBRACKET _ | RBRACE _), [] ->
+        (* stricter: original code just does nothing *)
+        error "unmatched closing token" in_
+    | (RPAREN _ | RBRACKET _ | RBRACE _) as x, y::ys ->
+        if x =~= y
+        then ys
+        else
+          (* stricter: original code just does nothing *)
+          error "unmatched closing token" in_
+    (* pad: not that an arrow can also be used outside of a case, so
+     * here we dont raise an error if we don't find a match.
+    *)
+    | ARROW _ as x, y::ys when x =~= y ->
+        ys
+    | _, xs -> xs
+  in
+  in_.sepRegions <- newRegions;
+  ()
 
 (* newline: pad: I've added the ~newlines param to differentiante adding
  * a NEWLINE or NEWLINES *)
 let insertNL ?(newlines=false) in_ =
   if !debug_newline then begin
-    logger#info "%s: %s" "insertNL" (dump_token in_.token);
+    logger#info "%s: %s" "insertNL" (T.show in_.token);
     logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
   end;
   match in_.last_nl with
@@ -201,7 +305,7 @@ let afterLineEnd in_ =
          | Space _ | Comment _ -> loop xs
          | _ ->
              if !debug_newline
-             then logger#info "%s: false because %s" "afterLineEnd" (dump_token x);
+             then logger#info "%s: false because %s" "afterLineEnd" (T.show x);
              false
         )
     | [] -> false
@@ -209,7 +313,7 @@ let afterLineEnd in_ =
   loop in_.passed
   |> (fun b ->
     if !debug_newline
-    then logger#info "%s: %s, result = %b" "afterLineEnd" (dump_token in_.token) b;
+    then logger#info "%s: %s, result = %b" "afterLineEnd" (T.show in_.token) b;
     b)
 
 (* ------------------------------------------------------------------------- *)
@@ -228,7 +332,7 @@ let fetchToken in_ =
     match in_.rest with
     | [] -> todo "fetchToken: no more tokens" in_
     | x::xs ->
-        if !debug_lexer then logger#info "fetchToken: %s" (dump_token x);
+        if !Flag.debug_lexer then logger#info "fetchToken: %s" (T.show x);
 
         in_.rest <- xs;
 
@@ -271,7 +375,7 @@ let nextToken in_ =
   if afterLineEnd in_ &&
      TH.inLastOfStat lastToken &&
      TH.inFirstOfStat in_.token &&
-     (* TODO: sepRegions stuff *)
+     (match in_.sepRegions with [] | (RBRACE _)::_ -> true | _ -> false) &&
      (* TODO: not applyBracePatch *)
      true
   then begin
@@ -299,22 +403,15 @@ let init in_ =
  * not there *)
 let accept t in_ =
   if not (in_.token =~= t)
-  then error (spf "was expecting: %s" (dump_token t)) in_;
+  then error (spf "was expecting: %s" (T.show t)) in_;
   (match t with
    | EOF _ -> ()
    | _ -> nextToken in_
   )
 
 (* ------------------------------------------------------------------------- *)
-(* looking Ahead *)
+(* looking ahead part 2 *)
 (* ------------------------------------------------------------------------- *)
-
-(* was called in.next.token *)
-let (*rec*) next_next_token in_ =
-  match in_.rest with
-  | [] -> None
-  (* TODO: also skip spacing and stuff? *)
-  | x::xs -> Some x
 
 let lookingAhead body in_ =
   (* CHECK: allowLeadingInfixOperators *)
@@ -352,21 +449,19 @@ let newLineOpt in_ =
   match in_.token with
   | NEWLINE _ -> nextToken in_
   | _ -> ()
-
 let newLinesOpt in_ =
   match in_.token with
   | NEWLINE _ | NEWLINES _ -> nextToken in_
   | _ -> ()
 
-
 let newLineOptWhenFollowedBy token in_ =
-  match in_.token, next_next_token in_ with
+  match in_.token, in_next_token in_.rest with
   | NEWLINE _, Some x when x =~= token -> newLineOpt in_
   | _ -> ()
-
-let newLineOptWhenFollowing token in_ =
-  warning "newLineOptWhenFollowing: TODO";
-  newLineOpt in_
+let newLineOptWhenFollowing ftok in_ =
+  match in_.token, in_next_token in_.rest with
+  | NEWLINE _, Some x when ftok x -> newLineOpt in_
+  | _ -> ()
 
 (* ------------------------------------------------------------------------- *)
 (* Trailing commas  *)
@@ -376,8 +471,8 @@ let newLineOptWhenFollowing token in_ =
  * inGroupers.
 *)
 
-(* used by parser to distinguish pattern P(_*, p) from trailing comma.
- * EOF is accepted for REPL, which can't look ahead past the current line.
+(** used by parser to distinguish pattern P(_*, p) from trailing comma.
+ *  EOF is accepted for REPL, which can't look ahead past the current line.
 *)
 let isTrailingComma right in_ =
   in_.token =~= (COMMA ab) && lookingAhead (fun in_ ->
@@ -387,7 +482,7 @@ let isTrailingComma right in_ =
 (* advance past COMMA NEWLINE RBRACE (to whichever token is the matching
  * close bracket)
 *)
-(* supposed to return a boolean *)
+(* pad: this was returning a boolean in the original code *)
 let skipTrailingComma right in_ =
   match in_.token with
   | COMMA _ when isTrailingComma right in_ ->
@@ -418,6 +513,9 @@ let seqOK f in_ =
   warning "seqOK: TODO";
   f in_
 
+(* The implementation of the context sensitive methods for parsing
+ * outside of patterns.
+*)
 let outPattern f in_ =
   warning "outPattern: TODO";
   f in_
@@ -452,7 +550,7 @@ let inBracesOrNil = inBraces
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
   (* CHECK: "separator cannot be a comma" *)
-  in_ |> with_logging (spf "separatedTopen(%s)" (dump_token sep)) (fun () ->
+  in_ |> with_logging (spf "separatedTopen(%s)" (T.show sep)) (fun () ->
     let ts = ref [] in
     while in_.token =~= sep do
       nextToken in_;
@@ -464,7 +562,7 @@ let separatedToken sep part in_ =
 
 (** {{{ part { `sep` part } }}}. *)
 let tokenSeparated separator part in_ =
-  in_ |> with_logging (spf "tokenSeparated(%s)" (dump_token separator)) (fun () ->
+  in_ |> with_logging (spf "tokenSeparated(%s)" (T.show separator)) (fun () ->
     let ts = ref [] in
     let x = part in_ in
     ts += x;
@@ -481,13 +579,6 @@ let tokenSeparated separator part in_ =
       done_ := not (in_.token =~= separator) || skippable;
     done;
     !ts
-    (* old:
-       while in_.token =~= separator do
-        nextToken in_;
-        let x = part in_ in
-        ts += x
-       done
-    *)
   )
 
 (* AST: Creates an actual Parens node (only used during parsing.) *)
@@ -513,6 +604,10 @@ let caseSeparated part in_ =
 (*****************************************************************************)
 (* Parsing names  *)
 (*****************************************************************************)
+
+(* ------------------------------------------------------------------------- *)
+(* Idents *)
+(* ------------------------------------------------------------------------- *)
 
 (* AST: Assumed to be TermNames *)
 let ident in_ =
@@ -548,6 +643,10 @@ let identForType in_ =
   (* AST: x.toTypeName *)
   x
 
+(* ------------------------------------------------------------------------- *)
+(* Selectors *)
+(* ------------------------------------------------------------------------- *)
+
 let selector t in_ =
   let id = ident in_ in
   (* AST: Select(t, id) *)
@@ -567,6 +666,9 @@ let rec selectors ~typeOK t in_ =
       end
       else t1
 
+(* ------------------------------------------------------------------------- *)
+(* Paths *)
+(* ------------------------------------------------------------------------- *)
 
 (** {{{
  *   QualId ::= Id {`.` Id}
@@ -591,6 +693,15 @@ let pkgQualId in_ =
   pkg
 
 
+(** {{{
+ *   MixinQualifier ::= `[` Id `]`
+ *   }}}
+*)
+let mixinQualifierOpt in_ =
+  if in_.token =~= (LBRACKET ab)
+  then let xs = inBrackets identForType in_ in ()
+  else () (* AST: tpnme.EMPTY *)
+
 
 (** {{{
  *  Path       ::= StableId
@@ -611,15 +722,50 @@ let path ~thisOK ~typeOK in_ =
           () (* AST: t = x *)
         end
 
-    | Ksuper _ -> todo "path.super" in_
+    | Ksuper _ ->
+        nextToken in_;
+        let x = mixinQualifierOpt in_ in
+        (* AST: t := Super(This(tpnme.EMPTY), x *)
+        accept (DOT ab) in_;
+        let x = selector !t in_ in
+        if in_.token =~= (DOT ab)
+        then begin
+          skipToken in_;
+          let x = selectors !t ~typeOK in_ in
+          (* AST: t = x *)
+          ()
+        end;
+        () (* AST: t = x *)
     | _ ->
         let name = ident in_ in
         (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
         if in_.token =~= (DOT ab) then begin
           skipToken in_;
           match in_.token with
-          | Kthis _ -> todo "path.this 2" in_
-          | Ksuper _ -> todo "path.super 2" in_
+          | Kthis _ ->
+              nextToken in_;
+              (* AST: t = This(name.toTypeName) *)
+              if not thisOK || in_.token =~= (DOT ab) then begin
+                accept (DOT ab) in_;
+                let xs = selectors !t ~typeOK in_ in
+                (* AST: t = xs *)
+                ()
+              end
+          | Ksuper _ ->
+              (* pad: factorize with above Ksuper case *)
+              nextToken in_;
+              let x = mixinQualifierOpt in_ in
+              (* AST: Super(This(name.toTypeName), x) *)
+              accept (DOT ab) in_;
+              let x = selector !t in_ in
+              if in_.token =~= (DOT ab)
+              then begin
+                skipToken in_;
+                let x = selectors !t ~typeOK in_ in
+                (* AST: t = x *)
+                ()
+              end;
+              () (* AST: t = x *)
           | _ ->
               let x = selectors ~typeOK !t in_ in
               t := x
@@ -639,18 +785,26 @@ let stableId in_ =
 (*****************************************************************************)
 (* Forward references  *)
 (*****************************************************************************)
-(* alt: have all functions mutually recursive, but it feels cleaner
- * to reduce those set of mutual dependencies
+(* The Scala constructs are mutually recursive, like in most languages.
+ * We should use a long list of let rec xxx ... and yyy  ... but
+ * but it helps a bit to structure the parser to reduce those set of
+ * mutual dependencies by using forward references.
+ * alt: have all functions mutually recursive
 *)
 let interpolatedString_ =
   ref (fun ~inPattern _ -> failwith "forward ref not set")
 let exprTypeArgs_ =
   ref (fun _ -> failwith "forward ref not set")
 
+let annotTypeRest_ =
+  ref (fun _ -> failwith "forward ref not set")
+
 let template_ = ref (fun _ -> failwith "forward ref not set")
+let defOrDcl_ = ref (fun _ _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
+let packageOrPackageObject_ = ref (fun _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Literal  *)
@@ -727,7 +881,7 @@ let rec typ in_ =
     let t =
       match in_.token with
       | LPAREN _ -> tupleInfixType in_
-      | _ -> infixType (* AST: InfixMode.FirstOp *) in_
+      | _ -> infixType FirstOp in_
     in
     match in_.token with
     | ARROW _ ->
@@ -741,11 +895,62 @@ let rec typ in_ =
     | _ -> t
   )
 
-(* pad: similar to infixExpr *)
-and infixType in_ =
-  in_ |> with_logging "infixType" (fun () ->
-    warning "infixType:TODO";
-    simpleType in_
+(** {{{
+ *  InfixType ::= CompoundType {id [nl] CompoundType}
+ *  }}}
+*)
+(* pad: similar to infixExpr, but seems very rarely used in Scala projects.
+*)
+and infixType mode in_ =
+  in_ |> with_logging (spf "infixType(%s)" (show_mode mode)) (fun () ->
+    (* CHECK: placeholderTypeBoundary *)
+    let x = compoundType in_ in
+    infixTypeRest x mode in_
+  )
+
+and infixTypeRest t mode in_ =
+  in_ |> with_logging "infixTypeRest" (fun () ->
+    (* Detect postfix star for repeated args.
+     * Only RPAREN can follow, but accept COMMA and EQUALS for error's sake.
+     * Take RBRACE as a paren typo.
+    *)
+    let checkRepeatedParam in_ =
+      if TH.isRawStar in_.token
+      then
+        lookingAhead (fun in_ ->
+          match in_.token with
+          | RPAREN _ | COMMA _ | EQUALS _ | RBRACE _ -> Some t
+          | _ -> None
+        ) in_
+      else None
+    in
+    let asInfix in_ =
+      (* AST: let leftAssoc = nme.isLeftAssoc(in.name) *)
+      let leftAssoc = false in
+      warning ("InfixTypeRest: leftAssoc??");
+      (* AST: if (mode != InfixMode.FirstOp) checkAssoc ... *)
+      let tycon = identForType in_ in
+      newLineOptWhenFollowing TH.isTypeIntroToken in_;
+      (* AST: let mkOp t1 = AppliedTypeTree(tycon, List(t, t1)) *)
+      if leftAssoc
+      then
+        let x = compoundType in_ in
+        (* AST: mkOp(x) *)
+        infixTypeRest x LeftOp in_
+      else
+        let x = infixType RightOp in_ in
+        (* AST: mkOp(x) *)
+        ()
+    in
+    if TH.isIdentBool in_.token
+    then
+      (match checkRepeatedParam in_ with
+       | None ->
+           asInfix in_
+       | Some x ->
+           x
+      )
+    else t
   )
 
 (* () must be () => R; (types) could be tuple or (types) => R *)
@@ -773,8 +978,6 @@ and tupleInfixType in_ =
          ()
     )
   )
-and makeExistentialTypeTree t in_ =
-  todo "makeExistentialTypeTree" in_
 
 
 (** {{{
@@ -829,9 +1032,6 @@ and simpleTypeRest t in_ =
       simpleTypeRest x in_
   | _ -> t
 
-and typeProjection t in_ =
-  todo "typeProjection" in_
-
 (** {{{
  *  TypeArgs    ::= `[` ArgType {`,` ArgType} `]`
  *  }}}
@@ -855,8 +1055,93 @@ and functionTypes in_ =
  *  }}}
 *)
 and compoundType in_ =
-  warning "compoundType:TODO";
-  typ in_
+  (* pad: can't call typ() here, which allows function type 'int => float'
+   * because this is used in a pattern context as in case p: ... =>
+   * where the arrow mark the start of the caseBlock, not a type.
+  *)
+  let t =
+    if in_.token =~= (LBRACE ab)
+    then () (* AST: scalaAnyRefConstr *)
+    else annotType in_
+  in
+  compoundTypeRest t in_
+
+and compoundTypeRest t in_ =
+  let ts = ref [] in
+  while in_.token =~= (Kwith ab) do
+    nextToken in_;
+    let x = annotType in_ in
+    ts += x;
+  done;
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  let types = !ts in
+  let hasRefinement = (in_.token =~= (LBRACE ab)) in
+  let refinements =
+    if hasRefinement
+    then refinement in_
+    else []
+  in
+  (* CHECK: "Detected apparent refinement of Unit" *)
+  (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
+  ()
+
+(** {{{
+ *  AnnotType        ::=  SimpleType {Annotation}
+ *  }}}
+*)
+(* was in PatternContextSensitive trait *)
+and annotType in_ =
+  (* CHECK: placeholderTypeBoundary *)
+  let x = simpleType in_ in
+  !annotTypeRest_ x in_
+
+(* ------------------------------------------------------------------------- *)
+(* Still in PatternContextSensitive, but more obscure type constructs *)
+(* ------------------------------------------------------------------------- *)
+and makeExistentialTypeTree t in_ =
+  todo "makeExistentialTypeTree" in_
+
+(* pad: https://stackoverflow.com/questions/6676048/why-does-one-select-scala-type-members-with-a-hash-instead-of-a-dot *)
+and typeProjection t in_ =
+  skipToken in_;
+  let name = identForType in_ in
+  (* AST: SelectFromTypeTree(t, name) *)
+  ()
+
+(** {{{
+ *  Refinement ::= [nl] `{` RefineStat {semi RefineStat} `}`
+ *  }}}
+*)
+and refinement in_ =
+  inBraces refineStatSeq in_
+
+(** {{{
+ *  RefineStatSeq    ::= RefineStat {semi RefineStat}
+ *  RefineStat       ::= Dcl
+ *                     | type TypeDef
+ *                     |
+ *  }}}
+*)
+and refineStatSeq in_ =
+  (* CHECK: checkNoEscapingPlaceholders *)
+  (* less: pad: reuse statSeq? *)
+  let stats = ref [] in
+  while not (TH.isStatSeqEnd in_.token) do
+    let xs = refineStat in_ in
+    stats ++= xs;
+    if not (in_.token =~= (RBRACE ab))
+    then acceptStatSep in_;
+  done;
+  !stats
+
+and refineStat in_ =
+  match in_.token with
+  | t when TH.isDclIntro t ->
+      let xs = !defOrDcl_ noMods in_ in
+      []
+  | t when not (TH.isStatSep t) ->
+      error "illegal start of declaration" in_
+  | _ -> []
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -909,11 +1194,24 @@ and bound tok in_ =
 (* Outside PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
 
-let typ x = outPattern typ x
-let exprSimpleType x = outPattern simpleType x
+(* These are default entry points into the pattern context sensitive methods:
+ *  they are all initiated from non-pattern context.
+*)
+let typ x =
+  outPattern typ x
+let startInfixType x =
+  outPattern (infixType FirstOp) x
+let startAnnotType in_ =
+  outPattern annotType in_
+let exprSimpleType x =
+  outPattern simpleType x
 
 let typeOrInfixType location in_ =
-  todo "typeOrInfixType" in_
+  in_ |> with_logging "typeOrInfixType" (fun () ->
+    if location = Local
+    then typ in_
+    else startInfixType in_
+  )
 
 (** {{{
  *  TypedOpt ::= [`:` Type]
@@ -926,7 +1224,6 @@ let typedOpt in_ =
       let t = typ in_ in
       Some t
   | _ -> None (* AST: TypeTree *)
-
 
 (*****************************************************************************)
 (* Parsing patterns  *)
@@ -1009,7 +1306,16 @@ and pattern3 in_ =
     (* CHECK: badPattern3 *)
     let top = simplePattern in_ in
     (* AST: let base = opstack *)
-    (* TODO: checkWildStar *)
+    let checkWildStar in_ =
+      warning "checkWildStar, incomplete";
+      (* crazy: if top = USCORE && sequenceOK && peekingAhead ... *)
+      if in_.token =~= (STAR ab)
+      then begin
+        nextToken in_;
+        Some ()
+      end
+      else None
+    in
     let rec loop top in_ =
       in_ |> with_logging "pattern3: loop" (fun () ->
         (* AST: let next = reducePatternStack(base, top) *)
@@ -1025,10 +1331,14 @@ and pattern3 in_ =
           )
       )
     in
-    warning "checkWildStar:TODO, orElse";
-    let x = loop top in_ in
-    (* AST: stripParens(x) *)
-    ()
+    (match checkWildStar in_ with
+     | None ->
+         let x = loop top in_ in
+         (* AST: stripParens(x) *)
+         ()
+     | Some x ->
+         () (* AST: x *)
+    )
   )
 
 (** {{{
@@ -1110,6 +1420,10 @@ and argumentPatterns in_ =
     () (* AST: xs *)
   )
 
+(* ------------------------------------------------------------------------- *)
+(* Context sensitive choices *)
+(* ------------------------------------------------------------------------- *)
+
 and seqPatterns in_ =
   seqOK patterns in_
 
@@ -1174,6 +1488,10 @@ and parseOther location (in_: env) =
           * AST: if Ident | Select | Apply *)
          let e = expr in_ in
          () (* AST: mkAssign(t, e) *)
+     (* pad: we may actually be inside a binding, and not an expression here,
+      * for example in 'foo((x: Path) => (...))' we can have parsed
+      * x and seeing the colon.
+     *)
      | COLON _ ->
          t := stripParens !t;
          skipToken in_;
@@ -1322,6 +1640,9 @@ and simpleExpr in_ : unit =
       | USCORE _ ->
           let x = freshPlaceholder in_ in
           ()
+      (* pad: this may actually be a binding, not a tuple of
+       * expressions when part of a short lambda (arrow).
+      *)
       | LPAREN _ ->
           let x = makeParens (commaSeparated expr) in_ in
           ()
@@ -1387,7 +1708,9 @@ and simpleExprRest ~canApply t in_ =
         )
   )
 
-(* and literal is now at the top because it's also used by SimplePattern *)
+(* and literal in_ = ...
+ *  is now at the top because it's also used by SimplePattern
+*)
 
 and exprTypeArgs in_ =
   outPattern typeArgs in_
@@ -1406,31 +1729,34 @@ and interpolatedString ~inPattern in_ =
   (* AST: let partsBuf = ref [] in let exprsBuf = ref [] in *)
   nextToken in_; (* T_INTERPOLATED_START(s,info) *)
   while TH.is_stringpart in_.token do
-    let x = literal in_ in
-    if inPattern
-    then todo "interpolatedString: inPattern (dropAnyBraces(pattern))" in_
-    else
-      match in_.token with
-      (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
-       * introduces a new token for $xxx.
-       * TODO? the original code also allow 'this', but ID_DOLLAR should cover
-       * that?
-      *)
-      | ID_DOLLAR (s, ii) ->
-          let x = ident in_ in
-          () (* AST: Ident(x) *)
-      (* actually a ${, but using LBRACE allows to reuse blockExpr *)
-      | LBRACE _ ->
-          let x = expr in_ in
-          (* AST: x *)
-          ()
-      (* pad: not in original code, but the way Lexer_scala.mll is written
-       * we can have multiple consecutive StringLiteral *)
-      | StringLiteral _ -> ()
-      | T_INTERPOLATED_END _ -> ()
-      | _ ->
-          error "error in interpolated string: identifier or block expected"
-            in_
+    (* pad: in original code, but the interpolated string can start with
+     * a non string literal like $f, so I've commented this code.
+     * let x = literal in_ in
+     * if inPattern
+     * then todo "interpolatedString: inPattern (dropAnyBraces(pattern))" in_
+     * else
+    *)
+    match in_.token with
+    (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
+     * introduces a new token for $xxx.
+     * TODO? the original code also allow 'this', but ID_DOLLAR should cover
+     * that?
+    *)
+    | ID_DOLLAR (s, ii) ->
+        let x = ident in_ in
+        () (* AST: Ident(x) *)
+    (* actually a ${, but using LBRACE allows to reuse blockExpr *)
+    | LBRACE _ ->
+        let x = expr in_ in
+        (* AST: x *)
+        ()
+    (* pad: not in original code, but the way Lexer_scala.mll is written
+     * we can have multiple consecutive StringLiteral *)
+    | StringLiteral _ ->
+        nextToken in_
+    | _ ->
+        error "error in interpolated string: identifier or block expected"
+          in_
   done;
   (* pad: not in original code *)
   accept (T_INTERPOLATED_END ab) in_;
@@ -1483,14 +1809,16 @@ and argumentExprs in_ : unit list =
  *  }}}
 *)
 and guard in_ =
-  if in_.token =~= (Kif ab)
-  then begin
-    nextToken in_;
-    let x = postfixExpr in_ in
-    (* AST: stripParens(x) *)
-    ()
-  end
-  else () (* AST: Nil *)
+  in_ |> with_logging "guard" (fun () ->
+    if in_.token =~= (Kif ab)
+    then begin
+      nextToken in_;
+      let x = postfixExpr in_ in
+      (* AST: stripParens(x) *)
+      ()
+    end
+    else () (* AST: Nil *)
+  )
 
 and caseBlock in_ =
   accept (ARROW ab) in_;
@@ -1517,11 +1845,30 @@ and caseClauses in_ =
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
 (* ------------------------------------------------------------------------- *)
+(** {{{
+ *  Expr ::= implicit Id `=>` Expr
+ *  }}}
+*)
 and implicitClosure location in_ =
-  todo "implicitClosure" in_
+  let expr0 =
+    let id = ident in_ in
+    if in_.token =~= (COLON ab)
+    then begin
+      nextToken in_;
+      let t = typeOrInfixType location in_ in
+      (* AST: Typed(Ident(id, t)) *)
+      ()
+    end else () (* AST: Ident(id) *)
+  in
+  (* AST: convertToParam expr0; copyValDef(param0, mods|Flags.IMPLICIT)  *)
+  let param = expr0 in
+  accept (ARROW ab) in_;
+  let x = if location <> InBlock then expr in_ else block in_ in
+  (* AST: Function(List(param), x) *)
+  ()
 
 (*****************************************************************************)
-(* Parsing statements  *)
+(* Parsing statements (which are expressions in Scala) *)
 (*****************************************************************************)
 and parseIf in_ =
   skipToken in_;
@@ -1554,7 +1901,14 @@ and parseWhile in_ =
   ()
 
 and parseDo in_ =
-  todo "parseDo" in_
+  skipToken in_;
+  let lname = () (* AST: freshTermName(nme.DO_WHILE_PREFIX) *) in
+  let body = expr in_ in
+  if TH.isStatSep in_.token then nextToken in_;
+  accept (Kwhile ab) in_;
+  let cond = condExpr in_ in
+  (* AST: makeDoWhile(lname.toTermName, body, cond) *)
+  ()
 
 and parseFor in_ =
   skipToken in_;
@@ -1648,7 +2002,7 @@ and blockExpr in_ =
   ) in_
 
 (* ------------------------------------------------------------------------- *)
-(* enumerators *)
+(* Enumerator/generator *)
 (* ------------------------------------------------------------------------- *)
 (** {{{
  *  Enumerators ::= Generator {semi Enumerator}
@@ -1659,7 +2013,64 @@ and blockExpr in_ =
 *)
 and enumerators in_ =
   in_ |> with_logging "enumerators" (fun () ->
-    todo "enumerators" in_
+    let enums = ref [] in
+    let xs = enumerator ~isFirst:true in_ in
+    enums ++= xs;
+    while TH.isStatSep in_.token do
+      nextToken in_;
+      let xs = enumerator ~isFirst:false in_ in
+      enums ++= xs;
+    done;
+    !enums
+  )
+and enumerator ~isFirst ?(allowNestedIf=true) in_ =
+  in_ |> with_logging "enumerator" (fun () ->
+    let rec loop () =
+      if not (in_.token =~= (Kif ab))
+      then () (* AST: Nil *)
+      else
+        let g = guard in_ in
+        let xs = loop () in
+        (* AST: makeFilter (g)::xs *)
+        ()
+    in
+    match in_.token with
+    | Kif _ when not isFirst -> loop ()
+    | _ -> generator ~eqOK:(not isFirst) ~allowNestedIf in_
+  )
+
+(** {{{
+ *  Generator ::= Pattern1 (`<-` | `=`) Expr [Guard]
+ *  }}}
+*)
+and generator ~eqOK ~allowNestedIf in_ =
+  in_ |> with_logging "generator" (fun () ->
+    let hasVal = in_.token =~= (Kval ab) in
+    if hasVal then nextToken in_;
+    let pat = noSeq pattern1 in_ in
+    let hasEq = in_.token =~= (EQUALS ab) in
+    (* CHECK: scala3: "`val` keyword in for comprehension is" *)
+    (if hasEq && eqOK
+     then nextToken in_
+     else accept (LARROW ab) in_
+    );
+    let rhs = expr in_ in
+    let rec loop () =
+      if not (in_.token =~= (Kif ab))
+      then () (* AST: Nil *)
+      else
+        let g = guard in_ in
+        let xs = loop () in
+        (* AST: makeFilter(g)::xs *)
+        ()
+    in
+    let tail =
+      if allowNestedIf
+      then loop ()
+      else () (* AST: Nil *)
+    in
+    (* AST: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
+    ()
   )
 
 (*****************************************************************************)
@@ -1692,34 +2103,14 @@ and annotations ~skipNewLines in_ =
     ) in_
   )
 
-
-(** {{{
- *  AnnotType        ::=  SimpleType {Annotation}
- *  }}}
-*)
 let annotTypeRest t in_ =
   let xs = annotations ~skipNewLines:false in
   (* AST: fold around t makeAnnotated *)
   t
 
-(* TODO? was in PatternContextSensitive trait *)
-let annotType in_ =
-  (* CHECK: placeholderTypeBoundary *)
-  let x = simpleType in_ in
-  annotTypeRest x in_
-
-let startAnnotType in_ =
-  outPattern annotType in_
-
 (*****************************************************************************)
 (* Parsing directives  *)
 (*****************************************************************************)
-(* scala3: deprecated *)
-let packageObjectDef in_ =
-  todo "packageObjectDef" in_
-
-let packageOrPackageObject in_ =
-  todo "packageOrPackageObject" in_
 
 let wildImportSelector in_ =
   (* AST: val selector = ImportSelector.wildAt(in.offset) *)
@@ -1896,7 +2287,6 @@ let localModifiers in_ =
   in
   loop [] in_
 
-
 (*****************************************************************************)
 (* Parsing Methods/Functions  *)
 (*****************************************************************************)
@@ -1910,23 +2300,25 @@ let localModifiers in_ =
  *  }}}
 *)
 let paramType ?(repeatedParameterOK=true) in_ =
-  match in_.token with
-  | ARROW _ ->
-      nextToken in_;
-      let t = typ in_ in
-      (* AST: byNameApplication *)
-      ()
-  | _ ->
-      let t = typ in_ in
-      if (TH.isRawStar in_.token)
-      then begin
+  in_ |> with_logging "paramType" (fun () ->
+    match in_.token with
+    | ARROW _ ->
         nextToken in_;
-        (* CHECK: if (!repeatedParameterOK)
-         * "repeated parameters are only allowed in method signatures" *)
-        (* AST: repeatedApplication t *)
+        let t = typ in_ in
+        (* AST: byNameApplication *)
         ()
-      end
-      else () (* AST: t *)
+    | _ ->
+        let t = typ in_ in
+        if (TH.isRawStar in_.token)
+        then begin
+          nextToken in_;
+          (* CHECK: if (!repeatedParameterOK)
+           * "repeated parameters are only allowed in method signatures" *)
+          (* AST: repeatedApplication t *)
+          ()
+        end
+        else () (* AST: t *)
+  )
 
 (** {{{
  *  ParamClauses      ::= {ParamClause} [[nl] `(` implicit Params `)`]
@@ -1939,13 +2331,27 @@ let paramType ?(repeatedParameterOK=true) in_ =
  *  ClassParam        ::= {Annotation}  [{Modifier} (`val` | `var`)] Id [`:` ParamType] [`=` Expr]
  *  }}}
 *)
-
-
 let param owner implicitmod caseParam in_ =
   in_ |> with_logging "param" (fun () ->
     let annots = annotations ~skipNewLines:false in_ in
     let mods = ref [] (* AST: PARAM *) in
-    (* AST: crazy?: if owner.isTypeName ... modifiers () *)
+    (* crazy?: if owner.isTypeName *)
+    begin
+      let xs = modifiers in_ in
+      (* AST: mods = xs |= Flags.PARAMACCESSOR *)
+      (* CHECK: "lazy modifier not allowed here. " *)
+      (match in_.token with
+       | Kval _ |  Kvar _ ->
+           nextToken in_;
+           (* AST: if (v == VAR) mods |= Flags.MUTABLE *)
+       | _ ->
+           (* CHECK: if (mods.flags != Flags.PARAMACCESSOR) accept(VAL) *)
+           (* AST: if (!caseParam) mods |= Flags.PrivateLocal *)
+           ()
+      );
+      (* AST: if (caseParam) mods |= Flags.CASEACCESSOR *)
+    end;
+
     let name = ident in_ in
     let bynamemod = ref 0 in
     let tpt =
@@ -2033,43 +2439,45 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
   in_ |> with_logging "typeParamClauseOpt" (fun () ->
 
     let typeParam ms in_ =
-      let mods = ref ms in (* AST: ms | Flags.PARAM *)
-      (match in_.token with
-       (* TODO? is supposed to be only if isTypeName owner *)
-       | PLUS _ ->
-           nextToken in_;
-           (* AST: mods |= Flags.COVARIANT *)
-       | MINUS _ ->
-           nextToken in_;
-           (* AST: mods |= Flags.CONTRAVARIANT *)
-       | _ -> ()
-      );
-      let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
-      let param =
-        let tparams = typeParamClauseOpt pname None in
-        let xs = typeBounds in_ in
-        (* AST: TypeDef(mods, pname, tparams, xs) *)
-        ()
-      in
-      if contextBoundBuf <> None
-      then begin
-        while in_.token =~= (VIEWBOUND ab) do
-          (* CHECK: scala3: "view bounds are unsupported" *)
-          skipToken in_;
-          let t = typ in_ in
-          (* AST: contextBoundBuf +=
-           *  makeFunctionTypeTree(List(Ident(pname)), t)
-          *)
+      in_ |> with_logging "typeParam" (fun () ->
+        let mods = ref ms in (* AST: ms | Flags.PARAM *)
+        (match in_.token with
+         (* TODO? is supposed to be only if isTypeName owner *)
+         | PLUS _ ->
+             nextToken in_;
+             (* AST: mods |= Flags.COVARIANT *)
+         | MINUS _ ->
+             nextToken in_;
+             (* AST: mods |= Flags.CONTRAVARIANT *)
+         | _ -> ()
+        );
+        let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
+        let param =
+          let tparams = typeParamClauseOpt pname None in_ in
+          let xs = typeBounds in_ in
+          (* AST: TypeDef(mods, pname, tparams, xs) *)
           ()
-        done;
-        while in_.token =~= (COLON ab) do
-          skipToken in_;
-          let t = typ in_ in
-          (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
-          ()
-        done
-      end;
-      param
+        in
+        if contextBoundBuf <> None
+        then begin
+          while in_.token =~= (VIEWBOUND ab) do
+            (* CHECK: scala3: "view bounds are unsupported" *)
+            skipToken in_;
+            let t = typ in_ in
+            (* AST: contextBoundBuf +=
+             *  makeFunctionTypeTree(List(Ident(pname)), t)
+            *)
+            ()
+          done;
+          while in_.token =~= (COLON ab) do
+            skipToken in_;
+            let t = typ in_ in
+            (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
+            ()
+          done
+        end;
+        param
+      )
     in
     newLineOptWhenFollowedBy (LBRACKET ab) in_;
     match in_.token with
@@ -2083,6 +2491,62 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
         Some x
     | _ -> None
   )
+
+(* ------------------------------------------------------------------------- *)
+(* Constructor body (as in 'def this(...) = { <body> }') *)
+(* ------------------------------------------------------------------------- *)
+(** {{{
+ *  SelfInvocation  ::= this ArgumentExprs {ArgumentExprs}
+ *  }}}
+*)
+let selfInvocation vparamss in_ =
+  accept (Kthis ab) in_;
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  let xs = argumentExprs in_ in
+  let t = ref () in
+  (* AST: t = Apply(Ident(nme.CONSTRUCTOR), xs) *)
+  newLineOptWhenFollowedBy (LBRACE ab) in_;
+  while (match in_.token with LPAREN _ | LBRACE _ -> true | _ -> false) do
+    let xs = argumentExprs in_ in
+    (* AST: t = Apply(t, xs) *)
+    newLineOptWhenFollowedBy (LBRACE ab) in_;
+  done;
+  (* AST: if classContextBounds is empty then t else
+   *  Apply(t, vparamss.last.map(vp => Ident(vp.name)))
+  *)
+  ()
+
+(** {{{
+ *  ConstrBlock    ::=  `{` SelfInvocation {semi BlockStat} `}`
+ *  }}}
+*)
+let constrBlock vparamss in_ =
+  skipToken in_;
+  let x = selfInvocation vparamss in_ in
+  let xs =
+    if TH.isStatSep in_.token then begin
+      nextToken in_;
+      !blockStatSeq_ in_
+    end
+    else [](* AST: Nil *)
+  in
+  let stats = x::xs in
+  accept (RBRACE ab) in_;
+  (* AST: Block(stats, literalUnit) *)
+  ()
+
+(** {{{
+ *  ConstrExpr      ::=  SelfInvocation
+ *                    |  ConstrBlock
+ *  }}}
+*)
+let constrExpr vparamss in_ =
+  if in_.token =~= (LBRACE ab)
+  then constrBlock vparamss in_
+  else
+    let x = selfInvocation vparamss in_ in
+    (* AST: Block(x :: Nil, literalUnit) *)
+    ()
 
 (* ------------------------------------------------------------------------- *)
 (* Def *)
@@ -2138,7 +2602,25 @@ let funDefOrDcl mods in_ =
     nextToken in_;
     match in_.token with
     | Kthis _ ->
-        todo "funDefOrDcl this" in_
+        skipToken in_;
+        let classcontextBoundBuf = ref [] in (* AST: TODO? *)
+        let name = () (* AST: nme.CONSTRUCTOR *) in
+        (* pad: quite similar to funDefRest *)
+        let vparamss =
+          paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
+        newLineOptWhenFollowedBy (LBRACE ab) in_;
+        let rhs =
+          match in_.token with
+          | LBRACE _ ->
+              (* CHECK: "procedure syntax is deprecated for constructors" *)
+              constrBlock vparamss in_
+          | _ ->
+              accept (EQUALS ab) in_;
+              constrExpr vparamss in_
+        in
+        (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
+        ()
+
     | _ ->
         let name = identOrMacro in_ in
         funDefRest mods name in_
@@ -2382,7 +2864,7 @@ let topStat in_ =
   match in_.token with
   | Kpackage _ ->
       skipToken in_;
-      let x = packageOrPackageObject in_ in
+      let x = !packageOrPackageObject_ in_ in
       Some () (* AST: x::Nil *)
   | Kimport _ ->
       let x = importClause in_ in
@@ -2447,7 +2929,6 @@ let templateBodyOpt ~parenMeansSyntaxError in_ =
       then error "traits or objects may not have parameters" in_
       else error "unexpected opening parenthesis" in_
   | _ -> noSelfType, []
-
 
 (** {{{
  *  ClassParents       ::= AnnotType {`(` [Exprs] `)`} {with AnnotType}
@@ -2539,7 +3020,7 @@ let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
  *  }}}
 *)
 (* pad: I've added isCase, it was passed via mods in the original code *)
-let objectDef ?(isCase=false) mods (* isPackageObject=false *) in_ =
+let objectDef ?(isCase=false) ?(isPackageObject=false) mods in_ =
   in_ |> with_logging "objectDef" (fun () ->
     nextToken in_; (* 'object' *)
     let name = ident in_ in
@@ -2547,6 +3028,38 @@ let objectDef ?(isCase=false) mods (* isPackageObject=false *) in_ =
     (* AST: ModuleDef (mods, name.toTermName, template) *)
     tmpl
   )
+
+(* ------------------------------------------------------------------------- *)
+(* Package object *)
+(* ------------------------------------------------------------------------- *)
+
+(** Create a tree representing a package object, converting
+ *  {{{
+ *    package object foo { ... }
+ *  }}}
+ *  to
+ *  {{{
+ *    package foo {
+ *      object `package` { ... }
+ *    }
+ *  }}}
+*)
+(* scala3: deprecated *)
+let packageObjectDef in_ =
+  let defn = objectDef noMods ~isPackageObject:true in_ in
+  (* AST: gen.mkPackageObject(defn, pidPos, pkgPos) *)
+  ()
+
+let packageOrPackageObject in_ =
+  if in_.token =~= (Kobject ab) then
+    let x = packageObjectDef in_ in
+    (* AST: joinComment(x::Nil).head *)
+    ()
+  else
+    let x = pkgQualId in_ in
+    let body = inBracesOrNil topStatSeq in_ in
+    (* AST: makePackaging(x, body) *)
+    ()
 
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
@@ -2662,11 +3175,16 @@ let topLevelTmplDef in_ =
 (* set the forward reference *)
 let _ =
   template_ := template;
+  defOrDcl_ := defOrDcl;
   tmplDef_ := tmplDef;
   blockStatSeq_ := blockStatSeq;
   topLevelTmplDef_ := topLevelTmplDef;
+  packageOrPackageObject_ := packageOrPackageObject;
+
   exprTypeArgs_ := exprTypeArgs;
   interpolatedString_ := interpolatedString;
+
+  annotTypeRest_ := annotTypeRest;
   ()
 
 (** {{{
