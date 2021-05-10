@@ -612,7 +612,7 @@ let caseSeparated part in_ =
 (* ------------------------------------------------------------------------- *)
 
 (* AST: Assumed to be TermNames *)
-let ident in_ =
+let ident in_ : ident =
   match TH.isIdent in_.token with
   | Some (s, info) ->
       nextToken in_;
@@ -649,24 +649,25 @@ let identForType in_ =
 (* Selectors *)
 (* ------------------------------------------------------------------------- *)
 
-let selector t in_ =
+let selector in_ : ident =
   let id = ident in_ in
-  (* AST: Select(t, id) *)
-  ()
+  (* ast: Select(t, id) *)
+  id
 
-let rec selectors ~typeOK t in_ =
+let rec selectors ~typeOK in_ : dotted_ident =
   match in_.token with
-  | Ktype _ when typeOK ->
+  | Ktype ii when typeOK ->
       nextToken in_;
       (* AST: SingletonTypeTree(t) *)
+      ["type", ii]
   | _ ->
-      let t1 = selector t in_ in
+      let t1 = selector in_ in
       if in_.token =~= (DOT ab)
       then begin
         skipToken in_;
-        selectors ~typeOK t1 in_
+        t1::selectors ~typeOK in_
       end
-      else t1
+      else [t1]
 
 (* ------------------------------------------------------------------------- *)
 (* Paths *)
@@ -676,15 +677,14 @@ let rec selectors ~typeOK t in_ =
  *   QualId ::= Id {`.` Id}
  *   }}}
 *)
-let qualId in_ =
+let qualId in_ : dotted_ident =
   (* AST: Ident(id) *)
   let id = ident in_ in
-  let id = () in (* TODO: AST Ident?) *)
   match in_.token with
   | DOT _ ->
       skipToken in_;
-      selectors id ~typeOK:false in_
-  | _ -> id
+      id::selectors ~typeOK:false in_
+  | _ -> [id]
 
 (* Calls `qualId()` and manages some package state. *)
 let pkgQualId in_ =
@@ -711,68 +711,65 @@ let mixinQualifierOpt in_ =
  *  AnnotType ::= Path [`.` type]
  *  }}}
 *)
-let path ~thisOK ~typeOK in_ =
+let path ~thisOK ~typeOK in_ : path =
   in_ |> with_logging (spf "path(thisOK:%b, typeOK:%b)" thisOK typeOK) (fun()->
-    let t = ref () in
     match in_.token with
-    | Kthis _ ->
+    | Kthis ii ->
         nextToken in_;
         (* AST: t := This(tpnme.Empty) *)
+        let t = "this", ii in
         if not thisOK || in_.token =~= (DOT ab) then begin
           accept (DOT ab) in_;
-          let x = selectors !t ~typeOK in_ in
-          () (* AST: t = x *)
+          t::selectors ~typeOK in_
         end
+        else [t]
 
-    | Ksuper _ ->
+    | Ksuper ii ->
         nextToken in_;
         let x = mixinQualifierOpt in_ in
+        let t = "super", ii in
         (* AST: t := Super(This(tpnme.EMPTY), x *)
         accept (DOT ab) in_;
-        let x = selector !t in_ in
+        let x = selector in_ in
         if in_.token =~= (DOT ab)
         then begin
           skipToken in_;
-          let x = selectors !t ~typeOK in_ in
-          (* AST: t = x *)
-          ()
-        end;
-        () (* AST: t = x *)
+          t::x::selectors ~typeOK in_
+        end
+        else [t;x]
     | _ ->
         let name = ident in_ in
         (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
         if in_.token =~= (DOT ab) then begin
           skipToken in_;
           match in_.token with
-          | Kthis _ ->
+          | Kthis ii ->
               nextToken in_;
-              (* AST: t = This(name.toTypeName) *)
+              (* ast: t = This(name.toTypeName) *)
+              let t = "this", ii in
               if not thisOK || in_.token =~= (DOT ab) then begin
                 accept (DOT ab) in_;
-                let xs = selectors !t ~typeOK in_ in
-                (* AST: t = xs *)
-                ()
+                name::t::selectors ~typeOK in_
               end
-          | Ksuper _ ->
+              else [name;t]
+          | Ksuper ii ->
               (* pad: factorize with above Ksuper case *)
               nextToken in_;
               let x = mixinQualifierOpt in_ in
               (* AST: Super(This(name.toTypeName), x) *)
+              let t = "super", ii in
               accept (DOT ab) in_;
-              let x = selector !t in_ in
+              let x = selector in_ in
               if in_.token =~= (DOT ab)
               then begin
                 skipToken in_;
-                let x = selectors !t ~typeOK in_ in
-                (* AST: t = x *)
-                ()
-              end;
-              () (* AST: t = x *)
+                t::x::selectors ~typeOK in_
+              end
+              else [name;t;x]
           | _ ->
-              let x = selectors ~typeOK !t in_ in
-              t := x
-        end;
-        !t
+              name::selectors ~typeOK in_
+        end
+        else [name]
   )
 
 (** {{{
@@ -781,7 +778,7 @@ let path ~thisOK ~typeOK in_ =
  *            |  [id `.`] super [`[` id `]`]`.` id
  *  }}}
 *)
-let stableId in_ =
+let stableId in_ : stable_id =
   path ~thisOK:false ~typeOK:false in_
 
 (*****************************************************************************)
@@ -1710,7 +1707,7 @@ and simpleExprRest ~canApply t in_ =
     match in_.token with
     | DOT _ ->
         nextToken in_;
-        let x = selector t in_ in
+        let x = selector (*t*) in_ in
         let x = stripParens t in
         simpleExprRest ~canApply:true x in_
     | LBRACKET _ ->
@@ -2182,7 +2179,7 @@ let importExpr in_ =
       (* AST: val t = This(name) *)
       let t = () in
       accept (DOT ab) in_;
-      let result = selector t in_ in
+      let result = selector (*t*) in_ in
       accept (DOT ab) in_;
       result
     in
@@ -2215,7 +2212,7 @@ let importExpr in_ =
     in
     let start =
       match in_.token with
-      | Kthis _ -> thisDotted empty in_
+      | Kthis _ -> let x = thisDotted empty in_ in ()
       | _ ->
           (* AST: Ident() *)
           let id = ident in_ in
@@ -2225,7 +2222,9 @@ let importExpr in_ =
            | _ -> error ". expected" in_
           );
           (match in_.token with
-           | Kthis _ -> thisDotted (* AST: id.name.toTypeName*) id in_
+           | Kthis _ ->
+               let x = thisDotted (* AST: id.name.toTypeName*) id in_ in
+               ()
            | _ -> (*id*) ()
           )
     in
