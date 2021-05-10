@@ -45,6 +45,8 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
  *
  * TODO:
  *  - see the AST: tag for what Parsers.scala was doing to build an AST
+ *    (I use ast: when I return something from AST_scala.ml to cover the
+ *     construct)
  * less:
  *  - see the CHECK: tag for what Parsers.scala was statically checking
  *
@@ -835,7 +837,7 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
     | SymbolLiteral(s, ii) -> finish (Right (ExprTodo ("Symbol", ii)))
 
     | CharacterLiteral(x, ii) ->
-        (* AST: incharVal *)
+        (* ast: incharVal *)
         finish (Left (Char (x, ii)))
     | IntegerLiteral(x, ii) ->
         (* AST: in.intVal(isNegated) *)
@@ -845,14 +847,14 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
         finish (Left (Float (x, ii)))
 
     | StringLiteral(x, ii) ->
-        (* AST: in.strVal.intern() *)
+        (* ast: in.strVal.intern() *)
         finish (Left (String (x, ii)))
 
     | BooleanLiteral(x, ii) ->
-        (* AST: bool *)
+        (* ast: bool *)
         finish (Left (Bool (x, ii)))
     | Knull ii ->
-        (* AST: null *)
+        (* ast: null *)
         finish (Left (Null ii))
 
     | _ -> error "illegal literal" in_
@@ -1253,21 +1255,22 @@ let typedOpt in_ =
  *  SeqPattern ::= SeqPattern1 { `|` SeqPattern1 }
  *  }}}
 *)
-let rec pattern in_ =
+let rec pattern in_ : pattern =
   in_ |> with_logging "pattern" (fun () ->
     let rec loop () =
-      let p = pattern1 in_ in
-      p::
+      let p1 = pattern1 in_ in
       (if TH.isRawBar in_.token
        then begin
+         let ii = TH.info_of_tok in_.token in
          nextToken in_;
-         loop ()
-       end else []
+         let p2 = loop () in
+         PatDisj (p1, ii, p2)
+       end else p1
       )
     in
     let res = loop () in
-    (* AST: makeAlternative if many elements *)
-    ()
+    (* ast: makeAlternative if many elements *)
+    res
   )
 
 (** {{{
@@ -1279,16 +1282,16 @@ let rec pattern in_ =
  *                |  [SeqPattern2]
  *  }}}
 *)
-and pattern1 in_ =
+and pattern1 in_ : pattern =
   let p = pattern2 in_ in
   (* crazy? depending whether Ident(name) && if nme.isVariableName(name)? *)
   (match in_.token with
-   | COLON _ ->
+   | COLON ii ->
        (* AST: p.removeAttachment[BackquotedIdentifierAttachment.type] *)
        skipToken in_;
        let x = compoundType in_ in
        (* AST: Typed(p, x) *)
-       ()
+       PatTodo ("PatTypedVarid", ii)
    (* CHECK: "Pattern variables must start with a lower-case letter." *)
    | _ -> p
   )
@@ -1299,14 +1302,14 @@ and pattern1 in_ =
  *                |   Pattern3
  *  }}}
 *)
-and pattern2 in_ =
+and pattern2 in_ : pattern =
   let x = pattern3 in_ in
   match in_.token with
-  | AT _ -> (* crazy? TODO: case p @ Ident(name) *)
+  | AT ii -> (* crazy? TODO: case p @ Ident(name) *)
       nextToken in_;
       let body = pattern3 in_ in
       (* AST: Bind(name, body), if WILDCARD then ... *)
-      body
+      PatTodo ("PatAs", ii)
   | _ -> x
 
 (** {{{
@@ -1315,7 +1318,7 @@ and pattern2 in_ =
  *  }}}
 *)
 (* pad: similar to infixExpr/infixType, rename infixPattern? *)
-and pattern3 in_ =
+and pattern3 in_ : pattern =
   in_ |> with_logging "pattern3" (fun () ->
     (* CHECK: badPattern3 *)
     let top = simplePattern in_ in
@@ -1323,12 +1326,12 @@ and pattern3 in_ =
     let checkWildStar in_ =
       warning "checkWildStar, incomplete";
       (* crazy: if top = USCORE && sequenceOK && peekingAhead ... *)
-      if in_.token =~= (STAR ab)
-      then begin
-        nextToken in_;
-        Some ()
-      end
-      else None
+      (match in_.token with
+       | STAR ii ->
+           nextToken in_;
+           Some ii
+       | _ -> None
+      )
     in
     let rec loop top in_ =
       in_ |> with_logging "pattern3: loop" (fun () ->
@@ -1338,6 +1341,7 @@ and pattern3 in_ =
           pushOpInfo next in_;
           (* no postfixPattern, so always go for right part of infix op *)
           let x = simplePattern in_ in
+          (* TODO: combine top, infixop, x *)
           loop x in_
         end else
           in_ |> with_logging "pattern3: loop noIsIdent stop" (fun () ->
@@ -1349,9 +1353,10 @@ and pattern3 in_ =
      | None ->
          let x = loop top in_ in
          (* AST: stripParens(x) *)
-         ()
-     | Some x ->
-         () (* AST: x *)
+         x
+     | Some ii ->
+         (* AST: x *)
+         PatTodo ("PatUnderscoreStar?", ii)
     )
   )
 
@@ -1380,44 +1385,52 @@ and patterns in_ =
  *
  * XXX: Hook for IDE
 *)
-and simplePattern in_ =
+and simplePattern in_ : pattern =
   in_ |> with_logging "simplePattern" (fun () ->
     match in_.token with
     (* pad: the code was written in a very different way by doing that
      * below, given isIdentBool will say yes for MINUS
     *)
-    | MINUS _ ->
+    | MINUS ii ->
         nextToken in_;
         let x = literal ~isNegated:true ~inPattern:true in_ in
-        ()
+        (match x with
+         | Left lit -> PatLiteral lit
+         | Right interpolated -> PatTodo ("NegativeLiteral", ii)
+        )
     | x when TH.isIdentBool x || x =~= (Kthis ab) ->
+        let ii = TH.info_of_tok x in
         let t = stableId in_ in
         (* less: if t = Ident("-") literal isNegated:true inPattern:true *)
         let typeAppliedTree =
           match in_.token with
-          | LBRACKET _ ->
+          | LBRACKET ii ->
               let xs = typeArgs in_ in
               (* AST: AppliedTypeTree(convertToTypeId(t), xs) *)
-              t
-          | _ -> t
+              PatTodo ("AppliedTypeTree", ii)
+          | _ -> PatTodo ("PatName", ii)
         in
         (match in_.token with
-         | LPAREN _ ->
+         | LPAREN ii ->
              let xs = argumentPatterns in_ in
              (* AST: Apply(typeAppliedTree, t) *)
-             ()
-         | _ -> (* AST: typeAppliedTree *) ()
+             PatTodo ("PatCall", ii)
+         | _ -> (* AST: typeAppliedTree *) typeAppliedTree
         )
-    | USCORE _ ->
+    | USCORE ii ->
         nextToken in_;
         (* AST: Ident(nme.WILDCARD) *)
-        ()
-    | LPAREN _ ->
+        PatVarid ("_", ii)
+    | LPAREN ii ->
         let xs = makeParens (noSeq patterns) in_ in
-        ()
+        PatTodo ("PatCall", ii)
     | x when TH.isLiteral x ->
+        let ii = TH.info_of_tok x in
         let x = literal ~inPattern:true in_ in
-        ()
+        (match x with
+         | Left lit -> PatLiteral lit
+         | Right interpolated -> PatTodo ("interpolated", ii)
+        )
     (* scala3: deprecated XMLSTART *)
     | _ ->
         error "illegal start of simple pattern" in_

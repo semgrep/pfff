@@ -145,7 +145,7 @@ and pattern =
   | PatInfix of pattern * ident * pattern
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
-  | PatDisj of pattern * pattern
+  | PatDisj of pattern * tok (* | *) * pattern
 
   | PatTodo of todo_category
 
