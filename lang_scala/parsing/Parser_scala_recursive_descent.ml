@@ -620,18 +620,18 @@ let ident in_ : ident =
   | None ->
       error "expecting ident" in_
 
-let rawIdent in_ =
+let rawIdent in_ : ident =
   (* AST: in.name *)
   let s = "" in
   nextToken in_;
   "", Parse_info.fake_info "RAW"
 
-let identOrMacro in_ =
+let identOrMacro in_ : ident =
   if (TH.isMacro in_.token)
   then ident in_
   else rawIdent in_
 
-let wildcardOrIdent in_ =
+let wildcardOrIdent in_ : ident =
   match in_.token with
   | USCORE ii ->
       nextToken in_;
@@ -640,7 +640,7 @@ let wildcardOrIdent in_ =
   | _ -> ident in_
 
 (* For when it's known already to be a type name. *)
-let identForType in_ =
+let identForType in_ : ident =
   let x = ident in_ in
   (* AST: x.toTypeName *)
   x
@@ -687,7 +687,7 @@ let qualId in_ : dotted_ident =
   | _ -> [id]
 
 (* Calls `qualId()` and manages some package state. *)
-let pkgQualId in_ =
+let pkgQualId in_ : dotted_ident =
   (* AST: if ... then inScalePackage = true *)
   let pkg = qualId in_ in
   newLineOptWhenFollowedBy (LBRACE ab) in_;
@@ -861,7 +861,7 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
 (* Infix Expr/Types/pattern management  *)
 (*****************************************************************************)
 
-let pushOpInfo top in_ =
+let pushOpInfo top in_ : ident =
   let x = ident in_ in
   let targs =
     if in_.token =~= (LBRACKET ab)
@@ -870,7 +870,7 @@ let pushOpInfo top in_ =
     else () (* AST: Nil *)
   in
   (* AST: OpInfo(top, name, targs) *)
-  ()
+  x
 
 (*****************************************************************************)
 (* Parsing types  *)
@@ -888,7 +888,7 @@ let pushOpInfo top in_ =
  *  ExistentialDcl    ::= type TypeDcl | val ValDcl
  *  }}}
 *)
-let rec typ in_ =
+let rec typ in_ : type_ =
   in_ |> with_logging "typ" (fun () ->
     (* CHECK: placeholderTypeBoundary *)
     let t =
@@ -897,12 +897,13 @@ let rec typ in_ =
       | _ -> infixType FirstOp in_
     in
     match in_.token with
-    | ARROW _ ->
+    | ARROW ii ->
         skipToken in_;
         let t2 = typ in_ in
         (* AST: makeFunctionTypeTree t t2 *)
-        ()
-    | KforSome _ ->
+        TyFunction1 (t, ii, t2)
+
+    | KforSome ii ->
         skipToken in_;
         makeExistentialTypeTree t in_
     | _ -> t
@@ -914,14 +915,14 @@ let rec typ in_ =
 *)
 (* pad: similar to infixExpr, but seems very rarely used in Scala projects.
 *)
-and infixType mode in_ =
+and infixType mode in_ : type_ =
   in_ |> with_logging (spf "infixType(%s)" (show_mode mode)) (fun () ->
     (* CHECK: placeholderTypeBoundary *)
     let x = compoundType in_ in
     infixTypeRest x mode in_
   )
 
-and infixTypeRest t mode in_ =
+and infixTypeRest t mode in_ : type_ =
   in_ |> with_logging "infixTypeRest" (fun () ->
     (* Detect postfix star for repeated args.
      * Only RPAREN can follow, but accept COMMA and EQUALS for error's sake.
@@ -932,7 +933,10 @@ and infixTypeRest t mode in_ =
       then
         lookingAhead (fun in_ ->
           match in_.token with
-          | RPAREN _ | COMMA _ | EQUALS _ | RBRACE _ -> Some t
+          | RPAREN ii (* the good one *)
+          | COMMA ii | EQUALS ii (* error recovery *)
+          | RBRACE ii (* probably typo *)
+            -> Some ii
           | _ -> None
         ) in_
       else None
@@ -953,21 +957,21 @@ and infixTypeRest t mode in_ =
       else
         let x = infixType RightOp in_ in
         (* AST: mkOp(x) *)
-        ()
+        TyTodo("InfixType Right", snd tycon)
     in
     if TH.isIdentBool in_.token
     then
       (match checkRepeatedParam in_ with
        | None ->
            asInfix in_
-       | Some x ->
-           x
+       | Some ii ->
+           TyTodo ("RepeatedParam", ii)
       )
     else t
   )
 
 (* () must be () => R; (types) could be tuple or (types) => R *)
-and tupleInfixType in_ =
+and tupleInfixType in_ : type_ =
   in_ |> with_logging "tupleInfixType" (fun () ->
     if not (in_.token =~= (LPAREN ab))
     then error "first token must be a left parenthesis" in_;
@@ -978,17 +982,18 @@ and tupleInfixType in_ =
         | _ -> functionTypes in_
       ) in_ in
     (match in_.token with
-     | ARROW _ ->
+     | ARROW ii ->
          skipToken in_;
          let t = typ in_ in
          (* AST: makeSafeFunctionType(ts, t) *)
-         ()
+         TyTodo ("Arrow", ii)
      (* CHECK: if is.isEmpty "Illegal literal type (), use Unit instead" *)
      | _ ->
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
-         let tuple = (* AST: makeSafeTupleType(ts) *) () in
+         (* AST: makeSafeTupleType(ts) *)
+         let tuple =  TyTuple ts in
          warning "tupleInfixType:TODO infixTypeRest(compoundTypeRest(...))";
-         ()
+         tuple
     )
   )
 
@@ -1003,46 +1008,57 @@ and tupleInfixType in_ =
  *                     |  WildcardType
  *  }}}
 *)
-and simpleType in_ =
+and simpleType in_ : type_ =
   in_ |> with_logging "simpleType" (fun () ->
     match in_.token with
     | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
+        let ii = TH.info_of_tok in_.token in
         let x = literal in_ in
         (* AST: SingletonTypeTree(x) *)
-        ()
-    | MINUS _ when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
+        (match x with
+         | Left lit -> TyLiteral lit
+         | Right interpolated -> TyTodo ("TyInterpolated", ii)
+        )
+    | MINUS ii when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
         nextToken in_;
         let x = literal ~isNegated:true in_ in
         (* AST: SingletonTypeTree(x) *)
-        ()
+        (match x with
+         | Left lit -> TyLiteral lit
+         | Right interpolated -> TyTodo ("TyInterpolated", ii)
+        )
     | _ ->
         let start =
           match in_.token with
-          | LPAREN _ ->
+          | LPAREN ii ->
               (* CHECK: "Illegal literal type (), use Unit instead" *)
               let xs = inParens types in_ in
               (* AST: makeSafeTupleType *)
-              ()
+              TyTodo ("LPAREN", ii)
           | t when TH.isWildcardType t ->
+              let ii = TH.info_of_tok in_.token in
               skipToken in_;
-              wildcardType in_
+              let bounds = wildcardType in_ in
+              (* TODO: bounds *)
+              TyTodo ("_ and bounds", ii)
           | _ ->
               let x = path ~thisOK:false ~typeOK:true in_ in
               (* AST: convertToTypeId if not SingletonTypeTree *)
-              ()
+              TyName x
         in
         simpleTypeRest start in_
   )
 
-and simpleTypeRest t in_ =
+and simpleTypeRest t in_ : type_ =
   match in_.token with
   | HASH _ ->
       let x = typeProjection t in_ in
       simpleTypeRest x in_
   | LBRACKET _ ->
       let xs = typeArgs in_ in
-      let x = () in (* AST: AppliedTypeTree(t, xs) *)
-      simpleTypeRest x in_
+      (* AST: AppliedTypeTree(t, xs) *)
+      let x = () in
+      simpleTypeRest t in_
   | _ -> t
 
 (** {{{
@@ -1067,15 +1083,16 @@ and functionTypes in_ =
  *                |  Refinement
  *  }}}
 *)
-and compoundType in_ =
+and compoundType in_ : type_ =
   (* pad: can't call typ() here, which allows function type 'int => float'
    * because this is used in a pattern context as in case p: ... =>
    * where the arrow mark the start of the caseBlock, not a type.
   *)
   let t =
-    if in_.token =~= (LBRACE ab)
-    then () (* AST: scalaAnyRefConstr *)
-    else annotType in_
+    match in_.token with
+    | (LBRACE ii) ->
+        TyTodo ("scalaAnyRefConstr", ii)  (* AST: scalaAnyRefConstr *)
+    | _ -> annotType in_
   in
   compoundTypeRest t in_
 
@@ -1096,7 +1113,8 @@ and compoundTypeRest t in_ =
   in
   (* CHECK: "Detected apparent refinement of Unit" *)
   (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
-  ()
+  let ii = TH.info_of_tok in_.token in
+  TyTodo ("compoundTypeRest", ii)
 
 (** {{{
  *  AnnotType        ::=  SimpleType {Annotation}
@@ -1119,7 +1137,7 @@ and typeProjection t in_ =
   skipToken in_;
   let name = identForType in_ in
   (* AST: SelectFromTypeTree(t, name) *)
-  ()
+  t
 
 (** {{{
  *  Refinement ::= [nl] `{` RefineStat {semi RefineStat} `}`
@@ -1199,9 +1217,12 @@ and typeBounds in_ =
 
 and bound tok in_ =
   if in_.token =~= tok then begin
+    let ii = TH.info_of_tok tok in
     nextToken in_;
-    typ in_
-  end else () (* AST: EmptyTree *)
+    Some (ii, typ in_)
+  end
+  (* ast: EmptyTree *)
+  else None
 
 (* ------------------------------------------------------------------------- *)
 (* Outside PatternContextSensitive *)
@@ -1335,7 +1356,7 @@ and pattern3 in_ : pattern =
         (* AST: let next = reducePatternStack(base, top) *)
         let next = () in
         if TH.isIdentBool in_.token && not (TH.isRawBar in_.token) then begin
-          pushOpInfo next in_;
+          let id = pushOpInfo next in_ in
           (* no postfixPattern, so always go for right part of infix op *)
           let x = simplePattern in_ in
           (* TODO: combine top, infixop, x *)
@@ -1588,7 +1609,7 @@ and postfixExpr in_ : unit =
            * that Scala allows any identifier in infix position
           *)
           (* AST: pushOpInfo(reduceExprStack(base, top)) *)
-          pushOpInfo top in_;
+          let id = pushOpInfo top in_ in
           newLineOptWhenFollowing (TH.isExprIntro) in_;
           if TH.isExprIntro in_.token then begin
             let res = prefixExpr in_ in
@@ -2128,7 +2149,7 @@ and annotations ~skipNewLines in_ =
     ) in_
   )
 
-let annotTypeRest t in_ =
+let annotTypeRest t in_ : type_ =
   let xs = annotations ~skipNewLines:false in
   (* AST: fold around t makeAnnotated *)
   t

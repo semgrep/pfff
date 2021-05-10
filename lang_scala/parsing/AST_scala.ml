@@ -110,13 +110,15 @@ type literal_or_interpolated = (literal, expr) Common.either
 (* Types *)
 (*****************************************************************************)
 and type_ =
+  | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
   | TyProj of type_ * tok (* '#' *) * ident
 
   | TyApp of type_ * type_ list bracket
   | TyInfix of type_ * ident * type_
-  | TyFunction of param_type list bracket * tok (* '=>' *) * type_
-  | TyTuple of type_ list bracket
+  | TyFunction1 of type_ * tok (* '=>' *) * type_
+  | TyFunction2 of param_type list bracket * tok (* '=>' *) * type_
+  | TyTuple of type_ list (*TODObracket*)
 
   (* todo: existentialClause (forSome), refinement *)
   | TyTodo of todo_category
