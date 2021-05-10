@@ -1119,7 +1119,7 @@ assignment_list_element:
 
 array_pair_list: array_pair_list_rev { List.rev $1 }
 array_pair:
- | expr                    { (ArrayExpr $1) }
+ | expr_or_dots                    { (ArrayExpr $1) }
  | TAND expr               { (ArrayRef ($1,$2)) }
  | expr "=>" expr          { (ArrayArrowExpr($1,$2,$3)) }
  | expr "=>" TAND expr { (ArrayArrowRef($1,$2,$3,$4)) }
