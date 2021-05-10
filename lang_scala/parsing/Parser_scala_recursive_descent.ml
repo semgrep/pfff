@@ -17,7 +17,7 @@ module TH = Token_helpers_scala
 module Flag = Flag_parsing
 
 open Token_scala
-(*open AST_scala*)
+open AST_scala
 
 let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
@@ -816,7 +816,8 @@ let packageOrPackageObject_ = ref (fun _ -> failwith "forward ref not set")
  *                  | null
  *  }}}
 *)
-let literal ?(isNegated=false) ?(inPattern=false) in_ =
+let literal ?(isNegated=false) ?(inPattern=false) in_
+  : literal_or_interpolated  =
   in_ |> with_logging (spf "literal(isNegated:%b, inPattern:%b)"
                          isNegated inPattern) (fun () ->
     let finish value_ =
@@ -825,21 +826,34 @@ let literal ?(isNegated=false) ?(inPattern=false) in_ =
       value_
     in
     match in_.token with
-    | T_INTERPOLATED_START _ ->
+    | T_INTERPOLATED_START (_s, ii) ->
         (* AST: if not inPattern then withPlaceholders(...) *)
-        !interpolatedString_ ~inPattern in_
+        let x = !interpolatedString_ ~inPattern in_ in
+        Right (ExprTodo ("interpolated", ii))
     (* scala3: unsupported, deprecated in 2.13.0 *)
     (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
-    | SymbolLiteral(s, ii) -> finish ()
+    | SymbolLiteral(s, ii) -> finish (Right (ExprTodo ("Symbol", ii)))
 
-    | CharacterLiteral(x, ii) -> finish () (* AST: incharVal *)
-    | IntegerLiteral(x, ii) -> finish () (* AST: in.intVal(isNegated) *)
-    | FloatingPointLiteral(x, ii) -> finish () (* AST: in.floatVal(isNegated)*)
+    | CharacterLiteral(x, ii) ->
+        (* AST: incharVal *)
+        finish (Left (Char (x, ii)))
+    | IntegerLiteral(x, ii) ->
+        (* AST: in.intVal(isNegated) *)
+        finish (Left (Int (x, ii)))
+    | FloatingPointLiteral(x, ii) ->
+        (* AST: in.floatVal(isNegated)*)
+        finish (Left (Float (x, ii)))
 
-    | StringLiteral(x, ii) -> finish () (* AST: in.strVal.intern() *)
+    | StringLiteral(x, ii) ->
+        (* AST: in.strVal.intern() *)
+        finish (Left (String (x, ii)))
 
-    | BooleanLiteral(x, ii) -> finish () (* AST: bool *)
-    | Knull _ -> finish () (* AST: null *)
+    | BooleanLiteral(x, ii) ->
+        (* AST: bool *)
+        finish (Left (Bool (x, ii)))
+    | Knull ii ->
+        (* AST: null *)
+        finish (Left (Null ii))
 
     | _ -> error "illegal literal" in_
   )
@@ -1600,7 +1614,8 @@ and prefixExpr in_ : unit =
         | MINUS _, x when TH.isNumericLit x  (* uname == nme.UNARY_- ... *)->
             (* start at the -, not the number *)
             let x = literal ~isNegated:true in_ in
-            simpleExprRest ~canApply:true x  in_
+            let x' = () in
+            simpleExprRest ~canApply:true x' in_
         | _ ->
             let x = simpleExpr in_ in
             (* AST: Select(stripParens(x), uname) *)
