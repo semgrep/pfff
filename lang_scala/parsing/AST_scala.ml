@@ -63,6 +63,9 @@ type ident_or_wildcard = ident
 [@@deriving show] (* with tarzan *)
 type varid_or_wildcard = ident
 [@@deriving show] (* with tarzan *)
+(* less: right now abusing ident to represent "this" *)
+type ident_or_this = ident
+[@@deriving show] (* with tarzan *)
 
 
 
@@ -229,17 +232,16 @@ and stmt =
   | Try of tok * expr * catch_clause option * finally_clause option
   | Throw of tok * expr
 
+(* less: the last can be a ResultExpr *)
+and block = block_stat list
+and block_stat = expr
+
 and enumerators = generator list
 and generator =
-  pattern * tok (* <- *) * expr * guard option
+  pattern * tok (* <- or = *) * expr * guard list
 and for_body =
   | Yield of tok * expr
   | NoYield of expr
-
-(* less: the last can be a ResultExpr *)
-and block = block_stat list
-
-and block_stat = expr
 
 and catch_clause =
   tok * (* TODO: case_clauses bracket *) expr
@@ -249,17 +251,20 @@ and finally_clause=
 (*****************************************************************************)
 (* Attributes *)
 (*****************************************************************************)
-and attribute =
-  | KeywordAttr of keyword_attribute wrap
-  | NamedAttr of tok (* @ *) * ident * arguments bracket
-
-and keyword_attribute =
-  (* for traits/classes *)
+and modifier =
+  (* local modifier *)
+  | Abstract
+  | Final
   | Sealed
-  (* for ??? *)
-  | Private | Protected
-  (* for ??? *)
   | Implicit
+  | Lazy
+  (* access modifier *)
+  | Private of ident_or_this bracket option
+  | Protected of ident_or_this bracket option
+  (* misc *)
+  | Override
+
+and annotation = tok (* @ *) * type_ * arguments list
 
 (*****************************************************************************)
 (* Definitions *)

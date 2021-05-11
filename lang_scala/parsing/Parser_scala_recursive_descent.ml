@@ -2110,54 +2110,50 @@ and enumerators in_ =
     done;
     !enums
   )
+
+(* pad: this was duplicated in enumerator and generator in the original code*)
+and guard_loop in_ : guard list =
+  if not (in_.token =~= (Kif ab))
+  then [] (* ast: Nil *)
+  else
+    let g = guard in_ in
+    let xs = guard_loop in_ in
+    (* ast: makeFilter (g)::xs *)
+    Common.opt_to_list g @ xs
+
 and enumerator ~isFirst ?(allowNestedIf=true) in_ =
   in_ |> with_logging "enumerator" (fun () ->
-    let rec loop () =
-      if not (in_.token =~= (Kif ab))
-      then () (* AST: Nil *)
-      else
-        let g = guard in_ in
-        let xs = loop () in
-        (* AST: makeFilter (g)::xs *)
-        ()
-    in
     match in_.token with
-    | Kif _ when not isFirst -> loop ()
-    | _ -> generator ~eqOK:(not isFirst) ~allowNestedIf in_
+    | Kif _ when not isFirst -> let xs = guard_loop in_ in () (* TODO *)
+    | _ ->
+        let g = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
+        ()
   )
 
 (** {{{
  *  Generator ::= Pattern1 (`<-` | `=`) Expr [Guard]
  *  }}}
 *)
-and generator ~eqOK ~allowNestedIf in_ =
+and generator ~eqOK ~allowNestedIf in_ : generator =
   in_ |> with_logging "generator" (fun () ->
     let hasVal = in_.token =~= (Kval ab) in
     if hasVal then nextToken in_;
     let pat = noSeq pattern1 in_ in
     let hasEq = in_.token =~= (EQUALS ab) in
     (* CHECK: scala3: "`val` keyword in for comprehension is" *)
+    let ieq = TH.info_of_tok in_.token in
     (if hasEq && eqOK
      then nextToken in_
      else accept (LARROW ab) in_
     );
     let rhs = expr in_ in
-    let rec loop () =
-      if not (in_.token =~= (Kif ab))
-      then () (* AST: Nil *)
-      else
-        let g = guard in_ in
-        let xs = loop () in
-        (* AST: makeFilter(g)::xs *)
-        ()
-    in
     let tail =
       if allowNestedIf
-      then loop ()
-      else () (* AST: Nil *)
+      then guard_loop in_
+      else [] (* ast: Nil *)
     in
-    (* AST: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
-    ()
+    (* ast: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
+    (pat, ieq, rhs, tail)
   )
 
 (*****************************************************************************)
@@ -2174,19 +2170,19 @@ and readAnnots part in_ =
 *)
 and annotationExpr in_ =
   let t = exprSimpleType in_ in
-  if in_.token =~= (LPAREN ab)
-  then
-    let xs = multipleArgumentExprs in_ in
-    (* AST: New (t, xs) *)
-    ()
-  else () (* AST: New(t, Nil) *)
+  let args =
+    if in_.token =~= (LPAREN ab)
+    then multipleArgumentExprs in_ (* ast: New (t, xs) *)
+    else [] (* ast: New(t, Nil) *)
+  in
+  t, args
 
-and annotations ~skipNewLines in_ =
+and annotations ~skipNewLines in_ : annotation list =
   in_ |> with_logging (spf "annotations(skipNewLines:%b)" skipNewLines)(fun()->
     readAnnots (fun iat in_ ->
-      let t = annotationExpr in_ in
+      let (t, args) = annotationExpr in_ in
       if skipNewLines then newLineOpt in_;
-      t
+      iat, t, args
     ) in_
   )
 
@@ -2312,25 +2308,26 @@ let importClause in_ =
  *  AccessQualifier ::= `[` (Id | this) `]`
  *  }}}
 *)
-let accessQualifierOpt mods in_ =
-  let result = ref mods in
-  (match in_.token with
-   | LBRACKET _ ->
-       nextToken in_;
-       (* CHECK: "duplicate private/protected qualifier" *)
-       (match in_.token with
-        | Kthis _ ->
+let accessQualifierOpt in_ : ident_or_this bracket option =
+  match in_.token with
+  | LBRACKET lb ->
+      nextToken in_;
+      (* CHECK: "duplicate private/protected qualifier" *)
+      let id =
+        match in_.token with
+        | Kthis ii ->
             nextToken in_;
             (* Flags.Local?? *)
+            "this", ii
         | _ ->
             let x = identForType in_ in
             (* AST: Modifiers(mods.flags, x) *)
-            ()
-       );
-       accept (RBRACKET ab) in_
-   | _ -> ()
-  );
-  !result
+            x
+      in
+      let rb = TH.info_of_tok in_.token in
+      accept (RBRACKET ab) in_;
+      Some (lb, id, rb)
+  | _ -> None
 
 (* AST: normalizeModifiers() *)
 (* CHECK: "repeated modifier" *)
@@ -2351,7 +2348,7 @@ let modifiers in_ =
     match in_.token with
     | Kprivate _ | Kprotected _ ->
         let mods = addMod mods in_.token in_ in
-        let mods = accessQualifierOpt mods in_ in
+        let mods_bis = accessQualifierOpt in_ in
         loop mods
     | Kabstract _ | Kfinal _ | Ksealed _ | Koverride _ | Kimplicit _ | Klazy _
       ->
@@ -2362,8 +2359,7 @@ let modifiers in_ =
         loop mods
     | _ -> mods
   in
-  (* AST: NoMods *)
-  loop []
+  loop noMods
 
 (** {{{
  *  LocalModifiers ::= {LocalModifier}
@@ -2577,7 +2573,7 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
     | LBRACKET _ ->
         let x = inBrackets (fun in_ ->
           let annots = annotations ~skipNewLines:true in_ in
-          let mods = (* AST: NoMods withannotation annots *) [] in
+          let mods = noMods (* AST: withannotation annots *) in
           commaSeparated (typeParam mods) in_
         ) in_
         in
@@ -3160,13 +3156,13 @@ let packageOrPackageObject in_ =
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
 (* ------------------------------------------------------------------------- *)
-let constructorAnnotations in_ =
+let constructorAnnotations in_ : annotation list =
   in_ |> with_logging "constructorAnnotations" (fun () ->
     readAnnots (fun iat in_ ->
       let t = exprSimpleType in_ in
-      let es = argumentExprs in_ in
-      (* AST: New(t, List(es)) *)
-      ()
+      let (es: arguments) = argumentExprs in_ in
+      (* ast: New(t, List(es)) *)
+      iat, t, [es]
     ) in_
   )
 
@@ -3180,8 +3176,9 @@ let accessModifierOpt in_ =
   | Kprivate _ | Kprotected _ ->
       nextToken in_;
       let mods = [] (* AST: flagToken(in_.token) *) in
-      accessQualifierOpt mods in_
-  | _ -> [] (* AST: NoMods *)
+      let x = accessQualifierOpt in_ in
+      []
+  | _ -> noMods
 
 (** {{{
  *  ClassDef ::= Id [TypeParamClause] ConstrAnnotations
