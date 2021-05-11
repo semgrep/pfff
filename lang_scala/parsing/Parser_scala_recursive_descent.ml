@@ -130,7 +130,6 @@ let fb = Parse_info.fake_bracket
 
 (* AST: use AST_scala something *)
 let noSelfType = ()
-let empty = ()
 let noMods = []
 
 (* crazy? context-sensitive parsing? *)
@@ -2202,77 +2201,77 @@ let wildImportSelector in_ =
  *  ImportSelector ::= Id [`=>` Id | `=>` `_`]
  *  }}}
 *)
-let importSelector in_ =
+let importSelector in_ : import_selector =
   let name = wildcardOrIdent in_ in
   let rename =
     match in_.token with
-    | ARROW _ ->
+    | ARROW ii ->
         nextToken in_;
         (* CHECK: "Wildcard import cannot be renamed" *)
-        wildcardOrIdent in_
+        let alias = wildcardOrIdent in_ in
+        Some (ii, alias)
     (* AST: if name = nme.WILDCARD && !bbq => null *)
-    | _ -> name
+    | _ -> None
   in
-  (* AST: ImportSelector(name, start, rename, renameOffset) *)
-  ()
+  (* ast: ImportSelector(name, start, rename, renameOffset) *)
+  name, rename
 
 (** {{{
  *  ImportSelectors ::= `{` {ImportSelector `,`} (ImportSelector | `_`) `}`
  *  }}}
 *)
-let importSelectors in_ =
-  let selectors = inBracesOrNil (commaSeparated importSelector) in_ in
+let importSelectors in_ : import_selector list bracket =
   (* CHECK: "Wildcard import must be in last position" *)
-  selectors
+  inBracesOrNil (commaSeparated importSelector) in_
 
 (** {{{
  *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
  *  }}}
 *)
-let importExpr in_ =
+let importExpr in_ : import_expr =
   in_ |> with_logging "importExpr" (fun () ->
-    let thisDotted _name in_ =
+    let thisDotted (*AST:name*) in_ : dotted_ident =
+      let ii = TH.info_of_tok in_.token in
       nextToken in_;
       (* AST: val t = This(name) *)
-      let t = () in
       accept (DOT ab) in_;
       let result = selector (*t*) in_ in
       accept (DOT ab) in_;
-      result
+      [("this", ii); result]
     in
     (** Walks down import `foo.bar.baz.{ ... }` until it ends at
      * an underscore, a left brace, or an undotted identifier.
     *)
-    let rec loop expr in_ =
-      let selectors =
-        match in_.token with
-        | USCORE _ -> [wildImportSelector in_] (* import foo.bar._; *)
-        | LBRACE _ ->
-            (* import foo.bar.{ x, y, z } *)
-            let (_, xs, _) = importSelectors in_ in
-            xs
-        | _ ->
-            let name = ident in_ in
-            (match in_.token with
-             | DOT _ ->
-                 (* import foo.bar.ident.<unknown> and so create a select node and recurse. *)
-                 (* AST: (Select(expr, name)) *)
-                 let t = expr in
-                 nextToken in_;
-                 loop t in_
-             | _ ->
-                 (* import foo.bar.Baz; *)
-                 (* AST: List(makeImportSelector(name, nameOffset)) *)
-                 []
-            )
-      in
-      (* reaching here means we're done walking. *)
-      (* AST: Import(expr, selectors) *)
-      []
-    in
-    let start =
+    let rec loop (expr: dotted_ident) in_ =
+      (* AST: let selectors = *)
       match in_.token with
-      | Kthis _ -> let x = thisDotted empty in_ in ()
+      (* import foo.bar._; *)
+      | USCORE ii -> let _ = wildImportSelector in_ in
+          expr, ImportWildcard ii
+      (* import foo.bar.{ x, y, z } *)
+      | LBRACE _ ->
+          let xs = importSelectors in_ in
+          expr, ImportSelectors xs
+      | _ ->
+          let name = ident in_ in
+          (match in_.token with
+           | DOT _ ->
+               (* import foo.bar.ident.<unknown> and so create a select node and recurse. *)
+               (* AST: (Select(expr, name)) *)
+               let t = expr @ [name] in
+               nextToken in_;
+               loop t in_
+           | _ ->
+               (* import foo.bar.Baz; *)
+               (* AST: List(makeImportSelector(name, nameOffset)) *)
+               expr, ImportId name
+          )
+          (* reaching here means we're done walking. *)
+          (* AST: Import(expr, selectors) *)
+    in
+    let start : dotted_ident =
+      match in_.token with
+      | Kthis _ -> thisDotted (*AST: empty*) in_
       | _ ->
           (* AST: Ident() *)
           let id = ident in_ in
@@ -2283,9 +2282,9 @@ let importExpr in_ =
           );
           (match in_.token with
            | Kthis _ ->
-               let x = thisDotted (* AST: id.name.toTypeName*) id in_ in
-               ()
-           | _ -> (*id*) ()
+               let x = thisDotted (* AST: id.name.toTypeName*) in_ in
+               id::x
+           | _ -> [id]
           )
     in
     loop start in_
@@ -2295,9 +2294,11 @@ let importExpr in_ =
  *  Import  ::= import ImportExpr {`,` ImportExpr}
  *  }}}
 *)
-let importClause in_ =
+let importClause in_ : import =
+  let ii = TH.info_of_tok in_.token in
   accept (Kimport ab) in_;
-  commaSeparated importExpr in_
+  let xs = commaSeparated importExpr in_ in
+  ii, xs
 
 (*****************************************************************************)
 (* Parsing modifiers  *)

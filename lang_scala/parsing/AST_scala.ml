@@ -72,22 +72,28 @@ type ident_or_this = ident
 type dotted_ident = ident list
 [@@deriving show] (* with tarzan *)
 
+type qualified_ident = dotted_ident
+[@@deriving show] (* with tarzan *)
+
 (* scala3: called simple_ref *)
 type path = dotted_ident
 [@@deriving show] (* with tarzan *)
+
+(* TODO:
+   scala3: called simple_ref
+   type simple_ref =
+   | PId of ident
+   | PThis of ident option * tok
+   | PSuper of ident option * tok * id bracket option * ident
+   and path = path_element list
+   type path = simple_ref * dotted_ident ?
+*)
+
 (* A stable identifier is a path which ends in an identifier
  * src: https://scala-lang.org/files/archive/spec/2.13/03-types.html
 *)
 type stable_id = dotted_ident
 [@@deriving show] (* with tarzan *)
-
-(* TODO:
-   type path_element =
-   | PId of ident
-   | PThis of ident option * tok
-   | PSuper of ident option * tok * id bracket option
-   and path = path_element list
-*)
 
 type todo_category = string wrap
 [@@deriving show] (* with tarzan *)
@@ -109,14 +115,26 @@ type literal =
   | Null of tok
 
 (*****************************************************************************)
-(* start of big recursive type! *)
+(* Directives *)
 (*****************************************************************************)
-type literal_or_interpolated = (literal, expr) Common.either
+
+type import_selector = ident_or_wildcard * alias option
+and alias = tok (* => *) * ident_or_wildcard
+
+type import_expr = stable_id * import_spec
+and import_spec =
+  | ImportId of ident
+  | ImportWildcard of tok (* '_' *)
+  | ImportSelectors of import_selector list bracket
+
+type import = tok (* 'import' *) * import_expr list
+
+type package = tok (* 'package' *) * qualified_ident
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-and type_ =
+type type_ =
   | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
   | TyProj of type_ * tok (* '#' *) * ident
@@ -136,12 +154,12 @@ and param_type =
   | PTRepeatedApplication of type_ * tok (* * *)
 
 (* todo: also _* or annotation list *)
-and ascription = type_
+type ascription = type_
 
 (*****************************************************************************)
 (* Patterns *)
 (*****************************************************************************)
-and pattern =
+type pattern =
   | PatLiteral of literal
   | PatName of stable_id
 
@@ -159,9 +177,13 @@ and pattern =
   | PatTodo of todo_category
 
 (*****************************************************************************)
+(* start of big recursive type? *)
+(*****************************************************************************)
+(*****************************************************************************)
 (* Expressions *)
 (*****************************************************************************)
-and expr =
+type expr =
+
   | L of literal
   | Tuples of expr list bracket
 
@@ -189,8 +211,6 @@ and expr =
   | New of tok (* TODO: ??? *)
 
   | S of stmt
-  | D of definition
-  | I of import
 
   | ExprTodo of todo_category
 
@@ -232,10 +252,6 @@ and stmt =
   | Try of tok * expr * catch_clause option * finally_clause option
   | Throw of tok * expr
 
-(* less: the last can be a ResultExpr *)
-and block = block_stat list
-and block_stat = expr
-
 and enumerators = generator list
 and generator =
   pattern * tok (* <- or = *) * expr * guard list
@@ -247,6 +263,23 @@ and catch_clause =
   tok * (* TODO: case_clauses bracket *) expr
 and finally_clause=
   tok * expr
+
+(*****************************************************************************)
+(* XxxStats *)
+(*****************************************************************************)
+(* less: the last can be a ResultExpr *)
+and block = block_stat list
+
+(* pad: not sure what Stat means, statement? *)
+and block_stat =
+  | D of definition
+  | I of import
+  | E of expr
+
+  | BlockTodo of todo_category
+
+and template_stat = block_stat
+and top_stat = block_stat
 
 (*****************************************************************************)
 (* Attributes *)
@@ -264,12 +297,20 @@ and modifier_kind =
   | Protected of ident_or_this bracket option
   (* misc *)
   | Override
+  (* pad: not in original spec *)
+  | CaseClassOrObject
+  | PackageObject
 
 and annotation = tok (* @ *) * type_ * arguments list
 
 and attribute =
   | A of annotation
   | M of modifier
+
+(*****************************************************************************)
+(* Type parameter (generics) *)
+(*****************************************************************************)
+and type_parameter = unit
 
 (*****************************************************************************)
 (* Definitions *)
@@ -291,29 +332,21 @@ and definition_kind =
   (* class/traits/objects *)
   | Template of template_definition
 
-(* ------------------------------------------------------------------------- *)
-(* Generics *)
-(* ------------------------------------------------------------------------- *)
+  (* TODO: multiPatDef? *)
 
-and type_parameter = unit
+  | DefTodo of todo_category
 
 (* ------------------------------------------------------------------------- *)
 (* Val/Var *)
 (* ------------------------------------------------------------------------- *)
 and variable_definition = {
-  (* move in entity? *)
+  vkind: variable_kind wrap;
   vtype: type_;
   vbody: expr;
 }
-
-(* ------------------------------------------------------------------------- *)
-(* Typedef *)
-(* ------------------------------------------------------------------------- *)
-and type_definition = {
-  (* move in entity? *)
-  (* type_parameter list; *)
-  tbody: type_;
-}
+and variable_kind =
+  | Val
+  | Var
 
 (* ------------------------------------------------------------------------- *)
 (* Functions/Methods *)
@@ -346,10 +379,14 @@ and template_kind =
   | Trait
   | Object
 
-(*****************************************************************************)
-(* Directives *)
-(*****************************************************************************)
-and import = unit
+(* ------------------------------------------------------------------------- *)
+(* Typedef *)
+(* ------------------------------------------------------------------------- *)
+and type_definition = {
+  (* move in entity? *)
+  (* type_parameter list; *)
+  tbody: type_;
+}
 
 (*****************************************************************************)
 (* Toplevel elements *)
@@ -368,3 +405,8 @@ type any =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
+
+(* Intermediate type just used during parsing.
+ * less: move in the parser code instead.
+*)
+type literal_or_interpolated = (literal, expr) Common.either
