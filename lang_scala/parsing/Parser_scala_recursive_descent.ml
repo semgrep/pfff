@@ -2304,6 +2304,15 @@ let importClause in_ =
 (* Parsing modifiers  *)
 (*****************************************************************************)
 
+(* coupling: TH.isLocalModifier *)
+let modifier_of_isLocalModifier_opt = function
+  | Kabstract ii -> Some (Abstract, ii)
+  | Kfinal ii -> Some (Final, ii)
+  | Ksealed ii -> Some (Sealed, ii)
+  | Kimplicit ii -> Some (Implicit, ii)
+  | Klazy ii -> Some (Lazy, ii)
+  | _ -> None
+
 (** {{{
  *  AccessQualifier ::= `[` (Id | this) `]`
  *  }}}
@@ -2329,11 +2338,45 @@ let accessQualifierOpt in_ : ident_or_this bracket option =
       Some (lb, id, rb)
   | _ -> None
 
+(** {{{
+ *  AccessModifier ::= (private | protected) [AccessQualifier]
+ *  }}}
+*)
+let accessModifierOpt in_ : modifier option =
+  (* AST: normalizeModifiers *)
+  match in_.token with
+  | Kprivate ii ->
+      nextToken in_;
+      (* AST: flagToken(in_.token) *)
+      let x = accessQualifierOpt in_ in
+      Some (Private x, ii)
+  | Kprotected ii ->
+      nextToken in_;
+      (* AST: flagToken(in_.token) *)
+      let x = accessQualifierOpt in_ in
+      Some (Protected x, ii)
+  | _ -> None (* ast: noMods *)
+
+(** {{{
+ *  LocalModifiers ::= {LocalModifier}
+ *  LocalModifier  ::= abstract | final | sealed | implicit | lazy
+ *  }}}
+*)
+let localModifiers in_ : modifier list =
+  let rec loop mods in_ =
+    (* old: if TH.isLocalModifier in_.token
+     * then let mods = addMod mods in_.token in_ in loop mods in_
+     * else mods
+    *)
+    match modifier_of_isLocalModifier_opt in_.token with
+    | Some x -> nextToken in_; loop (x::mods) in_
+    | None -> List.rev mods
+  in
+  loop noMods in_
+
 (* AST: normalizeModifiers() *)
 (* CHECK: "repeated modifier" *)
-let addMod mods t in_ =
-  nextToken in_;
-  t::mods
+(* old: let addMod mods t in_ = nextToken in_; t::mods *)
 
 (** {{{
  *  Modifiers ::= {Modifier}
@@ -2344,36 +2387,26 @@ let addMod mods t in_ =
 *)
 let modifiers in_ =
   (* AST: normalizeModifiers() *)
-  let rec loop mods =
+  let rec loop (mods: modifier list) =
     match in_.token with
     | Kprivate _ | Kprotected _ ->
-        let mods = addMod mods in_.token in_ in
-        let mods_bis = accessQualifierOpt in_ in
-        loop mods
-    | Kabstract _ | Kfinal _ | Ksealed _ | Koverride _ | Kimplicit _ | Klazy _
-      ->
-        let mods = addMod mods in_.token in_ in
-        loop mods
+        let mopt = accessModifierOpt in_ in
+        loop (Common.opt_to_list mopt @ mods)
+    (* old: let mods = addMod mods in_.token in_ in
+     * let mods_bis = accessQualifierOpt in_ in
+     * loop mods
+    *)
+    | Koverride ii ->
+        loop ((Override, ii)::mods)
+    | Kabstract _ | Kfinal _ | Ksealed _ | Kimplicit _ | Klazy _ ->
+        (* old: let mods = addMod mods in_.token in_ in loop mods *)
+        loop (List.rev (localModifiers in_) @ mods)
     | NEWLINE _ ->
         nextToken in_;
         loop mods
-    | _ -> mods
+    | _ -> List.rev mods
   in
   loop noMods
-
-(** {{{
- *  LocalModifiers ::= {LocalModifier}
- *  LocalModifier  ::= abstract | final | sealed | implicit | lazy
- *  }}}
-*)
-let localModifiers in_ =
-  let rec loop mods in_ =
-    if TH.isLocalModifier in_.token then
-      let mods = addMod mods in_.token in_ in
-      loop mods in_
-    else mods
-  in
-  loop [] in_
 
 (*****************************************************************************)
 (* Parsing Methods/Functions  *)
@@ -2822,6 +2855,7 @@ let localDef implicitMod in_ =
   in_ |> with_logging "localDef" (fun () ->
     let annots = annotations ~skipNewLines:true in_ in
     let mods = localModifiers in_ in
+    let mods = [] in
     (* AST: let mods = mods | implicitMod withAnnotations annots *)
     (* crazy? parsing depends on AST *)
     let defs =
@@ -3167,20 +3201,6 @@ let constructorAnnotations in_ : annotation list =
   )
 
 (** {{{
- *  AccessModifier ::= (private | protected) [AccessQualifier]
- *  }}}
-*)
-let accessModifierOpt in_ =
-  (* AST: normalizeModifiers *)
-  match in_.token with
-  | Kprivate _ | Kprotected _ ->
-      nextToken in_;
-      let mods = [] (* AST: flagToken(in_.token) *) in
-      let x = accessQualifierOpt in_ in
-      []
-  | _ -> noMods
-
-(** {{{
  *  ClassDef ::= Id [TypeParamClause] ConstrAnnotations
  *               [AccessModifier] ClassParamClauses RequiresTypeOpt ClassTemplateOpt
  *  TraitDef ::= Id [TypeParamClause] RequiresTypeOpt TraitTemplateOpt
@@ -3207,7 +3227,7 @@ let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
           accessModifierOpt in_ in
         let vparamss =
           paramClauses ~ofCaseClass:isCase name classContextBounds in_ in
-        constrMods, vparamss
+        Common.opt_to_list constrMods, vparamss
       end
     in
     let tmpl =

@@ -251,7 +251,8 @@ and finally_clause=
 (*****************************************************************************)
 (* Attributes *)
 (*****************************************************************************)
-and modifier =
+and modifier = modifier_kind wrap
+and modifier_kind =
   (* local modifier *)
   | Abstract
   | Final
@@ -266,6 +267,10 @@ and modifier =
 
 and annotation = tok (* @ *) * type_ * arguments list
 
+and attribute =
+  | A of annotation
+  | M of modifier
+
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
@@ -274,8 +279,8 @@ and definition = entity * definition_kind
 and entity = {
   (* can be AST_generic.special_multivardef_pattern *)
   name: ident;
-  (* type_: type; ? *)
-  (* tparams: type_parameter list; *)
+  attrs: attribute list;
+  tparams: type_parameter list;
 }
 
 (* less: also work for declaration *)
@@ -285,6 +290,12 @@ and definition_kind =
   | TypeDef of type_definition
   (* class/traits/objects *)
   | Template of template_definition
+
+(* ------------------------------------------------------------------------- *)
+(* Generics *)
+(* ------------------------------------------------------------------------- *)
+
+and type_parameter = unit
 
 (* ------------------------------------------------------------------------- *)
 (* Val/Var *)

@@ -318,11 +318,11 @@ let isModifier = function
   | Kimplicit _ | Klazy _ -> true
   | _ -> false
 
+(* coupling: modifier_of_isLocalModifier_opt *)
 let isLocalModifier = function
   | Kabstract _ | Kfinal _ | Ksealed _
   | Kimplicit _ | Klazy _ -> true
   | _ -> false
-
 
 (* ------------------------------------------------------------------------- *)
 (* Construct Intro *)
