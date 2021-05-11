@@ -1076,6 +1076,13 @@ stmt:
   * TODO add an sc? then remove the other ugly "..." and less conflicts?
   *)
  | "..." { [ExprStmt (Ellipsis $1, PI.sc)] }
+ (* We want to accept patterns like:
+  *
+  *     $ARG = $V;
+  *     ...
+  *     <... $O[$ARG] ...>;
+  *)
+ | LDots expr RDots { Flag_parsing.sgrep_guard [ExprStmt (DeepEllipsis ($1, $2, $3), PI.sc)] }
 
 %inline
 stmt1: stmt { stmt1 $1 }
