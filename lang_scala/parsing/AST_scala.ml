@@ -131,9 +131,9 @@ and type_ =
   | TyTodo of todo_category
 
 and param_type =
-  | ParamType of type_
-  | ParamTypeArrow of tok (* => *) * type_
-  | ParamTypeStar of type_ * tok (* * *)
+  | PT of type_
+  | PTByNameApplication of tok (* => *) * type_
+  | PTRepeatedApplication of type_ * tok (* * *)
 
 (* todo: also _* or annotation list *)
 and ascription = type_
@@ -147,7 +147,7 @@ and pattern =
 
   | PatVarid of varid_or_wildcard
   | PatTypedVarid of varid_or_wildcard * tok (* : *) * type_
-  | PatAs of varid * tok (* @ *) * pattern
+  | PatBind of varid * tok (* @ *) * pattern
 
   (* less: the last pattern one can be '[varid @] _ *' *)
   | PatCall of stable_id * pattern list bracket

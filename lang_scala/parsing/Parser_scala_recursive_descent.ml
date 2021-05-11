@@ -681,7 +681,7 @@ let rec selectors ~typeOK in_ : dotted_ident =
  *   }}}
 *)
 let qualId in_ : dotted_ident =
-  (* AST: Ident(id) *)
+  (* ast: Ident(id) *)
   let id = ident in_ in
   match in_.token with
   | DOT _ ->
@@ -823,7 +823,7 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
   in_ |> with_logging (spf "literal(isNegated:%b, inPattern:%b)"
                          isNegated inPattern) (fun () ->
     let finish value_ =
-      (* AST: newLiteral(value) *)
+      (* ast: newLiteral(value) *)
       nextToken in_;
       value_
     in
@@ -869,9 +869,8 @@ let pushOpInfo top in_ : ident =
   let x = ident in_ in
   let targs =
     if in_.token =~= (LBRACKET ab)
-    then let xs = !exprTypeArgs_ in_ in
-      () (* AST: xs *)
-    else () (* AST: Nil *)
+    then !exprTypeArgs_ in_
+    else fb [] (* ast: Nil *)
   in
   (* AST: OpInfo(top, name, targs) *)
   x
@@ -1261,7 +1260,7 @@ let typedOpt in_ =
       nextToken in_;
       let t = typ in_ in
       Some t
-  | _ -> None (* AST: TypeTree *)
+  | _ -> None (* ast: TypeTree *)
 
 (*****************************************************************************)
 (* Parsing patterns  *)
@@ -1331,7 +1330,7 @@ and pattern2 in_ : pattern =
       nextToken in_;
       let body = pattern3 in_ in
       (* AST: Bind(name, body), if WILDCARD then ... *)
-      PatTodo ("PatAs", ii)
+      PatTodo ("PatBind", ii)
   | _ -> x
 
 (** {{{
@@ -1533,7 +1532,7 @@ and parseOther location (in_: env) : expr =
     (match in_.token with
      | EQUALS _ ->
          skipToken in_;
-         (* crazy: parsing that depends on built AST!!
+         (* crazy? parsing that depends on built AST!!
           * AST: if Ident | Select | Apply *)
          let e = expr in_ in
          () (* AST: mkAssign(t, e) *)
@@ -1951,7 +1950,7 @@ and parseIf in_ : stmt =
         let e = expr in_ in
         Some (ii, e)
     | _ ->
-        (* AST: literalUnit *)
+        (* ast: literalUnit *)
         None
   in
   (* ast: If(cond, thenp, elsep) *)
@@ -1972,7 +1971,7 @@ and parseWhile in_ : stmt =
   let cond = condExpr in_ in
   newLinesOpt in_;
   let body = expr in_ in
-  (* AST: makeWhile(cond, body) *)
+  (* ast: makeWhile(cond, body) *)
   While (ii, cond, body)
 
 and parseDo in_ : stmt =
@@ -1984,7 +1983,7 @@ and parseDo in_ : stmt =
   let iwhile = TH.info_of_tok in_.token in
   accept (Kwhile ab) in_;
   let cond = condExpr in_ in
-  (* AST: makeDoWhile(lname.toTermName, body, cond) *)
+  (* ast: makeDoWhile(lname.toTermName, body, cond) *)
   DoWhile (ido, body, iwhile, cond)
 
 and parseFor in_ : stmt =
@@ -2002,11 +2001,11 @@ and parseFor in_ : stmt =
     | Kyield ii ->
         nextToken in_;
         let e = expr in_ in
-        (* AST: gen.mkFor(enums, gen.Yield(expr())) *)
+        (* ast: gen.mkFor(enums, gen.Yield(expr())) *)
         Yield (ii, e)
     | _ ->
         let e = expr in_ in
-        (* AST: gen.mkFor(enums, expr()) *)
+        (* ast: gen.mkFor(enums, expr()) *)
         NoYield e
   in
   For (ii, enums, body)
@@ -2330,7 +2329,7 @@ let accessQualifierOpt in_ : ident_or_this bracket option =
             "this", ii
         | _ ->
             let x = identForType in_ in
-            (* AST: Modifiers(mods.flags, x) *)
+            (* ast: Modifiers(mods.flags, x) *)
             x
       in
       let rb = TH.info_of_tok in_.token in
@@ -2343,16 +2342,16 @@ let accessQualifierOpt in_ : ident_or_this bracket option =
  *  }}}
 *)
 let accessModifierOpt in_ : modifier option =
-  (* AST: normalizeModifiers *)
+  (* ast: normalizeModifiers *)
   match in_.token with
   | Kprivate ii ->
       nextToken in_;
-      (* AST: flagToken(in_.token) *)
+      (* ast: flagToken(in_.token) *)
       let x = accessQualifierOpt in_ in
       Some (Private x, ii)
   | Kprotected ii ->
       nextToken in_;
-      (* AST: flagToken(in_.token) *)
+      (* ast: flagToken(in_.token) *)
       let x = accessQualifierOpt in_ in
       Some (Protected x, ii)
   | _ -> None (* ast: noMods *)
@@ -2374,7 +2373,7 @@ let localModifiers in_ : modifier list =
   in
   loop noMods in_
 
-(* AST: normalizeModifiers() *)
+(* ast: normalizeModifiers() *)
 (* CHECK: "repeated modifier" *)
 (* old: let addMod mods t in_ = nextToken in_; t::mods *)
 
@@ -2386,7 +2385,7 @@ let localModifiers in_ : modifier list =
  *  }}}
 *)
 let modifiers in_ =
-  (* AST: normalizeModifiers() *)
+  (* ast: normalizeModifiers() *)
   let rec loop (mods: modifier list) =
     match in_.token with
     | Kprivate _ | Kprotected _ ->
@@ -2420,25 +2419,26 @@ let modifiers in_ =
  *  ParamType ::= Type | `=>` Type | Type `*`
  *  }}}
 *)
-let paramType ?(repeatedParameterOK=true) in_ =
+let paramType ?(repeatedParameterOK=true) in_ : param_type =
   in_ |> with_logging "paramType" (fun () ->
     match in_.token with
-    | ARROW _ ->
+    | ARROW ii ->
         nextToken in_;
         let t = typ in_ in
-        (* AST: byNameApplication *)
-        ()
+        (* ast: byNameApplication *)
+        PTByNameApplication (ii, t)
     | _ ->
         let t = typ in_ in
         if (TH.isRawStar in_.token)
         then begin
+          let ii = TH.info_of_tok in_.token in
           nextToken in_;
           (* CHECK: if (!repeatedParameterOK)
            * "repeated parameters are only allowed in method signatures" *)
-          (* AST: repeatedApplication t *)
-          ()
+          (* ast: repeatedApplication t *)
+          PTRepeatedApplication (t, ii)
         end
-        else () (* AST: t *)
+        else PT t (* ast: t *)
   )
 
 (** {{{
