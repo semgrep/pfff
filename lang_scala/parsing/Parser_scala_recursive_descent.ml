@@ -2397,6 +2397,7 @@ let modifiers in_ =
      * loop mods
     *)
     | Koverride ii ->
+        nextToken in_;
         loop ((Override, ii)::mods)
     | Kabstract _ | Kfinal _ | Ksealed _ | Kimplicit _ | Klazy _ ->
         (* old: let mods = addMod mods in_.token in_ in loop mods *)
