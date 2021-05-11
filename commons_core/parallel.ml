@@ -32,17 +32,55 @@ let backtrace_when_exn = ref true
 (* Building block *)
 (*****************************************************************************)
 
+let string_of_signal signal_number =
+  match Signal.get_info signal_number with
+  | None -> spf "unknown signal %i" signal_number
+  | Some (name, descr) -> spf "signal %s: %s" name descr
+
+let check_status ((pid, process_status) : int * Unix.process_status) =
+  match process_status with
+  | WEXITED 0 -> ()
+  | WEXITED exit_code ->
+      let msg = spf "process %i exited with code %i" pid exit_code in
+      failwith msg
+  | WSIGNALED signal_number ->
+      let msg =
+        spf "process %i was killed by %s"
+          pid (string_of_signal signal_number)
+      in
+      failwith msg
+  | WSTOPPED signal_number ->
+      let msg =
+        spf "process %i was stopped by %s"
+          pid (string_of_signal signal_number)
+      in
+      failwith msg
+
+(*
+   Avoid an 'Invalid_argument' exception on Windows.
+*)
+let safe_fork () =
+  match Sys.os_type with
+  | "Win32" -> -1 (* indicates error *)
+  | _ -> Unix.fork ()
+
 (* src: harrop article on fork-based parallelism
  * returns a futur
 *)
 let invoke2 f x =
   flush_all (); (* avoid duplicate output *)
   let input, output = Unix.pipe() in
-  match Unix.fork() with
-  (* error, could not create process, well compute now then *)
-  | -1 ->
+  match safe_fork () with
+  | n when n < 0 ->
+    (*
+       Error, could not create process.
+       One possible reason is that we're on Windows (native).
+
+       We fall back to computing the task in the same process.
+    *)
       let v = f x in
       (fun () -> v)
+
   (* child *)
   | 0 ->
       (* bugfix: subtle: the parent may die (for example because of a Timeout),
@@ -89,16 +127,16 @@ let invoke2 f x =
       fun () ->
         let v =
           try
-            Marshal.from_channel input
+            Some (Marshal.from_channel input)
           with End_of_file ->
-            `Exn
-              (Failure "End_of_file in Parallel.invoke parent, probably segfault in child")
+            None
         in
-        ignore (Unix.waitpid [] pid);
+        let status = Unix.waitpid [] pid in
         close_in input;
+        check_status status;
         match v with
-        | `Res x -> x
-        | `Exn e ->
+        | Some (`Res x) -> x
+        | Some (`Exn e) ->
             (* TODO: this actually does not work! The documentation in
              * marshal.mli is pretty clear:
 
@@ -115,9 +153,12 @@ let invoke2 f x =
               * level stuff with it.
             *)
             raise e
+        | None ->
+            failwith "Bug in Parallel.invoke: child process appears to have \
+                      exited successfully but produced invalid output."
 
-let invoke a b =
-  Common.profile_code "Parallel.invoke" (fun () -> invoke2 a b)
+let invoke f x =
+  Common.profile_code "Parallel.invoke" (fun () -> invoke2 f x)
 
 let parallel_map f xs =
   (* create all the fork *)
