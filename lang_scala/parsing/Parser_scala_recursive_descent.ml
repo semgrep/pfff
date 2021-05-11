@@ -192,7 +192,7 @@ let (=~=) t1 t2 =
 
 (* to imitate Parsers.scala *)
 let (++=) aref xs =
-  ()
+  aref := xs @ !aref
 
 let (+=) aref x =
   aref := x::!aref
@@ -2100,11 +2100,12 @@ and enumerators in_ =
   in_ |> with_logging "enumerators" (fun () ->
     let enums = ref [] in
     let xs = enumerator ~isFirst:true in_ in
-    enums ++= xs;
+    (* TODO enums ++= xs; *)
     while TH.isStatSep in_.token do
       nextToken in_;
       let xs = enumerator ~isFirst:false in_ in
-      enums ++= xs;
+      (* TODO enums ++= xs; *)
+      ()
     done;
     !enums
   )
@@ -3324,19 +3325,19 @@ let _ =
  *  CompilationUnit ::= {package QualId semi} TopStatSeq
  *  }}}
 *)
-let compilationUnit in_ =
-  let rec topstats in_ =
+let compilationUnit in_ : top_stat list =
+  let rec topstats in_ : top_stat list =
     let ts = ref [] in
     while in_.token =~= (SEMI ab) do
       nextToken in_
     done;
     (match in_.token with
-     | Kpackage _ ->
+     | Kpackage ipackage ->
          nextToken in_;
          (match in_.token with
-          | Kobject _ ->
-              let xs = packageObjectDef in_ in
-              ts ++= xs;
+          | Kobject ii ->
+              let x = packageObjectDef in_ in
+              ts += (BlockTodo ("package object", ii));
               if not (in_.token =~= (EOF ab)) then begin
                 acceptStatSep in_;
                 let xs = topStatSeq in_ in
@@ -3344,20 +3345,21 @@ let compilationUnit in_ =
               end
           | _ ->
               let pkg = pkgQualId in_ in
+              let pack = P (ipackage, pkg) in
+              ts += pack;
               (match in_.token with
                | EOF _ ->
-                   let pack = () (* AST: makePackaging(pkg, []) *) in
-                   ts += pack
+                   (* AST: makePackaging(pkg, []) *)
+                   ()
                (* newline: needed here otherwise parsed as package def *)
                | x when TH.isStatSep x ->
                    nextToken in_;
                    let xs = topstats in_ in
-                   let pack = () (* AST: makePackaging(pkg, xs) *) in
-                   ts += pack
+                   (* AST: makePackaging(pkg, xs) *)
+                   ts ++= xs;
                | _ ->
                    let xs = inBraces topStatSeq in_ in
-                   let pack = ()  (* AST: makePackaging(pkg, xs) *) in
-                   ts += pack;
+                   (* AST: makePackaging(pkg, xs) *)
                    acceptStatSepOpt in_;
                    let xs = topStatSeq in_ in
                    ts ++= xs
@@ -3372,7 +3374,7 @@ let compilationUnit in_ =
   in
   let xs = topstats in_ in
   (* AST:  case ... makeEmptyPackage ... *)
-  ()
+  xs
 
 let parse toks =
   let in_ = mk_env toks in

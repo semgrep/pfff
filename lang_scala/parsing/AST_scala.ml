@@ -275,6 +275,8 @@ and block_stat =
   | D of definition
   | I of import
   | E of expr
+  (* just at the beginning of top_stat *)
+  | P of package
 
   | BlockTodo of todo_category
 
@@ -397,7 +399,7 @@ and type_definition = {
 (* Toplevel elements *)
 (*****************************************************************************)
 
-type program = unit
+type program = top_stat list
 
 (*****************************************************************************)
 (* Any *)

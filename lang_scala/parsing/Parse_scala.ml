@@ -87,7 +87,7 @@ let parse filename =
         Parse_info.print_bad line_error (0, checkpoint2) filelines;
       end;
       stat.PI.error_line_count <- stat.PI.total_line_count;
-      { PI.ast = (); tokens = toks; stat }
+      { PI.ast = []; tokens = toks; stat }
 [@@profiling]
 
 let parse_program file =
