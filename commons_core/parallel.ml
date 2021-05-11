@@ -56,17 +56,31 @@ let check_status ((pid, process_status) : int * Unix.process_status) =
       in
       failwith msg
 
+(*
+   Avoid an 'Invalid_argument' exception on Windows.
+*)
+let safe_fork () =
+  match Sys.os_type with
+  | "Win32" -> -1 (* indicates error *)
+  | _ -> Unix.fork ()
+
 (* src: harrop article on fork-based parallelism
  * returns a futur
 *)
 let invoke2 f x =
   flush_all (); (* avoid duplicate output *)
   let input, output = Unix.pipe() in
-  match Unix.fork() with
-  (* error, could not create process, well compute now then *)
-  | -1 ->
+  match safe_fork () with
+  | n when n < 0 ->
+    (*
+       Error, could not create process.
+       One possible reason is that we're on Windows (native).
+
+       We fall back to computing the task in the same process.
+    *)
       let v = f x in
       (fun () -> v)
+
   (* child *)
   | 0 ->
       (* bugfix: subtle: the parent may die (for example because of a Timeout),

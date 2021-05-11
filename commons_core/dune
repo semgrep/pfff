@@ -4,5 +4,6 @@
  (libraries
    ANSITerminal
    commons
+   ounit2
  )
 )
