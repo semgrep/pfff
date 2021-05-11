@@ -207,7 +207,7 @@ type expr =
 
   | Match of expr * tok (* 'match' *) * case_clauses bracket
 
-  | Lambda of bindings * tok (* => *) * expr
+  | Lambda of function_definition
   | New of tok (* TODO: ??? *)
 
   | S of stmt
@@ -315,7 +315,10 @@ and type_parameter = unit
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
-and definition = entity * definition_kind
+(* definition or declaration (def or dcl) *)
+and definition =
+  | DefEnt of entity * definition_kind
+  | DefTodo of todo_category
 
 and entity = {
   (* can be AST_generic.special_multivardef_pattern *)
@@ -332,9 +335,7 @@ and definition_kind =
   (* class/traits/objects *)
   | Template of template_definition
 
-  (* TODO: multiPatDef? *)
-
-  | DefTodo of todo_category
+(* TODO: multiPatDef? *)
 
 (* ------------------------------------------------------------------------- *)
 (* Val/Var *)
@@ -352,10 +353,14 @@ and variable_kind =
 (* Functions/Methods *)
 (* ------------------------------------------------------------------------- *)
 and function_definition = {
+  fkind: function_kind wrap;
   ftype: type_;
   fparams: bindings;
   fbody: expr;
 }
+and function_kind =
+  | LambdaArrow (* '=>' *)
+  | Def (* 'def' *)
 
 (* fake bracket for single param in short lambdas *)
 and bindings = binding list bracket

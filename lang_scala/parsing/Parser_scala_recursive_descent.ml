@@ -195,7 +195,7 @@ let (++=) aref xs =
   ()
 
 let (+=) aref x =
-  ()
+  aref := x::!aref
 
 (*****************************************************************************)
 (* Token helpers  *)
@@ -2834,18 +2834,26 @@ let patDefOrDcl mods in_ =
  *           | type [nl] TypeDcl
  *  }}}
 *)
-let defOrDcl mods in_ =
+let defOrDcl mods in_ : definition =
   in_ |> with_logging "defOrDcl" (fun () ->
     (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
     match in_.token with
-    | Kval _ -> patDefOrDcl mods (* AST: and VAL *) in_
-    | Kvar _ -> patDefOrDcl mods (* AST: and VAR and Mutable *) in_
-    | Kdef _ -> funDefOrDcl mods (* AST: and DEF *) in_
-    | Ktype _ -> typeDefOrDcl mods (* AST: and TYPE *) in_
+    | Kval ii ->
+        let x = patDefOrDcl mods (* AST: and VAL *) in_ in
+        DefTodo ("val", ii)
+    | Kvar ii ->
+        let x = patDefOrDcl mods (* AST: and VAR and Mutable *) in_ in
+        DefTodo ("var", ii)
+    | Kdef ii ->
+        let x = funDefOrDcl mods (* AST: and DEF *) in_ in
+        DefTodo ("def", ii)
+    | Ktype ii ->
+        let x = typeDefOrDcl mods (* AST: and TYPE *) in_ in
+        DefTodo ("type", ii)
     | _ -> !tmplDef_ mods in_
   )
 
-let nonLocalDefOrDcl in_ =
+let nonLocalDefOrDcl in_ : definition =
   in_ |> with_logging "nonLocalDefOrDcl" (fun () ->
     let annots = annotations ~skipNewLines:true in_ in
     let mods = modifiers in_ in
@@ -2853,7 +2861,7 @@ let nonLocalDefOrDcl in_ =
     defOrDcl mods in_
   )
 
-let localDef implicitMod in_ =
+let localDef implicitMod in_ : definition =
   in_ |> with_logging "localDef" (fun () ->
     let annots = annotations ~skipNewLines:true in_ in
     let mods = localModifiers in_ in
@@ -2881,8 +2889,8 @@ let statSeq ?(errorMsg="illegal start of definition") stat in_ =
   let stats = ref [] in
   while not (TH.isStatSeqEnd in_.token) do
     (match stat in_ with
-     | Some xs ->
-         stats ++= xs
+     | Some x ->
+         stats += x
      | None ->
          if TH.isStatSep in_.token
          then () (* AST: Nil *)
@@ -2890,7 +2898,7 @@ let statSeq ?(errorMsg="illegal start of definition") stat in_ =
     );
     acceptStatSepOpt in_
   done;
-  !stats
+  List.rev !stats
 
 (* ------------------------------------------------------------------------- *)
 (* BlockStat *)
@@ -2905,7 +2913,7 @@ let statSeq ?(errorMsg="illegal start of definition") stat in_ =
   *  }}}
 *)
 
-let blockStatSeq in_ =
+let blockStatSeq in_ : block_stat list =
   let acceptStatSepOptOrEndCase in_ =
     if not (TH.isCaseDefEnd in_.token)
     then acceptStatSepOpt in_
@@ -2914,28 +2922,31 @@ let blockStatSeq in_ =
   while not (TH.isStatSeqEnd in_.token) && not (TH.isCaseDefEnd in_.token) do
     match in_.token with
     | Kimport _ ->
-        let xs = importClause in_ in
-        stats ++= xs;
+        let x = importClause in_ in
+        stats += (I x);
         acceptStatSepOptOrEndCase in_
     | t when TH.isDefIntro t || TH.isLocalModifier t || TH.isAnnotation t ->
         (match in_.token with
-         | Kimplicit _ ->
+         | Kimplicit ii ->
              skipToken in_;
-             let xs =
+             let x =
                if TH.isIdentBool in_.token
-               then let x = implicitClosure InBlock in_ in ()
-               else localDef ()(*AST: Flags.IMPLICIT*) in_
+               then
+                 let x = implicitClosure InBlock in_ in
+                 BlockTodo ("implicitClosure", ii)
+               else D (localDef ()(*AST: Flags.IMPLICIT*) in_)
              in
-             stats ++= xs
+             stats += x
          | _ ->
-             let xs = localDef () in_ in
-             stats ++= xs
+             let x = D (localDef () in_) in
+             stats += x
         );
         acceptStatSepOptOrEndCase in_
     | t when TH.isExprIntro t ->
         let x = statement InBlock in_ in
-        stats += x;
+        stats += (E x);
         acceptStatSepOptOrEndCase in_
+
     | t when TH.isStatSep t ->
         nextToken in_
     | t when TH.isModifier t ->
@@ -2943,7 +2954,7 @@ let blockStatSeq in_ =
     | _ ->
         error "illegal start of statement" in_
   done;
-  !stats
+  List.rev !stats
 
 (* ------------------------------------------------------------------------- *)
 (* TemplateStat *)
@@ -2959,20 +2970,20 @@ let blockStatSeq in_ =
  *                     |
  *  }}}
 *)
-let templateStat in_ =
+let templateStat in_ : template_stat option =
   match in_.token with
   | Kimport _ ->
       let x = importClause in_ in
-      Some ()
+      Some (I x)
   | t when TH.isDefIntro t || TH.isModifier t || TH.isAnnotation t ->
       let x = nonLocalDefOrDcl in_ in
-      Some ()
+      Some (D x)
   | t when TH.isExprIntro t ->
       let x = statement InTemplate in_ in
-      Some ()
+      Some (E x)
   | _ -> None
 
-let templateStats in_ =
+let templateStats in_ : template_stat list =
   statSeq templateStat in_
 
 (* ------------------------------------------------------------------------- *)
@@ -2988,21 +2999,21 @@ let templateStats in_ =
  *            |
  *  }}}
 *)
-let topStat in_ =
+let topStat in_ : top_stat option =
   match in_.token with
-  | Kpackage _ ->
+  | Kpackage ii ->
       skipToken in_;
       let x = !packageOrPackageObject_ in_ in
-      Some () (* AST: x::Nil *)
+      Some (BlockTodo ("package object", ii)) (* AST: x::Nil *)
   | Kimport _ ->
       let x = importClause in_ in
-      Some () (* AST: x *)
+      Some (I x) (* ast: x *)
   | t when TH.isAnnotation t || TH.isTemplateIntro t || TH.isModifier t ->
       let x = !topLevelTmplDef_ in_ in
-      Some () (* x :: Nil *)
+      Some (D x) (* x :: Nil *)
   | _ -> None
 
-let topStatSeq in_ =
+let topStatSeq in_ : top_stat list =
   statSeq ~errorMsg:"expected class or object definition" topStat in_
 
 (*****************************************************************************)
@@ -3252,23 +3263,30 @@ let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
  *            |  [override] trait TraitDef
  *  }}}
 *)
-let tmplDef mods in_ =
+let tmplDef mods in_ : definition =
   (* CHECK: "classes cannot be lazy" *)
   match in_.token with
-  | Ktrait _ -> classDef ~isTrait:true mods (* AST: | TRAIT | ABSTRACT *) in_
-  | Kclass _ -> classDef mods in_
-  | Kobject _ -> objectDef mods in_
+  | Ktrait ii ->
+      let x = classDef ~isTrait:true mods (* AST: | TRAIT | ABSTRACT *) in_ in
+      DefTodo ("trait", ii)
+  | Kclass ii ->
+      let x = classDef mods in_ in
+      DefTodo ("class", ii)
+  | Kobject ii ->
+      let x = objectDef mods in_ in
+      DefTodo ("object", ii)
   (* pad: was done via a lexing trick in postProcessToken in the original
    * code; not sure you needed that
   *)
-  | Kcase _ ->
+  | Kcase ii ->
       nextToken in_;
-      (match in_.token with
-       | Kclass _ -> classDef ~isCase:true mods in_
-       | Kobject _ -> objectDef ~isCase:true mods in_
-       (* pad: my error message *)
-       | _ -> error "expecting class or object after a case" in_
-      )
+      let x = match in_.token with
+        | Kclass _ -> classDef ~isCase:true mods in_
+        | Kobject _ -> objectDef ~isCase:true mods in_
+        (* pad: my error message *)
+        | _ -> error "expecting class or object after a case" in_
+      in
+      DefTodo ("case class/obj", ii)
   | _ -> error "expected start of definition" in_
 
 (*****************************************************************************)
@@ -3276,7 +3294,7 @@ let tmplDef mods in_ =
 (*****************************************************************************)
 
 (** Hook for IDE, for top-level classes/objects. *)
-let topLevelTmplDef in_ =
+let topLevelTmplDef in_ : definition =
   let _annots = annotations ~skipNewLines:true in_ in
   let mods = modifiers in_ in
   (* AST: mods withAnnotations annots *)
