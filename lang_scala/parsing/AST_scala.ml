@@ -211,7 +211,7 @@ and stmt =
   | While of tok * expr bracket * expr
   | DoWhile of tok * expr * tok * expr bracket
 
-  | For of enumerators bracket
+  | For of tok * enumerators bracket * for_body
 
   | Return of tok * expr option
 
@@ -221,6 +221,9 @@ and stmt =
 and enumerators = generator list
 and generator =
   pattern * tok (* <- *) * expr * guard option
+and for_body =
+  | Yield of tok * expr
+  | NoYield of expr
 
 (* less: the last can be a ResultExpr *)
 and block = block_stat list
@@ -228,9 +231,9 @@ and block = block_stat list
 and block_stat = expr
 
 and catch_clause =
-  tok * case_clauses bracket
+  tok * (* TODO: case_clauses bracket *) expr
 and finally_clause=
-  tok * block
+  tok * expr
 
 (*****************************************************************************)
 (* Attributes *)
