@@ -527,11 +527,13 @@ let outPattern f in_ =
 (*****************************************************************************)
 
 let inGroupers left right body in_ =
+  let lp = TH.info_of_tok in_.token in
   accept left in_;
   let res = body in_ in
   skipTrailingComma right in_;
+  let rp = TH.info_of_tok in_.token in
   accept right in_;
-  res
+  lp, res, rp
 
 let inBraces f in_ =
   in_ |> with_logging "inBraces" (fun () ->
@@ -555,8 +557,9 @@ let separatedToken sep part in_ =
   in_ |> with_logging (spf "separatedTopen(%s)" (T.show sep)) (fun () ->
     let ts = ref [] in
     while in_.token =~= sep do
+      let ii = TH.info_of_tok in_.token in
       nextToken in_;
-      let x = part in_ in
+      let x = part ii in_ in
       ts += x;
     done;
     !ts
@@ -850,6 +853,7 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
     | BooleanLiteral(x, ii) ->
         (* ast: bool *)
         finish (Left (Bool (x, ii)))
+
     | Knull ii ->
         (* ast: null *)
         finish (Left (Null ii))
@@ -1108,8 +1112,8 @@ and compoundTypeRest t in_ =
   let hasRefinement = (in_.token =~= (LBRACE ab)) in
   let refinements =
     if hasRefinement
-    then refinement in_
-    else []
+    then Some (refinement in_)
+    else None
   in
   (* CHECK: "Detected apparent refinement of Unit" *)
   (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
@@ -1825,7 +1829,7 @@ and interpolatedString ~inPattern in_ =
 (* Arguments *)
 (* ------------------------------------------------------------------------- *)
 (* A succession of argument lists. *)
-and multipleArgumentExprs in_ =
+and multipleArgumentExprs in_ : arguments list =
   in_ |> with_logging "multipleArgumentExprs" (fun () ->
     match in_.token with
     | LPAREN _ ->
@@ -1840,14 +1844,14 @@ and multipleArgumentExprs in_ =
  *                  | [nl] BlockExpr
  *  }}}
 *)
-and argumentExprs in_ =
+and argumentExprs in_ : arguments =
   in_ |> with_logging "argumentExprs" (fun () ->
     let args in_ =
       (* AST: if isIdent then assignmentToMaybeNamedArg *)
       commaSeparated expr in_
     in
     match in_.token with
-    | LBRACE _ -> [blockExpr in_]
+    | LBRACE _ -> ArgBlock (blockExpr in_)
     | LPAREN _ ->
         (* less: could use makeParens *)
         inParens (fun in_ ->
@@ -1855,7 +1859,9 @@ and argumentExprs in_ =
           | RPAREN _ -> []
           | _ -> args in_
         ) in_
-    | _ -> []
+        |> (fun x -> Args x)
+    (* stricter: *)
+    | _ -> error "was expecting a ( or { for an argumentExprs" in_
   )
 
 (* ------------------------------------------------------------------------- *)
@@ -1866,36 +1872,36 @@ and argumentExprs in_ =
  *  Guard ::= if PostfixExpr
  *  }}}
 *)
-and guard in_ =
+and guard in_ : guard option =
   in_ |> with_logging "guard" (fun () ->
-    if in_.token =~= (Kif ab)
-    then begin
-      nextToken in_;
-      let x = postfixExpr in_ in
-      (* AST: stripParens(x) *)
-      ()
-    end
-    else () (* AST: Nil *)
+    match in_.token with
+    | Kif ii ->
+        nextToken in_;
+        let x = postfixExpr in_ in
+        (* AST: stripParens(x) *)
+        Some (ii, x)
+    | _ -> None (* ast: Nil *)
   )
 
-and caseBlock in_ =
+and caseBlock in_ : tok * block =
+  let ii = TH.info_of_tok in_.token in
   accept (ARROW ab) in_;
   let x = block in_ in
-  ()
+  ii, x
 
-and caseClause in_ =
+and caseClause icase in_ : case_clause =
   let p = pattern in_ in
   let g = guard in_ in
-  let b = caseBlock in_ in
-  (* AST: makeCaseDef *)
-  ()
+  let (iarrow, block) = caseBlock in_ in
+  (* ast: makeCaseDef *)
+  icase, p, g, iarrow, block
 
 (** {{{
  *  CaseClauses ::= CaseClause {CaseClause}
  *  CaseClause  ::= case Pattern [Guard] `=>` Block
  *  }}}
 *)
-and caseClauses in_ =
+and caseClauses in_ : case_clauses =
   (* CHECK: empty cases *)
   let xs = caseSeparated caseClause in_ in
   xs
@@ -2062,7 +2068,7 @@ and statement (location: location) (in_: env) : expr =
 and block in_ : block =
   in_ |> with_logging "block" (fun () ->
     let xs = !blockStatSeq_ in_ in
-    (* AST: makeBlock(xs) *)
+    (* ast: makeBlock(xs) *)
     xs
   )
 
@@ -2070,16 +2076,16 @@ and block in_ : block =
   *  BlockExpr ::= `{` (CaseClauses | Block) `}`
   *  }}}
 *)
-and blockExpr in_ =
+and blockExpr in_ : block_expr =
   inBraces (fun in_ ->
     match in_.token with
     | Kcase _ ->
         let xs = caseClauses in_ in
         (* AST: Match(EmptyTree, xs *)
-        ()
+        BECases xs
     | _ ->
         let xs  = block in_ in
-        ()
+        BEBlock xs
   ) in_
 
 (* ------------------------------------------------------------------------- *)
@@ -2177,7 +2183,7 @@ and annotationExpr in_ =
 
 and annotations ~skipNewLines in_ =
   in_ |> with_logging (spf "annotations(skipNewLines:%b)" skipNewLines)(fun()->
-    readAnnots (fun in_ ->
+    readAnnots (fun iat in_ ->
       let t = annotationExpr in_ in
       if skipNewLines then newLineOpt in_;
       t
@@ -2246,7 +2252,10 @@ let importExpr in_ =
       let selectors =
         match in_.token with
         | USCORE _ -> [wildImportSelector in_] (* import foo.bar._; *)
-        | LBRACE _ -> importSelectors in_  (* import foo.bar.{ x, y, z } *)
+        | LBRACE _ ->
+            (* import foo.bar.{ x, y, z } *)
+            let (_, xs, _) = importSelectors in_ in
+            xs
         | _ ->
             let name = ident in_ in
             (match in_.token with
@@ -3002,7 +3011,7 @@ let templateStatSeq ~isPre in_ =
 *)
 
 let templateBody ~isPre in_ =
-  let xs = inBraces (templateStatSeq ~isPre) in_ in
+  let (_, xs, _) = inBraces (templateStatSeq ~isPre) in_ in
   (* AST: self, EmptyTree.asList *)
   xs
 
@@ -3153,7 +3162,7 @@ let packageOrPackageObject in_ =
 (* ------------------------------------------------------------------------- *)
 let constructorAnnotations in_ =
   in_ |> with_logging "constructorAnnotations" (fun () ->
-    readAnnots (fun in_ ->
+    readAnnots (fun iat in_ ->
       let t = exprSimpleType in_ in
       let es = argumentExprs in_ in
       (* AST: New(t, List(es)) *)

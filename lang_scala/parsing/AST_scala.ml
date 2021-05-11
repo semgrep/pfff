@@ -69,6 +69,7 @@ type varid_or_wildcard = ident
 type dotted_ident = ident list
 [@@deriving show] (* with tarzan *)
 
+(* scala3: called simple_ref *)
 type path = dotted_ident
 [@@deriving show] (* with tarzan *)
 (* A stable identifier is a path which ends in an identifier
@@ -92,13 +93,16 @@ type todo_category = string wrap
 (* Literal *)
 (*****************************************************************************)
 
-(* todo: interpolated strings? can be a literal pattern too *)
+(* todo: interpolated strings? can be a literal pattern too??
+ * scala3: called simple_literal
+*)
 type literal =
   | Int    of int option wrap
   | Float  of float option wrap
   | Char   of string wrap
   | String of string wrap
   | Bool of bool wrap
+  (* scala3: not in simple_literal *)
   | Null of tok
 
 (*****************************************************************************)
@@ -118,7 +122,7 @@ and type_ =
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
   | TyFunction2 of param_type list bracket * tok (* '=>' *) * type_
-  | TyTuple of type_ list (*TODObracket*)
+  | TyTuple of type_ list bracket
 
   (* todo: existentialClause (forSome), refinement *)
   | TyTodo of todo_category
@@ -142,7 +146,7 @@ and pattern =
   | PatTypedVarid of varid_or_wildcard * tok (* : *) * type_
   | PatAs of varid * tok (* @ *) * pattern
 
-  (* less: the last pattern one can be '[varidd @] _ *' *)
+  (* less: the last pattern one can be '[varid @] _ *' *)
   | PatCall of stable_id * pattern list bracket
   | PatInfix of pattern * ident * pattern
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
@@ -166,7 +170,7 @@ and expr =
   | DotAccess of expr * tok (* . *) * ident
 
   (* in Scala you can have multiple argument lists! This is
-   * used in Scala for ArrAccess, implicits, etc.
+   * used in Scala for ArrAccess, implicits, block as last argument, etc.
   *)
   | Call of expr * arguments list
 
@@ -190,13 +194,20 @@ and expr =
 (* only Name, or DotAccess, or Call! (e.g., for ArrAccess) *)
 and lhs = expr
 
-and arguments = argument list bracket
+and arguments =
+  | Args of argument list bracket
+  | ArgBlock of block_expr
 and argument = expr
 
 and case_clauses = case_clause list
 and case_clause =
   tok (* 'case' *) * pattern * guard option * tok (* '=>' *) * block
 and guard = tok (* 'if' *) * expr
+
+and block_expr = block_expr_kind bracket
+and block_expr_kind =
+  | BEBlock of block
+  | BECases of case_clauses
 
 (*****************************************************************************)
 (* Statements *)
