@@ -197,7 +197,7 @@ type pattern =
 (*****************************************************************************)
 type expr =
   | L of literal
-  | Tuples of expr list bracket
+  | Tuple of expr list bracket
 
   | Name of path
   | ExprUnderscore of tok (* '_' *)
@@ -226,6 +226,7 @@ type expr =
 
   | Lambda of function_definition
   | New of tok * template_definition
+  | BlockExpr of block_expr
 
   | S of stmt
 

@@ -15,6 +15,7 @@ open Common
 module T = Token_scala
 module TH = Token_helpers_scala
 module Flag = Flag_parsing
+module PI = Parse_info
 
 open Token_scala
 open AST_scala
@@ -125,8 +126,8 @@ let copy_env env =
   { env with token = env.token }
 
 (* Trick to use = (called =~= below) to compare tokens *)
-let ab = Parse_info.abstract_info
-let fb = Parse_info.fake_bracket
+let ab = PI.abstract_info
+let fb = PI.fake_bracket
 
 (* AST: use AST_scala something *)
 let noSelfType = ()
@@ -175,7 +176,7 @@ let error x in_ =
     pr2 (T.show tok);
     pr2 x;
   end;
-  raise (Parse_info.Parsing_error info)
+  raise (PI.Parsing_error info)
 
 let todo x in_ =
   error ("TODO:" ^x) in_
@@ -815,14 +816,20 @@ let packageOrPackageObject_ = ref (fun _ -> failwith "forward ref not set")
  *                  | null
  *  }}}
 *)
-let literal ?(isNegated=false) ?(inPattern=false) in_
+let literal ?(isNegated=None) ?(inPattern=false) in_
   : literal_or_interpolated  =
-  in_ |> with_logging (spf "literal(isNegated:%b, inPattern:%b)"
-                         isNegated inPattern) (fun () ->
+  in_ |> with_logging (spf "literal(isNegated:%s, inPattern:%b)"
+                         (Common.dump isNegated) inPattern) (fun () ->
     let finish value_ =
       (* ast: newLiteral(value) *)
       nextToken in_;
       value_
+    in
+    let negate op (x, ii) =
+      match isNegated, x with
+      | None, x -> (x, ii)
+      | Some iminus, Some n -> Some (op n), PI.combine_infos iminus [ii]
+      | Some iminus, None -> None, PI.combine_infos iminus [ii]
     in
     match in_.token with
     | T_INTERPOLATED_START (_s, ii) ->
@@ -840,11 +847,11 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
         (* ast: incharVal *)
         finish (Left (Char (x, ii)))
     | IntegerLiteral(x, ii) ->
-        (* AST: in.intVal(isNegated) *)
-        finish (Left (Int (x, ii)))
+        (* ast: in.intVal(isNegated) *)
+        finish (Left (Int (negate (fun x -> - x) (x, ii))))
     | FloatingPointLiteral(x, ii) ->
-        (* AST: in.floatVal(isNegated)*)
-        finish (Left (Float (x, ii)))
+        (* ast: in.floatVal(isNegated)*)
+        finish (Left (Float (negate (fun x -> -. x) (x, ii))))
 
     | StringLiteral(x, ii) ->
         (* ast: in.strVal.intern() *)
@@ -1020,15 +1027,17 @@ and simpleType in_ : type_ =
         (* AST: SingletonTypeTree(x) *)
         (match x with
          | Left lit -> TyLiteral lit
-         | Right interpolated -> TyTodo ("TyInterpolated", ii)
+         (* stricter: scala3: restricted to simple_literal *)
+         | Right interpolated -> error "interpolated string type" in_
         )
     | MINUS ii when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
         nextToken in_;
-        let x = literal ~isNegated:true in_ in
+        let x = literal ~isNegated:(Some ii) in_ in
         (* AST: SingletonTypeTree(x) *)
         (match x with
          | Left lit -> TyLiteral lit
-         | Right interpolated -> TyTodo ("TyInterpolated", ii)
+         (* stricter: scala3: *)
+         | Right interpolated -> error "negative interpolated string type" in_
         )
     | _ ->
         let start =
@@ -1037,7 +1046,7 @@ and simpleType in_ : type_ =
               (* CHECK: "Illegal literal type (), use Unit instead" *)
               let xs = inParens types in_ in
               (* AST: makeSafeTupleType *)
-              TyTodo ("LPAREN", ii)
+              TyTuple xs
           | t when TH.isWildcardType t ->
               let ii = TH.info_of_tok in_.token in
               skipToken in_;
@@ -1414,10 +1423,11 @@ and simplePattern in_ : pattern =
     *)
     | MINUS ii ->
         nextToken in_;
-        let x = literal ~isNegated:true ~inPattern:true in_ in
+        let x = literal ~isNegated:(Some ii) ~inPattern:true in_ in
         (match x with
          | Left lit -> PatLiteral lit
-         | Right interpolated -> PatTodo ("NegativeLiteral", ii)
+         (* stricter: *)
+         | Right interpolated -> error "negative interpolated string pat" in_
         )
     | x when TH.isIdentBool x || x =~= (Kthis ab) ->
         let ii = TH.info_of_tok x in
@@ -1429,7 +1439,7 @@ and simplePattern in_ : pattern =
               let xs = typeArgs in_ in
               (* AST: AppliedTypeTree(convertToTypeId(t), xs) *)
               PatTodo ("AppliedTypeTree", ii)
-          | _ -> PatTodo ("PatName", ii)
+          | _ -> PatName t
         in
         (match in_.token with
          | LPAREN ii ->
@@ -1651,11 +1661,13 @@ and prefixExpr in_ : expr =
         match t, in_.token with
         | MINUS ii, x when TH.isNumericLit x  (* uname == nme.UNARY_- ... *)->
             (* start at the -, not the number *)
-            let x = literal ~isNegated:true in_ in
+            let x = literal ~isNegated:(Some ii) in_ in
             let x' =
               match x with
               | Left lit -> L lit
-              | Right e -> ExprTodo ("ExprInterpolated", ii)
+              (* stricter: *)
+              | Right e -> error "negative interpolated string" in_
+
             in
             simpleExprRest ~canApply:true x' in_
         | _ ->
@@ -1705,12 +1717,12 @@ and simpleExpr in_ : expr =
        * expressions when part of a short lambda (arrow).
       *)
       | LPAREN ii ->
-          let x = makeParens (commaSeparated expr) in_ in
-          ExprTodo ("LPAREN", ii)
+          let xs = makeParens (commaSeparated expr) in_ in
+          Tuple xs
       | LBRACE ii ->
           canApply := false;
           let x = blockExpr in_ in
-          ExprTodo ("LBRACE", ii)
+          BlockExpr x
       | Knew ii ->
           canApply := false;
           skipToken in_;
