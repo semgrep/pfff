@@ -473,6 +473,7 @@ type any =
 (*****************************************************************************)
 
 let empty_cparents = { cextends = None; cwith = [] }
+let attrs_of_mods xs = List.map (fun x -> M x) xs
 
 (* Intermediate type just used during parsing.
  * less: move in the parser code instead.

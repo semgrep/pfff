@@ -804,7 +804,7 @@ let defOrDcl_ = ref (fun _ _ -> failwith "forward ref not set")
 let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
-let packageOrPackageObject_ = ref (fun _ -> failwith "forward ref not set")
+let packageOrPackageObject_ = ref (fun _ _ -> failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Literal  *)
@@ -3028,7 +3028,7 @@ let topStat in_ : top_stat option =
   match in_.token with
   | Kpackage ii ->
       skipToken in_;
-      let x = !packageOrPackageObject_ in_ in
+      let x = !packageOrPackageObject_ ii in_ in
       Some (BlockTodo ("package object", ii)) (* AST: x::Nil *)
   | Kimport _ ->
       let x = importClause in_ in
@@ -3195,16 +3195,21 @@ let templateOpt ckind in_ : template_definition =
  *  }}}
 *)
 (* pad: I've added isCase, it was passed via mods in the original code *)
-let objectDef ?(isCase=false) ?(isPackageObject=false) mods in_ =
+let objectDef ?(isCase=None) ?(isPackageObject=None) mods in_ : definition =
   in_ |> with_logging "objectDef" (fun () ->
     let ikind = TH.info_of_tok in_.token in
     nextToken in_; (* 'object' *)
     let name = ident in_ in
-    (* AST: mods if isPackageObject ... *)
+    (* ast: mods if isPackageObject ... *)
+    let mods =
+      (match isCase with None -> [] | Some ii -> [CaseClassOrObject, ii]) @
+      (match isPackageObject with None -> [] | Some ii -> [PackageObject, ii])
+    in
     let ckind = Object, ikind in
     let tmpl = templateOpt ckind in_ in
     (* AST: ModuleDef (mods, name.toTermName, template) *)
-    tmpl
+    let ent = { name; attrs = attrs_of_mods mods; tparams = [] } in
+    DefEnt (ent, Template tmpl)
   )
 
 (* ------------------------------------------------------------------------- *)
@@ -3223,14 +3228,14 @@ let objectDef ?(isCase=false) ?(isPackageObject=false) mods in_ =
  *  }}}
 *)
 (* scala3: deprecated *)
-let packageObjectDef in_ =
-  let defn = objectDef noMods ~isPackageObject:true in_ in
+let packageObjectDef ipackage in_ =
+  let defn = objectDef noMods ~isPackageObject:(Some ipackage) in_ in
   (* AST: gen.mkPackageObject(defn, pidPos, pkgPos) *)
   ()
 
-let packageOrPackageObject in_ =
+let packageOrPackageObject ipackage in_ =
   if in_.token =~= (Kobject ab) then
-    let x = packageObjectDef in_ in
+    let x = packageObjectDef ipackage in_ in
     (* AST: joinComment(x::Nil).head *)
     ()
   else
@@ -3260,7 +3265,7 @@ let constructorAnnotations in_ : annotation list =
 *)
 
 (* pad: I added isTrait and isCase instead of abusing mods *)
-let classDef ?(isTrait=false) ?(isCase=false) attrs in_ : definition =
+let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
   in_ |> with_logging "classDef" (fun () ->
     let ikind = TH.info_of_tok in_.token in
     nextToken in_;
@@ -3282,7 +3287,7 @@ let classDef ?(isTrait=false) ?(isCase=false) attrs in_ : definition =
         let constrMods =
           accessModifierOpt in_ in
         let vparamss =
-          paramClauses ~ofCaseClass:isCase name classContextBounds in_ in
+          paramClauses ~ofCaseClass:(isCase <> None) name classContextBounds in_ in
         Common.opt_to_list constrMods, vparamss
       end
     in
@@ -3320,22 +3325,18 @@ let tmplDef attrs in_ : definition =
   | Kclass _ ->
       classDef attrs in_
   | Kobject ii ->
-      let x = objectDef attrs in_ in
-      DefTodo ("object", ii)
+      objectDef attrs in_
   (* pad: was done via a lexing trick in postProcessToken in the original
    * code; not sure you needed that
   *)
   | Kcase ii ->
       nextToken in_;
-      let x = match in_.token with
-        | Kclass _ -> classDef ~isCase:true attrs in_
-        | Kobject _ ->
-            let x = objectDef ~isCase:true attrs in_ in
-            DefTodo ("object", ii)
-        (* pad: my error message *)
-        | _ -> error "expecting class or object after a case" in_
-      in
-      DefTodo ("case class/obj", ii)
+      (match in_.token with
+       | Kclass _ -> classDef ~isCase:(Some ii) attrs in_
+       | Kobject _ -> objectDef ~isCase:(Some ii) attrs in_
+       (* pad: my error message *)
+       | _ -> error "expecting class or object after a case" in_
+      )
   | _ -> error "expected start of definition" in_
 
 (*****************************************************************************)
@@ -3384,7 +3385,7 @@ let compilationUnit in_ : top_stat list =
          nextToken in_;
          (match in_.token with
           | Kobject ii ->
-              let x = packageObjectDef in_ in
+              let x = packageObjectDef ipackage in_ in
               ts += (BlockTodo ("package object", ii));
               if not (in_.token =~= (EOF ab)) then begin
                 acceptStatSep in_;
