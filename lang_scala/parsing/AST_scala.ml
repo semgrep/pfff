@@ -301,7 +301,8 @@ and block_stat =
   | I of import
   | E of expr
   (* just at the beginning of top_stat *)
-  | P of package
+  | Package of package
+  | Packaging of package * top_stat list bracket
 
   | BlockTodo of todo_category
 
@@ -331,6 +332,7 @@ and modifier_kind =
   | Override
   (* pad: not in original spec *)
   | CaseClassOrObject
+  (* less: rewrite as Packaging and object def like in original code? *)
   | PackageObject
 
 and annotation = tok (* @ *) * type_ * arguments list

@@ -3029,7 +3029,7 @@ let topStat in_ : top_stat option =
   | Kpackage ii ->
       skipToken in_;
       let x = !packageOrPackageObject_ ii in_ in
-      Some (BlockTodo ("package object", ii)) (* AST: x::Nil *)
+      Some x (* ast: x::Nil *)
   | Kimport _ ->
       let x = importClause in_ in
       Some (I x) (* ast: x *)
@@ -3228,21 +3228,21 @@ let objectDef ?(isCase=None) ?(isPackageObject=None) mods in_ : definition =
  *  }}}
 *)
 (* scala3: deprecated *)
-let packageObjectDef ipackage in_ =
-  let defn = objectDef noMods ~isPackageObject:(Some ipackage) in_ in
-  (* AST: gen.mkPackageObject(defn, pidPos, pkgPos) *)
-  ()
+let packageObjectDef ipackage in_ : definition =
+  objectDef noMods ~isPackageObject:(Some ipackage) in_
+(* AST: gen.mkPackageObject(defn, pidPos, pkgPos) *)
 
-let packageOrPackageObject ipackage in_ =
+let packageOrPackageObject ipackage in_ : top_stat =
   if in_.token =~= (Kobject ab) then
     let x = packageObjectDef ipackage in_ in
-    (* AST: joinComment(x::Nil).head *)
-    ()
+    (* ast: joinComment(x::Nil).head *)
+    D x
   else
     let x = pkgQualId in_ in
     let body = inBracesOrNil topStatSeq in_ in
-    (* AST: makePackaging(x, body) *)
-    ()
+    (* ast: makePackaging(x, body) *)
+    let pack = (ipackage, x) in
+    Packaging (pack, body)
 
 (* ------------------------------------------------------------------------- *)
 (* Class/trait *)
@@ -3386,7 +3386,7 @@ let compilationUnit in_ : top_stat list =
          (match in_.token with
           | Kobject ii ->
               let x = packageObjectDef ipackage in_ in
-              ts += (BlockTodo ("package object", ii));
+              ts += (D x);
               if not (in_.token =~= (EOF ab)) then begin
                 acceptStatSep in_;
                 let xs = topStatSeq in_ in
@@ -3394,7 +3394,7 @@ let compilationUnit in_ : top_stat list =
               end
           | _ ->
               let pkg = pkgQualId in_ in
-              let pack = P (ipackage, pkg) in
+              let pack = Package (ipackage, pkg) in
               ts += pack;
               (match in_.token with
                | EOF _ ->
