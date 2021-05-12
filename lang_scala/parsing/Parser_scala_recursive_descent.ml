@@ -1716,11 +1716,10 @@ and simpleExpr in_ : expr =
       | Knew ii ->
           canApply := false;
           skipToken in_;
-          let ((*parents, self,*) cbody) = !template_ in_ in
+          let (cparents, (* self,*) cbody) = !template_ in_ in
           (* AST: gen.mkNew(parents, self, stats) *)
           let def = { ckind = (Singleton, ii);
-                      cparams = []; cparents = empty_cparents;
-                      cbody} in
+                      cparams = []; cparents; cbody} in
           New (ii, def)
       | _ -> error "illegal start of simple expression" in_
     in
@@ -3083,25 +3082,26 @@ let templateBodyOpt ~parenMeansSyntaxError in_ : block bracket option =
  *  TraitParents       ::= AnnotType {with AnnotType}
  *  }}}
 *)
-let templateParents in_ =
-  let parents = ref [] in
+let templateParents in_ : template_parents =
   let readAppliedParent () =
     let parent = startAnnotType in_ in
-    parents +=
-    (match in_.token with
-     | LPAREN _ ->
-         let _xs = multipleArgumentExprs in_ in
-         (* AST: fold_left Apply.apply xs *)
-         parent
-     | _ -> parent
-    );
+    let args =
+      (match in_.token with
+       | LPAREN _ ->
+           let _xs = multipleArgumentExprs in_ in
+           (* AST: fold_left Apply.apply xs *)
+           Some ()
+       | _ -> None
+      ) in
+    parent(*, args*)
   in
-  readAppliedParent ();
+  let (parent) = readAppliedParent () in
+  let cwith = ref [] in
   while in_.token =~= (Kwith ab) do
     nextToken in_;
-    readAppliedParent ()
+    cwith += readAppliedParent ();
   done;
-  !parents
+  { cextends = Some parent; cwith = List.rev !cwith }
 
 (** {{{
  *  ClassTemplate ::= [EarlyDefs with] ClassParents [TemplateBody]
@@ -3110,33 +3110,33 @@ let templateParents in_ =
  *  EarlyDef      ::= Annotations Modifiers PatDef
  *  }}}
 *)
-let template in_ : block bracket option (* TODO parents *) =
+let template in_ : template_parents * block bracket option =
   in_ |> with_logging "template" (fun () ->
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     match in_.token with
     | LBRACE _ ->
-        let (*(self, body)*) body = templateBody ~isPre:true in_ in
+        let ((*self, *) body) = templateBody ~isPre:true in_ in
         (match in_.token with
          | Kwith _ (* crazy? && self eq noSelfType *) ->
              (* CHECK: "use traint parameters instead" when scala3 *)
              let _earlyDefs = body (* CHECK: map ensureEarlyDef AST: filter *) in
              nextToken in_;
              let parents = templateParents in_ in
-             let (*(self1, body1)*) body1opt =
+             let ((*self1,*) body1opt) =
                templateBodyOpt ~parenMeansSyntaxError:false in_ in
-             (*(parents, self1, (* AST: earlyDefs @ *) body1)*)
-             Some body
+             (* self1, (* AST: earlyDefs @ *)*)
+             parents, body1opt
          | _ ->
-             (*([], self, body)*)
-             Some body
+             (*(self)*)
+             empty_cparents, Some body
         )
     | _ ->
         let parents = templateParents in_ in
         let (*(self, body)*) bodyopt =
           templateBodyOpt ~parenMeansSyntaxError:false in_
         in
-        (*(parents, self, body)*)
-        bodyopt
+        (*(self)*)
+        parents, bodyopt
   )
 
 (** {{{
@@ -3147,13 +3147,12 @@ let template in_ : block bracket option (* TODO parents *) =
 *)
 (* AST: name, mods, constrMods, vparams *)
 let templateOpt ckind in_ : template_definition =
-  let ((*parents, self,*) cbody) =
+  let (cparents, (* self,*) cbody) =
     match in_.token with
     | Kextends _
     | SUBTYPE _ (* CHECK: deprecated in 2.12.5 *) ->
         nextToken in_;
-        let bodyopt = template in_ in
-        bodyopt
+        template in_
     | _ ->
         newLineOptWhenFollowedBy (LBRACE ab) in_;
         let ((*self,*) bodyopt) =
@@ -3161,12 +3160,12 @@ let templateOpt ckind in_ : template_definition =
           let parenMeansSyntaxError = true in
           templateBodyOpt ~parenMeansSyntaxError in_ in
         (*[], self, body*)
-        bodyopt
+        empty_cparents, bodyopt
   in
   (* AST: Template(parents, self, anyvalConstructor()::body))
    * CHECK: "package object inheritance is deprecated"
   *)
-  { ckind; cparams = []; cparents = empty_cparents; cbody; }
+  { ckind; cparams = []; cparents; cbody; }
 
 (* ------------------------------------------------------------------------- *)
 (* Object *)

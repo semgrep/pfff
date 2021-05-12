@@ -413,11 +413,11 @@ and template_definition = {
   ckind: template_kind wrap;
   (* also a list of list of parameters? *)
   cparams: bindings list;
-  cparents: cparents;
+  cparents: template_parents;
   cbody: block bracket option;
 }
 (* scala3: intersection types so more symetric *)
-and cparents = {
+and template_parents = {
   cextends: type_ option (* TODO: * arguments list *);
   cwith: type_ list
 }
