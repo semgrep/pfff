@@ -225,7 +225,7 @@ type expr =
   | Match of expr * tok (* 'match' *) * case_clauses bracket
 
   | Lambda of function_definition
-  | New of tok (* TODO * template_definition *)
+  | New of tok * template_definition
 
   | S of stmt
 
@@ -413,16 +413,21 @@ and template_definition = {
   ckind: template_kind wrap;
   (* also a list of list of parameters? *)
   cparams: bindings list;
-  cparent: type_ option; (* TODO: * arguments list *)
-  (* scala3: intersection types so more symetric *)
-  cwith: type_ list;
+  cparents: cparents;
   cbody: block bracket option;
 }
+(* scala3: intersection types so more symetric *)
+and cparents = {
+  cextends: type_ option (* TODO: * arguments list *);
+  cwith: type_ list
+}
+
 (* case classes and objects are handled via attributes in the entity *)
 and template_kind =
   | Class
   | Trait
   | Object
+  | Singleton (* via new *)
 
 (* ------------------------------------------------------------------------- *)
 (* Typedef *)
@@ -451,6 +456,8 @@ type any =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
+
+let empty_cparents = { cextends = None; cwith = [] }
 
 (* Intermediate type just used during parsing.
  * less: move in the parser code instead.

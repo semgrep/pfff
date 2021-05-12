@@ -1716,9 +1716,12 @@ and simpleExpr in_ : expr =
       | Knew ii ->
           canApply := false;
           skipToken in_;
-          let (parents, self, stats) = !template_ in_ in
+          let ((*parents, self,*) cbody) = !template_ in_ in
           (* AST: gen.mkNew(parents, self, stats) *)
-          New (ii)
+          let def = { ckind = (Singleton, ii);
+                      cparams = []; cparents = empty_cparents;
+                      cbody} in
+          New (ii, def)
       | _ -> error "illegal start of simple expression" in_
     in
     simpleExprRest ~canApply:!canApply t in_
@@ -3057,21 +3060,23 @@ let templateStatSeq ~isPre in_ =
  * @param isPre specifies whether in early initializer (true) or not (false)
 *)
 
-let templateBody ~isPre in_ =
-  let (_, xs, _) = inBraces (templateStatSeq ~isPre) in_ in
+let templateBody ~isPre in_ : block bracket =
+  let (lp, (self, xs), rp) = inBraces (templateStatSeq ~isPre) in_ in
   (* AST: self, EmptyTree.asList *)
-  xs
+  lp, xs, rp
 
-let templateBodyOpt ~parenMeansSyntaxError in_ =
+let templateBodyOpt ~parenMeansSyntaxError in_ : block bracket option =
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   match in_.token with
   | LBRACE _ ->
-      templateBody ~isPre:false in_
+      Some (templateBody ~isPre:false in_)
   | LPAREN _ ->
       if parenMeansSyntaxError
       then error "traits or objects may not have parameters" in_
       else error "unexpected opening parenthesis" in_
-  | _ -> noSelfType, []
+  | _ ->
+      (* AST: noSelfType, [] *)
+      None
 
 (** {{{
  *  ClassParents       ::= AnnotType {`(` [Exprs] `)`} {with AnnotType}
@@ -3105,27 +3110,33 @@ let templateParents in_ =
  *  EarlyDef      ::= Annotations Modifiers PatDef
  *  }}}
 *)
-let template in_ =
+let template in_ : block bracket option (* TODO parents *) =
   in_ |> with_logging "template" (fun () ->
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     match in_.token with
     | LBRACE _ ->
-        let (self, body) = templateBody ~isPre:true in_ in
+        let (*(self, body)*) body = templateBody ~isPre:true in_ in
         (match in_.token with
          | Kwith _ (* crazy? && self eq noSelfType *) ->
              (* CHECK: "use traint parameters instead" when scala3 *)
              let _earlyDefs = body (* CHECK: map ensureEarlyDef AST: filter *) in
              nextToken in_;
              let parents = templateParents in_ in
-             let (self1, body1) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
-             (parents, self1, (* AST: earlyDefs @ *) body1)
+             let (*(self1, body1)*) body1opt =
+               templateBodyOpt ~parenMeansSyntaxError:false in_ in
+             (*(parents, self1, (* AST: earlyDefs @ *) body1)*)
+             Some body
          | _ ->
-             ([], self, body)
+             (*([], self, body)*)
+             Some body
         )
     | _ ->
         let parents = templateParents in_ in
-        let (self, body) = templateBodyOpt ~parenMeansSyntaxError:false in_ in
-        (parents, self, body)
+        let (*(self, body)*) bodyopt =
+          templateBodyOpt ~parenMeansSyntaxError:false in_
+        in
+        (*(parents, self, body)*)
+        bodyopt
   )
 
 (** {{{
@@ -3136,24 +3147,26 @@ let template in_ =
 *)
 (* AST: name, mods, constrMods, vparams *)
 let templateOpt ckind in_ : template_definition =
-  let (parents, self, body) =
+  let ((*parents, self,*) cbody) =
     match in_.token with
     | Kextends _
     | SUBTYPE _ (* CHECK: deprecated in 2.12.5 *) ->
         nextToken in_;
-        template in_
+        let bodyopt = template in_ in
+        bodyopt
     | _ ->
         newLineOptWhenFollowedBy (LBRACE ab) in_;
-        let (self, body) =
+        let ((*self,*) bodyopt) =
           (* AST: mods.isTrait || name.isTermName *)
           let parenMeansSyntaxError = true in
           templateBodyOpt ~parenMeansSyntaxError in_ in
-        [], self, body
+        (*[], self, body*)
+        bodyopt
   in
   (* AST: Template(parents, self, anyvalConstructor()::body))
    * CHECK: "package object inheritance is deprecated"
   *)
-  { ckind; cparams = []; cparent = None; cwith = []; cbody = None; }
+  { ckind; cparams = []; cparents = empty_cparents; cbody; }
 
 (* ------------------------------------------------------------------------- *)
 (* Object *)
