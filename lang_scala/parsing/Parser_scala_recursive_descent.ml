@@ -1438,16 +1438,18 @@ and simplePattern in_ : pattern =
           match in_.token with
           | LBRACKET ii ->
               let xs = typeArgs in_ in
-              (* AST: AppliedTypeTree(convertToTypeId(t), xs) *)
-              PatTodo ("AppliedTypeTree", ii)
-          | _ -> PatName t
+              (* ast: AppliedTypeTree(convertToTypeId(t), xs) *)
+              Some xs
+          | _ -> None (* AST: t *)
         in
         (match in_.token with
          | LPAREN ii ->
              let xs = argumentPatterns in_ in
              (* AST: Apply(typeAppliedTree, t) *)
-             PatTodo ("PatCall", ii)
-         | _ -> (* AST: typeAppliedTree *) typeAppliedTree
+             PatApply (t, typeAppliedTree, Some xs)
+         | _ ->
+             (* AST: typeAppliedTree *)
+             PatApply (t, typeAppliedTree, None)
         )
     | USCORE ii ->
         nextToken in_;
@@ -1468,15 +1470,13 @@ and simplePattern in_ : pattern =
         error "illegal start of simple pattern" in_
   )
 
-and argumentPatterns in_ =
+and argumentPatterns in_ : pattern list bracket =
   in_ |> with_logging "argumentPatterns" (fun () ->
-    let xs = inParens (fun in_ ->
+    inParens (fun in_ ->
       if in_.token =~= (RPAREN ab)
       then []
       else seqPatterns in_
     ) in_
-    in
-    () (* AST: xs *)
   )
 
 (* ------------------------------------------------------------------------- *)
@@ -1917,8 +1917,7 @@ and caseClause icase in_ : case_clause =
 *)
 and caseClauses in_ : case_clauses =
   (* CHECK: empty cases *)
-  let xs = caseSeparated caseClause in_ in
-  xs
+  caseSeparated caseClause in_
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
@@ -2081,9 +2080,8 @@ and statement (location: location) (in_: env) : expr =
 
 and block in_ : block =
   in_ |> with_logging "block" (fun () ->
-    let xs = !blockStatSeq_ in_ in
     (* ast: makeBlock(xs) *)
-    xs
+    !blockStatSeq_ in_
   )
 
 (** {{{
@@ -3425,9 +3423,8 @@ let compilationUnit in_ : top_stat list =
     (* AST: resetPAckage *)
     List.rev !ts
   in
-  let xs = topstats in_ in
   (* AST:  case ... makeEmptyPackage ... *)
-  xs
+  topstats in_
 
 let parse toks =
   let in_ = mk_env toks in
