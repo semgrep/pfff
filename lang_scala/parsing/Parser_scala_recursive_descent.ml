@@ -2910,7 +2910,7 @@ let localDef implicitMod in_ : definition =
 (* Helpers *)
 (* ------------------------------------------------------------------------- *)
 
-let statSeq ?(errorMsg="illegal start of definition") stat in_ =
+let statSeq ?(errorMsg="illegal start of definition") ?(rev=false) stat in_ =
   let stats = ref [] in
   while not (TH.isStatSeqEnd in_.token) do
     (match stat in_ with
@@ -2923,7 +2923,9 @@ let statSeq ?(errorMsg="illegal start of definition") stat in_ =
     );
     acceptStatSepOpt in_
   done;
-  List.rev !stats
+  if rev
+  then !stats
+  else List.rev !stats
 
 (* ------------------------------------------------------------------------- *)
 (* BlockStat *)
@@ -3038,8 +3040,8 @@ let topStat in_ : top_stat option =
       Some (D x) (* x :: Nil *)
   | _ -> None
 
-let topStatSeq in_ : top_stat list =
-  statSeq ~errorMsg:"expected class or object definition" topStat in_
+let topStatSeq ?rev in_ : top_stat list =
+  statSeq ?rev ~errorMsg:"expected class or object definition" topStat in_
 
 (*****************************************************************************)
 (* Parsing Template (classes/traits/objects)  *)
@@ -3389,7 +3391,7 @@ let compilationUnit in_ : top_stat list =
               ts += (D x);
               if not (in_.token =~= (EOF ab)) then begin
                 acceptStatSep in_;
-                let xs = topStatSeq in_ in
+                let xs = topStatSeq ~rev:true in_ in
                 ts ++= xs
               end
           | _ ->
@@ -3410,16 +3412,16 @@ let compilationUnit in_ : top_stat list =
                    let xs = inBraces topStatSeq in_ in
                    (* AST: makePackaging(pkg, xs) *)
                    acceptStatSepOpt in_;
-                   let xs = topStatSeq in_ in
+                   let xs = topStatSeq ~rev:true in_ in
                    ts ++= xs
               )
          )
      | _ ->
-         let xs = topStatSeq in_ in
+         let xs = topStatSeq ~rev:true in_ in
          ts ++= xs
     );
     (* AST: resetPAckage *)
-    !ts
+    List.rev !ts
   in
   let xs = topstats in_ in
   (* AST:  case ... makeEmptyPackage ... *)
