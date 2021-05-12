@@ -19,6 +19,7 @@ module PI = Parse_info
 
 open Token_scala
 open AST_scala
+module AST = AST_scala
 
 let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 
@@ -624,7 +625,7 @@ let ident in_ : ident =
       error "expecting ident" in_
 
 let rawIdent in_ : ident =
-  (* AST: in.name *)
+  (* ast: in.name *)
   ident in_
 
 let identOrMacro in_ : ident =
@@ -636,8 +637,8 @@ let wildcardOrIdent in_ : ident =
   match in_.token with
   | USCORE ii ->
       nextToken in_;
-      (* AST: nme.WILDCARD *)
-      ("_", ii)
+      (* ast: nme.WILDCARD *)
+      (AST.wildcard, ii)
   | _ -> ident in_
 
 (* For when it's known already to be a type name. *)
@@ -2765,12 +2766,12 @@ let funDefOrDcl attrs in_ : definition =
               constrExpr vparamss in_
         in
         (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
-        let _ent = { name; attrs = []; tparams = [] } in
+        let _ent = { name; attrs; tparams = [] } in
         DefTodo name
     | _ ->
         let name = identOrMacro in_ in
         let fdef = funDefRest (Def, idef) attrs name in_ in
-        let ent = { name; attrs = []; tparams = [] } in
+        let ent = { name; attrs; tparams = [] } in
         DefEnt (ent, FuncDef fdef)
   )
 
@@ -2806,7 +2807,7 @@ let typeDefOrDcl attrs in_ : definition =
 
     | _ -> error "`=`, `>:`, or `<:` expected" in_
   in
-  let ent = { name; tparams = []; attrs = [] } (* TODO *) in
+  let ent = { name; tparams = []; attrs} (* TODO *) in
   let def = { ttok = itype; tbody } in
   DefEnt (ent, TypeDef def)
 
@@ -2882,20 +2883,20 @@ let nonLocalDefOrDcl in_ : definition =
   in_ |> with_logging "nonLocalDefOrDcl" (fun () ->
     let annots = annotations ~skipNewLines:true in_ in
     let mods = modifiers in_ in
-    (* AST: mods withAnnotations annots *)
-    defOrDcl mods in_
+    (* ast: mods withAnnotations annots *)
+    defOrDcl (mods_with_annots mods annots) in_
   )
 
 let localDef implicitMod in_ : definition =
   in_ |> with_logging "localDef" (fun () ->
     let annots = annotations ~skipNewLines:true in_ in
     let mods = localModifiers in_ in
-    let mods = [] in
-    (* AST: let mods = mods | implicitMod withAnnotations annots *)
+    let mods = implicitMod @ mods in
+    (* ast: let mods = mods | implicitMod withAnnotations annots *)
     (* crazy? parsing depends on AST *)
     let defs =
       (* TODO !(mods hasFlag ~(Flags.IMPLICIT | Flags.LAZY))) *)
-      defOrDcl mods in_
+      defOrDcl (mods_with_annots mods annots) in_
       (* TODO: else tmplDef mods in_ *)
     in
     defs
@@ -2961,11 +2962,12 @@ let blockStatSeq in_ : block_stat list =
                then
                  let x = implicitClosure InBlock in_ in
                  BlockTodo ("implicitClosure", ii)
-               else D (localDef ()(*AST: Flags.IMPLICIT*) in_)
+                 (* ast: Flags.IMPLICIT*)
+               else D (localDef [Implicit, ii] in_)
              in
              stats += x
          | _ ->
-             let x = D (localDef () in_) in
+             let x = D (localDef [] in_) in
              stats += x
         );
         acceptStatSepOptOrEndCase in_
@@ -3095,7 +3097,7 @@ let templateBodyOpt ~parenMeansSyntaxError in_ : block bracket option =
       then error "traits or objects may not have parameters" in_
       else error "unexpected opening parenthesis" in_
   | _ ->
-      (* AST: noSelfType, [] *)
+      (* ast: noSelfType, [] *)
       None
 
 (** {{{
@@ -3149,7 +3151,7 @@ let template in_ : template_parents * block bracket option =
              parents, body1opt
          | _ ->
              (*(self)*)
-             empty_cparents, Some body
+             AST.empty_cparents, Some body
         )
     | _ ->
         let parents = templateParents in_ in
@@ -3180,8 +3182,8 @@ let templateOpt ckind in_ : template_definition =
           (* AST: mods.isTrait || name.isTermName *)
           let parenMeansSyntaxError = true in
           templateBodyOpt ~parenMeansSyntaxError in_ in
-        (*[], self, body*)
-        empty_cparents, bodyopt
+        (* (self) *)
+        AST.empty_cparents, bodyopt
   in
   (* AST: Template(parents, self, anyvalConstructor()::body))
    * CHECK: "package object inheritance is deprecated"
@@ -3210,7 +3212,7 @@ let objectDef ?(isCase=None) ?(isPackageObject=None) mods in_ : definition =
     let ckind = Object, ikind in
     let tmpl = templateOpt ckind in_ in
     (* AST: ModuleDef (mods, name.toTermName, template) *)
-    let ent = { name; attrs = attrs_of_mods mods; tparams = [] } in
+    let ent = { name; attrs = AST.attrs_of_mods mods; tparams = [] } in
     DefEnt (ent, Template tmpl)
   )
 
@@ -3285,20 +3287,20 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
     let constrMods, vparamss =
       if isTrait
       then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
-      else begin
+      else
         let constrMods =
           accessModifierOpt in_ in
         let vparamss =
-          paramClauses ~ofCaseClass:(isCase <> None) name classContextBounds in_ in
+          paramClauses ~ofCaseClass:(isCase <> None) name
+            classContextBounds in_ in
         Common.opt_to_list constrMods, vparamss
-      end
     in
 
-    (* TODO *)
-    let ent = { name; attrs = []; tparams = [] } in
 
     let kind = (if isTrait then Trait else Class), ikind in
-    (* AST: name ... constrMods withAnnotations...*)
+    (* ast: name ... constrMods withAnnotations...*)
+    let attrs = mods_with_annots constrMods constrAnnots @ attrs in
+    let ent = { name; attrs; tparams = [] } in
     let tmpl = templateOpt kind in_ in
     (* AST: gen.mkClassDef(mods, name, tparams, template) *)
     (* CHECK: Context bounds generate implicit parameters (part of the template)
@@ -3347,10 +3349,10 @@ let tmplDef attrs in_ : definition =
 
 (** Hook for IDE, for top-level classes/objects. *)
 let topLevelTmplDef in_ : definition =
-  let _annots = annotations ~skipNewLines:true in_ in
+  let annots = annotations ~skipNewLines:true in_ in
   let mods = modifiers in_ in
-  (* AST: mods withAnnotations annots *)
-  let x = tmplDef mods in_ in
+  (* ast: mods withAnnotations annots *)
+  let x = tmplDef (mods_with_annots mods annots) in_ in
   x
 
 (*****************************************************************************)
