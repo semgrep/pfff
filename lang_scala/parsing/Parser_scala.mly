@@ -19,6 +19,11 @@
 (*************************************************************************)
 (* This file contains a grammar for Scala 2.13
  *
+ * !!!IMPORTANT!!! this file is not currently used. It was used at least
+ * to define the tokens via the %token but now those tokens are defined
+ * instead externally in Token_scala.ml (so we can use deriving show on
+ * them).
+ *
  * src: this was converted from scala.ebnf (itself derived from the official
  * grammar) by semgrep -ebnf_to_menhir, and adapted to conform to what
  * menhir can do (hence the use of macros like list_sep, seq2, etc.).

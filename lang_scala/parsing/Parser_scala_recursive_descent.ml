@@ -833,7 +833,10 @@ let literal ?(isNegated=false) ?(inPattern=false) in_
         Right (ExprTodo ("interpolated", ii))
     (* scala3: unsupported, deprecated in 2.13.0 *)
     (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
-    | SymbolLiteral(s, ii) -> finish (Right (ExprTodo ("Symbol", ii)))
+    | SymbolLiteral(s, ii) ->
+        (* not even generated in the Lexer_scala.mll for now and
+         * deprecated construct anyway. *)
+        raise Impossible
 
     | CharacterLiteral(x, ii) ->
         (* ast: incharVal *)
@@ -3131,25 +3134,26 @@ let template in_ =
  *  TraitExtends     ::= `extends` | `<:` (deprecated)
  *  }}}
 *)
-let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
+(* AST: name, mods, constrMods, vparams *)
+let templateOpt ckind in_ : template_definition =
   let (parents, self, body) =
     match in_.token with
-    | Kextends _ | SUBTYPE _ (* CHECK: deprecated in 2.12.5 *) ->
+    | Kextends _
+    | SUBTYPE _ (* CHECK: deprecated in 2.12.5 *) ->
         nextToken in_;
         template in_
     | _ ->
         newLineOptWhenFollowedBy (LBRACE ab) in_;
         let (self, body) =
-          let parenMeansSyntaxError =
-            (* AST: mods.isTrait || name.isTermName *) true
-          in
+          (* AST: mods.isTrait || name.isTermName *)
+          let parenMeansSyntaxError = true in
           templateBodyOpt ~parenMeansSyntaxError in_ in
         [], self, body
   in
   (* AST: Template(parents, self, anyvalConstructor()::body))
    * CHECK: "package object inheritance is deprecated"
   *)
-  ()
+  { ckind; cparams = []; cparent = None; cwith = []; cbody = None; }
 
 (* ------------------------------------------------------------------------- *)
 (* Object *)
@@ -3162,9 +3166,12 @@ let templateOpt mods (* AST: name, constrMods, vparams *) in_ =
 (* pad: I've added isCase, it was passed via mods in the original code *)
 let objectDef ?(isCase=false) ?(isPackageObject=false) mods in_ =
   in_ |> with_logging "objectDef" (fun () ->
+    let ikind = TH.info_of_tok in_.token in
     nextToken in_; (* 'object' *)
     let name = ident in_ in
-    let tmpl = templateOpt mods (* AST: if isPackageObject ... *) in_ in
+    (* AST: mods if isPackageObject ... *)
+    let ckind = Object, ikind in
+    let tmpl = templateOpt ckind in_ in
     (* AST: ModuleDef (mods, name.toTermName, template) *)
     tmpl
   )
@@ -3222,17 +3229,21 @@ let constructorAnnotations in_ : annotation list =
 *)
 
 (* pad: I added isTrait and isCase instead of abusing mods *)
-let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
+let classDef ?(isTrait=false) ?(isCase=false) attrs in_ : definition =
   in_ |> with_logging "classDef" (fun () ->
+    let ikind = TH.info_of_tok in_.token in
     nextToken in_;
     let name = identForType in_ in
+
     (* AST: savingClassContextBounds *)
     let contextBoundBuf = ref [] in
     let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let classContextBounds = !contextBoundBuf in
+
     (* CHECK: "traits cannot have type parameters with context bounds" *)
     let constrAnnots =
       if not isTrait then constructorAnnotations in_ else [] in
+
     let constrMods, vparamss =
       if isTrait
       then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
@@ -3244,14 +3255,20 @@ let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
         Common.opt_to_list constrMods, vparamss
       end
     in
-    let tmpl =
-      templateOpt mods (* AST: name ... constrMods withAnnotations...*) in_ in
+
+    (* TODO *)
+    let ent = { name; attrs = []; tparams = [] } in
+
+    let kind = (if isTrait then Trait else Class), ikind in
+    (* AST: name ... constrMods withAnnotations...*)
+    let tmpl = templateOpt kind in_ in
     (* AST: gen.mkClassDef(mods, name, tparams, template) *)
     (* CHECK: Context bounds generate implicit parameters (part of the template)
      *  with types from tparams: we need to ensure these don't overlap
      * ensureNonOverlapping(template, tparams)
     *)
-    ()
+    DefEnt (ent, Template tmpl)
+
   )
 
 (* ------------------------------------------------------------------------- *)
@@ -3264,17 +3281,15 @@ let classDef ?(isTrait=false) ?(isCase=false) mods in_ =
  *            |  [override] trait TraitDef
  *  }}}
 *)
-let tmplDef mods in_ : definition =
+let tmplDef attrs in_ : definition =
   (* CHECK: "classes cannot be lazy" *)
   match in_.token with
-  | Ktrait ii ->
-      let x = classDef ~isTrait:true mods (* AST: | TRAIT | ABSTRACT *) in_ in
-      DefTodo ("trait", ii)
-  | Kclass ii ->
-      let x = classDef mods in_ in
-      DefTodo ("class", ii)
+  | Ktrait _ ->
+      classDef ~isTrait:true attrs (* AST: | TRAIT | ABSTRACT *) in_
+  | Kclass _ ->
+      classDef attrs in_
   | Kobject ii ->
-      let x = objectDef mods in_ in
+      let x = objectDef attrs in_ in
       DefTodo ("object", ii)
   (* pad: was done via a lexing trick in postProcessToken in the original
    * code; not sure you needed that
@@ -3282,8 +3297,10 @@ let tmplDef mods in_ : definition =
   | Kcase ii ->
       nextToken in_;
       let x = match in_.token with
-        | Kclass _ -> classDef ~isCase:true mods in_
-        | Kobject _ -> objectDef ~isCase:true mods in_
+        | Kclass _ -> classDef ~isCase:true attrs in_
+        | Kobject _ ->
+            let x = objectDef ~isCase:true attrs in_ in
+            DefTodo ("object", ii)
         (* pad: my error message *)
         | _ -> error "expecting class or object after a case" in_
       in

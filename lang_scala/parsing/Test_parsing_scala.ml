@@ -44,9 +44,8 @@ let test_parse xs =
   ()
 
 let test_dump file =
-  let _ast = Parse_scala.parse_program file in
-  pr "TODO"
-
+  let ast = Parse_scala.parse_program file in
+  pr (AST_scala.show_program ast)
 
 (*****************************************************************************)
 (* Main entry for Arg *)

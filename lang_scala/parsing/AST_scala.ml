@@ -107,16 +107,20 @@ type todo_category = string wrap
 
 type import_selector = ident_or_wildcard * alias option
 and alias = tok (* => *) * ident_or_wildcard
+[@@deriving show]
 
 type import_expr = stable_id * import_spec
 and import_spec =
   | ImportId of ident
   | ImportWildcard of tok (* '_' *)
   | ImportSelectors of import_selector list bracket
+[@@deriving show {with_path = false }]
 
 type import = tok (* 'import' *) * import_expr list
+[@@deriving show]
 
 type package = tok (* 'package' *) * qualified_ident
+[@@deriving show]
 
 (*****************************************************************************)
 (* Literals *)
@@ -133,6 +137,7 @@ type literal =
   | Bool of bool wrap
   (* scala3: not in simple_literal *)
   | Null of tok
+[@@deriving show {with_path = false }]
 
 (*****************************************************************************)
 (* Types *)
@@ -156,9 +161,11 @@ and param_type =
   | PT of type_
   | PTByNameApplication of tok (* => *) * type_
   | PTRepeatedApplication of type_ * tok (* * *)
+[@@deriving show {with_path = false }]
 
 (* todo: also _* or annotation list *)
 type ascription = type_
+[@@deriving show]
 
 (*****************************************************************************)
 (* Patterns *)
@@ -180,6 +187,7 @@ type pattern =
   | PatDisj of pattern * tok (* | *) * pattern
 
   | PatTodo of todo_category
+[@@deriving show {with_path = false }]
 
 (*****************************************************************************)
 (* start of big recursive type? *)
@@ -378,7 +386,8 @@ and variable_kind =
 (* ------------------------------------------------------------------------- *)
 and function_definition = {
   fkind: function_kind wrap;
-  fparams: bindings;
+  (* a list of list of parameters! but usually 0/1/2 *)
+  fparams: bindings list;
   (* scala3? remove None and force : Unit ? *)
   frettype: type_ option;
   fbody: expr option; (* None for declarations *)
@@ -402,7 +411,12 @@ and binding = {
 (* =~ class def, hence the c prefix below *)
 and template_definition = {
   ckind: template_kind wrap;
-  cbody: block bracket;
+  (* also a list of list of parameters? *)
+  cparams: bindings list;
+  cparent: type_ option; (* TODO: * arguments list *)
+  (* scala3: intersection types so more symetric *)
+  cwith: type_ list;
+  cbody: block bracket option;
 }
 (* case classes and objects are handled via attributes in the entity *)
 and template_kind =
@@ -416,12 +430,14 @@ and template_kind =
 and type_definition = {
   tbody: type_;
 }
+[@@deriving show {with_path = false }]
 
 (*****************************************************************************)
 (* Toplevel elements *)
 (*****************************************************************************)
 
 type program = top_stat list
+[@@deriving show]
 
 (*****************************************************************************)
 (* Any *)
@@ -430,6 +446,7 @@ type program = top_stat list
 type any =
   | Program of program
   | Tk of tok
+[@@deriving show {with_path = false }]
 
 (*****************************************************************************)
 (* Wrappers *)
