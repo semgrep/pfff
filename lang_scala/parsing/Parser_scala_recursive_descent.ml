@@ -1117,7 +1117,7 @@ and compoundTypeRest t in_ =
   (* CHECK: "Detected apparent refinement of Unit" *)
   (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
   let ii = TH.info_of_tok in_.token in
-  TyTodo ("compoundTypeRest", ii)
+  t (* TODO: add refinments *)
 
 (** {{{
  *  AnnotType        ::=  SimpleType {Annotation}
@@ -1211,14 +1211,14 @@ and wildcardType in_ =
  *  TypeBounds ::= [`>:` Type] [`<:` Type]
  *  }}}
 *)
-and typeBounds in_ =
+and typeBounds in_ : type_bounds =
   (* CHECK: checkNoEscapingPlaceholders *)
   let lo = bound (SUPERTYPE ab) in_ in
   let hi = bound (SUBTYPE ab) in_ in
-  (* AST: TypeBoundsTree(lo, hi) *)
-  ()
+  (* ast: TypeBoundsTree(lo, hi) *)
+  { supertype = lo; subtype = hi }
 
-and bound tok in_ =
+and bound tok in_ : (tok * type_) option =
   if in_.token =~= tok then begin
     let ii = TH.info_of_tok tok in
     nextToken in_;
@@ -2771,26 +2771,32 @@ let funDefOrDcl attrs in_ : definition =
  *  TypeDcl ::= type Id [TypeParamClause] TypeBounds
  *  }}}
 *)
-let typeDefOrDcl mods in_ =
+let typeDefOrDcl attrs in_ : definition =
+  let itype = TH.info_of_tok in_.token in
   nextToken in_;
   newLinesOpt in_;
   let name = identForType in_ in
   (* a type alias as well as an abstract type may declare type parameters *)
   let tparams = typeParamClauseOpt name (None) in_ in
-  match in_.token with
-  | EQUALS _ ->
-      nextToken in_;
-      let t = typ in_ in
-      (* AST: TypeDef(mods, name, tparams, t) *)
-      ()
-  | SEMI _ | NEWLINE _ | NEWLINES _
-  | SUPERTYPE _ | SUBTYPE _
-  | RBRACE _ | EOF _ ->
-      let xs = typeBounds in_ in
-      (* AST: TypeDef(mods | Flags.DEFERRED, name, tparams, typeBounds()) *)
-      ()
+  let tbody =
+    match in_.token with
+    | EQUALS ii ->
+        nextToken in_;
+        let t = typ in_ in
+        (* AST: TypeDef(mods, name, tparams, t) *)
+        TDef (ii, t)
+    | SEMI _ | NEWLINE _ | NEWLINES _
+    | SUPERTYPE _ | SUBTYPE _
+    | RBRACE _ | EOF _ ->
+        let xs = typeBounds in_ in
+        (* AST: TypeDef(mods | Flags.DEFERRED, name, tparams, typeBounds()) *)
+        TDcl xs
 
-  | _ -> error "`=`, `>:`, or `<:` expected" in_
+    | _ -> error "`=`, `>:`, or `<:` expected" in_
+  in
+  let ent = { name; tparams = []; attrs = [] } (* TODO *) in
+  let def = { ttok = itype; tbody } in
+  DefEnt (ent, TypeDef def)
 
 (*****************************************************************************)
 (* Parsing Def or Dcl  *)
@@ -2856,8 +2862,7 @@ let defOrDcl attrs in_ : definition =
     | Kdef ii ->
         funDefOrDcl attrs (* AST: and DEF *) in_
     | Ktype ii ->
-        let x = typeDefOrDcl attrs (* AST: and TYPE *) in_ in
-        DefTodo ("type", ii)
+        typeDefOrDcl attrs (* AST: and TYPE *) in_
     | _ -> !tmplDef_ attrs in_
   )
 

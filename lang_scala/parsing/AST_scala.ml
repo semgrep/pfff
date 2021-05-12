@@ -343,6 +343,11 @@ and attribute =
 (*****************************************************************************)
 and type_parameter = unit
 
+and type_bounds = {
+  supertype: (tok (* >: *) * type_) option;
+  subtype:   (tok (* <: *) * type_) option;
+}
+
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
@@ -437,8 +442,13 @@ and template_kind =
 (* Typedef *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = {
-  tbody: type_;
+  ttok: tok;
+  tbody: type_definition_kind;
 }
+and type_definition_kind =
+  | TDef of tok (* = *) * type_
+  | TDcl of type_bounds
+
 [@@deriving show {with_path = false }]
 
 (*****************************************************************************)
