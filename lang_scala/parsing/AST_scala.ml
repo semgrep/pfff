@@ -161,7 +161,7 @@ type type_ =
   | TyProj of type_ * tok (* '#' *) * ident
 
   (* ast_orig: AppliedType *)
-  | TyApp of type_ * type_ list bracket
+  | TyApplied of type_ * type_ list bracket
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
   | TyFunction2 of param_type list bracket * tok (* '=>' *) * type_
@@ -187,14 +187,19 @@ type pattern =
   (* interpolated strings serve as regexp-like patterns (nice) *)
   | PatLiteral of literal
   | PatName of stable_id
+  | PatTuple of pattern list bracket
 
   | PatVarid of varid_or_wildcard
   (* ast_orig: just Typed *)
   | PatTypedVarid of varid_or_wildcard * tok (* : *) * type_
   | PatBind of varid * tok (* @ *) * pattern
 
-  (* less: the last pattern one can be '[varid @] _ *' *)
-  | PatApply of stable_id * pattern list bracket
+  (* less: the last pattern one can be '[varid @] _ *'
+   * ast_orig: AppliedType for the type_ list bracket
+  *)
+  | PatApply of stable_id *
+                type_ list bracket option *
+                pattern list bracket option
   | PatInfix of pattern * ident * pattern
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 

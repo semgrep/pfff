@@ -1455,7 +1455,7 @@ and simplePattern in_ : pattern =
         PatVarid (AST.wildcard, ii)
     | LPAREN ii ->
         let xs = makeParens (noSeq patterns) in_ in
-        PatTodo ("PatCall", ii)
+        PatTuple xs
     | x when TH.isLiteral x ->
         let ii = TH.info_of_tok x in
         let x = literal ~inPattern:true in_ in
