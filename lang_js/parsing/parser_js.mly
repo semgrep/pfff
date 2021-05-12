@@ -1185,9 +1185,10 @@ assignment_expr:
  (* typescript-ext: 1.6, because <> cant be used in TSX files *)
  | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
 
- (* sgrep-ext: can't move in primary_expr, get s/r conflicts *)
+ (* sgrep-ext: TODO can't move in primary_expr_no_braces, get s/r conflicts
+  * (LDots however can be put in primary_expr_no_braces)
+ *)
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
- | LDots expr RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 left_hand_side_expr: left_hand_side_expr_(d1) { $1 }
 
@@ -1343,6 +1344,8 @@ primary_expr_no_braces:
  | xhp_html { Xml $1 }
 
  | template_literal { mk_Encaps None $1 }
+ (* sgrep-ext: *)
+ | LDots expr RDots { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
 (*----------------------------*)
 (* scalar *)
@@ -1563,10 +1566,12 @@ expr_no_stmt:
  | assignment_expr_no_stmt { $1 }
  | expr_no_stmt "," assignment_expr { seq ($1, $2, $3) }
 
+(* coupling: with assignment_expr *)
 assignment_expr_no_stmt:
  | conditional_expr(primary_no_stmt) { $1 }
  | left_hand_side_expr_(primary_no_stmt) assignment_operator assignment_expr
      { mk_Assign ($1, $2, $3) }
+
  (* es6: *)
  | arrow_function { $1 }
  (* es6: *)
