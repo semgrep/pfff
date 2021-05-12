@@ -624,9 +624,7 @@ let ident in_ : ident =
 
 let rawIdent in_ : ident =
   (* AST: in.name *)
-  let s = "" in
-  nextToken in_;
-  "", Parse_info.fake_info "RAW"
+  ident in_
 
 let identOrMacro in_ : ident =
   if (TH.isMacro in_.token)
@@ -2692,9 +2690,9 @@ let constrExpr vparamss in_ =
  *  FunSig ::= id [FunTypeParamClause] ParamClauses
  *  }}}
 *)
-let funDefRest mods name in_ =
+let funDefRest fkind attrs name in_ : function_definition =
   in_ |> with_logging "funDefRest" (fun () ->
-    let newmods = ref mods in
+    let newmods = ref attrs in
     (* contextBoundBuf is for context bounded type parameters of the form
      * [T : B] or [T : => B]; it contains the equivalent implicit parameter type,
      * i.e. (B[T] or T => B)
@@ -2710,34 +2708,37 @@ let funDefRest mods name in_ =
       | t when TH.isStatSep t || t =~= (RBRACE ab) ->
           (* CHECK: if restype = None then deprecated missing type, use : Unit *)
           (* AST: EmptyTree, newmods |= DEFERRED *)
-          ()
+          None
       | LBRACE _ when restype = None ->
           (* CHECK: missing type *)
           let x = blockExpr in_ in
-          ()
-      | EQUALS _ ->
+          Some (FBlock x)
+      | EQUALS ii ->
           nextTokenAllow TH.nme_MACROkw in_;
           if (TH.isMacro in_.token) then begin
             nextToken in_;
             (* AST: newmmods |= MACRO *)
           end;
           let x = expr in_ in
-          ()
-      | _ -> accept (EQUALS ab) in_ (* generate error message *)
+          Some (FExpr (ii, x))
+      | _ ->
+          accept (EQUALS ab) in_ (* generate error message *);
+          None
     in
-    (* AST: DefDef(newmods, name.toTermName, tparams, vparamss, restype, rhs) *)
-    (* CHECK: "unary prefix operator definition with empty parameter list ..."*)
-    ()
+    (* AST: DefDef(newmods, name.toTermName, tparams,vparamss,restype, rhs) *)
+    (* CHECK: "unary prefix operator definition with empty parameter list.."*)
+    { fkind; fparams = []; frettype = None; fbody = rhs }
   )
 
-let funDefOrDcl mods in_ =
+let funDefOrDcl attrs in_ : definition =
   in_ |> with_logging "funDefOrDcl" (fun () ->
+    let idef = TH.info_of_tok in_.token in
     nextToken in_;
     match in_.token with
-    | Kthis _ ->
+    | Kthis ii ->
         skipToken in_;
         let classcontextBoundBuf = ref [] in (* AST: TODO? *)
-        let name = () (* AST: nme.CONSTRUCTOR *) in
+        let name = "this", ii (* AST: nme.CONSTRUCTOR *) in
         (* pad: quite similar to funDefRest *)
         let vparamss =
           paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
@@ -2752,11 +2753,13 @@ let funDefOrDcl mods in_ =
               constrExpr vparamss in_
         in
         (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
-        ()
-
+        let _ent = { name; attrs = []; tparams = [] } in
+        DefTodo name
     | _ ->
         let name = identOrMacro in_ in
-        funDefRest mods name in_
+        let fdef = funDefRest (Def, idef) attrs name in_ in
+        let ent = { name; attrs = []; tparams = [] } in
+        DefEnt (ent, FuncDef fdef)
   )
 
 (*****************************************************************************)
@@ -2840,23 +2843,22 @@ let patDefOrDcl mods in_ =
  *           | type [nl] TypeDcl
  *  }}}
 *)
-let defOrDcl mods in_ : definition =
+let defOrDcl attrs in_ : definition =
   in_ |> with_logging "defOrDcl" (fun () ->
     (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
     match in_.token with
     | Kval ii ->
-        let x = patDefOrDcl mods (* AST: and VAL *) in_ in
+        let x = patDefOrDcl attrs (* AST: and VAL *) in_ in
         DefTodo ("val", ii)
     | Kvar ii ->
-        let x = patDefOrDcl mods (* AST: and VAR and Mutable *) in_ in
+        let x = patDefOrDcl attrs (* AST: and VAR and Mutable *) in_ in
         DefTodo ("var", ii)
     | Kdef ii ->
-        let x = funDefOrDcl mods (* AST: and DEF *) in_ in
-        DefTodo ("def", ii)
+        funDefOrDcl attrs (* AST: and DEF *) in_
     | Ktype ii ->
-        let x = typeDefOrDcl mods (* AST: and TYPE *) in_ in
+        let x = typeDefOrDcl attrs (* AST: and TYPE *) in_ in
         DefTodo ("type", ii)
-    | _ -> !tmplDef_ mods in_
+    | _ -> !tmplDef_ attrs in_
   )
 
 let nonLocalDefOrDcl in_ : definition =

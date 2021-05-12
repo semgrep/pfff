@@ -390,11 +390,15 @@ and function_definition = {
   fparams: bindings list;
   (* scala3? remove None and force : Unit ? *)
   frettype: type_ option;
-  fbody: expr option; (* None for declarations *)
+  fbody: fbody option; (* None for declarations *)
 }
 and function_kind =
   | LambdaArrow (* '=>' *)
   | Def (* 'def' *)
+
+and fbody =
+  | FBlock of block_expr
+  | FExpr of tok (* = *) * expr
 
 (* fake brackets for single param in short lambdas *)
 and bindings = binding list bracket
