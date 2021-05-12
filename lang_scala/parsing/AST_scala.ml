@@ -18,7 +18,14 @@
 (*****************************************************************************)
 (* An Abstract Syntax Tree for Scala 2.
  *
- * See also the scala3: tag for possible extensions to handle Scala 3.
+ * I tried to keep the names used in the original compiler for
+ * the AST constructs (e.g., Template for class/traits/objects, PatBind
+ * for what I usually call PatAs, Apply for Call), or corresponding
+ * grammar rules (e.g., block_stat, block_expr, import_expr).
+ * In case I didn't, I used the ast_orig: tag to indicate what was the
+ * original name.
+ *
+ * See the scala3: tag for possible extensions to handle Scala 3.
  *
  * TODO:
  * - use the Tasty format?
@@ -84,6 +91,8 @@ type qualified_ident = dotted_ident
 type path = dotted_ident
 [@@deriving show] (* with tarzan *)
 
+let this = "this"
+let super = "super"
 (* TODO:
    scala3: called simple_ref
    type simple_ref =
@@ -145,11 +154,13 @@ type literal =
 (* Types *)
 (*****************************************************************************)
 type type_ =
-  (* scala3: simple_literal *)
+  (* scala3: simple_literal, ast_orig: SingletonType *)
   | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
+  (* ast_orig: SelectFromType *)
   | TyProj of type_ * tok (* '#' *) * ident
 
+  (* ast_orig: AppliedType *)
   | TyApp of type_ * type_ list bracket
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
@@ -178,11 +189,12 @@ type pattern =
   | PatName of stable_id
 
   | PatVarid of varid_or_wildcard
+  (* ast_orig: just Typed *)
   | PatTypedVarid of varid_or_wildcard * tok (* : *) * type_
   | PatBind of varid * tok (* @ *) * pattern
 
   (* less: the last pattern one can be '[varid @] _ *' *)
-  | PatCall of stable_id * pattern list bracket
+  | PatApply of stable_id * pattern list bracket
   | PatInfix of pattern * ident * pattern
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
@@ -212,7 +224,7 @@ type expr =
   (* in Scala you can have multiple argument lists! This is
    * used in Scala for ArrAccess, implicits, block as last argument, etc.
   *)
-  | Call of expr * arguments list
+  | Apply of expr * arguments list
 
   (* in Scala any identifier can be used in infix position
    * (nice but also easy to abuse).

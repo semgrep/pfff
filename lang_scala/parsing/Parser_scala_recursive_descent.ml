@@ -690,10 +690,10 @@ let qualId in_ : dotted_ident =
 
 (* Calls `qualId()` and manages some package state. *)
 let pkgQualId in_ : dotted_ident =
-  (* AST: if ... then inScalePackage = true *)
+  (* ast: if ... then inScalePackage = true *)
   let pkg = qualId in_ in
   newLineOptWhenFollowedBy (LBRACE ab) in_;
-  (* AST: adjust currentPackage *)
+  (* ast: adjust currentPackage *)
   pkg
 
 
@@ -701,10 +701,10 @@ let pkgQualId in_ : dotted_ident =
  *   MixinQualifier ::= `[` Id `]`
  *   }}}
 *)
-let mixinQualifierOpt in_ =
+let mixinQualifierOpt in_ : ident bracket option =
   if in_.token =~= (LBRACKET ab)
-  then let xs = inBrackets identForType in_ in ()
-  else () (* AST: tpnme.EMPTY *)
+  then Some (inBrackets identForType in_)
+  else None (* ast: tpnme.EMPTY *)
 
 
 (** {{{
@@ -718,8 +718,8 @@ let path ~thisOK ~typeOK in_ : path =
     match in_.token with
     | Kthis ii ->
         nextToken in_;
-        (* AST: t := This(tpnme.Empty) *)
-        let t = "this", ii in
+        (* ast: t := This(tpnme.Empty) *)
+        let t = AST.this, ii in
         if not thisOK || in_.token =~= (DOT ab) then begin
           accept (DOT ab) in_;
           t::selectors ~typeOK in_
@@ -729,8 +729,8 @@ let path ~thisOK ~typeOK in_ : path =
     | Ksuper ii ->
         nextToken in_;
         let x = mixinQualifierOpt in_ in
-        let t = "super", ii in
         (* AST: t := Super(This(tpnme.EMPTY), x *)
+        let t = AST.super, ii in
         accept (DOT ab) in_;
         let x = selector in_ in
         if in_.token =~= (DOT ab)
@@ -741,14 +741,14 @@ let path ~thisOK ~typeOK in_ : path =
         else [t;x]
     | _ ->
         let name = ident in_ in
-        (* AST: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
+        (* ast: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
         if in_.token =~= (DOT ab) then begin
           skipToken in_;
           match in_.token with
           | Kthis ii ->
               nextToken in_;
               (* ast: t = This(name.toTypeName) *)
-              let t = "this", ii in
+              let t = AST.this, ii in
               if not thisOK || in_.token =~= (DOT ab) then begin
                 accept (DOT ab) in_;
                 name::t::selectors ~typeOK in_
@@ -759,7 +759,7 @@ let path ~thisOK ~typeOK in_ : path =
               nextToken in_;
               let x = mixinQualifierOpt in_ in
               (* AST: Super(This(name.toTypeName), x) *)
-              let t = "super", ii in
+              let t = AST.super, ii in
               accept (DOT ab) in_;
               let x = selector in_ in
               if in_.token =~= (DOT ab)
@@ -838,7 +838,7 @@ let literal ?(isNegated=None) ?(inPattern=false) in_
         let x = !interpolatedString_ ~inPattern in_ in
         Right (ExprTodo ("interpolated", ii))
     (* scala3: unsupported, deprecated in 2.13.0 *)
-    (* AST: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
+    (* ast: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
     | SymbolLiteral(s, ii) ->
         (* not even generated in the Lexer_scala.mll for now and
          * deprecated construct anyway. *)
@@ -911,7 +911,7 @@ let rec typ in_ : type_ =
     | ARROW ii ->
         skipToken in_;
         let t2 = typ in_ in
-        (* AST: makeFunctionTypeTree t t2 *)
+        (* ast: makeFunctionTypeTree t t2 *)
         TyFunction1 (t, ii, t2)
 
     | KforSome ii ->
@@ -1001,7 +1001,7 @@ and tupleInfixType in_ : type_ =
      (* CHECK: if is.isEmpty "Illegal literal type (), use Unit instead" *)
      | _ ->
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
-         (* AST: makeSafeTupleType(ts) *)
+         (* ast: makeSafeTupleType(ts) *)
          let tuple =  TyTuple ts in
          warning "tupleInfixType:TODO infixTypeRest(compoundTypeRest(...))";
          tuple
@@ -1025,7 +1025,7 @@ and simpleType in_ : type_ =
     | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
         let ii = TH.info_of_tok in_.token in
         let x = literal in_ in
-        (* AST: SingletonTypeTree(x) *)
+        (* ast: SingletonTypeTree(x) *)
         (match x with
          | Left lit -> TyLiteral lit
          (* stricter: scala3: restricted to simple_literal *)
@@ -1034,7 +1034,7 @@ and simpleType in_ : type_ =
     | MINUS ii when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
         nextToken in_;
         let x = literal ~isNegated:(Some ii) in_ in
-        (* AST: SingletonTypeTree(x) *)
+        (* ast: SingletonTypeTree(x) *)
         (match x with
          | Left lit -> TyLiteral lit
          (* stricter: scala3: *)
@@ -1046,7 +1046,7 @@ and simpleType in_ : type_ =
           | LPAREN ii ->
               (* CHECK: "Illegal literal type (), use Unit instead" *)
               let xs = inParens types in_ in
-              (* AST: makeSafeTupleType *)
+              (* ast: makeSafeTupleType *)
               TyTuple xs
           | t when TH.isWildcardType t ->
               let ii = TH.info_of_tok in_.token in
@@ -1056,7 +1056,7 @@ and simpleType in_ : type_ =
               TyTodo ("_ and bounds", ii)
           | _ ->
               let x = path ~thisOK:false ~typeOK:true in_ in
-              (* AST: convertToTypeId if not SingletonTypeTree *)
+              (* ast: convertToTypeId if not SingletonTypeTree *)
               TyName x
         in
         simpleTypeRest start in_
@@ -1452,7 +1452,7 @@ and simplePattern in_ : pattern =
     | USCORE ii ->
         nextToken in_;
         (* AST: Ident(nme.WILDCARD) *)
-        PatVarid ("_", ii)
+        PatVarid (AST.wildcard, ii)
     | LPAREN ii ->
         let xs = makeParens (noSeq patterns) in_ in
         PatTodo ("PatCall", ii)
@@ -2254,7 +2254,7 @@ let importExpr in_ : import_expr =
       accept (DOT ab) in_;
       let result = selector (*t*) in_ in
       accept (DOT ab) in_;
-      [("this", ii); result]
+      [(AST.this, ii); result]
     in
     (** Walks down import `foo.bar.baz.{ ... }` until it ends at
      * an underscore, a left brace, or an undotted identifier.
@@ -2344,7 +2344,7 @@ let accessQualifierOpt in_ : ident_or_this bracket option =
         | Kthis ii ->
             nextToken in_;
             (* Flags.Local?? *)
-            "this", ii
+            AST.this, ii
         | _ ->
             let x = identForType in_ in
             (* ast: Modifiers(mods.flags, x) *)
@@ -2751,7 +2751,7 @@ let funDefOrDcl attrs in_ : definition =
     | Kthis ii ->
         skipToken in_;
         let classcontextBoundBuf = ref [] in (* AST: TODO? *)
-        let name = "this", ii (* AST: nme.CONSTRUCTOR *) in
+        let name = AST.this, ii (* AST: nme.CONSTRUCTOR *) in
         (* pad: quite similar to funDefRest *)
         let vparamss =
           paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
