@@ -16,7 +16,9 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* An Abstract Syntax Tree for Scala.
+(* An Abstract Syntax Tree for Scala 2.
+ *
+ * See also the scala3: tag for possible extensions to handle Scala 3.
  *
  * TODO:
  * - use the Tasty format?
@@ -72,6 +74,7 @@ type ident_or_this = ident
 type dotted_ident = ident list
 [@@deriving show] (* with tarzan *)
 
+(* just for packages for now *)
 type qualified_ident = dotted_ident
 [@@deriving show] (* with tarzan *)
 
@@ -99,22 +102,6 @@ type todo_category = string wrap
 [@@deriving show] (* with tarzan *)
 
 (*****************************************************************************)
-(* Literal *)
-(*****************************************************************************)
-
-(* todo: interpolated strings? can be a literal pattern too??
- * scala3: called simple_literal
-*)
-type literal =
-  | Int    of int option wrap
-  | Float  of float option wrap
-  | Char   of string wrap
-  | String of string wrap
-  | Bool of bool wrap
-  (* scala3: not in simple_literal *)
-  | Null of tok
-
-(*****************************************************************************)
 (* Directives *)
 (*****************************************************************************)
 
@@ -132,9 +119,26 @@ type import = tok (* 'import' *) * import_expr list
 type package = tok (* 'package' *) * qualified_ident
 
 (*****************************************************************************)
+(* Literals *)
+(*****************************************************************************)
+
+(* todo: interpolated strings? can be a literal pattern too?
+ * scala3: called simple_literal
+*)
+type literal =
+  | Int    of int option wrap
+  | Float  of float option wrap
+  | Char   of string wrap
+  | String of string wrap
+  | Bool of bool wrap
+  (* scala3: not in simple_literal *)
+  | Null of tok
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 type type_ =
+  (* scala3: simple_literal *)
   | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
   | TyProj of type_ * tok (* '#' *) * ident
@@ -160,6 +164,7 @@ type ascription = type_
 (* Patterns *)
 (*****************************************************************************)
 type pattern =
+  (* interpolated strings serve as regexp-like patterns (nice) *)
   | PatLiteral of literal
   | PatName of stable_id
 
@@ -183,12 +188,12 @@ type pattern =
 (* Expressions *)
 (*****************************************************************************)
 type expr =
-
   | L of literal
   | Tuples of expr list bracket
 
   | Name of path
   | ExprUnderscore of tok (* '_' *)
+
   | InstanciatedExpr of expr * type_ list bracket (* ex: empty[List[Int]]? *)
   | TypedExpr of expr * tok (* : *) * ascription
 
@@ -199,6 +204,10 @@ type expr =
   *)
   | Call of expr * arguments list
 
+  (* in Scala any identifier can be used in infix position
+   * (nice but also easy to abuse).
+   * scala3: restricted to functions declared as 'infix'
+  *)
   | Infix of expr * ident * expr
   | Prefix of op (* just -/+/~/! *) * expr
   | Postfix of expr * ident
@@ -208,7 +217,7 @@ type expr =
   | Match of expr * tok (* 'match' *) * case_clauses bracket
 
   | Lambda of function_definition
-  | New of tok (* TODO: ??? *)
+  | New of tok (* TODO * template_definition *)
 
   | S of stmt
 
@@ -219,10 +228,15 @@ and lhs = expr
 
 and arguments =
   | Args of argument list bracket
+  (* Ruby-style last argument used as a block (nice when defining your
+   * own control structure.
+  *)
   | ArgBlock of block_expr
+  (* less: no keyword argument in Scala? *)
 and argument = expr
 
 and case_clauses = case_clause list
+(* less: use a record? *)
 and case_clause =
   tok (* 'case' *) * pattern * guard option * tok (* '=>' *) * block
 and guard = tok (* 'if' *) * expr
@@ -236,7 +250,9 @@ and block_expr_kind =
 (* Statements *)
 (*****************************************************************************)
 (* Note that in Scala everything is an expr, but I still like to split expr
- * with the different "subtypes" 'stmt' and 'definition'.
+ * with the different "subtype" 'stmt'. In some languages, e.g., Ruby, I
+ * also put 'definition' as a "subtype" but in Scala we can restricte
+ * them to block_stat below.
 *)
 and stmt =
   | Block of block bracket
@@ -270,7 +286,7 @@ and finally_clause=
 (* less: the last can be a ResultExpr *)
 and block = block_stat list
 
-(* pad: not sure what Stat means, statement? *)
+(* pad: not sure what Stat means in original grammar. Statement? *)
 and block_stat =
   | D of definition
   | I of import
@@ -280,6 +296,10 @@ and block_stat =
 
   | BlockTodo of todo_category
 
+(* those have special restrictions but simpler to make them alias
+ * to block_stat. Anyway in AST_generic they will be all converted
+ * to stmts/items.
+*)
 and template_stat = block_stat
 and top_stat = block_stat
 
@@ -291,13 +311,14 @@ and modifier_kind =
   (* local modifier *)
   | Abstract
   | Final
+  (* scala specific *)
   | Sealed
   | Implicit
   | Lazy
   (* access modifier *)
   | Private of ident_or_this bracket option
   | Protected of ident_or_this bracket option
-  (* misc *)
+  (* misc (and nice!) *)
   | Override
   (* pad: not in original spec *)
   | CaseClassOrObject
@@ -323,13 +344,13 @@ and definition =
   | DefTodo of todo_category
 
 and entity = {
-  (* can be AST_generic.special_multivardef_pattern *)
+  (* can be AST_generic.special_multivardef_pattern? *)
   name: ident;
   attrs: attribute list;
   tparams: type_parameter list;
 }
 
-(* less: also work for declaration *)
+(* less: also work for declaration, in which case the xbody is empty *)
 and definition_kind =
   | FuncDef of function_definition
   | VarDef of variable_definition
@@ -342,35 +363,37 @@ and definition_kind =
 (* ------------------------------------------------------------------------- *)
 (* Val/Var *)
 (* ------------------------------------------------------------------------- *)
+(* Used for local variables but also for fields *)
 and variable_definition = {
   vkind: variable_kind wrap;
-  vtype: type_;
-  vbody: expr;
+  vtype: type_; (* option? *)
+  vbody: expr option; (* None for declarations? *)
 }
 and variable_kind =
-  | Val
-  | Var
+  | Val (* immutable *)
+  | Var (* mutable *)
 
 (* ------------------------------------------------------------------------- *)
 (* Functions/Methods *)
 (* ------------------------------------------------------------------------- *)
 and function_definition = {
   fkind: function_kind wrap;
-  ftype: type_;
   fparams: bindings;
-  fbody: expr;
+  (* scala3? remove None and force : Unit ? *)
+  frettype: type_ option;
+  fbody: expr option; (* None for declarations *)
 }
 and function_kind =
   | LambdaArrow (* '=>' *)
   | Def (* 'def' *)
 
-(* fake bracket for single param in short lambdas *)
+(* fake brackets for single param in short lambdas *)
 and bindings = binding list bracket
-and binding =
-  { p_name: ident_or_wildcard;
-    p_type: type_ option;
-    p_implicit: tok option; (* only when just one id in bindings *)
-  }
+and binding = {
+  p_name: ident_or_wildcard;
+  p_type: type_ option;
+  p_implicit: tok option; (* only when just one id in bindings *)
+}
 
 (* ------------------------------------------------------------------------- *)
 (* Traits/Classes/Objects *)
@@ -381,6 +404,7 @@ and template_definition = {
   ckind: template_kind wrap;
   cbody: block bracket;
 }
+(* case classes and objects are handled via attributes in the entity *)
 and template_kind =
   | Class
   | Trait
@@ -390,8 +414,6 @@ and template_kind =
 (* Typedef *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = {
-  (* move in entity? *)
-  (* type_parameter list; *)
   tbody: type_;
 }
 
