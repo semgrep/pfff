@@ -18,7 +18,14 @@
 (*****************************************************************************)
 (* An Abstract Syntax Tree for Scala 2.
  *
- * See also the scala3: tag for possible extensions to handle Scala 3.
+ * I tried to keep the names used in the original compiler for
+ * the AST constructs (e.g., Template for class/traits/objects, PatBind
+ * for what I usually call PatAs, Apply for Call), or corresponding
+ * grammar rules (e.g., block_stat, block_expr, import_expr).
+ * In case I didn't, I used the ast_orig: tag to indicate what was the
+ * original name.
+ *
+ * See the scala3: tag for possible extensions to handle Scala 3.
  *
  * TODO:
  * - use the Tasty format?
@@ -60,6 +67,8 @@ type op = string wrap
 type varid = string wrap
 [@@deriving show] (* with tarzan *)
 
+let wildcard = "_"
+
 (* less: right now abusing ident to represent "_" *)
 type ident_or_wildcard = ident
 [@@deriving show] (* with tarzan *)
@@ -82,6 +91,8 @@ type qualified_ident = dotted_ident
 type path = dotted_ident
 [@@deriving show] (* with tarzan *)
 
+let this = "this"
+let super = "super"
 (* TODO:
    scala3: called simple_ref
    type simple_ref =
@@ -143,12 +154,14 @@ type literal =
 (* Types *)
 (*****************************************************************************)
 type type_ =
-  (* scala3: simple_literal *)
+  (* scala3: simple_literal, ast_orig: SingletonType *)
   | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
+  (* ast_orig: SelectFromType *)
   | TyProj of type_ * tok (* '#' *) * ident
 
-  | TyApp of type_ * type_ list bracket
+  (* ast_orig: AppliedType *)
+  | TyApplied of type_ * type_ list bracket
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
   | TyFunction2 of param_type list bracket * tok (* '=>' *) * type_
@@ -174,13 +187,19 @@ type pattern =
   (* interpolated strings serve as regexp-like patterns (nice) *)
   | PatLiteral of literal
   | PatName of stable_id
+  | PatTuple of pattern list bracket
 
   | PatVarid of varid_or_wildcard
+  (* ast_orig: just Typed *)
   | PatTypedVarid of varid_or_wildcard * tok (* : *) * type_
   | PatBind of varid * tok (* @ *) * pattern
 
-  (* less: the last pattern one can be '[varid @] _ *' *)
-  | PatCall of stable_id * pattern list bracket
+  (* less: the last pattern one can be '[varid @] _ *'
+   * ast_orig: AppliedType for the type_ list bracket
+  *)
+  | PatApply of stable_id *
+                type_ list bracket option *
+                pattern list bracket option
   | PatInfix of pattern * ident * pattern
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
@@ -210,7 +229,7 @@ type expr =
   (* in Scala you can have multiple argument lists! This is
    * used in Scala for ArrAccess, implicits, block as last argument, etc.
   *)
-  | Call of expr * arguments list
+  | Apply of expr * arguments list
 
   (* in Scala any identifier can be used in infix position
    * (nice but also easy to abuse).
@@ -301,7 +320,8 @@ and block_stat =
   | I of import
   | E of expr
   (* just at the beginning of top_stat *)
-  | P of package
+  | Package of package
+  | Packaging of package * top_stat list bracket
 
   | BlockTodo of todo_category
 
@@ -331,6 +351,7 @@ and modifier_kind =
   | Override
   (* pad: not in original spec *)
   | CaseClassOrObject
+  (* less: rewrite as Packaging and object def like in original code? *)
   | PackageObject
 
 and annotation = tok (* @ *) * type_ * arguments list
@@ -469,10 +490,14 @@ type any =
 [@@deriving show {with_path = false }]
 
 (*****************************************************************************)
-(* Wrappers *)
+(* Helpers *)
 (*****************************************************************************)
 
 let empty_cparents = { cextends = None; cwith = [] }
+let attrs_of_mods xs = List.map (fun x -> M x) xs
+let attrs_of_annots xs = List.map (fun x -> A x) xs
+let mods_with_annots mods annots =
+  attrs_of_annots annots @ attrs_of_mods mods
 
 (* Intermediate type just used during parsing.
  * less: move in the parser code instead.
