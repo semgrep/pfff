@@ -2660,6 +2660,7 @@ let selfInvocation vparamss in_ =
  *  }}}
 *)
 let constrBlock vparamss in_ =
+  let lb = TH.info_of_tok in_.token in
   skipToken in_;
   let x = selfInvocation vparamss in_ in
   let xs =
@@ -2671,6 +2672,7 @@ let constrBlock vparamss in_ =
     else [](* AST: Nil *)
   in
   let stats = x::xs in
+  let rb = TH.info_of_tok in_.token in
   accept (RBRACE ab) in_;
   (* AST: Block(stats, literalUnit) *)
   ()
@@ -2754,14 +2756,21 @@ let funDefOrDcl attrs in_ : definition =
         let vparamss =
           paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
         newLineOptWhenFollowedBy (LBRACE ab) in_;
-        let rhs =
+        let (rhs) =
           match in_.token with
           | LBRACE _ ->
               (* CHECK: "procedure syntax is deprecated for constructors" *)
-              constrBlock vparamss in_
-          | _ ->
+              let x = constrBlock vparamss in_ in
+              ()
+          (* TODO FBlock x *)
+          | EQUALS ii ->
               accept (EQUALS ab) in_;
-              constrExpr vparamss in_
+              let x = constrExpr vparamss in_ in
+              (* TODO Some (FExpr (ii, x))   *)
+              ()
+          | _ ->
+              accept (EQUALS ab) in_; (* generate error message *);
+              raise Impossible
         in
         (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
         let _ent = { name; attrs; tparams = [] } in
