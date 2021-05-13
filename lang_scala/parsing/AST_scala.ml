@@ -376,7 +376,30 @@ and type_bounds = {
 (* definition or declaration (def or dcl) *)
 and definition =
   | DefEnt of entity * definition_kind
+  | VarDefs of variable_definitions
   | DefTodo of todo_category
+
+(* ------------------------------------------------------------------------- *)
+(* Val/Var *)
+(* ------------------------------------------------------------------------- *)
+(* Used for local variables but also for fields *)
+and variable_definitions = {
+  (* a bit like entity, but for a list of stuff because of the pattern *)
+  vpatterns: pattern list;
+  vattrs: attribute list;
+  (* tparams? *)
+
+  vkind: variable_kind wrap;
+  vtype: type_ option;
+  vbody: expr option; (* None for declarations? *)
+}
+and variable_kind =
+  | Val (* immutable *)
+  | Var (* mutable *)
+
+(* ------------------------------------------------------------------------- *)
+(* Other entities *)
+(* ------------------------------------------------------------------------- *)
 
 and entity = {
   (* can be AST_generic.special_multivardef_pattern? *)
@@ -388,25 +411,12 @@ and entity = {
 (* less: also work for declaration, in which case the xbody is empty *)
 and definition_kind =
   | FuncDef of function_definition
-  | VarDef of variable_definition
   | TypeDef of type_definition
   (* class/traits/objects *)
   | Template of template_definition
 
 (* TODO: multiPatDef? *)
 
-(* ------------------------------------------------------------------------- *)
-(* Val/Var *)
-(* ------------------------------------------------------------------------- *)
-(* Used for local variables but also for fields *)
-and variable_definition = {
-  vkind: variable_kind wrap;
-  vtype: type_; (* option? *)
-  vbody: expr option; (* None for declarations? *)
-}
-and variable_kind =
-  | Val (* immutable *)
-  | Var (* mutable *)
 
 (* ------------------------------------------------------------------------- *)
 (* Functions/Methods *)

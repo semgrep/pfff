@@ -2819,8 +2819,7 @@ let typeDefOrDcl attrs in_ : definition =
   *  VarDef ::= PatDef | Id {`,` Id} `:` Type `=` `_`
   *  }}}
 *)
-let patDefOrDcl mods in_ =
-  let newmods = ref mods in
+let patDefOrDcl vkind attrs in_ : variable_definitions =
   nextToken in_;
   let lhs =
     commaSeparated (fun in_ ->
@@ -2845,7 +2844,7 @@ let patDefOrDcl mods in_ =
   (* CHECK: "lazy values may not be abstract" *)
   (* CHECK: "pattern definition may not be abstract" *)
   (* AST: mkDefs (...) *)
-  ()
+  ({ vkind; vattrs = attrs; vpatterns = lhs; vtype = tp; vbody = rhs })
 
 
 (** {{{
@@ -2865,15 +2864,14 @@ let defOrDcl attrs in_ : definition =
     (* CHECK: "lazy not allowed here. Only vals can be lazy" *)
     match in_.token with
     | Kval ii ->
-        let x = patDefOrDcl attrs (* AST: and VAL *) in_ in
-        DefTodo ("val", ii)
+        VarDefs (patDefOrDcl (Val, ii) attrs (* ast:VAL *) in_)
     | Kvar ii ->
-        let x = patDefOrDcl attrs (* AST: and VAR and Mutable *) in_ in
-        DefTodo ("var", ii)
+        VarDefs (patDefOrDcl (Var, ii) attrs (* ast:VAR and Mutable*) in_)
     | Kdef ii ->
-        funDefOrDcl attrs (* AST: and DEF *) in_
+        funDefOrDcl attrs (* ast:DEF *) in_
     | Ktype ii ->
-        typeDefOrDcl attrs (* AST: and TYPE *) in_
+        typeDefOrDcl attrs (* ast:TYPE *) in_
+    (* classes/traits/objects (a.k.a templates) *)
     | _ -> !tmplDef_ attrs in_
   )
 
