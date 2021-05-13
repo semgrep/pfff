@@ -377,7 +377,6 @@ and type_bounds = {
 and definition =
   | DefEnt of entity * definition_kind
   | VarDefs of variable_definitions
-  | DefTodo of todo_category
 
 (* ------------------------------------------------------------------------- *)
 (* Val/Var *)
@@ -402,7 +401,7 @@ and variable_kind =
 (* ------------------------------------------------------------------------- *)
 
 and entity = {
-  (* can be AST_generic.special_multivardef_pattern? *)
+  (* can be "this" for constructor *)
   name: ident;
   attrs: attribute list;
   tparams: type_parameter list;
@@ -432,6 +431,7 @@ and function_definition = {
 and function_kind =
   | LambdaArrow (* '=>' *)
   | Def (* 'def' *)
+(* less: Constructor, when name = "this"? *)
 
 and fbody =
   | FBlock of block_expr

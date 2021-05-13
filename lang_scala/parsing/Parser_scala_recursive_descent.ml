@@ -2638,7 +2638,8 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
  *  SelfInvocation  ::= this ArgumentExprs {ArgumentExprs}
  *  }}}
 *)
-let selfInvocation vparamss in_ =
+let selfInvocation vparamss in_ : expr =
+  let ithis = TH.info_of_tok in_.token in
   accept (Kthis ab) in_;
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   let xs = argumentExprs in_ in
@@ -2653,42 +2654,43 @@ let selfInvocation vparamss in_ =
   (* AST: if classContextBounds is empty then t else
    *  Apply(t, vparamss.last.map(vp => Ident(vp.name)))
   *)
-  ()
+  ExprTodo ("selfInvocation", ithis)
 
 (** {{{
  *  ConstrBlock    ::=  `{` SelfInvocation {semi BlockStat} `}`
  *  }}}
 *)
-let constrBlock vparamss in_ =
+let constrBlock vparamss in_ : block bracket =
   let lb = TH.info_of_tok in_.token in
   skipToken in_;
   let x = selfInvocation vparamss in_ in
   let xs =
     if TH.isStatSep in_.token then begin
       nextToken in_;
-      let xs = !blockStatSeq_ in_ in
-      [] (* TODO: xs *)
+      !blockStatSeq_ in_
     end
-    else [](* AST: Nil *)
+    else [](* ast: Nil *)
   in
-  let stats = x::xs in
+  let stats = (E x)::xs in
   let rb = TH.info_of_tok in_.token in
   accept (RBRACE ab) in_;
-  (* AST: Block(stats, literalUnit) *)
-  ()
+  (* ast: Block(stats, literalUnit) *)
+  lb, stats, rb
 
 (** {{{
  *  ConstrExpr      ::=  SelfInvocation
  *                    |  ConstrBlock
  *  }}}
 *)
-let constrExpr vparamss in_ =
+let constrExpr vparamss in_ : expr =
   if in_.token =~= (LBRACE ab)
-  then constrBlock vparamss in_
+  then
+    let x = constrBlock vparamss in_ in
+    (S (Block x))
   else
     let x = selfInvocation vparamss in_ in
     (* AST: Block(x :: Nil, literalUnit) *)
-    ()
+    x
 
 (* ------------------------------------------------------------------------- *)
 (* Def *)
@@ -2756,25 +2758,26 @@ let funDefOrDcl attrs in_ : definition =
         let vparamss =
           paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
         newLineOptWhenFollowedBy (LBRACE ab) in_;
-        let (rhs) =
+        let (rhs : fbody) =
           match in_.token with
           | LBRACE _ ->
               (* CHECK: "procedure syntax is deprecated for constructors" *)
-              let x = constrBlock vparamss in_ in
-              ()
-          (* TODO FBlock x *)
+              let (lb, xs, rb) = constrBlock vparamss in_ in
+              FBlock (lb, BEBlock xs, rb)
           | EQUALS ii ->
               accept (EQUALS ab) in_;
               let x = constrExpr vparamss in_ in
-              (* TODO Some (FExpr (ii, x))   *)
-              ()
+              FExpr (ii, x)
           | _ ->
-              accept (EQUALS ab) in_; (* generate error message *);
+              accept (EQUALS ab) in_; (* generate error message *)
               raise Impossible
         in
         (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
-        let _ent = { name; attrs; tparams = [] } in
-        DefTodo name
+        let ent = { name; attrs; tparams = [] } in
+        let fdef = { fkind = (Def, idef); fparams = []; (* TODO *)
+                     frettype = None;
+                     fbody = Some rhs } in
+        DefEnt (ent, FuncDef fdef)
     | _ ->
         let name = identOrMacro in_ in
         let fdef = funDefRest (Def, idef) attrs name in_ in
