@@ -1541,12 +1541,13 @@ and parseOther location (in_: env) : expr =
                          (show_location location))(fun() ->
     let t = ref (postfixExpr in_) in
     (match in_.token with
-     | EQUALS _ ->
+     | EQUALS ii ->
          skipToken in_;
          (* crazy? parsing that depends on built AST!!
           * AST: if Ident | Select | Apply *)
          let e = expr in_ in
-         () (* AST: mkAssign(t, e) *)
+         (* ast: mkAssign(t, e) *)
+         t := Assign (!t, ii, e)
      (* pad: we may actually be inside a binding, and not an expression here,
       * for example in 'foo((x: Path) => (...))' we can have parsed
       * x and seeing the colon.
@@ -1573,11 +1574,11 @@ and parseOther location (in_: env) : expr =
               (* AST: Typed(t, tpt) *)
               ()
          )
-     | Kmatch _ ->
+     | Kmatch ii ->
          skipToken in_;
-         let _xs = inBracesOrNil caseClauses in_ in
-         (* AST: t:= Match(stripParens(t)) *)
-         ()
+         let xs = inBracesOrNil caseClauses in_ in
+         (* ast: t:= Match(stripParens(t)) *)
+         t := Match (!t, ii, xs)
      | _ -> ()
     );
     (* AST: disambiguate between self types "x: Int =>" and orphan function
@@ -1591,18 +1592,19 @@ and parseOther location (in_: env) : expr =
       warning "lhsIsTypedParamList";
       false
     in
-    if in_.token =~= (ARROW ab) &&
-       (location <> InTemplate || lhsIsTypedParamList !t) then begin
-      skipToken in_;
-      let x =
-        if location <> InBlock
-        then expr in_
-        else S (Block (fb (block in_ )))
-      in
-      (* AST: Function(convertToParams(t), x) *)
-      ()
-    end;
-    (* AST: stripParens(t) *)
+    (match in_.token with
+     | ARROW ii when (location <> InTemplate || lhsIsTypedParamList !t) ->
+         skipToken in_;
+         let x =
+           if location <> InBlock
+           then expr in_
+           else S (Block (fb (block in_ )))
+         in
+         (* AST: Function(convertToParams(t), x) *)
+         ()
+     | _ -> ()
+    );
+    (* ast: stripParens(t) *)
     !t
   )
 
@@ -1634,6 +1636,7 @@ and postfixExpr in_ : expr =
             match res with
             (*| None -> (* AST: reduceExprStack(base, top) *) None
               | Some *) next ->
+                let next = Infix (top, id, next) in
                 loop next in_
           end
           else
@@ -1743,7 +1746,7 @@ and simpleExprRest ~canApply t in_ : expr =
     if canApply then newLineOptWhenFollowedBy (LBRACE ab) in_;
 
     let paren_or_brace () =
-      let x = argumentExprs in_ in
+      let xs = argumentExprs in_ in
       let app =
         (* AST: look for anonymous function application like (f _)(x) and
          *      translate to (f _).apply(x), bug #460
@@ -1751,7 +1754,7 @@ and simpleExprRest ~canApply t in_ : expr =
          *      Apply(sel, x)
         *)
 
-        t
+        Apply (t, [xs])
       in
       simpleExprRest ~canApply:true app in_
     in
@@ -2643,18 +2646,21 @@ let selfInvocation vparamss in_ : expr =
   accept (Kthis ab) in_;
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   let xs = argumentExprs in_ in
-  let t = ref () in
+  let xxs = ref [xs] in
   (* AST: t = Apply(Ident(nme.CONSTRUCTOR), xs) *)
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   while (match in_.token with LPAREN _ | LBRACE _ -> true | _ -> false) do
     let xs = argumentExprs in_ in
     (* AST: t = Apply(t, xs) *)
     newLineOptWhenFollowedBy (LBRACE ab) in_;
+    xxs += xs;
   done;
   (* AST: if classContextBounds is empty then t else
    *  Apply(t, vparamss.last.map(vp => Ident(vp.name)))
   *)
-  ExprTodo ("selfInvocation", ithis)
+  let ident = AST.this, ithis in
+  let name = Name [ident] in
+  Apply (name, List.rev !xxs)
 
 (** {{{
  *  ConstrBlock    ::=  `{` SelfInvocation {semi BlockStat} `}`
@@ -3073,16 +3079,18 @@ let templateStatSeq ~isPre in_ =
   if (TH.isExprIntro in_.token) then begin
     let first = expr ~location:InTemplate in_ in
     (match in_.token with
-     | ARROW _ ->
+     | ARROW ii ->
          (* AST: case Typed(...) self := makeSelfDef(), convertToParam *)
-         nextToken in_
+         nextToken in_;
+         (* TODO? *)
+         firstOpt := Some (E (ExprTodo ("Arrow template", ii))  )
      | _ ->
-         firstOpt := Some first;
+         firstOpt := Some (E first);
          acceptStatSepOpt in_
     )
   end;
   let xs = templateStats in_ in
-  !self, (* AST !firstOpt @ *) xs
+  !self, Common.opt_to_list !firstOpt @ xs
 
 (** {{{
  *  TemplateBody ::= [nl] `{` TemplateStatSeq `}`
