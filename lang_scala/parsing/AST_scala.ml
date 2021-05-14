@@ -139,9 +139,18 @@ type package = tok (* 'package' *) * qualified_ident
 [@@deriving show]
 
 (*****************************************************************************)
+(* Start of big recursive type *)
+(*****************************************************************************)
+(* type_ and pattern_ used to not be mutually recursive, but once you
+ * add interpolated strings in literal, then everything is mutually recursive.
+ * scala3: literal is split in simple_literal and literal in which case
+ * at least types can be defined independently of the other types
+ * (but pattern can not).
+*)
+
+(*****************************************************************************)
 (* Literals *)
 (*****************************************************************************)
-
 (* todo: interpolated strings? can be a literal pattern too?
  * scala3: called simple_literal
 *)
@@ -153,12 +162,20 @@ type literal =
   | Bool of bool wrap
   (* scala3: not in simple_literal *)
   | Null of tok
-[@@deriving show {with_path = false }]
+  (* this forces to define type_ and pattern and expr as mutually recursive*)
+  | Interpolated of ident (* e.g., s"..." *) *
+                    encaps list * tok (* '"' or '""""' *)
+
+and encaps =
+  | EncapsStr of string wrap
+  | EncapsDollarIdent of ident (* e.g., $foo *)
+  (* 'expr' here! hence the big mutual recursive types below *)
+  | EncapsExpr of expr (* will always be a BlockExpr with ${ ... } *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type type_ =
+and type_ =
   (* scala3: simple_literal, ast_orig: SingletonType *)
   | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
@@ -180,16 +197,14 @@ and param_type =
   | PT of type_
   | PTByNameApplication of tok (* => *) * type_
   | PTRepeatedApplication of type_ * tok (* * *)
-[@@deriving show {with_path = false }]
 
 (* todo: also _* or annotation list *)
-type ascription = type_
-[@@deriving show]
+and ascription = type_
 
 (*****************************************************************************)
 (* Patterns *)
 (*****************************************************************************)
-type pattern =
+and pattern =
   (* interpolated strings serve as regexp-like patterns (nice) *)
   | PatLiteral of literal
   | PatName of stable_id
@@ -213,15 +228,11 @@ type pattern =
   | PatDisj of pattern * tok (* | *) * pattern
 
   | PatTodo of todo_category
-[@@deriving show {with_path = false }]
 
-(*****************************************************************************)
-(* Start of big recursive type *)
-(*****************************************************************************)
 (*****************************************************************************)
 (* Expressions *)
 (*****************************************************************************)
-type expr =
+and expr =
   | L of literal
   | Tuple of expr list bracket
 
@@ -516,8 +527,3 @@ let empty_cparents = { cextends = None; cwith = [] }
 let attrs_of_mods xs = List.map (fun x -> M x) xs
 let attrs_of_annots xs = List.map (fun x -> A x) xs
 let mods_with_annots mods annots = attrs_of_annots annots @ attrs_of_mods mods
-
-(* Intermediate type just used during parsing.
- * less: move in the parser code instead.
-*)
-type literal_or_interpolated = (literal, expr) Common.either

@@ -67,7 +67,7 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
 *)
 
 (* TODO: temporary *)
-[@@@warning "-27-26"]
+[@@@warning ""]
 
 (* See also Flag_parsing.debug_parser and Flag_parsing.debug_lexer *)
 let debug_newline = ref false
@@ -322,7 +322,7 @@ let afterLineEnd in_ =
 (* ------------------------------------------------------------------------- *)
 (* Lexing tricks *)
 (* ------------------------------------------------------------------------- *)
-let postProcessToken in_ =
+let postProcessToken _in_ =
   pr2_once "postProcessToken";
   ()
 
@@ -392,7 +392,7 @@ let nextToken in_ =
   postProcessToken in_;
   ()
 
-let nextTokenAllow next in_ =
+let nextTokenAllow _next in_ =
   warning "nextTokenAllow: TODO";
   nextToken in_
 
@@ -728,7 +728,7 @@ let path ~thisOK ~typeOK in_ : path =
 
     | Ksuper ii ->
         nextToken in_;
-        let x = mixinQualifierOpt in_ in
+        let _TODO = mixinQualifierOpt in_ in
         (* AST: t := Super(This(tpnme.EMPTY), x *)
         let t = AST.super, ii in
         accept (DOT ab) in_;
@@ -757,7 +757,7 @@ let path ~thisOK ~typeOK in_ : path =
           | Ksuper ii ->
               (* pad: factorize with above Ksuper case *)
               nextToken in_;
-              let x = mixinQualifierOpt in_ in
+              let _TODO = mixinQualifierOpt in_ in
               (* AST: Super(This(name.toTypeName), x) *)
               let t = AST.super, ii in
               accept (DOT ab) in_;
@@ -793,7 +793,7 @@ let stableId in_ : stable_id =
  * alt: have all functions mutually recursive
 *)
 let interpolatedString_ =
-  ref (fun ~inPattern _ -> failwith "forward ref not set")
+  ref (fun ~inPattern _ -> ignore(inPattern); failwith "forward ref not set")
 let exprTypeArgs_ =
   ref (fun _ -> failwith "forward ref not set")
 
@@ -817,8 +817,7 @@ let packageOrPackageObject_ = ref (fun _ _ -> failwith "forward ref not set")
  *                  | null
  *  }}}
 *)
-let literal ?(isNegated=None) ?(inPattern=false) in_
-  : literal_or_interpolated  =
+let literal ?(isNegated=None) ?(inPattern=false) in_ : literal  =
   in_ |> with_logging (spf "literal(isNegated:%s, inPattern:%b)"
                          (Common.dump isNegated) inPattern) (fun () ->
     let finish value_ =
@@ -832,39 +831,40 @@ let literal ?(isNegated=None) ?(inPattern=false) in_
       | Some iminus, Some n -> Some (op n), PI.combine_infos iminus [ii]
       | Some iminus, None -> None, PI.combine_infos iminus [ii]
     in
+    (* less: check that negate only on Int or Float *)
     match in_.token with
-    | T_INTERPOLATED_START (_s, ii) ->
+    | T_INTERPOLATED_START (s, ii) ->
         (* AST: if not inPattern then withPlaceholders(...) *)
-        let x = !interpolatedString_ ~inPattern in_ in
-        Right (ExprTodo ("interpolated", ii))
+        let xs, endt = !interpolatedString_ ~inPattern in_ in
+        (Interpolated ((s, ii), xs, endt))
     (* scala3: unsupported, deprecated in 2.13.0 *)
     (* ast: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
-    | SymbolLiteral(s, ii) ->
+    | SymbolLiteral(_, _) ->
         (* not even generated in the Lexer_scala.mll for now and
          * deprecated construct anyway. *)
         raise Impossible
 
     | CharacterLiteral(x, ii) ->
         (* ast: incharVal *)
-        finish (Left (Char (x, ii)))
+        finish ((Char (x, ii)))
     | IntegerLiteral(x, ii) ->
         (* ast: in.intVal(isNegated) *)
-        finish (Left (Int (negate (fun x -> - x) (x, ii))))
+        finish ((Int (negate (fun x -> - x) (x, ii))))
     | FloatingPointLiteral(x, ii) ->
         (* ast: in.floatVal(isNegated)*)
-        finish (Left (Float (negate (fun x -> -. x) (x, ii))))
+        finish ((Float (negate (fun x -> -. x) (x, ii))))
 
     | StringLiteral(x, ii) ->
         (* ast: in.strVal.intern() *)
-        finish (Left (String (x, ii)))
+        finish ((String (x, ii)))
 
     | BooleanLiteral(x, ii) ->
         (* ast: bool *)
-        finish (Left (Bool (x, ii)))
+        finish ((Bool (x, ii)))
 
     | Knull ii ->
         (* ast: null *)
-        finish (Left (Null ii))
+        finish ((Null ii))
 
     | _ -> error "illegal literal" in_
   )
@@ -873,9 +873,9 @@ let literal ?(isNegated=None) ?(inPattern=false) in_
 (* Infix Expr/Types/pattern management  *)
 (*****************************************************************************)
 
-let pushOpInfo top in_ : ident =
+let pushOpInfo _topTODO in_ : ident =
   let x = ident in_ in
-  let targs =
+  let _targsTODO =
     if in_.token =~= (LBRACKET ab)
     then !exprTypeArgs_ in_
     else fb [] (* ast: Nil *)
@@ -914,7 +914,7 @@ let rec typ in_ : type_ =
         (* ast: makeFunctionTypeTree t t2 *)
         TyFunction1 (t, ii, t2)
 
-    | KforSome ii ->
+    | KforSome _ ->
         skipToken in_;
         makeExistentialTypeTree t in_
     | _ -> t
@@ -933,7 +933,7 @@ and infixType mode in_ : type_ =
     infixTypeRest x mode in_
   )
 
-and infixTypeRest t mode in_ : type_ =
+and infixTypeRest t _modeTODO in_ : type_ =
   in_ |> with_logging "infixTypeRest" (fun () ->
     (* Detect postfix star for repeated args.
      * Only RPAREN can follow, but accept COMMA and EQUALS for error's sake.
@@ -966,7 +966,7 @@ and infixTypeRest t mode in_ : type_ =
         (* AST: mkOp(x) *)
         infixTypeRest x LeftOp in_
       else
-        let x = infixType RightOp in_ in
+        let _TODO = infixType RightOp in_ in
         (* AST: mkOp(x) *)
         TyTodo("InfixType Right", snd tycon)
     in
@@ -995,7 +995,7 @@ and tupleInfixType in_ : type_ =
     (match in_.token with
      | ARROW ii ->
          skipToken in_;
-         let t = typ in_ in
+         let _tTODO = typ in_ in
          (* AST: makeSafeFunctionType(ts, t) *)
          TyTodo ("Arrow", ii)
      (* CHECK: if is.isEmpty "Illegal literal type (), use Unit instead" *)
@@ -1023,27 +1023,19 @@ and simpleType in_ : type_ =
   in_ |> with_logging "simpleType" (fun () ->
     match in_.token with
     | t when TH.isLiteral t && not (t =~= (Knull ab)) ->
-        let ii = TH.info_of_tok in_.token in
         let x = literal in_ in
         (* ast: SingletonTypeTree(x) *)
-        (match x with
-         | Left lit -> TyLiteral lit
-         (* stricter: scala3: restricted to simple_literal *)
-         | Right interpolated -> error "interpolated string type" in_
-        )
+        (* scala3: restrict to simple_literal *)
+        TyLiteral x
     | MINUS ii when lookingAhead (fun in_ -> TH.isNumericLit in_.token) in_ ->
         nextToken in_;
         let x = literal ~isNegated:(Some ii) in_ in
         (* ast: SingletonTypeTree(x) *)
-        (match x with
-         | Left lit -> TyLiteral lit
-         (* stricter: scala3: *)
-         | Right interpolated -> error "negative interpolated string type" in_
-        )
+        TyLiteral x
     | _ ->
         let start =
           match in_.token with
-          | LPAREN ii ->
+          | LPAREN _ ->
               (* CHECK: "Illegal literal type (), use Unit instead" *)
               let xs = inParens types in_ in
               (* ast: makeSafeTupleType *)
@@ -1051,7 +1043,7 @@ and simpleType in_ : type_ =
           | t when TH.isWildcardType t ->
               let ii = TH.info_of_tok in_.token in
               skipToken in_;
-              let bounds = wildcardType in_ in
+              let _boundsTODO = wildcardType in_ in
               (* TODO: bounds *)
               TyTodo ("_ and bounds", ii)
           | _ ->
@@ -1068,9 +1060,8 @@ and simpleTypeRest t in_ : type_ =
       let x = typeProjection t in_ in
       simpleTypeRest x in_
   | LBRACKET _ ->
-      let xs = typeArgs in_ in
+      let _xsTODO = typeArgs in_ in
       (* AST: AppliedTypeTree(t, xs) *)
-      let x = () in
       simpleTypeRest t in_
   | _ -> t
 
@@ -1117,16 +1108,15 @@ and compoundTypeRest t in_ =
     ts += x;
   done;
   newLineOptWhenFollowedBy (LBRACE ab) in_;
-  let types = !ts in
+  let _typesTODO = !ts in
   let hasRefinement = (in_.token =~= (LBRACE ab)) in
-  let refinements =
+  let _refinementsTODO =
     if hasRefinement
     then Some (refinement in_)
     else None
   in
   (* CHECK: "Detected apparent refinement of Unit" *)
   (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
-  let ii = TH.info_of_tok in_.token in
   t (* TODO: add refinments *)
 
 (** {{{
@@ -1142,15 +1132,16 @@ and annotType in_ =
 (* ------------------------------------------------------------------------- *)
 (* Still in PatternContextSensitive, but more obscure type constructs *)
 (* ------------------------------------------------------------------------- *)
-and makeExistentialTypeTree t in_ =
+and makeExistentialTypeTree _t in_ =
   todo "makeExistentialTypeTree" in_
 
 (* pad: https://stackoverflow.com/questions/6676048/why-does-one-select-scala-type-members-with-a-hash-instead-of-a-dot *)
 and typeProjection t in_ : type_ =
+  let ii = TH.info_of_tok in_.token in (* # *)
   skipToken in_;
   let name = identForType in_ in
   (* AST: SelectFromTypeTree(t, name) *)
-  t
+  TyProj (t, ii, name)
 
 (** {{{
  *  Refinement ::= [nl] `{` RefineStat {semi RefineStat} `}`
@@ -1181,7 +1172,7 @@ and refineStatSeq in_ =
 and refineStat in_ =
   match in_.token with
   | t when TH.isDclIntro t ->
-      let xs = !defOrDcl_ noMods in_ in
+      let _xsTODO = !defOrDcl_ noMods in_ in
       []
   | t when not (TH.isStatSep t) ->
       error "illegal start of declaration" in_
@@ -1212,7 +1203,7 @@ and functionArgType in_ =
 *)
 and wildcardType in_ =
   (* AST: freshTypeName("_$"), Ident(...) *)
-  let bounds = typeBounds in_ in
+  let _boundsTODO = typeBounds in_ in
   (* AST: makeSyntheticTypeParam(pname, bounds) *)
   (* CHECK: placeholderTypes = ... *)
   ()
@@ -1320,7 +1311,7 @@ and pattern1 in_ : pattern =
    | COLON ii ->
        (* AST: p.removeAttachment[BackquotedIdentifierAttachment.type] *)
        skipToken in_;
-       let x = compoundType in_ in
+       let _xTODO = compoundType in_ in
        (* AST: Typed(p, x) *)
        PatTodo ("PatTypedVarid", ii)
    (* CHECK: "Pattern variables must start with a lower-case letter." *)
@@ -1338,7 +1329,7 @@ and pattern2 in_ : pattern =
   match in_.token with
   | AT ii -> (* crazy? TODO: case p @ Ident(name) *)
       nextToken in_;
-      let body = pattern3 in_ in
+      let _bodyTODO = pattern3 in_ in
       (* AST: Bind(name, body), if WILDCARD then ... *)
       PatTodo ("PatBind", ii)
   | _ -> x
@@ -1369,7 +1360,7 @@ and pattern3 in_ : pattern =
         (* AST: let next = reducePatternStack(base, top) *)
         let next = () in
         if TH.isIdentBool in_.token && not (TH.isRawBar in_.token) then begin
-          let id = pushOpInfo next in_ in
+          let _idTODO = pushOpInfo next in_ in
           (* no postfixPattern, so always go for right part of infix op *)
           let x = simplePattern in_ in
           (* TODO: combine top, infixop, x *)
@@ -1425,25 +1416,20 @@ and simplePattern in_ : pattern =
     | MINUS ii ->
         nextToken in_;
         let x = literal ~isNegated:(Some ii) ~inPattern:true in_ in
-        (match x with
-         | Left lit -> PatLiteral lit
-         (* stricter: *)
-         | Right interpolated -> error "negative interpolated string pat" in_
-        )
+        PatLiteral x
     | x when TH.isIdentBool x || x =~= (Kthis ab) ->
-        let ii = TH.info_of_tok x in
         let t = stableId in_ in
         (* less: if t = Ident("-") literal isNegated:true inPattern:true *)
         let typeAppliedTree =
           match in_.token with
-          | LBRACKET ii ->
+          | LBRACKET _ ->
               let xs = typeArgs in_ in
               (* ast: AppliedTypeTree(convertToTypeId(t), xs) *)
               Some xs
           | _ -> None (* AST: t *)
         in
         (match in_.token with
-         | LPAREN ii ->
+         | LPAREN _ ->
              let xs = argumentPatterns in_ in
              (* AST: Apply(typeAppliedTree, t) *)
              PatApply (t, typeAppliedTree, Some xs)
@@ -1455,16 +1441,12 @@ and simplePattern in_ : pattern =
         nextToken in_;
         (* AST: Ident(nme.WILDCARD) *)
         PatVarid (AST.wildcard, ii)
-    | LPAREN ii ->
+    | LPAREN _ ->
         let xs = makeParens (noSeq patterns) in_ in
         PatTuple xs
     | x when TH.isLiteral x ->
-        let ii = TH.info_of_tok x in
         let x = literal ~inPattern:true in_ in
-        (match x with
-         | Left lit -> PatLiteral lit
-         | Right interpolated -> PatTodo ("interpolated", ii)
-        )
+        PatLiteral x
     (* scala3: deprecated XMLSTART *)
     | _ ->
         error "illegal start of simple pattern" in_
@@ -1565,11 +1547,11 @@ and parseOther location (in_: env) : expr =
                | _ -> error "* expected" in_
               )
           | x when TH.isAnnotation x ->
-              let ts = annotations ~skipNewLines:false in_ in
+              let _tsTODO = annotations ~skipNewLines:false in_ in
               (* AST: fold around t makeAnnotated *)
               ()
           | _ ->
-              let tpt = typeOrInfixType location in_ in
+              let _tptTODO = typeOrInfixType location in_ in
               (* AST: if isWildcard(t) ... *)
               (* AST: Typed(t, tpt) *)
               ()
@@ -1587,15 +1569,15 @@ and parseOther location (in_: env) : expr =
      * special guidance on what's probably intended.
     *)
     (* crazy: another parsing depending on the AST! crazy *)
-    let lhsIsTypedParamList x =
+    let lhsIsTypedParamList _xTODO =
       (* CHECK: "self-type annotation may not be in parentheses" *)
       warning "lhsIsTypedParamList";
       false
     in
     (match in_.token with
-     | ARROW ii when (location <> InTemplate || lhsIsTypedParamList !t) ->
+     | ARROW _ when (location <> InTemplate || lhsIsTypedParamList !t) ->
          skipToken in_;
-         let x =
+         let _xTODO =
            if location <> InBlock
            then expr in_
            else S (Block (fb (block in_ )))
@@ -1661,18 +1643,12 @@ and prefixExpr in_ : expr =
   | t when TH.isUnaryOp t ->
       if lookingAhead (fun in_ -> TH.isExprIntro in_.token) in_
       then begin
-        let uname = rawIdent in_ in (* AST: toUnaryName ... *)
+        let _unameTODO = rawIdent in_ in (* AST: toUnaryName ... *)
         match t, in_.token with
         | MINUS ii, x when TH.isNumericLit x  (* uname == nme.UNARY_- ... *)->
             (* start at the -, not the number *)
             let x = literal ~isNegated:(Some ii) in_ in
-            let x' =
-              match x with
-              | Left lit -> L lit
-              (* stricter: *)
-              | Right e -> error "negative interpolated string" in_
-
-            in
+            let x' = L x in
             simpleExprRest ~canApply:true x' in_
         | _ ->
             let x = simpleExpr in_ in
@@ -1701,12 +1677,8 @@ and simpleExpr in_ : expr =
     let t =
       match in_.token with
       | x when TH.isLiteral x ->
-          let ii = TH.info_of_tok x in
           let x = literal in_ in
-          (match x with
-           | Left lit -> L lit
-           | Right xx -> ExprTodo ("interpolated", ii)
-          )
+          L x
       (* scala3: deprecated XMLSTART *)
       | x when TH.isIdentBool x ->
           let x = path ~thisOK:true ~typeOK:false in_ in
@@ -1715,15 +1687,16 @@ and simpleExpr in_ : expr =
           let x = path ~thisOK:true ~typeOK:false in_ in
           Name x
       | USCORE ii ->
-          let x = freshPlaceholder in_ in
+          nextToken in_;
+          (* ast: freshPlaceholder *)
           ExprUnderscore ii
       (* pad: this may actually be a binding, not a tuple of
        * expressions when part of a short lambda (arrow).
       *)
-      | LPAREN ii ->
+      | LPAREN _ ->
           let xs = makeParens (commaSeparated expr) in_ in
           Tuple xs
-      | LBRACE ii ->
+      | LBRACE _ ->
           canApply := false;
           let x = blockExpr in_ in
           BlockExpr x
@@ -1761,7 +1734,7 @@ and simpleExprRest ~canApply t in_ : expr =
     match in_.token with
     | DOT _ ->
         nextToken in_;
-        let x = selector (*t*) in_ in
+        let _xTODO = selector (*t*) in_ in
         let x = stripParens t in
         simpleExprRest ~canApply:true x in_
     | LBRACKET _ ->
@@ -1769,7 +1742,7 @@ and simpleExprRest ~canApply t in_ : expr =
         (* crazy: parsing depending on built AST: Ident(_) | Select(_, _) | Apply(_, _) | Literal(_) *)
         let app = ref t1 in
         while in_.token =~= (LBRACKET ab) do
-          let xs = exprTypeArgs in_ in
+          let _xsTODO = exprTypeArgs in_ in
           (* AST: app := TypeApply(app, xs) *)
           ()
         done;
@@ -1794,18 +1767,15 @@ and simpleExprRest ~canApply t in_ : expr =
 and exprTypeArgs in_ =
   outPattern typeArgs in_
 
-(* AST: *)
-and freshPlaceholder in_ =
-  nextToken in_;
-  ()
-
 (* ------------------------------------------------------------------------- *)
 (* Interpolated strings *)
 (* ------------------------------------------------------------------------- *)
 
 and interpolatedString ~inPattern in_ =
-  (* AST: let interpolater = in.name.encoded,  *)
-  (* AST: let partsBuf = ref [] in let exprsBuf = ref [] in *)
+  ignore(inPattern); (* TODO *)
+  (* ast: let interpolater = in.name.encoded,  *)
+  (* ast: let partsBuf = ref [] in let exprsBuf = ref [] in *)
+  let xs = ref [] in
   nextToken in_; (* T_INTERPOLATED_START(s,info) *)
   while TH.is_stringpart in_.token do
     (* pad: in original code, but the interpolated string can start with
@@ -1821,26 +1791,29 @@ and interpolatedString ~inPattern in_ =
      * TODO? the original code also allow 'this', but ID_DOLLAR should cover
      * that?
     *)
-    | ID_DOLLAR (s, ii) ->
+    | ID_DOLLAR (_) ->
         let x = ident in_ in
-        () (* AST: Ident(x) *)
+        (* ast: Ident(x) *)
+        xs += EncapsDollarIdent x
     (* actually a ${, but using LBRACE allows to reuse blockExpr *)
     | LBRACE _ ->
         let x = expr in_ in
-        (* AST: x *)
-        ()
+        (* ast: x *)
+        xs += EncapsExpr x
     (* pad: not in original code, but the way Lexer_scala.mll is written
      * we can have multiple consecutive StringLiteral *)
-    | StringLiteral _ ->
-        nextToken in_
+    | StringLiteral x ->
+        nextToken in_;
+        xs += EncapsStr x
     | _ ->
         error "error in interpolated string: identifier or block expected"
           in_
   done;
   (* pad: not in original code *)
+  let ii = TH.info_of_tok in_.token in
   accept (T_INTERPOLATED_END ab) in_;
-  (* AST: InterpolatedString(...) *)
-  ()
+  (* ast: InterpolatedString(...) *)
+  List.rev !xs, ii
 
 (* ------------------------------------------------------------------------- *)
 (* Arguments *)
@@ -2003,7 +1976,7 @@ and parseWhile in_ : stmt =
 and parseDo in_ : stmt =
   let ido = TH.info_of_tok in_.token in
   skipToken in_;
-  let lname = () (* AST: freshTermName(nme.DO_WHILE_PREFIX) *) in
+  (* AST: lname = freshTermName(nme.DO_WHILE_PREFIX) *)
   let body = expr in_ in
   if TH.isStatSep in_.token then nextToken in_;
   let iwhile = TH.info_of_tok in_.token in
@@ -2015,7 +1988,7 @@ and parseDo in_ : stmt =
 and parseFor in_ : stmt =
   let ii = TH.info_of_tok in_.token in
   skipToken in_;
-  let enums =
+  let _enumsTODO =
     if in_.token =~= (LBRACE ab)
     then inBraces enumerators in_
     else inParens enumerators in_
@@ -2125,11 +2098,11 @@ and blockExpr in_ : block_expr =
 and enumerators in_ =
   in_ |> with_logging "enumerators" (fun () ->
     let enums = ref [] in
-    let xs = enumerator ~isFirst:true in_ in
+    let _xsTODO = enumerator ~isFirst:true in_ in
     (* TODO enums ++= xs; *)
     while TH.isStatSep in_.token do
       nextToken in_;
-      let xs = enumerator ~isFirst:false in_ in
+      let _xsTODO = enumerator ~isFirst:false in_ in
       (* TODO enums ++= xs; *)
       ()
     done;
@@ -2149,9 +2122,10 @@ and guard_loop in_ : guard list =
 and enumerator ~isFirst ?(allowNestedIf=true) in_ =
   in_ |> with_logging "enumerator" (fun () ->
     match in_.token with
-    | Kif _ when not isFirst -> let xs = guard_loop in_ in () (* TODO *)
+    | Kif _ when not isFirst ->
+        let _xsTODO = guard_loop in_ in () (* TODO *)
     | _ ->
-        let g = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
+        let _gTODO = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
         ()
   )
 
@@ -2212,7 +2186,7 @@ and annotations ~skipNewLines in_ : annotation list =
   )
 
 let annotTypeRest t in_ : type_ =
-  let xs = annotations ~skipNewLines:false in
+  let _xsTODO = annotations ~skipNewLines:false in_ in
   (* AST: fold around t makeAnnotated *)
   t
 
@@ -2449,6 +2423,7 @@ let modifiers in_ =
  *  }}}
 *)
 let paramType ?(repeatedParameterOK=true) in_ : param_type =
+  ignore(repeatedParameterOK) (* TODO *);
   in_ |> with_logging "paramType" (fun () ->
     match in_.token with
     | ARROW ii ->
@@ -2481,7 +2456,7 @@ let paramType ?(repeatedParameterOK=true) in_ : param_type =
  *  ClassParam        ::= {Annotation}  [{Modifier} (`val` | `var`)] Id [`:` ParamType] [`=` Expr]
  *  }}}
 *)
-let param owner implicitmod caseParam in_ : binding =
+let param _owner implicitmod _caseParam in_ : binding =
   in_ |> with_logging "param" (fun () ->
     let annots = annotations ~skipNewLines:false in_ in
     let mods =
@@ -2537,7 +2512,7 @@ let param owner implicitmod caseParam in_ : binding =
 (* AST: convert tree to parameter *)
 (* CHECK: Tuples cannot be directly destructured in method ... *)
 (* CHECK: "identifier expected" *)
-let paramClauses ~ofCaseClass owner contextBoundBuf in_ : bindings list =
+let paramClauses ~ofCaseClass owner _contextBoundBuf in_ : bindings list =
   let vds = ref [] in
   let caseParam = ref ofCaseClass in
   let paramClause in_ : binding list =
@@ -2589,12 +2564,12 @@ let paramClauses ~ofCaseClass owner contextBoundBuf in_ : bindings list =
  *  TypeParam             ::= Id TypeParamClauseOpt TypeBounds {`<%` Type} {`:` Type}
  *  }}}
 *)
-let rec typeParamClauseOpt owner contextBoundBuf in_ =
+let rec typeParamClauseOpt _owner contextBoundBuf in_ =
   in_ |> with_logging "typeParamClauseOpt" (fun () ->
 
     let typeParam ms in_ =
       in_ |> with_logging "typeParam" (fun () ->
-        let mods = ref ms in (* AST: ms | Flags.PARAM *)
+        let _modsTODO = ref ms in (* AST: ms | Flags.PARAM *)
         (match in_.token with
          (* TODO? is supposed to be only if isTypeName owner *)
          | PLUS _ ->
@@ -2607,8 +2582,8 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
         );
         let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
         let param =
-          let tparams = typeParamClauseOpt pname None in_ in
-          let xs = typeBounds in_ in
+          let _tparamsTODO = typeParamClauseOpt pname None in_ in
+          let _xsTODO = typeBounds in_ in
           (* AST: TypeDef(mods, pname, tparams, xs) *)
           ()
         in
@@ -2617,7 +2592,7 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
           while in_.token =~= (VIEWBOUND ab) do
             (* CHECK: scala3: "view bounds are unsupported" *)
             skipToken in_;
-            let t = typ in_ in
+            let _tTODO = typ in_ in
             (* AST: contextBoundBuf +=
              *  makeFunctionTypeTree(List(Ident(pname)), t)
             *)
@@ -2625,7 +2600,7 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
           done;
           while in_.token =~= (COLON ab) do
             skipToken in_;
-            let t = typ in_ in
+            let _tTODO = typ in_ in
             (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
             ()
           done
@@ -2637,7 +2612,7 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
     match in_.token with
     | LBRACKET _ ->
         let x = inBrackets (fun in_ ->
-          let annots = annotations ~skipNewLines:true in_ in
+          let _annotsTODO = annotations ~skipNewLines:true in_ in
           let mods = noMods (* AST: withannotation annots *) in
           commaSeparated (typeParam mods) in_
         ) in_
@@ -2653,7 +2628,7 @@ let rec typeParamClauseOpt owner contextBoundBuf in_ =
  *  SelfInvocation  ::= this ArgumentExprs {ArgumentExprs}
  *  }}}
 *)
-let selfInvocation vparamss in_ : expr =
+let selfInvocation _vparamss in_ : expr =
   let ithis = TH.info_of_tok in_.token in
   accept (Kthis ab) in_;
   newLineOptWhenFollowedBy (LBRACE ab) in_;
@@ -2723,7 +2698,7 @@ let constrExpr vparamss in_ : expr =
  *  FunSig ::= id [FunTypeParamClause] ParamClauses
  *  }}}
 *)
-let funDefRest fkind attrs name in_ : function_definition =
+let funDefRest fkind _attrs name in_ : function_definition =
   in_ |> with_logging "funDefRest" (fun () ->
     (* let newmods = ref attrs in *)
     (* contextBoundBuf is for context bounded type parameters of the form
@@ -2731,7 +2706,7 @@ let funDefRest fkind attrs name in_ : function_definition =
      * i.e. (B[T] or T => B)
     *)
     let contextBoundBuf = ref [] in
-    let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
+    let _tparamsTODO = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     let restype = (* AST: fromWithinReturnType *) typedOpt in_ in
@@ -2819,7 +2794,7 @@ let typeDefOrDcl attrs in_ : definition =
   newLinesOpt in_;
   let name = identForType in_ in
   (* a type alias as well as an abstract type may declare type parameters *)
-  let tparams = typeParamClauseOpt name (None) in_ in
+  let _tparamsTODO = typeParamClauseOpt name (None) in_ in
   let tbody =
     match in_.token with
     | EQUALS ii ->
@@ -2899,9 +2874,9 @@ let defOrDcl attrs in_ : definition =
         VarDefs (patDefOrDcl (Val, ii) attrs (* ast:VAL *) in_)
     | Kvar ii ->
         VarDefs (patDefOrDcl (Var, ii) attrs (* ast:VAR and Mutable*) in_)
-    | Kdef ii ->
+    | Kdef _ ->
         funDefOrDcl attrs (* ast:DEF *) in_
-    | Ktype ii ->
+    | Ktype _ ->
         typeDefOrDcl attrs (* ast:TYPE *) in_
     (* classes/traits/objects (a.k.a templates) *)
     | _ -> !tmplDef_ attrs in_
@@ -3086,6 +3061,7 @@ let topStatSeq ?rev in_ : top_stat list =
 *)
 
 let templateStatSeq ~isPre in_ =
+  ignore(isPre); (* TODO? *)
   let self = ref noSelfType in
   let firstOpt = ref None in
   if (TH.isExprIntro in_.token) then begin
@@ -3095,7 +3071,7 @@ let templateStatSeq ~isPre in_ =
          (* AST: case Typed(...) self := makeSelfDef(), convertToParam *)
          nextToken in_;
          (* TODO? *)
-         firstOpt := Some (E (ExprTodo ("Arrow template", ii))  )
+         firstOpt := Some (E (ExprTodo ("Arrow template", ii)))
      | _ ->
          firstOpt := Some (E first);
          acceptStatSepOpt in_
@@ -3111,7 +3087,7 @@ let templateStatSeq ~isPre in_ =
 *)
 
 let templateBody ~isPre in_ : block bracket =
-  let (lp, (self, xs), rp) = inBraces (templateStatSeq ~isPre) in_ in
+  let (lp, (_self, xs), rp) = inBraces (templateStatSeq ~isPre) in_ in
   (* AST: self, EmptyTree.asList *)
   lp, xs, rp
 
@@ -3136,7 +3112,7 @@ let templateBodyOpt ~parenMeansSyntaxError in_ : block bracket option =
 let templateParents in_ : template_parents =
   let readAppliedParent () =
     let parent = startAnnotType in_ in
-    let args =
+    let _argsTODO =
       (match in_.token with
        | LPAREN _ ->
            let _xs = multipleArgumentExprs in_ in
@@ -3227,7 +3203,7 @@ let templateOpt ckind in_ : template_definition =
  *  }}}
 *)
 (* pad: I've added isCase, it was passed via mods in the original code *)
-let objectDef ?(isCase=None) ?(isPackageObject=None) mods in_ : definition =
+let objectDef ?(isCase=None) ?(isPackageObject=None) attrs in_ : definition =
   in_ |> with_logging "objectDef" (fun () ->
     let ikind = TH.info_of_tok in_.token in
     nextToken in_; (* 'object' *)
@@ -3240,7 +3216,7 @@ let objectDef ?(isCase=None) ?(isPackageObject=None) mods in_ : definition =
     let ckind = Object, ikind in
     let tmpl = templateOpt ckind in_ in
     (* AST: ModuleDef (mods, name.toTermName, template) *)
-    let ent = { name; attrs = AST.attrs_of_mods mods; tparams = [] } in
+    let ent = { name; attrs = attrs @ AST.attrs_of_mods mods; tparams = [] } in
     DefEnt (ent, Template tmpl)
   )
 
@@ -3305,14 +3281,14 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
 
     (* AST: savingClassContextBounds *)
     let contextBoundBuf = ref [] in
-    let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
+    let _tparamsTODO = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let classContextBounds = !contextBoundBuf in
 
     (* CHECK: "traits cannot have type parameters with context bounds" *)
     let constrAnnots =
       if not isTrait then constructorAnnotations in_ else [] in
 
-    let constrMods, vparamss =
+    let constrMods, _vparamssTODO =
       if isTrait
       then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
       else
@@ -3356,7 +3332,7 @@ let tmplDef attrs in_ : definition =
       classDef ~isTrait:true attrs (* AST: | TRAIT | ABSTRACT *) in_
   | Kclass _ ->
       classDef attrs in_
-  | Kobject ii ->
+  | Kobject _ ->
       objectDef attrs in_
   (* pad: was done via a lexing trick in postProcessToken in the original
    * code; not sure you needed that
@@ -3416,7 +3392,7 @@ let compilationUnit in_ : top_stat list =
      | Kpackage ipackage ->
          nextToken in_;
          (match in_.token with
-          | Kobject ii ->
+          | Kobject _ ->
               let x = packageObjectDef ipackage in_ in
               ts += (D x);
               if not (in_.token =~= (EOF ab)) then begin
@@ -3439,7 +3415,7 @@ let compilationUnit in_ : top_stat list =
                    (* AST: makePackaging(pkg, xs) *)
                    ts ++= xs;
                | _ ->
-                   let xs = inBraces topStatSeq in_ in
+                   let _xsTODO = inBraces topStatSeq in_ in
                    (* AST: makePackaging(pkg, xs) *)
                    acceptStatSepOpt in_;
                    let xs = topStatSeq ~rev:true in_ in
