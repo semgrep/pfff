@@ -1529,9 +1529,9 @@ and expr0 (location: location) (in_: env) : expr =
     | Kfor _ -> S (parseFor in_)
     | Kreturn _ -> S (parseReturn in_)
     | Kthrow _ -> S (parseThrow in_)
-    | Kimplicit _ ->
+    | Kimplicit ii ->
         skipToken in_;
-        implicitClosure location in_
+        implicitClosure (Implicit, ii) location in_
     | _ ->
         parseOther location in_
   )
@@ -1929,27 +1929,36 @@ and caseClauses in_ : case_clauses =
  *  Expr ::= implicit Id `=>` Expr
  *  }}}
 *)
-and implicitClosure location in_ =
-  let expr0 =
-    let id = ident in_ in
+and implicitClosure implicitmod location in_ =
+  let id = ident in_ in
+  (* ast: expr0 = ... *)
+  let topt =
     if in_.token =~= (COLON ab)
     then begin
       nextToken in_;
-      let t = typeOrInfixType location in_ in
-      (* AST: Typed(Ident(id, t)) *)
-      ()
-    end else () (* AST: Ident(id) *)
+      (* ast: Typed(Ident(id, t)) *)
+      Some (PT (typeOrInfixType location in_))
+    end
+    else None (* ast: Ident(id) *)
   in
-  (* AST: convertToParam expr0; copyValDef(param0, mods|Flags.IMPLICIT)  *)
-  let param = expr0 in
+  (* ast: convertToParam expr0; copyValDef(param0, mods|Flags.IMPLICIT)  *)
+  let param = { p_name = id; p_attrs = [M implicitmod]; p_type = topt;
+                p_default = None } in
+  let iarrow = TH.info_of_tok in_.token in
   accept (ARROW ab) in_;
-  let x =
+  let body =
     if location <> InBlock
-    then expr in_
-    else S (Block (fb (block in_ )))
+    then FExpr (iarrow, expr in_)
+    else
+      let xs = block in_ in
+      FBlock (fb (BEBlock xs))
+
   in
-  (* AST: Function(List(param), x) *)
-  x
+  (* ast: Function(List(param), x) *)
+  let def = { fkind = (LambdaArrow, iarrow);
+              fparams = [fb [param]]; frettype = None;
+              fbody = Some body } in
+  Lambda def
 
 (*****************************************************************************)
 (* Parsing statements (which are expressions in Scala) *)
@@ -2520,7 +2529,7 @@ let param owner implicitmod caseParam in_ : binding =
     in
     (* ast: ValDef((mods|implicitmod|bynamemod) with annots, name.toTermName, tpt, default) *)
     let p_attrs = AST.mods_with_annots mods annots in
-    { p_name = name; p_attrs; p_type = tpt; p_default = default }
+    { p_name = name; p_attrs; p_type = Some tpt; p_default = default }
   )
 
 (* CHECK: "no by-name parameter type allowed here" *)
@@ -2978,10 +2987,8 @@ let blockStatSeq in_ : block_stat list =
              skipToken in_;
              let x =
                if TH.isIdentBool in_.token
-               then
-                 let x = implicitClosure InBlock in_ in
-                 BlockTodo ("implicitClosure", ii)
-                 (* ast: Flags.IMPLICIT*)
+               then E (implicitClosure (Implicit, ii) InBlock in_)
+               (* ast: Flags.IMPLICIT*)
                else D (localDef [Implicit, ii] in_)
              in
              stats += x
