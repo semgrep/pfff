@@ -506,7 +506,7 @@ and template_definition = {
 }
 (* scala3: intersection types so more symetric *)
 and template_parents = {
-  cextends: type_ option (* TODO: * arguments list ??? *);
+  cextends: (type_ * arguments list) option;
   cwith: type_ list
 }
 

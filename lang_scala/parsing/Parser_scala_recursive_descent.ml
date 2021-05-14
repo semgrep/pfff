@@ -1725,8 +1725,8 @@ and simpleExpr in_ : expr =
       | Knew ii ->
           canApply := false;
           skipToken in_;
-          let (cparents, (* self,*) cbody) = !template_ in_ in
-          (* AST: gen.mkNew(parents, self, stats) *)
+          let (cparents, cbody) = !template_ in_ in
+          (* ast: gen.mkNew(parents, self, stats) *)
           let def = { ckind = (Singleton, ii);
                       cparams = []; cparents; cbody} in
           New (ii, def)
@@ -2445,7 +2445,7 @@ let modifiers in_ =
  *  }}}
 *)
 let paramType ?(repeatedParameterOK=true) in_ : param_type =
-  ignore(repeatedParameterOK) (* TODO *);
+  ignore(repeatedParameterOK);
   in_ |> with_logging "paramType" (fun () ->
     match in_.token with
     | ARROW ii ->
@@ -2833,7 +2833,7 @@ let typeDefOrDcl attrs in_ : definition =
 
     | _ -> error "`=`, `>:`, or `<:` expected" in_
   in
-  let ent = { name; tparams = []; attrs} (* TODO *) in
+  let ent = { name; tparams = []; attrs} in
   let def = { ttok = itype; tbody } in
   DefEnt (ent, TypeDef def)
 
@@ -3083,7 +3083,7 @@ let topStatSeq ?rev in_ : top_stat list =
 *)
 
 let templateStatSeq ~isPre in_ : self_type option * block =
-  ignore(isPre); (* TODO? *)
+  ignore(isPre);
   let self, firstOpt =
     if (TH.isExprIntro in_.token)
     then
@@ -3141,23 +3141,27 @@ let templateBodyOpt ~parenMeansSyntaxError in_ : template_body option =
 let templateParents in_ : template_parents =
   let readAppliedParent () =
     let parent = startAnnotType in_ in
-    let _argsTODO =
+    let args =
       (match in_.token with
        | LPAREN _ ->
-           let _xs = multipleArgumentExprs in_ in
+           let xs = multipleArgumentExprs in_ in
            (* AST: fold_left Apply.apply xs *)
-           Some ()
-       | _ -> None
+           xs
+       | _ -> []
       ) in
-    parent(*, args*)
+    parent, args
   in
-  let (parent) = readAppliedParent () in
+  let (parent, args) = readAppliedParent () in
   let cwith = ref [] in
   while in_.token =~= (Kwith ab) do
     nextToken in_;
-    cwith += readAppliedParent ();
+    let (parent, args) = readAppliedParent () in
+    (* stricter? *)
+    if args <> []
+    then error "only the first parent type can have arguments" in_;
+    cwith += parent;
   done;
-  { cextends = Some parent; cwith = List.rev !cwith }
+  { cextends = Some (parent, args); cwith = List.rev !cwith }
 
 (** {{{
  *  ClassTemplate ::= [EarlyDefs with] ClassParents [TemplateBody]
@@ -3171,7 +3175,7 @@ let template in_ : template_parents * template_body option =
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     match in_.token with
     | LBRACE _ ->
-        let ((*self, *) body) = templateBody ~isPre:true in_ in
+        let (body) = templateBody ~isPre:true in_ in
         (match in_.token with
          | Kwith _ (* crazy? && self eq noSelfType *) ->
              (* CHECK: "use traint parameters instead" when scala3 *)
@@ -3180,11 +3184,9 @@ let template in_ : template_parents * template_body option =
              let parents = templateParents in_ in
              let (body1opt) =
                templateBodyOpt ~parenMeansSyntaxError:false in_ in
-             (* self1, (* AST: earlyDefs @ *)*)
+             (* AST: earlyDefs @ *)
              parents, body1opt
-         | _ ->
-             (*(self)*)
-             AST.empty_cparents, Some body
+         | _ -> AST.empty_cparents, Some body
         )
     | _ ->
         let parents = templateParents in_ in
@@ -3199,8 +3201,8 @@ let template in_ : template_parents * template_body option =
  *  }}}
 *)
 (* AST: name, mods, constrMods, vparams *)
-let templateOpt ckind in_ : template_definition =
-  let (cparents, (* self,*) cbody) =
+let templateOpt ckind vparams in_ : template_definition =
+  let (cparents, cbody) =
     match in_.token with
     | Kextends _
     | SUBTYPE _ (* CHECK: deprecated in 2.12.5 *) ->
@@ -3208,17 +3210,16 @@ let templateOpt ckind in_ : template_definition =
         template in_
     | _ ->
         newLineOptWhenFollowedBy (LBRACE ab) in_;
-        let ((*self,*) bodyopt) =
+        let (bodyopt) =
           (* AST: mods.isTrait || name.isTermName *)
           let parenMeansSyntaxError = true in
           templateBodyOpt ~parenMeansSyntaxError in_ in
-        (* (self) *)
         AST.empty_cparents, bodyopt
   in
   (* AST: Template(parents, self, anyvalConstructor()::body))
    * CHECK: "package object inheritance is deprecated"
   *)
-  { ckind; cparams = []; cparents; cbody; }
+  { ckind; cparams = vparams; cparents; cbody; }
 
 (* ------------------------------------------------------------------------- *)
 (* Object *)
@@ -3240,7 +3241,7 @@ let objectDef ?(isCase=None) ?(isPackageObject=None) attrs in_ : definition =
       (match isPackageObject with None -> [] | Some ii -> [PackageObject, ii])
     in
     let ckind = Object, ikind in
-    let tmpl = templateOpt ckind in_ in
+    let tmpl = templateOpt ckind [] in_ in
     (* AST: ModuleDef (mods, name.toTermName, template) *)
     let ent = { name; attrs = attrs @ AST.attrs_of_mods mods; tparams = [] } in
     DefEnt (ent, Template tmpl)
@@ -3302,7 +3303,7 @@ let constructorAnnotations in_ : annotation list =
 let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
   in_ |> with_logging "classDef" (fun () ->
     let ikind = TH.info_of_tok in_.token in
-    nextToken in_;
+    nextToken in_; (* 'class' or 'trait' *)
     let name = identForType in_ in
 
     (* AST: savingClassContextBounds *)
@@ -3314,24 +3315,21 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
     let constrAnnots =
       if not isTrait then constructorAnnotations in_ else [] in
 
-    let constrMods, _vparamssTODO =
+    let constrMods, vparamss =
       if isTrait
       then [], [] (* AST: (Modifiers(Flags.TRAIT), List()) *)
       else
-        let constrMods =
-          accessModifierOpt in_ in
-        let vparamss =
-          paramClauses ~ofCaseClass:(isCase <> None) name
+        let constrMods = accessModifierOpt in_ in
+        let vparamss = paramClauses ~ofCaseClass:(isCase <> None) name
             classContextBounds in_ in
         Common.opt_to_list constrMods, vparamss
     in
-
 
     let kind = (if isTrait then Trait else Class), ikind in
     (* ast: name ... constrMods withAnnotations...*)
     let attrs = mods_with_annots constrMods constrAnnots @ attrs in
     let ent = { name; attrs; tparams = [] } in
-    let tmpl = templateOpt kind in_ in
+    let tmpl = templateOpt kind vparamss in_ in
     (* AST: gen.mkClassDef(mods, name, tparams, template) *)
     (* CHECK: Context bounds generate implicit parameters (part of the template)
      *  with types from tparams: we need to ensure these don't overlap
