@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
 *)
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -67,7 +68,7 @@ type ident = string wrap
 type op = string wrap
 [@@deriving show]
 
-(* just for patterns, lowercase ident *)
+(* just for patterns, start with a lowercase letter *)
 type varid = string wrap
 [@@deriving show]
 
@@ -205,7 +206,7 @@ and param_type =
   | PTRepeatedApplication of type_ * tok (* * *)
 
 and refinement = refine_stat list bracket
-(* just type and val dcls *)
+(* just dcls and type defs *)
 and refine_stat = definition
 
 and type_bounds = {
@@ -233,6 +234,7 @@ and pattern =
 
   (* less: the last pattern one can be '[varid @] _ *'
    * ast_orig: AppliedType for the type_ list bracket
+   * less: could remove PatName and use PatApply (name, None, None).
   *)
   | PatApply of stable_id *
                 type_ list bracket option *
@@ -242,8 +244,6 @@ and pattern =
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
   | PatDisj of pattern * tok (* | *) * pattern
-
-  | PatTodo of todo_category
 
 (*****************************************************************************)
 (* Expressions *)
@@ -255,9 +255,11 @@ and expr =
   | Name of path
   | ExprUnderscore of tok (* '_' *)
 
+  (* ast_orig: TypeApply *)
   | InstanciatedExpr of expr * type_ list bracket (* ex: empty[List[Int]]? *)
   | TypedExpr of expr * tok (* : *) * ascription
 
+  (* !TAKE CARE! (Name path) can also be a disguised DotAccess *)
   | DotAccess of expr * tok (* . *) * ident
 
   (* in Scala you can have multiple argument lists! This is
@@ -270,6 +272,7 @@ and expr =
    * scala3: restricted to functions declared as 'infix'
   *)
   | Infix of expr * ident * expr
+  (* ast_orig: converted as a Select *)
   | Prefix of op (* just -/+/~/! *) * expr
   | Postfix of expr * ident
 
@@ -283,7 +286,6 @@ and expr =
 
   | S of stmt
 
-  | ExprTodo of todo_category
 
 (* only Name, or DotAccess, or Apply! (e.g., for ArrAccess) *)
 and lhs = expr
@@ -297,9 +299,12 @@ and arguments =
 and argument = expr
 
 and case_clauses = case_clause list
-(* less: use a record? *)
-and case_clause =
-  tok (* 'case' *) * pattern * guard option * tok (* '=>' *) * block
+and case_clause = {
+  casetoks: tok (* 'case' *) * tok (* '=>' *);
+  casepat: pattern;
+  caseguard: guard option;
+  casebody: block;
+}
 and guard = tok (* 'if' *) * expr
 
 and block_expr = block_expr_kind bracket
@@ -410,6 +415,9 @@ and type_parameter = unit
 (* definition or declaration (def or dcl) *)
 and definition =
   | DefEnt of entity * definition_kind
+  (* note that some VarDefs are really disgused FuncDef when
+   * the vbody is a BECases
+  *)
   | VarDefs of variable_definitions
 
 (* ------------------------------------------------------------------------- *)
@@ -485,13 +493,17 @@ and template_definition = {
   (* also a list of list of parameters *)
   cparams: bindings list;
   cparents: template_parents;
-  cbody: block bracket option;
+  cbody: template_body option;
 }
 (* scala3: intersection types so more symetric *)
 and template_parents = {
   cextends: type_ option (* TODO: * arguments list ??? *);
   cwith: type_ list
 }
+
+and template_body = (self_type option * block) bracket
+(* if use this then type_ can't be None *)
+and self_type = ident_or_this * type_ option * tok (* '=>' *)
 
 (* Case classes/objects are handled via attributes in the entity *)
 and template_kind =
@@ -538,3 +550,7 @@ let empty_cparents = { cextends = None; cwith = [] }
 let attrs_of_mods xs = List.map (fun x -> M x) xs
 let attrs_of_annots xs = List.map (fun x -> A x) xs
 let mods_with_annots mods annots = attrs_of_annots annots @ attrs_of_mods mods
+
+let is_variable_name s =
+  (* start with lowercase, see varid *)
+  s =~ "[a-z].*"

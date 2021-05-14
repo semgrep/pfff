@@ -128,7 +128,7 @@ let ab = PI.abstract_info
 let fb = PI.fake_bracket
 
 (* AST: use AST_scala something *)
-let noSelfType = ()
+let noSelfType = None
 let noMods = []
 
 (* crazy? context-sensitive parsing? *)
@@ -560,7 +560,7 @@ let separatedToken sep part in_ =
       let x = part ii in_ in
       ts += x;
     done;
-    !ts
+    List.rev !ts
   )
 
 (** {{{ part { `sep` part } }}}. *)
@@ -581,7 +581,7 @@ let tokenSeparated separator part in_ =
       end;
       done_ := not (in_.token =~= separator) || skippable;
     done;
-    !ts
+    List.rev !ts
   )
 
 (* AST: Creates an actual Parens node (only used during parsing.) *)
@@ -870,15 +870,15 @@ let literal ?(isNegated=None) ?(inPattern=false) in_ : literal  =
 (* Infix Expr/Types/pattern management  *)
 (*****************************************************************************)
 
-let pushOpInfo _topTODO in_ : ident =
+let pushOpInfo _topTODO in_ : ident * type_ list bracket option =
   let x = ident in_ in
-  let _targsTODO =
+  let targs =
     if in_.token =~= (LBRACKET ab)
-    then !exprTypeArgs_ in_
-    else fb [] (* ast: Nil *)
+    then Some (!exprTypeArgs_ in_)
+    else None (* ast: Nil *)
   in
   (* AST: OpInfo(top, name, targs) *)
-  x
+  x, targs
 
 (*****************************************************************************)
 (* Parsing types  *)
@@ -1055,16 +1055,17 @@ and simpleTypeRest t in_ : type_ =
       let x = typeProjection t in_ in
       simpleTypeRest x in_
   | LBRACKET _ ->
-      let _xsTODO = typeArgs in_ in
-      (* AST: AppliedTypeTree(t, xs) *)
-      simpleTypeRest t in_
+      let xs = typeArgs in_ in
+      (* ast: AppliedTypeTree(t, xs) *)
+      let x = TyApplied (t, xs) in
+      simpleTypeRest x in_
   | _ -> t
 
 (** {{{
  *  TypeArgs    ::= `[` ArgType {`,` ArgType} `]`
  *  }}}
 *)
-and typeArgs in_ =
+and typeArgs in_ : type_ list bracket =
   inBrackets types in_
 
 (** {{{
@@ -1317,9 +1318,13 @@ and pattern1 in_ : pattern =
    | COLON ii ->
        (* AST: p.removeAttachment[BackquotedIdentifierAttachment.type] *)
        skipToken in_;
-       let _xTODO = compoundType in_ in
+       let t = compoundType in_ in
        (* AST: Typed(p, x) *)
-       PatTodo ("PatTypedVarid", ii)
+       (match p with
+        | PatVarid varid -> PatTypedVarid (varid, ii, t)
+        (* stricter? *)
+        | _ -> error "typed patterns work only with a varid" in_
+       )
    (* CHECK: "Pattern variables must start with a lower-case letter." *)
    | _ -> p
   )
@@ -1335,9 +1340,13 @@ and pattern2 in_ : pattern =
   match in_.token with
   | AT ii -> (* crazy? TODO: case p @ Ident(name) *)
       nextToken in_;
-      let _bodyTODO = pattern3 in_ in
+      let y = pattern3 in_ in
       (* AST: Bind(name, body), if WILDCARD then ... *)
-      PatTodo ("PatBind", ii)
+      (match x with
+       | PatVarid varid -> PatBind (varid, ii, y)
+       (* stricter? *)
+       | _ -> error "binded patterns work only with a varid" in_
+      )
   | _ -> x
 
 (** {{{
@@ -1366,10 +1375,10 @@ and pattern3 in_ : pattern =
         (* AST: let next = reducePatternStack(base, top) *)
         let next = () in
         if TH.isIdentBool in_.token && not (TH.isRawBar in_.token) then begin
-          let _idTODO = pushOpInfo next in_ in
+          let id, _targsTODO = pushOpInfo next in_ in
           (* no postfixPattern, so always go for right part of infix op *)
-          let x = simplePattern in_ in
-          (* TODO: combine top, infixop, x *)
+          let t2 = simplePattern in_ in
+          let x = PatInfix (top, id, t2) in
           loop x in_
         end else
           in_ |> with_logging "pattern3: loop noIsIdent stop" (fun () ->
@@ -1380,11 +1389,14 @@ and pattern3 in_ : pattern =
     (match checkWildStar in_ with
      | None ->
          let x = loop top in_ in
-         (* AST: stripParens(x) *)
-         x
-     | Some ii ->
-         (* AST: x *)
-         PatTodo ("PatUnderscoreStar?", ii)
+         stripParens x
+     | Some istar ->
+         (* ast: x *)
+         (match top with
+          | PatVarid ("_", iuscore) -> PatUnderscoreStar (iuscore, istar)
+          (* stricter: *)
+          | _ -> error "star patterns works only with wildcard" in_
+         )
     )
   )
 
@@ -1434,18 +1446,23 @@ and simplePattern in_ : pattern =
               Some xs
           | _ -> None (* AST: t *)
         in
-        (match in_.token with
-         | LPAREN _ ->
-             let xs = argumentPatterns in_ in
-             (* AST: Apply(typeAppliedTree, t) *)
-             PatApply (t, typeAppliedTree, Some xs)
-         | _ ->
-             (* AST: typeAppliedTree *)
-             PatApply (t, typeAppliedTree, None)
+        let args =
+          match in_.token with
+          | LPAREN _ ->
+              (* ast: Apply(typeAppliedTree, t) *)
+              Some (argumentPatterns in_)
+          | _ ->
+              (* ast: typeAppliedTree *)
+              None
+        in
+        (match t, typeAppliedTree, args with
+         | [(s, ii)], None, None when AST.is_variable_name s -> PatVarid (s,ii)
+         | t, None, None -> PatName t
+         | t, x1, x2 -> PatApply (t, x1, x2)
         )
     | USCORE ii ->
         nextToken in_;
-        (* AST: Ident(nme.WILDCARD) *)
+        (* ast: Ident(nme.WILDCARD) *)
         PatVarid (AST.wildcard, ii)
     | LPAREN _ ->
         let xs = makeParens (noSeq patterns) in_ in
@@ -1566,7 +1583,7 @@ and parseOther location (in_: env) : expr =
          skipToken in_;
          let xs = inBracesOrNil caseClauses in_ in
          (* ast: t:= Match(stripParens(t)) *)
-         t := Match (!t, ii, xs)
+         t := Match (stripParens !t, ii, xs)
      | _ -> ()
     );
     (* AST: disambiguate between self types "x: Int =>" and orphan function
@@ -1592,8 +1609,7 @@ and parseOther location (in_: env) : expr =
          ()
      | _ -> ()
     );
-    (* ast: stripParens(t) *)
-    !t
+    stripParens !t
   )
 
 (** {{{
@@ -1617,7 +1633,7 @@ and postfixExpr in_ : expr =
            * that Scala allows any identifier in infix position
           *)
           (* AST: pushOpInfo(reduceExprStack(base, top)) *)
-          let id = pushOpInfo top in_ in
+          let id, _targsTODO = pushOpInfo top in_ in
           newLineOptWhenFollowing (TH.isExprIntro) in_;
           if TH.isExprIntro in_.token then begin
             let res = prefixExpr in_ in
@@ -1649,7 +1665,7 @@ and prefixExpr in_ : expr =
   | t when TH.isUnaryOp t ->
       if lookingAhead (fun in_ -> TH.isExprIntro in_.token) in_
       then begin
-        let _unameTODO = rawIdent in_ in (* AST: toUnaryName ... *)
+        let uname = rawIdent in_ in (* AST: toUnaryName ... *)
         match t, in_.token with
         | MINUS ii, x when TH.isNumericLit x  (* uname == nme.UNARY_- ... *)->
             (* start at the -, not the number *)
@@ -1658,8 +1674,8 @@ and prefixExpr in_ : expr =
             simpleExprRest ~canApply:true x' in_
         | _ ->
             let x = simpleExpr in_ in
-            (* AST: Select(stripParens(x), uname) *)
-            x
+            (* ast: Select(stripParens(x), uname) *)
+            Prefix (uname, stripParens x)
       end
       else simpleExpr in_
   | _ -> simpleExpr in_
@@ -1738,19 +1754,19 @@ and simpleExprRest ~canApply t in_ : expr =
       simpleExprRest ~canApply:true app in_
     in
     match in_.token with
-    | DOT _ ->
+    | DOT ii ->
         nextToken in_;
-        let _xTODO = selector (*t*) in_ in
-        let x = stripParens t in
+        let id = selector (*t*) in_ in
+        let x = stripParens (DotAccess (t, ii, id)) in
         simpleExprRest ~canApply:true x in_
     | LBRACKET _ ->
-        let t1 = t in (* AST: stripParens(t) *)
+        let t1 = stripParens t in
         (* crazy: parsing depending on built AST: Ident(_) | Select(_, _) | Apply(_, _) | Literal(_) *)
         let app = ref t1 in
         while in_.token =~= (LBRACKET ab) do
-          let _xsTODO = exprTypeArgs in_ in
-          (* AST: app := TypeApply(app, xs) *)
-          ()
+          let xs = exprTypeArgs in_ in
+          (* ast: app := TypeApply(app, xs) *)
+          app := InstanciatedExpr(!app, xs)
         done;
         simpleExprRest ~canApply:true !app in_
 
@@ -1874,8 +1890,7 @@ and guard in_ : guard option =
     | Kif ii ->
         nextToken in_;
         let x = postfixExpr in_ in
-        (* AST: stripParens(x) *)
-        Some (ii, x)
+        Some (ii, stripParens x)
     | _ -> None (* ast: Nil *)
   )
 
@@ -1890,7 +1905,7 @@ and caseClause icase in_ : case_clause =
   let g = guard in_ in
   let (iarrow, block) = caseBlock in_ in
   (* ast: makeCaseDef *)
-  icase, p, g, iarrow, block
+  { casetoks = (icase, iarrow); casepat = p; caseguard = g; casebody = block}
 
 (** {{{
  *  CaseClauses ::= CaseClause {CaseClause}
@@ -3068,25 +3083,32 @@ let topStatSeq ?rev in_ : top_stat list =
  * @param isPre specifies whether in early initializer (true) or not (false)
 *)
 
-let templateStatSeq ~isPre in_ =
+let templateStatSeq ~isPre in_ : self_type option * block =
   ignore(isPre); (* TODO? *)
-  let self = ref noSelfType in
-  let firstOpt = ref None in
-  if (TH.isExprIntro in_.token) then begin
-    let first = expr ~location:InTemplate in_ in
-    (match in_.token with
-     | ARROW ii ->
-         (* AST: case Typed(...) self := makeSelfDef(), convertToParam *)
-         nextToken in_;
-         (* TODO? *)
-         firstOpt := Some (E (ExprTodo ("Arrow template", ii)))
-     | _ ->
-         firstOpt := Some (E first);
-         acceptStatSepOpt in_
-    )
-  end;
+  let self, firstOpt =
+    if (TH.isExprIntro in_.token)
+    then
+      let first = expr ~location:InTemplate in_ in
+      (match in_.token with
+       | ARROW ii ->
+           (* ast: case Typed(...) self := makeSelfDef(), convertToParam *)
+           nextToken in_;
+           let self_type =
+             match first with
+             | Name [id] -> id, None, ii
+             | TypedExpr (Name [id], _, t) -> id, Some t, ii
+             (* stricter? *)
+             | _ -> error "wrong self type syntax" in_
+           in
+           Some self_type, None
+       | _ ->
+           acceptStatSepOpt in_;
+           noSelfType, Some (E first)
+      )
+    else noSelfType, None
+  in
   let xs = templateStats in_ in
-  !self, Common.opt_to_list !firstOpt @ xs
+  self, Common.opt_to_list firstOpt @ xs
 
 (** {{{
  *  TemplateBody ::= [nl] `{` TemplateStatSeq `}`
@@ -3094,12 +3116,12 @@ let templateStatSeq ~isPre in_ =
  * @param isPre specifies whether in early initializer (true) or not (false)
 *)
 
-let templateBody ~isPre in_ : block bracket =
-  let (lp, (_self, xs), rp) = inBraces (templateStatSeq ~isPre) in_ in
-  (* AST: self, EmptyTree.asList *)
-  lp, xs, rp
+let templateBody ~isPre in_ : template_body =
+  (* ast: self, EmptyTree.asList *)
+  inBraces (templateStatSeq ~isPre) in_
 
-let templateBodyOpt ~parenMeansSyntaxError in_ : block bracket option =
+
+let templateBodyOpt ~parenMeansSyntaxError in_ : template_body option =
   newLineOptWhenFollowedBy (LBRACE ab) in_;
   match in_.token with
   | LBRACE _ ->
@@ -3145,7 +3167,7 @@ let templateParents in_ : template_parents =
  *  EarlyDef      ::= Annotations Modifiers PatDef
  *  }}}
 *)
-let template in_ : template_parents * block bracket option =
+let template in_ : template_parents * template_body option =
   in_ |> with_logging "template" (fun () ->
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     match in_.token with
@@ -3157,7 +3179,7 @@ let template in_ : template_parents * block bracket option =
              let _earlyDefs = body (* CHECK: map ensureEarlyDef AST: filter *) in
              nextToken in_;
              let parents = templateParents in_ in
-             let ((*self1,*) body1opt) =
+             let (body1opt) =
                templateBodyOpt ~parenMeansSyntaxError:false in_ in
              (* self1, (* AST: earlyDefs @ *)*)
              parents, body1opt
@@ -3167,10 +3189,7 @@ let template in_ : template_parents * block bracket option =
         )
     | _ ->
         let parents = templateParents in_ in
-        let (*(self, body)*) bodyopt =
-          templateBodyOpt ~parenMeansSyntaxError:false in_
-        in
-        (*(self)*)
+        let bodyopt = templateBodyOpt ~parenMeansSyntaxError:false in_ in
         parents, bodyopt
   )
 
@@ -3422,7 +3441,7 @@ let compilationUnit in_ : top_stat list =
                    nextToken in_;
                    let xs = topstats in_ in
                    (* ast: makePackaging(pkg, xs) *)
-                   ts ++= xs;
+                   ts ++= (List.rev xs);
                | _ ->
                    let xs = inBraces topStatSeq in_ in
                    let pack = Packaging ((ipackage, pkg), xs) in
