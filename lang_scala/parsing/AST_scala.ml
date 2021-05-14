@@ -415,8 +415,26 @@ and attribute =
 (*****************************************************************************)
 (* Type parameter (generics) *)
 (*****************************************************************************)
-(* TODO *)
-and type_parameter = unit
+(* I'm using the same type for type parameters for classes and functions
+ * but variance constructs apply only for classes.
+*)
+and type_parameter = {
+  tpname: ident_or_wildcard;
+  tpvariance: variance wrap option;
+
+  tpannots: annotation list;
+
+  (* wow, this is complicated *)
+  tpparams: type_parameters;
+  tpbounds: type_bounds;
+  tpviewbounds: (* <% *) type_ list;
+  tpcolons: (* : *) type_ list;
+}
+and variance =
+  | Covariant (* + *)
+  | Contravariant (* - *)
+
+and type_parameters = type_parameter list bracket option
 
 (*****************************************************************************)
 (* Definitions *)
@@ -451,7 +469,7 @@ and entity = {
   (* can be "this" for constructor *)
   name: ident;
   attrs: attribute list;
-  tparams: type_parameter list;
+  tparams: type_parameters;
 }
 
 (* less: also work for declaration, in which case the [fc]body is empty *)

@@ -42,6 +42,15 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
  *    in the Scala 2 compiler source.
  *
  * Note that parsing Scala is difficult. See the crazy: tag in this file.
+ * In some cases, parsing looks very contextual and crazy, because the
+ * code looks at the AST built in previous steps to decide what to do
+ * (e.g., the code around PatBind), but it's just that the parser
+ * is using an LL(1) parsing style, so the parser sometimes accept
+ * a more general expression first and later restrict what was possible.
+ * In that case I use the not_crazy: tag when I think this could be solved
+ * using a LALR(1) parser.
+ *
+ *
  * See also the newline: tag to see all the places where newlines are handled
  * in a special way.
  *
@@ -51,6 +60,8 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
  *     construct)
  * less:
  *  - see the CHECK: tag for what Parsers.scala was statically checking
+ *  - see the STILL for what was TODO but may not be needed in the end as
+ *    it seems we can parse most code without handling those
  *
  * Not handled (or partially handled) on purpose for now:
  *  - XML (deprecated constructs anyway)
@@ -176,8 +187,6 @@ let error x in_ =
   end;
   raise (PI.Parsing_error info)
 
-let todo x in_ =
-  error ("TODO:" ^x) in_
 let warning s =
   if !Flag.debug_parser
   then pr2 ("WARNING: " ^ s)
@@ -289,7 +298,7 @@ let insertNL ?(newlines=false) in_ =
     logger#info "inserting back a newline:%s" (Common.dump in_.last_nl);
   end;
   match in_.last_nl with
-  | None -> todo "no last newline to insert back" in_
+  | None -> error "IMPOSSIBLE? no last newline to insert back" in_
   | Some x ->
       in_.rest <- in_.token::in_.rest;
       in_.token <- if newlines then NEWLINES x else NEWLINE x;
@@ -330,7 +339,7 @@ let fetchToken in_ =
 
   let rec loop aux =
     match in_.rest with
-    | [] -> todo "fetchToken: no more tokens" in_
+    | [] -> error "IMPOSSIBLE? fetchToken: no more tokens" in_
     | x::xs ->
         if !Flag.debug_lexer then logger#info "fetchToken: %s" (T.show x);
 
@@ -363,7 +372,7 @@ let fetchToken in_ =
 let nextToken in_ =
   let lastToken = in_.token in
   adjustSepRegions lastToken in_;
-  (* TODO: if inStringInterpolation fetchStringPart else *)
+  (* STILL?: if inStringInterpolation fetchStringPart else *)
   fetchToken in_;
   (* Insert NEWLINE or NEWLINES if
    * - we are after a newline
@@ -376,12 +385,12 @@ let nextToken in_ =
      TH.inLastOfStat lastToken &&
      TH.inFirstOfStat in_.token &&
      (match in_.sepRegions with [] | (RBRACE _)::_ -> true | _ -> false) &&
-     (* TODO: not applyBracePatch *)
+     (* STILL?: not applyBracePatch *)
      true
   then begin
     match () with
-    (* TODO: | _ when pastBlankLine in_ -> insertNL ~newlines:true in_ *)
-    (* TODO  | _ when TH.isLeadingInfixOperator *)
+    (* STILL?: | _ when pastBlankLine in_ -> insertNL ~newlines:true in_ *)
+    (* STILL?: | _ when TH.isLeadingInfixOperator *)
     (* CHECK: scala3: "Line starts with an operator that in future" *)
     | _ ->
         insertNL in_
@@ -390,7 +399,7 @@ let nextToken in_ =
   ()
 
 let nextTokenAllow _next in_ =
-  warning "nextTokenAllow: TODO";
+  warning "nextTokenAllow: STILL?";
   nextToken in_
 
 let skipToken in_ =
@@ -503,21 +512,21 @@ let skipTrailingComma right in_ =
  * sequences are disallowed.
 *)
 let noSeq f in_ =
-  warning "noSeq: TODO";
+  warning "noSeq: STILL?";
   f in_
 
 (* The implementation for parsing inside of patterns at points where
  * sequences are allowed.
 *)
 let seqOK f in_ =
-  warning "seqOK: TODO";
+  warning "seqOK: STILL?";
   f in_
 
 (* The implementation of the context sensitive methods for parsing
  * outside of patterns.
 *)
 let outPattern f in_ =
-  warning "outPattern: TODO";
+  warning "outPattern: STILL?";
   f in_
 
 (*****************************************************************************)
@@ -572,7 +581,7 @@ let tokenSeparated separator part in_ =
     let done_ = ref (not (in_.token =~= separator)) in
     while not !done_  do
       let skippable = separator =~= (COMMA ab) &&
-                      (* TODO: in.sepRegions nonEmpty and head *)
+                      (* STILL?: in.sepRegions nonEmpty and head *)
                       isTrailingComma (RPAREN ab) in_ in
       if not skippable then begin
         nextToken in_;
@@ -885,7 +894,7 @@ let pushOpInfo _topTODO in_ : ident * type_ list bracket option =
 (*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
-(* TODO: in PatternContextSensitive *)
+(* in PatternContextSensitive *)
 (* ------------------------------------------------------------------------- *)
 
 (** {{{
@@ -999,7 +1008,7 @@ and tupleInfixType in_ : type_ =
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
          (* ast: makeSafeTupleType(ts) *)
          let tuple =  TyTuple ts in
-         warning "tupleInfixType:TODO infixTypeRest(compoundTypeRest(...))";
+         warning "tupleInfixType:STILL? infixTypeRest(compoundTypeRest(...))";
          tuple
     )
   )
@@ -1142,7 +1151,7 @@ and annotType in_ =
 (* Still in PatternContextSensitive, but more obscure type constructs *)
 (* ------------------------------------------------------------------------- *)
 and makeExistentialTypeTree _t in_ =
-  todo "makeExistentialTypeTree" in_
+  error "TODO: makeExistentialTypeTree" in_
 
 (* pad: https://stackoverflow.com/questions/6676048/why-does-one-select-scala-type-members-with-a-hash-instead-of-a-dot *)
 and typeProjection t in_ : type_ =
@@ -1194,11 +1203,11 @@ and refineStat in_ : refine_stat option =
  *  }}}
 *)
 and argType in_ =
-  warning "argType: TODO typ() and wildcard or typ()";
+  warning "argType: STILL? typ() and wildcard or typ()";
   typ in_
 
 and functionArgType in_ =
-  warning "functionArgType TODO argType or paramType";
+  warning "functionArgType STILL? argType or paramType";
   argType in_
 
 (* ------------------------------------------------------------------------- *)
@@ -1277,7 +1286,7 @@ let typedOpt in_ =
 (* ------------------------------------------------------------------------- *)
 (* Inside SeqContextSensitive *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: functionArgType, argType different here *)
+(* STILL?: functionArgType, argType different here *)
 
 (** {{{
  *  Pattern  ::=  Pattern1 { `|` Pattern1 }
@@ -1338,11 +1347,12 @@ and pattern1 in_ : pattern =
 and pattern2 in_ : pattern =
   let x = pattern3 in_ in
   match in_.token with
-  | AT ii -> (* crazy? TODO: case p @ Ident(name) *)
+  | AT ii ->
       nextToken in_;
       let y = pattern3 in_ in
-      (* AST: Bind(name, body), if WILDCARD then ... *)
+      (* not_crazy: ast: case p @ Ident(name) *)
       (match x with
+       (* AST: Bind(name, body), if WILDCARD then ... *)
        | PatVarid varid -> PatBind (varid, ii, y)
        (* stricter? *)
        | _ -> error "binded patterns work only with a varid" in_
@@ -1564,7 +1574,7 @@ and parseOther location (in_: env) : expr =
           | USCORE _ ->
               skipToken in_;
               (match in_.token with
-               | STAR _ (* TODO: was isIdent && name = "*" *) ->
+               | STAR _ (* STILL?: was isIdent && name = "*" *) ->
                    nextToken in_
                (* AST: t = Typed(t, Ident(WILDCARD_STAR)) *)
                | _ -> error "* expected" in_
@@ -1810,7 +1820,7 @@ and interpolatedString ~inPattern in_ =
     match in_.token with
     (* pad: the original code  uses IDENTIFIER but Lexer_scala.mll
      * introduces a new token for $xxx.
-     * TODO? the original code also allow 'this', but ID_DOLLAR should cover
+     * STILL? the original code also allow 'this', but ID_DOLLAR should cover
      * that?
     *)
     | ID_DOLLAR (_) ->
@@ -2586,57 +2596,65 @@ let paramClauses ~ofCaseClass owner _contextBoundBuf in_ : bindings list =
  *  TypeParam             ::= Id TypeParamClauseOpt TypeBounds {`<%` Type} {`:` Type}
  *  }}}
 *)
-let rec typeParamClauseOpt _owner contextBoundBuf in_ =
+let rec typeParamClauseOpt _owner _contextBoundBuf in_ : type_parameters =
   in_ |> with_logging "typeParamClauseOpt" (fun () ->
 
-    let typeParam ms in_ =
+    let typeParam tpannots in_ =
       in_ |> with_logging "typeParam" (fun () ->
-        let _modsTODO = ref ms in (* AST: ms | Flags.PARAM *)
-        (match in_.token with
-         (* TODO? is supposed to be only if isTypeName owner *)
-         | PLUS _ ->
-             nextToken in_;
-             (* AST: mods |= Flags.COVARIANT *)
-         | MINUS _ ->
-             nextToken in_;
-             (* AST: mods |= Flags.CONTRAVARIANT *)
-         | _ -> ()
-        );
-        let pname = wildcardOrIdent in_ in (* AST: toTypeName *)
-        let param =
-          let _tparamsTODO = typeParamClauseOpt pname None in_ in
-          let _xsTODO = typeBounds in_ in
-          (* AST: TypeDef(mods, pname, tparams, xs) *)
-          ()
+        (* ast: ms | Flags.PARAM *)
+        let tpvariance =
+          match in_.token with
+          (* STILL? is supposed to be only if isTypeName owner *)
+          | PLUS ii ->
+              nextToken in_;
+              (* ast: mods |= Flags.COVARIANT *)
+              Some (Covariant, ii)
+          | MINUS ii ->
+              nextToken in_;
+              (* ast: mods |= Flags.CONTRAVARIANT *)
+              Some (Contravariant, ii)
+          | _ -> None
         in
-        if contextBoundBuf <> None
-        then begin
+        let tpname = wildcardOrIdent in_ in (* AST: toTypeName *)
+        let tpparams = typeParamClauseOpt tpname None in_ in
+        let tpbounds = typeBounds in_ in
+        (* AST: TypeDef(mods, pname, tparams, xs) *)
+        let viewbounds = ref [] in
+        let colons = ref [] in
+        (*if contextBoundBuf <> None
+          then
+        *)
+        begin
           while in_.token =~= (VIEWBOUND ab) do
             (* CHECK: scala3: "view bounds are unsupported" *)
             skipToken in_;
-            let _tTODO = typ in_ in
+            let t = typ in_ in
             (* AST: contextBoundBuf +=
              *  makeFunctionTypeTree(List(Ident(pname)), t)
             *)
-            ()
+            viewbounds += t;
           done;
           while in_.token =~= (COLON ab) do
             skipToken in_;
-            let _tTODO = typ in_ in
+            let t = typ in_ in
             (* AST: contextBoundBuf += AppliedTypeTree(t, List(Ident(pname)))*)
-            ()
+            colons += t;
           done
         end;
-        param
+        { tpannots; tpname; tpvariance;
+          tpparams;
+          tpbounds;
+          tpviewbounds = List.rev !viewbounds;
+          tpcolons = List.rev !colons;
+        }
       )
     in
     newLineOptWhenFollowedBy (LBRACKET ab) in_;
     match in_.token with
     | LBRACKET _ ->
         let x = inBrackets (fun in_ ->
-          let _annotsTODO = annotations ~skipNewLines:true in_ in
-          let mods = noMods (* AST: withannotation annots *) in
-          commaSeparated (typeParam mods) in_
+          let annots = annotations ~skipNewLines:true in_ in
+          commaSeparated (typeParam annots) in_
         ) in_
         in
         Some x
@@ -2720,7 +2738,7 @@ let constrExpr vparamss in_ : expr =
  *  FunSig ::= id [FunTypeParamClause] ParamClauses
  *  }}}
 *)
-let funDefRest fkind _attrs name in_ : function_definition =
+let funDefRest fkind _attrs name in_ : function_definition * type_parameters =
   in_ |> with_logging "funDefRest" (fun () ->
     (* let newmods = ref attrs in *)
     (* contextBoundBuf is for context bounded type parameters of the form
@@ -2728,7 +2746,7 @@ let funDefRest fkind _attrs name in_ : function_definition =
      * i.e. (B[T] or T => B)
     *)
     let contextBoundBuf = ref [] in
-    let _tparamsTODO = typeParamClauseOpt name (Some contextBoundBuf) in_ in
+    let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let vparamss = paramClauses ~ofCaseClass:false name contextBoundBuf in_ in
     newLineOptWhenFollowedBy (LBRACE ab) in_;
     let restype = (* AST: fromWithinReturnType *) typedOpt in_ in
@@ -2757,8 +2775,7 @@ let funDefRest fkind _attrs name in_ : function_definition =
     in
     (* ast: DefDef(newmods, name.toTermName, tparams,vparamss,restype, rhs) *)
     (* CHECK: "unary prefix operator definition with empty parameter list.."*)
-    (* TODO: tparams *)
-    { fkind; fparams = vparamss; frettype = restype; fbody = rhs }
+    { fkind; fparams = vparamss; frettype = restype; fbody = rhs }, tparams
   )
 
 let funDefOrDcl attrs in_ : definition =
@@ -2768,7 +2785,7 @@ let funDefOrDcl attrs in_ : definition =
     match in_.token with
     | Kthis ii ->
         skipToken in_;
-        let classcontextBoundBuf = ref [] in (* AST: TODO? *)
+        let classcontextBoundBuf = ref [] in (* AST: STILL? *)
         let name = AST.this, ii (* ast: nme.CONSTRUCTOR *) in
         (* pad: quite similar to funDefRest *)
         let vparamss =
@@ -2789,15 +2806,15 @@ let funDefOrDcl attrs in_ : definition =
               raise Impossible
         in
         (* ast: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
-        let ent = { name; attrs; tparams = [] } in
+        let ent = { name; attrs; tparams = None } in
         let fdef = { fkind = (Def, idef); fparams = vparamss;
                      frettype = None;
                      fbody = Some rhs } in
         DefEnt (ent, FuncDef fdef)
     | _ ->
         let name = identOrMacro in_ in
-        let fdef = funDefRest (Def, idef) attrs name in_ in
-        let ent = { name; attrs; tparams = [] } in
+        let fdef, tparams = funDefRest (Def, idef) attrs name in_ in
+        let ent = { name; attrs; tparams } in
         DefEnt (ent, FuncDef fdef)
   )
 
@@ -2816,7 +2833,7 @@ let typeDefOrDcl attrs in_ : definition =
   newLinesOpt in_;
   let name = identForType in_ in
   (* a type alias as well as an abstract type may declare type parameters *)
-  let _tparamsTODO = typeParamClauseOpt name (None) in_ in
+  let tparams = typeParamClauseOpt name (None) in_ in
   let tbody =
     match in_.token with
     | EQUALS ii ->
@@ -2833,7 +2850,7 @@ let typeDefOrDcl attrs in_ : definition =
 
     | _ -> error "`=`, `>:`, or `<:` expected" in_
   in
-  let ent = { name; tparams = []; attrs} in
+  let ent = { name; tparams; attrs} in
   let def = { ttok = itype; tbody } in
   DefEnt (ent, TypeDef def)
 
@@ -2920,9 +2937,9 @@ let localDef implicitMod in_ : definition =
     (* ast: let mods = mods | implicitMod withAnnotations annots *)
     (* crazy? parsing depends on AST *)
     let defs =
-      (* TODO !(mods hasFlag ~(Flags.IMPLICIT | Flags.LAZY))) *)
+      (* STILL? !(mods hasFlag ~(Flags.IMPLICIT | Flags.LAZY))) *)
       defOrDcl (mods_with_annots mods annots) in_
-      (* TODO: else tmplDef mods in_ *)
+      (* STILL?: else tmplDef mods in_ *)
     in
     defs
     (* AST: if RBRACE | CASE defs :+ literalUnit *)
@@ -3243,7 +3260,7 @@ let objectDef ?(isCase=None) ?(isPackageObject=None) attrs in_ : definition =
     let ckind = Object, ikind in
     let tmpl = templateOpt ckind [] in_ in
     (* AST: ModuleDef (mods, name.toTermName, template) *)
-    let ent = { name; attrs = attrs @ AST.attrs_of_mods mods; tparams = [] } in
+    let ent = { name; attrs = attrs @ AST.attrs_of_mods mods; tparams =None} in
     DefEnt (ent, Template tmpl)
   )
 
@@ -3308,7 +3325,7 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
 
     (* AST: savingClassContextBounds *)
     let contextBoundBuf = ref [] in
-    let _tparamsTODO = typeParamClauseOpt name (Some contextBoundBuf) in_ in
+    let tparams = typeParamClauseOpt name (Some contextBoundBuf) in_ in
     let classContextBounds = !contextBoundBuf in
 
     (* CHECK: "traits cannot have type parameters with context bounds" *)
@@ -3328,7 +3345,7 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
     let kind = (if isTrait then Trait else Class), ikind in
     (* ast: name ... constrMods withAnnotations...*)
     let attrs = mods_with_annots constrMods constrAnnots @ attrs in
-    let ent = { name; attrs; tparams = [] } in
+    let ent = { name; attrs; tparams } in
     let tmpl = templateOpt kind vparamss in_ in
     (* AST: gen.mkClassDef(mods, name, tparams, template) *)
     (* CHECK: Context bounds generate implicit parameters (part of the template)
