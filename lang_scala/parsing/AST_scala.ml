@@ -187,16 +187,32 @@ and type_ =
 
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
-  | TyFunction2 of param_type list bracket * tok (* '=>' *) * type_
+  (* TODO? param_type here? *)
+  | TyFunction2 of type_ list bracket * tok (* '=>' *) * type_
   | TyTuple of type_ list bracket
+  | TyRepeated of type_ * tok (* '*' *)
 
-  (* todo: existentialClause (forSome), refinement *)
-  | TyTodo of todo_category
+  | TyAnnotated of type_ * annotation list (* at least one *)
+  | TyRefined of type_ option * refinement
+  | TyWith of type_ * tok (* 'with' *) * type_
+  | TyWildcard of tok (* '_' *) * type_bounds
+
+(* todo: existentialClause (forSome) *)
 
 and param_type =
   | PT of type_
   | PTByNameApplication of tok (* => *) * type_
   | PTRepeatedApplication of type_ * tok (* * *)
+
+and refinement = refine_stat list bracket
+(* just type and val dcls *)
+and refine_stat = definition
+
+and type_bounds = {
+  supertype: (tok (* >: *) * type_) option;
+  subtype:   (tok (* <: *) * type_) option;
+}
+
 
 (* todo: also _* or annotation list *)
 and ascription = type_
@@ -387,11 +403,6 @@ and attribute =
 (*****************************************************************************)
 (* TODO *)
 and type_parameter = unit
-
-and type_bounds = {
-  supertype: (tok (* >: *) * type_) option;
-  subtype:   (tok (* <: *) * type_) option;
-}
 
 (*****************************************************************************)
 (* Definitions *)

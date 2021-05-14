@@ -66,9 +66,6 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
  *  - hooks for Scaladoc or IDEs
 *)
 
-(* TODO: temporary *)
-[@@@warning ""]
-
 (* See also Flag_parsing.debug_parser and Flag_parsing.debug_lexer *)
 let debug_newline = ref false
 
@@ -952,7 +949,7 @@ and infixTypeRest t _modeTODO in_ : type_ =
         ) in_
       else None
     in
-    let asInfix in_ =
+    let asInfix in_ : type_ =
       (* AST: let leftAssoc = nme.isLeftAssoc(in.name) *)
       let leftAssoc = false in
       warning ("InfixTypeRest: leftAssoc??");
@@ -962,21 +959,20 @@ and infixTypeRest t _modeTODO in_ : type_ =
       (* AST: let mkOp t1 = AppliedTypeTree(tycon, List(t, t1)) *)
       if leftAssoc
       then
-        let x = compoundType in_ in
-        (* AST: mkOp(x) *)
+        let t2 = compoundType in_ in
+        let x = TyInfix (t, tycon, t2) in
+        (* ast: mkOp(x) *)
         infixTypeRest x LeftOp in_
       else
-        let _TODO = infixType RightOp in_ in
-        (* AST: mkOp(x) *)
-        TyTodo("InfixType Right", snd tycon)
+        let t2 = infixType RightOp in_ in
+        (* ast: mkOp(x) *)
+        TyInfix (t, tycon, t2)
     in
     if TH.isIdentBool in_.token
     then
       (match checkRepeatedParam in_ with
-       | None ->
-           asInfix in_
-       | Some ii ->
-           TyTodo ("RepeatedParam", ii)
+       | None -> asInfix in_
+       | Some ii -> TyRepeated (t, ii)
       )
     else t
   )
@@ -995,9 +991,9 @@ and tupleInfixType in_ : type_ =
     (match in_.token with
      | ARROW ii ->
          skipToken in_;
-         let _tTODO = typ in_ in
-         (* AST: makeSafeFunctionType(ts, t) *)
-         TyTodo ("Arrow", ii)
+         let t = typ in_ in
+         (* ast: makeSafeFunctionType(ts, t) *)
+         TyFunction2(ts, ii, t)
      (* CHECK: if is.isEmpty "Illegal literal type (), use Unit instead" *)
      | _ ->
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
@@ -1043,9 +1039,8 @@ and simpleType in_ : type_ =
           | t when TH.isWildcardType t ->
               let ii = TH.info_of_tok in_.token in
               skipToken in_;
-              let _boundsTODO = wildcardType in_ in
-              (* TODO: bounds *)
-              TyTodo ("_ and bounds", ii)
+              let bounds = wildcardType in_ in
+              TyWildcard (ii, bounds)
           | _ ->
               let x = path ~thisOK:false ~typeOK:true in_ in
               (* ast: convertToTypeId if not SingletonTypeTree *)
@@ -1092,32 +1087,45 @@ and compoundType in_ : type_ =
    * because this is used in a pattern context as in case p: ... =>
    * where the arrow mark the start of the caseBlock, not a type.
   *)
-  let t =
+  let topt =
     match in_.token with
-    | (LBRACE ii) ->
-        TyTodo ("scalaAnyRefConstr", ii)  (* AST: scalaAnyRefConstr *)
-    | _ -> annotType in_
+    | (LBRACE _) ->
+        (* AST: scalaAnyRefConstr *)
+        None
+    | _ -> Some (annotType in_)
   in
-  compoundTypeRest t in_
+  compoundTypeRest topt in_
 
-and compoundTypeRest t in_ =
+and compoundTypeRest topt in_ =
   let ts = ref [] in
   while in_.token =~= (Kwith ab) do
+    let iwith = TH.info_of_tok in_.token in
     nextToken in_;
     let x = annotType in_ in
-    ts += x;
+    ts += (iwith, x);
   done;
   newLineOptWhenFollowedBy (LBRACE ab) in_;
-  let _typesTODO = !ts in
-  let hasRefinement = (in_.token =~= (LBRACE ab)) in
-  let _refinementsTODO =
-    if hasRefinement
+  let refinements =
+    if in_.token =~= (LBRACE ab)
     then Some (refinement in_)
     else None
   in
   (* CHECK: "Detected apparent refinement of Unit" *)
   (* AST: CompoundTypeTree(Template(tps, noSelfType, refinements) *)
-  t (* TODO: add refinments *)
+  let topt =
+    match topt, List.rev !ts with
+    (* stricter: *)
+    | None, _::_ -> error "missing type before 'with'" in_
+    | x, [] -> x
+    | Some t, (x::xs) ->
+        Some (List.fold_left
+                (fun acc (iwith, t2) -> TyWith (acc, iwith, t2)) t (x::xs))
+  in
+  (match topt, refinements with
+   | None, None -> raise Impossible
+   | Some t, None -> t
+   | topt, Some refined -> TyRefined (topt, refined)
+  )
 
 (** {{{
  *  AnnotType        ::=  SimpleType {Annotation}
@@ -1147,7 +1155,7 @@ and typeProjection t in_ : type_ =
  *  Refinement ::= [nl] `{` RefineStat {semi RefineStat} `}`
  *  }}}
 *)
-and refinement in_ =
+and refinement in_ : refine_stat list bracket =
   inBraces refineStatSeq in_
 
 (** {{{
@@ -1157,26 +1165,25 @@ and refinement in_ =
  *                     |
  *  }}}
 *)
-and refineStatSeq in_ =
+and refineStatSeq in_ : refine_stat list =
   (* CHECK: checkNoEscapingPlaceholders *)
   (* less: pad: reuse statSeq? *)
   let stats = ref [] in
   while not (TH.isStatSeqEnd in_.token) do
-    let xs = refineStat in_ in
-    stats ++= xs;
+    let xopt = refineStat in_ in
+    stats ++= Common.opt_to_list xopt;
     if not (in_.token =~= (RBRACE ab))
     then acceptStatSep in_;
   done;
-  !stats
+  List.rev !stats
 
-and refineStat in_ =
+and refineStat in_ : refine_stat option =
   match in_.token with
   | t when TH.isDclIntro t ->
-      let _xsTODO = !defOrDcl_ noMods in_ in
-      []
+      Some ((!defOrDcl_ noMods in_))
   | t when not (TH.isStatSep t) ->
       error "illegal start of declaration" in_
-  | _ -> []
+  | _ -> None
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract in PatternContextSensitive *)
@@ -1203,10 +1210,9 @@ and functionArgType in_ =
 *)
 and wildcardType in_ =
   (* AST: freshTypeName("_$"), Ident(...) *)
-  let _boundsTODO = typeBounds in_ in
   (* AST: makeSyntheticTypeParam(pname, bounds) *)
   (* CHECK: placeholderTypes = ... *)
-  ()
+  typeBounds in_
 
 (** {{{
  *  TypeBounds ::= [`>:` Type] [`<:` Type]
@@ -2186,9 +2192,11 @@ and annotations ~skipNewLines in_ : annotation list =
   )
 
 let annotTypeRest t in_ : type_ =
-  let _xsTODO = annotations ~skipNewLines:false in_ in
-  (* AST: fold around t makeAnnotated *)
-  t
+  let xs = annotations ~skipNewLines:false in_ in
+  (* ast: fold around t makeAnnotated *)
+  match xs with
+  | [] -> t
+  | xs -> TyAnnotated (t, xs)
 
 (*****************************************************************************)
 (* Parsing directives  *)
@@ -3402,21 +3410,24 @@ let compilationUnit in_ : top_stat list =
               end
           | _ ->
               let pkg = pkgQualId in_ in
-              let pack = Package (ipackage, pkg) in
-              ts += pack;
               (match in_.token with
                | EOF _ ->
-                   (* AST: makePackaging(pkg, []) *)
-                   ()
-               (* newline: needed here otherwise parsed as package def *)
+                   (* ast: makePackaging(pkg, []) *)
+                   let pack = Package (ipackage, pkg) in
+                   ts += pack;
+                   (* newline: needed here otherwise parsed as package def *)
                | x when TH.isStatSep x ->
+                   let pack = Package (ipackage, pkg) in
+                   ts += pack;
                    nextToken in_;
                    let xs = topstats in_ in
-                   (* AST: makePackaging(pkg, xs) *)
+                   (* ast: makePackaging(pkg, xs) *)
                    ts ++= xs;
                | _ ->
-                   let _xsTODO = inBraces topStatSeq in_ in
-                   (* AST: makePackaging(pkg, xs) *)
+                   let xs = inBraces topStatSeq in_ in
+                   let pack = Packaging ((ipackage, pkg), xs) in
+                   (* ast: makePackaging(pkg, xs) *)
+                   ts += pack;
                    acceptStatSepOpt in_;
                    let xs = topStatSeq ~rev:true in_ in
                    ts ++= xs
@@ -3426,10 +3437,10 @@ let compilationUnit in_ : top_stat list =
          let xs = topStatSeq ~rev:true in_ in
          ts ++= xs
     );
-    (* AST: resetPAckage *)
+    (* ast: resetPackage *)
     List.rev !ts
   in
-  (* AST:  case ... makeEmptyPackage ... *)
+  (* ast:  case ... makeEmptyPackage ... *)
   topstats in_
 
 let parse toks =
