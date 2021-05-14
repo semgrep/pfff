@@ -441,8 +441,10 @@ and fbody =
 and bindings = binding list bracket
 and binding = {
   p_name: ident_or_wildcard;
+  (* especially var/val, and implicit *)
+  p_attrs: attribute list;
   p_type: type_ option;
-  p_implicit: tok option; (* only when just one id in bindings *)
+  p_default: expr option;
 }
 
 (* ------------------------------------------------------------------------- *)

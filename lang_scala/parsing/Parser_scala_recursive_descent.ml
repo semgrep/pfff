@@ -2472,7 +2472,7 @@ let paramType ?(repeatedParameterOK=true) in_ : param_type =
  *  ClassParam        ::= {Annotation}  [{Modifier} (`val` | `var`)] Id [`:` ParamType] [`=` Expr]
  *  }}}
 *)
-let param owner implicitmod caseParam in_ =
+let param owner implicitmod caseParam in_ : binding =
   in_ |> with_logging "param" (fun () ->
     let annots = annotations ~skipNewLines:false in_ in
     let mods = ref [] (* AST: PARAM *) in
@@ -2516,7 +2516,8 @@ let param owner implicitmod caseParam in_ =
           ()
     in
     (* AST: ValDef((mods | implicitmod | bynamemod) with annots, name.toTermName, tpt, default) *)
-    ()
+    { p_name = name; p_attrs = [];
+      p_type = None; p_default = None }
   )
 
 (* CHECK: "no by-name parameter type allowed here" *)
@@ -2524,10 +2525,10 @@ let param owner implicitmod caseParam in_ =
 (* AST: convert tree to parameter *)
 (* CHECK: Tuples cannot be directly destructured in method ... *)
 (* CHECK: "identifier expected" *)
-let paramClauses ~ofCaseClass owner contextBoundBuf in_ =
+let paramClauses ~ofCaseClass owner contextBoundBuf in_ : bindings list =
   let vds = ref [] in
   let caseParam = ref ofCaseClass in
-  let paramClause in_ =
+  let paramClause in_ : binding list =
     if in_.token =~= (RPAREN ab)
     then []
     else
