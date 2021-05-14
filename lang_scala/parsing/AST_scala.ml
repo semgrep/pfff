@@ -353,6 +353,9 @@ and modifier_kind =
   | CaseClassOrObject
   (* less: rewrite as Packaging and object def like in original code? *)
   | PackageObject
+  (* just for variables/fields/class params *)
+  | Val (* immutable *)
+  | Var (* mutable *)
 
 and annotation = tok (* @ *) * type_ * arguments list
 
@@ -388,13 +391,10 @@ and variable_definitions = {
   vattrs: attribute list;
   (* tparams? *)
 
-  vkind: variable_kind wrap;
+  (* old: vkind: variable_kind wrap;, now in vattrs *)
   vtype: type_ option;
   vbody: expr option; (* None for declarations? *)
 }
-and variable_kind =
-  | Val (* immutable *)
-  | Var (* mutable *)
 
 (* ------------------------------------------------------------------------- *)
 (* Other entities *)
@@ -443,7 +443,7 @@ and binding = {
   p_name: ident_or_wildcard;
   (* especially var/val, and implicit *)
   p_attrs: attribute list;
-  p_type: type_ option;
+  p_type: param_type;
   p_default: expr option;
 }
 

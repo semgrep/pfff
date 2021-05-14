@@ -2475,32 +2475,35 @@ let paramType ?(repeatedParameterOK=true) in_ : param_type =
 let param owner implicitmod caseParam in_ : binding =
   in_ |> with_logging "param" (fun () ->
     let annots = annotations ~skipNewLines:false in_ in
-    let mods = ref [] (* AST: PARAM *) in
-    (* crazy?: if owner.isTypeName *)
-    begin
+    let mods =
+      (* crazy?: if owner.isTypeName *)
       let xs = modifiers in_ in
-      (* AST: mods = xs |= Flags.PARAMACCESSOR *)
+      (* ast: mods = xs |= Flags.PARAMACCESSOR *)
       (* CHECK: "lazy modifier not allowed here. " *)
+      implicitmod @ xs @
       (match in_.token with
-       | Kval _ |  Kvar _ ->
+       |  Kval ii ->
            nextToken in_;
-           (* AST: if (v == VAR) mods |= Flags.MUTABLE *)
+           [Val, ii]
+       |  Kvar ii ->
+           nextToken in_;
+           (* ast: if (v == VAR) mods |= Flags.MUTABLE *)
+           [Var, ii]
        | _ ->
            (* CHECK: if (mods.flags != Flags.PARAMACCESSOR) accept(VAL) *)
-           (* AST: if (!caseParam) mods |= Flags.PrivateLocal *)
-           ()
-      );
-      (* AST: if (caseParam) mods |= Flags.CASEACCESSOR *)
-    end;
+           (* ast: if (!caseParam) mods |= Flags.PrivateLocal *)
+           []
+      )
+      (* ast: if (caseParam) mods |= Flags.CASEACCESSOR *)
+    in
 
     let name = ident in_ in
-    let bynamemod = ref 0 in
     let tpt =
       accept (COLON ab) in_;
       if in_.token =~= (ARROW ab) then begin
         (* CHECK: if owner.isTypeName && !mods.isLocalToThis
          * "var/val parameters may not be call-by-name" *)
-        bynamemod := 1 (* AST: Flags.BYNAMEPARAM *)
+        (* ast: bynamemod = Flags.BYNAMEPARAM *)
       end;
       paramType in_
     in
@@ -2508,16 +2511,16 @@ let param owner implicitmod caseParam in_ : binding =
       match in_.token with
       | EQUALS _ ->
           nextToken in_;
-          (* AST: mods |= FLAGS.DEFAULTPARAM *)
+          (* ast: mods |= FLAGS.DEFAULTPARAM *)
           let x = expr in_ in
-          ()
+          Some x
       | _ ->
-          (* AST: emptyTree *)
-          ()
+          (* ast: emptyTree *)
+          None
     in
-    (* AST: ValDef((mods | implicitmod | bynamemod) with annots, name.toTermName, tpt, default) *)
-    { p_name = name; p_attrs = [];
-      p_type = None; p_default = None }
+    (* ast: ValDef((mods|implicitmod|bynamemod) with annots, name.toTermName, tpt, default) *)
+    let p_attrs = AST.mods_with_annots mods annots in
+    { p_name = name; p_attrs; p_type = tpt; p_default = default }
   )
 
 (* CHECK: "no by-name parameter type allowed here" *)
@@ -2534,12 +2537,12 @@ let paramClauses ~ofCaseClass owner contextBoundBuf in_ : bindings list =
     else
       let implicitmod =
         match in_.token with
-        | Kimplicit _ ->
+        | Kimplicit ii ->
             nextToken in_;
             (* AST: Flags.IMPLICIT *)
-            1
+            [Implicit, ii]
         | _ ->
-            0
+            []
       in
       commaSeparated (param owner implicitmod !caseParam) in_
   in
@@ -2559,12 +2562,11 @@ let paramClauses ~ofCaseClass owner contextBoundBuf in_ : bindings list =
   (* CHECK: "an implicit parameter section must be last" *)
   (* CHECK: "multiple implicit parameter sections are not allowed" *)
   (* CHECK: "parameter sections are effectively implicit" *)
-  let result = !vds in
-  (* AST: if owner is CONSTRUCTOR && ... *)
-  (* CHECK: "no type parameters allowed here" *)
-  (* CHECK: "auxiliary constructor needs non-implicit parameter list" *)
-  (* AST: addEvidentParams (owner, result, contextBounds) *)
-  []
+  List.rev !vds
+(* AST: if owner is CONSTRUCTOR && ... *)
+(* CHECK: "no type parameters allowed here" *)
+(* CHECK: "auxiliary constructor needs non-implicit parameter list" *)
+(* AST: addEvidentParams (owner, result, contextBounds) *)
 
 (* ------------------------------------------------------------------------- *)
 (* Type Parameter *)
@@ -2714,7 +2716,7 @@ let constrExpr vparamss in_ : expr =
 *)
 let funDefRest fkind attrs name in_ : function_definition =
   in_ |> with_logging "funDefRest" (fun () ->
-    let newmods = ref attrs in
+    (* let newmods = ref attrs in *)
     (* contextBoundBuf is for context bounded type parameters of the form
      * [T : B] or [T : => B]; it contains the equivalent implicit parameter type,
      * i.e. (B[T] or T => B)
@@ -2747,9 +2749,10 @@ let funDefRest fkind attrs name in_ : function_definition =
           accept (EQUALS ab) in_ (* generate error message *);
           None
     in
-    (* AST: DefDef(newmods, name.toTermName, tparams,vparamss,restype, rhs) *)
+    (* ast: DefDef(newmods, name.toTermName, tparams,vparamss,restype, rhs) *)
     (* CHECK: "unary prefix operator definition with empty parameter list.."*)
-    { fkind; fparams = []; frettype = None; fbody = rhs }
+    (* TODO: tparams *)
+    { fkind; fparams = vparamss; frettype = restype; fbody = rhs }
   )
 
 let funDefOrDcl attrs in_ : definition =
@@ -2760,7 +2763,7 @@ let funDefOrDcl attrs in_ : definition =
     | Kthis ii ->
         skipToken in_;
         let classcontextBoundBuf = ref [] in (* AST: TODO? *)
-        let name = AST.this, ii (* AST: nme.CONSTRUCTOR *) in
+        let name = AST.this, ii (* ast: nme.CONSTRUCTOR *) in
         (* pad: quite similar to funDefRest *)
         let vparamss =
           paramClauses ~ofCaseClass:false name classcontextBoundBuf in_ in
@@ -2779,9 +2782,9 @@ let funDefOrDcl attrs in_ : definition =
               accept (EQUALS ab) in_; (* generate error message *)
               raise Impossible
         in
-        (* AST: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
+        (* ast: DefDef(mods, nme.CONSTRUCTOR, [], vparamss, TypeTree(), rhs)*)
         let ent = { name; attrs; tparams = [] } in
-        let fdef = { fkind = (Def, idef); fparams = []; (* TODO *)
+        let fdef = { fkind = (Def, idef); fparams = vparamss;
                      frettype = None;
                      fbody = Some rhs } in
         DefEnt (ent, FuncDef fdef)
@@ -2863,7 +2866,8 @@ let patDefOrDcl vkind attrs in_ : variable_definitions =
   (* CHECK: "lazy values may not be abstract" *)
   (* CHECK: "pattern definition may not be abstract" *)
   (* AST: mkDefs (...) *)
-  ({ vkind; vattrs = attrs; vpatterns = lhs; vtype = tp; vbody = rhs })
+  let attrs = AST.attrs_of_mods [vkind] @ attrs in
+  ({ vattrs = attrs; vpatterns = lhs; vtype = tp; vbody = rhs })
 
 
 (** {{{
