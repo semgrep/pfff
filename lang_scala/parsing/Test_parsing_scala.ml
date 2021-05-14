@@ -45,7 +45,11 @@ let test_parse xs =
 
 let test_dump file =
   let ast = Parse_scala.parse_program file in
-  pr (AST_scala.show_program ast)
+  (* alt: pr (AST_scala.show_program ast) *)
+  let formatter = Format.std_formatter in
+  Format.pp_set_margin formatter 120;
+  AST_scala.pp_program formatter ast;
+  ()
 
 (*****************************************************************************)
 (* Main entry for Arg *)

@@ -12,22 +12,27 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
 *)
+open Common
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* An Abstract Syntax Tree for Scala 2.
+(* A Concrete/Abstract Syntax Tree for Scala 2.
  *
  * I tried to keep the names used in the original compiler for
  * the AST constructs (e.g., Template for class/traits/objects, PatBind
- * for what I usually call PatAs, Apply for Call), or corresponding
- * grammar rules (e.g., block_stat, block_expr, import_expr).
+ * for what I usually call PatAs, Apply for Call, bindings for parameters,
+ * PatApply for Constructor, etc.),
+ * or corresponding grammar rules (e.g., block_stat, block_expr, import_expr).
  * In case I didn't, I used the ast_orig: tag to indicate what was the
  * original name.
  *
  * See the scala3: tag for possible extensions to handle Scala 3.
  *
- * TODO:
+ * alt:
+ * - mimic the AST types/classes in the Scala compiler, but they look
+ *   very weakly typed (not as bad as just Node/Leaves, but not
+ *   super precise either)
  * - use the Tasty format?
  *   https://github.com/lampepfl/dotty/blob/master/tasty/src/dotty/tools/tasty/TastyFormat.scala
 *)
@@ -48,7 +53,7 @@ type 'a wrap = 'a * tok
 
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
@@ -57,42 +62,41 @@ type 'a bracket = tok * 'a * tok
  * even a backquoted ident (e.g., `foo is great`).
 *)
 type ident = string wrap
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
 (* just used for prefixExpr *)
 type op = string wrap
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
-(* just for patterns, lowercase variable *)
+(* just for patterns, start with a lowercase letter *)
 type varid = string wrap
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
 let wildcard = "_"
+let this = "this"
+let super = "super"
 
 (* less: right now abusing ident to represent "_" *)
 type ident_or_wildcard = ident
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 type varid_or_wildcard = ident
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 (* less: right now abusing ident to represent "this" *)
 type ident_or_this = ident
-[@@deriving show] (* with tarzan *)
-
+[@@deriving show]
 
 
 type dotted_ident = ident list
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
 (* just for packages for now *)
 type qualified_ident = dotted_ident
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
 (* scala3: called simple_ref *)
 type path = dotted_ident
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
-let this = "this"
-let super = "super"
 (* TODO:
    scala3: called simple_ref
    type simple_ref =
@@ -107,10 +111,12 @@ let super = "super"
  * src: https://scala-lang.org/files/archive/spec/2.13/03-types.html
 *)
 type stable_id = dotted_ident
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
+
+(* TODO: to remove at some point when the AST is finished *)
 type todo_category = string wrap
-[@@deriving show] (* with tarzan *)
+[@@deriving show]
 
 (*****************************************************************************)
 (* Directives *)
@@ -134,9 +140,18 @@ type package = tok (* 'package' *) * qualified_ident
 [@@deriving show]
 
 (*****************************************************************************)
+(* Start of big recursive type *)
+(*****************************************************************************)
+(* type_ and pattern_ used to not be mutually recursive, but once you
+ * add interpolated strings in literal, then everything is mutually recursive.
+ * scala3: literal is split in simple_literal and literal in which case
+ * at least types can be defined independently of the other types
+ * (but pattern can not).
+*)
+
+(*****************************************************************************)
 (* Literals *)
 (*****************************************************************************)
-
 (* todo: interpolated strings? can be a literal pattern too?
  * scala3: called simple_literal
 *)
@@ -148,42 +163,65 @@ type literal =
   | Bool of bool wrap
   (* scala3: not in simple_literal *)
   | Null of tok
-[@@deriving show {with_path = false }]
+  (* this forces to define type_ and pattern and expr as mutually recursive*)
+  | Interpolated of ident (* e.g., s"..." *) *
+                    encaps list * tok (* '"' or '""""' *)
+
+and encaps =
+  | EncapsStr of string wrap
+  | EncapsDollarIdent of ident (* e.g., $foo *)
+  (* 'expr' here! hence the big mutual recursive types below *)
+  | EncapsExpr of expr (* will always be a BlockExpr with ${ ... } *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-type type_ =
+and type_ =
   (* scala3: simple_literal, ast_orig: SingletonType *)
   | TyLiteral of literal (* crazy? genius? *)
   | TyName of stable_id
+
   (* ast_orig: SelectFromType *)
   | TyProj of type_ * tok (* '#' *) * ident
-
   (* ast_orig: AppliedType *)
   | TyApplied of type_ * type_ list bracket
+
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
-  | TyFunction2 of param_type list bracket * tok (* '=>' *) * type_
+  (* TODO? param_type here? *)
+  | TyFunction2 of type_ list bracket * tok (* '=>' *) * type_
   | TyTuple of type_ list bracket
+  | TyRepeated of type_ * tok (* '*' *)
 
-  (* todo: existentialClause (forSome), refinement *)
-  | TyTodo of todo_category
+  | TyAnnotated of type_ * annotation list (* at least one *)
+  | TyRefined of type_ option * refinement
+  | TyWith of type_ * tok (* 'with' *) * type_
+  | TyWildcard of tok (* '_' *) * type_bounds
+
+(* todo: existentialClause (forSome) *)
 
 and param_type =
   | PT of type_
   | PTByNameApplication of tok (* => *) * type_
   | PTRepeatedApplication of type_ * tok (* * *)
-[@@deriving show {with_path = false }]
+
+and refinement = refine_stat list bracket
+(* just dcls and type defs *)
+and refine_stat = definition
+
+and type_bounds = {
+  supertype: (tok (* >: *) * type_) option;
+  subtype:   (tok (* <: *) * type_) option;
+}
+
 
 (* todo: also _* or annotation list *)
-type ascription = type_
-[@@deriving show]
+and ascription = type_
 
 (*****************************************************************************)
 (* Patterns *)
 (*****************************************************************************)
-type pattern =
+and pattern =
   (* interpolated strings serve as regexp-like patterns (nice) *)
   | PatLiteral of literal
   | PatName of stable_id
@@ -196,34 +234,32 @@ type pattern =
 
   (* less: the last pattern one can be '[varid @] _ *'
    * ast_orig: AppliedType for the type_ list bracket
+   * less: could remove PatName and use PatApply (name, None, None).
   *)
   | PatApply of stable_id *
                 type_ list bracket option *
                 pattern list bracket option
   | PatInfix of pattern * ident * pattern
+  (* less: only last element of a pattern list? *)
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
   | PatDisj of pattern * tok (* | *) * pattern
 
-  | PatTodo of todo_category
-[@@deriving show {with_path = false }]
-
-(*****************************************************************************)
-(* start of big recursive type? *)
-(*****************************************************************************)
 (*****************************************************************************)
 (* Expressions *)
 (*****************************************************************************)
-type expr =
+and expr =
   | L of literal
   | Tuple of expr list bracket
 
   | Name of path
   | ExprUnderscore of tok (* '_' *)
 
+  (* ast_orig: TypeApply *)
   | InstanciatedExpr of expr * type_ list bracket (* ex: empty[List[Int]]? *)
   | TypedExpr of expr * tok (* : *) * ascription
 
+  (* !TAKE CARE! (Name path) can also be a disguised DotAccess *)
   | DotAccess of expr * tok (* . *) * ident
 
   (* in Scala you can have multiple argument lists! This is
@@ -236,6 +272,7 @@ type expr =
    * scala3: restricted to functions declared as 'infix'
   *)
   | Infix of expr * ident * expr
+  (* ast_orig: converted as a Select *)
   | Prefix of op (* just -/+/~/! *) * expr
   | Postfix of expr * ident
 
@@ -249,24 +286,25 @@ type expr =
 
   | S of stmt
 
-  | ExprTodo of todo_category
 
-(* only Name, or DotAccess, or Call! (e.g., for ArrAccess) *)
+(* only Name, or DotAccess, or Apply! (e.g., for ArrAccess) *)
 and lhs = expr
 
 and arguments =
   | Args of argument list bracket
   (* Ruby-style last argument used as a block (nice when defining your
-   * own control structure.
-  *)
+   * own control structure) *)
   | ArgBlock of block_expr
   (* less: no keyword argument in Scala? *)
 and argument = expr
 
 and case_clauses = case_clause list
-(* less: use a record? *)
-and case_clause =
-  tok (* 'case' *) * pattern * guard option * tok (* '=>' *) * block
+and case_clause = {
+  casetoks: tok (* 'case' *) * tok (* '=>' *);
+  casepat: pattern;
+  caseguard: guard option;
+  casebody: block;
+}
 and guard = tok (* 'if' *) * expr
 
 and block_expr = block_expr_kind bracket
@@ -279,8 +317,8 @@ and block_expr_kind =
 (*****************************************************************************)
 (* Note that in Scala everything is an expr, but I still like to split expr
  * with the different "subtype" 'stmt'. In some languages, e.g., Ruby, I
- * also put 'definition' as a "subtype" but in Scala we can restricte
- * them to block_stat below.
+ * also put 'definition' as a "subtype" but in Scala we can restrict
+ * them to appear only in block_stat (see block_stat below).
 *)
 and stmt =
   | Block of block bracket
@@ -296,17 +334,27 @@ and stmt =
   | Try of tok * expr * catch_clause option * finally_clause option
   | Throw of tok * expr
 
-and enumerators = generator list
-and generator =
-  pattern * tok (* <- or = *) * expr * guard list
+(* the first one is always a generator *)
+and enumerators = enumerator list
+and enumerator =
+  | G of generator
+  | GIf of guard list
+  (* less: GAssign *)
+
+and generator = {
+  genpat: pattern;
+  gentok: tok (* <- or = *);
+  genbody: expr;
+  genguards: guard list;
+}
 and for_body =
   | Yield of tok * expr
   | NoYield of expr
 
 and catch_clause =
-  tok * (* TODO: case_clauses bracket *) expr
+  tok (* 'catch' *) * (* TODO: case_clauses bracket *) expr
 and finally_clause=
-  tok * expr
+  tok(* 'finally' *) * expr
 
 (*****************************************************************************)
 (* XxxStats *)
@@ -319,11 +367,10 @@ and block_stat =
   | D of definition
   | I of import
   | E of expr
+
   (* just at the beginning of top_stat *)
   | Package of package
   | Packaging of package * top_stat list bracket
-
-  | BlockTodo of todo_category
 
 (* those have special restrictions but simpler to make them alias
  * to block_stat. Anyway in AST_generic they will be all converted
@@ -333,7 +380,7 @@ and template_stat = block_stat
 and top_stat = block_stat
 
 (*****************************************************************************)
-(* Attributes *)
+(* Attributes (modifiers and annotations) *)
 (*****************************************************************************)
 and modifier = modifier_kind wrap
 and modifier_kind =
@@ -349,12 +396,17 @@ and modifier_kind =
   | Protected of ident_or_this bracket option
   (* misc (and nice!) *)
   | Override
+
   (* pad: not in original spec *)
   | CaseClassOrObject
   (* less: rewrite as Packaging and object def like in original code? *)
   | PackageObject
+  (* just for variables/fields/class params *)
+  | Val (* immutable *)
+  | Var (* mutable *)
 
-and annotation = tok (* @ *) * type_ * arguments list
+and annotation =
+  tok (* @ *) * type_ (* usually just a TyName*) * arguments list
 
 and attribute =
   | A of annotation
@@ -363,12 +415,26 @@ and attribute =
 (*****************************************************************************)
 (* Type parameter (generics) *)
 (*****************************************************************************)
-and type_parameter = unit
+(* I'm using the same type for type parameters for classes and functions
+ * but variance constructs apply only for classes.
+*)
+and type_parameter = {
+  tpname: ident_or_wildcard;
+  tpvariance: variance wrap option;
 
-and type_bounds = {
-  supertype: (tok (* >: *) * type_) option;
-  subtype:   (tok (* <: *) * type_) option;
+  tpannots: annotation list;
+
+  (* wow, this is complicated *)
+  tpparams: type_parameters;
+  tpbounds: type_bounds;
+  tpviewbounds: (* <% *) type_ list;
+  tpcolons: (* : *) type_ list;
 }
+and variance =
+  | Covariant (* + *)
+  | Contravariant (* - *)
+
+and type_parameters = type_parameter list bracket option
 
 (*****************************************************************************)
 (* Definitions *)
@@ -376,37 +442,42 @@ and type_bounds = {
 (* definition or declaration (def or dcl) *)
 and definition =
   | DefEnt of entity * definition_kind
-  | DefTodo of todo_category
+  (* note that some VarDefs are really disgused FuncDef when
+   * the vbody is a BECases
+  *)
+  | VarDefs of variable_definitions
 
-and entity = {
-  (* can be AST_generic.special_multivardef_pattern? *)
-  name: ident;
-  attrs: attribute list;
-  tparams: type_parameter list;
+(* ------------------------------------------------------------------------- *)
+(* Val/Var entities *)
+(* ------------------------------------------------------------------------- *)
+(* Used for local variables but also for fields *)
+and variable_definitions = {
+  (* a bit like entity, but for a list of stuff because of the pattern *)
+  vpatterns: pattern list;
+  vattrs: attribute list;
+
+  (* old: vkind: variable_kind wrap;, now in vattrs *)
+  vtype: type_ option;
+  vbody: expr option; (* None for declarations *)
 }
 
-(* less: also work for declaration, in which case the xbody is empty *)
+(* ------------------------------------------------------------------------- *)
+(* Other entities *)
+(* ------------------------------------------------------------------------- *)
+
+and entity = {
+  (* can be "this" for constructor *)
+  name: ident;
+  attrs: attribute list;
+  tparams: type_parameters;
+}
+
+(* less: also work for declaration, in which case the [fc]body is empty *)
 and definition_kind =
   | FuncDef of function_definition
-  | VarDef of variable_definition
   | TypeDef of type_definition
   (* class/traits/objects *)
   | Template of template_definition
-
-(* TODO: multiPatDef? *)
-
-(* ------------------------------------------------------------------------- *)
-(* Val/Var *)
-(* ------------------------------------------------------------------------- *)
-(* Used for local variables but also for fields *)
-and variable_definition = {
-  vkind: variable_kind wrap;
-  vtype: type_; (* option? *)
-  vbody: expr option; (* None for declarations? *)
-}
-and variable_kind =
-  | Val (* immutable *)
-  | Var (* mutable *)
 
 (* ------------------------------------------------------------------------- *)
 (* Functions/Methods *)
@@ -422,17 +493,21 @@ and function_definition = {
 and function_kind =
   | LambdaArrow (* '=>' *)
   | Def (* 'def' *)
+(* less: Constructor, when name = "this"? *)
 
 and fbody =
   | FBlock of block_expr
-  | FExpr of tok (* = *) * expr
+  | FExpr of tok (* = (or => for lambdas) *) * expr
 
 (* fake brackets for single param in short lambdas *)
 and bindings = binding list bracket
 and binding = {
   p_name: ident_or_wildcard;
-  p_type: type_ option;
-  p_implicit: tok option; (* only when just one id in bindings *)
+  (* especially var/val, and implicit *)
+  p_attrs: attribute list;
+  (* None only in Lambdas; Def must define types for each parameters *)
+  p_type: param_type option;
+  p_default: expr option;
 }
 
 (* ------------------------------------------------------------------------- *)
@@ -442,18 +517,22 @@ and binding = {
 (* =~ class def, hence the c prefix below *)
 and template_definition = {
   ckind: template_kind wrap;
-  (* also a list of list of parameters? *)
+  (* also a list of list of parameters *)
   cparams: bindings list;
   cparents: template_parents;
-  cbody: block bracket option;
+  cbody: template_body option;
 }
 (* scala3: intersection types so more symetric *)
 and template_parents = {
-  cextends: type_ option (* TODO: * arguments list *);
+  cextends: (type_ * arguments list) option;
   cwith: type_ list
 }
 
-(* case classes and objects are handled via attributes in the entity *)
+and template_body = (self_type option * block) bracket
+(* if use this then type_ can't be None *)
+and self_type = ident_or_this * type_ option * tok (* '=>' *)
+
+(* Case classes/objects are handled via attributes in the entity *)
 and template_kind =
   | Class
   | Trait
@@ -464,7 +543,7 @@ and template_kind =
 (* Typedef *)
 (* ------------------------------------------------------------------------- *)
 and type_definition = {
-  ttok: tok;
+  ttok: tok; (* 'type' *)
   tbody: type_definition_kind;
 }
 and type_definition_kind =
@@ -494,12 +573,11 @@ type any =
 (*****************************************************************************)
 
 let empty_cparents = { cextends = None; cwith = [] }
+
 let attrs_of_mods xs = List.map (fun x -> M x) xs
 let attrs_of_annots xs = List.map (fun x -> A x) xs
-let mods_with_annots mods annots =
-  attrs_of_annots annots @ attrs_of_mods mods
+let mods_with_annots mods annots = attrs_of_annots annots @ attrs_of_mods mods
 
-(* Intermediate type just used during parsing.
- * less: move in the parser code instead.
-*)
-type literal_or_interpolated = (literal, expr) Common.either
+let is_variable_name s =
+  (* start with lowercase, see varid *)
+  s =~ "[a-z].*"
