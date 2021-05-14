@@ -334,10 +334,19 @@ and stmt =
   | Try of tok * expr * catch_clause option * finally_clause option
   | Throw of tok * expr
 
-and enumerators = generator list
-(* less: use a record? *)
-and generator =
-  pattern * tok (* <- or = *) * expr * guard list
+(* the first one is always a generator *)
+and enumerators = enumerator list
+and enumerator =
+  | G of generator
+  | GIf of guard list
+  (* less: GAssign *)
+
+and generator = {
+  genpat: pattern;
+  gentok: tok (* <- or = *);
+  genbody: expr;
+  genguards: guard list;
+}
 and for_body =
   | Yield of tok * expr
   | NoYield of expr

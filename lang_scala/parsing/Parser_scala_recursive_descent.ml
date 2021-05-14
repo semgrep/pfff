@@ -1794,7 +1794,7 @@ and exprTypeArgs in_ =
 (* ------------------------------------------------------------------------- *)
 
 and interpolatedString ~inPattern in_ =
-  ignore(inPattern); (* TODO *)
+  ignore(inPattern); (* useful? *)
   (* ast: let interpolater = in.name.encoded,  *)
   (* ast: let partsBuf = ref [] in let exprsBuf = ref [] in *)
   let xs = ref [] in
@@ -2009,12 +2009,11 @@ and parseDo in_ : stmt =
 and parseFor in_ : stmt =
   let ii = TH.info_of_tok in_.token in
   skipToken in_;
-  let _enumsTODO =
+  let enums =
     if in_.token =~= (LBRACE ab)
     then inBraces enumerators in_
     else inParens enumerators in_
   in
-  let enums = fb [] in (* TODO *)
   newLinesOpt in_;
   let body =
     match in_.token with
@@ -2116,18 +2115,17 @@ and blockExpr in_ : block_expr =
  *                |  Pattern1 `=` Expr
  *  }}}
 *)
-and enumerators in_ =
+and enumerators in_ : enumerators =
   in_ |> with_logging "enumerators" (fun () ->
     let enums = ref [] in
-    let _xsTODO = enumerator ~isFirst:true in_ in
-    (* TODO enums ++= xs; *)
+    let x = enumerator ~isFirst:true in_ in
+    enums += x;
     while TH.isStatSep in_.token do
       nextToken in_;
-      let _xsTODO = enumerator ~isFirst:false in_ in
-      (* TODO enums ++= xs; *)
-      ()
+      let x = enumerator ~isFirst:false in_ in
+      enums += x;
     done;
-    !enums
+    List.rev !enums
   )
 
 (* pad: this was duplicated in enumerator and generator in the original code*)
@@ -2140,14 +2138,15 @@ and guard_loop in_ : guard list =
     (* ast: makeFilter (g)::xs *)
     Common.opt_to_list g @ xs
 
-and enumerator ~isFirst ?(allowNestedIf=true) in_ =
+and enumerator ~isFirst ?(allowNestedIf=true) in_ : enumerator =
   in_ |> with_logging "enumerator" (fun () ->
     match in_.token with
     | Kif _ when not isFirst ->
-        let _xsTODO = guard_loop in_ in () (* TODO *)
+        let xs = guard_loop in_ in
+        GIf xs
     | _ ->
-        let _gTODO = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
-        ()
+        let g = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
+        G g
   )
 
 (** {{{
@@ -2173,7 +2172,7 @@ and generator ~eqOK ~allowNestedIf in_ : generator =
       else [] (* ast: Nil *)
     in
     (* ast: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
-    (pat, ieq, rhs, tail)
+    {genpat = pat; gentok = ieq; genbody = rhs; genguards = tail }
   )
 
 (*****************************************************************************)
