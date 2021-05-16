@@ -19,7 +19,7 @@ open Common
 (*****************************************************************************)
 (* A Concrete/Abstract Syntax Tree for Scala 2.
  *
- * I tried to keep the names used in the original compiler for
+ * I tried to keep the names used in the original Scala parser for
  * the AST constructs (e.g., Template for class/traits/objects, PatBind
  * for what I usually call PatAs, Apply for Call, bindings for parameters,
  * PatApply for Constructor, etc.),
@@ -74,7 +74,6 @@ type varid = string wrap
 
 let wildcard = "_"
 let this = "this"
-let super = "super"
 
 (* less: right now abusing ident to represent "_" *)
 type ident_or_wildcard = ident
@@ -93,24 +92,26 @@ type dotted_ident = ident list
 type qualified_ident = dotted_ident
 [@@deriving show]
 
-(* scala3: called simple_ref *)
-type path = dotted_ident
+type selectors = dotted_ident
 [@@deriving show]
 
-(* TODO:
-   scala3: called simple_ref
-   type simple_ref =
-   | PId of ident
-   | PThis of ident option * tok
-   | PSuper of ident option * tok * id bracket option * ident
-   and path = path_element list
-   type path = simple_ref * dotted_ident ?
-*)
+(* scala3: not defined in scala2, but good name *)
+type simple_ref =
+  | Id of ident
+  | This of ident option * tok (* 'this' *)
+  | Super of ident option * tok (* 'super'*) * ident bracket option * ident
+[@@deriving show {with_path = false }]
+
+(* the dotted_ident can be empty *)
+type path = simple_ref * selectors
+[@@deriving show]
 
 (* A stable identifier is a path which ends in an identifier
  * src: https://scala-lang.org/files/archive/spec/2.13/03-types.html
+ * This ending identifier can also contain be the special ident 'type'
+ * when used in TyName
 *)
-type stable_id = dotted_ident
+type stable_id = path
 [@@deriving show]
 
 
@@ -252,6 +253,7 @@ and expr =
   | L of literal
   | Tuple of expr list bracket
 
+  (* this path can be just 'this' *)
   | Name of path
   | ExprUnderscore of tok (* '_' *)
 
@@ -259,7 +261,7 @@ and expr =
   | InstanciatedExpr of expr * type_ list bracket (* ex: empty[List[Int]]? *)
   | TypedExpr of expr * tok (* : *) * ascription
 
-  (* !TAKE CARE! (Name path) can also be a disguised DotAccess *)
+  (* !TAKE CARE! (Name path) is also a disguised DotAccess *)
   | DotAccess of expr * tok (* . *) * ident
 
   (* in Scala you can have multiple argument lists! This is
