@@ -920,9 +920,9 @@ let rec typ in_ : type_ =
         (* ast: makeFunctionTypeTree t t2 *)
         TyFunction1 (t, ii, t2)
 
-    | KforSome _ ->
+    | KforSome ii ->
         skipToken in_;
-        makeExistentialTypeTree t in_
+        makeExistentialTypeTree t ii in_
     | _ -> t
   )
 
@@ -1150,8 +1150,10 @@ and annotType in_ =
 (* ------------------------------------------------------------------------- *)
 (* Still in PatternContextSensitive, but more obscure type constructs *)
 (* ------------------------------------------------------------------------- *)
-and makeExistentialTypeTree _t in_ =
-  error "TODO: makeExistentialTypeTree" in_
+and makeExistentialTypeTree t iforsome in_ =
+  let xs = refinement in_ in
+  (* CHECK: "not a legal existential clause", just TypeDef and ValDef *)
+  TyExistential (t, iforsome, xs)
 
 (* pad: https://stackoverflow.com/questions/6676048/why-does-one-select-scala-type-members-with-a-hash-instead-of-a-dot *)
 and typeProjection t in_ : type_ =

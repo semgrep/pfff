@@ -196,6 +196,7 @@ and type_ =
 
   | TyAnnotated of type_ * annotation list (* at least one *)
   | TyRefined of type_ option * refinement
+  | TyExistential of type_ * tok (* 'forSome' *) * refinement
   | TyWith of type_ * tok (* 'with' *) * type_
   | TyWildcard of tok (* '_' *) * type_bounds
 
@@ -207,7 +208,8 @@ and param_type =
   | PTRepeatedApplication of type_ * tok (* * *)
 
 and refinement = refine_stat list bracket
-(* just dcls and type defs *)
+(* just dcls and type defs for TyRefined,
+ * and val and type defs for TyExistential  *)
 and refine_stat = definition
 
 and type_bounds = {
