@@ -725,26 +725,26 @@ let path ~thisOK ~typeOK in_ : path =
     | Kthis ii ->
         nextToken in_;
         (* ast: t := This(tpnme.Empty) *)
-        let t = AST.this, ii in
+        let t = This (None, ii) in
         if not thisOK || in_.token =~= (DOT ab) then begin
           accept (DOT ab) in_;
-          t::selectors ~typeOK in_
+          t, selectors ~typeOK in_
         end
-        else [t]
+        else t, []
 
     | Ksuper ii ->
         nextToken in_;
-        let _TODO = mixinQualifierOpt in_ in
+        let mixins = mixinQualifierOpt in_ in
         (* AST: t := Super(This(tpnme.EMPTY), x *)
-        let t = AST.super, ii in
         accept (DOT ab) in_;
         let x = selector in_ in
+        let t = Super (None, ii, mixins, x) in
         if in_.token =~= (DOT ab)
         then begin
           skipToken in_;
-          t::x::selectors ~typeOK in_
+          t, selectors ~typeOK in_
         end
-        else [t;x]
+        else t, []
     | _ ->
         let name = ident in_ in
         (* ast: t := Ident(name) and special stuff in BACKQUOTED_IDENT *)
@@ -754,30 +754,30 @@ let path ~thisOK ~typeOK in_ : path =
           | Kthis ii ->
               nextToken in_;
               (* ast: t = This(name.toTypeName) *)
-              let t = AST.this, ii in
+              let t = This(Some name, ii) in
               if not thisOK || in_.token =~= (DOT ab) then begin
                 accept (DOT ab) in_;
-                name::t::selectors ~typeOK in_
+                t, selectors ~typeOK in_
               end
-              else [name;t]
+              else t, []
           | Ksuper ii ->
               (* pad: factorize with above Ksuper case *)
               nextToken in_;
-              let _TODO = mixinQualifierOpt in_ in
+              let mixins = mixinQualifierOpt in_ in
               (* AST: Super(This(name.toTypeName), x) *)
-              let t = AST.super, ii in
               accept (DOT ab) in_;
               let x = selector in_ in
+              let t = Super (Some name, ii, mixins, x) in
               if in_.token =~= (DOT ab)
               then begin
                 skipToken in_;
-                t::x::selectors ~typeOK in_
+                t, selectors ~typeOK in_
               end
-              else [name;t;x]
+              else t, []
           | _ ->
-              name::selectors ~typeOK in_
+              Id name, selectors ~typeOK in_
         end
-        else [name]
+        else Id name, []
   )
 
 (** {{{
@@ -1466,7 +1466,8 @@ and simplePattern in_ : pattern =
               None
         in
         (match t, typeAppliedTree, args with
-         | [(s, ii)], None, None when AST.is_variable_name s -> PatVarid (s,ii)
+         | (Id (s, ii), []), None, None when AST.is_variable_name s ->
+             PatVarid (s,ii)
          | t, None, None -> PatName t
          | t, x1, x2 -> PatApply (t, x1, x2)
         )
@@ -2263,20 +2264,20 @@ let importSelectors in_ : import_selector list bracket =
 *)
 let importExpr in_ : import_expr =
   in_ |> with_logging "importExpr" (fun () ->
-    let thisDotted (*AST:name*) in_ : dotted_ident =
+    let thisDotted nameopt in_ : stable_id =
       let ii = TH.info_of_tok in_.token in
-      nextToken in_;
+      nextToken in_; (* 'this' *)
       (* AST: val t = This(name) *)
       accept (DOT ab) in_;
       let result = selector (*t*) in_ in
       accept (DOT ab) in_;
-      [(AST.this, ii); result]
+      This (nameopt, ii), [result]
     in
     (** Walks down import `foo.bar.baz.{ ... }` until it ends at
      * an underscore, a left brace, or an undotted identifier.
     *)
-    let rec loop (expr: dotted_ident) in_ =
-      (* AST: let selectors = *)
+    let rec loop (expr: stable_id) in_ =
+      (* ast: let selectors = *)
       match in_.token with
       (* import foo.bar._; *)
       | USCORE ii -> let _ = wildImportSelector in_ in
@@ -2291,7 +2292,8 @@ let importExpr in_ : import_expr =
            | DOT _ ->
                (* import foo.bar.ident.<unknown> and so create a select node and recurse. *)
                (* AST: (Select(expr, name)) *)
-               let t = expr @ [name] in
+               let (sref, selectors) = expr in
+               let t = (sref, selectors @ [name]) in
                nextToken in_;
                loop t in_
            | _ ->
@@ -2302,9 +2304,9 @@ let importExpr in_ : import_expr =
           (* reaching here means we're done walking. *)
           (* AST: Import(expr, selectors) *)
     in
-    let start : dotted_ident =
+    let start : stable_id =
       match in_.token with
-      | Kthis _ -> thisDotted (*AST: empty*) in_
+      | Kthis _ -> thisDotted None (*ast: empty*) in_
       | _ ->
           (* AST: Ident() *)
           let id = ident in_ in
@@ -2315,9 +2317,8 @@ let importExpr in_ : import_expr =
           );
           (match in_.token with
            | Kthis _ ->
-               let x = thisDotted (* AST: id.name.toTypeName*) in_ in
-               id::x
-           | _ -> [id]
+               thisDotted (Some id) (* ast: id.name.toTypeName*) in_
+           | _ -> Id id, []
           )
     in
     loop start in_
@@ -2685,8 +2686,8 @@ let selfInvocation _vparamss in_ : expr =
   (* AST: if classContextBounds is empty then t else
    *  Apply(t, vparamss.last.map(vp => Ident(vp.name)))
   *)
-  let ident = AST.this, ithis in
-  let name = Name [ident] in
+  let this = This (None, ithis) in
+  let name = Name (this, []) in
   Apply (name, List.rev !xxs)
 
 (** {{{
@@ -3111,8 +3112,9 @@ let templateStatSeq ~isPre in_ : self_type option * block =
            nextToken in_;
            let self_type =
              match first with
-             | Name [id] -> id, None, ii
-             | TypedExpr (Name [id], _, t) -> id, Some t, ii
+             | Name (This (None, ithis), []) -> (AST.this, ithis), None, ii
+             | Name (Id id,[]) -> id, None, ii
+             | TypedExpr (Name (Id id,[]), _, t) -> id, Some t, ii
              (* stricter? *)
              | _ -> error "wrong self type syntax" in_
            in
