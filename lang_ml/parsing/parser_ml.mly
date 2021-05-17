@@ -771,6 +771,9 @@ simple_pattern:
  (* scoped open for pattern *)
  | mod_longident "." "(" pattern ")"
      { PatTodo (("ScopedPat", $2), [$4]) }
+ (* first-class modules *)
+ | "(" Tmodule TUpperIdent ":" module_type ")"
+     { PatTodo (("Module", $2), []) }
  (* sgrep-ext: *)
  | "..."              { PatEllipsis $1 }
 
