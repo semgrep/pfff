@@ -180,7 +180,8 @@ and expr =
    * not exist.
   *)
 
-  (* should be a statement ... *)
+  (* should be a statement ...; is it obsolete since we have a separate pattern
+     type where PatAssign represents a variable with a default value? *)
   | Assign of pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
@@ -324,14 +325,28 @@ and catch =
 (*****************************************************************************)
 (* Pattern (destructuring binding) *)
 (*****************************************************************************)
-(* 'pattern' used to be a different type than 'expr' in cst_js.ml with
- * restrictions on what can be a pattern. But to simplify we now
- * reuse Obj, Arr, etc and so 'expr' to represent a pattern,
- * transpiled: to regular assignments when Ast_js_build.transpile_pattern.
- * sgrep: this is useful for sgrep to keep the ability to match over
- * JS destructuring patterns.
+
+(* Adapted from 'expr'. Some comments there may apply here as well. *)
+and pattern =
+  | PatL of literal
+  | PatId of ident
+  | PatIdSpecial of special wrap
+
+  (* destructuring assignment with default value *)
+  | PatAssign of pattern * tok * expr
+
+  | PatObjAccess of pattern * tok * property_name
+  | PatArrAccess of pattern * pattern bracket
+  | PatObj of obj_pattern
+  | PatArr of pattern list bracket
+
+(* Do we support any of this?
+   (* sgrep-ext: *)
+   | PatEllipsis of tok
+   | PatDeepEllipsis of pattern bracket
+   | PatObjAccessEllipsis of expr * tok (* ... *)
+   | PatTypedMetavar of ident * tok * type_
 *)
-and pattern = expr
 
 (*****************************************************************************)
 (* Types *)
@@ -473,6 +488,7 @@ and class_definition = {
 }
 
 and obj_ = property list bracket
+and obj_pattern = property_pattern list bracket
 
 and property =
   (* field_classic.fld_body is a (Some Fun) for methods.
@@ -483,12 +499,6 @@ and property =
   | FieldColon of field_classic
   (* less: can unsugar? *)
   | FieldSpread of tok * expr
-  (* This is present only when in pattern context.
-   * ugly: we should have a clean separate pattern type instead of abusing
-   * expr, which forces us to add this construct.
-  *)
-  | FieldPatDefault of pattern * tok * expr
-
   | FieldTodo of todo_category * stmt
 
   (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
@@ -499,6 +509,20 @@ and field_classic = {
   fld_attrs: attribute list;
   fld_type: type_ option;
   fld_body: expr option;
+}
+
+and property_pattern =
+  | PatField of field_pattern_classic
+  | PatFieldColon of field_pattern_classic
+  | PatFieldSpread of tok * pattern
+  | PatFieldPatDefault of pattern * tok * expr
+  | PatFieldTodo of todo_category * stmt
+
+and field_pattern_classic = {
+  pat_fld_name: property_name;
+  pat_fld_attrs: attribute list;
+  pat_fld_type: type_ option;
+  pat_fld_body: pattern option;
 }
 
 (*****************************************************************************)
@@ -642,21 +666,22 @@ let attr x = KeywordAttr x
 
 
 (* helpers used in ast_js_build.ml and Parse_javascript_tree_sitter.ml *)
-let var_pattern_to_var v_kind pat tok init_opt =
+let var_pattern_to_var v_kind (pat : pattern) tok init_opt
+  : entity * variable_definition =
   match pat, init_opt with
   (* no need special_multivardef_pattern trick here *)
-  | Id id, None ->
+  | PatId id, None ->
       basic_entity id, {v_kind; v_init = None; v_type = None}
   | _ ->
       let s = AST_generic_.special_multivardef_pattern in
       let id = s, tok in
       let init =
         match init_opt with
-        | Some init -> Assign (pat, tok, init)
-        | None -> pat
+        | Some init -> Some (Assign (pat, tok, init))
+        | None -> None
       in
       (* less: use x.vpat_type *)
-      (basic_entity id, {v_kind; v_init = Some init; v_type = None; })
+      (basic_entity id, {v_kind; v_init = init; v_type = None; })
 
 let build_var kwd (id_or_pat, ty_opt, initopt) =
   match id_or_pat with
@@ -676,6 +701,31 @@ let mk_const_var id e =
   (basic_entity id,
    VarDef { v_kind = Const, (snd id); v_init = Some e; v_type = None; }
   )
+
+(*
+   Convert an assignable pattern to an expression. This is used for
+   shorthand get/transform/set operators such as addition assignment '+='.
+
+     x += 1      -> x
+     a[0] += 1   -> a[0]
+     [a, b] += 1 -> error: root of left-handside pattern is not assignable;
+                    we assume it would have been caught by the parser.
+*)
+let rec assignable_pattern_to_expr (pat : pattern) : expr =
+  match pat with
+  | PatL _lit -> assert false
+  | PatId id -> Id id
+  | PatIdSpecial x -> IdSpecial x
+  | PatAssign (_pat, _tok, _default_value) -> assert false
+  | PatObjAccess (pat, tok, name) ->
+      ObjAccess (assignable_pattern_to_expr pat, tok, name)
+  | PatArrAccess (pat, (tok1, index, tok2)) ->
+      let pat = assignable_pattern_to_expr pat in
+      let index = assignable_pattern_to_expr index in
+      ArrAccess (pat, (tok1, index, tok2))
+  | PatObj _ -> assert false
+  | PatArr _ -> assert false
+
 
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)

@@ -128,13 +128,13 @@ let mk_Super tok =
 let mk_pattern binding_pattern init_opt =
   match init_opt with
   | None -> binding_pattern
-  | Some (t, e) -> Assign (binding_pattern, t, e)
+  | Some (t, e) -> PatAssign (binding_pattern, t, e)
 
 (* Javascript has implicit returns for arrows with expression body *)
 let mk_block_return e =
   fb [Return (PI.fake_info "return", Some e, PI.sc)]
 
-let special spec tok xs =
+let special spec tok xs : expr =
   Apply (IdSpecial (spec, tok), fb xs)
 
 let bop op a b c = special (ArithOp op) b [a;c]
@@ -142,11 +142,13 @@ let uop op tok x = special op tok [x]
 
 let seq (e1, t, e2) = special Seq t [e1; e2]
 
-let mk_Assign (e1, (tok, opopt), e2) =
+let mk_Assign (pat, (tok, opopt), e) : expr =
   match opopt with
-  | None -> Assign (e1, tok, e2)
+  | None -> Assign (pat, tok, e)
   (* less: should use intermediate? can unsugar like this? *)
-  | Some op -> Assign (e1, tok, special (ArithOp op) tok [e1;e2])
+  | Some op ->
+     let left_operand = assignable_pattern_to_expr pat in
+     Assign (pat, tok, special (ArithOp op) tok [left_operand; e])
 
 let mk_Encaps opt (t1, xs, _t2) =
   let b, extra =
@@ -584,8 +586,8 @@ binding_pattern:
  | array_binding_pattern  { $1 }
 
 object_binding_pattern:
- | "{" "}"                               { Obj ($1, [], $2)  }
- | "{" listc(binding_property) ","?  "}" { Obj ($1, $2, $4) }
+ | "{" "}"                               { PatObj ($1, [], $2)  }
+ | "{" listc(binding_property) ","?  "}" { PatObj ($1, $2, $4) }
 
 binding_property:
  | binding_id initializeur?
@@ -601,7 +603,7 @@ binding_property:
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id         initializeur? { mk_pattern (Id $1) $2 }
+ | binding_id         initializeur? { mk_pattern (PatId $1) $2 }
  | binding_pattern    initializeur? { mk_pattern ($1)       $2 }
 
 (* array destructuring *)
@@ -611,8 +613,8 @@ binding_element:
  * type like for the (call)argument type.
  *)
 array_binding_pattern:
- | "[" "]"                      { Arr ($1, [], $2) }
- | "[" binding_element_list "]" { Arr ($1, $2, $3) }
+ | "[" "]"                      { PatArr ($1, [], $2) }
+ | "[" binding_element_list "]" { PatArr ($1, $2, $3) }
 
 binding_start_element:
  | ","                  { [] (* TODO elision *) }
