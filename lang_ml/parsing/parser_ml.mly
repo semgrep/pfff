@@ -227,7 +227,7 @@ list_sep2(X,Sep):
 
 listr_sep(X,Sep):
  | X                       { [$1] }
- | X Sep listr_sep(X,Sep)  { [$1] @ $3 }
+ | X Sep listr_sep(X,Sep)  { $1 :: $3 }
 
 (* list separated by Sep and possibly terminated by trailing Sep.
  * This has to be recursive on the right, otherwise s/r conflict.
@@ -235,7 +235,7 @@ listr_sep(X,Sep):
 list_sep_term(X,Sep):
  | X                       { [$1] }
  | X Sep                   { [$1] }
- | X Sep list_sep_term(X,Sep)  { [$1] @ $3 }
+ | X Sep list_sep_term(X,Sep)  { $1 :: $3 }
 
 list_and(X): list_sep(X, Tand) { $1 }
 
@@ -833,7 +833,7 @@ type_kind:
       { Some ($1, CoreType $2) }
  | "=" ioption(Tprivate) ioption("|") list_sep(constructor_declaration, "|")
       { Some ($1, AlgebraicType $4) }
- | "=" ioption(Tprivate) "{" list_sep_term(label_declaration, ";") "}"
+ | "=" ioption(Tprivate) "{" label_declarations "}"
       { Some ($1, RecordType ($3, ($4), $5)) }
 
 
@@ -849,6 +849,12 @@ type_parameters:
  | "(" list_sep(type_parameter, ",") ")" { $2 }
 
 type_parameter: ioption(type_variance) "'" ident   { ($3) }
+
+(* old: list_sep_term(label_declaration, ";") but accept attr after ; *)
+label_declarations:
+ | label_declaration { [$1] }
+ | label_declaration ";" attribute* { [$1] }
+ | label_declaration ";" attribute* label_declarations { $1 :: $4 }
 
 label_declaration: Tmutable? label ":" poly_type attribute*
    { $2, $4, $1 }
