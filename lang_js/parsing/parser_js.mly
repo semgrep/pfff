@@ -1193,6 +1193,20 @@ assignment_expr:
 
 left_hand_side_expr: left_hand_side_expr_(d1) { $1 }
 
+(*************************************************************************)
+(* Patterns *)
+(*************************************************************************)
+
+(* coupling: see also assignment_expr_no_stmt and extend if can? *)
+pattern:
+ | left_hand_side_expr_(d1) assignment_operator assignment_expr
+    { mk_Assign ($1,$2,$3) }
+
+ (* typescript-ext: 1.6, because <> cant be used in TSX files *)
+ | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
+
+left_hand_side_expr: left_hand_side_expr_(d1) { $1 }
+
 (*----------------------------*)
 (* Generic part (to factorize rules) *)
 (*----------------------------*)
@@ -1424,6 +1438,11 @@ property_name_and_value:
  (* es6: spread operator: *)
  | "..." assignment_expr                { (FieldSpread ($1, $2)) }
  | "..."                                { (FieldEllipsis $1 ) }
+
+property_pattern_name_and_value:
+ | property_name ":" pattern { PatFieldColon (mk_pat_field $1 (Some $3)) }
+ | id                        { PatFieldColon (mk_pat_field (PN $1) None) }
+ | "..." pattern             { (PatFieldSpread ($1, $2)) }
 
 (*----------------------------*)
 (* function call *)

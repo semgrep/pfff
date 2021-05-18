@@ -512,7 +512,6 @@ and field_classic = {
 }
 
 and property_pattern =
-  | PatField of field_pattern_classic
   | PatFieldColon of field_pattern_classic
   | PatFieldSpread of tok * pattern
   | PatFieldPatDefault of pattern * tok * expr
