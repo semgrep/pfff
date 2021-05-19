@@ -288,7 +288,7 @@ and stmt =
   | Break of tok * expr option | Continue of tok * expr option
 
   | Throw of tok * expr
-  | Try of tok * stmt list * catch list * finally list
+  | Try of tok * stmt * catch list * finally list
 
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
@@ -314,8 +314,8 @@ and case =
 (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...])
  * TODO: can now be a list of hint_type, Exn1 | Exn2 like in Java.
 *)
-and catch = tok * hint_type * var * stmt list
-and finally = tok * stmt list
+and catch = tok * hint_type * var * stmt
+and finally = tok * stmt
 
 
 (*****************************************************************************)
@@ -344,7 +344,7 @@ and func_def = {
   l_uses: (bool (* is_ref *) * var) list;
   f_attrs: attribute list;
 
-  f_body: stmt list;
+  f_body: stmt;
 }
 and function_kind =
   | Function

@@ -735,7 +735,7 @@ and stmt_bis env x =
       Common2.opt (expr env) eopt
   | Throw (_, e) -> expr env e
   | Try (_, xs, cs, fs) ->
-      stmtl env xs;
+      stmt env xs;
       catches env (cs);
       finallys env (fs)
 
@@ -746,10 +746,10 @@ and stmt_bis env x =
 
 (* todo: add deps to type hint? *)
 and catch env (_t, _hint_type, _name, xs) =
-  stmtl env xs
+  stmt env xs
 
 and finally env (_t, xs) =
-  stmtl env xs
+  stmt env xs
 
 and case env = function
   | Case (_, e, xs) ->
@@ -779,7 +779,7 @@ and func_def env def =
         Common2.opt (expr env) p.p_default;
     | ParamEllipsis _ -> ()
   );
-  stmtl env def.f_body
+  stmt env def.f_body
 
 and class_def env def =
   (* old, or use Class_php.class_kind_of_ctype
@@ -837,7 +837,7 @@ and class_def env def =
                 [E.Privacy (privacy_of_modifiers def.m_modifiers)]
     in
     let env = add_node_and_has_edge ~props env (def.f_name, E.Method) in
-    stmtl env def.f_body
+    stmt env def.f_body
   )
 
 and constant_def env def =

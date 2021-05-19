@@ -271,11 +271,11 @@ and stmt env st acc =
   | Continue (tok, eopt, _) -> A.Continue (tok, opt expr env eopt) :: acc
   | Return (tok, eopt, _) -> A.Return (tok, opt expr env eopt) :: acc
   | Throw (tok, e, _) -> A.Throw (tok, expr env e) :: acc
-  | Try (tok, (_, stl, _), cl, fl) ->
+  | Try (tok, (lb, stl, rb), cl, fl) ->
       let stl = List.fold_right (stmt_and_def env) stl [] in
       let cl = List.map (catch env) cl in
       let fl = List.map (finally env) fl in
-      A.Try (tok, stl, cl, fl) :: acc
+      A.Try (tok, A.Block (lb, stl, rb), cl, fl) :: acc
   | Echo (tok, el, t) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                       fb (List.map (expr env) (comma_list el))), t) :: acc
@@ -624,14 +624,14 @@ and comma_list_dots_params f xs =
 and func_def env f =
   let _, params, _ = f.f_params in
   let params = comma_list_dots_params (parameter env) params in
-  let _, body, _ = f.f_body in
+  let lb, body, rb = f.f_body in
   { A.f_ref = f.f_ref <> None;
     A.f_name = ident env f.f_name;
     A.f_attrs = attributes env f.f_attrs;
     A.f_params = params;
     A.f_return_type =
       Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
-    A.f_body = List.fold_right (stmt_and_def env) body [];
+    A.f_body = A.Block (lb, List.fold_right (stmt_and_def env) body [], rb);
     A.f_kind = (A.Function, f.f_tok) ;
     A.m_modifiers = [];
     A.l_uses = [];
@@ -640,13 +640,13 @@ and func_def env f =
 and lambda_def env (l_use, ld) =
   let _, params, _ = ld.f_params in
   let params = comma_list_dots_params (parameter env) params in
-  let _, body, _ = ld.f_body in
+  let lb, body, rb = ld.f_body in
   { A.f_ref = ld.f_ref <> None;
     A.f_name = (A.special "_lambda", wrap ld.f_tok);
     A.f_params = params;
     A.f_return_type =
       Common2.fmap (fun (_, t) -> hint_type env t) ld.f_return_type;
-    A.f_body = List.fold_right (stmt_and_def env) body [];
+    A.f_body = A.Block (lb, List.fold_right (stmt_and_def env) body [], rb);
     A.f_kind = A.AnonLambda, ld.f_tok;
     A.m_modifiers = [];
     A.f_attrs = attributes env ld.f_attrs;
@@ -678,8 +678,9 @@ and short_lambda_def env def =
     f_return_type = None;
     f_body =
       (match def.sl_body with
-       | SLExpr e -> [A.Expr (expr env e, PI.sc)]
-       | SLBody (_, body, _) -> List.fold_right (stmt_and_def env) body []
+       | SLExpr e -> A.Expr (expr env e, PI.sc)
+       | SLBody (lb, body, rb) ->
+           Block (lb, List.fold_right (stmt_and_def env) body [], rb)
       );
     f_kind = (A.ShortLambda, sl_tok);
     m_modifiers = [];
@@ -830,7 +831,6 @@ and method_def env m =
     )
   in
 *)
-  let implicit_assigns = [] in (* TODO? *)
   let implicit_flds = [] in (* TODO? *)
   { A.m_modifiers = mds;
     A.f_ref = (match m.f_ref with None -> false | Some _ -> true);
@@ -839,14 +839,14 @@ and method_def env m =
     A.f_params = params ;
     A.f_return_type =
       Common2.fmap (fun (_, t) -> hint_type env t) m.f_return_type;
-    A.f_body = implicit_assigns @ method_body env m.f_body;
+    A.f_body = (* implicit_assigns @ *) method_body env m.f_body;
     A.f_kind = (A.Method, m.f_tok);
     A.l_uses = [];
   },
   implicit_flds
 
-and method_body env (_, stl, _) =
-  List.fold_right (stmt_and_def env) stl []
+and method_body env (lb, stl, rb) =
+  A.Block (lb, List.fold_right (stmt_and_def env) stl [], rb)
 
 and parameter env
     { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a;
@@ -915,14 +915,14 @@ and foreach_pattern env pat =
       A.List (t1, xs, t2)
 
 
-and catch env (t, (_, (fq, dn), _), (_, stdl, _)) =
-  let stdl = List.fold_right (stmt_and_def env) stdl [] in
+and catch env (t, (_, (fq, dn), _), (lb, stdl, rb)) =
+  let stdl = A.Block (lb, List.fold_right (stmt_and_def env) stdl [], rb) in
   let fq = hint_type env fq in
   let dn = dname dn in
   t, fq, dn, stdl
 
-and finally env (t, (_, stdl, _)) =
-  let stdl = List.fold_right (stmt_and_def env) stdl [] in
+and finally env (t, (lb, stdl, rb)) =
+  let stdl = A.Block (lb, List.fold_right (stmt_and_def env) stdl [], rb) in
   t, stdl
 
 and static_var env (x, e) =
