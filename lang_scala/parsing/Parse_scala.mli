@@ -11,10 +11,8 @@ val parse:
 val parse_program:
   Common.filename -> AST_scala.program
 
-(* TODO for semgrep *)
-(*
+(* for semgrep *)
 val any_of_string: string -> AST_scala.any
- *)
 
 (* internal *)
 val tokens: Common.filename -> Parser_scala.token list

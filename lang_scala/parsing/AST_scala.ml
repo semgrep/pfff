@@ -114,11 +114,6 @@ type path = simple_ref * selectors
 type stable_id = path
 [@@deriving show]
 
-
-(* TODO: to remove at some point when the AST is finished *)
-type todo_category = string wrap
-[@@deriving show]
-
 (*****************************************************************************)
 (* Directives *)
 (*****************************************************************************)
