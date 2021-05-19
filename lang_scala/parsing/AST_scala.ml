@@ -184,7 +184,6 @@ and type_ =
 
   | TyInfix of type_ * ident * type_
   | TyFunction1 of type_ * tok (* '=>' *) * type_
-  (* TODO? param_type here? *)
   | TyFunction2 of type_ list bracket * tok (* '=>' *) * type_
   | TyTuple of type_ list bracket
   | TyRepeated of type_ * tok (* '*' *)
@@ -194,13 +193,6 @@ and type_ =
   | TyExistential of type_ * tok (* 'forSome' *) * refinement
   | TyWith of type_ * tok (* 'with' *) * type_
   | TyWildcard of tok (* '_' *) * type_bounds
-
-(* todo: existentialClause (forSome) *)
-
-and param_type =
-  | PT of type_
-  | PTByNameApplication of tok (* => *) * type_
-  | PTRepeatedApplication of type_ * tok (* * *)
 
 and refinement = refine_stat list bracket
 (* just dcls and type defs for TyRefined,
@@ -508,6 +500,11 @@ and binding = {
   p_type: param_type option;
   p_default: expr option;
 }
+
+and param_type =
+  | PT of type_
+  | PTByNameApplication of tok (* => *) * type_
+  | PTRepeatedApplication of type_ * tok (* * *)
 
 (* ------------------------------------------------------------------------- *)
 (* Traits/Classes/Objects *)
