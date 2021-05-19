@@ -773,9 +773,11 @@ and func_def env def =
     | Function -> add_node_and_has_edge env (def.f_name, E.Function)
     | Method -> raise Impossible
   in
-  def.f_params |> List.iter (fun p ->
-    (* less: add deps to type hint? *)
-    Common2.opt (expr env) p.p_default;
+  def.f_params |> List.iter (function
+    | ParamClassic p ->
+        (* less: add deps to type hint? *)
+        Common2.opt (expr env) p.p_default;
+    | ParamEllipsis _ -> ()
   );
   stmtl env def.f_body
 

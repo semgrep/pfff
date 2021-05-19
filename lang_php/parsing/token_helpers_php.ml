@@ -72,6 +72,7 @@ let visitor_info_of_tok f = function
   | T_LNUMBER (s,ii) -> T_LNUMBER(s, f ii)
   | T_DNUMBER (s,ii) -> T_DNUMBER(s, f ii)
   | T_IDENT (s, ii) -> T_IDENT(s, f ii)
+  | T_METAVAR (s, ii) -> T_METAVAR(s, f ii)
   | T_STRING_VARNAME (s, ii) -> T_STRING_VARNAME(s, f ii)
   | T_VARIABLE (s, ii) -> T_VARIABLE(s, f ii)
   | T_NUM_STRING (s, ii) -> T_NUM_STRING(s, f ii)

@@ -215,12 +215,16 @@ and qualified_ident env xs =
 and dname = function
   | DName (s, tok) ->
       if s.[0] = '$'
-      then failwith "dname: the string has a dollar, weird";
-      (* We abuse Id to represent both variables and functions/classes
-       * identifiers in ast_php_simple, so to avoid collision
-       * we prepend a $ (the $ was removed in ast_php.ml and parse_php.ml)
-      *)
-      ("$"^s, wrap tok)
+      then
+        if !Flag_parsing.sgrep_mode
+        then s, wrap tok
+        else failwith "dname: the string has a dollar, weird"
+      else
+        (* We abuse Id to represent both variables and functions/classes
+         * identifiers in ast_php_simple, so to avoid collision
+         * we prepend a $ (the $ was removed in ast_php.ml and parse_php.ml)
+        *)
+        ("$"^s, wrap tok)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -609,14 +613,22 @@ and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = (tok,_,_)}=
   let value = (expr env cst_val) in
   { A.cst_tok = tok; A.cst_name = name; A.cst_body = value }
 
+and comma_list_dots_params f xs =
+  match xs with
+  | [] -> []
+  | Common.Left3 x :: rl -> A.ParamClassic (f x) :: comma_list_dots_params f rl
+  (* less: guard by sgrep_mode? *)
+  | Common.Middle3 t :: rl -> A.ParamEllipsis t :: comma_list_dots_params f rl
+  | Common.Right3 _ :: rl -> comma_list_dots_params f rl
+
 and func_def env f =
   let _, params, _ = f.f_params in
-  let params = comma_list_dots params in
+  let params = comma_list_dots_params (parameter env) params in
   let _, body, _ = f.f_body in
   { A.f_ref = f.f_ref <> None;
     A.f_name = ident env f.f_name;
     A.f_attrs = attributes env f.f_attrs;
-    A.f_params = List.map (parameter env) params;
+    A.f_params = params;
     A.f_return_type =
       Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
@@ -627,11 +639,11 @@ and func_def env f =
 
 and lambda_def env (l_use, ld) =
   let _, params, _ = ld.f_params in
-  let params = comma_list_dots params in
+  let params = comma_list_dots_params (parameter env) params in
   let _, body, _ = ld.f_body in
   { A.f_ref = ld.f_ref <> None;
     A.f_name = (A.special "_lambda", wrap ld.f_tok);
-    A.f_params = List.map (parameter env) params;
+    A.f_params = params;
     A.f_return_type =
       Common2.fmap (fun (_, t) -> hint_type env t) ld.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
@@ -659,11 +671,9 @@ and short_lambda_def env def =
     f_name = A.special "_lambda", sl_tok;
     f_params =
       (match def.sl_params with
-       | SLSingleParam p -> [parameter env p]
+       | SLSingleParam p -> [ParamClassic (parameter env p)]
        | SLParamsOmitted -> []
-       | SLParams (_, xs, _) ->
-           let xs = comma_list_dots xs in
-           List.map (parameter env) xs
+       | SLParams (_, xs, _) -> comma_list_dots_params (parameter env) xs
       );
     f_return_type = None;
     f_body =
@@ -789,8 +799,9 @@ and class_body env st (mets, flds) =
 
 and method_def env m =
   let _, params, _ = m.f_params in
-  let params = comma_list_dots params in
   let mds = m.f_modifiers in
+  let params = comma_list_dots_params (parameter env) params in
+(*
   let implicits =
     params |> Common.map_filter (fun p ->
       match p.p_modifier with
@@ -818,12 +829,14 @@ and method_def env m =
                   A.Var (str_with_dollar, tok)), PI.sc)
     )
   in
-
+*)
+  let implicit_assigns = [] in (* TODO? *)
+  let implicit_flds = [] in (* TODO? *)
   { A.m_modifiers = mds;
     A.f_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.f_name = ident env m.f_name;
     A.f_attrs = attributes env m.f_attrs;
-    A.f_params = List.map (parameter env) params ;
+    A.f_params = params ;
     A.f_return_type =
       Common2.fmap (fun (_, t) -> hint_type env t) m.f_return_type;
     A.f_body = implicit_assigns @ method_body env m.f_body;

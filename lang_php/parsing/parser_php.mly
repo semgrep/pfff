@@ -57,6 +57,7 @@
   *)
  *)
 open Common
+module Flag = Flag_parsing
 
 open Cst_php
 module PI = Parse_info
@@ -88,7 +89,10 @@ let rec validate_parameter_list = function
 and validate_parameter_list_empty = function
   | [] -> ()
   | Right3 _ :: params -> validate_parameter_list_empty params
-  | _ -> raise Parsing.Parse_error
+  | _ ->
+      if !Flag.sgrep_mode
+      then ()
+      else raise Parsing.Parse_error
 
 let o2l = Common.opt_to_list
 
@@ -219,6 +223,7 @@ let mk_Toplevel x =
 %token <Parse_info.t> T_ELLIPSIS "..."
 (* semgrep-ext: *)
 %token <Parse_info.t> LDots "<..." RDots "...>"
+%token <string * Parse_info.t> T_METAVAR
 
 
 (* lexing hack to parse lambda params properly *)
@@ -372,7 +377,7 @@ statement:
  | T_RETURN expr_or_dots? ";"  { Return ($1, $2, $3)}
 
  | T_TRY   "{" inner_statement* "}"
-   T_CATCH "(" list_sep2(class_name, "|")  T_VARIABLE ")"
+   T_CATCH "(" list_sep2(class_name, "|")  variable ")"
      "{" inner_statement* "}"
      additional_catch* finally_clause?
      { let try_block = ($2,$3,$4) in
@@ -492,7 +497,7 @@ new_else_single:
 
 
 additional_catch:
- | T_CATCH "(" class_name T_VARIABLE ")" "{" inner_statement* "}"
+ | T_CATCH "(" class_name variable ")" "{" inner_statement* "}"
      { let catch_block = ($6, $7, $8) in
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
        catch
@@ -507,13 +512,13 @@ finally_clause: T_FINALLY "{" inner_statement* "}"  { ($1, ($2, $3, $4)) }
 declare: ident   TEQ static_scalar { Name $1, ($2, $3) }
 
 global_var:
- | T_VARIABLE       { GlobalVar (DName $1) }
+ | variable       { GlobalVar (DName $1) }
  | "$" expr         { GlobalDollar ($1, $2) }
  | "$" "{" expr "}" { GlobalDollarExpr ($1, ($2, $3, $4)) }
 
 static_var:
- | T_VARIABLE                   { (DName $1, None) }
- | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
+ | variable                   { (DName $1, None) }
+ | variable TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
 unset_variable: expr_or_dots    { $1 }
 
@@ -564,7 +569,7 @@ parameter_list:
  (* php-facebook-ext: trailing comma *)
  | parameter "," parameter_list   { $1 :: (Right3 $2) :: $3 }
 
-parameter: attributes? ctor_modifier? type_php? parameter_bis
+parameter: attributes? ctor_modifier? ioption(type_php) parameter_bis
    { match $4 with
      | Left3 param ->
          let hint = match param.p_type with
@@ -578,21 +583,31 @@ parameter: attributes? ctor_modifier? type_php? parameter_bis
       }
 
 parameter_bis:
- | T_VARIABLE
+ | variable
      { Left3 (mk_param $1) }
- | TAND T_VARIABLE
+ | TAND variable
      { let p = mk_param $2 in Left3 {p with p_ref=Some $1} }
- | T_VARIABLE TEQ static_scalar
+ | variable TEQ static_scalar
      { let p = mk_param $1 in Left3 {p with p_default=Some($2,$3)} }
- | TAND T_VARIABLE TEQ static_scalar
+ | TAND variable TEQ static_scalar
      { let p = mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
  | "..." T_VARIABLE
      { let p = mk_param $2 in Left3 {p with p_variadic=Some $1; p_type=Some(HintVariadic ($1, None))} }
  | TAND "..." T_VARIABLE
      { let p = mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2; p_type=Some(HintVariadic ($2, None))} }
- (* varargs extension *)
+ (* varargs extension, and semgrep-ext: *)
  | "..."
      { Middle3 $1 }
+
+(* semgrep-ext: there are places where we expect a T_VARIABLE and we
+ * also want to accept metavariables.
+ *)
+%inline
+variable:
+ | T_VARIABLE { $1 }
+ (* semgrep-ext: *)
+ | T_METAVAR { $1 }
+
 
 (* php-facebook-ext: implicit field via constructor parameter *)
 ctor_modifier: visibility_modifier { $1 }
@@ -619,7 +634,7 @@ non_empty_lexical_var_list_bis:
  | non_empty_lexical_var_list_bis "," lexical_var
      { $1 @ [Right $2; Left $3] }
 
-lexical_var: TAND? T_VARIABLE  { ($1, DName $2) }
+lexical_var: TAND? variable  { ($1, DName $2) }
 
 (*************************************************************************)
 (* Class declaration *)
@@ -754,8 +769,8 @@ class_constant_declaration:
 
 
 class_variable:
- | T_VARIABLE           { (DName $1, None) }
- | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
+ | variable           { (DName $1, None) }
+ | variable TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
 method_body:
  | "{" inner_statement* "}" { ($1, $2, $3), MethodRegular }
@@ -1278,10 +1293,13 @@ ident:
  | T_ENUM      { PI.str_of_info $1, $1 }
  | T_TYPE      { PI.str_of_info $1, $1 }
  | T_SUPER     { PI.str_of_info $1, $1 }
+ (* semgrep-ext: *)
+ | T_METAVAR   { $1 }
 
 ident_encaps:
  | T_IDENT { $1 }
 
+(* In namespace and class name. Used notably indirectly in primary_expr. *)
 ident_in_name:
  | ident { $1 }
  | T_INSTANCEOF { PI.str_of_info $1, $1 }

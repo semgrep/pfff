@@ -352,7 +352,12 @@ and function_kind =
   | ShortLambda (* they have different scoping rules for free variables *)
   | Method
 
-and parameter = {
+and parameter =
+  | ParamClassic of parameter_classic
+  (* sgrep-ext: *)
+  | ParamEllipsis of tok
+
+and parameter_classic = {
   p_type: hint_type option;
   p_ref: tok option;
   p_name: var;

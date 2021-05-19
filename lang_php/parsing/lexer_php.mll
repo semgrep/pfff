@@ -582,8 +582,15 @@ rule st_in_scripting = parse
      *)
     | "$" (LABEL as s) {
         let info = tokinfo lexbuf in
-        if AST_generic_.is_metavar_name ("$" ^ s) && !Flag_parsing.sgrep_mode
-        then T_IDENT (case_str ("$" ^ s), info)
+        (* sgrep-ext: we used to generate a T_IDENT here, so a metavariable
+         * could be used where a T_IDENT was expected, e.g., a function name,
+         * but we also want to use a metavariable where a T_VARIABLE could
+         * be used, e.g., a parameter, so simpler to use a separate
+         * token for metavariables. That way we also avoid certain
+         * conflicts in the grammar.
+         *)
+        if AST_generic_.is_metavar_name ("$" ^ s) && !Flag.sgrep_mode
+        then T_METAVAR (case_str ("$" ^ s), info)
         else T_VARIABLE(case_str s, info)
           }
     | ("$" as dollar) "$" (LABEL as s) {
@@ -598,7 +605,7 @@ rule st_in_scripting = parse
                   }
   (* sgrep-ext: *)
   | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
-     { Flag.sgrep_guard (T_IDENT (tok lexbuf, tokinfo lexbuf)) }
+     { Flag.sgrep_guard (T_METAVAR (tok lexbuf, tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)

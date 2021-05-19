@@ -632,7 +632,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
     | T.TUnknown ii -> tag ii Error
 
     (* all the name and varname should have been tagged by now. *)
-    | T.T_IDENT (_, ii) ->
+    | T.T_IDENT (_, ii) | T.T_METAVAR (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Error
     (* they should have been covered before *)
