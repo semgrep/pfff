@@ -55,9 +55,10 @@ let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
  * in a special way.
  *
  * TODO:
- *  - see the AST: tag for what Parsers.scala was doing to build an AST
- *    (I use ast: when I return something from AST_scala.ml to cover the
- *     construct)
+ *  - see the AST: tag for what Parsers.scala was doing to build an AST.
+ *    I use ast: when I return something from AST_scala.ml to cover the
+ *    construct. I don't include the ast: for Nil or EmptyTree where I
+ *    usually instead return a None or a [].
  * less:
  *  - see the CHECK: tag for what Parsers.scala was statically checking
  *  - see the STILL for what was TODO but may not be needed in the end as
@@ -218,12 +219,15 @@ let convertToParam tk e =
       pr2 (spf "convertToParam: not handled %s" (AST.show_expr e));
       raise (PI.Parsing_error (tk))
 
-
-
 let convertToParams tk e =
   match e with
   | Tuple (lb, xs, rb) -> (lb, xs |> List.map (convertToParam tk), rb)
   | _ -> fb [convertToParam tk e]
+
+let makeMatchFromExpr e =
+  match e with
+  | BlockExpr (lb, BECases cases, rb) -> CatchCases (lb, cases, rb)
+  | _ -> CatchExpr e
 
 (*****************************************************************************)
 (* Token helpers  *)
@@ -904,7 +908,7 @@ let pushOpInfo _topTODO in_ : ident * type_ list bracket option =
   let targs =
     if in_.token =~= (LBRACKET ab)
     then Some (!exprTypeArgs_ in_)
-    else None (* ast: Nil *)
+    else None
   in
   (* AST: OpInfo(top, name, targs) *)
   x, targs
@@ -1263,7 +1267,6 @@ and bound tok in_ : (tok * type_) option =
     nextToken in_;
     Some (ii, typ in_)
   end
-  (* ast: EmptyTree *)
   else None
 
 (* ------------------------------------------------------------------------- *)
@@ -1929,7 +1932,7 @@ and guard in_ : guard option =
         nextToken in_;
         let x = postfixExpr in_ in
         Some (ii, stripParens x)
-    | _ -> None (* ast: Nil *)
+    | _ -> None
   )
 
 and caseBlock in_ : tok * block =
@@ -2088,9 +2091,9 @@ and parseTry in_ : stmt =
     | Kcatch ii ->
         nextToken in_;
         let e = expr in_ in
-        (* AST: makeMatchFromExpr(e) *)
-        Some (ii, e)
-    | _ -> None (* ast: Nil *)
+        let cases = makeMatchFromExpr e in
+        Some (ii, cases)
+    | _ -> None
   in
   let finalizer =
     match in_.token with
@@ -2098,7 +2101,6 @@ and parseTry in_ : stmt =
         nextToken in_;
         Some (ii, expr in_)
     | _ ->
-        (* ast: EmptyTree *)
         None
   in
   (* ast: Try(body, handler, finalizer) *)
@@ -2169,7 +2171,7 @@ and enumerators in_ : enumerators =
 (* pad: this was duplicated in enumerator and generator in the original code*)
 and guard_loop in_ : guard list =
   if not (in_.token =~= (Kif ab))
-  then [] (* ast: Nil *)
+  then []
   else
     let g = guard in_ in
     let xs = guard_loop in_ in
@@ -2207,7 +2209,7 @@ and generator ~eqOK ~allowNestedIf in_ : generator =
     let tail =
       if allowNestedIf
       then guard_loop in_
-      else [] (* ast: Nil *)
+      else []
     in
     (* ast: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
     {genpat = pat; gentok = ieq; genbody = rhs; genguards = tail }
@@ -2730,7 +2732,7 @@ let constrBlock vparamss in_ : block bracket =
       nextToken in_;
       !blockStatSeq_ in_
     end
-    else [](* ast: Nil *)
+    else []
   in
   let stats = (E x)::xs in
   let rb = TH.info_of_tok in_.token in
@@ -2911,7 +2913,7 @@ let patDefOrDcl vkind attrs in_ : variable_definitions =
     | _ ->
         (* CHECK: if tp.isEmpty then accept EQUALS (* raise error *) *)
         (* AST: newmods |= DEFERRED *)
-        None (* AST: EmptyTree *)
+        None
   in
   (* CHECK: ensureNonOverlapping *)
   (* CHECK: "lazy values may not be abstract" *)
@@ -2989,7 +2991,7 @@ let statSeq ?(errorMsg="illegal start of definition") ?(rev=false) stat in_ =
          stats += x
      | None ->
          if TH.isStatSep in_.token
-         then () (* AST: Nil *)
+         then ()
          else error errorMsg in_
     );
     acceptStatSepOpt in_
@@ -3101,13 +3103,13 @@ let topStat in_ : top_stat option =
   | Kpackage ii ->
       skipToken in_;
       let x = !packageOrPackageObject_ ii in_ in
-      Some x (* ast: x::Nil *)
+      Some x
   | Kimport _ ->
       let x = importClause in_ in
-      Some (I x) (* ast: x *)
+      Some (I x)
   | t when TH.isAnnotation t || TH.isTemplateIntro t || TH.isModifier t ->
       let x = !topLevelTmplDef_ in_ in
-      Some (D x) (* x :: Nil *)
+      Some (D x)
   | _ -> None
 
 let topStatSeq ?rev in_ : top_stat list =

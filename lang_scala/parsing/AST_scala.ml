@@ -343,7 +343,10 @@ and for_body =
   | NoYield of expr
 
 and catch_clause =
-  tok (* 'catch' *) * (* TODO: case_clauses bracket *) expr
+  tok (* 'catch' *) * catch_body
+and catch_body =
+  | CatchCases of case_clauses bracket
+  | CatchExpr of expr
 and finally_clause=
   tok(* 'finally' *) * expr
 
