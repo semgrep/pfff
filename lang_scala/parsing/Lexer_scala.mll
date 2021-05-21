@@ -249,9 +249,8 @@ rule token = parse
   (* a lambda, found in sbt source *)
   | "\xce\xbb" { ID_LOWER (tok lexbuf, tokinfo lexbuf) }
 
-
   (* semgrep-ext: *)
-  | "..."   { Ellipsis (tokinfo lexbuf) }
+  | "..."   { Flag_parsing.sgrep_guard (Ellipsis (tokinfo lexbuf)) }
   (* semgrep-ext: *)
   | "<..."  { Flag_parsing.sgrep_guard (LDots (tokinfo lexbuf)) }
   | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }

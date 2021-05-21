@@ -224,8 +224,8 @@ let param_of_e_opt e =
 
 let convertToParam tk e =
   match param_of_e_opt e with
-  | Some (id, None) -> AST.basic_param id
-  | Some (id, Some t) -> { (AST.basic_param id) with p_type = Some (PT t) }
+  | Some (id, None) -> ParamClassic (AST.basic_param id)
+  | Some (id, Some t) -> ParamClassic { (AST.basic_param id) with p_type = Some (PT t) }
   | _ ->
       (* CHECK: "not a legal formal parameter" *)
       warning (spf "convertToParam: not handled %s" (AST.show_expr e));
@@ -1783,6 +1783,18 @@ and simpleExpr in_ : expr =
           let def = { ckind = (Singleton, ii);
                       cparams = []; cparents; cbody} in
           New (ii, def)
+
+      (* semgrep-ext: *)
+      | T.Ellipsis ii ->
+          skipToken in_;
+          AST.Ellipsis ii
+      | LDots ld ->
+          skipToken in_;
+          let e = expr in_ in
+          let rd = TH.info_of_tok in_.token in
+          accept (RDots ab) in_;
+          DeepEllipsis (ld, e, rd)
+
       | _ -> error "illegal start of simple expression" in_
     in
     simpleExprRest ~canApply:!canApply t in_
@@ -1989,8 +2001,9 @@ and implicitClosure implicitmod location in_ =
     else None (* ast: Ident(id) *)
   in
   (* ast: convertToParam expr0; copyValDef(param0, mods|Flags.IMPLICIT)  *)
-  let param = { p_name = id; p_attrs = [M implicitmod]; p_type = topt;
-                p_default = None } in
+  let param = ParamClassic
+      { p_name = id; p_attrs = [M implicitmod]; p_type = topt;
+        p_default = None } in
   let iarrow = TH.info_of_tok in_.token in
   accept (ARROW ab) in_;
   let body =
@@ -2554,32 +2567,35 @@ let param _owner implicitmod _caseParam in_ : binding =
       )
       (* ast: if (caseParam) mods |= Flags.CASEACCESSOR *)
     in
-
-    let name = ident in_ in
-    let tpt =
-      accept (COLON ab) in_;
-      if in_.token =~= (ARROW ab) then begin
-        (* CHECK: if owner.isTypeName && !mods.isLocalToThis
-         * "var/val parameters may not be call-by-name" *)
-        (* ast: bynamemod = Flags.BYNAMEPARAM *)
-      end;
-      paramType in_
-    in
-    let default =
-      match in_.token with
-      | EQUALS _ ->
-          nextToken in_;
-          (* ast: mods |= FLAGS.DEFAULTPARAM *)
-          let x = expr in_ in
-          Some x
-      | _ ->
-          (* ast: emptyTree *)
-          None
-    in
-    (* ast: ValDef((mods|implicitmod|bynamemod) with annots, name.toTermName, tpt, default) *)
-    let p_attrs = AST.mods_with_annots mods annots in
-    { p_name = name; p_attrs; p_type = Some tpt; p_default = default }
-  )
+    (* semgrep-ext: *)
+    (match in_.token with
+     | Ellipsis ii -> nextToken in_; ParamEllipsis ii
+     | _ ->
+         let name = ident in_ in
+         let tpt =
+           accept (COLON ab) in_;
+           if in_.token =~= (ARROW ab) then begin
+             (* CHECK: if owner.isTypeName && !mods.isLocalToThis
+              * "var/val parameters may not be call-by-name" *)
+             (* ast: bynamemod = Flags.BYNAMEPARAM *)
+           end;
+           paramType in_
+         in
+         let default =
+           match in_.token with
+           | EQUALS _ ->
+               nextToken in_;
+               (* ast: mods |= FLAGS.DEFAULTPARAM *)
+               let x = expr in_ in
+               Some x
+           | _ ->
+               (* ast: emptyTree *)
+               None
+         in
+         (* ast: ValDef((mods|implicitmod|bynamemod) with annots, name.toTermName, tpt, default) *)
+         let p_attrs = AST.mods_with_annots mods annots in
+         ParamClassic { p_name = name; p_attrs; p_type = Some tpt; p_default = default }
+    ))
 
 (* CHECK: "no by-name parameter type allowed here" *)
 (* CHECK: "no * parameter type allowed here" *)

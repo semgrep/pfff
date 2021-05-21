@@ -277,6 +277,10 @@ and expr =
 
   | S of stmt
 
+  (* semgrep-ext: *)
+  | Ellipsis of tok
+  | DeepEllipsis of expr bracket
+
 
 (* only Name, or DotAccess, or Apply! (e.g., for ArrAccess) *)
 and lhs = expr
@@ -318,12 +322,15 @@ and stmt =
   | While of tok * expr bracket * expr
   | DoWhile of tok * expr * tok * expr bracket
 
-  | For of tok * enumerators bracket * for_body
+  | For of tok * for_header * for_body
 
   | Return of tok * expr option
 
   | Try of tok * expr * catch_clause option * finally_clause option
   | Throw of tok * expr
+
+(* TODO: ForEllipsis for semgrep *)
+and for_header = enumerators bracket
 
 (* the first one is always a generator *)
 and enumerators = enumerator list
@@ -495,7 +502,12 @@ and fbody =
 
 (* fake brackets for single param in short lambdas *)
 and bindings = binding list bracket
-and binding = {
+and binding =
+  | ParamClassic of parameter_classic
+  (* semgrep-ext: *)
+  | ParamEllipsis of tok
+
+and parameter_classic = {
   p_name: ident_or_wildcard;
   (* especially var/val, and implicit *)
   p_attrs: attribute list;

@@ -212,7 +212,10 @@ let inLastOfStat x =
   | USCORE _
   | Ktype _
   (* less: | XMLSTART  *)
-  | RPAREN _ | RBRACKET _ | RBRACE _ ->
+  | RPAREN _ | RBRACKET _ | RBRACE _
+  (* semgrep-ext: *)
+  | Ellipsis _ | RDots _
+    ->
       logger#info "inLastOfStat: true for %s" (Common.dump x);
       true
   | _ -> false
@@ -345,7 +348,9 @@ let isExprIntro x =
    | Kdo _ | Kreturn _ | Kthrow _
    | USCORE _
    | LPAREN _ | LBRACE  _
-     (* | XMLSTART  *)
+   (* | XMLSTART  *)
+   (* semgrep-ext: *)
+   | Ellipsis _ | LDots _
      -> true
    | _ -> false
   )
