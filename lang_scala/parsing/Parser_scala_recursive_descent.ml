@@ -139,7 +139,6 @@ let copy_env env =
 let ab = PI.abstract_info
 let fb = PI.fake_bracket
 
-(* AST: use AST_scala something *)
 let noSelfType = None
 let noMods = []
 
@@ -206,14 +205,27 @@ let (++=) aref xs =
 let (+=) aref x =
   aref := x::!aref
 
+let id_of_e_opt = function
+  | Name (Id id, []) -> Some id
+  (* TODO? can this happen? is it because we wrongly parse the self type? *)
+  | Name (This (None, ii) , []) -> Some (AST.this, ii)
+  | ExprUnderscore ii -> Some (AST.wildcard, ii)
+  | _ -> None
+
+let param_of_e_opt e =
+  match e, id_of_e_opt e with
+  | _, Some id -> Some (id, None)
+  | TypedExpr (e, _, t), None ->
+      (match id_of_e_opt e with
+       | Some id -> Some (id, Some t)
+       | None -> None
+      )
+  | _ -> None
+
 let convertToParam tk e =
-  match e with
-  | Name (Id id, []) ->
-      AST.basic_param id
-  | ExprUnderscore ii ->
-      AST.basic_param (AST.wildcard, ii)
-  | TypedExpr (Name (Id id, []), _, t) ->
-      { (AST.basic_param id) with p_type = Some (PT t) }
+  match param_of_e_opt e with
+  | Some (id, None) -> AST.basic_param id
+  | Some (id, Some t) -> { (AST.basic_param id) with p_type = Some (PT t) }
   | _ ->
       (* CHECK: "not a legal formal parameter" *)
       pr2 (spf "convertToParam: not handled %s" (AST.show_expr e));
@@ -674,7 +686,7 @@ let wildcardOrIdent in_ : ident =
 (* For when it's known already to be a type name. *)
 let identForType in_ : ident =
   let x = ident in_ in
-  (* AST: x.toTypeName *)
+  (* ast: x.toTypeName *)
   x
 
 (* ------------------------------------------------------------------------- *)
@@ -759,7 +771,7 @@ let path ~thisOK ~typeOK in_ : path =
     | Ksuper ii ->
         nextToken in_;
         let mixins = mixinQualifierOpt in_ in
-        (* AST: t := Super(This(tpnme.EMPTY), x *)
+        (* ast: t := Super(This(tpnme.EMPTY), x *)
         accept (DOT ab) in_;
         let x = selector in_ in
         let t = Super (None, ii, mixins, x) in
@@ -788,7 +800,7 @@ let path ~thisOK ~typeOK in_ : path =
               (* pad: factorize with above Ksuper case *)
               nextToken in_;
               let mixins = mixinQualifierOpt in_ in
-              (* AST: Super(This(name.toTypeName), x) *)
+              (* ast: Super(This(name.toTypeName), x) *)
               accept (DOT ab) in_;
               let x = selector in_ in
               let t = Super (Some name, ii, mixins, x) in
@@ -1184,7 +1196,7 @@ and typeProjection t in_ : type_ =
   let ii = TH.info_of_tok in_.token in (* # *)
   skipToken in_;
   let name = identForType in_ in
-  (* AST: SelectFromTypeTree(t, name) *)
+  (* ast: SelectFromTypeTree(t, name) *)
   TyProj (t, ii, name)
 
 (** {{{
@@ -1353,7 +1365,7 @@ and pattern1 in_ : pattern =
        (* AST: p.removeAttachment[BackquotedIdentifierAttachment.type] *)
        skipToken in_;
        let t = compoundType in_ in
-       (* AST: Typed(p, x) *)
+       (* ast: Typed(p, x) *)
        (match p with
         | PatVarid varid -> PatTypedVarid (varid, ii, t)
         (* stricter? *)
@@ -1377,7 +1389,7 @@ and pattern2 in_ : pattern =
       let y = pattern3 in_ in
       (* not_crazy: ast: case p @ Ident(name) *)
       (match x with
-       (* AST: Bind(name, body), if WILDCARD then ... *)
+       (* ast: Bind(name, body), if WILDCARD then ... *)
        | PatVarid varid -> PatBind (varid, ii, y)
        (* stricter? *)
        | _ -> error "binded patterns work only with a varid" in_
@@ -1479,7 +1491,7 @@ and simplePattern in_ : pattern =
               let xs = typeArgs in_ in
               (* ast: AppliedTypeTree(convertToTypeId(t), xs) *)
               Some xs
-          | _ -> None (* AST: t *)
+          | _ -> None (* ast: t *)
         in
         let args =
           match in_.token with
@@ -1593,7 +1605,7 @@ and parseOther location (in_: env) : expr =
       * for example in 'foo((x: Path) => (...))' we can have parsed
       * x and seeing the colon.
      *)
-     | COLON _ ->
+     | COLON icolon ->
          t := stripParens !t;
          skipToken in_;
          (match in_.token with
@@ -1610,10 +1622,10 @@ and parseOther location (in_: env) : expr =
               (* AST: fold around t makeAnnotated *)
               ()
           | _ ->
-              let _tptTODO = typeOrInfixType location in_ in
+              let tpt = typeOrInfixType location in_ in
               (* AST: if isWildcard(t) ... *)
-              (* AST: Typed(t, tpt) *)
-              ()
+              (* ast: Typed(t, tpt) *)
+              t := TypedExpr (!t, icolon, tpt)
          )
      | Kmatch ii ->
          skipToken in_;
@@ -3140,10 +3152,8 @@ let templateStatSeq ~isPre in_ : self_type option * block =
            (* ast: case Typed(...) self := makeSelfDef(), convertToParam *)
            nextToken in_;
            let self_type =
-             match first with
-             | Name (This (None, ithis), []) -> (AST.this, ithis), None, ii
-             | Name (Id id,[]) -> id, None, ii
-             | TypedExpr (Name (Id id,[]), _, t) -> id, Some t, ii
+             match param_of_e_opt first with
+             | Some (id, topt) -> id, topt, ii
              (* stricter? *)
              | _ -> error "wrong self type syntax" in_
            in
