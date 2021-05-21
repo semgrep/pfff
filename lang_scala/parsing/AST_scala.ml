@@ -566,7 +566,9 @@ type program = top_stat list
 (*****************************************************************************)
 
 type any =
-  | Program of program
+  | Pr of program
+  | Ex of expr
+  | Ss of block
   | Tk of tok
 [@@deriving show {with_path = false }]
 

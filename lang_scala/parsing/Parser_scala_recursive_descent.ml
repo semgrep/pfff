@@ -228,7 +228,7 @@ let convertToParam tk e =
   | Some (id, Some t) -> { (AST.basic_param id) with p_type = Some (PT t) }
   | _ ->
       (* CHECK: "not a legal formal parameter" *)
-      pr2 (spf "convertToParam: not handled %s" (AST.show_expr e));
+      warning (spf "convertToParam: not handled %s" (AST.show_expr e));
       raise (PI.Parsing_error (tk))
 
 let convertToParams tk e =
@@ -365,7 +365,7 @@ let afterLineEnd in_ =
 (* Lexing tricks *)
 (* ------------------------------------------------------------------------- *)
 let postProcessToken _in_ =
-  pr2_once "postProcessToken";
+  warning "postProcessToken";
   ()
 
 (* ------------------------------------------------------------------------- *)
@@ -3445,7 +3445,7 @@ let topLevelTmplDef in_ : definition =
   x
 
 (*****************************************************************************)
-(* Entry point  *)
+(* Entry points  *)
 (*****************************************************************************)
 
 (* set the forward reference *)
@@ -3526,3 +3526,21 @@ let parse toks =
   let xs = compilationUnit in_ in
   accept (EOF ab) in_;
   xs
+
+let semgrep_pattern toks =
+  let try_rule frule =
+    let in_ = mk_env toks in
+    init in_;
+    let x = frule in_ in
+    accept (EOF ab) in_;
+    x
+  in
+  try
+    try_rule (fun in_ -> Ex (expr in_))
+  with PI.Parsing_error _ ->
+    begin
+      try
+        try_rule (fun in_ -> Ss (block in_))
+      with PI.Parsing_error _ ->
+        try_rule (fun in_ -> Pr (compilationUnit in_))
+    end

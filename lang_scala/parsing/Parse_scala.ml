@@ -97,8 +97,16 @@ let parse_program file =
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)
-let any_of_string _str =
-  failwith "Parse_scala.any_of_string: TODO"
+(* for semgrep *)
+let any_of_string s =
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    Common2.with_tmp_file ~str:s ~ext:"scala" (fun file ->
+      let toks = tokens file in
+      (* -------------------------------------------------- *)
+      (* Call parser *)
+      (* -------------------------------------------------- *)
+      Parser_scala_recursive_descent.semgrep_pattern toks
+    ))
 
 (*****************************************************************************)
 (* Helpers *)
