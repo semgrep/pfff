@@ -510,7 +510,10 @@ and param_type =
 (* Traits/Classes/Objects *)
 (* ------------------------------------------------------------------------- *)
 
-(* =~ class def, hence the c prefix below *)
+(* =~ class def, hence the c prefix below.
+ * Note that this is also used for New, in which case
+ * the constructor arguments are passed via cextends.
+*)
 and template_definition = {
   ckind: template_kind wrap;
   (* also a list of list of parameters *)
@@ -577,3 +580,6 @@ let mods_with_annots mods annots = attrs_of_annots annots @ attrs_of_mods mods
 let is_variable_name s =
   (* start with lowercase, see varid *)
   s =~ "[a-z].*"
+
+let basic_param id =
+  { p_name = id; p_type = None; p_attrs = []; p_default = None }

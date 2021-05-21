@@ -205,6 +205,26 @@ let (++=) aref xs =
 let (+=) aref x =
   aref := x::!aref
 
+let convertToParam tk e =
+  match e with
+  | Name (Id id, []) ->
+      AST.basic_param id
+  | ExprUnderscore ii ->
+      AST.basic_param (AST.wildcard, ii)
+  | TypedExpr (Name (Id id, []), _, t) ->
+      { (AST.basic_param id) with p_type = Some (PT t) }
+  | _ ->
+      (* CHECK: "not a legal formal parameter" *)
+      pr2 (spf "convertToParam: not handled %s" (AST.show_expr e));
+      raise (PI.Parsing_error (tk))
+
+
+
+let convertToParams tk e =
+  match e with
+  | Tuple (lb, xs, rb) -> (lb, xs |> List.map (convertToParam tk), rb)
+  | _ -> fb [convertToParam tk e]
+
 (*****************************************************************************)
 (* Token helpers  *)
 (*****************************************************************************)
@@ -1611,15 +1631,20 @@ and parseOther location (in_: env) : expr =
       false
     in
     (match in_.token with
-     | ARROW _ when (location <> InTemplate || lhsIsTypedParamList !t) ->
+     | ARROW ii when (location <> InTemplate || lhsIsTypedParamList !t) ->
          skipToken in_;
-         let _xTODO =
+         let fbody =
            if location <> InBlock
-           then expr in_
-           else S (Block (fb (block in_ )))
+           then FExpr (ii, expr in_)
+           else FBlock (fb (BEBlock (block in_ )))
          in
-         (* AST: Function(convertToParams(t), x) *)
-         ()
+         let params = convertToParams ii !t in
+         let def = { fkind = LambdaArrow, ii;
+                     fparams = [params];
+                     frettype = None;
+                     fbody = Some fbody;
+                   } in
+         t := Lambda def
      | _ -> ()
     );
     stripParens !t
