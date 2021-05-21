@@ -3374,8 +3374,11 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
     in
 
     let kind = (if isTrait then Trait else Class), ikind in
+    let mods =
+      (match isCase with None -> [] | Some ii -> [CaseClassOrObject, ii])
+    in
     (* ast: name ... constrMods withAnnotations...*)
-    let attrs = mods_with_annots constrMods constrAnnots @ attrs in
+    let attrs = mods_with_annots (mods @ constrMods) constrAnnots @ attrs in
     let ent = { name; attrs; tparams } in
     let tmpl = templateOpt kind vparamss in_ in
     (* AST: gen.mkClassDef(mods, name, tparams, template) *)

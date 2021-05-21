@@ -471,7 +471,7 @@ let info_of_entity_kind_and_usedef2 kind defkind =
   match kind, defkind with
 
   | E.Type, (Def2 _) -> [`FOREGROUND "chartreuse";]
-  | E.Type, (Use2 _) -> [`FOREGROUND "chartreuse";]
+  | E.Type, (Use2 _) -> [`FOREGROUND "chartreuse3";]
 
   | E.Constructor, (Def2 _ ) -> [`FOREGROUND "tomato1";]
   | E.Constructor, (Use2 _) -> [`FOREGROUND "pink3";]
@@ -501,7 +501,11 @@ let info_of_entity_kind_and_usedef2 kind defkind =
   | E.Method, (Def2 _) -> [`FOREGROUND "gold3";
                            `WEIGHT `BOLD; `SCALE `MEDIUM;
                           ]
-  | E.Class, (Def2 _) ->  [`FOREGROUND "coral"] @ info_of_usedef (Def)
+  (* In the end a class is really similar to a type, so better to use
+   * a similar color. Anyway, at the use site we can't really know whether
+   * an ident correspond to a type or a class.
+  *)
+  | E.Class, (Def2 _) ->  [`FOREGROUND "chartreuse2"] @ info_of_usedef (Def)
 
   (* uses *)
   | E.Function, (Use2 (defplace,def_arity,use_arity)) ->
@@ -575,7 +579,7 @@ let info_of_entity_kind_and_usedef2 kind defkind =
 
   | E.Method, (Use2 _) -> [`FOREGROUND "gold3";]
 
-  | E.Class, (Use2 _) -> [`FOREGROUND "coral"] @ info_of_usedef (Use)
+  | E.Class, (Use2 _) -> [`FOREGROUND "chartreuse4"] @ info_of_usedef (Use)
 
   (* this is for codemap completion search box *)
   | E.Package, _ -> [`FOREGROUND "IndianRed"]
