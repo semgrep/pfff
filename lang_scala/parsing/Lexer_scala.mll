@@ -413,7 +413,7 @@ and in_interpolated_double = parse
   | escapeSeq as s { StringLiteral (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { StringLiteral (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; LBRACE (tokinfo lexbuf) }
-  | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
+  | "$" (id as s) { ID_DOLLAR (s, tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated string" lexbuf;
            pop_mode();

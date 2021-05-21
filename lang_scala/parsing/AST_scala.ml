@@ -165,7 +165,7 @@ type literal =
 
 and encaps =
   | EncapsStr of string wrap
-  | EncapsDollarIdent of ident (* e.g., $foo *)
+  | EncapsDollarIdent of ident (* e.g., (fst ident) does not contain $ *)
   (* 'expr' here! hence the big mutual recursive types below *)
   | EncapsExpr of expr (* will always be a BlockExpr with ${ ... } *)
 
