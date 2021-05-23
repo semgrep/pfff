@@ -30,9 +30,10 @@ let action = ref ""
 (*****************************************************************************)
 
 let graph_of_string str =
+  let tmpdir = Filename.get_temp_dir_name () in
   let tmpfile = Parse_php.tmp_php_file_from_string str in
   let (g, _stat) = Graph_code_php.build
-      ~verbose:false ~logfile:"/dev/null" "/tmp" [tmpfile] in
+      ~verbose:false ~logfile:"/dev/null" tmpdir [tmpfile] in
   g
 
 (*****************************************************************************)
