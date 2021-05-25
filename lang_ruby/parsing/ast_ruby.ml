@@ -201,7 +201,8 @@ type expr =
   | Binop of expr * binary_op wrap * expr
   | Ternary of expr * tok (* ? *) * expr * tok (* : *) * expr
 
-  | Call of expr * expr list * expr option
+  (* the brackets can be fake when the call is a "Command" *)
+  | Call of expr * expr list bracket * expr option
   (* TODO: ArrayAccess of expr * expr list bracket *)
   (* old: was Binop(e1, Op_DOT, e2) before *)
   | DotAccess of expr * tok (* . or &. *) * method_name

@@ -21,6 +21,8 @@ let uniq_list cmp lst =
   in
   u (List.sort cmp lst)
 
+let fb = Parse_info.fake_bracket
+
 (*****************************************************************************)
 (* Lexer/Parser extra state *)
 (*****************************************************************************)
@@ -184,13 +186,13 @@ let rec starts_with = function
 
 let rec ends_with = function
   | Binop(_,_,r) -> ends_with r
-  | Call(m,[],None) -> ends_with m
+  | Call(m,(_,[], _),None) -> ends_with m
   | Ternary(_,_,_, _, r) -> ends_with r
   | e -> e
 
 let rec replace_end expr new_e = match expr with
   | Binop(l,(o,p),r) -> Binop(l,(o,p),replace_end r new_e)
-  | Call(m,[],None) -> Call(replace_end m new_e,[],None)
+  | Call(m,(lp, [], rp),None) -> Call(replace_end m new_e,(lp,[],rp),None)
   | Ternary(g,p1, l,p2, r) -> Ternary(g,p1, l,p2, replace_end r new_e)
   | _e -> new_e
 
@@ -243,7 +245,7 @@ let _hash_literal_as_args args =
   in
   List.rev (work [] args)
 
-let rec methodcall m args cb =
+let rec methodcall m (lp, args, rp) cb =
   (* old: x.y used to be parsed as a Call (DotAccess ...) because
    * that is the semantic of Ruby, but we do not do the same
    * in Parse_ruby_tree_sitter.ml and in the semgrep context it's better
@@ -267,20 +269,20 @@ let rec methodcall m args cb =
 
     | ScopedId(Scope(_x,(_),_y)),[],None -> m
 
-    | DotAccess(x,(p),y),_,_ -> Call(unfold_dot x y p, args, cb)
-    | _ -> Call(m,args,cb)
+    | DotAccess(x,(p),y),_,_ -> Call(unfold_dot x y p, (lp, args, rp), cb)
+    | _ -> Call(m,(lp, args, rp),cb)
 
 and unfold_dot l r pos =
   match l with
   (* unfold nested a.b.c to become (a.b()).c() *)
   | DotAccess(a,(p),b) ->
-      let l' = methodcall (unfold_dot a b p) [] None in
+      let l' = methodcall (unfold_dot a b p) (fb []) None in
       DotAccess(l',(pos),r)
 
   | _ -> DotAccess(l,(pos),r)
 
 and check_for_dot = function
-  | DotAccess(l,(p),r) -> methodcall (unfold_dot l r p) [] None
+  | DotAccess(l,(p),r) -> methodcall (unfold_dot l r p) (fb []) None
   | e -> e
 
 and scope tk l r =
@@ -292,8 +294,8 @@ let command_codeblock cmd cb =
   match cmd with
   | Call(c,args,None) -> Call(c,args,Some cb)
   | DotAccess(_,(_p),_)
-  | ScopedId(Scope(_,(_p),_)) -> Call(cmd,[],Some cb)
-  | Id((_,_p),_) -> Call(cmd,[],Some cb)
+  | ScopedId(Scope(_,(_p),_)) -> Call(cmd,fb [],Some cb)
+  | Id((_,_p),_) -> Call(cmd,fb [],Some cb)
   | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
@@ -461,7 +463,7 @@ let wrap xs f =
 let rec rhs_do_codeblock = function
   | Call(_,_,Some (CodeBlock((_,false,_),_,_))) -> true
   | Binop(_,_,r)
-  | Call(r,[],None)
+  | Call(r,(_,[],_),None)
   | Ternary(_,_,_, _, r) -> rhs_do_codeblock r
   | Hash(false,(_, el,_)) -> rhs_do_codeblock (Utils.last el)
 
@@ -470,10 +472,10 @@ let rec rhs_do_codeblock = function
       false
 
 let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
-  | _, Call(_,[],None) ->
+  | _, Call(_,(_, [], _),None) ->
       Printf.eprintf "here2??\n";[with_cb;no_cb]
   | Call(_m1',_args1,Some _do_block),
-    Call(_m2',args_ne,None) ->
+    Call(_m2',(_, args_ne, _),None) ->
       (* look for cmd arg1,...,(argn do block end) *)
       if rhs_do_codeblock (Utils.last args_ne)
       then [with_cb]

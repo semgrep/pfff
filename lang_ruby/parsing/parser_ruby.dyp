@@ -37,6 +37,8 @@ module M = Parser_ruby_helpers
 (* for fake_xxx *)
 module PI = Parse_info
 
+let fb = Parse_info.fake_bracket
+
 (*************************************************************************)
 (*1 Dypgen merge directives *)
 (*************************************************************************)
@@ -471,7 +473,7 @@ primary:
 
   /*(* stmt-->topcall-->command-->command_name (with empty call_args) vs
      * stmt-->expr-->arg-->primary-->command_name *)*/
-  | command_name<c>                { M.methodcall c [] None}
+  | command_name<c>                { M.methodcall c (fb []) None}
   | command_name<c> code_block<cb> { M.command_codeblock c cb }
 
   /*(* stmt-->topcall vs stmt-->expr-->arg-->primary *)*/
@@ -479,14 +481,14 @@ primary:
   | func<f> code_block<cb>
       { match f with
         | Call(m,args,None) -> M.methodcall m args (Some cb)
-        | _ -> M.methodcall f [] (Some cb)
+        | _ -> M.methodcall f (fb []) (Some cb)
       }
 
   | primary<p> T_SCOPE variable<id>  { M.scope $2 p (SV id) }
   | T_USCOPE<pos> variable<id>       { ScopedId(TopScope(pos, id)) }
 
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
-     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) xs None }
+     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) (fb xs) None }
 
   | array { $1 }
   | hash { $1 }
@@ -700,7 +702,7 @@ array_item:
   | arg<e> { e }
   | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
       { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
-                     xs None }
+                     (fb xs) None }
 
 
 hash: T_LBRACE eols hash_elem_list eols T_RBRACE { Hash(true, ($1, $3, $5)) }
@@ -731,13 +733,13 @@ topcall:
   | func<f> code_block<cb>
       { match f with
         | Call(m,args,None) -> M.methodcall m args (Some cb)
-        | _ -> M.methodcall f [] (Some cb) }
+        | _ -> M.methodcall f (fb []) (Some cb) }
 
   | command<c>
       { c }
   | command_name<m> call_args<xs> do_codeblock<cb>
       { M.well_formed_command m xs;
-        M.methodcall m xs (Some cb)}
+        M.methodcall m (fb xs) (Some cb)}
 
 /*(*----------------------------*)*/
 /*(*2 Command *)*/
@@ -746,7 +748,7 @@ topcall:
 command:
   | command_name<m> call_args<xs>
       { M.well_formed_command m xs;
-        M.methodcall m xs None}
+        M.methodcall m (fb xs) None}
   | K_YIELD<pos>    call_args<xs>
       { M.well_formed_return xs;
         S (Yield(pos, xs)) }
@@ -754,7 +756,7 @@ command:
   /*(* recursive *)*/
   | command_name<cmd> command<cmd2>
       { M.well_formed_command cmd [cmd2];
-        M.methodcall cmd [cmd2] None}
+        M.methodcall cmd (fb [cmd2]) None}
 
 command_name:
   | variable<id>
@@ -777,11 +779,11 @@ command_name:
 func:
   | command_name<c> any_LPAREN eols call_args<xs> eols T_RPAREN
       { match xs with
-        | [] -> Call(c, xs, None)
-        | _ -> M.methodcall c xs None
+        | [] -> Call(c, ($2, xs, $6), None)
+        | _ -> M.methodcall c ($2, xs, $6) None
       }
   | command_name<c> any_LPAREN eols command<a> eols T_RPAREN
-      { Call(c,[a],None)}
+      { Call(c,($2, [a], $6),None)}
 
 any_LPAREN:
   | T_LPAREN<pos> {pos}
@@ -844,9 +846,9 @@ lhs:
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_star_list<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t2))) xs None}
+      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t2))) (fb xs) None}
   | primary<p> T_DOT<t> eols message_identifier<m>
-      { M.methodcall (DotAccess(p,(t), (m))) [] None}
+      { M.methodcall (DotAccess(p,(t), (m))) (fb []) None}
 
 /*(*----------------------------*)*/
 /*(*2 Multiple LHS *)*/
