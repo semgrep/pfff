@@ -129,7 +129,19 @@ type special =
   | In | Delete
   | Spread
   | Yield | YieldStar | Await
-  | Encaps of bool (* if true, first arg of apply is the "tag" *)
+  (* This is used for "template literals". The boolean below represents
+   * whether the template literal is part of a special "tagged" call.
+   * If true, first arg of apply is the "tag".
+   * Note that the example below is a call with a single string argument:
+   *     foo(`a${b}c`) // we will generate an Encaps false here
+   * The code below is a tagged template literal, which is a call with
+   * N+1 arguments, where N is the number of interpolated values
+   *     foo`a${b}c` // we will generate an Encaps true here.
+   * Technically it's syntactic sugar for the following
+   *     foo(['a', 'c'], b)
+   * TODO: we might want to unsugar it at some point?
+  *)
+  | Encaps of bool
   (* CommonJS part2 *)
   | Require
 
