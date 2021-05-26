@@ -19,6 +19,8 @@ type 'a acc = {
   super_args : (star_expr list * expr option) option;
 }
 
+let fb = PI.fake_bracket
+
 let acc_empty old =
   {q = DQueue.empty; seen = StrSet.empty;
    super_args = old.super_args}
@@ -603,7 +605,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
       let acc,v = fresh acc in
       let v' = match v with LId id -> id | _ -> failwith "Impossible" in
       let acc = seen_lhs acc v in
-      let e' = Ast.Call(e,[], None) in
+      let e' = Ast.Call(e,fb [], None) in
       (refactor_method_call_assign acc (Some v) e'), EId v'
 
   | Ast.ScopedId(Ast.Scope(e1,pos,_e2_var_or_method_name_now)) ->
@@ -705,7 +707,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let lhs' = match lhs with LId id -> id | _ -> failwith "Impossible" in
 
         (refactor_super acc (Some lhs) pos), EId lhs'
-      else refactor_expr acc (Ast.Call(e,[],None))
+      else refactor_expr acc (Ast.Call(e, fb [],None))
 
   (* handles $0 *)
   | Ast.Id(("0", _pos), Ast.ID_Global) ->
@@ -741,7 +743,7 @@ and refactor_defined acc lhs args pos =
   let lhs' = match lhs with LId id -> id | _ -> failwith "Impossible" in
 
   let arg = match args with
-    | [x] -> x
+    | (_, [x], _) -> x
     | _ -> Log.fatal (Log.of_tok pos) "multiple args to defined?"
   in
   let inside_acc = refactor_stmt (acc_emptyq acc) arg in
@@ -865,7 +867,7 @@ and refactor_method_arg_no_cb acc e : stmt acc * star_expr = match e with
       Log.fatal (Log.of_tok pos) "unexpected & arg in method arguments"
   | e -> refactor_star_expr acc e
 
-and refactor_method_args_and_cb acc arg_list cb =
+and refactor_method_args_and_cb acc (_lp, arg_list, _rp) cb =
   let acc, lst, cb_arg = match List.rev arg_list, cb with
     | Ast.Unary((Ast.Op_UAmper, _pos), e)::rest, None ->
         let acc, e' = refactor_expr acc e in
@@ -1208,17 +1210,17 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
       C.seq [s;new_s] s.pos
 
 and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
-  | Ast.Call(Ast.Id(("retry",p1),Ast.ID_Lowercase), [], None) ->
+  | Ast.Call(Ast.Id(("retry",p1),Ast.ID_Lowercase), (_, [], _), None) ->
       acc_enqueue (C.retry p1) acc
-  | Ast.Call(Ast.Id(("redo",p1),Ast.ID_Lowercase), [], None) ->
+  | Ast.Call(Ast.Id(("redo",p1),Ast.ID_Lowercase), (_, [], _), None) ->
       acc_enqueue (C.redo p1) acc
 
-  | Ast.Call(Ast.Id(("next",p1),Ast.ID_Lowercase), args, None) ->
+  | Ast.Call(Ast.Id(("next",p1),Ast.ID_Lowercase), (_, args, _), None) ->
       let _envBUG, es = refactor_list refactor_tuple_expr (acc, DQueue.empty) args in
       let tup = make_tuple_option (DQueue.to_list es) in
       acc_enqueue (C.next ?v:tup p1) acc
 
-  | Ast.Call(Ast.Id(("break",p1),Ast.ID_Lowercase), args, None) ->
+  | Ast.Call(Ast.Id(("break",p1),Ast.ID_Lowercase), (_, args, _), None) ->
       let _env, es = refactor_list refactor_tuple_expr (acc, DQueue.empty) args in
       let tup = make_tuple_option (DQueue.to_list es) in
       acc_enqueue (C.break ?v:tup p1) acc
@@ -1236,14 +1238,14 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       in
       refactor_defined acc v args pos
 
-  | Ast.Call(Ast.Id((("proc"|"lambda" as m),_pos),Ast.ID_Lowercase),[],Some cb)->
+  | Ast.Call(Ast.Id((("proc"|"lambda" as m),_pos),Ast.ID_Lowercase),(_, [], _),Some cb)->
       let cb' = refactor_codeblock acc cb in
       let cb' = proc_transform cb' in
       let call = C.mcall ?lhs (ID_MethodName m) [] ~cb:cb' () in
       acc_enqueue call acc
 
   | Ast.Call(Ast.Id(("define_method",pos),Ast.ID_Lowercase),
-             [Ast.Atom(Ast.AtomSimple (mname,atompos))],
+             (_, [Ast.Atom(Ast.AtomSimple (mname,atompos))], _),
              Some(Ast.CodeBlock(_,params_o,cb_body))) ->
       let params = Utils.default_opt [] params_o in
       let name = (* H.msg_of_str *) Ast.MethodId ((mname,atompos), Ast.ID_Lowercase) in
@@ -1268,7 +1270,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
   | Ast.Call(msg, args, cb) ->
       let () = match msg, args with
         | Ast.Id((("proc"|"lambda"),pos),Ast.ID_Lowercase),
-          [Ast.Unary((Ast.Op_UAmper,_),_)] ->
+          (_, [Ast.Unary((Ast.Op_UAmper,_),_)], _) ->
             Log.err ~ctx:(Log.of_tok pos) "unsupported proc/lambda with &block param"
         | _ -> ()
       in
@@ -1289,7 +1291,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
   match lhs,rhs with
   (* x[y] = z is really x.[]=(y,z) *)
   | Ast.Call(
-    Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.Op_AREF,_)), args,None),
+    Ast.DotAccess(targ, (_),Ast.MethodOperator(Ast.Op_AREF,_)), (_, args, _),None),
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
@@ -1321,7 +1323,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
       acc_enqueue call acc
 
   (* handle x.y = e specially to avoid duping the rhs into a temp *)
-  | Ast.Call(Ast.DotAccess(targ,(_),msg),args,None), _ ->
+  | Ast.Call(Ast.DotAccess(targ,(_),msg),(_, args, _),None), _ ->
       if args <> [] then Log.fatal (Log.of_tok pos) "args on lhs of assignable?";
       let acc,targ' = refactor_expr acc targ in
       let acc,msg' = refactor_msg2 acc msg in
@@ -1343,7 +1345,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
 
   | e1,        (Ast.Id((s, _pos'),Ast.ID_Lowercase) as e)
     when not (StrSet.mem s acc.seen || is_special s) ->
-      refactor_assignment acc e1 (Ast.Call(e,[],None)) pos
+      refactor_assignment acc e1 (Ast.Call(e,fb [],None)) pos
 
   | _ ->
       let acc,lhs',after = refactor_lhs acc lhs in
@@ -1447,7 +1449,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
 
   (* A::m is really a method call *)
   | Ast.ScopedId(Ast.Scope(_e1,_pos,(Ast.SV((_,_),Ast.ID_Lowercase)))) ->
-      refactor_method_call_assign acc None (Ast.Call(e,[], None))
+      refactor_method_call_assign acc None (Ast.Call(e,fb [], None))
 
   | Ast.Call _ as m ->
       refactor_method_call_assign acc None m
@@ -1494,7 +1496,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Id((s, pos),Ast.ID_Lowercase)
     when not (StrSet.mem s acc.seen || is_special s) ->
       if s = "super" then refactor_super acc None pos
-      else refactor_stmt acc (Ast.Call(e,[],None))
+      else refactor_stmt acc (Ast.Call(e,fb [],None))
 
   | Ast.Id _
   | Ast.Literal _ | Ast.Atom _
