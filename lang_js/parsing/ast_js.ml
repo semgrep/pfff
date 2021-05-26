@@ -672,10 +672,46 @@ let vars_to_defs xs =
 let vars_to_stmts xs =
   xs |> vars_to_defs |> List.map (fun x -> DefStmt x)
 
+(*
+   Left-handside patterns and function parameters happen to use the same
+   syntax. This for converting one to the other.
+*)
+let parameter_to_pattern (param : parameter) : pattern =
+  match param with
+  | ParamClassic { p_name; p_default; p_type; p_dots; p_attrs } ->
+      let pat =
+        match p_dots with
+        | None -> Id p_name
+        | Some tok -> IdSpecial (Spread, tok)
+      in
+      let pat =
+        match p_type with
+        | None -> pat
+        | Some type_ -> Cast (pat, Parse_info.fake_info ":", type_)
+      in
+      let pat =
+        match p_default with
+        | None -> pat
+        | Some expr -> Assign (pat, Parse_info.fake_info "=", expr)
+      in
+      (* TODO? *)
+      ignore p_attrs;
+      pat
+
+  | ParamPattern pat -> pat
+  | ParamEllipsis tok -> Ellipsis tok
+
 let mk_const_var id e =
   (basic_entity id,
    VarDef { v_kind = Const, (snd id); v_init = Some e; v_type = None; }
   )
+
+let add_decorators_to_declaration decorators declaration =
+  let (ent, defkind) = declaration in
+  ({ ent with attrs = ent.attrs @ decorators }, defkind)
+
+let add_decorators_to_declarations decorators declarations =
+  List.map (add_decorators_to_declaration decorators) declarations
 
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
