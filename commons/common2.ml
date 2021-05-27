@@ -2133,6 +2133,16 @@ let dbe_of_filename_noext_ok file =
   let base = Filename.basename file in
   dir, fileprefix base, filesuffix base
 
+let dbe_of_filename_many_ext_opt file =
+  let re_be = Str.regexp "\\([^.]*\\)\\.\\(.*\\)" in
+  let dir = Filename.dirname file in
+  let base = Filename.basename file in
+  if Str.string_match re_be base 0
+  then
+    let (b, e) = matched2 base in
+    Some (dir, b, e)
+  else
+    None
 
 let replace_ext file oldext newext =
   let (d,b,e) = dbe_of_filename file in
