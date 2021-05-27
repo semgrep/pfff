@@ -2,6 +2,9 @@ module Y = Yojson.Basic
 
 (* compatibility mode with json-wheel *)
 
+(* a JSON object as a string *)
+type str = string
+
 type t =
   | Object of (string * t) list
   | Array of t list
