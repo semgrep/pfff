@@ -62,6 +62,12 @@ open Common
  * less:
  *  - ast_js_es5.ml? unsugar even more? remove classes, get/set, etc.?
  *  - unsugar ES6 features? lift Var up, rename lexical vars, etc.
+ *
+ * Type aliases start with 'a_'. This is a hack to force the compiler to
+ * report the original type name rather than an alias in error messages
+ * and type hints.
+ * See "-short-paths incorrectly picks arbitrary type alias" for details:
+ * https://github.com/ocaml/ocaml/issues/10432
 *)
 
 (*****************************************************************************)
@@ -193,7 +199,7 @@ and expr =
   *)
 
   (* should be a statement ... *)
-  | Assign of pattern * tok * expr
+  | Assign of a_pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
   | Obj of obj_
@@ -244,8 +250,8 @@ and literal =
   | String of string wrap
   | Regexp of string wrap
 
-and arguments = argument list bracket
-and argument = expr
+and arguments = a_argument list bracket
+and a_argument = expr (* see note about aliases prefixed by 'a_' *)
 
 (* transpiled: to regular Calls when Ast_js_build.transpile_xml *)
 and xml = {
@@ -258,13 +264,13 @@ and xml_kind =
   | XmlSingleton of tok (*'<'*) * ident * tok (* '/>', with xml_body = [] *)
   | XmlFragment of tok (* '<>' *) * tok (* '</>', with xml_attrs = [] *)
 and xml_attribute =
-  | XmlAttr of ident * tok (* = *) * xml_attr_value
+  | XmlAttr of ident * tok (* = *) * a_xml_attr_value
   (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
   | XmlAttrExpr of expr bracket
   (* sgrep-ext: *)
   | XmlEllipsis of tok
   (* either a String or a bracketed expr, but right now we just use expr *)
-and xml_attr_value = expr
+and a_xml_attr_value = expr (* see note about aliases prefixed by 'a_' *)
 
 and xml_body =
   (* sgrep-ext: can contain "..." *)
@@ -329,7 +335,7 @@ and case =
   | Default of tok * stmt
 
 and catch =
-  | BoundCatch of tok * pattern * stmt
+  | BoundCatch of tok * a_pattern * stmt
   (* js-ext: es2019, catch {...} *)
   | UnboundCatch of tok * stmt
 
@@ -343,7 +349,7 @@ and catch =
  * sgrep: this is useful for sgrep to keep the ability to match over
  * JS destructuring patterns.
 *)
-and pattern = expr
+and a_pattern = expr (* see note about aliases prefixed by 'a_' *)
 
 (*****************************************************************************)
 (* Types *)
@@ -455,7 +461,7 @@ and parameter =
    * TODO: can also have types and default, so factorize with
    * parameter_classic?
   *)
-  | ParamPattern of pattern
+  | ParamPattern of a_pattern
   (* sgrep-ext: *)
   | ParamEllipsis of tok
 and parameter_classic = {
@@ -499,7 +505,7 @@ and property =
    * ugly: we should have a clean separate pattern type instead of abusing
    * expr, which forces us to add this construct.
   *)
-  | FieldPatDefault of pattern * tok * expr
+  | FieldPatDefault of a_pattern * tok * expr
 
   | FieldTodo of todo_category * stmt
 
@@ -587,7 +593,7 @@ and any =
   | Expr of expr
   | Stmt of stmt
   | Stmts of stmt list
-  | Pattern of pattern
+  | Pattern of a_pattern
   | Property of property
   | Type of type_
   | Program of program
@@ -688,7 +694,7 @@ let vars_to_stmts xs =
    Left-handside patterns and function parameters happen to use the same
    syntax. This for converting one to the other.
 *)
-let parameter_to_pattern (param : parameter) : pattern =
+let parameter_to_pattern (param : parameter) : a_pattern =
   match param with
   | ParamClassic { p_name; p_default; p_type; p_dots; p_attrs } ->
       let pat =
