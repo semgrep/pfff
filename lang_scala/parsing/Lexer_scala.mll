@@ -258,6 +258,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
+  | "'" (idrest as s) { SymbolLiteral(s, tokinfo lexbuf) }
 
   (* keywords *)
   | id_lower as s
