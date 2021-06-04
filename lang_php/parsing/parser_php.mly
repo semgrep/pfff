@@ -392,8 +392,8 @@ statement:
      }
  | T_THROW expr_or_dots ";" { Throw($1,$2,$3) }
 
- | T_ECHO listc(expr) ";"     { Echo($1,$2,$3) }
- | T_INLINE_HTML            { InlineHtml($1) }
+ | T_ECHO listc(expr_or_dots) ";" { Echo($1,$2,$3) }
+ | T_INLINE_HTML                  { InlineHtml($1) }
 
  | T_OPEN_TAG_WITH_ECHO expr T_CLOSE_TAG_OF_ECHO {
      (* ugly: the 2 tokens will have a wrong string *)
@@ -1023,10 +1023,10 @@ expr:
  (* php-facebook-ext: Just like yield, await is at the statement level *)
  | T_AWAIT expr { Await ($1, $2) }
 
- | T_INCLUDE      expr             { Include($1,$2) }
- | T_INCLUDE_ONCE expr             { IncludeOnce($1,$2) }
- | T_REQUIRE      expr             { Require($1,$2) }
- | T_REQUIRE_ONCE expr             { RequireOnce($1,$2) }
+ | T_INCLUDE      expr_or_dots     { Include($1,$2) }
+ | T_INCLUDE_ONCE expr_or_dots     { IncludeOnce($1,$2) }
+ | T_REQUIRE      expr_or_dots     { Require($1,$2) }
+ | T_REQUIRE_ONCE expr_or_dots     { RequireOnce($1,$2) }
 
  | T_EMPTY "(" expr_or_dots ")"        { Empty($1,($2,$3,$4)) }
 
@@ -1105,7 +1105,7 @@ primary_expr:
     *)
   (* | T_STRING_VARNAME {  } *)
 
- | "(" expr ")"     { ParenExpr($1,$2,$3) }
+ | "(" expr_or_dots ")" { ParenExpr($1,$2,$3) }
  (* semgrep-ext: *)
  | "<..." expr "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
@@ -1147,6 +1147,7 @@ arguments: "(" function_call_argument_list ")" { ($1, $2, $3) }
 
 (* TODO: we want ... in primary_expr, but it leads to many conflicts. *)
 (* semgrep-ext: *)
+%inline
 expr_or_dots:
  | expr  { $1 }
  | "..." { Flag_parsing.sgrep_guard (Ellipsis $1) }
