@@ -154,6 +154,13 @@ let id_backquoted2 = '`' (charNoBackQuoteOrNewline | escapeSeq)+ '`'
 (* for interpolated strings *)
 let alphaid = upper idrest | varid
 
+(* Used for s"$xxx" in interpolated strings. This used to be just 'id'
+ * but s"$xxx${1}" should actually be parsed as $xxx and then ${1}, which
+ * means xxx$ is not a valid id (even though the official spec says it is)
+ *)
+let id_after_dollar =
+  ['A'-'Z''a'-'z''_'] (['A'-'Z''a'-'z''_'] | digit)* ('_' op)?
+
 (*****************************************************************************)
 (* Rule initial *)
 (*****************************************************************************)
@@ -414,7 +421,8 @@ and in_interpolated_double = parse
   | escapeSeq as s { StringLiteral (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { StringLiteral (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; LBRACE (tokinfo lexbuf) }
-  | "$" (id as s) { ID_DOLLAR (s, tokinfo lexbuf) }
+  | "$" (id_after_dollar as s) { ID_DOLLAR (s, tokinfo lexbuf) }
+  | "$$" { StringLiteral("$", tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated string" lexbuf;
            pop_mode();
@@ -437,7 +445,8 @@ and in_interpolated_triple = parse
   | escapeSeq as s { StringLiteral (s, tokinfo lexbuf) }
   | [^'"''$''\\']+ as s { StringLiteral (s, tokinfo lexbuf) }
   | "${" { push_mode ST_IN_CODE; LBRACE (tokinfo lexbuf) }
-  | "$" id as s { ID_DOLLAR (s, tokinfo lexbuf) }
+  | "$" (id_after_dollar as s) { ID_DOLLAR (s, tokinfo lexbuf) }
+  | "$$" { StringLiteral("$", tokinfo lexbuf) }
 
   | eof  { error "end of file in interpolated2 string" lexbuf;
            pop_mode();
