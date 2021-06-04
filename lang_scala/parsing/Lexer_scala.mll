@@ -406,6 +406,7 @@ and string buf = parse
 (*****************************************************************************)
 (* String interpolation *)
 (*****************************************************************************)
+(* coupling: mostly same code in in_interpolated_triple below *)
 and in_interpolated_double = parse
   | '"'  { pop_mode(); T_INTERPOLATED_END (tokinfo lexbuf) }
 
