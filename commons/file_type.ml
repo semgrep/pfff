@@ -315,14 +315,17 @@ let file_type_of_file a =
 (* Misc *)
 (*****************************************************************************)
 
+(* this is used in codemap, to know whether to display a file *)
 let is_textual_file file =
   match file_type_of_file file with
-  (* if this contains weird code then pfff_visual crash *)
+  (* still? if this contains weird code then pfff_visual crash *)
   | PL (Web Sql) -> false
 
   | PL _
-  | Text _ -> true
-  | _ -> false
+  | Text _
+  | Config _
+    -> true
+  | Obj _ | Binary _ | Media _ | Doc _ | Archive _ | Other _ -> false
 
 let webpl_type_of_file file =
   match file_type_of_file file with
