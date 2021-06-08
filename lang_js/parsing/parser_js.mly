@@ -284,6 +284,9 @@ let mk_Encaps opt (t1, xs, _t2) =
 %nonassoc p_IF
 %nonassoc T_ELSE
 
+%nonassoc below_COLON
+%nonassoc T_COLON
+
 (* unused according to menhir:
 %nonassoc p_POSTFIX
 %right
@@ -440,10 +443,16 @@ sgrep_spatch_pattern:
  | finally EOF
    { Partial (PartialFinally $1) }
   (* partial objects, like in json_pattern *)
-(* TODO additional s/r conflict
-  | property_name2 ":" binding_element ","? EOF
-     { raise Todo }
-*)
+  (* foo : ... can also be interpeted as a label statement in JS
+   * (we don't have this ambiguity for json_pattern)
+   * which leads to a s/r conflict. property_name2 is actually %inline,
+   * so the shift, which we want, is here, and we want the reduce in
+   * id: of label to be lower priority, hence the %prec below_COLON in
+   * the id rule.
+   * Note that this rule below is a slice of property_name_and_value.
+   *)
+  | property_name2 ":" assignment_expr ","? EOF
+     { Partial (PartialSingleField ($1, $2, $3)) }
 
 (*************************************************************************)
 (* Namespace *)
@@ -1587,7 +1596,7 @@ primary_no_stmt: TUnknown TComment { raise Impossible }
 (*************************************************************************)
 (* used for entities, parameters, labels, etc. *)
 id:
- | T_ID               { $1 }
+ | T_ID  %prec below_COLON               { $1 }
  | ident_semi_keyword { PI.str_of_info $1, $1 }
 
 (* add here keywords which are not considered reserved by ECMA *)
