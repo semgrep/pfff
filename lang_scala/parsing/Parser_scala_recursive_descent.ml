@@ -617,8 +617,12 @@ let tokenSeparated separator part in_ =
     let done_ = ref (not (in_.token =~= separator)) in
     while not !done_  do
       let skippable = separator =~= (COMMA ab) &&
-                      (* STILL?: in.sepRegions nonEmpty and head *)
-                      isTrailingComma (RPAREN ab) in_ in
+                      (match in_.sepRegions with
+                       | [] -> false
+                       | head::_ ->
+                           (* usually an RPAREN, but also RBRACE in import! *)
+                           isTrailingComma head in_
+                      ) in
       if not skippable then begin
         nextToken in_;
         let x = part in_ in
