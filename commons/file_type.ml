@@ -78,6 +78,7 @@ and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
 and webpl_type =
   | Php of string (* php or phpt or script *)
+  | Hack
   | Js | Coffee | TypeScript  (* JSX/TSX are converted in Js/Typescript *)
   | Css
   | Html | Xml
