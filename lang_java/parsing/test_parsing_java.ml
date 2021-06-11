@@ -68,8 +68,15 @@ let test_lexer file =
   done
 
 let test_dump file =
-  let ast = Parse_java.parse_program file in
-  let s = Ast_java.show_program ast in
+  let s =
+    if !Flag_parsing.sgrep_mode 
+    then 
+       let ast = Parse_java.any_of_string (Common.read_file file) in
+       Ast_java.show_any ast
+    else
+       let ast = Parse_java.parse_program file in
+       Ast_java.show_program ast
+  in
   pr s
 
 let test_visitor file =
