@@ -197,6 +197,9 @@ let file_type_of_file2 file =
   | "bc" -> PL (MiscPL "bc")
 
   | "php" | "phpt" -> PL (Web (Php e))
+  | "hck" | "hack" (* | "hh" *)  ->
+      (* ".hh" is also a popular choice for C++ header files *)
+      PL (Web Hack)
   | "css" -> PL (Web Css)
   (* "javascript" | "es" | ? *)
   | "js" -> PL (Web Js)
