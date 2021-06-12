@@ -11,4 +11,4 @@ type qualified_name = string
 (* deprecated *)
 val build_for_ai: Common.dirname -> Common.filename list ->
   (qualified_name, Ast_js.var) Hashtbl.t *
-  (Common.filename (* readable *) * Ast_js.program) list
+  (Common.filename (* readable *) * Ast_js.a_program) list

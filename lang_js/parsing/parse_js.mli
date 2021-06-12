@@ -6,12 +6,12 @@
 val parse:
   ?timeout: int ->
   Common.filename ->
-  (Ast_js.program, Parser_js.token) Parse_info.parsing_result
+  (Ast_js.a_program, Parser_js.token) Parse_info.parsing_result
 
 val parse_program:
-  Common.filename -> Ast_js.program
+  Common.filename -> Ast_js.a_program
 val parse_string :
-  string -> Ast_js.program
+  string -> Ast_js.a_program
 
 (* other parsers *)
 
@@ -20,7 +20,7 @@ val any_of_string:
   string -> Ast_js.any
 
 (* to help write test code *)
-val program_of_string: string -> Ast_js.program
+val program_of_string: string -> Ast_js.a_program
 
 (* internal *)
 val tokens: Common.filename -> Parser_js.token list

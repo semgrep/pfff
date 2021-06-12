@@ -92,7 +92,7 @@ type 'a wrap = 'a * tok
 type 'a bracket = tok * 'a * tok
 [@@deriving show] (* with tarzan *)
 
-type todo_category = string wrap
+type a_todo_category = string wrap
 [@@deriving show] (* with tarzan *)
 
 (* real or fake when ASI (automatic semicolon insertion) *)
@@ -103,7 +103,7 @@ type sc = Parse_info.t
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
-type ident = string wrap
+type a_ident = string wrap
 [@@deriving show]
 
 (* old: there used to be 'resolved_name' and 'qualified_name' types, but
@@ -158,19 +158,19 @@ type special =
   | IncrDecr of (AST_generic_.incr_decr * AST_generic_.prefix_postfix)
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
-type label = string wrap
+type a_label = string wrap
 [@@deriving show ] (* with tarzan *)
 
 (* the filename is not "resolved".
  * alt: use a reference like for resolved_name set in graph_code_js.ml and
  * module_path_js.ml? *)
-type filename = string wrap
+type a_filename = string wrap
 [@@deriving show ] (* with tarzan *)
 
 (* Used for decorators and for TyName in AST_generic.type_.
  * Otherwise for regular JS dotted names are encoded with ObjAccess instead.
 *)
-type dotted_ident = ident list
+type a_dotted_ident = a_ident list
 [@@deriving show ] (* with tarzan *)
 
 (* when doing export default Foo and import Bar, ... *)
@@ -178,7 +178,7 @@ let default_entity = "!default!"
 
 type property_name =
   (* this can even be a string or number *)
-  | PN of ident
+  | PN of a_ident
   (* especially useful for array objects, but also used for dynamic fields *)
   | PN_Computed of expr
   (* less: Prototype *)
@@ -189,7 +189,7 @@ type property_name =
 and expr =
   | L of literal
 
-  | Id of ident
+  | Id of a_ident
   | IdSpecial of special wrap
   (* old: we used to have a Nop, without any token attached, which allowed
    * to simplify a bit the AST by replacing some 'expr option' into simply
@@ -202,7 +202,7 @@ and expr =
   | Assign of a_pattern * tok * expr
 
   (* less: could be transformed in a series of Assign(ObjAccess, ...) *)
-  | Obj of obj_
+  | Obj of a_obj
   (* we could transform it in an Obj but it can be useful to remember
    * the difference in further analysis (e.g., in the abstract interpreter).
    * This can also contain "holes" when the array is used in lhs of an assign
@@ -211,15 +211,15 @@ and expr =
   *)
   | Arr of expr list bracket
   (* ident is None when assigned in module.exports  *)
-  | Class of class_definition * ident option
+  | Class of class_definition * a_ident option
 
   | ObjAccess of expr * tok * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr bracket
 
   (* ident is a Some when recursive lambda or assigned in module.exports *)
-  | Fun of function_definition * ident option
-  | Apply of expr * arguments
+  | Fun of function_definition * a_ident option
+  | Apply of expr * a_arguments
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
   | Xml of xml
@@ -236,13 +236,13 @@ and expr =
   | TypeAssert of expr * tok (* 'as' or '<' *) * type_ (* X as T or <T> X *)
 
   (* this is used mostly for unsupported typescript features *)
-  | ExprTodo of todo_category * expr list
+  | ExprTodo of a_todo_category * expr list
 
   (* sgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
   | ObjAccessEllipsis of expr * tok (* ... *)
-  | TypedMetavar of ident * tok * type_
+  | TypedMetavar of a_ident * tok * type_
 
 and literal =
   | Bool of bool wrap
@@ -250,7 +250,7 @@ and literal =
   | String of string wrap
   | Regexp of string wrap
 
-and arguments = a_argument list bracket
+and a_arguments = a_argument list bracket
 and a_argument = expr (* see note about aliases prefixed by 'a_' *)
 
 (* transpiled: to regular Calls when Ast_js_build.transpile_xml *)
@@ -260,11 +260,11 @@ and xml = {
   xml_body: xml_body list;
 }
 and xml_kind =
-  | XmlClassic   of tok (*'<'*) * ident * tok (*'>'*) * tok (*'</foo>'*)
-  | XmlSingleton of tok (*'<'*) * ident * tok (* '/>', with xml_body = [] *)
+  | XmlClassic   of tok (*'<'*) * a_ident * tok (*'>'*) * tok (*'</foo>'*)
+  | XmlSingleton of tok (*'<'*) * a_ident * tok (* '/>', with xml_body = [] *)
   | XmlFragment of tok (* '<>' *) * tok (* '</>', with xml_attrs = [] *)
 and xml_attribute =
-  | XmlAttr of ident * tok (* = *) * a_xml_attr_value
+  | XmlAttr of a_ident * tok (* = *) * a_xml_attr_value
   (* jsx: usually a Spread operation, e.g., <foo {...bar} /> *)
   | XmlAttrExpr of expr bracket
   (* sgrep-ext: *)
@@ -295,10 +295,10 @@ and stmt =
   | For of tok * for_header * stmt
 
   | Switch of tok * expr * case list
-  | Continue of tok * label option * sc | Break of tok * label option * sc
+  | Continue of tok * a_label option * sc | Break of tok * a_label option * sc
   | Return of tok * expr option * sc
 
-  | Label of label * stmt
+  | Label of a_label * stmt
 
   | Throw of tok * expr * sc
   | Try of tok * stmt * catch option * (tok * stmt) option
@@ -314,7 +314,7 @@ and stmt =
   | M of module_directive
 
   (* again, mostly used for unsupported typescript features *)
-  | StmtTodo of todo_category * any list
+  | StmtTodo of a_todo_category * any list
 
 (* less: could use some Special instead? *)
 and for_header =
@@ -358,7 +358,7 @@ and a_pattern = expr (* see note about aliases prefixed by 'a_' *)
 and type_ =
   | TyBuiltin of string wrap
   (* todo: generics, * type_parameters list *)
-  | TyName of dotted_ident
+  | TyName of a_dotted_ident
   (* fancy *)
   | TyLiteral of literal
 
@@ -372,10 +372,10 @@ and type_ =
   | TyOr of type_ * tok * type_
   | TyAnd of type_ * tok * type_
 
-  | TypeTodo of todo_category * any list
+  | TypeTodo of a_todo_category * any list
 
-and type_parameter = ident (* TODO: constraints *)
-and type_parameter_constraint = type_
+and a_type_parameter = a_ident (* TODO: constraints *)
+and a_type_parameter_constraint = type_
 
 and tuple_type_member =
   (* simple tuple type element *)
@@ -395,7 +395,7 @@ and tuple_type_member =
 and attribute =
   | KeywordAttr of keyword_attribute wrap
   (* a.k.a decorators *)
-  | NamedAttr of tok (* @ *) * dotted_ident * arguments option
+  | NamedAttr of tok (* @ *) * a_dotted_ident * a_arguments option
 
 and keyword_attribute =
   (* field properties *)
@@ -423,7 +423,7 @@ and entity = {
    * actually in a ForIn/ForOf the init will be just the pattern, not even
    * an Assign.
   *)
-  name: ident;
+  name: a_ident;
   (* TODO: put type parameters *)
   attrs: attribute list;
 }
@@ -433,7 +433,7 @@ and definition_kind =
   | VarDef of variable_definition
   | ClassDef of class_definition
 
-  | DefTodo of todo_category * any list
+  | DefTodo of a_todo_category * any list
 
 and variable_definition = {
   v_kind: var_kind wrap;
@@ -465,7 +465,7 @@ and parameter =
   (* sgrep-ext: *)
   | ParamEllipsis of tok
 and parameter_classic = {
-  p_name: ident;
+  p_name: a_ident;
   p_default: expr option;
   (* typescript-ext: *)
   p_type: type_ option;
@@ -490,7 +490,7 @@ and class_definition = {
   c_body: property list bracket;
 }
 
-and obj_ = property list bracket
+and a_obj = property list bracket
 
 and property =
   (* field_classic.fld_body is a (Some Fun) for methods.
@@ -507,7 +507,7 @@ and property =
   *)
   | FieldPatDefault of a_pattern * tok * expr
 
-  | FieldTodo of todo_category * stmt
+  | FieldTodo of a_todo_category * stmt
 
   (* sgrep-ext: used for {fld1: 1, ... } which is distinct from spreading *)
   | FieldEllipsis of tok
@@ -537,18 +537,18 @@ and module_directive =
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
   *)
-  | Import of tok * ident * ident option (* 'name1 as name2' *) * filename
-  | Export of tok * ident
+  | Import of tok * a_ident * a_ident option (* 'name1 as name2' *) * a_filename
+  | Export of tok * a_ident
   (* export * from 'foo' *)
-  | ReExportNamespace of tok * tok * tok * filename
+  | ReExportNamespace of tok * tok * tok * a_filename
 
   (* hard to unsugar in Import because we do not have the list of names *)
-  | ModuleAlias of tok * ident * filename (* import * as 'name' from 'file' *)
+  | ModuleAlias of tok * a_ident * a_filename (* import * as 'name' from 'file' *)
 
   (* those should not exist (except for sgrep where they are useful),
    * unless file is a CSS file.
   *)
-  | ImportFile of tok * filename
+  | ImportFile of tok * a_filename
 
 (*  [@@deriving show { with_path = false} ] *)
 
@@ -561,14 +561,14 @@ and module_directive =
  * move those at the stmt level.
 *)
 (* less: can remove and below when StmtTodo disappear *)
-and toplevel = stmt
+and a_toplevel = stmt
 (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
 
-and program = toplevel list
+and a_program = a_toplevel list
 (* [@@deriving show { with_path = false} ] (* with tarzan *) *)
 
 (*****************************************************************************)
@@ -596,7 +596,7 @@ and any =
   | Pattern of a_pattern
   | Property of property
   | Type of type_
-  | Program of program
+  | Program of a_program
   | Partial of partial
   | Tk of tok
 
