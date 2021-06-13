@@ -199,7 +199,7 @@ let rec string_of_shape_ n stack shape =
 let string_of_shape n shape =
   string_of_shape_ n [] shape
 
-type parseinfo = (Ast_js.program * Parser_js.token list)
+type parseinfo = (Ast_js.a_program * Parser_js.token list)
 
 type parseinfo_map = parseinfo smap
 

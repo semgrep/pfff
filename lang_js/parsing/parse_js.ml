@@ -309,14 +309,14 @@ let parse_program file =
   res.PI.ast
 
 
-let parse_string (w : string) : Ast.program =
+let parse_string (w : string) : Ast.a_program =
   Common2.with_tmp_file ~str:w ~ext:"js" parse_program
 
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)
 
-let (program_of_string: string -> Ast_js.program) = fun s ->
+let (program_of_string: string -> Ast_js.a_program) = fun s ->
   Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
     parse_program file
   )

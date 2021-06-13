@@ -4,7 +4,7 @@ open Ast_js
 type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
-  ktop: (toplevel  -> unit) * visitor_out -> toplevel  -> unit;
+  ktop: (a_toplevel  -> unit) * visitor_out -> a_toplevel  -> unit;
   kprop: (property  -> unit) * visitor_out -> property  -> unit;
   kparam: (parameter_classic  -> unit) * visitor_out -> parameter_classic  -> unit;
 

@@ -313,7 +313,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 (*************************************************************************)
 (* Rules type decl *)
 (*************************************************************************)
-%start <Ast_js.program> main
+%start <Ast_js.a_program> main
 %start <Ast_js.stmt option> module_item_or_eof
 %start <Ast_js.any> sgrep_spatch_pattern
 (* for lang_json/ *)

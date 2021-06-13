@@ -84,7 +84,7 @@ type env = {
 
   (* this is for the abstract interpreter *)
   db: (qualified_name, Ast_js.var) Hashtbl.t;
-  asts: (Common.filename (* readable *)* Ast_js.program (* resolved*)) list ref;
+  asts: (Common.filename (* readable *)* Ast_js.a_program (* resolved*)) list ref;
 
   log: string -> unit;
   pr2_and_log: string -> unit;

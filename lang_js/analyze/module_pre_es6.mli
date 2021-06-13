@@ -40,7 +40,7 @@ val fresh_id : unit -> int
 val string_of_shape : int -> shape -> string
 
 (** parse info for JS files, containing an AST and a token list with comments **)
-type parseinfo = (Ast_js.program * Parser_js.token list)
+type parseinfo = (Ast_js.a_program * Parser_js.token list)
 
 (** map of file names to parse info cached after parsing **)
 type parseinfo_map =  parseinfo Common.smap
