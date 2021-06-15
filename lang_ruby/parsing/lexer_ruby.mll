@@ -743,9 +743,13 @@ and atom t state = parse
         let newt = tk lexbuf in
         emit_extra (T_ATOM_BEG t)
         (non_interp_string '\'' (Buffer.create 31) newt) state lexbuf }
-  (* sgrep-ext: *)
-  | "..." { end_state_unless_afterdef state;
-            Flag_parsing.sgrep_guard (T_ATOM(t, ("...", tk lexbuf))) }
+  (* TODO sgrep-ext: this does not work because
+   * we have a conflict when parsing 'foo(password:...)' as
+   * atoms and keyword arguments are mixed in Ruby.
+   *
+   *  | "..." { end_state_unless_afterdef state;
+   *         Flag_parsing.sgrep_guard (T_ATOM(t, ("...", tk lexbuf))) }
+   *)
 
   (* TODO: miss space and newline tokens here, yyback? *)
   | nl   { t_colon t state lexbuf }
