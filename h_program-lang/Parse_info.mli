@@ -124,7 +124,7 @@ val lexical_error: string -> Lexing.lexbuf -> unit
 (*e: signature [[Parse_info.lexical_error]] *)
 
 (*****************************************************************************)
-(* Info accessors *)
+(* Info accessors and builders *)
 (*****************************************************************************)
 
 (*s: signature [[Parse_info.fake_token_location]] *)
@@ -139,6 +139,7 @@ val fake_bracket: 'a -> t * 'a * t
 val unbracket: t * 'a * t -> 'a
 val sc: t
 
+val mk_info_of_loc: token_location -> t
 
 val is_fake: t -> bool
 (*s: signature [[Parse_info.first_loc_of_file]] *)
@@ -266,6 +267,9 @@ val tok_add_s: string -> t -> t
 (*e: signature [[Parse_info.tok_add_s]] *)
 (* used mainly by tree-sitter based parsers in semgrep *)
 val combine_infos: t -> t list -> t
+(* this function assumes the full content of the token is on the same
+ * line, otherwise the line/col of the result might be wrong *)
+val split_info_at_pos: int -> t -> t * t
 
 (*s: signature [[Parse_info.tokenize_all_and_adjust_pos]] *)
 (* to be used by the lexer *)

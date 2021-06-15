@@ -145,7 +145,10 @@ let visitor_info_of_tok f = function
   | T_REGEXP (a,b, ii) -> T_REGEXP (a,b, f ii)
   | T_FLOAT (a, ii) -> T_FLOAT (a, f ii)
   | T_NUM (s, ii) -> T_NUM (s, f ii)
-  | T_ATOM (s, ii) -> T_ATOM (s, f ii)
+  | T_ATOM (ii1, (s, ii2)) ->
+      let ii1' = f ii1 in
+      let ii2' = f ii2 in
+      T_ATOM (ii1', (s, ii2'))
 
 
 let info_of_tok tok =

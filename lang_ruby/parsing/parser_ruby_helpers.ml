@@ -331,7 +331,7 @@ let fix_broken_assoc l op r =
       let l' = replace_end l (Id((s,p),ik)) in
         l', Op_ASSOC, r
 *)
-    | Atom(AtomFromString(lt, sc, rt)) ->
+    | Atom(tk, AtomFromString(lt, sc, rt)) ->
         let (astr, t), rest = match List.rev sc with
           | (Ast_ruby.StrChars (s, t))::tl -> (s,t),tl
           | _ -> ("a", Parse_info.fake_info "a"),[]
@@ -341,7 +341,7 @@ let fix_broken_assoc l op r =
         then
           let s' = String.sub astr 0 (len-1) in
           let sc' = List.rev ((Ast_ruby.StrChars (s',t))::rest) in
-          let l' = replace_end l ((Atom(AtomFromString(lt, sc', rt)))) in
+          let l' = replace_end l ((Atom(tk, AtomFromString(lt, sc', rt)))) in
           l', Op_ASSOC, r
         else default
     | _ -> default

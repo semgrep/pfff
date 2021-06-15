@@ -192,7 +192,7 @@ and params_to_pattern xs =
 %token <string * Parse_info.t>  T_NUM
 %token <string * Parse_info.t>  T_FLOAT
 
-%token <string * Parse_info.t> T_ATOM
+%token <Parse_info.t * (string * Parse_info.t)> T_ATOM
 %token <Parse_info.t> T_ATOM_BEG
 
 %token <string * Parse_info.t> T_SINGLE_STRING
@@ -568,8 +568,10 @@ constant:
 
   | string<s>        { s }
 
-  | T_ATOM    { Atom (AtomSimple $1) }
-  | T_ATOM_BEG<pos> interp_str<istr> { Atom (AtomFromString (pos, istr, fake"\"")) }
+  | T_ATOM
+      { Atom (fst $1, AtomSimple (snd $1)) }
+  | T_ATOM_BEG<pos> interp_str<istr>
+      { Atom (pos, AtomFromString (pos, istr, fake"\"")) }
 
   | T_REGEXP<s,m,pos> { Literal(Regexp ((s,m),pos)) }
   | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
@@ -1073,7 +1075,7 @@ method_kind:
 
 meth_or_atom:
     | method_name  { $1 }
-    | T_ATOM       { MethodAtom (AtomSimple $1) }
+    | T_ATOM       { MethodAtom (fst $1, AtomSimple (snd $1)) }
 
 /*(* TODO: split in scoped_id *)*/
 var_or_scoped_id:

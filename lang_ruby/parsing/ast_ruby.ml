@@ -251,11 +251,10 @@ and literal =
 
   | Nil of tok
 
-and atom =
-  (* the atom string includes the ':' prefix *)
+and atom = tok (* ':' *) * atom_kind
+and atom_kind =
   | AtomSimple of string wrap
-  (* less: tok for ':' ? *)
-  | AtomFromString of interp list bracket (* '' or "" *)
+  | AtomFromString of interp list bracket (* '' or "" or %i() *)
 
 and string_kind =
   | Single of string wrap
@@ -482,4 +481,4 @@ let opt_stmts_to_stmts = function
 (* x: v  <=>  :x => v  in Ruby in hash and calls *)
 let keyword_arg_to_expr id tk arg =
   let (s, t) = id in
-  Binop (((Atom (AtomSimple ((":"^s), t)))), (Op_ASSOC, tk), arg)
+  Binop (((Atom (tk, AtomSimple ((s), t)))), (Op_ASSOC, tk), arg)

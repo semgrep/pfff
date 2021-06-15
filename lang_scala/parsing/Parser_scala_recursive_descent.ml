@@ -885,8 +885,8 @@ let literal ?(isNegated=None) ?(inPattern=false) in_ : literal  =
         (Interpolated ((s, ii), xs, endt))
     (* scala3: unsupported, deprecated in 2.13.0 *)
     (* ast: Apply(scalaDot(Symbol, List(finish(in.strVal)) *)
-    | SymbolLiteral(s, ii) ->
-        finish (Symbol (s, ii))
+    | SymbolLiteral(tcolon, id) ->
+        finish (Symbol (tcolon, id))
 
     | CharacterLiteral(x, ii) ->
         (* ast: incharVal *)
