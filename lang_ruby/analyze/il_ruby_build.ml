@@ -822,7 +822,9 @@ and refactor_interp_string acc istr pos =
       let acc, e = refactor_contents acc hd in
       helper acc e tl
 
-and refactor_atom acc (l : Ast.atom) : stmt acc * expr = match l with
+and refactor_atom acc (l : Ast.atom) : stmt acc * expr =
+  let (_tk, kind) = l in
+  match kind with
   | Ast.AtomSimple (s, _pos) -> acc, ELit (Atom s)
   | Ast.AtomFromString (_, [Ast.StrChars (s, _t)], _) -> acc, ELit (Atom s)
   | Ast.AtomFromString (lpos, istr, _rpos) ->
@@ -1089,10 +1091,11 @@ and refactor_msg2 (acc:stmt acc) msg : stmt acc * msg_id = match msg with
       Log.fatal (Log.of_tok (tok_of e)) "refactor_msg unknown msg: %s\n"
         (Ast_ruby.show_method_name e)
 
-and refactor_symbol_or_msg (acc:stmt acc) sym_msg = match sym_msg with
-  | Ast.MethodAtom(Ast.AtomSimple(s,_pos)) ->
+and refactor_symbol_or_msg (acc:stmt acc) sym_msg =
+  match sym_msg with
+  | Ast.MethodAtom(_tcolon, Ast.AtomSimple(s,_pos)) ->
       acc, msg_id_from_string s
-  | Ast.MethodAtom(Ast.AtomFromString(lt, interp, _rt)) ->
+  | Ast.MethodAtom(_tcolon, Ast.AtomFromString(lt, interp, _rt)) ->
       let acc, e = refactor_interp_string acc interp lt in
       begin match e with
         | ELit (String s) -> acc, msg_id_from_string s
@@ -1245,7 +1248,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       acc_enqueue call acc
 
   | Ast.Call(Ast.Id(("define_method",pos),Ast.ID_Lowercase),
-             (_, [Ast.Atom(Ast.AtomSimple (mname,atompos))], _),
+             (_, [Ast.Atom(_tk, Ast.AtomSimple (mname,atompos))], _),
              Some(Ast.CodeBlock(_,params_o,cb_body))) ->
       let params = Utils.default_opt [] params_o in
       let name = (* H.msg_of_str *) Ast.MethodId ((mname,atompos), Ast.ID_Lowercase) in
@@ -1638,12 +1641,12 @@ and refactor_method_name (acc:stmt acc) e : stmt acc * def_name = match e with
       Log.fatal (Log.of_tok (tok_of e)) "refactor_method_name unknown msg: %s\n"
         (Ast_ruby.show_expr e)
 
-  | Ast.M (Ast.MethodAtom (Ast.AtomSimple (s, _pos))) ->
+  | Ast.M (Ast.MethodAtom (_tcolon, Ast.AtomSimple (s, _pos))) ->
       acc, (Instance_Method (ID_MethodName s))
-  | Ast.M (Ast.MethodAtom (Ast.AtomFromString (_, [Ast.StrChars (s,_t)],_)))->
+  | Ast.M (Ast.MethodAtom (_tcolon, Ast.AtomFromString (_, [Ast.StrChars (s,_t)],_)))->
       acc, (Instance_Method (ID_MethodName s))
 
-  | Ast.M (Ast.MethodAtom (Ast.AtomFromString (pos, _, _))) ->
+  | Ast.M (Ast.MethodAtom (_tcolon, Ast.AtomFromString (pos, _, _))) ->
       Log.fatal (Log.of_tok pos) "interpreted atom string in method name?"
   | Ast.M e ->
       let acc,id = refactor_msg2 acc e in

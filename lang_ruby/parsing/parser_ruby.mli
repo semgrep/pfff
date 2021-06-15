@@ -95,7 +95,7 @@ type token =
   | T_DOUBLE_BEG of Parse_info.t
   | T_SINGLE_STRING of (string * Parse_info.t)
   | T_ATOM_BEG of Parse_info.t
-  | T_ATOM of (string * Parse_info.t)
+  | T_ATOM of (Parse_info.t * (string * Parse_info.t))
   | T_FLOAT of (string * Parse_info.t)
   | T_NUM of (string * Parse_info.t)
   | T_CLASS_VAR of (string * Parse_info.t)
@@ -152,7 +152,7 @@ val pp :
    | `Obj_T_ANDOP of Parse_info.t
    | `Obj_T_ASSIGN of Parse_info.t
    | `Obj_T_ASSOC of Parse_info.t
-   | `Obj_T_ATOM of string * Parse_info.t
+   | `Obj_T_ATOM of Parse_info.t * (string * Parse_info.t)
    | `Obj_T_ATOM_BEG of Parse_info.t
    | `Obj_T_BANG of Parse_info.t
    | `Obj_T_CARROT of Parse_info.t

@@ -70,7 +70,10 @@ let visitor_info_of_tok f = function
   | FloatingPointLiteral(x, ii) -> FloatingPointLiteral(x, f ii)
   | CharacterLiteral(x, ii) -> CharacterLiteral(x, f ii)
   | BooleanLiteral(x, ii) -> BooleanLiteral(x, f ii)
-  | SymbolLiteral(s, ii) -> SymbolLiteral(s, f ii)
+  | SymbolLiteral(ii1, (s, ii2)) ->
+      let ii1' = f ii1 in
+      let ii2' = f ii2 in
+      SymbolLiteral(ii1', (s, ii2'))
   | StringLiteral(x, ii) -> StringLiteral(x, f ii)
 
   (* tokens without values *)

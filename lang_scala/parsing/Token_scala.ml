@@ -7,7 +7,7 @@ type token =
   | T_INTERPOLATED_END of (Parse_info.t)
   | T_DOLLAR_LBRACE of (Parse_info.t)
   | TILDE of (Parse_info.t)
-  | SymbolLiteral of (string * Parse_info.t)
+  | SymbolLiteral of (Parse_info.t * (string * Parse_info.t))
   | StringLiteral of (string * Parse_info.t)
   | Space of (Parse_info.t)
   | SUPERTYPE of (Parse_info.t)

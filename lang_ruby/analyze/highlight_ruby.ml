@@ -96,7 +96,9 @@ let visit_program ~tag_hook _prefs (_program, toks) =
         tag ii Number
     | T.K_NIL ii ->
         tag ii Null
-    | T.T_ATOM (_, ii) | T.T_ATOM_BEG ii ->
+    | T.T_ATOM (ii1, (_, ii2)) ->
+        tag ii1 Atom; tag ii2 Atom
+    | T.T_ATOM_BEG ii ->
         tag ii Atom
     | T.T_SINGLE_STRING (_, ii)
     | T.T_INTERP_STR (_, ii)

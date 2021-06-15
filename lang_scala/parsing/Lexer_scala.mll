@@ -265,7 +265,11 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  | "'" (plainid as s) { SymbolLiteral(s, tokinfo lexbuf) }
+  | "'" (plainid as s) {
+      let t = tokinfo lexbuf in
+      let (tcolon, trest) = PI.split_info_at_pos 1 t in
+      SymbolLiteral(tcolon, (s, trest))
+    }
 
   (* keywords *)
   | id_lower as s

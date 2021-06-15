@@ -117,11 +117,14 @@ and add =
 
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
+
+let mk_info_of_loc loc =
+  { token = OriginTok loc; transfo = NoTransfo }
+
 (* Synthesize a token. *)
-let fake_info str : token_mutable = {
-  token = FakeTokStr (str, None);
-  transfo = NoTransfo;
-}
+let fake_info str : token_mutable =
+  { token = FakeTokStr (str, None); transfo = NoTransfo; }
+
 let abstract_info =
   { token = Ab; transfo = NoTransfo }
 
@@ -252,18 +255,16 @@ type ('ast, 'toks) parsing_result = {
 (*****************************************************************************)
 
 let tokinfo_str_pos str pos =
-  {
-    token = OriginTok {
-      charpos = pos;
-      str     = str;
+  let loc =  {
+    charpos = pos;
+    str     = str;
 
-      (* info filled in a post-lexing phase, see complete_token_location_large*)
-      line = -1;
-      column = -1;
-      file = "NO FILE INFO YET";
-    };
-    transfo = NoTransfo;
-  }
+    (* info filled in a post-lexing phase, see complete_token_location_large*)
+    line = -1;
+    column = -1;
+    file = "NO FILE INFO YET";
+  } in
+  mk_info_of_loc loc
 
 (* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
  * is not exactly the same than yyless(), so I use yyback() instead.
@@ -502,6 +503,21 @@ let str_of_info_fake_ok ii =
 let combine_infos x xs =
   let str = xs |> List.map str_of_info_fake_ok |> String.concat "" in
   tok_add_s str x
+
+let split_info_at_pos pos ii =
+  let loc = token_location_of_info ii in
+  let str = loc.str in
+  let loc1_str =
+    String.sub str 0 pos in
+  let loc2_str =
+    String.sub str pos (String.length str - pos) in
+  let loc1 = { loc with str = loc1_str } in
+  let loc2 = { loc with
+               str = loc2_str;
+               charpos = loc.charpos + pos;
+               column = loc.column + pos;
+             } in
+  mk_info_of_loc loc1, mk_info_of_loc loc2
 
 (*****************************************************************************)
 (* Adjust file pos *)

@@ -157,8 +157,7 @@ type literal =
   | Char   of string wrap
   | String of string wrap
   | Bool of bool wrap
-  (* the string does not contain the ' *)
-  | Symbol of string wrap
+  | Symbol of tok (* "'" *) * string wrap
   (* scala3: not in simple_literal *)
   | Null of tok
   (* this forces to define type_ and pattern and expr as mutually recursive*)
