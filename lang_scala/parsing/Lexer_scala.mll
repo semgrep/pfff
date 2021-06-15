@@ -263,13 +263,25 @@ rule token = parse
   | "...>"  { Flag_parsing.sgrep_guard (RDots (tokinfo lexbuf)) }
 
   (* ----------------------------------------------------------------------- *)
-  (* Keywords and ident *)
+  (* Scala symbols (a.k.a Atoms) *)
   (* ----------------------------------------------------------------------- *)
-  | "'" (plainid as s) {
+
+  | "'" (plainid as s)
+    {
       let t = tokinfo lexbuf in
       let (tcolon, trest) = PI.split_info_at_pos 1 t in
       SymbolLiteral(tcolon, (s, trest))
     }
+  (* semgrep-ext: note that plainid above also allow $XXX for semgrep *)
+  | "'..."
+     { let t = tokinfo lexbuf in
+       let (tcolon, trest) = PI.split_info_at_pos 1 t in
+       Flag_parsing.sgrep_guard (SymbolLiteral(tcolon, ("...", trest)))
+     }
+
+  (* ----------------------------------------------------------------------- *)
+  (* Keywords and ident *)
+  (* ----------------------------------------------------------------------- *)
 
   (* keywords *)
   | id_lower as s
