@@ -203,7 +203,6 @@ and params_to_pattern xs =
 %token <Parse_info.t> T_TICK_BEG
 %token <string * Parse_info.t> T_USER_BEG
 
-%token <Ast_ruby.interp list * string * Parse_info.t> T_REGEXP
 %token <Parse_info.t> T_REGEXP_BEG
 %token <string * Parse_info.t>  T_REGEXP_MOD
 
@@ -573,9 +572,10 @@ constant:
   | T_ATOM_BEG<pos> interp_str<istr>
       { Atom (pos, AtomFromString (pos, istr, fake"\"")) }
 
-  | T_REGEXP<s,m,pos> { Literal(Regexp ((s,m),pos)) }
-  | T_REGEXP_BEG<pos> interp_str<istr> T_REGEXP_MOD<mods, _posTODO>
-      { Literal(Regexp ((istr,mods),pos)) }
+  | T_REGEXP_BEG<l> interp_str<istr> T_REGEXP_MOD<mods, posmod>
+      { let r = l (* TODO *) in
+        let rmod = if mods = "" then None else Some (mods, posmod) in
+        Literal(Regexp ((l, istr, r), rmod)) }
 
   | T_TICK_BEG<pos> interp_str<xs> { Literal (String ((Tick (pos, xs, fake"`")))) }
 

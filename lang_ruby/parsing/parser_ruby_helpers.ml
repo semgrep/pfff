@@ -164,7 +164,7 @@ let merge_string_lits s1 s2 = match s1,s2 with
   | _ -> assert false
 
 let process_user_string m str pos = match m with
-  | "r" -> Literal(Regexp ((str,""),pos))
+  | "r" -> Literal(Regexp ((pos, str, pos),None))
   | "w" -> split_single_string_to_array (str_of_interp str) pos
   | "W" -> split_double_string_to_array str pos
   | "q" -> Literal(String((Single (str_of_interp str, pos))))

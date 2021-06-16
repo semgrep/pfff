@@ -846,11 +846,14 @@ and refactor_lit acc (l : Ast.literal) : stmt acc * expr = match l with
       make_call_expr acc None (ID_MethodName "__backtick") [SE e] None lpos
 
 
-  | Ast.Regexp(([Ast.StrChars (s1, _t1)],s2),_pos) ->
+  | Ast.Regexp((_, [Ast.StrChars (s1, _t1)],_), s2opt) ->
       let s1' = escape_regexp s1 in
+      let s2 = match s2opt with None -> "" | Some (s, _) -> s in
       acc, ELit (Regexp(s1',s2))
 
-  | Ast.Regexp((s1,s2),pos) -> construct_explicit_regexp acc pos s1 s2
+  | Ast.Regexp((pos, xs, _), s2opt) ->
+      let s2 = match s2opt with None -> "" | Some (s, _) -> s in
+      construct_explicit_regexp acc pos xs s2
 
   | Ast.Nil _ -> acc, EId (Nil)
   | Ast.Bool (true,_) -> acc, EId (True)

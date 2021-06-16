@@ -107,7 +107,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.T_USER_BEG (_, ii)
       -> tag ii String
 
-    | T.T_REGEXP (_,_, ii) | T.T_REGEXP_BEG ii ->
+    | T.T_REGEXP_BEG ii ->
         tag ii Regexp
     | T.T_REGEXP_MOD (_, ii) ->
         tag ii Regexp

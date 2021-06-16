@@ -87,7 +87,6 @@ type token =
   | K_CLASS of Parse_info.t
   | T_REGEXP_MOD of (string * Parse_info.t)
   | T_REGEXP_BEG of Parse_info.t
-  | T_REGEXP of (Ast_ruby.interp list * string * Parse_info.t)
   | T_USER_BEG of (string * Parse_info.t)
   | T_TICK_BEG of Parse_info.t
   | T_INTERP_END of (string * Parse_info.t)
@@ -199,7 +198,6 @@ val pp :
    | `Obj_T_QUESTION of Parse_info.t
    | `Obj_T_RBRACE of Parse_info.t
    | `Obj_T_RBRACK of Parse_info.t
-   | `Obj_T_REGEXP of Ast_ruby.interp list * string * Parse_info.t
    | `Obj_T_REGEXP_BEG of Parse_info.t
    | `Obj_T_REGEXP_MOD of string * Parse_info.t
    | `Obj_T_RPAREN of Parse_info.t
