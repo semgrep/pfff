@@ -249,7 +249,7 @@ and literal =
   | Num of float option wrap
   | String of string wrap
   (* TODO: string wrap bracket * string wrap option *)
-  | Regexp of string wrap
+  | Regexp of (string wrap * string)
 
 and a_arguments = a_argument list bracket
 and a_argument = expr (* see note about aliases prefixed by 'a_' *)

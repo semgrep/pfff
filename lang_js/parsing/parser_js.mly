@@ -181,7 +181,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 
 %token<string * Parse_info.t> T_STRING
 %token<string * Parse_info.t> T_ENCAPSED_STRING
-%token<string * Parse_info.t> T_REGEX
+%token<(string * Parse_info.t) * string> T_REGEX
 
 (*-----------------------------------------*)
 (* Keyword tokens *)

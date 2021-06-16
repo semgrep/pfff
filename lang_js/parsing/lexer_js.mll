@@ -491,7 +491,7 @@ rule initial = parse
           let str_modifier = Buffer.contents buf_modifier in
           let fullstr = "/" ^ str ^ "/" ^ str_modifier in
           (* TODO: split info! *)
-          T_REGEX (str, info |> PI.rewrap_str fullstr)
+          T_REGEX ((str, info |> PI.rewrap_str fullstr), str_modifier)
     }
 
   (* ----------------------------------------------------------------------- *)
