@@ -477,12 +477,21 @@ rule initial = parse
           | "/=" -> T_DIV_ASSIGN (tokinfo lexbuf)
           | _ -> raise Impossible
           )
+      (* a regexp *)
       | _ ->
           let buf = Buffer.create 127 in
-          Buffer.add_string buf s;
-          regexp buf lexbuf;
+          let buf_modifier = Buffer.create 127 in
+          (match s with
+          | "/" -> ()
+          | "/=" -> Buffer.add_string buf "="
+          | _ -> raise Impossible
+          );
+          regexp buf buf_modifier lexbuf;
           let str = Buffer.contents buf in
-          T_REGEX (str, info |> PI.rewrap_str str)
+          let str_modifier = Buffer.contents buf_modifier in
+          let fullstr = "/" ^ str ^ "/" ^ str_modifier in
+          (* TODO: split info! *)
+          T_REGEX (str, info |> PI.rewrap_str fullstr)
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -647,24 +656,24 @@ and backquote = parse
 (*****************************************************************************)
 (* Rule regexp *)
 (*****************************************************************************)
-and regexp buf = parse
-  | '/' { Buffer.add_char buf '/'; regexp_maybe_ident buf lexbuf }
+and regexp buf buf_modifier = parse
+  | '/' { regexp_maybe_ident buf_modifier lexbuf }
   | '\\' (_ as x) { Buffer.add_char buf '\\';
                     (* check char ? *)
                     Buffer.add_char buf x;
-                    regexp buf lexbuf }
-  | '[' { Buffer.add_char buf '['; regexp_class buf lexbuf }
-  | (_ as x)       { Buffer.add_char buf x; regexp buf lexbuf }
+                    regexp buf buf_modifier lexbuf }
+  | '[' { Buffer.add_char buf '['; regexp_class buf buf_modifier lexbuf }
+  | (_ as x)       { Buffer.add_char buf x; regexp buf buf_modifier lexbuf }
   | eof { error "WIERD end of file in regexp" lexbuf; ()}
 
 
-and regexp_class buf = parse
+and regexp_class buf buf_modifier = parse
   | ']' { Buffer.add_char buf ']';
-             regexp buf lexbuf }
+             regexp buf buf_modifier lexbuf }
   | '\\' (_ as x) { Buffer.add_char buf '\\';
                     Buffer.add_char buf x;
-                    regexp_class buf lexbuf }
-  | (_ as x) { Buffer.add_char buf x; regexp_class buf lexbuf }
+                    regexp_class buf buf_modifier lexbuf }
+  | (_ as x) { Buffer.add_char buf x; regexp_class buf buf_modifier lexbuf }
 
 and regexp_maybe_ident buf = parse
   | ['A'-'Z''a'-'z']* { Buffer.add_string buf (tok lexbuf) }
