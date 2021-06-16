@@ -65,14 +65,16 @@ let visitor_info_of_tok f = function
   | T_FLOAT (s, ii) -> T_FLOAT (s, (f ii))
   | T_ID (s, ii) -> T_ID (s, f ii)
   | T_STRING (s, ii) -> T_STRING (s, (f ii))
-  | T_REGEX ((s1, ii1), s2opt) ->
-      let ii1 = f ii1 in
-      let s2opt =
-        match s2opt with
-        | "" -> s2opt
-        | _ -> s2opt
+  | T_REGEX ((li, (s1, ii1), ri), opt) ->
+      let li' = f li in
+      let ii1' = f ii1 in
+      let ri' = f ri in
+      let opt =
+        match opt with
+        | None -> None
+        | Some (s, ii) -> Some (s, f ii)
       in
-      T_REGEX ((s1, ii1), s2opt)
+      T_REGEX ((li', (s1, ii1'), ri'), opt)
 
   | T_FUNCTION ii -> T_FUNCTION (f ii)
   | T_IF ii -> T_IF (f ii)

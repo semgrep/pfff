@@ -248,8 +248,7 @@ and literal =
   | Bool of bool wrap
   | Num of float option wrap
   | String of string wrap
-  (* TODO: string wrap bracket * string wrap option *)
-  | Regexp of (string wrap * string)
+  | Regexp of string wrap bracket (* // *) * string wrap option (* modifier *)
 
 and a_arguments = a_argument list bracket
 and a_argument = expr (* see note about aliases prefixed by 'a_' *)

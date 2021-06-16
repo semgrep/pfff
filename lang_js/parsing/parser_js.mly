@@ -181,7 +181,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 
 %token<string * Parse_info.t> T_STRING
 %token<string * Parse_info.t> T_ENCAPSED_STRING
-%token<(string * Parse_info.t) * string> T_REGEX
+%token<(Parse_info.t * (string * Parse_info.t) * Parse_info.t) * (string * Parse_info.t) option> T_REGEX
 
 (*-----------------------------------------*)
 (* Keyword tokens *)
@@ -1342,7 +1342,7 @@ primary_expr_no_braces:
  | string_literal  { L (String $1) }
 
  (* marcel: this isn't an expansion of literal in ECMA-262... mistake? *)
- | regex_literal                { L (Regexp $1) }
+ | regex_literal                { L (Regexp (fst $1, snd $1)) }
  | array_literal                { $1 }
 
  (* simple! ECMA mixes this rule with arrow parameters (bad) *)

@@ -489,9 +489,18 @@ rule initial = parse
           regexp buf buf_modifier lexbuf;
           let str = Buffer.contents buf in
           let str_modifier = Buffer.contents buf_modifier in
+
           let fullstr = "/" ^ str ^ "/" ^ str_modifier in
-          (* TODO: split info! *)
-          T_REGEX ((str, info |> PI.rewrap_str fullstr), str_modifier)
+          let info = info |> PI.rewrap_str fullstr in
+          let (lt, info) = PI.split_info_at_pos 1 info in
+          let (t, info) = PI.split_info_at_pos (String.length str) info in
+          let (rt, info) = PI.split_info_at_pos 1 info in
+          let modifier =
+            if str_modifier = ""
+            then None
+            else Some (str_modifier, info)
+          in
+          T_REGEX ((lt, (str, t), rt), modifier)
     }
 
   (* ----------------------------------------------------------------------- *)

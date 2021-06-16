@@ -159,8 +159,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
            | Num v1 -> let v1 = v_wrap v_id v1 in ()
            | String v1 -> let v1 = v_wrap v_string v1 in ()
            | Regexp (v1, v2) ->
-               let v1 = v_wrap v_string v1 in
-               let v2 = v_string v2 in
+               let v1 = v_bracket (v_wrap v_string) v1 in
+               let v2 = v_option (v_wrap v_string) v2 in
                ()
           )
       | Id v1 -> let v1 = v_name v1 in ()
