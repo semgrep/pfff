@@ -694,6 +694,28 @@ let mk_lexer_for_yacc toks is_comment =
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
   tr, lexer, lexbuf_fake
 
+let adjust_pinfo_wrt_base base_loc loc =
+  { loc with
+    charpos = base_loc.charpos + loc.charpos - 1;
+    line    = base_loc.line + loc.line - 1;
+    column  =
+      if loc.line = 1 then
+        base_loc.column + loc.column - 1
+      else
+        loc.column;
+    file    = base_loc.file; }
+
+let adjust_info_wrt_base base_loc ii =
+  { ii with token =
+              match ii.token with
+              | OriginTok pi ->
+                  OriginTok(adjust_pinfo_wrt_base base_loc pi)
+              | ExpandedTok (pi, vpi, off) ->
+                  ExpandedTok(adjust_pinfo_wrt_base base_loc pi, vpi, off)
+              | FakeTokStr (s, vpi_opt) ->
+                  FakeTokStr (s, vpi_opt)
+              | Ab -> Ab
+  }
 
 (*****************************************************************************)
 (* Error location report *)

@@ -303,6 +303,13 @@ val complete_token_location_large :
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 (*e: signature [[Parse_info.complete_token_location_large]] *)
 
+(** [adjust_info_wrt_base base_loc tok], where [tok] represents a location
+  * relative to [base_loc], returns the same [tok] but with an absolute
+  * {! token_location}. This is useful for fixing parse info after
+  * {! Common2.with_tmp_file}. E.g. if [base_loc] points to line 3, and
+  * [tok] points to line 2 (interpreted line 2 starting in line 3), then
+  * the adjusted token will point to line 4. *)
+val adjust_info_wrt_base : token_location -> token_mutable -> token_mutable
 
 (*s: signature [[Parse_info.error_message]] *)
 val error_message : Common.filename -> (string * int) -> string
