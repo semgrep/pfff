@@ -281,6 +281,22 @@ let with_time f =
   let t2 = Unix.gettimeofday () in
   (res, t2 -. t1)
 
+let pr_time name f =
+  let t1 = Unix.gettimeofday () in
+  Fun.protect f
+    ~finally:(fun () ->
+      let t2 = Unix.gettimeofday () in
+      pr (spf "%s: %.6f s" name (t2 -. t1))
+    )
+
+let pr2_time name f =
+  let t1 = Unix.gettimeofday () in
+  Fun.protect f
+    ~finally:(fun () ->
+      let t2 = Unix.gettimeofday () in
+      pr2 (spf "%s: %.6f s" name (t2 -. t1))
+    )
+
 type prof = ProfAll | ProfNone | ProfSome of string list
 let profile = ref ProfNone
 let show_trace_profile = ref false

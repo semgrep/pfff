@@ -170,6 +170,13 @@ val try_with_print_exn_and_reraise:
   Common.filename -> (unit -> unit) -> unit
 (*e: signature [[Error_code.try_with_print_exn_and_reraise]] *)
 
+(*
+   Print exception and exit with code 2. No stack trace is printed because
+   it takes 2 seconds in some instances.
+*)
+val try_with_print_exn_and_exit_fast:
+  Common.filename -> (unit -> unit) -> unit
+
 (*s: type [[Error_code.identifier_index]] *)
 (* to detect false positives (we use the Hashtbl.find_all property) *)
 type identifier_index = (string, Parse_info.token_location) Hashtbl.t

@@ -438,7 +438,18 @@ val timeout_function: ?verbose:bool -> int -> (unit -> 'a) -> 'a
 (*e: signature [[Common.timeout_function]] *)
 val timeout_function_float :?verbose:bool -> float -> (unit -> 'a) -> 'a
 
+(*
+   Measure how long it takes for a function to run, returning the result
+   and the duration.
+*)
 val with_time: (unit -> 'a) -> 'a * float
+
+(*
+   Run a function and print how long it took to return or to raise an
+   exception. pr_time prints to stdout, pr2_time prints to stderr.
+*)
+val pr_time: string -> (unit -> 'a) -> 'a
+val pr2_time: string -> (unit -> 'a) -> 'a
 
 (*s: type [[Common.prof]] *)
 type prof = ProfAll | ProfNone | ProfSome of string list

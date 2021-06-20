@@ -405,6 +405,15 @@ let try_with_print_exn_and_reraise file f =
     (* does not really re-raise :( lose some backtrace *)
     raise exn
 
+(* fast = no stack trace *)
+let try_with_print_exn_and_exit_fast file f =
+  try
+    f ()
+  with exn ->
+    let err = exn_to_error file exn in
+    pr2 (string_of_error err);
+    exit 2
+
 
 let adjust_paths_relative_to_root root errs =
   errs |> List.map (fun e ->
