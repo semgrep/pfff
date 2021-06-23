@@ -695,12 +695,13 @@ let mk_lexer_for_yacc toks is_comment =
   tr, lexer, lexbuf_fake
 
 let adjust_pinfo_wrt_base base_loc loc =
+  (* Note that charpos and columns are 0-based, whereas lines are 1-based. *)
   { loc with
-    charpos = base_loc.charpos + loc.charpos - 1;
+    charpos = base_loc.charpos + loc.charpos;
     line    = base_loc.line + loc.line - 1;
     column  =
       if loc.line = 1 then
-        base_loc.column + loc.column - 1
+        base_loc.column + loc.column
       else
         loc.column;
     file    = base_loc.file; }
