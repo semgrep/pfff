@@ -13,9 +13,17 @@ val (=:=) : bool   -> bool   -> bool
 val (=*=): 'a -> 'a -> bool
 (*e: signature [[Common.TODOOPERATOR (pfff/commons/Common.mli)4]] *)
 
+(*
+   Same as print_endline: print the string and a newline, then flush stdout.
+*)
 (*s: signature [[Common.pr]] *)
 val pr : string -> unit
 (*e: signature [[Common.pr]] *)
+
+
+(*
+   Print a string and a newline to stderr, then flush stderr.
+*)
 (*s: signature [[Common.pr2]] *)
 val pr2 : string -> unit
 (*e: signature [[Common.pr2]] *)
