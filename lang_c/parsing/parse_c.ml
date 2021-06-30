@@ -11,7 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
 *)
-open Common
+
+let logger = Logging.get_logger [__MODULE__]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -31,7 +32,7 @@ let parse file =
   let ast, stat =
     try (Ast_c_build.program ast), stat
     with exn ->
-      pr2 (spf "PB: Ast_c_build, on %s (exn = %s)" file (Common.exn_to_s exn));
+      logger#error "PB: Ast_c_build, on %s (exn = %s)" file (Common.exn_to_s exn);
       (*None, { stat with Stat.bad = stat.Stat.bad + stat.Stat.correct } *)
       raise exn
   in

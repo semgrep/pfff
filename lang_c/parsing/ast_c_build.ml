@@ -18,6 +18,8 @@ open Cst_cpp
 module A = Ast_c
 module PI = Parse_info
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -73,8 +75,7 @@ let gensym_enum cnt =
   spf "__anon_enum_%d" cnt
 
 let debug any =
-  let s = Cst_cpp.show_any any in
-  pr2 s
+  logger#debug "%s" (Cst_cpp.show_any any)
 
 let rec ifdef_skipper xs f =
 
@@ -86,7 +87,7 @@ let rec ifdef_skipper xs f =
        | Some ifdef ->
            (match ifdef with
             | Ifdef, tok ->
-                pr2_once (spf "skipping: %s" (Parse_info.str_of_info tok));
+                logger#info "skipping: %s" (Parse_info.str_of_info tok);
                 (try
                    let (_, x, rest) =
                      xs |> Common2.split_when (fun x ->
@@ -576,7 +577,7 @@ and expr env e =
                         initialiser env (InitList xs))
 
   | ConstructedObject (_, _) ->
-      pr2_once "BUG PARSING LOCAL DECL PROBABLY";
+      logger#error "BUG PARSING LOCAL DECL PROBABLY";
       debug (Expr e);
       raise CplusplusConstruct
 
@@ -611,7 +612,7 @@ and argument env x =
   | Arg e -> Some (A.Arg (expr env e))
   (* TODO! can't just skip it ... *)
   | ArgType _  | ArgAction _ ->
-      pr2 ("type argument, maybe wrong typedef inference!");
+      logger#error "type argument, maybe wrong typedef inference!";
       debug (Argument x);
       None
 

@@ -17,16 +17,16 @@ open Common2.Infix
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A (real) Abstract Syntax Tree for C, not a Concrete Syntax Tree
+(* A (real) Abstract Syntax Tree (AST) for C, not a Concrete Syntax Tree (CST)
  * as in cst_cpp.ml.
  *
- * This file contains a simplified C abstract syntax tree. The original
+ * This file contains a simplified AST for C. The original
  * C/C++ syntax tree (cst_cpp.ml) is good for code refactoring or
  * code visualization; the types used match exactly the source. However,
- * for other algorithms, the nature of the AST makes the code a bit
+ * for other algorithms, the nature of the CST makes the code a bit
  * redundant. Moreover many analysis are far simpler to write on
- * C than C++. Hence the idea of a SimpleAST which is the
- * original AST where certain constructions have been factorized
+ * C than C++. Hence the idea of a simple AST which is the
+ * original CST where certain constructions have been factorized
  * or even removed.
 
  * Here is a list of the simplications/factorizations:
