@@ -758,9 +758,9 @@ unann_type: type_ { $1 }
 
 variable_arity_parameter:
  | variable_modifier+ unann_type "..." identifier
-    { ParamClassic (canon_var $1 (Some $2) (IdentDecl $4)) }
+    { ParamSpread ($3, canon_var $1 (Some $2) (IdentDecl $4)) }
  |                    unann_type "..." identifier
-    { ParamClassic (canon_var [] (Some $1) (IdentDecl $3)) }
+    { ParamSpread ($2, canon_var [] (Some $1) (IdentDecl $3)) }
 
 (* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)
 lambda_body:
@@ -1231,15 +1231,13 @@ explicit_constructor_invocation:
 formal_parameters: "(" listc0(formal_parameter) ")" { $2 }
 
 formal_parameter:
- | variable_modifier* type_ variable_declarator_id_bis
+ | variable_modifier* type_ variable_declarator_id
   { ParamClassic (canon_var $1 (Some $2) $3) }
+ (* javaext: 1.? *)
+ | variable_modifier* type_ "..." variable_declarator_id
+  { ParamSpread ($3, canon_var $1 (Some $2) $4) }
  (* sgrep-ext: *)
  | "..." { ParamEllipsis $1 }
-
-variable_declarator_id_bis:
- | variable_declarator_id      { $1 }
- (* javaext: 1.? *)
- | "..." variable_declarator_id { $2 (* todo_ast *) }
 
  (* javaext: 1.? *)
 variable_modifier:
