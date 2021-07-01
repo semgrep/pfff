@@ -491,6 +491,11 @@ type program = stmts
 type partial =
   (* the body will be empty in m_body or cl_body *)
   | PartialDecl of decl
+  (* partial stmts *)
+  | PartialIf of tok * expr
+  | PartialTry of tok * stmt
+  | PartialCatch of catch
+  | PartialFinally of (tok * stmt)
 [@@deriving show { with_path = false }] (* with tarzan *)
 
 type any =

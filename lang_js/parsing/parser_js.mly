@@ -428,12 +428,12 @@ sgrep_spatch_pattern:
    | _ -> raise Impossible
    }
 
- (* partials defs *)
+ (* partial defs *)
  | T_FUNCTION id? call_signature EOF
    { Partial (PartialDef (mk_def ($2, mk_FuncDef [] (Function,$1) $3 (fb[]))))}
  | T_CLASS binding_id? generics? class_heritage EOF
    { Partial (PartialDef (mk_def ($2, mk_ClassDef $1 $3 $4 (fb [])))) }
- (* partials stmts *)
+ (* partial stmts *)
  | T_IF "(" expr ")" EOF
    { Partial (PartialIf ($1, $3)) }
  | T_TRY block EOF

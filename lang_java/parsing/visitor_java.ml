@@ -102,6 +102,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_partial = function
     | PartialDecl x -> v_decl x
+    | PartialIf (v1, v2) -> v_tok v1; v_expr v2
+    | PartialTry (v1, v2) | PartialFinally (v1, v2) -> v_tok v1; v_stmt v2
+    | PartialCatch (v1) -> v_catch v1
 
   and v_any x = match x with
     | AMod x -> v_wrap v_modifier x

@@ -327,10 +327,14 @@ sgrep_spatch_pattern:
 
  | annotation EOF { AMod (Annotation $1, Common2.fst3 $1) }
 
- (* partials *)
- | class_header  EOF { Partial (PartialDecl (Class $1)) }
- | method_header EOF { Partial (PartialDecl (Method $1)) }
-
+ (* partial defs *)
+ | class_header          EOF { Partial (PartialDecl (Class $1)) }
+ | method_header         EOF { Partial (PartialDecl (Method $1)) }
+ (* partial stmts *)
+ | IF "(" expression ")" EOF { Partial (PartialIf ($1, $3)) }
+ | TRY block             EOF { Partial (PartialTry ($1, $2)) }
+ | catch_clause          EOF { Partial (PartialCatch $1) }
+ | finally               EOF { Partial (PartialFinally $1) }
 
 item:
  | statement { [$1] }
