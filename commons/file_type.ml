@@ -79,7 +79,8 @@ and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 and webpl_type =
   | Php of string (* php or phpt or script *)
   | Hack
-  | Js | Coffee | TypeScript  (* JSX/TSX are converted in Js/Typescript *)
+  | Js | TypeScript  (* JSX/TSX are converted in Js/Typescript *)
+  | Coffee | Vue
   | Css
   | Html | Xml
   | Sql
@@ -207,6 +208,7 @@ let file_type_of_file2 file =
   | "coffee" -> PL (Web Coffee)
   | "ts" -> PL (Web TypeScript)
   | "tsx" -> PL (Web TypeScript) (* Typescript with JSX enabled *)
+  | "vue" -> PL (Web Vue)
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
   | "json" -> Config Json

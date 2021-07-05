@@ -38,7 +38,8 @@ and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 and webpl_type =
   | Php of string
   | Hack
-  | Js | Coffee | TypeScript (* JSX/TSX are converted in Js/Typescript *)
+  | Js | TypeScript (* JSX/TSX are converted in Js/Typescript *)
+  | Coffee | Vue
   | Css
   | Html | Xml
   | Sql
