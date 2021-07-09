@@ -5866,6 +5866,8 @@ let cmdline_flags_devel () =
     " option to set if launched inside ocamldebug";
     "-profile",          Arg.Unit (fun () -> Common.profile := Common.ProfAll),
     " output profiling information";
+    "-keep_tmp_files", Arg.Set Common.save_tmp_files,
+    " keep temporary generated files";
   ]
 let cmdline_flags_verbose () =
   [
