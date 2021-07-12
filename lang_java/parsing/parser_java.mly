@@ -50,22 +50,22 @@ let void_type ii = named_type ("void", ii)
  *)
 let (class_type: name_or_class_type -> class_type) = fun xs ->
   xs |> List.map (function
-  | Id x -> x, []
-  | Id_then_TypeArgs (x, xs) -> x, xs
+  | Id x -> x, None
+  | Id_then_TypeArgs (x, xs) -> x, Some xs
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
   )
 
 let (name: name_or_class_type -> expr) = fun xs ->
   let ys =
     xs |> List.map (function
-     | Id x -> [], x
+     | Id x -> None, x
      | Id_then_TypeArgs (x, xs) ->
       (* this is ok because of the ugly trick we do for Cast
        * where we transform a Name into a ref_type
        *)
-        xs, x
+        Some xs, x
      | TypeArgs_then_Id (xs, Id x) ->
-        xs, x
+        Some xs, x
      | TypeArgs_then_Id (_xs, _) ->
         raise Parsing.Parse_error
      )
@@ -137,7 +137,7 @@ let expr_to_typename expr =
         raise Todo
    in
    let xs = aux expr in
-   TClass (xs |> List.map (fun id -> id, []))
+   typ_of_qualified_id xs
 
 let mk_stmt_or_stmts = function
   | [] -> AStmts []
@@ -399,11 +399,11 @@ name:
  | identifier_           { [$1] }
  | name "." identifier_  { $1 @ [$3] }
  | name "." LT_GENERIC listc(type_argument) GT identifier_
-     { $1@[TypeArgs_then_Id($4,$6)] }
+     { $1@[TypeArgs_then_Id(($3, $4, $5), $6)] }
 
 identifier_:
  | identifier                                     { Id $1 }
- | identifier LT_GENERIC listc0(type_argument) GT { Id_then_TypeArgs($1, $3) }
+ | identifier LT_GENERIC listc0(type_argument) GT { Id_then_TypeArgs($1, ($2, $3, $4)) }
 
 (*************************************************************************)
 (* Types *)
@@ -502,10 +502,10 @@ class_instance_creation_expression:
    { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
  (* javaext: ? *)
  | primary "." NEW identifier "(" listc0(argument) ")" class_body?
-   { NewQualifiedClass ($1, $2, $3, TClass ([$4,[]]), ($5,$6,$7), $8) }
+   { NewQualifiedClass ($1, $2, $3, TClass ([$4,None]), ($5,$6,$7), $8) }
  (* javaext: not in 2nd edition java language specification. *)
  | name "." NEW identifier "(" listc0(argument) ")" class_body?
-   { NewQualifiedClass (((name $1)), $2, $3,TClass [$4,[]],($5,$6,$7),$8)}
+   { NewQualifiedClass (((name $1)), $2, $3,TClass [$4,None],($5,$6,$7),$8)}
 
 (* A new array that cannot be accessed right away by appending [index]:
  * new String[2][1]  // a 2-dimensional array
@@ -779,17 +779,17 @@ lambda_body:
 method_reference:
  | name       "::" identifier
     { (* TODO? probably a type? *)
-       MethodRef (Right (TClass (class_type $1)), $2, [], $3)
+       MethodRef (Right (TClass (class_type $1)), $2, None, $3)
     }
- | primary    "::" identifier       { MethodRef (Left $1, $2, [], $3) }
- | array_type "::" identifier       { MethodRef (Right $1, $2, [], $3) }
+ | primary    "::" identifier       { MethodRef (Left $1, $2, None, $3) }
+ | array_type "::" identifier       { MethodRef (Right $1, $2, None, $3) }
  | name       "::" NEW
-    { MethodRef (Right (TClass (class_type $1)), $2, [], new_id $3) }
- | array_type "::" NEW              { MethodRef (Right $1, $2, [], new_id $3) }
- | SUPER      "::" identifier       { MethodRef (Left (super $1), $2, [], $3) }
+    { MethodRef (Right (TClass (class_type $1)), $2, None, new_id $3) }
+ | array_type "::" NEW              { MethodRef (Right $1, $2, None, new_id $3) }
+ | SUPER      "::" identifier       { MethodRef (Left (super $1), $2, None, $3) }
  | name "." SUPER   "::" identifier
    { let e = Dot (fix_name $1, $2, super_ident $3) in
-     MethodRef (Left e, $4, [], $5) }
+     MethodRef (Left e, $4, None, $5) }
 
 (*----------------------------*)
 (* Shortcuts *)

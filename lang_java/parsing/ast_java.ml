@@ -69,14 +69,14 @@ type typ =
 
 (* class or interface or enum type actually *)
 and class_type =
-  (ident * type_arguments) list1
+  (ident * type_arguments option) list1
 
 and type_argument =
   | TArgument of ref_type
   | TWildCard of tok (* '?' *) *
                  (bool wrap (* extends|super, true = super *) * ref_type) option
 
-and type_arguments = type_argument list (* TODO bracket *)
+and type_arguments = type_argument list bracket
 (* A ref type should be a class type or an array of whatever, but not a
  * primitive type. We don't enforce this invariant in the AST to simplify
  * things.
@@ -144,7 +144,7 @@ and identifier_ =
  * less: do a NameGeneric instead? the type_argument could then be
  *  only at the end?
 *)
-and _name = (type_arguments * ident) list1
+and _name = (type_arguments option * ident) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
@@ -173,7 +173,7 @@ and expr =
   (* Xxx.class *)
   | ClassLiteral of typ * tok (* 'class' *)
   (* tree-sitter-only: not that ident can be the special "new" *)
-  | MethodRef of expr_or_type * tok (* :: *) * type_arguments * ident
+  | MethodRef of expr_or_type * tok (* :: *) * type_arguments option * ident
 
   (* the 'decls option' is for anon classes *)
   | NewClass of tok (* new *) * typ * arguments * decls bracket option
@@ -588,7 +588,7 @@ let constructor_invocation name args sc =
   Expr (Call ((name), args), sc)
 
 let typ_of_qualified_id xs =
-  TClass (xs |> List.map (fun id -> id, []))
+  TClass (xs |> List.map (fun id -> id, None))
 
 let name_of_id id =
   (*Name ([[], id]) *)

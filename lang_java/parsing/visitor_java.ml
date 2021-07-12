@@ -146,8 +146,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_class_type v =
     v_list
       (fun (v1, v2) ->
-         let v1 = v_ident v1 and v2 = v_list v_type_argument v2 in ())
+         let v1 = v_ident v1 and v2 = v_option v_type_arguments v2 in ())
       v
+
+  and v_type_arguments v =
+    v_bracket (v_list v_type_argument) v
 
   and v_list1 _of_a = v_list _of_a
   and v_name v =
@@ -163,9 +166,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     function
     | Id v1 -> let v1 = v_ident v1 in ()
     | Id_then_TypeArgs (v1, v2) ->
-        let v1 = v_ident v1 and v2 = v_list v_type_argument v2 in ()
+        let v1 = v_ident v1 and v2 = v_type_arguments v2 in ()
     | TypeArgs_then_Id (v1, v2) ->
-        let v1 = v_list v_type_argument v1 and v2 = v_identifier_ v2 in ()
+        let v1 = v_type_arguments v1 and v2 = v_identifier_ v2 in ()
   and v_type_argument =
     function
     | TArgument v1 -> let v1 = v_ref_type v1 in ()
@@ -173,7 +176,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         v_tok v1;
         v_option (fun (v1, v2) -> v_wrap v_bool v1; v_ref_type v2) v2;
         ()
-  and v_type_arguments x = v_list v_type_argument x
 
   and v_literal =
     function
@@ -190,7 +192,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | MethodRef (v1, v2, v3, v4) ->
           OCaml.v_either v_expr v_typ v1;
           v_tok v2;
-          v_type_arguments v3;
+          v_option v_type_arguments v3;
           v_ident v4
       | Ellipsis v1 -> let v1 = v_tok v1 in ()
       | DeepEllipsis v1 -> let v1 = v_bracket v_expr v1 in ()
