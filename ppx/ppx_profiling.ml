@@ -134,7 +134,7 @@ let impl xs =
               m ^ "." ^ fname
           | [{pstr_desc =
                 Pstr_eval
-                  ({pexp_desc = Pexp_constant (Pconst_string (name, None));_},
+                  ({pexp_desc = Pexp_constant (Pconst_string (name, _loc, None));_},
                    _); _}] -> name
           | _ ->
               Location.raise_errorf ~loc
@@ -151,7 +151,7 @@ let impl xs =
                  (Exp.apply
                     (Exp.ident
                        {txt = Ldot (Lident "Common", "profile_code" ); loc})
-                    [Nolabel, Exp.constant (Pconst_string (action_name, None));
+                    [Nolabel, Exp.constant (Pconst_string (action_name, loc, None));
                      Nolabel, Exp.fun_ Nolabel None (Pat.any ())
                        (Exp.apply (Exp.ident {txt = Lident fname; loc})
                           (mk_args loc nbparams))
