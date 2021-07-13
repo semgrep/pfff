@@ -706,17 +706,20 @@ let adjust_pinfo_wrt_base base_loc loc =
         loc.column;
     file    = base_loc.file; }
 
-let adjust_info_wrt_base base_loc ii =
+let fix_token_location fix ii =
   { ii with token =
               match ii.token with
               | OriginTok pi ->
-                  OriginTok(adjust_pinfo_wrt_base base_loc pi)
+                  OriginTok(fix pi)
               | ExpandedTok (pi, vpi, off) ->
-                  ExpandedTok(adjust_pinfo_wrt_base base_loc pi, vpi, off)
+                  ExpandedTok(fix pi, vpi, off)
               | FakeTokStr (s, vpi_opt) ->
                   FakeTokStr (s, vpi_opt)
               | Ab -> Ab
   }
+
+let adjust_info_wrt_base base_loc ii =
+  fix_token_location (adjust_pinfo_wrt_base base_loc) ii
 
 (*****************************************************************************)
 (* Error location report *)
