@@ -29,7 +29,7 @@
 ;    pfff-lang_GENERIC pfff-lang_GENERIC-analyze
  )
  ; for ocamldebug
- (modes byte)
+ (modes native byte)
 )
 
 
