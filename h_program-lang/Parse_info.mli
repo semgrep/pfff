@@ -303,6 +303,12 @@ val complete_token_location_large :
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 (*e: signature [[Parse_info.complete_token_location_large]] *)
 
+(** Fix the location info in a token. *)
+val fix_token_location : (token_location -> token_location) -> token_mutable -> token_mutable
+
+(** See [adjust_info_wrt_base]. *)
+val adjust_pinfo_wrt_base : token_location -> token_location -> token_location
+
 (** [adjust_info_wrt_base base_loc tok], where [tok] represents a location
   * relative to [base_loc], returns the same [tok] but with an absolute
   * {! token_location}. This is useful for fixing parse info after
