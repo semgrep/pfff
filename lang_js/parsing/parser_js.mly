@@ -530,7 +530,7 @@ export_decl:
 
 export_names:
  | "*"           from_clause sc
-    { (fun t -> [M (ReExportNamespace (t, $1, fst $2, snd $2))]) }
+    { (fun t -> [M (ReExportNamespace (t, $1, None, fst $2, snd $2))]) }
  | export_clause from_clause sc
     { (fun _t -> []) (*TODO ReExportNames ($1, $2, $3)*) }
  | export_clause sc

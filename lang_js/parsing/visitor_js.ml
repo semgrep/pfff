@@ -404,8 +404,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_module_directive x =
     match x with
-    | ReExportNamespace (v1, v2, v3, v4) ->
-        v_tok v1; v_tok v2; v_tok v3; v_filename v4
+    | ReExportNamespace (v1, v2, opt_as, v4, v5) ->
+        v_tok v1; v_tok v2;
+        (match opt_as with
+         | Some name -> v_name name
+         | None -> ());
+        v_tok v4; v_filename v5
     | Import (t, v1, v2, v3) ->
         let t = v_tok t in
         let v1 = v_name v1 and v2 = v_option v_name v2 and v3 = v_filename v3 in ()
