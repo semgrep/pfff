@@ -539,8 +539,9 @@ and module_directive =
   *)
   | Import of tok * a_ident * a_ident option (* 'name1 as name2' *) * a_filename
   | Export of tok * a_ident
-  (* export * from 'foo' *)
-  | ReExportNamespace of tok * tok * tok * a_filename
+  (* export * from 'foo'
+     export * as bar from 'foo' *)
+  | ReExportNamespace of tok * tok * a_ident option * tok * a_filename
 
   (* hard to unsugar in Import because we do not have the list of names *)
   | ModuleAlias of tok * a_ident * a_filename (* import * as 'name' from 'file' *)

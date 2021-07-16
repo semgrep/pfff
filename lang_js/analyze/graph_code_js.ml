@@ -362,7 +362,8 @@ and module_directive env x =
           Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
         )
       end
-  | Export (_t, name) ->
+  | Export (_t, name)
+  | ReExportNamespace (_t, _, Some name, _, _) ->
       if env.phase = Defs then begin
         let exports =
           try
@@ -372,13 +373,13 @@ and module_directive env x =
         let str = s_of_n name in
         Hashtbl.replace env.exports env.file_readable (str::exports)
       end
+  | ReExportNamespace (_t, _, None, _, _file) -> ()
   | ModuleAlias (_, name, _fileTODO) ->
       (* for now just add name as a local; anyway we do not
        * generate dependencies for fields yet
       *)
       let s = s_of_n name in
       Hashtbl.replace env.vars s true;
-  | ReExportNamespace (_t, _, _, _file) -> ()
   | ImportFile (_t, _file) -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
