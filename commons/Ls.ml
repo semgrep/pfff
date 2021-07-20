@@ -8,14 +8,14 @@ let map f l =
 
 (* List.rev_mapi isn't available *)
 let mapi f l =
-  let rec aux acc l =
+  let rec aux acc i l =
     match l with
     | [] -> List.rev acc
     | x :: l ->
-        let y = f x in
-        aux (y :: acc) l
+        let y = f i x in
+        aux (y :: acc) (i + 1) l
   in
-  aux [] l
+  aux [] 0 l
 
 let map2 f a b =
   List.rev_map2 f a b |> List.rev
@@ -38,8 +38,8 @@ let fold_right f l acc =
   | l ->
       List.fold_left (fun acc l -> f l acc) acc (List.rev l)
 
-let fold_right2 f a b acc =
-  List.fold_left (fun acc a b -> f a b acc) acc (List.rev a) (List.rev b)
+let fold_right2 f al bl acc =
+  List.fold_left2 (fun acc a b -> f a b acc) acc (List.rev al) (List.rev bl)
 
 let remove_assoc k l =
   let rec aux acc = function
@@ -53,7 +53,7 @@ let remove_assoc k l =
   aux [] l
 
 (* Same as assoc but using '==' instead of '=' *)
-let remove_assoc k l =
+let remove_assq k l =
   let rec aux acc = function
     | [] -> List.rev acc
     | ((k2, _) as kv) :: l ->
@@ -71,7 +71,7 @@ let rec rev_split al bl l =
 
 let split l =
   List.rev l
-  |> rev_split []
+  |> rev_split [] []
 
 let rec rev_combine acc al bl =
   match al, bl with

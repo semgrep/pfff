@@ -62,7 +62,7 @@
 
 val map : ('a -> 'b) -> 'a list -> 'b list
 val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
-val map2 : (int -> 'a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
+val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
 
 val append : 'a list -> 'a list -> 'a list
 val flatten : 'a list list -> 'a list
@@ -72,7 +72,7 @@ val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
 val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
 
 val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list
-val remove_assoq : 'a -> ('a * 'b) list -> ('a * 'b) list
+val remove_assq : 'a -> ('a * 'b) list -> ('a * 'b) list
 
 val split : ('a * 'b) list -> 'a list * 'b list
 val combine : 'a list -> 'b list -> ('a * 'b) list
