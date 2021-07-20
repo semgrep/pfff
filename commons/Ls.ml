@@ -9,7 +9,7 @@ let map f l =
 let flatten ll =
   match ll with
   | [] -> []
-  | l ->
+  | ll ->
       List.fold_left (fun acc l -> List.rev_append l acc) [] ll
       |> List.rev
 
