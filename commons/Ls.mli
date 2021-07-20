@@ -1,5 +1,5 @@
 (*
-   Safe re-implementation of the standard List module.
+   Safe re-implementation of the unsafe parts of the standard List module.
 
    Several functions of OCaml's List module run in O(list length) stack
    space, occasionally resulting in crashes due to stack overflows.
