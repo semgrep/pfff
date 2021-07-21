@@ -98,6 +98,7 @@ let pos ii = Parse_info.string_of_info ii
  * and replace \ with TCommentSpace
 *)
 let rec define_line_1 acc xs =
+  (* Tail-recursive to prevent stack overflows. *)
   match xs with
   | [] -> List.rev acc
   | (TDefine ii as x)::xs ->
@@ -110,6 +111,7 @@ let rec define_line_1 acc xs =
       define_line_1 (x::acc) xs
 
 and define_line_2 acc line lastinfo xs =
+  (* Tail-recursive to prevent stack overflows. *)
   match xs with
   | [] ->
       (* should not happened, should meet EOF before *)
@@ -137,6 +139,7 @@ let define_line xs = define_line_1 [] xs
 
 (* put the TIdent_Define and TOPar_Define *)
 let define_ident xs =
+  (* Tail-recursive to prevent stack overflows. *)
   let rec aux acc xs =
     match xs with
     | [] -> List.rev acc

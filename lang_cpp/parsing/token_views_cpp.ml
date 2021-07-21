@@ -208,6 +208,7 @@ let rec mk_parameters extras acc_before_sep  xs =
  * pre: have done the TInf->TInf_Template translation.
 *)
 let mk_parenthised xs =
+  (* Tail-recursive to prevent stack overflows. *)
   let rec aux acc xs =
     match xs with
     | [] -> List.rev acc

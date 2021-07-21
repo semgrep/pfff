@@ -83,7 +83,8 @@ let filter_comment_stuff xs =
 let insert_virtual_positions l =
   let strlen x = String.length (Parse_info.str_of_info x) in
   let rec loop acc prev offset = function
-      [] -> List.rev acc
+    (* Tail-recursive to prevent stack overflows. *)
+    | [] -> List.rev acc
     | x::xs ->
         let ii = TH.info_of_tok x in
         let inject pi =
@@ -100,7 +101,8 @@ let insert_virtual_positions l =
             (loop acc' prev (offset + (strlen ii)) xs)
         | Parse_info.Ab -> failwith "abstract not expected" in
   let rec skip_fake acc = function
-      [] -> List.rev acc
+    (* Tail-recursive to prevent stack overflows. *)
+    | [] -> List.rev acc
     | x::xs ->
         let ii = TH.info_of_tok x in
         match ii.Parse_info.token with

@@ -89,6 +89,7 @@ let is_really_foreach xs =
 (* TODO: set_ifdef_parenthize_info ?? from parsing_c/ *)
 
 let filter_pp_or_comment_stuff xs =
+  (* Tail-recursive to prevent stack overflows. *)
   let rec aux acc xs =
     match xs with
     | [] -> List.rev acc

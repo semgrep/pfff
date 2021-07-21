@@ -747,6 +747,7 @@ let rec filter_some = function
   | None :: l -> filter_some l
   | Some e :: l -> e :: filter_some l
 
+(* Tail-recursive to prevent stack overflows. *)
 let map_filter f xs =
   List.fold_left (fun acc x ->
     match f x with
@@ -1148,9 +1149,10 @@ let erase_this_temp_file f =
 (* List *)
 (*****************************************************************************)
 
+(* Safe implementation that prevents stack overflows. *)
 let map f xs =
   (* Since map is such a frequently used function we try to make it fast for
-   * small/medium-sized lists too. Inspired by Jane Street's Base library. *)
+   * small/medium-sized lists. Inspired by Jane Street's Base library. *)
   let max_rec_count = 1000 in
   let rec count_map i = function
     | [] -> []
@@ -1260,6 +1262,7 @@ let sort_by_key_highfirst xs =
 let sort_by_key_lowfirst xs =
   sort_prof (fun (k1,_v1) (k2,_v2) -> compare k1 k2) xs
 
+(* Tail-recursive to prevent stack overflows. *)
 let flatten xss =
   xss
   |> List.fold_left (fun acc xs ->

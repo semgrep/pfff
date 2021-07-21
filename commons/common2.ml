@@ -3819,6 +3819,7 @@ let rec list_init = function
  *   let last l = List.hd (last_n 1 l)
 *)
 
+(* Tail-recursive to prevent stack overflows. *)
 let join_gen a xs =
   let rec aux acc = function
     | [] -> List.rev acc
