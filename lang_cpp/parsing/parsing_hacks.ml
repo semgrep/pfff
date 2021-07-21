@@ -82,8 +82,8 @@ let filter_comment_stuff xs =
 (* to do at the very very end *)
 let insert_virtual_positions l =
   let strlen x = String.length (Parse_info.str_of_info x) in
-  let rec loop prev offset = function
-      [] -> []
+  let rec loop acc prev offset = function
+      [] -> List.rev acc
     | x::xs ->
         let ii = TH.info_of_tok x in
         let inject pi =
@@ -91,30 +91,30 @@ let insert_virtual_positions l =
         match ii.Parse_info.token with
           Parse_info.OriginTok _pi ->
             let prev = Parse_info.token_location_of_info ii in
-            x::(loop prev (strlen ii) xs)
+            (loop (x::acc) prev (strlen ii) xs)
         | Parse_info.ExpandedTok (pi,_, _) ->
-            inject (Parse_info.ExpandedTok (pi, prev,offset)) ::
-            (loop prev (offset + (strlen ii)) xs)
+            let acc' = inject (Parse_info.ExpandedTok (pi, prev,offset)) :: acc in
+            (loop acc' prev (offset + (strlen ii)) xs)
         | Parse_info.FakeTokStr (s,_) ->
-            inject (Parse_info.FakeTokStr (s, (Some (prev,offset)))) ::
-            (loop prev (offset + (strlen ii)) xs)
+            let acc' = inject (Parse_info.FakeTokStr (s, (Some (prev,offset)))) :: acc in
+            (loop acc' prev (offset + (strlen ii)) xs)
         | Parse_info.Ab -> failwith "abstract not expected" in
-  let rec skip_fake = function
-      [] -> []
+  let rec skip_fake acc = function
+      [] -> List.rev acc
     | x::xs ->
         let ii = TH.info_of_tok x in
         match ii.Parse_info.token with
           Parse_info.OriginTok _pi ->
             let prev = Parse_info.token_location_of_info ii in
-            x::(loop prev (strlen ii) xs)
-        | _ -> x::skip_fake xs in
-  skip_fake l
+            (loop (x::acc) prev (strlen ii) xs)
+        | _ -> skip_fake (x::acc) xs in
+  skip_fake [] l
 
 (*****************************************************************************)
 (* C vs C++ *)
 (*****************************************************************************)
 let fix_tokens_for_language lang xs =
-  xs |> List.map (fun tok ->
+  xs |> Common.map (fun tok ->
     if lang = Flag_parsing_cpp.C && TH.is_cpp_keyword tok
     then
       let ii = TH.info_of_tok tok in

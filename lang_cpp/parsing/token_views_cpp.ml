@@ -167,32 +167,8 @@ let rebuild_tokens_extented toks_ext =
 (* Parens *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo: synchro ! use more indentation
- * if paren not closed and same indentation level, certainly because
- * part of a mid-ifdef-expression.
- *
- * c++ext: TODO: need to handle templates here.
- * The parenthized view must not consider the ',' in expressions
- * like foo(lexical cast<string,int>, ...) as a separator for the arguments
- * of foo(), otherwise we will get [lexical_cast<string;  ...] which
- * could confuse some heuristics.
- *
- * pre: have done the TInf->TInf_Template translation.
-*)
-let rec mk_parenthised xs =
-  match xs with
-  | [] -> []
-  | x::xs ->
-      (match x.t with
-       | xx when TH.is_opar xx ->
-           let body, extras, xs = mk_parameters [x] [] xs in
-           Parenthised (body,extras)::mk_parenthised xs
-       | _ ->
-           PToken x::mk_parenthised xs
-      )
-
 (* return the body of the parenthised expression and the rest of the tokens *)
-and mk_parameters extras acc_before_sep  xs =
+let rec mk_parameters extras acc_before_sep  xs =
   match xs with
   | [] ->
       (* maybe because of #ifdef which "opens" '(' in 2 branches *)
@@ -218,6 +194,33 @@ and mk_parameters extras acc_before_sep  xs =
        | _ ->
            mk_parameters extras (PToken x::acc_before_sep) xs
       )
+
+(* todo: synchro ! use more indentation
+ * if paren not closed and same indentation level, certainly because
+ * part of a mid-ifdef-expression.
+ *
+ * c++ext: TODO: need to handle templates here.
+ * The parenthized view must not consider the ',' in expressions
+ * like foo(lexical cast<string,int>, ...) as a separator for the arguments
+ * of foo(), otherwise we will get [lexical_cast<string;  ...] which
+ * could confuse some heuristics.
+ *
+ * pre: have done the TInf->TInf_Template translation.
+*)
+let mk_parenthised xs =
+  let rec aux acc xs =
+    match xs with
+    | [] -> List.rev acc
+    | x::xs ->
+        (match x.t with
+         | xx when TH.is_opar xx ->
+             let body, extras, xs = mk_parameters [x] [] xs in
+             aux (Parenthised (body,extras)::acc) xs
+         | _ ->
+             aux (PToken x::acc) xs
+        )
+  in
+  aux [] xs
 
 (* ------------------------------------------------------------------------- *)
 (* Brace *)

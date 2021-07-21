@@ -747,7 +747,15 @@ let rec filter_some = function
   | None :: l -> filter_some l
   | Some e :: l -> e :: filter_some l
 
-let map_filter f xs = xs |> List.map f |> filter_some
+let map_filter f xs =
+  List.fold_left (fun acc x ->
+    match f x with
+    | None -> acc
+    | Some y -> (y::acc))
+    []
+    xs
+  |> List.rev
+
 
 let rec find_some_opt p = function
   | [] -> None
@@ -1140,6 +1148,27 @@ let erase_this_temp_file f =
 (* List *)
 (*****************************************************************************)
 
+let map f xs =
+  (* Since map is such a frequently used function we try to make it fast for
+   * small/medium-sized lists too. Inspired by Jane Street's Base library. *)
+  let max_rec_count = 1000 in
+  let rec count_map i = function
+    | [] -> []
+    | x1::[] -> f x1 :: []
+    | x1::x2::[] -> f x1 :: f x2 :: []
+    | x1::x2::x3::xs ->
+        let ys =
+          if i <= max_rec_count then
+            count_map (i+1) xs
+          else
+            xs
+            |> List.rev_map f
+            |> List.rev
+        in
+        f x1 :: f x2 :: f x3 :: ys
+  in
+  count_map 0 xs
+
 let exclude p xs =
   List.filter (fun x -> not (p x)) xs
 
@@ -1230,6 +1259,13 @@ let sort_by_key_highfirst xs =
   sort_prof (fun (k1,_v1) (k2,_v2) -> compare k2 k1) xs
 let sort_by_key_lowfirst xs =
   sort_prof (fun (k1,_v1) (k2,_v2) -> compare k1 k2) xs
+
+let flatten xss =
+  xss
+  |> List.fold_left (fun acc xs ->
+    List.rev_append xs acc)
+    []
+  |> List.rev
 
 (*****************************************************************************)
 (* Assoc *)

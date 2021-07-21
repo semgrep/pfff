@@ -89,13 +89,13 @@ let is_really_foreach xs =
 (* TODO: set_ifdef_parenthize_info ?? from parsing_c/ *)
 
 let filter_pp_or_comment_stuff xs =
-  let rec aux xs =
+  let rec aux acc xs =
     match xs with
-    | [] -> []
+    | [] -> List.rev acc
     | x::xs ->
         (match x.TV.t with
          | tok when TH.is_comment tok ->
-             aux xs
+             aux acc xs
          (* don't want drop the define, or if drop, have to drop
           * also its body otherwise the line heuristics may be lost
           * by not finding the TDefine in column 0 but by finding
@@ -104,14 +104,14 @@ let filter_pp_or_comment_stuff xs =
           * todo? but define often contain some unbalanced {
          *)
          | Parser.TDefine _ ->
-             x::aux xs
+             aux (x::acc) xs
          | tok when TH.is_pp_instruction tok ->
-             aux xs
+             aux acc xs
          | _ ->
-             x::aux xs
+             aux (x::acc) xs
         )
   in
-  aux xs
+  aux [] xs
 
 (*****************************************************************************)
 (* Ifdef keeping/passing *)

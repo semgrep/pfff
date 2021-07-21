@@ -316,7 +316,7 @@ and initialiser env x =
              )) xs)
        | _ ->
            A.ArrayInit (bracket_keep (fun xs ->
-             xs |> uncomma |> List.map (function
+             xs |> uncomma |> Common.map (function
                (* less: todo? *)
                | InitIndexOld ((_, idx, _), ini) ->
                    Some (expr env idx), initialiser env ini

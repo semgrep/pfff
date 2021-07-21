@@ -87,7 +87,7 @@ let look_like_declaration_context tok_before =
 (* Better View *)
 (*****************************************************************************)
 
-let  filter_for_typedef multi_groups =
+let filter_for_typedef multi_groups =
 
   (* a sentinel, which helps a few typedef heuristics which look
    * for a token before which would not work for the first toplevel

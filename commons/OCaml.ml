@@ -263,7 +263,7 @@ let vof_string x =
 let vof_bool b =
   VBool b
 let vof_list ofa x =
-  VList (List.map ofa x)
+  VList (Common.map ofa x)
 let vof_option ofa x =
   match x with
   | None -> VNone
@@ -314,7 +314,7 @@ let option_ofv a__of_sexp sexp = match sexp with
 (* Format pretty printers *)
 (*****************************************************************************)
 let add_sep xs =
-  xs |> List.map (fun x -> Right x) |> Common2.join_gen (Left ())
+  xs |> Common.map (fun x -> Right x) |> Common2.join_gen (Left ())
 
 (*
  * OCaml value pretty printer. A similar functionnality is provided by

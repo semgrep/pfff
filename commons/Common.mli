@@ -148,6 +148,10 @@ val cmd_to_list_and_status:
 (*s: signature [[Common.null]] *)
 val null : 'a list -> bool
 (*e: signature [[Common.null]] *)
+
+(** Same as [List.map] but tail recursive. *)
+val map : ('a -> 'b) -> 'a list -> 'b list
+
 (*s: signature [[Common.exclude]] *)
 val exclude : ('a -> bool) -> 'a list -> 'a list
 (*e: signature [[Common.exclude]] *)
@@ -158,6 +162,7 @@ val sort : 'a list -> 'a list
 val uniq_by: ('a -> 'a -> bool) -> 'a list -> 'a list
 
 (*s: signature [[Common.map_filter]] *)
+(** Same as [List.filter_map] but tail recursive. *)
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
 (*e: signature [[Common.map_filter]] *)
 (*s: signature [[Common.find_opt]] *)
@@ -226,6 +231,9 @@ val group_by_mapped_key: ('a -> 'b) -> 'a list -> ('b * 'a list) list
 (*s: signature [[Common.group_by_multi]] *)
 val group_by_multi: ('a -> 'b list) -> 'a list -> ('b * 'a list) list
 (*e: signature [[Common.group_by_multi]] *)
+
+(** Same as [List.flatten] but tail recursive. *)
+val flatten : 'a list list -> 'a list
 
 (*s: type [[Common.stack]] *)
 type 'a stack = 'a list

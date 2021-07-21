@@ -3819,11 +3819,13 @@ let rec list_init = function
  *   let last l = List.hd (last_n 1 l)
 *)
 
-let rec join_gen a = function
-  | [] -> []
-  | [x] -> [x]
-  | x::xs -> x::a::(join_gen a xs)
-
+let join_gen a xs =
+  let rec aux acc = function
+    | [] -> List.rev acc
+    | [x] -> List.rev (x::acc)
+    | x::xs -> aux (a::x::acc) xs
+  in
+  aux [] xs
 
 (* todo: foldl, foldr (a more consistent foldr) *)
 
