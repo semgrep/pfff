@@ -97,76 +97,91 @@ let pos ii = Parse_info.string_of_info ii
 (* put the TCommentNewline_DefineEndOfMacro at the good place
  * and replace \ with TCommentSpace
 *)
-let rec define_line_1 xs =
+let rec define_line_1 acc xs =
+  (* Tail-recursive to prevent stack overflows. *)
   match xs with
-  | [] -> []
+  | [] -> List.rev acc
   | (TDefine ii as x)::xs ->
       let line = PI.line_of_info ii in
-      x::define_line_2 line ii xs
+      define_line_2 (x::acc) line ii xs
   | TCppEscapedNewline ii::xs ->
       pr2 (spf "WEIRD: a \\ outside a #define at %s" (pos ii));
-      (* fresh_tok*) TCommentSpace ii::define_line_1 xs
+      define_line_1 ((* fresh_tok*) TCommentSpace ii::acc) xs
   | x::xs ->
-      x::define_line_1 xs
+      define_line_1 (x::acc) xs
 
-and define_line_2 line lastinfo xs =
+and define_line_2 acc line lastinfo xs =
+  (* Tail-recursive to prevent stack overflows. *)
   match xs with
   | [] ->
       (* should not happened, should meet EOF before *)
       pr2 "PB: WEIRD in Parsing_hack_define.define_line_2";
-      mark_end_define lastinfo::[]
+      List.rev (mark_end_define lastinfo::acc)
   | x::xs ->
       let line' = TH.line_of_tok x in
       let info = TH.info_of_tok x in
 
       (match x with
        | EOF ii ->
-           mark_end_define lastinfo::EOF ii::define_line_1 xs
+           define_line_1 (EOF ii::mark_end_define lastinfo::acc) xs
        | TCppEscapedNewline ii ->
            if (line' <> line)
            then pr2 "PB: WEIRD: not same line number";
-           (* fresh_tok*) TCommentSpace ii::define_line_2 (line+1) info xs
+           define_line_2 ((* fresh_tok*) TCommentSpace ii::acc) (line+1) info xs
        | x ->
            if line' = line
-           then x::define_line_2 line info xs
+           then define_line_2 (x::acc) line info xs
            else
-             mark_end_define lastinfo::define_line_1 (x::xs)
+             define_line_1 (mark_end_define lastinfo::acc) (x::xs)
       )
+
+let define_line xs = define_line_1 [] xs
 
 (* put the TIdent_Define and TOPar_Define *)
-let rec define_ident xs =
-  match xs with
-  | [] -> []
-  | (TDefine ii as x)::xs ->
-      x::
-      (match xs with
-       | (TCommentSpace _ as x)::TIdent (s,i2)::(* no space *)TOPar (i3)::xs ->
-           (* if TOPar_Define is just next to the ident (no space), then
-            * it's a macro-function. We change the token to avoid
-            * ambiguity between '#define foo(x)'  and   '#define foo   (x)'
-           *)
-           x
-           ::Hack.fresh_tok (TIdent_Define (s,i2))
-           ::Hack.fresh_tok (TOPar_Define i3)
-           ::define_ident xs
+let define_ident xs =
+  (* Tail-recursive to prevent stack overflows. *)
+  let rec aux acc xs =
+    match xs with
+    | [] -> List.rev acc
+    | (TDefine ii as x)::xs ->
+        (match xs with
+         | (TCommentSpace _ as x1)::TIdent (s,i2)::(* no space *)TOPar (i3)::xs ->
+             (* if TOPar_Define is just next to the ident (no space), then
+              * it's a macro-function. We change the token to avoid
+              * ambiguity between '#define foo(x)'  and   '#define foo   (x)'
+             *)
+             let acc' =
+               Hack.fresh_tok (TOPar_Define i3)
+               ::Hack.fresh_tok (TIdent_Define (s,i2))
+               ::x1
+               ::x
+               ::acc
+             in
+             aux acc' xs
 
-       | (TCommentSpace _ as x)::TIdent (s,i2)::xs ->
-           x
-           ::Hack.fresh_tok (TIdent_Define (s,i2))
-           ::define_ident xs
-       | _ ->
-           pr2 (spf "WEIRD #define body, at %s" (pos ii));
-           define_ident xs
-      )
-  | x::xs ->
-      x::define_ident xs
+         | (TCommentSpace _ as x1)::TIdent (s,i2)::xs ->
+             let acc' =
+               Hack.fresh_tok (TIdent_Define (s,i2))
+               ::x1
+               ::x
+               ::acc
+             in
+             aux acc' xs
+         | _ ->
+             pr2 (spf "WEIRD #define body, at %s" (pos ii));
+             aux (x::acc) xs
+        )
+    | x::xs ->
+        aux (x::acc) xs
+  in
+  aux [] xs
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let fix_tokens_define2 xs =
-  define_ident (define_line_1 xs)
+  define_ident (define_line xs)
 
 let fix_tokens_define a =
   Common.profile_code "Hack.fix_define" (fun () -> fix_tokens_define2 a)
