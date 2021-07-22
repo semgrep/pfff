@@ -3,8 +3,112 @@
    List module.
 *)
 
-let map f l =
+(*
+   This is safe and simple but a little slow.
+*)
+let naive_safe_map f l =
   List.rev_map f l |> List.rev
+
+(*
+   Custom list type used to store intermediate lists, while minimizing
+   the number of allocated blocks.
+*)
+type 'a list5 =
+  | Elt of 'a * 'a list5
+  | Tuple of 'a * 'a * 'a * 'a * 'a * 'a list5
+  | Empty
+
+let rev5 l =
+  let rec aux acc l =
+    match l with
+    | Tuple (e, d, c, b, a, l) ->
+        (* common case *)
+        aux (a :: b :: c :: d :: e :: acc) l
+    | Elt (a, l) ->
+        aux (a :: acc) l
+    | Empty -> acc
+  in
+  aux [] l
+
+let rec slow_map acc f l =
+  match l with
+  | [] -> rev5 acc
+  | [a] -> rev5 (Elt (f a, acc))
+  | [a; b] ->
+      let a = f a in
+      let b = f b in
+      rev5 (Elt (b, Elt (a, acc)))
+  | [a; b; c] ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      rev5 (Elt (c, (Elt (b, (Elt (a, acc))))))
+  | [a; b; c; d] ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      let d = f d in
+      rev5 (Elt (d, (Elt (c, (Elt (b, (Elt (a, acc))))))))
+  | [a; b; c; d; e] ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      let d = f d in
+      let e = f e in
+      rev5 (Elt (e, (Elt (d, (Elt (c, (Elt (b, (Elt (a, acc))))))))))
+  | a :: b :: c :: d :: e :: l ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      let d = f d in
+      let e = f e in
+      slow_map (Tuple (e, d, c, b, a, acc)) f l
+
+let rec fast_map rec_calls_remaining f l =
+  if rec_calls_remaining <= 0 then
+    slow_map Empty f l
+  else
+    match l with
+    | [] -> []
+    | [a] -> [f a]
+    | [a; b] ->
+        let a = f a in
+        let b = f b in
+        [a; b]
+    | [a; b; c] ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        [a; b; c]
+    | [a; b; c; d] ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        let d = f d in
+        [a; b; c; d]
+    | [a; b; c; d; e] ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        let d = f d in
+        let e = f e in
+        [a; b; c; d; e]
+    | a :: b :: c :: d :: e :: l ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        let d = f d in
+        let e = f e in
+        a :: b :: c :: d :: e :: fast_map (rec_calls_remaining - 1) f l
+
+(*
+   This implementation of List.map makes at most 1000 non-tailrec calls
+   before switching to a slower tailrec implementation.
+
+   Additionally, this implementation guarantees left-to-right evaluation.
+*)
+let map f l = fast_map 1000 f l
+
 
 (* List.rev_mapi isn't available *)
 let mapi f l =
