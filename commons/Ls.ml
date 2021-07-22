@@ -142,11 +142,15 @@ let flatten = List.flatten
 
 let concat = flatten
 
+(*
 let fold_right f l acc =
   match l with
   | [] -> acc
   | l ->
       List.fold_left (fun acc l -> f l acc) acc (List.rev l)
+*)
+(* temporary! *)
+let fold_right = List.fold_right
 
 let fold_right2 f al bl acc =
   List.fold_left2 (fun acc a b -> f a b acc) acc (List.rev al) (List.rev bl)
