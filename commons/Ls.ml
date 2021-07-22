@@ -6,8 +6,10 @@
 (*
    This is safe and simple but a little slow.
 *)
+(*
 let naive_safe_map f l =
   List.rev_map f l |> List.rev
+*)
 
 (*
    Custom list type used to store intermediate lists, while minimizing
