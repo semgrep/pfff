@@ -1149,27 +1149,8 @@ let erase_this_temp_file f =
 (* List *)
 (*****************************************************************************)
 
-(* Safe implementation that prevents stack overflows. *)
-let map f xs =
-  (* Since map is such a frequently used function we try to make it fast for
-   * small/medium-sized lists. Inspired by Jane Street's Base library. *)
-  let max_rec_count = 1000 in
-  let rec count_map i = function
-    | [] -> []
-    | x1::[] -> f x1 :: []
-    | x1::x2::[] -> f x1 :: f x2 :: []
-    | x1::x2::x3::xs ->
-        let ys =
-          if i <= max_rec_count then
-            count_map (i+1) xs
-          else
-            xs
-            |> List.rev_map f
-            |> List.rev
-        in
-        f x1 :: f x2 :: f x3 :: ys
-  in
-  count_map 0 xs
+(* Safe and fast implementation that prevents stack overflows. *)
+let map = Ls.map
 
 let exclude p xs =
   List.filter (fun x -> not (p x)) xs
