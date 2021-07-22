@@ -589,6 +589,13 @@ val int_of_base : string -> int -> int
 val int_of_stringbits : string -> int
 val int_of_octal : string -> int
 val int_of_all : string -> int
+(* like int_of_string_opt, but also converts C octals like 0400 in
+ * the right value. *)
+val int_of_string_c_octal_opt : string -> int option
+(* like float_of_string_opt, but also converts C octals like 0400 in
+ * the right value. *)
+val float_of_string_opt : string -> float option
+
 
 (* useful but sometimes when want grep for all places where do modif,
  * easier to have just code using ':=' and '<-' to do some modifications.

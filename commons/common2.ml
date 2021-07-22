@@ -1440,6 +1440,17 @@ let int_of_all s =
   if String.length s >= 2 && (String.get s 0 =<= '0') && is_digit (String.get s 1)
   then int_of_octal s else int_of_string s
 
+let int_of_string_c_octal_opt s =
+  let open Common in
+  if s =~ "^0\\([0-7]+\\)$" then
+    let s = Common.matched1 s in
+    int_of_string_opt ("0o" ^ s)
+  else int_of_string_opt s
+
+let float_of_string_opt s =
+  match int_of_string_c_octal_opt s with
+  | Some i -> Some (float_of_int i)
+  | None -> float_of_string_opt s
 
 let (+=) ref v = ref := !ref + v
 let (-=) ref v = ref := !ref - v

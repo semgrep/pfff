@@ -1374,7 +1374,13 @@ numeric_literal:
   | T_FLOAT { $1 }
 numeric_literal_as_string: numeric_literal
     { let t = snd $1 in
-      (Parse_info.str_of_info t, t)
+      let s = Parse_info.str_of_info t in
+      let s' =
+        match Common2.float_of_string_opt s with
+        | None -> s
+        | Some n -> string_of_float n
+      in
+      (s', t)
     }
 
 regex_literal: T_REGEX { $1 }
