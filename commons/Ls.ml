@@ -129,12 +129,16 @@ let map2 f a b =
 let append a b =
   List.rev_append (List.rev a) b
 
+(*
 let flatten ll =
   match ll with
   | [] -> []
   | ll ->
       List.fold_left (fun acc l -> List.rev_append l acc) [] ll
       |> List.rev
+*)
+(* temporary! *)
+let flatten = List.flatten
 
 let concat = flatten
 
