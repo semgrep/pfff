@@ -111,7 +111,7 @@ let rec fast_map rec_calls_remaining f l =
 *)
 let map f l = fast_map 1000 f l
 
-
+(*
 (* List.rev_mapi isn't available *)
 let mapi f l =
   let rec aux acc i l =
@@ -122,12 +122,23 @@ let mapi f l =
         aux (y :: acc) (i + 1) l
   in
   aux [] 0 l
+*)
+(* temporary! *)
+let mapi = List.mapi
 
+(*
 let map2 f a b =
   List.rev_map2 f a b |> List.rev
+*)
+(* temporary! *)
+let map2 = List.map2
 
+(*
 let append a b =
   List.rev_append (List.rev a) b
+*)
+(* temporary! *)
+let append = List.append
 
 (*
 let flatten ll =
@@ -155,6 +166,7 @@ let fold_right = List.fold_right
 let fold_right2 f al bl acc =
   List.fold_left2 (fun acc a b -> f a b acc) acc (List.rev al) (List.rev bl)
 
+(*
 let remove_assoc k l =
   let rec aux acc = function
     | [] -> List.rev acc
@@ -165,6 +177,9 @@ let remove_assoc k l =
           aux (kv :: acc) l
   in
   aux [] l
+*)
+(* temporary! *)
+let remove_assoc = List.remove_assoc
 
 (* Same as assoc but using '==' instead of '=' *)
 let remove_assq k l =
@@ -178,6 +193,7 @@ let remove_assq k l =
   in
   aux [] l
 
+(*
 let rec rev_split al bl l =
   match l with
   | [] -> (al, bl)
@@ -186,6 +202,9 @@ let rec rev_split al bl l =
 let split l =
   List.rev l
   |> rev_split [] []
+*)
+(* temporary! *)
+let split = List.split
 
 let rec rev_combine acc al bl =
   match al, bl with
