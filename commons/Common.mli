@@ -149,7 +149,10 @@ val cmd_to_list_and_status:
 val null : 'a list -> bool
 (*e: signature [[Common.null]] *)
 
-(** Same as [List.map] but tail recursive. *)
+(** Same as [List.map] but stack-safe and slightly faster on short lists.
+    Additionally, we guarantee that the mapping function is applied from
+    from left to right like for [List.iter].
+*)
 val map : ('a -> 'b) -> 'a list -> 'b list
 
 (*s: signature [[Common.exclude]] *)

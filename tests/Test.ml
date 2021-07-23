@@ -53,6 +53,7 @@ let test regexp =
     "all" >::: [
 
       (* general tests *)
+      Unit_commons.unittest;
       Unit_commons_core.unittest;
       Unit_program_lang.unittest;
       Unit_graph_code.unittest ~graph_of_string;
