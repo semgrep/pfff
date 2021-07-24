@@ -101,6 +101,8 @@ let mk_lexer file chan =
   in
   toks, lexbuf, lexer
 
+exception Parse_ruby_timeout
+
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
@@ -115,9 +117,13 @@ let parse file =
       (* -------------------------------------------------- *)
       let lst =
         (* GLR parsing can be very time consuming *)
-        Common.timeout_function 10 (fun () ->
-          Parser_ruby.main lexer lexbuf
-        )
+        match
+          Common.set_timeout ~name:"Parse_ruby.parse" 10.0 (fun () ->
+            Parser_ruby.main lexer lexbuf
+          )
+        with
+        | Some res -> res
+        | None -> raise Parse_ruby_timeout
       in
 
       (* check for ambiguous parse trees *)
@@ -130,7 +136,7 @@ let parse file =
       {PI. ast = ast; tokens = List.rev !toks; stat }
 
     with (Dyp.Syntax_error
-         | Failure _ | Stack.Empty | Common.Timeout
+         | Failure _ | Stack.Empty | Parse_ruby_timeout
          ) as exn ->
         let cur =
           match !toks with
@@ -156,7 +162,7 @@ let parse file =
         end;
 
         stat.PI.error_line_count <- stat.PI.total_line_count;
-        if exn = Common.Timeout then stat.PI.have_timeout <- true;
+        if exn = Parse_ruby_timeout then stat.PI.have_timeout <- true;
         {PI. ast = []; tokens = List.rev !toks; stat }
   )
 
@@ -177,9 +183,14 @@ let any_of_string str =
           (* -------------------------------------------------- *)
           let lst =
             (* GLR parsing can be very time consuming *)
-            Common.timeout_function 10 (fun () ->
-              Parser_ruby.sgrep_spatch_pattern lexer lexbuf
-            )
+            match
+              Common.set_timeout ~name:"Parse_ruby.any_of_string" 10.0
+                (fun () ->
+                   Parser_ruby.sgrep_spatch_pattern lexer lexbuf
+                )
+            with
+            | Some res -> res
+            | None -> raise Parse_ruby_timeout
           in
 
           (* check for ambiguous parse trees *)
@@ -190,7 +201,7 @@ let any_of_string str =
           let ast = List.hd l' in
           ast
         with (Dyp.Syntax_error
-             | Failure _ | Stack.Empty | Common.Timeout
+             | Failure _ | Stack.Empty | Parse_ruby_timeout
              ) as exn ->
             raise exn
       )))

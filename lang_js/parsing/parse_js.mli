@@ -4,7 +4,7 @@
  *  - Parse_info.Lexical_error if Flag_parsing.exn_when_lexical_error is true.
 *)
 val parse:
-  ?timeout: int ->
+  ?timeout: float ->
   Common.filename ->
   (Ast_js.a_program, Parser_js.token) Parse_info.parsing_result
 

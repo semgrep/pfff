@@ -190,7 +190,7 @@ let tokens file =
 (* Main entry point *)
 (*****************************************************************************)
 
-let parse2 ?(timeout=0) filename =
+let parse2 opt_timeout filename =
   let stat = PI.default_stat filename in
 
   let toks = tokens filename in
@@ -201,14 +201,6 @@ let parse2 ?(timeout=0) filename =
     PI.mk_lexer_for_yacc toks TH.is_comment in
 
   let last_charpos_error = ref 0 in
-
-  if timeout > 0 then begin
-    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
-    (* todo: minimized files abusing ASI before '}' requires a very long time
-     * to parse
-    *)
-    ignore(Unix.alarm timeout);
-  end;
 
   let rec parse_module_item_or_eof tr =
     try
@@ -288,21 +280,22 @@ let parse2 ?(timeout=0) filename =
         else raise (PI.Parsing_error (TH.info_of_tok err_tok))
   in
   let items =
-    try
-      aux tr
-    with Timeout when timeout > 0 ->
-      ignore(Unix.alarm 0);
-      if !Flag.show_parsing_error
-      then pr2 (spf "TIMEOUT on %s" filename);
-      stat.PI.error_line_count <- stat.PI.total_line_count;
-      stat.PI.have_timeout <- true;
-      []
+    match
+      Common.set_timeout_opt ~name:"Parse_js.parse" opt_timeout
+        (fun () -> aux tr)
+    with
+    | Some res -> res
+    | None ->
+        if !Flag.show_parsing_error
+        then pr2 (spf "TIMEOUT on %s" filename);
+        stat.PI.error_line_count <- stat.PI.total_line_count;
+        stat.PI.have_timeout <- true;
+        []
   in
-  if timeout > 0 then ignore(Unix.alarm 0);
   {PI. ast = items; tokens = toks; stat }
 
 let parse ?timeout a =
-  Common.profile_code "Parse_js.parse" (fun () -> parse2 ?timeout a)
+  Common.profile_code "Parse_js.parse" (fun () -> parse2 timeout a)
 
 let parse_program file =
   let res = parse file in

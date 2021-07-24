@@ -108,7 +108,7 @@ let parse file =
     try
       Parse_js.parse_program file
     with
-    | Timeout -> raise Timeout
+    | Timeout _ as e -> raise e
     | exn ->
         pr2 (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
         if !error_recovery

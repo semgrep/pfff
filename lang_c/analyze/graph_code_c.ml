@@ -160,7 +160,7 @@ let parse ~show_parse_error file =
           Parse_c.parse_program file
         )))
   with
-  | Timeout -> raise Timeout
+  | Timeout _ as e -> raise e
   | exn ->
       pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
       raise exn

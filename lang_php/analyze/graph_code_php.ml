@@ -154,7 +154,7 @@ let parse env file =
       ast
     )
   with
-  | Timeout -> raise Timeout
+  | Timeout _ as e -> raise e
   | exn ->
       env.stats.G.parse_errors |> Common.push file;
       env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)

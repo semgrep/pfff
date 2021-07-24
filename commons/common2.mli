@@ -1153,21 +1153,13 @@ val with_open_outfile_append :
 val with_open_stringbuf :
   (((string -> unit) * Buffer.t) -> unit) -> string
 
-exception Timeout
+(* Same as Common.set_timeout *)
+val set_timeout:
+  ?verbose:bool -> name:string -> float -> (unit -> 'a) -> 'a option
 
-(* subtil: have to make sure that Timeout is not intercepted before here. So
- * avoid exn handler such as try (...) with _ -> cos Timeout will not bubble up
- * enough. In such case, add a case before such as
- * with Timeout -> raise Timeout | _ -> ...
- *
- * The same is true for UnixExit (see below).
-*)
-val timeout_function :
-  ?verbose:bool ->
-  int -> (unit -> 'a) -> 'a
-
-val timeout_function_opt : int option -> (unit -> 'a) -> 'a
-
+(* Same as Common.set_timeout_opt *)
+val set_timeout_opt :
+  ?verbose:bool -> name:string -> float option -> (unit -> 'a) -> 'a option
 
 val with_tmp_file: str:string -> ext:string -> (filename -> 'a) -> 'a
 val with_tmp_dir: (dirname -> 'a) -> 'a
