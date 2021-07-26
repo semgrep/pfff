@@ -201,6 +201,13 @@ type parsing_stat = {
   mutable commentized: int;
   mutable problematic_lines: (string list * int ) list;
 }
+
+(*
+   Print file name and number of lines and error lines in compact format
+   suitable for logging.
+*)
+val summary_of_stat : parsing_stat -> string
+
 (*e: type [[Parse_info.parsing_stat]] *)
 (*s: signature [[Parse_info.default_stat]] *)
 val default_stat: Common.filename -> parsing_stat

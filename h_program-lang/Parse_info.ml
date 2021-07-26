@@ -41,6 +41,7 @@ type token_location = {
 let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "FAKE TOKEN LOCATION";
 }
+
 let first_loc_of_file file = {
   charpos = 0; str = ""; line = 1; column = 0; file = file;
 }
@@ -177,7 +178,6 @@ let pp fmt t =
   then pp_token_mutable fmt t
   else Format.fprintf fmt "()"
 
-
 type parsing_stat = {
   filename: Common.filename;
   total_line_count: int;
@@ -198,6 +198,11 @@ type parsing_stat = {
   mutable problematic_lines:
     (string list (* ident in error line *) * int (* line_error *)) list;
 }
+
+let summary_of_stat (x : parsing_stat) =
+  spf "%s lines=%i error_lines=%i timeout=%B"
+    x.filename x.total_line_count x.error_line_count x.have_timeout
+
 let default_stat file =
   let n = Common2.nblines_eff file in
   {
@@ -234,6 +239,7 @@ type 'tok tokens_state = {
    * mutable rest_clean :   'tok list;
   *)
 }
+
 let mk_tokens_state toks = {
   rest       = toks;
   current    = (List.hd toks);
