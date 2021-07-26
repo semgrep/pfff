@@ -560,15 +560,15 @@ expr:
 
  (* array extension *)
  | simple_expr "." "(" seq_expr ")" "<-" expr
-     { ExprTodo (("ArrayUpdate",$2), [$1] @ $4 @ [$7]) }
+     { ExprTodo (("Array",$2), [$1] @ $4 @ [$7]) }
  | simple_expr "." "[" seq_expr "]" "<-" expr
-     { ExprTodo (("ArrayUpdate",$2), [$1] @ $4 @ [$7]) }
+     { ExprTodo (("Array",$2), [$1] @ $4 @ [$7]) }
  (* bigarray extension, a.{i} <- v *)
  | simple_expr "." "{" expr "}" "<-" expr
-     { ExprTodo (("BigArrayUpdate",$2), [$1;$4;$7]) }
+     { ExprTodo (("BigArray",$2), [$1;$4;$7]) }
  (* local open *)
  | Tlet Topen mod_longident Tin seq_expr
-     { ExprTodo (("LetOpen",$1), $5) }
+     { ExprTodo (("LocalOpen",$1), $5) }
  | Tassert simple_expr
      { ExprTodo (("Assert",$1), [$2]) }
  | name_tag simple_expr
@@ -619,12 +619,12 @@ simple_expr:
  | "[|" list_sep_term(expr, ";")? "|]"
     { ExprTodo (("ArrayLiteral",$1), optlist_to_list $2)  }
  | simple_expr "." "(" seq_expr ")"
-    { ExprTodo (("ArrayAccess", $2), [$1] @ $4) }
+    { ExprTodo (("Array", $2), [$1] @ $4) }
  | simple_expr "." "[" seq_expr "]"
-    { ExprTodo (("ArrayAccess", $2), [$1] @ $4) }
+    { ExprTodo (("Array", $2), [$1] @ $4) }
  (* bigarray extension *)
  | simple_expr "." "{" expr "}"
-    { ExprTodo (("BigArrayAccess", $2), [$1;$4]) }
+    { ExprTodo (("BigArray", $2), [$1;$4]) }
 
  (* object extension *)
  | simple_expr "#" label             { ObjAccess ($1, $2, $3) }
@@ -639,7 +639,7 @@ simple_expr:
      { TypedExpr (seq1 $2, fst $3, snd $3)  }
  (* scoped open, 3.12 *)
  | mod_longident "." "(" seq_expr ")"
-     { ExprTodo (("ScopedOpen", $2), $4) }
+     { ExprTodo (("LocalOpen", $2), $4) }
  (* sgrep-ext: *)
  | "..."              { Ellipsis $1 }
  | "<..." expr "...>" { DeepEllipsis ($1, $2, $3) }
@@ -691,14 +691,16 @@ constant:
 (*----------------------------*)
 
 label_expr:
+ (* ~xxx: expr *)
  | TLabelDecl simple_expr
     { ArgKwd ($1 (* TODO del ~/:? *), $2) }
+ (* ?xxx: expr *)
+ | TOptLabelDecl simple_expr
+    { ArgQuestion ($1, $2) }
  | "~" label_ident
     { ArgKwd ($2, name_of_id $2) }
  | "?" label_ident
-    { Arg (ExprTodo (("ArgTodo1", $1), [name_of_id $2])) }
- | TOptLabelDecl simple_expr
-    { Arg (ExprTodo (("ArgTodo2", snd $1), [$2])) }
+    { ArgQuestion ($2, name_of_id $2) }
 
 (*----------------------------*)
 (* objects *)
@@ -758,7 +760,7 @@ simple_pattern:
  | "{" lbl_pattern_list record_pattern_end "}" { PatRecord ($1,$2,(*$3*) $4) }
  | "["  list_sep_term(pattern, ";")  "]"       { PatList ($1, $2, $3) }
  | "[|" list_sep_term(pattern, ";")? "|]"
-    { PatTodo (("Array",$1), optlist_to_list $2) }
+    { PatTodo (("ArrayLiteral",$1), optlist_to_list $2) }
 
  (* note that let (x:...) a =  will trigger this rule *)
  | "(" pattern ":" core_type ")"               { PatTyped ($2, $4)}
@@ -770,7 +772,7 @@ simple_pattern:
  | TChar ".." TChar            { PatTodo (("Range", $2), []) }
  (* scoped open for pattern *)
  | mod_longident "." "(" pattern ")"
-     { PatTodo (("ScopedPat", $2), [$4]) }
+     { PatTodo (("LocalOpen", $2), [$4]) }
  (* first-class modules *)
  | "(" Tmodule TUpperIdent ":" module_type ")"
      { PatTodo (("Module", $2), []) }
@@ -1097,7 +1099,7 @@ class_simple_expr:
   | "(" class_expr ")"                             { }
 
 object_expression: Tobject class_structure Tend
-  { ExprTodo (("ObjExpr", $1), [](* TODO *)) }
+  { ExprTodo (("Object", $1), [](* TODO *)) }
 
 
 class_fun_def:

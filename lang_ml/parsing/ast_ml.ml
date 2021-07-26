@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019, 2020 r2c
+ * Copyright (C) 2019-2021 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -16,8 +16,17 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* An Abstract Syntax Tree for OCaml.
- * (for a Concrete Syntax Tree see old/cst_ml_ml or ocaml-tree-sitter-lang).
+(* An Abstract Syntax Tree (AST) for OCaml.
+ * (for a Concrete Syntax Tree see old/cst_ml_ml or ocaml-tree-sitter-semgrep).
+ *
+ * TODO:
+ *  - lots of missing xxx bracket, lots of missing tok for correct l/r range
+ *  - attributes at more places (@xxx)
+ *  - extensions at many places (%xxx)
+ *  - classes and objects
+ *  - functors, module types, first-class modules
+ *  - GADTs
+ *  - see the XxxTodo
 *)
 
 (*****************************************************************************)
@@ -69,6 +78,12 @@ type type_ =
   (* sgrep-ext: *)
   | TyEllipsis of tok
 
+  (* TODO:
+   * - Rows, PolyVariants, inline record
+   * - Object, Class
+   * - Forall types ('a .)
+   * - Package (first-class module?)
+  *)
   | TyTodo of todo_category * type_ list
 
 [@@deriving show { with_path = false} ] (* with tarzan *)
@@ -91,6 +106,7 @@ type expr =
   (* can be empty *)
   | Sequence of expr list
 
+  (* todo: Use AST_generic_.op? *)
   | Prefix of string wrap * expr
   | Infix of expr * string wrap * expr
 
@@ -100,15 +116,16 @@ type expr =
   | RefAccess of tok (* ! *) * expr
   | RefAssign of expr * tok (* := *) * expr
 
+  (* less: lhs type to factorize xx and xx <- yy, for Array/String/BigArray *)
   (* special case of RefAccess and RefAssign *)
   | FieldAccess of expr * tok * name
   | FieldAssign of expr * tok * name * tok (* <- *) * expr
 
+  (* we unsugar { x } in { x = x } *)
   | Record of expr option (* with *) * (name * expr) list bracket
 
   | New of tok * name
   | ObjAccess of expr * tok (* # *) * ident
-
 
   (* > 1 elt for mutually recursive let (let x and y and z) *)
   | LetIn of tok * rec_opt * let_binding list * expr
@@ -130,6 +147,15 @@ type expr =
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
 
+  (* TODO:
+   * - LocalOpen, LocalModule
+   * - Array, BigArray (literals, access, set)
+   * - Lazy, Assert,
+   * - Object, ObjCopy
+   * - Package (first-class module?)
+   * - Coerce
+   * - OCamlYacc value ($1)
+  *)
   | ExprTodo of todo_category * expr list
 
 (* Unit '()' used to be represented as a Constructor ("()"), and
@@ -145,6 +171,7 @@ and literal =
 
 and argument =
   | Arg of expr
+  (* we unsugar ~x in ~x:x (same for ?x) *)
   | ArgKwd of ident * expr
   | ArgQuestion of ident  * expr
 
@@ -157,6 +184,7 @@ and for_direction =
   | To of tok
   | Downto of tok
 
+(* TODO: attribute? and keyword_attribute? *)
 and rec_opt = tok option
 
 (*****************************************************************************)
@@ -165,6 +193,7 @@ and rec_opt = tok option
 and pattern =
   | PatVar of ident
   | PatLiteral of literal (* can be signed *)
+
   | PatConstructor of name * pattern option
   | PatPolyVariant of (tok (* '`' *) * ident) * pattern option
 
@@ -174,16 +203,23 @@ and pattern =
   | PatList of pattern list bracket
 
   | PatUnderscore of tok
+  (* TODO: can also have just ; _ and can have typed name *)
+  (* we unsugar { x } in { x = x } *)
   | PatRecord of (name * pattern) list bracket
 
   | PatAs of pattern * ident
-  (* ocaml disjunction patterns extension *)
+  (* OCaml disjunction patterns extension *)
   | PatDisj of pattern * pattern
-  | PatTyped of pattern * type_
+  | PatTyped of pattern * (* TODO: tok *) type_
 
   (* sgrep-ext: *)
   | PatEllipsis of tok
 
+  (* TODO:
+   * - LocalOpen,
+   * - Array, BigArray,
+   * - Lazy
+  *)
   | PatTodo of todo_category * pattern list
 
 (*****************************************************************************)
@@ -194,6 +230,7 @@ and pattern =
 (* Let binding (global/local/function definition) *)
 (* ------------------------------------------------------------------------- *)
 
+(* Similar to the Fun vs Function dichotomy *)
 and let_binding =
   | LetClassic of let_def
   | LetPattern of pattern * expr
@@ -209,6 +246,7 @@ and let_def = {
 and parameter =
   | Param of pattern
   (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
+  (* TODO: todo_category! *)
   | ParamTodo of tok
 
 [@@deriving show { with_path = false} ]  (* with tarzan *)
@@ -217,26 +255,42 @@ and parameter =
 (* Type declaration *)
 (* ------------------------------------------------------------------------- *)
 
+(* TODO: TyDeclSimple, TyDeclExtension, ...
+ * TODO: keyword attribute: private, constraints
+*)
 type type_declaration = {
   tname: ident;
   tparams: type_parameter list;
   tbody: type_def_kind;
 }
 
+(* TODO: can be far more complex now, with constraints on the type parameter *)
 and type_parameter = ident (* a TyVar, e.g., 'a *)
 
 and type_def_kind =
   | AbstractType
   | CoreType of type_
   (* or type *)
-  | AlgebraicType of (ident * type_ list) list
+  | AlgebraicType of constructor_decl list
   (* and type *)
-  | RecordType   of (ident * type_ * tok option (* mutable *)) list bracket
+  | RecordType   of field_decl list bracket
+  (* TODO: TdTodo of todo_category *)
 
+and constructor_decl = ident * constructor_decl_kind
+
+(* TODO: GADT : ..., Alias, inline record def, etc. *)
+and constructor_decl_kind =
+  (* of ... *)
+  type_ list
+
+and field_decl = ident * type_ * mutable_opt
+
+(* TODO: keyword attribute *)
+and mutable_opt = tok option (* mutable *)
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
-(* Class *)
+(* Class (and object) *)
 (* ------------------------------------------------------------------------- *)
 (* Nope ... represented via an ItemTodo "Class" *)
 
@@ -253,11 +307,14 @@ and module_expr =
   | ModuleName of name (* alias *)
   | ModuleStruct of item list
 
+  (* TODO: functor (def and app), abstract module *)
   | ModuleTodo of todo_category * module_expr list
 
 (*****************************************************************************)
 (* Attributes *)
 (*****************************************************************************)
+
+(* TODO: also put keyword_attribute *)
 and attribute = (dotted_ident * item list) bracket
 and attributes = attribute list
 and dotted_ident = ident list
@@ -281,6 +338,7 @@ and item_kind =
   | Exception of tok * ident * type_ list
   | External  of tok * ident * type_ * string wrap list (* primitive decls *)
 
+  (* TODO: '!' option *)
   | Open of tok * name
 
   (* only in sig_item *)
@@ -292,6 +350,12 @@ and item_kind =
 
   | Module of tok * module_declaration
 
+  (* TODO
+   * - directives (#xxx)
+   * - floating attributes ([@@@ ])
+   * - include
+   * - module type
+  *)
   | ItemTodo of todo_category * item list
 
 [@@deriving show { with_path = false} ] (* with tarzan *)
@@ -309,6 +373,7 @@ type any =
   | P of pattern
 
   | I of item
+  | Id of ident
   | Pr of program
 
 [@@deriving show { with_path = false} ] (* with tarzan *)
@@ -317,13 +382,13 @@ type any =
 (* Wrappers *)
 (*****************************************************************************)
 
-let str_of_ident (s,_) = s
-let info_of_ident (_,info) = info
+(* used when converting a module_path to a module name *)
+let qualifier_to_name xs =
+  match List.rev xs with
+  | [] -> raise Common.Impossible
+  | x::xs -> List.rev xs, x
 
-let ident_of_name (_, ident) = ident
-let qualifier_of_name (qu, _) =
-  qu |> List.map str_of_ident |> Common.join "."
-
+(* TODO: rename id_to_expr *)
 let name_of_id id = Name ([], id)
 
 let mki x =
