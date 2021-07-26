@@ -47,7 +47,7 @@ let test_parse_common xs fullxs ext  =
       try (
         Common.save_excursion Flag.error_recovery true (fun () ->
           Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-            Parse_js.parse ~timeout:5 file
+            Parse_js.parse ~timeout:5.0 file
 
            (* to have a better comparison with semgrep -lang js -test_parse_lang: *)
            (* let _gen = Js_to_generic.program ast in *)

@@ -449,13 +449,39 @@ val memoized :
 exception UnixExit of int
 (*e: exception [[Common.UnixExit]] *)
 
+(* Contains the name given by the user to the timer and the time limit *)
+type timeout_info
+
 (*s: exception [[Common.Timeout]] *)
-exception Timeout
+(*
+   If ever caught, this exception must be re-raised immediately so as
+   to not interfere with the timeout handler. See function 'set_timeout'.
+*)
+exception Timeout of timeout_info
 (*e: exception [[Common.Timeout]] *)
+
+(* Show name and time limit in a compact format for debugging purposes. *)
+val string_of_timeout_info : timeout_info -> string
+
 (*s: signature [[Common.timeout_function]] *)
-val timeout_function: ?verbose:bool -> int -> (unit -> 'a) -> 'a
+(*
+   Launch the specified computation and abort if it takes longer than
+   specified (in seconds).
+
+   This uses a global timer. An Invalid_argument exception will be raised
+   if the timer is already running.
+
+   tl;dr nesting will fail
+*)
+val set_timeout:
+  ?verbose:bool -> name:string -> float -> (unit -> 'a) -> 'a option
 (*e: signature [[Common.timeout_function]] *)
-val timeout_function_float :?verbose:bool -> float -> (unit -> 'a) -> 'a
+
+(*
+   Only set a timer if a time limit is specified. Uses 'set_timeout'.
+*)
+val set_timeout_opt:
+  ?verbose:bool -> name:string -> float option -> (unit -> 'a) -> 'a option
 
 (*
    Measure how long it takes for a function to run, returning the result

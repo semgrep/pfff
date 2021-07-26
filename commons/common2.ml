@@ -31,7 +31,6 @@
  * reference.
 *)
 
-exception Timeout
 exception UnixExit of int
 
 let rec (do_n: int -> (unit -> unit) -> unit) = fun i f ->
@@ -3400,59 +3399,12 @@ let (with_open_outfile_append: filename -> (((string -> unit) * out_channel) -> 
     res)
     (fun _e -> close_out chan)
 
-
-(* now in prelude:
- * exception Timeout
+(*
+   This uses a global resource so we can't duplicate that code.
+   Copy it from Common.ml when the time comes to get rid of Common.ml.
 *)
-
-(* it seems that the toplevel block such signals, even with this explicit
- *  command :(
- *  let _ = Unix.sigprocmask Unix.SIG_UNBLOCK [Sys.sigalrm]
-*)
-
-(* could be in Control section *)
-
-(* subtil: have to make sure that timeout is not intercepted before here, so
- * avoid exn handle such as try (...) with _ -> cos timeout will not bubble up
- * enough. In such case, add a case before such as
- * with Timeout -> raise Timeout | _ -> ...
- *
- * question: can we have a signal and so exn when in a exn handler ?
-*)
-let timeout_function ?(verbose=false) timeoutval = fun f ->
-  try
-    begin
-      Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Timeout ));
-      ignore(Unix.alarm timeoutval);
-      let x = f () in
-      ignore(Unix.alarm 0);
-      x
-    end
-  with Timeout ->
-    begin
-      if verbose then log "timeout (we abort)";
-      raise Timeout;
-    end
-     | e ->
-         (* subtil: important to disable the alarm before relaunching the exn,
-          * otherwise the alarm is still running.
-          *
-          * robust?: and if alarm launched after the log (...) ?
-          * Maybe signals are disabled when process an exception handler ?
-         *)
-         begin
-           ignore(Unix.alarm 0);
-           (* log ("exn while in transaction (we abort too, even if ...) = " ^
-              Printexc.to_string e);
-           *)
-           if verbose then log "exn while in timeout_function";
-           raise e
-         end
-
-let timeout_function_opt timeoutvalopt f =
-  match timeoutvalopt with
-  | None -> f ()
-  | Some x -> timeout_function x f
+let set_timeout = Common.set_timeout
+let set_timeout_opt = Common.set_timeout_opt
 
 
 let with_tmp_file ~(str: string) ~(ext: string) (f: string -> 'a) : 'a =

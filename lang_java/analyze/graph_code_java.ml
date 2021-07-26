@@ -109,7 +109,7 @@ let parse ~show_parse_error file =
   try
     Parse_java.parse_program file
   with
-  | Timeout -> raise Timeout
+  | Timeout _ as e -> raise e
   | exn ->
       if show_parse_error
       then pr2_once (spf "PARSE ERROR with %s, exn = %s" file

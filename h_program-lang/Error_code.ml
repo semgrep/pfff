@@ -376,9 +376,11 @@ let exn_to_error file exn =
       (* this should never be captured *)
       (* in theory we should also avoid to capture those *)
 *)
-  | Common.Timeout ->
+  | Common.Timeout timeout_info ->
+      (* This exception should always be reraised. *)
       let loc = Parse_info.first_loc_of_file file in
-      mk_error_loc loc (Timeout None)
+      let msg = Common.string_of_timeout_info timeout_info in
+      mk_error_loc loc (Timeout (Some msg))
   | Out_of_memory ->
       let loc = Parse_info.first_loc_of_file file in
       mk_error_loc loc (OutOfMemory None)
