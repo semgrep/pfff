@@ -273,12 +273,14 @@ and interp =
 (* old: was just expr before *)
 and method_name =
   | MethodId of variable (* all except Self and Super *)
-  | MethodIdAssign of ident * tok * id_kind (* = *)
+  (* todo? delete id_kind? always ID_Lowercase *)
+  | MethodIdAssign of ident * tok (* = *) * id_kind
+  (* TODO: MethodArray, a[b] <=> a.[] b, vs ArrayAccess? *)
   | MethodAtom of atom
   | MethodUOperator of unary_msg wrap
   | MethodOperator of binary_msg wrap
-  (* tree-sitter: and only in Call, not in definitions *)
-  | MethodDynamic of expr (* actually an expr list inside () encoded as Tuple*)
+  (* a.(b) <=> a.call b (only in Call, not in definitions). *)
+  | MethodSpecialCall of unit bracket
 
 (* ------------------------------------------------------------------------- *)
 (* Class or module name *)
