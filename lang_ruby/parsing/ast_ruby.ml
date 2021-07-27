@@ -276,6 +276,9 @@ and method_name =
   (* todo? delete id_kind? always ID_Lowercase *)
   | MethodIdAssign of ident * tok (* = *) * id_kind
   (* TODO: MethodArray, a[b] <=> a.[] b, vs ArrayAccess? *)
+  (* Note that an atom can be interpolated, so this allows for
+   * dynamic method names
+  *)
   | MethodAtom of atom
   | MethodUOperator of unary_msg wrap
   | MethodOperator of binary_msg wrap
