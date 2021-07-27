@@ -106,7 +106,8 @@ exception Parse_ruby_timeout
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-let parse file =
+
+let parse2 opt_timeout file =
   let stat = Parse_info.default_stat file in
 
   Common.with_open_infile file (fun chan ->
@@ -118,7 +119,7 @@ let parse file =
       let lst =
         (* GLR parsing can be very time consuming *)
         match
-          Common.set_timeout ~name:"Parse_ruby.parse" 10.0 (fun () ->
+          Common.set_timeout_opt ~name:"Parse_ruby.parse" opt_timeout (fun () ->
             Parser_ruby.main lexer lexbuf
           )
         with
@@ -166,12 +167,15 @@ let parse file =
         {PI. ast = []; tokens = List.rev !toks; stat }
   )
 
+let parse ?timeout file =
+  parse2 timeout file
+
 let parse_program file =
   let res = parse file in
   res.PI.ast
 
 (* for semgrep *)
-let any_of_string str =
+let any_of_string ?timeout str =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
     Common2.with_tmp_file ~str ~ext:"rb" (fun file ->
 
@@ -184,7 +188,7 @@ let any_of_string str =
           let lst =
             (* GLR parsing can be very time consuming *)
             match
-              Common.set_timeout ~name:"Parse_ruby.any_of_string" 10.0
+              Common.set_timeout_opt ~name:"Parse_ruby.any_of_string" timeout
                 (fun () ->
                    Parser_ruby.sgrep_spatch_pattern lexer lexbuf
                 )
