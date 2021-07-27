@@ -763,7 +763,7 @@ simple_pattern:
     { PatTodo (("ArrayLiteral",$1), optlist_to_list $2) }
 
  (* note that let (x:...) a =  will trigger this rule *)
- | "(" pattern ":" core_type ")"               { PatTyped ($2, $4)}
+ | "(" pattern ":" core_type ")"               { PatTyped ($2, $3, $4)}
 
  (* extensions *)
  (* name tag extension *)
@@ -823,11 +823,12 @@ type_constraint:
 (*----------------------------*)
 
 type_declaration: type_parameters TLowerIdent type_kind (*TODO constraints*)
-   { match $3 with
+   { let tparams = $1 |> List.map (fun id -> TyParam id) in
+     match $3 with
      | None ->
-         { tname = $2; tparams = $1; tbody = AbstractType }
+         TyDecl { tname = $2; tparams; tbody = AbstractType }
      | Some (_tok_eq, type_kind) ->
-         { tname = $2; tparams = $1; tbody = type_kind }
+         TyDecl { tname = $2; tparams; tbody = type_kind }
    }
 
 
@@ -853,7 +854,7 @@ type_parameters:
  | type_parameter                      { [$1] }
  | "(" list_sep(type_parameter, ",") ")" { $2 }
 
-type_parameter: ioption(type_variance) "'" ident   { ($3) }
+type_parameter: ioption(type_variance) "'" ident   { $3 }
 
 (* old: list_sep_term(label_declaration, ";") but accept attr after ; *)
 label_declarations:
@@ -999,13 +1000,13 @@ opt_default:
 (*----------------------------*)
 
 label_pattern:
-  | "~" label_var                                 { ParamTodo $1 }
+  | "~" label_var                                 { ParamTodo ("Label", $1) }
   (* ex: let x ~foo:a *)
-  | TLabelDecl simple_pattern                     { ParamTodo (snd $1) }
-  | TOptLabelDecl simple_expr                     { ParamTodo (snd $1) }
-  | "~" "(" label_let_pattern ")"                 { ParamTodo $1 }
-  | "?" "(" label_let_pattern opt_default ")"     { ParamTodo $1 }
-  | "?" label_var                                 { ParamTodo $1 }
+  | TLabelDecl simple_pattern                     { ParamTodo ("Label", snd $1) }
+  | TOptLabelDecl simple_expr                     { ParamTodo ("Label", snd $1) }
+  | "~" "(" label_let_pattern ")"                 { ParamTodo ("LabelParen", $1) }
+  | "?" "(" label_let_pattern opt_default ")"     { ParamTodo ("LabelParen", $1) }
+  | "?" label_var                                 { ParamTodo ("Label", $1) }
 
 label_let_pattern:
  | label_var                { }
@@ -1214,9 +1215,9 @@ floating_attribute:  "[@@@" attr_id payload "]"
   { ItemTodo (("Attribute", $1), $3) }
 
 post_item_attribute: "[@@"  attr_id payload "]"
-  { ($1, ($2, $3), $4) }
+  { NamedAttr ($1, ($2, $3), $4) }
 attribute:           "[@"   attr_id payload "]"
-  { ($1, ($2, $3), $4) }
+  { NamedAttr ($1, ($2, $3), $4) }
 
 
 attr_id: listr_sep(single_attr_id, ".") { $1 }

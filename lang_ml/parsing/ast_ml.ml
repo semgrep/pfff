@@ -210,7 +210,7 @@ and pattern =
   | PatAs of pattern * ident
   (* OCaml disjunction patterns extension *)
   | PatDisj of pattern * pattern
-  | PatTyped of pattern * (* TODO: tok *) type_
+  | PatTyped of pattern * tok * type_
 
   (* sgrep-ext: *)
   | PatEllipsis of tok
@@ -246,8 +246,8 @@ and let_def = {
 and parameter =
   | Param of pattern
   (* ParamEllipsis can be done via ParamPat (PatEllipsis) *)
-  (* TODO: todo_category! *)
-  | ParamTodo of tok
+  (* TODO: Label parameter ~xxx ?xxx *)
+  | ParamTodo of todo_category
 
 [@@deriving show { with_path = false} ]  (* with tarzan *)
 
@@ -255,17 +255,22 @@ and parameter =
 (* Type declaration *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: TyDeclSimple, TyDeclExtension, ...
- * TODO: keyword attribute: private, constraints
-*)
-type type_declaration = {
+(* TODO: keyword attribute: private, constraints *)
+type type_declaration =
+  | TyDecl of type_declaration_classic
+  (* TODO: Extension (+=) decl, .. *)
+  | TyDeclTodo of todo_category
+
+and type_declaration_classic = {
   tname: ident;
   tparams: type_parameter list;
   tbody: type_def_kind;
 }
 
 (* TODO: can be far more complex now, with constraints on the type parameter *)
-and type_parameter = ident (* a TyVar, e.g., 'a *)
+and type_parameter =
+  | TyParam of ident (* a TyVar, e.g., 'a *)
+  | TyParamTodo of todo_category
 
 and type_def_kind =
   | AbstractType
@@ -274,7 +279,7 @@ and type_def_kind =
   | AlgebraicType of constructor_decl list
   (* and type *)
   | RecordType   of field_decl list bracket
-  (* TODO: TdTodo of todo_category *)
+  | TdTodo of todo_category
 
 and constructor_decl = ident * constructor_decl_kind
 
@@ -314,8 +319,9 @@ and module_expr =
 (* Attributes *)
 (*****************************************************************************)
 
-(* TODO: also put keyword_attribute *)
-and attribute = (dotted_ident * item list) bracket
+and attribute =
+  | NamedAttr of (dotted_ident * item list) bracket
+  (* TODO: also put keyword_attribute *)
 and attributes = attribute list
 and dotted_ident = ident list
 
