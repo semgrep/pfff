@@ -310,12 +310,10 @@ rule token = parse
       TUpperIdent (s, tokinfo lexbuf)
     }
 
-  | '~' label_name ':' {
-      let s = tok lexbuf in
+  | '~' (label_name as s) ':' {
       TLabelDecl (s, tokinfo lexbuf)
     }
-  | '?' label_name ':' {
-      let s = tok lexbuf in
+  | '?' (label_name as s) ':' {
       TOptLabelDecl (s, tokinfo lexbuf)
     }
 
