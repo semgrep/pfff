@@ -54,7 +54,11 @@ let spf = Printf.sprintf
      The mli interface makes this type private to help prevent unsafe uses of
      the exception.
 *)
-type timeout_info = string * float
+type timeout_info = {
+  name: string;
+  max_duration: float;
+}
+
 exception Timeout of timeout_info
 
 exception UnixExit of int
@@ -1043,8 +1047,8 @@ let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
     res)
     (fun _e -> close_in chan)
 
-let string_of_timeout_info (name, time_limit) =
-  spf "%s:%g" name time_limit
+let string_of_timeout_info { name; max_duration } =
+  spf "%s:%g" name max_duration
 
 let current_timer = ref None
 
@@ -1065,19 +1069,19 @@ let current_timer = ref None
 
   question: can we have a signal and so exn when in a exn handler ?
 *)
-let set_timeout ?(verbose=false) ~name time_limit = fun f ->
+let set_timeout ?(verbose=false) ~name max_duration = fun f ->
   (match !current_timer with
    | None -> ()
-   | Some (running_name, running_val) ->
+   | Some { name = running_name; max_duration = running_val } ->
        invalid_arg (
          spf
            "Common.set_timeout: cannot set a timeout %S of %g seconds. \
             A timer for %S of %g seconds is still running."
-           name time_limit
+           name max_duration
            running_name running_val
        )
   );
-  let info (* private *) = (name, time_limit) in
+  let info (* private *) = { name; max_duration } in
   let timeout_exn = Timeout info in
   let clear_timer () =
     current_timer := None;
@@ -1086,9 +1090,9 @@ let set_timeout ?(verbose=false) ~name time_limit = fun f ->
     |> ignore
   in
   let set_timer () =
-    current_timer := Some (name, time_limit);
+    current_timer := Some info;
     Unix.setitimer Unix.ITIMER_REAL
-      { Unix.it_value = time_limit; it_interval = 0. }
+      { Unix.it_value = max_duration; it_interval = 0. }
     |> ignore
   in
   try
@@ -1098,9 +1102,10 @@ let set_timeout ?(verbose=false) ~name time_limit = fun f ->
     clear_timer ();
     Some x
   with
-  | Timeout (name, time_limit) ->
+  | Timeout {name; max_duration} ->
       clear_timer ();
-      if verbose then pr2 (spf "%S timeout at %g s (we abort)" name time_limit);
+      if verbose then pr2 (spf "%S timeout at %g s (we abort)"
+                             name max_duration);
       None
   | e ->
       (* It's important to disable the alarm before relaunching the exn,
