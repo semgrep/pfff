@@ -298,24 +298,34 @@ rule token = parse
       | None -> TLowerIdent (s, info)
     }
   (* sgrep-ext: *)
+  (* We need a way to differentiate metavariables for:
+   *  - uppercase things (module names, constructors, exceptions)
+   *  - lowercase things (entity names, parameters, full expression/types).
+   * The OCaml grammar relies on the first letter of the identifier
+   * to resolve ambiguities between those two big categories, so we
+   * need to reproduce this with metavariables.
+   *
+   * Ideally we would use $XX for uppercase stuff, and $xx for lowercase
+   * stuff, but this would not be consistent with what we do for the
+   * other languages (we opted for $XXX and not $xxx because of possible
+   * ambiguities in languages like PHP which already use $xxx for variables).
+   *
+   * TODO: right now it's ugly, if it's $X_... then it's considered
+   * an uppercase metavariable. We should use $XXX and $xx but then
+   * we need to revisit lots of code like Metavariable.metavar_regexp
+   *)
+  | '$' upperletter '_' (upperletter | '_' | digit)*
+     { Flag.sgrep_guard (TUpperIdent (tok lexbuf, tokinfo lexbuf)) }
   | '$' (upperletter | '_') (upperletter | '_' | digit)*
      { Flag.sgrep_guard (TLowerIdent (tok lexbuf, tokinfo lexbuf)) }
-  (* sgrep-ext: *)
   | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
      { Flag.sgrep_guard (TLowerIdent (tok lexbuf, tokinfo lexbuf)) }
 
 
-  | upperident {
-      let s = tok lexbuf in
-      TUpperIdent (s, tokinfo lexbuf)
-    }
-
-  | '~' (label_name as s) ':' {
-      TLabelDecl (s, tokinfo lexbuf)
-    }
-  | '?' (label_name as s) ':' {
-      TOptLabelDecl (s, tokinfo lexbuf)
-    }
+  | upperident as s           { TUpperIdent (s, tokinfo lexbuf) }
+  (* less: should split in different tokens, like in tree-sitter-ocaml *)
+  | '~' (label_name as s) ':' { TLabelDecl (s, tokinfo lexbuf)  }
+  | '?' (label_name as s) ':' { TOptLabelDecl (s, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
@@ -329,8 +339,7 @@ rule token = parse
                        ( ['0'-'7'] | '_')*
   | '-'? ("0b" | "0B")   ['0'-'1']
                        ( ['0'-'1'] | '_')*
-   {
-     let s = tok lexbuf in
+   { let s = tok lexbuf in
      TInt (int_of_string_opt s, tokinfo lexbuf)
    }
 
@@ -338,9 +347,8 @@ rule token = parse
     digit (digit | '_')*
     ('.' (digit | '_')*)?
     ( ('e' |'E') ['+' '-']? digit (digit | '_')* )?
-     {
-     let s = tok lexbuf in
-     TFloat (float_of_string_opt s, tokinfo lexbuf)
+    { let s = tok lexbuf in
+      TFloat (float_of_string_opt s, tokinfo lexbuf)
     }
 
 
