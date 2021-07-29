@@ -11,7 +11,8 @@ type file_type =
   | Other of string
 
 and pl_type =
-  | ML of string | Haskell of string | Lisp of lisp_type | Skip | Scala
+  | OCaml of string | FSharp of string | MLOther of string
+  | Haskell of string | Lisp of lisp_type | Skip | Scala
   | Prolog of string
   | Script of string
   | C of string | Cplusplus of string | Java | Kotlin | Csharp | ObjectiveC of string

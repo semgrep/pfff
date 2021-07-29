@@ -36,23 +36,31 @@ type file_type =
 
 (* programming languages *)
 and pl_type =
-  | ML of string  (* mli, ml, mly, mll *)
+  (* functional *)
+  | OCaml of string  (* mli, ml, mly, mll *)
+  | FSharp of string (* fsi, fsx, fs *)
+  | MLOther of string
   | Haskell of string
   | Lisp of lisp_type
   | Skip
   | Scala
 
+  (* logic *)
   | Prolog of string
 
+  (* classic script *)
   | Script of string (* sh, csh, awk, sed, etc *)
 
+  (* mainstream *)
   | C of string | Cplusplus of string
   | Java | Kotlin | Csharp
   | ObjectiveC of string
   | Swift
 
+  (* advanced script *)
   | Perl | Python | Ruby | Lua | R
 
+  (* other *)
   | Erlang
   | Go | Rust
   | Beta
@@ -104,20 +112,20 @@ let file_type_of_file2 file =
   | "ml" | "mli"
   | "mly" | "mll"
   | "dyp" (* dypgen =~ GLR ocamlyacc *)
-    -> PL (ML e)
+    -> PL (OCaml e)
   | "mlb" (* mlburg *)
   | "mlp" (* used in some source *)
   | "eliom" (* ocsigen, obviously *)
-    -> PL (ML e)
+    -> PL (OCaml e)
 
-  | "sml" -> PL (ML e)
+  | "sml" -> PL (MLOther e)
   (* fsharp *)
-  | "fsi" | "fsx" | "fs"  -> PL (ML e)
+  | "fsi" | "fsx" | "fs"  -> PL (FSharp e)
   (* linear ML *)
-  | "lml"  -> PL (ML e)
+  | "lml"  -> PL (MLOther e)
 
   | "hs" | "lhs" -> PL (Haskell e)
-  | "scala" -> PL (Scala)
+  | "scala" | "sc" -> PL (Scala)
 
   | "erl" | "hrl" -> PL Erlang
 

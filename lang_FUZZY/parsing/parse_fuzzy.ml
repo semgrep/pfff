@@ -44,7 +44,7 @@ let parse_and_tokens_with_lang lang file =
                   } in
       Lib_ast_fuzzy.mk_trees hooks toks, Lib_ast_fuzzy.mk_tokens hooks toks
 
-  | Lang_fuzzy.ML ->
+  | Lang_fuzzy.OCaml ->
       let toks = Parse_ml.tokens file  |> (fun toks ->
         if !Flag_parsing.sgrep_mode
         then Common.exclude Token_helpers_ml.is_eof toks

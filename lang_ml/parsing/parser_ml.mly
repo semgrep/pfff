@@ -276,22 +276,31 @@ qualified(X, Y):
 interface:      signature EOF              { $1 }
 implementation: structure EOF              { $1 }
 
+(* this is the entry point used by semgrep to parse patterns *)
 sgrep_spatch_pattern:
  | expr                                EOF { E $1 }
- | signature_item                      EOF { I $1 }
- | structure_item_minus_signature_item EOF { I $1 }
+ | signature_or_structure_common       EOF { I { i = $1; iattrs = [] } }
+ | just_in_signature                   EOF { I { i = $1; iattrs = [] } }
+ | just_in_structure                   EOF { I { i = $1; iattrs = [] } }
  | ":" core_type                       EOF { T $2 }
  | "|" pattern                         EOF { P $2 }
 
-(* coupling: structure_item *)
-structure_item_minus_signature_item:
- | Tlet Trec? list_and(let_binding) post_item_attribute*
-     { { i = Let ($1, $2, $3); iattrs = $4 } }
- (* TODO: put more stuff from structure_item that you want to be able
-  * to match in a semgrep pattern.
-  *)
-
+(* this is used by semgrep -lsp to parse the types returned by ocamllsp *)
 type_for_lsp: core_type EOF { $1 }
+
+signature_or_structure_common:
+ | Ttype list_and(type_declaration)
+     { Type ($1, $2) }
+ | Texternal val_ident ":" core_type "=" primitive_declaration
+     { External ($1, $2, $4, $6) }
+ | Texception TUpperIdent constructor_arguments
+     { Exception ($1, $2, $3) }
+ | Topen "!"? mod_longident
+     { Open ($1, $3) }
+ | Tmodule Ttype ident "=" module_type
+     { ItemTodo (("ModuleType", $1), [$5]) }
+ | Tclass Ttype list_and(class_type_declaration)
+     { ItemTodo (("ClassType", $1), $3) }
 
 (*************************************************************************)
 (* Signature *)
@@ -306,25 +315,17 @@ signature_item: signature_item_noattr post_item_attribute*
   { { i = $1; iattrs = $2 } }
 
 signature_item_noattr:
- | Ttype list_and(type_declaration)            { Type ($1, $2) }
+ | signature_or_structure_common { $1 }
+ | just_in_signature { $1 }
+
+just_in_signature:
  | Tval val_ident ":" core_type                { Val ($1, $2, $4) }
- | Texternal val_ident ":" core_type "=" primitive_declaration
-     { External ($1, $2, $4, $6) }
- | Texception TUpperIdent constructor_arguments { Exception ($1, $2, $3) }
-
  (* modules *)
- | Topen mod_longident                          { Open ($1, $2) }
-
- | Tmodule Ttype ident "=" module_type
-    { ItemTodo (("ModuleType", $1), [$5]) }
  | Tmodule TUpperIdent module_declaration
     { ItemTodo (("ModuleDecl", $1), [$3]) }
-
  (* objects *)
  | Tclass list_and(class_description)
    { ItemTodo (("Class",$1), $2)  }
- | Tclass Ttype list_and(class_type_declaration)
-    { ItemTodo (("ClassType", $1), $3) }
 
 (*----------------------------*)
 (* Misc *)
@@ -355,16 +356,13 @@ structure_item: structure_item_noattr post_item_attribute*
   { { i = $1; iattrs = $2 } }
 
 structure_item_noattr:
- (* as in signature_item *)
- | Ttype list_and(type_declaration)              { Type ($1, $2) }
- | Texception TUpperIdent constructor_arguments  { Exception ($1, $2, $3)}
- | Texternal val_ident ":" core_type "=" primitive_declaration
-     { External ($1, $2, $4, $6)  }
- | Topen "!"? mod_longident                           { Open ($1, $3) }
+ | signature_or_structure_common { $1 }
+ | just_in_structure { $1 }
 
- (* start of deviation *)
-
+just_in_structure:
  | Tlet Trec? list_and(let_binding)              { Let ($1, $2, $3) }
+ | Texception TUpperIdent "=" mod_longident
+    { ItemTodo (("ExnAlias",$1), []) }
 
  (* modules *)
  | Tmodule TUpperIdent module_binding
@@ -372,19 +370,12 @@ structure_item_noattr:
         | None -> ItemTodo (("AbstractModule?", $1), [])
         | Some (_x, y) -> Module ($1, { mname = $2; mbody = y })
       }
- | Tmodule Ttype ident "=" module_type
-   { ItemTodo (("ModuleType", $1), [$5]) }
  | Tinclude module_expr
    { ItemTodo (("Include",$1), [] (* TODO $2 *)) }
 
  (* objects *)
  | Tclass list_and(class_declaration)
     { ItemTodo (("Class",$1), $2)  }
- | Tclass Ttype list_and(class_type_declaration)
-    { ItemTodo (("ClassType", $1), $3) }
-
- | Texception TUpperIdent "=" mod_longident
-    { ItemTodo (("ExnAlias",$1), []) }
 
  | floating_attribute { $1 }
 
