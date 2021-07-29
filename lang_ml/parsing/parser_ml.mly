@@ -12,6 +12,7 @@
 (***********************************************************************)
 open Common
 open Ast_ml
+module PI = Parse_info
 
 (*************************************************************************)
 (* Prelude *)
@@ -497,7 +498,8 @@ expr:
 
  | Tfunction "|"? match_cases                { Function ($1, $3) }
 
- | expr_comma_list        %prec below_COMMA  { Tuple $1 }
+ (* the fake will be replace by real parens in simple_expr: seq_expr case *)
+ | expr_comma_list        %prec below_COMMA  { Tuple (PI.fake_bracket $1) }
  | constr_longident simple_expr
      { match $1 with
        | Left x -> Constructor (x, Some $2)
@@ -592,7 +594,8 @@ simple_expr:
  | "(" seq_expr ")"
      { match $2 with
      | [] -> Sequence ([])
-     | [x] -> x
+     (* putting real parenthesis tokens on Tuples *)
+     | [Tuple (_, xs, _)] -> Tuple ($1, xs, $3)
      | _ -> Sequence ($2)
      }
 
@@ -726,7 +729,8 @@ pattern:
        | Left x -> PatConstructor (x, Some $2)
        | Right _lit -> failwith "Impossible, literal with pattern argument"
      }
- | pattern_comma_list       %prec below_COMMA     { PatTuple ($1) }
+ (* the fake will be replace by real parens in simple_pattern last case *)
+ | pattern_comma_list       %prec below_COMMA     { PatTuple (PI.fake_bracket $1) }
  | pattern "::" pattern                           { PatConsInfix ($1, $2, $3) }
 
  | pattern Tas val_ident                          { PatAs ($1, $3) }
@@ -773,7 +777,11 @@ simple_pattern:
  (* sgrep-ext: *)
  | "..."              { PatEllipsis $1 }
 
- | "(" pattern ")"             { $2 }
+ | "(" pattern ")"
+     { match $2 with
+       | PatTuple (_, xs, _) -> PatTuple ($1, xs, $3)
+       | p -> p
+     }
 
 lbl_pattern:
  | label_longident "=" pattern               { ($1, $3) }

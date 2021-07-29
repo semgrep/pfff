@@ -97,10 +97,14 @@ type expr =
   | L of literal
   | Name of name
 
+  (* note that Foo(1,2) is represented as Constructor(Foo, Some Tuple ...).
+   * alt: Constructor of name * expr list bracket option
+  *)
   | Constructor of name * expr option
   | PolyVariant of (tok (* '`' *) * ident) * expr option
   (* special case of Constr *)
-  | Tuple of expr list
+  (* some brackets are fake_info *)
+  | Tuple of expr list bracket
   | List  of expr list bracket
 
   (* can be empty *)
@@ -194,12 +198,14 @@ and pattern =
   | PatVar of ident
   | PatLiteral of literal (* can be signed *)
 
+  (* alt: PatConstructor of name * pattern list bracket option *)
   | PatConstructor of name * pattern option
   | PatPolyVariant of (tok (* '`' *) * ident) * pattern option
 
   (* special cases of PatConstructor *)
   | PatConsInfix of pattern * tok (* :: *) * pattern
-  | PatTuple of pattern list
+  (* some brackets are fake_info *)
+  | PatTuple of pattern list bracket
   | PatList of pattern list bracket
 
   | PatUnderscore of tok
