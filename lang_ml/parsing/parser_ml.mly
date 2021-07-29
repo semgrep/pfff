@@ -279,9 +279,12 @@ implementation: structure EOF              { $1 }
 (* this is the entry point used by semgrep to parse patterns *)
 sgrep_spatch_pattern:
  | expr                                EOF { E $1 }
- | signature_or_structure_common       EOF { I { i = $1; iattrs = [] } }
- | just_in_signature                   EOF { I { i = $1; iattrs = [] } }
- | just_in_structure                   EOF { I { i = $1; iattrs = [] } }
+ | signature_or_structure_common post_item_attribute* EOF
+     { I { i = $1; iattrs = $2 } }
+ | just_in_signature post_item_attribute*  EOF
+     { I { i = $1; iattrs = $2 } }
+ | just_in_structure post_item_attribute*  EOF
+     { I { i = $1; iattrs = $2 } }
  | ":" core_type                       EOF { T $2 }
  | "|" pattern                         EOF { P $2 }
 
