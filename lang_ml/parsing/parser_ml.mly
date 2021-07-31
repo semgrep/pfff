@@ -288,6 +288,8 @@ sgrep_spatch_pattern:
      { I { i = $1; iattrs = $2 } }
  | ":" core_type                       EOF { T $2 }
  | "|" pattern                         EOF { P $2 }
+ (* partial *)
+ | partial EOF { Partial $1 }
 
 (* this is used by semgrep -lsp to parse the types returned by ocamllsp *)
 type_for_lsp: core_type EOF { $1 }
@@ -305,6 +307,11 @@ signature_or_structure_common:
      { ItemTodo (("ModuleType", $1), [$5]) }
  | Tclass Ttype list_and(class_type_declaration)
      { ItemTodo (("ClassType", $1), $3) }
+
+partial:
+ | Tif expr    { PartialIf ($1, $2) }
+ | Tmatch expr { PartialMatch ($1, $2) }
+ | Ttry expr   { PartialTry ($1, $2) }
 
 (*************************************************************************)
 (* Signature *)

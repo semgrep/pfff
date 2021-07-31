@@ -378,6 +378,12 @@ type program = item list
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+type partial =
+  (* partial stmts *)
+  | PartialIf of tok * expr
+  | PartialMatch of tok * expr
+  | PartialTry of tok * expr
+[@@deriving show { with_path = false} ] (* with tarzan *)
 
 type any =
   | T of type_
@@ -387,6 +393,8 @@ type any =
   | I of item
   | Id of ident
   | Pr of program
+
+  | Partial of partial
 
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
