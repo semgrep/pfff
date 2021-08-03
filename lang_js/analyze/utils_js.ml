@@ -4,7 +4,7 @@ let string_of_any ast =
 
 let load db gen =
   try
-    let in_channel = open_in db in
+    let in_channel = open_in_bin db in
     let data = Marshal.from_channel in_channel in
     close_in in_channel;
     data

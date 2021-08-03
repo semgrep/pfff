@@ -410,7 +410,7 @@ let redirect_stdout_stderr file f =
 
 let redirect_stdin file f =
   begin
-    let chan = open_in file in
+    let chan = open_in_bin file in
     let descr = Unix.descr_of_in_channel chan in
 
     let savein = Unix.dup Unix.stdin in
@@ -763,7 +763,7 @@ let take_one xs =
 (*****************************************************************************)
 
 let get_value filename =
-  let chan = open_in filename in
+  let chan = open_in_bin filename in
   let x = input_value chan in (* <=> Marshal.from_channel  *)
   (close_in chan; x)
 
@@ -2834,7 +2834,7 @@ let _ = example (nblines "toto\ntata\n" =|= 2)
 let nblines_eff2 file =
   let res = ref 0 in
   let finished = ref false in
-  let ch = open_in file in
+  let ch = open_in_bin file in
   while not !finished do
     try
       let _ = input_line ch in
@@ -2869,7 +2869,7 @@ let _ = example (lines_with_nl_either "ab\n\nc" =*=
 (* Process/Files *)
 (*****************************************************************************)
 let cat_orig file =
-  let chan = open_in file in
+  let chan = open_in_bin file in
   let rec cat_orig_aux ()  =
     try
       (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
@@ -2880,7 +2880,7 @@ let cat_orig file =
 
 (* tail recursive efficient version *)
 let cat file =
-  let chan = open_in file in
+  let chan = open_in_bin file in
   let rec cat_aux acc ()  =
     (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
     let (b, l) = try (true, input_line chan) with End_of_file -> (false, "") in
@@ -3038,7 +3038,7 @@ let mkdir ?(mode=0o770) file =
   Unix.mkdir file mode
 
 let read_file file =
-  let ic = open_in file  in
+  let ic = open_in_bin file  in
   let size = in_channel_length ic in
   let buf = Bytes.create size in
   really_input ic buf 0 size;
@@ -3061,7 +3061,7 @@ let filesize file =
   then (unix_stat file).Unix.st_size
   (* src: https://rosettacode.org/wiki/File_size#OCaml *)
   else begin
-    let ic = open_in file in
+    let ic = open_in_bin file in
     let i = in_channel_length ic in
     close_in ic;
     i
@@ -5446,7 +5446,7 @@ let parserCommon lexbuf parserer lexer =
 (*
 let getDoubleParser parserer lexer string =
   let lexbuf1 = Lexing.from_string string in
-  let chan = open_in string in
+  let chan = open_in_bin string in
   let lexbuf2 = Lexing.from_channel chan in
   (parserCommon lexbuf1 parserer lexer  , parserCommon lexbuf2 parserer lexer )
 *)
@@ -5458,7 +5458,7 @@ let getDoubleParser parserer lexer =
        parserCommon lexbuf1 parserer lexer
     ),
     (function string ->
-       let chan = open_in string in
+       let chan = open_in_bin string in
        let lexbuf2 = Lexing.from_channel chan in
        parserCommon lexbuf2 parserer lexer
     ))
@@ -5952,7 +5952,7 @@ let format_to_string f =
   Format.print_flush();
   Format.set_formatter_out_channel stdout;
   close_out o;
-  let i = open_in nm in
+  let i = open_in_bin nm in
   let lines = ref [] in
   let rec loop _ =
     let cur = input_line i in

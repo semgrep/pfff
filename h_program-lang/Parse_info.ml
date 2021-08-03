@@ -531,7 +531,7 @@ let split_info_at_pos pos ii =
 
 let full_charpos_to_pos_large2 = fun file ->
 
-  let chan = open_in file in
+  let chan = open_in_bin file in
   let size = Common2.filesize file + 2 in
 
   (* old: let arr = Array.create size  (0,0) in *)
@@ -747,7 +747,7 @@ let (info_from_charpos2: int -> filename -> (int * int * string)) =
    *      (pos.pos_cnum - pos.pos_bol) in
    * Hence this function to overcome the previous limitation.
   *)
-  let chan = open_in filename in
+  let chan = open_in_bin filename in
   let linen  = ref 0 in
   let posl   = ref 0 in
   let rec charpos_to_pos_aux last_valid =

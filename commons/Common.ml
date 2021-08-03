@@ -446,7 +446,7 @@ let profile_code2 category f =
 (*****************************************************************************)
 
 let get_value filename =
-  let chan = open_in filename in
+  let chan = open_in_bin filename in
   let x = input_value chan in (* <=> Marshal.from_channel  *)
   (close_in chan; x)
 
@@ -911,7 +911,7 @@ let cmd_to_list_and_status = process_output_to_list2
 
 (* tail recursive efficient version *)
 let cat file =
-  let chan = open_in file in
+  let chan = open_in_bin file in
   let rec cat_aux acc ()  =
     (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
     let (b, l) = try (true, input_line chan) with End_of_file -> (false, "") in
@@ -922,7 +922,7 @@ let cat file =
   cat_aux [] () |> List.rev |> (fun x -> close_in chan; x)
 
 let read_file2 file =
-  let ic = open_in file  in
+  let ic = open_in_bin file  in
   let size = in_channel_length ic in
   let buf = Bytes.create size in
   really_input ic buf 0 size;
@@ -1040,7 +1040,7 @@ let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 
     (fun _e -> close_out chan)
 
 let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
-  let chan = open_in file in
+  let chan = open_in_bin file in
   unwind_protect (fun () ->
     let res = f chan in
     close_in chan;
