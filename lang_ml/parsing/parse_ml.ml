@@ -109,5 +109,5 @@ let any_of_string  s =
       (* -------------------------------------------------- *)
       (* Call parser *)
       (* -------------------------------------------------- *)
-      Parser_ml.sgrep_spatch_pattern lexer lexbuf_fake
+      Parser_ml.semgrep_pattern lexer lexbuf_fake
     ))

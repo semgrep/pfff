@@ -207,7 +207,7 @@ let topseqexpr v1 = mki (TopExpr (seq1 v1))
 (*************************************************************************)
 %start <Ast_ml.item list> interface
 %start <Ast_ml.item list> implementation
-%start <Ast_ml.any> sgrep_spatch_pattern
+%start <Ast_ml.any> semgrep_pattern
 %start <Ast_ml.type_> type_for_lsp
 
 %%
@@ -278,7 +278,7 @@ interface:      signature EOF              { $1 }
 implementation: structure EOF              { $1 }
 
 (* this is the entry point used by semgrep to parse patterns *)
-sgrep_spatch_pattern:
+semgrep_pattern:
  | expr                                EOF { E $1 }
  | signature_or_structure_common post_item_attribute* EOF
      { I { i = $1; iattrs = $2 } }
@@ -312,6 +312,18 @@ partial:
  | Tif expr    { PartialIf ($1, $2) }
  | Tmatch expr { PartialMatch ($1, $2) }
  | Ttry expr   { PartialTry ($1, $2) }
+ (* conflicts: I would like to just write 'Tlet let_binding in' but then we
+  * get s/r conflicts, so I have to be more general like in the 'expr:'
+  * and 'structure:' grammar rules.
+  *
+  * Note that semgrep_pattern allows also to search for 'let x = $BODY'
+  * because this is a valid structure item, and this will actually also match
+  * LetIn expressions because of the way LetIn are converted in
+  * ml_to_generic.ml in a sequence of VarDef and ExprStmt.
+  * So this PartialLetIn is a bit superficial, but maybe one day
+  * those partial will be restricted to match only LetIn (local vars).
+  *)
+ | Tlet Trec? list_and(let_binding) Tin  { PartialLetIn ($1, $2, $3, $4 ) }
 
 (*************************************************************************)
 (* Signature *)

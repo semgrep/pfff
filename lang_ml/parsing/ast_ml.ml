@@ -383,6 +383,9 @@ type partial =
   | PartialIf of tok * expr
   | PartialMatch of tok * expr
   | PartialTry of tok * expr
+  (* other *)
+  | PartialLetIn of tok * rec_opt * let_binding list * tok (* in *)
+
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
 type any =
