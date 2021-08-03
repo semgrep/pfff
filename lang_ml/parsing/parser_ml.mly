@@ -53,11 +53,13 @@ let optlist_to_list = function
   | None -> []
   | Some xs -> xs
 
-(* TODO: use shortcut *)
+
 let seq1 = function
   | [x] -> x
-  | xs -> Sequence xs
+  | xs -> Sequence (Parse_info.fake_bracket xs)
+
 let topseqexpr v1 = mki (TopExpr (seq1 v1))
+
 
 %}
 (*************************************************************************)
@@ -517,8 +519,7 @@ expr:
 
  | Tfunction "|"? match_cases                { Function ($1, $3) }
 
- (* the fake will be replace by real parens in simple_expr: seq_expr case *)
- | expr_comma_list        %prec below_COMMA  { Tuple (PI.fake_bracket $1) }
+ | expr_comma_list        %prec below_COMMA  { Tuple ($1) }
  | constr_longident simple_expr
      { match $1 with
        | Left x -> Constructor (x, Some $2)
@@ -612,14 +613,16 @@ simple_expr:
  (* if only one expr then prefer to generate a ParenExpr *)
  | "(" seq_expr ")"
      { match $2 with
-     | [] -> Sequence ([])
-     (* putting real parenthesis tokens on Tuples *)
-     | [Tuple (_, xs, _)] -> Tuple ($1, xs, $3)
-     | _ -> Sequence ($2)
+     | [] -> Sequence ($1, [], $3)
+     (* Ml_to_generic will do the right thing if x is a tuple or
+      * if this expression is part of a Constructor call.
+      *)
+     | [x] -> ParenExpr ($1, x, $3)
+     | _ -> Sequence ($1, $2, $3)
      }
 
- | Tbegin seq_expr Tend     { Sequence ($2)  }
- | Tbegin Tend              { Sequence ([]) }
+ | Tbegin seq_expr Tend     { Sequence ($1, $2, $3)  }
+ | Tbegin Tend              { Sequence ($1, [], $2) }
 
  (* bugfix: must be in simple_expr. Originally made the mistake to put it
   * in expr: and the parser would then not recognize things like 'foo !x' *)

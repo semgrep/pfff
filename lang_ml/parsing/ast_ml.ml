@@ -103,12 +103,26 @@ type expr =
   | Constructor of name * expr option
   | PolyVariant of (tok (* '`' *) * ident) * expr option
   (* special case of Constr *)
-  (* some brackets are fake_info *)
-  | Tuple of expr list bracket
+  | Tuple of expr list
   | List  of expr list bracket
 
-  (* can be empty *)
-  | Sequence of expr list
+  (* The list can be empty. The brackets can also be fake. For example, in
+   * 'match x with Foo -> 1; 2' you do not need the brackets around
+   * '1; 2'
+  *)
+  | Sequence of expr list bracket (* begin/end or () *)
+
+  (* In most ASTs, and in most parsers, we get rid of those Paren
+   * constructs because they are more useful in CSTs than ASTs. However,
+   * for semgrep, and especially for autofix, parenthesis matter.
+   * We used to have 'Tuple of expr list bracket', but this was not enough
+   * because in code like Foo (1+2), there are no tuple, but
+   * we still want to remember those parenthesis in the AST.
+   * Thus, we keed those parenthesis in the AST and let ml_to_generic.ml
+   * do the right thing depending on the context in which those
+   * ParenExpr are used (for Tuple, for Constructor, or for regular grouping).
+  *)
+  | ParenExpr of expr bracket
 
   (* todo: Use AST_generic_.op? *)
   | Prefix of string wrap * expr
