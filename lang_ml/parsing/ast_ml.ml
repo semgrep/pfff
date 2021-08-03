@@ -108,9 +108,11 @@ type expr =
 
   (* The list can be empty. The brackets can also be fake. For example, in
    * 'match x with Foo -> 1; 2' you do not need the brackets around
-   * '1; 2'
+   * '1; 2'.
+   * Note that if the list has just one element, the ParenExpr construct
+   * below will be used instead.
   *)
-  | Sequence of expr list bracket (* begin/end or () *)
+  | Sequence of expr list bracket (* begin/end, (), or do/done *)
 
   (* In most ASTs, and in most parsers, we get rid of those Paren
    * constructs because they are more useful in CSTs than ASTs. However,
