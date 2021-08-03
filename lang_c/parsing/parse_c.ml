@@ -11,6 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
 *)
+module PI = Parse_info
 
 let logger = Logging.get_logger [__MODULE__]
 
@@ -26,9 +27,9 @@ let logger = Logging.get_logger [__MODULE__]
 (*****************************************************************************)
 
 let parse file =
-  let (ast2, stat) = Parse_cpp.parse_with_lang ~lang:Flag_parsing_cpp.C file in
-  let ast = ast2 |> List.map fst in
-  let toks = ast2 |> List.concat_map snd in
+  let {PI. ast; tokens; stat} =
+    Parse_cpp.parse_with_lang ~lang:Flag_parsing_cpp.C file in
+  (* less: merge stat? *)
   let ast, stat =
     try (Ast_c_build.program ast), stat
     with exn ->
@@ -36,7 +37,7 @@ let parse file =
       (*None, { stat with Stat.bad = stat.Stat.bad + stat.Stat.correct } *)
       raise exn
   in
-  { Parse_info. ast; tokens = toks; stat }
+  { Parse_info. ast; tokens; stat }
 
 let parse_program file =
   let res = parse file in

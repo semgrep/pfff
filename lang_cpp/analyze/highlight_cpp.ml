@@ -55,7 +55,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
+let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -444,7 +444,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     );
   }
   in
-  visitor (Toplevel toplevel);
+  visitor (Program ast);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)

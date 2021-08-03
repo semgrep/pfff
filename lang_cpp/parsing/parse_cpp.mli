@@ -1,19 +1,18 @@
 
-(* the token list contains also the comment-tokens *)
-type toplevels_and_tokens = (Cst_cpp.toplevel * Parser_cpp.token list) list
-
 (* This is the main function. It uses _defs below which often comes
  * from a standard.h macro file. It will raise Parse_error unless
  * Flag_parsing_cpp.error_recovery is set.
 *)
 val parse:
-  Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
+  Common.filename ->
+  (Cst_cpp.program, Parser_cpp.token) Parse_info.parsing_result
 
 val parse_program:
   Common.filename -> Cst_cpp.program
 val parse_with_lang:
   ?lang:Flag_parsing_cpp.language ->
-  Common.filename -> (toplevels_and_tokens * Parse_info.parsing_stat)
+  Common.filename ->
+  (Cst_cpp.program, Parser_cpp.token) Parse_info.parsing_result
 
 
 (* other parsers *)
@@ -45,6 +44,3 @@ val extract_macros:
 
 (* subsystem testing *)
 val tokens:      Common.filename -> Parser_cpp.token list
-
-(* a few helpers *)
-val program_of_program2: toplevels_and_tokens -> Cst_cpp.program

@@ -11,11 +11,11 @@ module PI = Parse_info
 
 let test_highlight_cpp file =
 
-  let (ast2, _stat) = Parse_cpp.parse file in
+  let { PI.ast; tokens = toks; stat = _} = Parse_cpp.parse file in
 
   let h = Hashtbl.create 101 in
 
-  ast2 |> List.iter (fun (ast, toks) ->
+  (ast, toks) |> (fun (ast, toks) ->
     (* computing the token attributes *)
     let prefs = Highlight_code.default_highlighter_preferences in
 

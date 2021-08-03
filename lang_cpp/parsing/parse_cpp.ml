@@ -25,6 +25,8 @@ module TH = Token_helpers_cpp
 module Lexer = Lexer_cpp
 module Semantic = Parser_cpp_mly_helper
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -37,20 +39,6 @@ module Semantic = Parser_cpp_mly_helper
 (*
 let use_dypgen = false
 *)
-
-(*****************************************************************************)
-(* Types *)
-(*****************************************************************************)
-
-type toplevels_and_tokens = (Ast.toplevel * Parser_cpp.token list) list
-
-let program_of_program2 xs =
-  xs |> List.map fst
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 
 (*****************************************************************************)
 (* Error diagnostic *)
@@ -229,7 +217,7 @@ let add_defs file =
   if not (Sys.file_exists file)
   then failwith (spf "Could not find %s, have you set PFFF_HOME correctly?"
                    file);
-  pr2 (spf "Using %s macro file" file);
+  logger#info "Using %s macro file" file;
   let xs = extract_macros file in
   xs |> List.iter (fun (k, v) -> Hashtbl.add _defs k v)
 
@@ -260,13 +248,14 @@ let init_defs file =
 *)
 let rec lexer_function tr = fun lexbuf ->
   match tr.PI.rest with
-  | [] -> (pr2 "LEXER: ALREADY AT END"; tr.PI.current)
+  | [] -> logger#error "LEXER: ALREADY AT END"; tr.PI.current
   | v::xs ->
       tr.PI.rest <- xs;
       tr.PI.current <- v;
       tr.PI.passed <- v::tr.PI.passed;
 
-      if !Flag.debug_lexer then pr2_gen v;
+      if !Flag.debug_lexer
+      then pr2_gen v;
 
       if TH.is_comment v
       then lexer_function (*~pass*) tr lexbuf
@@ -282,7 +271,7 @@ let passed_a_define tr =
      | _ -> false
     )
   else begin
-    pr2 "WIERD: length list of error recovery tokens < 2 ";
+    logger#error "WIERD: length list of error recovery tokens < 2 ";
     false
   end
 
@@ -297,7 +286,7 @@ let passed_a_define tr =
  * !!!This function use refs, and is not reentrant !!! so take care.
  * It uses the _defs global defined above!!!!
  *)
-let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
+let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.token) PI.parsing_result =
 
   let stat = Parse_info.default_stat file in
   let filelines = Common2.cat_array file in
@@ -310,7 +299,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   let toks =
     try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
     with Token_views_cpp.UnclosedSymbol s ->
-      pr2 s;
+      logger#error "unclosed symbol %s" s;
       if !Flag_cpp.debug_cplusplus
       then raise (Token_views_cpp.UnclosedSymbol s)
       else toks_orig
@@ -354,7 +343,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
              Parser_cpp2.toplevel (lexer_function tr) lexbuf_fake
              |> List.hd |> fst
            with Failure "hd" ->
-             pr2 "no elements";
+             logger#error "no elements";
              raise Parsing.Parse_error
           )
 *)
@@ -467,10 +456,12 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
      | Some xs -> (xs, info):: loop () (* recurse *)
     )
   in
-  let v = loop() in
-  (v, stat)
+  let xs = loop() in
+  let ast = xs |> List.map fst in
+  let tokens = xs |> List.map snd |> List.flatten in
+  {PI. ast; tokens; stat }
 
-let parse2 file =
+let parse2 file : (Ast.program, T.token) PI.parsing_result =
   match File_type.file_type_of_file file with
   | FT.PL (FT.C _) ->
       (try
@@ -483,19 +474,21 @@ let parse2 file =
   | _ -> failwith (spf "not a C/C++ file: %s" file)
 
 
-let parse file  =
+let parse file : (Ast.program, T.token) PI.parsing_result  =
   Common.profile_code "Parse_cpp.parse" (fun () ->
     try
       parse2 file
     with Stack_overflow ->
-      pr2 (spf "PB stack overflow in %s" file);
-      [(Ast.NotParsedCorrectly [], ([]))],
-      { (Stat.bad_stat file) with Stat.have_timeout = true }
+      logger#error "PB stack overflow in %s" file;
+      { PI.ast = [Ast.NotParsedCorrectly []];
+        tokens = [];
+        stat = { (Stat.bad_stat file) with Stat.have_timeout = true }
+      }
   )
 
 let parse_program file =
-  let (ast2, _stat) = parse file in
-  program_of_program2 ast2
+  let res = parse file in
+  res.PI.ast
 
 (*****************************************************************************)
 (* Sub parsers *)
@@ -510,7 +503,7 @@ let any_of_string lang s =
       let toks =
         try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
         with Token_views_cpp.UnclosedSymbol s ->
-          pr2 s;
+          logger#error "unclosed symbol %s" s;
           if !Flag_cpp.debug_cplusplus
           then raise (Token_views_cpp.UnclosedSymbol s)
           else toks_orig

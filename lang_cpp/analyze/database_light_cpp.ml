@@ -91,14 +91,14 @@ let compute_database ?(verbose=false) files_or_dirs =
   files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k ();
-      let (ast2, _stat) = Parse_cpp.parse file in
+      let res = Parse_cpp.parse file in
 
       let hcomplete_name_of_info =
         (*Class_js.extract_complete_name_of_info ast *)
         Hashtbl.create 101
       in
 
-      ast2 |> List.iter (fun (ast, toks) ->
+      res |> (fun {PI. ast; tokens = toks; _} ->
         let prefs = Highlight_code.default_highlighter_preferences in
 
         Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->
@@ -128,14 +128,13 @@ let compute_database ?(verbose=false) files_or_dirs =
   files |> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
-      let (ast2, _stat) = Parse_cpp.parse file in
+      let { PI. ast; tokens = toks; stat = _ } = Parse_cpp.parse file in
 
-      let ast = Parse_cpp.program_of_program2 ast2 in
       (* work by side effect on ast2 too *)
       Check_variables_cpp.check_and_annotate_program
         ast;
 
-      ast2 |> List.iter (fun (ast, toks) ->
+      (ast, toks) |> (fun (ast, toks) ->
         let prefs = Highlight_code.default_highlighter_preferences in
 
         Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ ->

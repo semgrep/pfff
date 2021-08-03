@@ -29,13 +29,11 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-let tokens2 file =
+let tokens file =
   let token = Lexer_ml.token in
   Parse_info.tokenize_all_and_adjust_pos
     file token TH.visitor_info_of_tok TH.is_eof
-
-let tokens a =
-  Common.profile_code "Parse_ml.tokens" (fun () -> tokens2 a)
+[@@profiling]
 
 (*****************************************************************************)
 (* Main entry point *)

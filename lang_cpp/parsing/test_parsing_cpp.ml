@@ -29,17 +29,20 @@ let test_parse_cpp ?lang xs  =
 
   fullxs |> Console.progress (fun k -> List.iter (fun file ->
     k();
-    let (_xs, stat) =
+    let stat =
       try (
         Common.save_excursion Flag.error_recovery true (fun () ->
           Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-            match lang with
-            | None -> Parse_cpp.parse file
-            | Some lang -> Parse_cpp.parse_with_lang ~lang file
+            let res =
+              match lang with
+              | None -> Parse_cpp.parse file
+              | Some lang -> Parse_cpp.parse_with_lang ~lang file
+            in
+            res.PI.stat
           ))
       ) with exn -> (* TODO: be more strict, List.hd failure, Stack overflow *)
         pr2 (spf "PB on %s, exn = %s" file (Common.exn_to_s exn));
-        [], PI.bad_stat file
+        PI.bad_stat file
     in
     Common.push stat stat_list;
 

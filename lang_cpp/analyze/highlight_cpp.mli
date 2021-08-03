@@ -5,5 +5,5 @@ val visit_toplevel :
     (Parse_info.t -> Highlight_code.category -> unit) ->
   Highlight_code.highlighter_preferences ->
   (*(Database_php.id * Common.filename * Database_php.database) option -> *)
-  Cst_cpp.toplevel * Parser_cpp.token list ->
+  Cst_cpp.program * Parser_cpp.token list ->
   unit
