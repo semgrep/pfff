@@ -451,7 +451,7 @@ let get_value filename =
   (close_in chan; x)
 
 let write_value valu filename =
-  let chan = open_out filename in
+  let chan = open_out_bin filename in
   (output_value chan valu;  (* <=> Marshal.to_channel *)
    (* Marshal.to_channel chan valu [Marshal.Closures]; *)
    close_out chan)
@@ -932,7 +932,7 @@ let read_file a =
   profile_code "Common.read_file" (fun () -> read_file2 a)
 
 let write_file ~file s =
-  let chan = open_out file in
+  let chan = open_out_bin file in
   (output_string chan s; close_out chan)
 
 (* could be in control section too *)
@@ -1031,7 +1031,7 @@ let cache_computation ?verbose ?use_cache a b c =
 (* emacs/lisp inspiration (eric cooper and yaron minsky use that too) *)
 let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) =
   fun file f ->
-  let chan = open_out file in
+  let chan = open_out_bin file in
   let pr s = output_string chan s in
   unwind_protect (fun () ->
     let res = f (pr, chan) in
