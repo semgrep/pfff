@@ -968,18 +968,17 @@ let input_text_line ic =
   else
     s
 
-(* tail recursive efficient version *)
 let cat file =
+  let acc = ref [] in
   let chan = open_in_bin file in
-  let rec cat_aux acc ()  =
-    (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
-    let (b, l) =
-      try (true, input_text_line chan) with End_of_file -> (false, "") in
-    if b
-    then cat_aux (l::acc) ()
-    else acc
-  in
-  cat_aux [] () |> List.rev |> (fun x -> close_in chan; x)
+  try
+    while true do
+      acc := input_text_line chan :: !acc
+    done;
+    assert false
+  with End_of_file ->
+    close_in chan;
+    List.rev !acc
 
 let read_file2 file =
   let ic = open_in_bin file  in
