@@ -111,6 +111,10 @@ type dirname = string
 type path = string
 (*e: type [[Common.path]] *)
 
+(*
+   Return the lines of a file. Both Windows-style and Unix-style line endings
+   are recognized and removed from the end of the line.
+*)
 (*s: signature [[Common.cat]] *)
 val cat :      filename -> string list
 (*e: signature [[Common.cat]] *)

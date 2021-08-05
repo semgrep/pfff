@@ -908,13 +908,73 @@ let cmd_to_list ?verbose command =
 
 let cmd_to_list_and_status = process_output_to_list2
 
+(*
+   Input a line of text from a file in a way that works for Windows files
+   or Unix files in any mode on any platform. Line terminators are eaten
+   up.
+
+   Known bug: CR characters preceding a CRLF sequence are eaten up anyway
+   in text mode on Windows. Workaround: open the file in binary mode.
+
+   Unix file on Unix:    "a\nb"   -> "a"
+   Windows file on Unix: "a\r\nb" -> "a"  (* input_line returns "a\r" *)
+   Unix file on Windows text mode:      "a\nb" -> "a"
+   Unix file on Windows binary mode:    "a\nb" -> "a"
+   Windows file on Windows text mode:   "a\r\nb" -> "a"
+   Windows file on Windows binary mode: "a\r\nb" -> "a"
+
+   What you need to know about Windows vs. Unix line endings
+   =========================================================
+
+   CR designates the byte '\r', LF designates '\n'.
+   CRLF designates the sequence "\r\n".
+
+   On Windows, there are two modes for opening a file for reading or writing:
+   - binary mode, which is the same as on Unix.
+   - text mode, which is special.
+
+   A file opened in text mode on Windows causes the reads and the writes
+   to translate line endings:
+   - read from text file: CRLF -> LF
+   - write to text file: LF -> CRLF
+
+   To avoid these translations when running on Windows, the file must be
+   opened in binary mode.
+
+   Q: When must a file be opened in text mode?
+   A: Never. Only stdin, stdout, and stderr connected to a console should
+      be in text mode but the OS takes care of this for us.
+
+   Q: Really never?
+   A: Never for reading. For writing, maybe some Windows applications behave
+      so badly that they can't recognize single LFs, in which case local logs
+      and such might have to be opened in text mode. See next question.
+
+   Q: Do all text processing applications on Windows support LF line endings
+      in input files?
+   A: Hopefully. They really should. The only way they don't support single LFs
+      is if they open files in binary mode and then search for CRLF
+      sequences as line terminators exclusively, which would be strange.
+
+   Q: Do the parsers in pfff support all line endings?
+   A: Yes unless there's a bug. All parsers for real programming languages
+      should use the pattern '\r'?'\n' to match line endings.
+*)
+let input_text_line ic =
+  let s = input_line ic in
+  let len = String.length s in
+  if len > 0 && s.[len-1] = '\r' then
+    String.sub s 0 (len-1)
+  else
+    s
 
 (* tail recursive efficient version *)
 let cat file =
   let chan = open_in_bin file in
   let rec cat_aux acc ()  =
     (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
-    let (b, l) = try (true, input_line chan) with End_of_file -> (false, "") in
+    let (b, l) =
+      try (true, input_text_line chan) with End_of_file -> (false, "") in
     if b
     then cat_aux (l::acc) ()
     else acc
@@ -928,6 +988,7 @@ let read_file2 file =
   really_input ic buf 0 size;
   close_in ic;
   buf |> Bytes.to_string
+
 let read_file a =
   profile_code "Common.read_file" (fun () -> read_file2 a)
 
