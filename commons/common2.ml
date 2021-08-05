@@ -2815,7 +2815,7 @@ let indent_string n s =
   |> unlines
 
 
-(* todo opti ? *)
+(* see nblines_eff for a more efficient implementation *)
 let nblines s =
   lines s |> List.length
 (*
@@ -2831,6 +2831,39 @@ let _ = example (nblines "toto\ntata\n" =|= 2)
 *)
 
 
+(* from https://gist.github.com/jaspervdj/1162402 *)
+(* Fold over a file in chunks *)
+let fold_file f x file_name =
+  let buffer = Bytes.create 1024 in
+  let file = open_in file_name in
+  let rec go a =
+    let length = input file buffer 0 (Bytes.length buffer) in
+    let a' = f a (Bytes.sub buffer 0 length) in
+    if length > 0 then go a' else a' in
+  let r = go x in
+  close_in file;
+  r
+(* Count the number of newlines in a buffer *)
+let count_newlines s =
+  let rec go n i =
+    try
+      let i' = Bytes.index_from s i '\n' in
+      go (n + 1) (i' + 1)
+    with Not_found -> n in
+  go 0 0
+
+(* Compose the previous two functions to count the lines in a file *)
+let nblines_eff2 file =
+  fold_file (fun x s -> x + count_newlines s) 0 file
+let nblines_eff a =
+  Common.profile_code "Nblines_eff" (fun () -> nblines_eff2 a)
+
+(* old: this could generate some Sys_error "Out of memory" in stressful
+ * conditions because of the repeated calls to input_line which on
+ * huge files will allocate each time new memory. The GC will reclaim
+ * it, but it may be too late and we reach the physical memory limit.
+*)
+(*
 let nblines_eff2 file =
   let res = ref 0 in
   let finished = ref false in
@@ -2843,8 +2876,7 @@ let nblines_eff2 file =
   done;
   close_in ch;
   !res
-let nblines_eff a =
-  Common.profile_code "Nblines_eff" (fun () -> nblines_eff2 a)
+*)
 
 
 
