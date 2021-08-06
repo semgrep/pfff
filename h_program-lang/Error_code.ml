@@ -388,7 +388,9 @@ let exn_to_error file exn =
   (* general case, can't extract line information from it, default to line 1 *)
   | exn ->
       let loc = Parse_info.first_loc_of_file file in
-      mk_error_loc loc (FatalError (Common.exn_to_s exn))
+      let msg =
+        Common.spf "%s\n%s" (Common.exn_to_s exn) (Printexc.get_backtrace ()) in
+      mk_error_loc loc (FatalError msg)
 
 let try_with_exn_to_error file f =
   try
