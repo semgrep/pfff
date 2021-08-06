@@ -373,7 +373,7 @@ let mk_pr2_wrappers aref =
 
 let redirect_stdout file f =
   begin
-    let chan = open_out file in
+    let chan = open_out_bin file in
     let descr = Unix.descr_of_out_channel chan in
 
     let saveout = Unix.dup Unix.stdout in
@@ -393,7 +393,7 @@ let redirect_stdout_opt optfile f =
 
 let redirect_stdout_stderr file f =
   begin
-    let chan = open_out file in
+    let chan = open_out_bin file in
     let descr = Unix.descr_of_out_channel chan in
 
     let saveout = Unix.dup Unix.stdout in
@@ -410,7 +410,7 @@ let redirect_stdout_stderr file f =
 
 let redirect_stdin file f =
   begin
-    let chan = open_in file in
+    let chan = open_in_bin file in
     let descr = Unix.descr_of_in_channel chan in
 
     let savein = Unix.dup Unix.stdin in
@@ -453,7 +453,7 @@ let _chan = ref stderr
 let start_log_file () =
   let filename = (spf "/tmp/debugml%d:%d" (Unix.getuid()) (Unix.getpid())) in
   pr2 (spf "now using %s for logging" filename);
-  _chan := open_out filename
+  _chan := open_out_bin filename
 
 
 let dolog s = output_string !_chan (s ^ "\n"); flush !_chan
@@ -763,12 +763,12 @@ let take_one xs =
 (*****************************************************************************)
 
 let get_value filename =
-  let chan = open_in filename in
+  let chan = open_in_bin filename in
   let x = input_value chan in (* <=> Marshal.from_channel  *)
   (close_in chan; x)
 
 let write_value valu filename =
-  let chan = open_out filename in
+  let chan = open_out_bin filename in
   (output_value chan valu;  (* <=> Marshal.to_channel *)
    (* Marshal.to_channel chan valu [Marshal.Closures]; *)
    close_out chan)
@@ -925,7 +925,7 @@ let mk_str_func_of_assoc_conv xs =
 
 (* put your macro in macro.ml4, and you can test it interactivly as in lisp *)
 let macro_expand s =
-  let c = open_out "/tmp/ttttt.ml" in
+  let c = open_out_bin "/tmp/ttttt.ml" in
   begin
     output_string c s; close_out c;
     command2 ("ocamlc -c -pp 'camlp4o pa_extend.cmo q_MLast.cmo -impl' " ^
@@ -2867,7 +2867,7 @@ let nblines_eff a =
 let nblines_eff2 file =
   let res = ref 0 in
   let finished = ref false in
-  let ch = open_in file in
+  let ch = open_in_bin file in
   while not !finished do
     try
       let _ = input_line ch in
@@ -2901,7 +2901,7 @@ let _ = example (lines_with_nl_either "ab\n\nc" =*=
 (* Process/Files *)
 (*****************************************************************************)
 let cat_orig file =
-  let chan = open_in file in
+  let chan = open_in_bin file in
   let rec cat_orig_aux ()  =
     try
       (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
@@ -2912,7 +2912,7 @@ let cat_orig file =
 
 (* tail recursive efficient version *)
 let cat file =
-  let chan = open_in file in
+  let chan = open_in_bin file in
   let rec cat_aux acc ()  =
     (* cant do input_line chan::aux() cos ocaml eval from right to left ! *)
     let (b, l) = try (true, input_line chan) with End_of_file -> (false, "") in
@@ -3070,7 +3070,7 @@ let mkdir ?(mode=0o770) file =
   Unix.mkdir file mode
 
 let read_file file =
-  let ic = open_in file  in
+  let ic = open_in_bin file  in
   let size = in_channel_length ic in
   let buf = Bytes.create size in
   really_input ic buf 0 size;
@@ -3079,7 +3079,7 @@ let read_file file =
 
 
 let write_file ~file s =
-  let chan = open_out file in
+  let chan = open_out_bin file in
   (output_string chan s; close_out chan)
 
 let unix_stat file =
@@ -3093,7 +3093,7 @@ let filesize file =
   then (unix_stat file).Unix.st_size
   (* src: https://rosettacode.org/wiki/File_size#OCaml *)
   else begin
-    let ic = open_in file in
+    let ic = open_in_bin file in
     let i = in_channel_length ic in
     close_in ic;
     i
@@ -3423,7 +3423,7 @@ let has_env _var =
 
 let (with_open_outfile_append: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) =
   fun file f ->
-  let chan = open_out_gen [Open_creat;Open_append] 0o666 file in
+  let chan = open_out_gen [Open_creat;Open_append;Open_binary] 0o666 file in
   let pr s = output_string chan s in
   Common.unwind_protect (fun () ->
     let res = f (pr, chan) in
@@ -5247,7 +5247,7 @@ let (display: 'a graph -> ('a -> unit) -> unit) = fun g display_func ->
   in aux 0 1
 
 let (display_dot: 'a graph -> ('a -> string) -> unit)= fun (nodes,arcs) func ->
-  let file = open_out "test.dot" in
+  let file = open_out_bin "test.dot" in
   output_string file "digraph misc {\n" ;
   List.iter (fun (n, node) ->
     output_int file n; output_string file " [label=\"";
@@ -5265,7 +5265,7 @@ let (display_dot: 'a graph -> ('a -> string) -> unit)= fun (nodes,arcs) func ->
 (* todo: mettre diff(modulo = !!) en rouge *)
 let (display_dot2: 'a graph -> 'a graph -> ('a -> string) -> unit) =
   fun (nodes1, arcs1) (nodes2, arcs2) func ->
-  let file = open_out "test.dot" in
+  let file = open_out_bin "test.dot" in
   output_string file "digraph misc {\n" ;
   output_string file "rotate = 90;\n";
   List.iter (fun (n, node) ->
@@ -5360,7 +5360,7 @@ type pixel = (int * int * int) (* RGB *)
 (* required pixel list in row major order, line after line *)
 let (write_ppm: int -> int -> (pixel list) -> string -> unit) = fun
   width height xs filename ->
-  let chan = open_out filename in
+  let chan = open_out_bin filename in
   begin
     output_string chan "P6\n";
     output_string chan ((string_of_int width)  ^ "\n");
@@ -5478,7 +5478,7 @@ let parserCommon lexbuf parserer lexer =
 (*
 let getDoubleParser parserer lexer string =
   let lexbuf1 = Lexing.from_string string in
-  let chan = open_in string in
+  let chan = open_in_bin string in
   let lexbuf2 = Lexing.from_channel chan in
   (parserCommon lexbuf1 parserer lexer  , parserCommon lexbuf2 parserer lexer )
 *)
@@ -5490,7 +5490,7 @@ let getDoubleParser parserer lexer =
        parserCommon lexbuf1 parserer lexer
     ),
     (function string ->
-       let chan = open_in string in
+       let chan = open_in_bin string in
        let lexbuf2 = Lexing.from_channel chan in
        parserCommon lexbuf2 parserer lexer
     ))
@@ -5984,7 +5984,7 @@ let format_to_string f =
   Format.print_flush();
   Format.set_formatter_out_channel stdout;
   close_out o;
-  let i = open_in nm in
+  let i = open_in_bin nm in
   let lines = ref [] in
   let rec loop _ =
     let cur = input_line i in

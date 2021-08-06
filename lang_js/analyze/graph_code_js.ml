@@ -681,7 +681,7 @@ let build_gen ?(verbose=false) root files =
   (* use Hashtbl.find_all property *)
   let hstat_lookup_failures = Hashtbl.create 101 in
 
-  let chan = open_out (Filename.concat root "pfff.log") in
+  let chan = open_out_bin (Filename.concat root "pfff.log") in
 
   let env = {
     g;

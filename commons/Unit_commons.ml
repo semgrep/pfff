@@ -47,9 +47,32 @@ let test_common_map =
   in
   tests
 
+(*
+   Check that both Windows (CRLF) and Unix line endings (LF) are removed
+   when reading a line. This is a problem with Stdlib.input_line, which
+   leaves a trailing '\r' when reading a file from Windows.
+*)
+let test_cat () =
+  let contents = "\
+hello\r\n\
+world\n\
+!"
+  in
+  let file = Filename.temp_file "test_cat_" ".txt" in
+  let oc = open_out_bin file in
+  output_string oc contents;
+  close_out oc;
+  match Common.cat file with
+  | ["hello"; "world"; "!"] -> ()
+  | lines ->
+      List.iteri (fun i line -> eprintf "line %i: %S\n" i line) lines;
+      flush stderr;
+      assert false
+
 let unittest =
   "commons" >::: [
     "common" >::: [
       "map" >::: test_common_map;
+      "cat" >:: test_cat;
     ]
   ]

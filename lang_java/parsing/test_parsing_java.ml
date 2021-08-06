@@ -59,7 +59,7 @@ let test_parse xs  =
   ()
 
 let test_lexer file =
-  let lexbuf = Lexing.from_channel (open_in file) in
+  let lexbuf = Lexing.from_channel (open_in_bin file) in
   while true do
     let result = Lexer_java.token lexbuf in
     pr2_gen result;

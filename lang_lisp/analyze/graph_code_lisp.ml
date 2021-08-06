@@ -235,7 +235,7 @@ let build ?(verbose=true) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let chan = open_out (Filename.concat root "pfff.log") in
+  let chan = open_out_bin (Filename.concat root "pfff.log") in
 
   let env = {
     g;

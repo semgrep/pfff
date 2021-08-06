@@ -1073,7 +1073,7 @@ let build
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let chan = open_out logfile in
+  let chan = open_out_bin logfile in
   let env = {
     g;
 

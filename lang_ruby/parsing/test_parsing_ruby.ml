@@ -17,7 +17,7 @@ let test_tokens file =
   Flag.exn_when_lexical_error := true;
 *)
 
-  let ic = open_in file in
+  let ic = open_in_bin file in
   let lexbuf = Lexing.from_channel ic in
   let state = Lexer_parser_ruby.create ("top_lexer", Lexer_ruby.top_lexer) in
 
