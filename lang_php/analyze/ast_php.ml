@@ -235,6 +235,7 @@ and special =
   | Eval
 
 and binaryOp =
+  (* TODO: now available in AST_generic_ ? *)
   | BinaryConcat
   | CombinedComparison
   | ArithOp of AST_generic_.operator
@@ -264,7 +265,6 @@ and hint_type =
   | HintVariadic of tok * hint_type option
 
 and class_name = hint_type
-
 
 (*****************************************************************************)
 (* Statement *)
@@ -321,7 +321,10 @@ and finally = tok * stmt
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
-
+(* TODO: factorize xx_name in an entity type like in AST_generic.ml,
+ * which also lead to a cleaner Lambda and NewAnonClass.
+ * TODO: factorize also the xx_modifiers and xx_attrs?
+*)
 
 (* The func_def type below is actually used both for functions and methods.
  *
@@ -330,7 +333,7 @@ and finally = tok * stmt
  *  - __call, __callStatic
 *)
 and func_def = {
-  (* "_lambda" when used for lambda, see also AnonLambda for f_kind below *)
+  (* TODO: "_lambda" when used for lambda, see also AnonLambda for f_kind below *)
   f_name: ident;
   f_kind: function_kind wrap;
 
@@ -430,11 +433,9 @@ and type_def_kind =
 
 [@@deriving show { with_path = false }] (* with tarzan *)
 
-
 (*****************************************************************************)
 (* Program *)
 (*****************************************************************************)
-
 
 type program = stmt list
 [@@deriving show { with_path = false }] (* with tarzan *)
