@@ -198,7 +198,7 @@ and declaration env x =
   | ExternCList (_, _, _)|ExternC (_, _, _)|TemplateSpecialization (_, _, _)
   | TemplateDecl _ ->
       debug (Toplevel (DeclElem x)); raise CplusplusConstruct
-  | DeclTodo ->
+  | DeclTodo _ ->
       debug (Toplevel (DeclElem x)); raise Todo
 
 
@@ -388,7 +388,7 @@ and cpp_def_val for_debug env x =
   | DefineEmpty -> None
   | DefineFunction _
   | DefineType _
-  | DefineTodo
+  | DefineTodo _
     ->
       debug (Cpp for_debug); raise Todo
 

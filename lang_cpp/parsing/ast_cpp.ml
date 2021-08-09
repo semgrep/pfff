@@ -91,6 +91,9 @@ type 'a angle   = tok * 'a * tok
 type sc = tok
 [@@deriving show]
 
+type todo_category = string wrap
+[@@deriving show]
+
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
 (* ------------------------------------------------------------------------- *)
@@ -106,7 +109,7 @@ type sc = tok
  * converters can not have an associated Qtop. But I prefered to simplify
  * and have a unique type for all those different kinds of names.
 *)
-type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident_or_op
+type name = tok (*::*) option  * (qualifier * tok (*::TODO DELETE*)) list * ident_or_op
 
 and ident_or_op =
   (* function name, macro name, variable, classname, enumname, namespace *)
@@ -200,7 +203,7 @@ and typeC =
   | StructDef of class_definition
 
   (* forunparser: *)
-  | ParenType of type_ paren
+  | ParenType of type_ paren (* TODO DELETE *)
 
 and  baseType =
   | Void of tok
@@ -223,6 +226,7 @@ and sign = Signed | UnSigned
 
 and floatType = CFloat | CDouble | CLongDouble
 
+(* TODO: change to KeywordAttr? *)
 and typeQualifier =
   { const: tok option; volatile: tok option; }
 
@@ -248,6 +252,7 @@ and expr =
    * c++ext: Id is now a 'name' instead of a 'string' and can be
    *  also an operator name.
    * todo: split in Id vs IdQualified like in ast_generic.ml?
+   * TODO: Id -> Name
   *)
   | Id of name * ident_info (* semantic: see check_variables_cpp.ml *)
   | C of constant
@@ -311,8 +316,9 @@ and expr =
   | Ellipses of tok
   | DeepEllipsis of expr bracket
 
-  | ExprTodo of tok
   | TypedMetavar of ident * type_
+
+  | ExprTodo of todo_category * expr list
 
 (* see check_variables_cpp.ml *)
 and ident_info = {
@@ -439,7 +445,7 @@ and stmt =
   (* cppext: *)
   | MacroStmt of tok
 
-  | StmtTodo of tok
+  | StmtTodo of todo_category * stmt list
 
 (* cppext: c++ext:
  * old: compound = (declaration list * stmt list)
@@ -569,14 +575,16 @@ and func_definition = {
 and functionType = {
   ft_ret: type_; (* fake return type for ctor/dtor *)
   ft_params: parameter list paren;
-  ft_dots: (tok(*,*) * tok(*...*)) option;
+  ft_dots: (tok(*,*) (* TODO DELETE *) * tok(*...*)) option;
   (* c++ext: *)
+  (* TODO: via attribute *)
   ft_const: tok option; (* only for methods, TODO put in attribute? *)
   ft_throw: exn_spec option;
 }
 and parameter = {
   p_name: ident option;
   p_type: type_;
+  (* TODO: via attribute *)
   p_register: tok option; (* TODO put in attribute? *)
   (* c++ext: *)
   p_val: (tok (*=*) * expr) option;
@@ -702,7 +710,7 @@ and define_val =
   | DefineDoWhileZero of tok * stmt * tok * tok paren
   | DefinePrintWrapper of tok (* if *) * expr paren * name
 
-  | DefineTodo
+  | DefineTodo of todo_category
 
 and inc_kind =
   | Local (* "" *)
@@ -757,7 +765,7 @@ and declaration =
   (* gccext: allow redundant ';' *)
   | EmptyDef of sc
 
-  | DeclTodo
+  | DeclTodo of todo_category
 
 (* c++ext: *)
 and template_parameter = parameter (* todo? more? *)

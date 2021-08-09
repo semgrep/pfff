@@ -576,9 +576,11 @@ postfix_expr:
  | cast_constructor_expr { $1 }
 
  (* c++0x: *)
- | simple_type_specifier braced_init_list  { ExprTodo (Common2.fst3 $2) }
+ | simple_type_specifier braced_init_list
+    { ExprTodo (("CtorBrace", Common2.fst3 $2), []) }
  (* TODO: should be typename, but require new parsing_hack_typedef *)
- | TIdent braced_init_list { ExprTodo (Common2.fst3 $2) }
+ | TIdent braced_init_list
+    { ExprTodo (("CtorBrace", snd $1), [(*TODO $2*)]) }
 
 
 primary_expr:
@@ -595,7 +597,7 @@ primary_expr:
  (* contains identifier rule *)
  | primary_cplusplus_id { $1 }
  (* c++0x: *)
- | lambda_introducer compound { ExprTodo $1 }
+ | lambda_introducer compound { ExprTodo (("lambda", $1), [(*TODO $2*)]) }
  | LDots expr RDots { DeepEllipsis ($1, $2, $3) }
 
 literal:
@@ -642,7 +644,7 @@ cast_operator_expr:
      { CplusplusCast ($1, ($2, $3, $4), ($5, $6, $7)) }
 (* TODO: remove once we don't skip template arguments *)
  | cpp_cast_operator "(" expr ")"
-     { ExprTodo $2 }
+     { ExprTodo (("CppCast", $2), [$3]) }
 
 (*c++ext:*)
 cpp_cast_operator:
@@ -827,7 +829,7 @@ iteration:
      { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
  (* c++ext: *)
  | Tfor "(" for_range_decl ":" for_range_init ")" statement
-     { StmtTodo $1 }
+     { StmtTodo (("ForEach", $1), [$7]) }
  (* cppext: *)
  | TIdent_MacroIterator "(" optl(listc(argument)) ")" statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
@@ -861,7 +863,7 @@ condition:
  | expr { $1 }
  (* c++ext: *)
  | decl_spec_seq declaratori "=" initializer_clause
-     { ExprTodo (PI.fake_info "TODO") }
+     { ExprTodo (("DeclCondition", $3), []) }
 
 for_init_stmt:
  | expr_statement { $1 }
@@ -1726,21 +1728,21 @@ ctor_dtor:
  | nested_name_specifier TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { DeclTodo }
+     { DeclTodo ("DeclCtor", $3)  }
  (* new_type_id, could also introduce a Tdestructorname or forbidy the
       TypedefIdent2 transfo by putting a guard in the lalr(k) rule by
       checking if have a ~ before
    *)
  | nested_name_specifier TTilde ident "(" Tvoid? ")" compound
-     { DeclTodo }
+     { DeclTodo ("DeclDtor", $2) }
 
 (* TODO: remove once we don't skip qualifiers *)
  | Tinline? TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { DeclTodo }
+     { DeclTodo ("DeclCtor", $3) }
  | TTilde ident "(" Tvoid? ")" exn_spec? compound
-     { DeclTodo }
+     { DeclTodo ("DeclDtor", $1) }
 
 
 
