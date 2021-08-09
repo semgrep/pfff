@@ -13,9 +13,9 @@
  * license.txt for more details.
 *)
 
-open Cst_cpp
+open Ast_cpp
 
-module Ast = Cst_cpp
+module Ast = Ast_cpp
 module V = Visitor_cpp
 module E = Error_code
 module S = Scope_code
@@ -150,7 +150,7 @@ let visit_prog prog =
                   do_in_new_scope_and_check (fun () ->
                     (match x with
                      | Define (_, _id, DefineFunc params, _body) ->
-                         params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (s, ii) ->
+                         params |> Ast.unparen |> List.iter (fun (s, ii) ->
                            add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
                          );
                      | _ -> ()
@@ -170,7 +170,7 @@ let visit_prog prog =
                 V.kblock_decl = (fun (k, _) x ->
                   match x with
                   | DeclList (xs_comma, _) ->
-                      xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
+                      xs_comma |> List.iter (fun onedecl ->
                         onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
                           let scope =
                             if is_top_env !_scoped_env ||

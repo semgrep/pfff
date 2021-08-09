@@ -18,7 +18,7 @@
  *)
 open Common
 
-open Cst_cpp
+open Ast_cpp
 open Parser_cpp_mly_helper
 
 module PI = Parse_info
@@ -70,8 +70,8 @@ module PI = Parse_info
 (* The C tokens *)
 (*-----------------------------------------*)
 %token <int option * Parse_info.t>                       TInt
-%token <(float option * Parse_info.t) * Cst_cpp.floatType> TFloat
-%token <(string * Parse_info.t) * Cst_cpp.isWchar>   TChar TString
+%token <(float option * Parse_info.t) * Ast_cpp.floatType> TFloat
+%token <(string * Parse_info.t) * Ast_cpp.isWchar>   TChar TString
 
 %token <string * Parse_info.t> TIdent
 (* fresh_token: appear after some fix_tokens in parsing_hack.ml *)
@@ -88,7 +88,7 @@ module PI = Parse_info
 
 %token <Parse_info.t> TDot TPtrOp     TInc TDec
 %token <Parse_info.t> TComma "," TPtVirg ";"
-%token <Cst_cpp.assignOp> TAssign
+%token <Ast_cpp.assignOp> TAssign
 %token <Parse_info.t> TEq "=" TWhy "?"  TTilde TBang TCol ":" TEllipsis "..."
 %token <Parse_info.t>
   TOrLog TAndLog "&&" TOr TXor TAnd "&"  TEqEq TNotEq TInfEq TSupEq
@@ -243,9 +243,9 @@ module PI = Parse_info
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-%start <Cst_cpp.program> main
-%start <Cst_cpp.toplevel option> toplevel
-%start <Cst_cpp.any> sgrep_spatch_pattern
+%start <Ast_cpp.program> main
+%start <Ast_cpp.toplevel option> toplevel
+%start <Ast_cpp.any> sgrep_spatch_pattern
 
 %%
 (*************************************************************************)
@@ -276,8 +276,8 @@ module PI = Parse_info
 (*************************************************************************)
 
 listc(X):
- | X { [$1, []] }
- | listc(X) "," X { $1 @ [$3, [$2]] }
+ | X { [$1] }
+ | listc(X) "," X { $1 @ [$3] }
 
 optl(X):
  | (* empty *) { [] }
@@ -1117,8 +1117,8 @@ parameter_decl:
 (*----------------------------*)
 
 parameter_list:
- | parameter_decl2                    { [$1, []] }
- | parameter_list "," parameter_decl2 { $1 @ [$3,  [$2]] }
+ | parameter_decl2                    { [$1] }
+ | parameter_list "," parameter_decl2 { $1 @ [$3] }
 
 parameter_decl2:
  | parameter_decl { $1 }
@@ -1136,9 +1136,9 @@ parameter_decl2:
  *)
 exn_spec:
  | Tthrow "(" ")"                        { ($1, ($2, [], $3)) }
- | Tthrow "(" exn_name ")"               { ($1, ($2, [Left $3], $4)) }
+ | Tthrow "(" exn_name ")"               { ($1, ($2, [$3], $4)) }
  | Tthrow "(" exn_name "," exn_name ")"
-     { ($1, ($2, [Left $3; Right $4; Left $5], $6))  }
+     { ($1, ($2, [$3; $5], $6))  }
 
 exn_name: ident { None, [], IdIdent $1 }
 
@@ -1342,11 +1342,11 @@ field_declaration:
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
-       ([(FieldDecl onedecl),noii], $2)
+       ([(FieldDecl onedecl)], $2)
      }
  | decl_spec_seq listc(member_declarator) ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       ($2 |> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
+       ($2 |> (List.map (fun (f) -> f t_ret sto)), $3)
      }
 
 (* was called struct_declarator before *)
@@ -1413,17 +1413,16 @@ enum_base: ":" type_spec_seq2 { }
 simple_declaration:
  | decl_spec_seq ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],$2)
+       DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto}],$2)
      }
  | decl_spec_seq listc(init_declarator) ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        DeclList (
-         ($2 |> List.map (fun (((name, f), iniopt), iivirg) ->
+         ($2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            { v_namei = Some (name, iniopt);
              v_type = f t_ret; v_storage = sto
-           },
-           iivirg
+           }
          )), $3)
      }
  (* cppext: *)
@@ -1523,8 +1522,8 @@ braced_init_list:
  * do a  'initialize2 Tcomma initialize_list'.
  *)
 initialize_list:
- | initialize2                        { [$1,   []] }
- | initialize_list "," initialize2 { ($3,  [$2])::$1 }
+ | initialize2                        { [$1] }
+ | initialize_list "," initialize2 { ($3)::$1 }
 
 
 (* gccext: condexpr and no assign_expr cos can have ambiguity with comma *)

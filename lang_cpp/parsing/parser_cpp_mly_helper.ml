@@ -1,7 +1,7 @@
 open Common
-open Cst_cpp
+open Ast_cpp
 
-module Ast = Cst_cpp
+module Ast = Ast_cpp
 module Flag = Flag_parsing
 
 (*****************************************************************************)
@@ -14,7 +14,7 @@ let warning s v =
   then Common2.warning ("PARSING: " ^ s) v
   else v
 
-exception Semantic of string * Cst_cpp.tok
+exception Semantic of string * Ast_cpp.tok
 
 let fake s = Parse_info.fake_info s
 
@@ -27,6 +27,9 @@ let fake s = Parse_info.fake_info s
 (*-------------------------------------------------------------------------- *)
 
 type shortLong = Short | Long | LongLong
+
+(* TODO: delete *)
+type 'a wrapx  = 'a * tok list
 
 (* note: have a full_info: parse_info list; to remember ordering
  * between storage, qualifier, type? well this info is already in
@@ -235,7 +238,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
        * definition), then you must write a name within the declarator.
        * Otherwise, you can omit the name. *)
       (match Ast.unparen params with
-       | [{p_name = None; p_type = ty2;_},_] ->
+       | [{p_name = None; p_type = ty2;_}] ->
            (match Ast.unwrap_typeC ty2 with
             | BaseType (Void _) -> ty
             | _ ->
@@ -251,7 +254,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
                 ty
            )
        | params ->
-           (params |> List.iter (fun (param,_) ->
+           (params |> List.iter (fun (param) ->
               match param with
               | {p_name = None; p_type = _ty2; _} ->
                   (* see above
@@ -282,7 +285,7 @@ let fixFunc ((name, ty, sto), cp) =
       assert (aQ =*= nQ);
 
       (match Ast.unparen params with
-         [{p_name= None; p_type = ty2;_}, _] ->
+         [{p_name= None; p_type = ty2;_}] ->
            (match Ast.unwrap_typeC ty2 with
             | BaseType (Void _) -> ()
             (* failwith "internal errror: fixOldCDecl not good" *)
@@ -290,7 +293,7 @@ let fixFunc ((name, ty, sto), cp) =
            )
        | params ->
            params |> List.iter (function
-             | ({p_name = Some _s;_}, _) -> ()
+             | ({p_name = Some _s;_}) -> ()
              (* failwith "internal errror: fixOldCDecl not good" *)
              | _ -> ()
            )
@@ -306,7 +309,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
     v_namei = Some (name, ini_opt);
     v_type = (q, (FunctionType ft));
     v_storage = sto;
-  }), _noiicomma] ->
+  })] ->
       (* todo? define another type instead of onedecl? *)
       MemberDecl (MethodDecl ({
         v_namei = Some (name, None);

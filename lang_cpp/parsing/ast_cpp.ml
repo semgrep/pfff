@@ -4,7 +4,7 @@
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2019-2020 r2c
+ * Copyright (C) 2019-2021 r2c
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -19,7 +19,7 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* A Concrete Syntax Tree for C/C++/Cpp.
+(* An Abstract Syntax Tree for C/C++/Cpp.
  *
  * This is a big file. C++ is a big and complicated language, and dealing
  * directly with preprocessor constructs from cpp makes the language
@@ -31,6 +31,8 @@
  * and C++ constructs (see c++ext:), and a few kencc (the plan9 compiler)
  * extensions (see kenccext:). Finally it was extended to deal with
  * a few C++0x and C++11 extensions (see c++0x:).
+ * Finally it was converted back to an AST (actually half AST, half CST)
+ * for semgrep and to be the target of tree-sitter-cpp.
  *
  * gcc introduced StatementExpr which made 'expr' and 'stmt' mutually
  * recursive. It also added NestedFunc for even more mutual recursivity.
@@ -74,22 +76,20 @@ type tok = Parse_info.t
 
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap  = 'a * tok
+[@@deriving show]
 
-(* TODO: delete *)
-and 'a wrapx  = 'a * tok list
-
-and 'a paren   = tok * 'a * tok
-and 'a brace   = tok * 'a * tok
-and 'a bracket = tok * 'a * tok
-and 'a angle   = tok * 'a * tok
-
-and 'a comma_list = 'a wrapx list
-and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
+type 'a paren   = tok * 'a * tok
+[@@deriving show]
+type 'a brace   = tok * 'a * tok
+[@@deriving show]
+type 'a bracket = tok * 'a * tok
+[@@deriving show]
+type 'a angle   = tok * 'a * tok
+[@@deriving show]
 
 (* semicolon *)
-and sc = tok
-
-[@@deriving show] (* with tarzan *)
+type sc = tok
+[@@deriving show]
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, name, scope qualifier *)
@@ -120,7 +120,7 @@ and ident_or_op =
 
 and ident = string wrap
 
-and template_arguments = template_argument comma_list angle
+and template_arguments = template_argument list angle
 (* C++ allows integers for template arguments! (=~ dependent types) *)
 and template_argument = (type_, expr) Common.either
 
@@ -255,7 +255,7 @@ and expr =
   (* I used to have FunCallSimple but not that useful, and we want scope info
    * for FunCallSimple too because can have fn(...) where fn is actually
    * a local *)
-  | Call of expr * argument comma_list paren
+  | Call of expr * argument list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
   | CondExpr       of expr * tok * expr option * tok * expr
@@ -288,17 +288,17 @@ and expr =
   (* gccext: *)
   | StatementExpr of compound paren (* ( {  } ) new scope*)
   (* gccext: kenccext: *)
-  | GccConstructor  of type_ paren * initialiser comma_list brace
+  | GccConstructor  of type_ paren * initialiser list brace
 
   (* c++ext: *)
   | This of tok
-  | ConstructedObject of type_ * argument comma_list paren
+  | ConstructedObject of type_ * argument list paren
   | TypeId     of tok * (type_, expr) Common.either paren
   | CplusplusCast of cast_operator wrap * type_ angle * expr paren
   | New of tok (*::*) option * tok *
-           argument comma_list paren option (* placement *) *
+           argument list paren option (* placement *) *
            type_ *
-           argument comma_list paren option (* initializer *)
+           argument list paren option (* initializer *)
 
   | Delete      of tok (*::*) option * tok * expr
   | DeleteArray of tok (*::*) option * tok * unit bracket * expr
@@ -416,7 +416,7 @@ and stmt =
       (expr option * sc * expr option * sc * expr option) paren *
       stmt
   (* cppext: *)
-  | MacroIteration of ident * argument comma_list paren * stmt
+  | MacroIteration of ident * argument list paren * stmt
 
   | Jump          of jump * sc
 
@@ -483,10 +483,10 @@ and block_declaration =
    * note: before the need for unparser, I didn't have a DeclList but just
    * a Decl.
   *)
-  | DeclList of onedecl comma_list * sc
+  | DeclList of onedecl list * sc
 
   (* cppext: todo? now factorize with MacroTop ?  *)
-  | MacroDecl of tok list * ident * argument comma_list paren * tok
+  | MacroDecl of tok list * ident * argument list paren * tok
 
   (* c++ext: using namespace *)
   | UsingDecl of (tok * name * sc)
@@ -497,7 +497,7 @@ and block_declaration =
 
 (* gccext: *)
 and asmbody = string wrap list * colon list
-and colon = Colon of tok (* : *) * colon_option comma_list
+and colon = Colon of tok (* : *) * colon_option list
 and colon_option =
   | ColonExpr of tok list * expr paren
   | ColonMisc of tok list
@@ -531,11 +531,11 @@ and _func_specifier = Inline | Virtual
 and init =
   | EqInit of tok (*=*) * initialiser
   (* c++ext: constructed object *)
-  | ObjInit of argument comma_list paren
+  | ObjInit of argument list paren
 
 and initialiser =
   | InitExpr of expr
-  | InitList of initialiser comma_list brace
+  | InitList of initialiser list brace
   (* gccext: *)
   | InitDesignators of designator list * tok (*=*) * initialiser
   | InitFieldOld  of ident * tok (*:*) * initialiser
@@ -568,7 +568,7 @@ and func_definition = {
 }
 and functionType = {
   ft_ret: type_; (* fake return type for ctor/dtor *)
-  ft_params: parameter comma_list paren;
+  ft_params: parameter list paren;
   ft_dots: (tok(*,*) * tok(*...*)) option;
   (* c++ext: *)
   ft_const: tok option; (* only for methods, TODO put in attribute? *)
@@ -581,7 +581,7 @@ and parameter = {
   (* c++ext: *)
   p_val: (tok (*=*) * expr) option;
 }
-and exn_spec = (tok * name comma_list2 paren)
+and exn_spec = (tok * name list paren)
 
 (* less: simplify? need differentiate at this level? could have
  * is_ctor, is_dtor helper instead.
@@ -596,7 +596,7 @@ and func_or_else =
 and method_decl =
   | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * sc
   | ConstructorDecl of
-      ident * parameter comma_list paren * sc
+      ident * parameter list paren * sc
   | DestructorDecl of
       tok(*~*) * ident * tok option paren * exn_spec option * sc
 
@@ -605,7 +605,7 @@ and method_decl =
 (* ------------------------------------------------------------------------- *)
 (* less: use a record *)
 and enum_definition =
-  tok (*enum*) * ident option * enum_elem comma_list brace
+  tok (*enum*) * ident option * enum_elem list brace
 
 and enum_elem = {
   e_name: ident;
@@ -620,7 +620,7 @@ and class_definition = {
   (* the ident can be a template_id when do template specialization. *)
   c_name: ident_name(*class_name??*) option;
   (* c++ext: *)
-  c_inherit: (tok (* ':' *) * base_clause comma_list) option;
+  c_inherit: (tok (* ':' *) * base_clause list) option;
   c_members: class_member_sequencable list brace (* new scope *);
 }
 and structUnion =
@@ -643,7 +643,7 @@ and class_member =
   | Access of access_spec wrap * tok (*:*)
 
   (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-  | MemberField of fieldkind comma_list * sc
+  | MemberField of fieldkind list * sc
   | MemberFunc of func_or_else
   | MemberDecl of method_decl
 
@@ -688,7 +688,7 @@ and cpp_directive =
 
 and define_kind =
   | DefineVar
-  | DefineFunc   of string wrap comma_list paren
+  | DefineFunc   of string wrap list paren
 and define_val =
   | DefineExpr of expr
   | DefineStmt of stmt
@@ -761,7 +761,7 @@ and declaration =
 
 (* c++ext: *)
 and template_parameter = parameter (* todo? more? *)
-and template_parameters = template_parameter comma_list angle
+and template_parameters = template_parameter list angle
 
 (* easier to put at stmt_list level than stmt level *)
 and declaration_sequencable =
@@ -771,7 +771,7 @@ and declaration_sequencable =
   | CppDirectiveDecl of cpp_directive
   | IfdefDecl of ifdef_directive (* * toplevel list *)
   (* cppext: *)
-  | MacroTop of ident * argument comma_list paren * tok option
+  | MacroTop of ident * argument list paren * tok option
   | MacroVarTop of ident * sc
 
   (* could also be in decl *)
@@ -833,7 +833,6 @@ let noQscope = []
 (* Wrappers *)
 (*****************************************************************************)
 let unwrap x = fst x
-let uncomma xs = Common.map fst xs
 let unparen (_, x, _) = x
 let unbrace (_, x, _) = x
 

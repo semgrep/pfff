@@ -14,7 +14,7 @@
 *)
 open Common
 
-open Cst_cpp
+open Ast_cpp
 module A = Ast_c
 module PI = Parse_info
 
@@ -75,7 +75,7 @@ let gensym_enum cnt =
   spf "__anon_enum_%d" cnt
 
 let debug any =
-  logger#debug "%s" (Cst_cpp.show_any any)
+  logger#debug "%s" (Ast_cpp.show_any any)
 
 let rec ifdef_skipper xs f =
 
@@ -231,7 +231,7 @@ and function_type env x =
       );
 
       (full_type env ret,
-       List.map (parameter env) (params |> unparen |> uncomma)
+       List.map (parameter env) (params |> unparen)
       )
 
 and parameter env x =
@@ -285,7 +285,7 @@ and onedecl env d =
            env.typedefs_toadd <- def :: env.typedefs_toadd;
            None
        | None, NoSto ->
-           (match Cst_cpp.unwrap_typeC ft with
+           (match Ast_cpp.unwrap_typeC ft with
             (* it's ok to not have any var decl as long as a type
              * was defined. struct_defs_toadd should not be empty then.
             *)
@@ -305,18 +305,18 @@ and initialiser env x =
   match x with
   | InitExpr e -> expr env e
   | InitList xs ->
-      (match xs |> unbrace |> uncomma with
+      (match xs |> unbrace with
        | [] -> debug (Init x); raise Impossible
        | (InitDesignators ([DesignatorField (_, _)], _, _init))::_ ->
            A.RecordInit (bracket_keep (fun xs ->
-             xs |> uncomma |> List.map (function
+             xs |> List.map (function
                | InitDesignators ([DesignatorField (_, ident)], _, init) ->
                    ident, initialiser env init
                | _ -> debug (Init x); raise Todo
              )) xs)
        | _ ->
            A.ArrayInit (bracket_keep (fun xs ->
-             xs |> uncomma |> Common.map (function
+             xs |> Common.map (function
                (* less: todo? *)
                | InitIndexOld ((_, idx, _), ini) ->
                    Some (expr env idx), initialiser env ini
@@ -353,7 +353,7 @@ and cpp_directive env x =
            A.Define (tok, name, v)
        | DefineFunc(args) ->
            A.Macro(tok, name,
-                   args |> unparen |> uncomma |> List.map (fun (s, ii) ->
+                   args |> unparen |> List.map (fun (s, ii) ->
                      (s, ii)
                    ),
                    v)
@@ -511,7 +511,6 @@ and cases env st =
 and block_declaration env block_decl =
   match block_decl with
   | DeclList (xs, _) ->
-      let xs = uncomma xs in
       A.Vars (Common.map_filter (onedecl env) xs)
 
   (* todo *)
@@ -566,7 +565,7 @@ and expr env e =
                   expr env e3)
   | Call (e, (t1, args, t2)) ->
       A.Call (expr env e,
-              (t1, Common.map_filter (argument env) (args |> uncomma), t2))
+              (t1, Common.map_filter (argument env) (args), t2))
 
   | SizeOfExpr (tok, e) ->
       A.SizeOf(tok, Left (expr env e))
@@ -700,7 +699,7 @@ and full_type env x =
         | Some n -> n
       in
       let xs' =
-        xs |> unbrace |> uncomma |> List.map (fun eelem ->
+        xs |> unbrace |> List.map (fun eelem ->
           let (name, e_opt) = eelem.e_name, eelem.e_val in
           name,
           match e_opt with
@@ -725,7 +724,7 @@ and full_type env x =
 and class_member env x =
   match x with
   | MemberField (fldkind, _) ->
-      let xs = uncomma fldkind in
+      let xs = fldkind in
       xs |> List.map (fieldkind env)
   | ( UsingDeclInClass _| TemplateDeclInClass _
     | QualifiedIdInClass (_, _)| MemberDecl _| MemberFunc _| Access (_, _)

@@ -1,5 +1,5 @@
 
-open Cst_cpp
+open Ast_cpp
 
 (* the hooks *)
 type visitor_in = {

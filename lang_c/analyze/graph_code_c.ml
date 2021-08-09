@@ -638,7 +638,7 @@ and definition env x =
              eopt |> Common.do_option (fun e ->
                let n = name in
                expr_toplevel env
-                 (Assign ((Cst_cpp.SimpleAssign (snd n)), Id n, e))
+                 (Assign ((Ast_cpp.SimpleAssign (snd n)), Id n, e))
              )
        | _ -> raise Impossible
       )
@@ -800,7 +800,7 @@ and stmt env = function
         (match eopt with
          | None -> ()
          | Some e ->
-             expr_toplevel env (Assign ((Cst_cpp.SimpleAssign (snd n)), Id n, e))
+             expr_toplevel env (Assign ((Ast_cpp.SimpleAssign (snd n)), Id n, e))
         )
 
       )
@@ -909,7 +909,7 @@ and expr env = function
   | Unary (e, op) ->
       (match Ast.unwrap op with
        (* if get the address probably one wants to modify it *)
-       | Cst_cpp.GetRef -> expr { env with in_assign = true } e
+       | Ast_cpp.GetRef -> expr { env with in_assign = true } e
        | _ -> expr env e
       )
   | Binary (e1, _op, e2) -> exprs env [e1;e2]

@@ -149,7 +149,7 @@ and expr =
   | Call of expr * argument list bracket
 
   (* should be a statement ... but see Datalog_c.instr *)
-  | Assign of Cst_cpp.assignOp * expr * expr
+  | Assign of Ast_cpp.assignOp * expr * expr
 
   | ArrayAccess of expr * expr bracket (* x[y] *)
   (* Why x->y instead of x.y choice? it's easier then with datalog
@@ -161,11 +161,11 @@ and expr =
   | Cast of type_ * expr
 
   (* less: transform into Call (builtin ...) ? *)
-  | Postfix of expr * Cst_cpp.fixOp wrap
-  | Infix of expr * Cst_cpp.fixOp wrap
+  | Postfix of expr * Ast_cpp.fixOp wrap
+  | Infix of expr * Ast_cpp.fixOp wrap
   (* less: contains GetRef and Deref!! lift up? *)
-  | Unary of expr * Cst_cpp.unaryOp wrap
-  | Binary of expr * Cst_cpp.binaryOp wrap * expr
+  | Unary of expr * Ast_cpp.unaryOp wrap
+  | Binary of expr * Ast_cpp.binaryOp wrap * expr
 
   (* todo: tok *)
   | CondExpr of expr * expr * expr

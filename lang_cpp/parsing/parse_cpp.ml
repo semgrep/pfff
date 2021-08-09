@@ -18,7 +18,7 @@ module PI = Parse_info
 module Stat = Parse_info
 module FT = File_type
 
-module Ast = Cst_cpp
+module Ast = Ast_cpp
 module Flag_cpp = Flag_parsing_cpp
 module T = Parser_cpp
 module TH = Token_helpers_cpp

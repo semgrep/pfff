@@ -14,13 +14,13 @@
 *)
 open Common
 
-open Cst_cpp
+open Ast_cpp
 open Entity_code
 open Highlight_code
 
 module S = Scope_code
 module PI = Parse_info
-module Ast = Cst_cpp
+module Ast = Ast_cpp
 module V = Visitor_cpp
 module Lib = Lib_parsing_cpp
 module T = Parser_cpp
@@ -194,8 +194,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
     V.kblock_decl = (fun (k, _) x ->
       match x with
-      | DeclList (xs_comma, _) ->
-          xs_comma |> Ast.uncomma |> List.iter (fun onedecl ->
+      | DeclList (xs, _) ->
+          xs |> List.iter (fun onedecl ->
             onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
               let storage = onedecl.v_storage in
               let categ =
@@ -341,7 +341,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           );
           k x
 
-      | Cst_cpp.EnumName (_tok, (_s, ii)) ->
+      | Ast_cpp.EnumName (_tok, (_s, ii)) ->
           tag ii (Entity (Type, Use2 fake_no_use2))
 
       | StructUnionName (_su, (_s, ii)) ->
@@ -354,7 +354,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           k x
 
       | EnumDef (_tok, _sopt, xs) ->
-          xs |> unbrace |> uncomma |> List.iter (fun enum_elem ->
+          xs |> unbrace |> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
             tag ii (Entity (Constructor,(Def2 fake_no_def2)))
           );
@@ -424,7 +424,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     V.kcpp = (fun (k,_) def ->
       (match def with
        | Ast.Define (_, _id, DefineFunc params, _body) ->
-           params |> Ast.unparen |> Ast.uncomma |> List.iter (fun (_s, ii) ->
+           params |> Ast.unparen |> List.iter (fun (_s, ii) ->
              tag ii (Parameter Def)
            )
        | _ -> ()

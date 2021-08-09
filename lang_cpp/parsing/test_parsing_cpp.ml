@@ -76,7 +76,7 @@ let test_parse_cpp ?lang xs  =
 let test_dump_cpp file =
   Parse_cpp.init_defs !Flag_cpp.macros_h;
   let ast = Parse_cpp.parse_program file in
-  let s = Cst_cpp.show_program ast in
+  let s = Ast_cpp.show_program ast in
   pr s
 
 let test_dump_cpp_full file =
@@ -87,7 +87,7 @@ let test_dump_cpp_full file =
                      full_info = true; type_info = false; token_info = true;
                    }
   in
-  let s = Cst_cpp.show_program (* TODO ~precision *) ast in
+  let s = Ast_cpp.show_program (* TODO ~precision *) ast in
   pr s;
   toks |> List.iter (fun tok ->
     match tok with

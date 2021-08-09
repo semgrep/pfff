@@ -5,19 +5,19 @@
 *)
 val parse:
   Common.filename ->
-  (Cst_cpp.program, Parser_cpp.token) Parse_info.parsing_result
+  (Ast_cpp.program, Parser_cpp.token) Parse_info.parsing_result
 
 val parse_program:
-  Common.filename -> Cst_cpp.program
+  Common.filename -> Ast_cpp.program
 val parse_with_lang:
   ?lang:Flag_parsing_cpp.language ->
   Common.filename ->
-  (Cst_cpp.program, Parser_cpp.token) Parse_info.parsing_result
+  (Ast_cpp.program, Parser_cpp.token) Parse_info.parsing_result
 
 
 (* other parsers *)
 val any_of_string:
-  Flag_parsing_cpp.language -> string -> Cst_cpp.any
+  Flag_parsing_cpp.language -> string -> Ast_cpp.any
 
 val parse_fuzzy:
   Common.filename ->
@@ -25,7 +25,7 @@ val parse_fuzzy:
 
 (* now in old_glr/
    val parse_with_dypgen:
-   Common.filename -> Cst_cpp.program
+   Common.filename -> Ast_cpp.program
 *)
 
 (* usually correspond to what is inside your macros.h *)

@@ -17,7 +17,7 @@ open Common
 open Ast_c
 open Ast_cil
 module A = Ast_c
-module A2 = Cst_cpp
+module A2 = Ast_cpp
 module D = Datalog_code
 module G = Graph_code
 module E = Entity_code
@@ -285,9 +285,9 @@ let instrs_of_expr env e =
         let v = fresh_var env tokwrap in
         let tok = snd tokwrap in
         let i2 =
-          instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e2)) in
+          instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign tok), A.Id v, e2)) in
         Common.push i2 instrs;
-        instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e3));
+        instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign tok), A.Id v, e3));
 
         (* like GccConstructor can be outside Assign context when in macro *)
         (* todo: an alloc is hidden here?? *)
@@ -296,7 +296,7 @@ let instrs_of_expr env e =
         let tokwrap = tokwrap_of_expr e in
         let v = fresh_var env tokwrap in
         let tok = snd tokwrap in
-        instr_of_expr (A.Assign ((Cst_cpp.SimpleAssign tok), A.Id v, e))
+        instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign tok), A.Id v, e))
 
   and rvalue_of_simple_expr e =
     match e with
@@ -311,7 +311,7 @@ let instrs_of_expr env e =
     | A.Call (A.Id ("malloc", tok), (_, es, _)) ->
         (match es with
          | [Arg (SizeOf(_, Right(t)))] -> Alloc t
-         | [Arg (Binary(e, (Cst_cpp.Arith(Cst_cpp.Mul), _), SizeOf(_, Right(t))))] ->
+         | [Arg (Binary(e, (Ast_cpp.Arith(Ast_cpp.Mul), _), SizeOf(_, Right(t))))] ->
              let v = var_of_expr e in
              AllocArray(v,t)
          | [Arg (SizeOf(_, Left(_e)))] ->
