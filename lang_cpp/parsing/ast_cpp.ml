@@ -230,13 +230,6 @@ and floatType = CFloat | CDouble | CLongDouble
 and typeQualifier =
   { const: tok option; volatile: tok option; }
 
-(* TODO: like in parsing_c/
- * (* gccext: cppext: *)
- * and attribute = attributebis wrap
- *  and attributebis =
- *   | Attribute of string
-*)
-
 (*****************************************************************************)
 (* Expressions *)
 (*****************************************************************************)
@@ -529,11 +522,6 @@ and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap
 and storageClass  = Auto | Static | Register | Extern
 (* Friend ???? Mutable? *)
 
-(*c++ext: TODO *)
-(* I am not sure what it means to declare a prototype inline, but gcc
- * accepts it. *)
-and _func_specifier = Inline | Virtual
-
 and init =
   | EqInit of tok (*=*) * initialiser
   (* c++ext: constructed object *)
@@ -680,6 +668,28 @@ and class_member_sequencable =
   (* cppext: *)
   | CppDirectiveStruct of cpp_directive
   | IfdefStruct of ifdef_directive (*  * field list *)
+
+(*****************************************************************************)
+(* Attributes, modifiers *)
+(*****************************************************************************)
+and attribute =
+  | M of modifier wrap
+
+and modifier =
+  (* what is a prototype inline?? gccaccepts it. *)
+  | Inline
+  (* virtual specifier *)
+  | Virtual
+  | Final | Override
+  (* just for functions *)
+  | MsCall of string (* e.g., __cdecl, __stdcall *)
+
+(* TODO: like in parsing_c/
+ * (* gccext: cppext: *)
+ * and attribute = attributebis wrap
+ *  and attributebis =
+ *   | Attribute of string
+*)
 
 (*****************************************************************************)
 (* Cpp *)
