@@ -395,7 +395,7 @@ qualified_id:
 
 nested_name_specifier:
  | class_or_namespace_name_for_qualifier "::" optl(nested_name_specifier)
-   { ($1, $2)::$3 }
+   { ($1)::$3 }
 
 (* context dependent *)
 class_or_namespace_name_for_qualifier:
@@ -424,7 +424,7 @@ namespace_name: TIdent { $1 }
 nested_name_specifier2:
  | class_or_namespace_name_for_qualifier2
     TColCol_BeforeTypedef optl(nested_name_specifier2)
-     { ($1, $2)::$3 }
+     { ($1)::$3 }
 
 class_or_namespace_name_for_qualifier2:
  | TIdent_ClassnameInQualifier_BeforeTypedef
@@ -454,7 +454,7 @@ assign_expr:
  | cond_expr                     { $1 }
  | cast_expr TAssign assign_expr { Assign ($1, $2,$3)}
  | cast_expr "="     assign_expr { Assign ($1,SimpleAssign $2,$3)}
- (* c++ext: *)
+ (* c++ext: TODO in treesitter it's a stmt *)
  | Tthrow assign_expr?        { Throw ($1, $2) }
 
 (* gccext: allow optional then part hence expr?
@@ -530,9 +530,9 @@ cast_expr:
 
 unary_expr:
  | postfix_expr            { $1 }
- | TInc unary_expr         { Infix ($2, (Inc, $1)) }
- | TDec unary_expr         { Infix ($2, (Dec, $1)) }
- | unary_op cast_expr      { Unary ($2, $1) }
+ | TInc unary_expr         { Prefix ((Inc, $1), $2) }
+ | TDec unary_expr         { Prefix ((Dec, $1), $2) }
+ | unary_op cast_expr      { Unary ($1, $2) }
  | Tsizeof unary_expr      { SizeOfExpr ($1, $2) }
  | Tsizeof "(" type_id ")" { SizeOfType ($1, ($2, $3, $4)) }
  (*c++ext: *)
@@ -586,7 +586,7 @@ postfix_expr:
 primary_expr:
  | literal { $1 }
  (* c++ext: *)
- | Tthis { This $1 }
+ | Tthis { IdSpecial (This, $1) }
  (*c++ext: cf below now. old: TIdent { Ident  (fst $1) [snd $1] }  *)
 
  (* forunparser: *)
@@ -770,7 +770,7 @@ basic_type_2:
 
 statement:
  | compound        { Compound $1 }
- | expr_statement  { ExprStatement (fst $1, snd $1) }
+ | expr_statement  { ExprStmt (fst $1, snd $1) }
  | labeled         { $1 }
  | selection       { $1 }
  | iteration       { $1 }
@@ -795,7 +795,7 @@ statement:
  (* c++ext: *)
  | try_block { $1 }
  (* sgrep-ext: *)
- | "..." { Flag_parsing.sgrep_guard (ExprStatement (Some (Ellipses $1), $1)) }
+ | "..." { Flag_parsing.sgrep_guard (ExprStmt (Some (Ellipses $1), $1)) }
 
 compound: "{" statement_cpp* "}" { ($1, $2, $3) }
 
@@ -814,9 +814,9 @@ labeled:
 (* classic else ambiguity resolved by a %prec, see conflicts.txt *)
 selection:
  | Tif "(" condition ")" statement              %prec LOW_PRIORITY_RULE
-     { If ($1, ($2, $3, $4), $5, None) }
+     { If ($1, None, ($2, $3, $4), $5, None) }
  | Tif "(" condition ")" statement Telse statement
-     { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
+     { If ($1, None, ($2, $3, $4), $5, Some ($6, $7)) }
  | Tswitch "(" condition ")" statement
      { Switch ($1, ($2, $3, $4), $5) }
 
@@ -826,7 +826,7 @@ iteration:
  | Tdo statement Twhile "(" expr ")" ";"
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
  | Tfor "(" for_init_stmt expr_statement expr? ")" statement
-     { For ($1, ($2, (fst $3, snd $3, fst $4, snd $4, $5), $6), $7) }
+     { For ($1, ($2, ForClassic (fst $3, fst $4, $5), $6), $7) }
  (* c++ext: *)
  | Tfor "(" for_range_decl ":" for_range_init ")" statement
      { StmtTodo (("ForEach", $1), [$7]) }
@@ -859,11 +859,12 @@ statement_cpp:
 
 declaration_statement: block_declaration { DeclStmt $1 }
 
+%inline
 condition:
- | expr { $1 }
+ | expr { CondClassic $1 }
  (* c++ext: *)
  | decl_spec_seq declaratori "=" initializer_clause
-     { ExprTodo (("DeclCondition", $3), []) }
+     { CondClassic (ExprTodo (("DeclCondition", $3), [])) }
 
 for_init_stmt:
  | expr_statement { $1 }
@@ -879,8 +880,8 @@ try_block: Ttry compound handler+ { Try ($1, $2, $3) }
 handler: Tcatch "(" exception_decl ")" compound { ($1, ($2, $3, $4), $5) }
 
 exception_decl:
- | parameter_decl { ExnDecl $1 }
- | "..."          { ExnDeclEllipsis $1 }
+ | parameter_decl { [ExnDecl $1] }
+ | "..."          { [ExnDeclEllipsis $1] }
 
 (*************************************************************************)
 (* Types *)
@@ -981,10 +982,10 @@ template_argument:
 
 (* was called type_qualif before *)
 cv_qualif:
- | Tconst    { {const=Some $1; volatile=None} }
- | Tvolatile { {const=None ; volatile=Some $1} }
+ | Tconst    { Const, $1 }
+ | Tvolatile { Volatile, $1 }
  (* C99 *)
- | Trestrict { (* TODO *) {const=None ; volatile=None} }
+ | Trestrict { Restrict, $1 }
 
 (*-----------------------------------------------------------------------*)
 (* Declarator, right part of a type + second part of decl (the ident)   *)
@@ -1142,7 +1143,7 @@ exn_spec:
  | Tthrow "(" exn_name "," exn_name ")"
      { ($1, ($2, [$3; $5], $6))  }
 
-exn_name: ident { None, [], IdIdent $1 }
+exn_name: ident { nQ, TypeName (None, [], IdIdent $1) }
 
 (*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so *)
 const_opt:
@@ -1156,13 +1157,13 @@ const_opt:
  * now structure fields can have storage so fields now use decl_spec. *)
 spec_qualif_list:
  | type_spec                    { addTypeD $1 nullDecl }
- | cv_qualif                    { {nullDecl with qualifD = $1} }
+ | cv_qualif                    { {nullDecl with qualifD = [$1]} }
  | type_spec   spec_qualif_list { addTypeD $1 $2   }
  | cv_qualif   spec_qualif_list { addQualifD $1 $2 }
 
 (* for pointers in direct_declarator and abstract_declarator *)
 cv_qualif_list:
- | cv_qualif                  { {nullDecl with qualifD = $1 } }
+ | cv_qualif                  { {nullDecl with qualifD = [$1] } }
  | cv_qualif_list cv_qualif   { addQualifD $2 $1 }
 
 (* grammar_c++: should be type_spec_seq but conflicts
@@ -1575,11 +1576,14 @@ block_declaration:
 namespace_alias_definition: Tnamespace TIdent "=" qualified_namespace_spec ";"
   { NameSpaceAlias ($1, $2, $3, $4, $5) }
 
-using_directive: Tusing Tnamespace qualified_namespace_spec ";"
+using_directive: Tusing Tnamespace qualified_namespace_spec2 ";"
   { UsingDirective ($1, $2, $3, $4) }
 
 qualified_namespace_spec: "::"? optl(nested_name_specifier) namespace_name
-  { $1, $2, IdIdent $3 }
+  { nQ, TypeName ($1, $2, IdIdent $3) }
+
+qualified_namespace_spec2: "::"? optl(nested_name_specifier) namespace_name
+  { ($1, $2, IdIdent $3) }
 
 (* conflict on TColCol in 'Tusing TColCol unqualified_id ";"'
  * need LALR(2) to see if after tcol have a nested_name_specifier
@@ -1802,13 +1806,16 @@ cpp_directive:
  | TInclude
      { let (_include_str, filename, tok) = $1 in
        (* redo some lexing work :( *)
-       let inc_kind, path =
+       let inc_kind =
          match () with
-         | _ when filename =~ "^\"\\(.*\\)\"$" ->  Local, matched1 filename
-         | _ when filename =~ "^\\<\\(.*\\)\\>$" -> Standard, matched1 filename
-         | _ -> Weird, filename
+         | _ when filename =~ "^\"\\(.*\\)\"$" ->
+          IncLocal (Common.matched1 filename, tok)
+         | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
+          IncSystem (Common.matched1 filename, tok)
+         | _ ->
+          IncOther (Id (name_of_id (filename, tok), noIdInfo()))
        in
-       Include (tok, inc_kind, path)
+       Include (tok, inc_kind)
      }
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro
@@ -1820,7 +1827,7 @@ cpp_directive:
   *)
  | TDefine TIdent_Define TOPar_Define optl(listc(param_define)) ")"
     define_val TCommentNewline_DefineEndOfMacro
-     { Define ($1, $2, (DefineFunc ($3, $4, $5)), $6) (*$7*) }
+     { Define ($1, $2, (DefineMacro ($3, $4, $5)), $6) (*$7*) }
 
  | TUndef             { Undef $1 }
  | TCppDirectiveOther { PragmaAndCo $1 }
@@ -1842,7 +1849,7 @@ define_val:
        | _ -> raise Parsing.Parse_error
      }
  (* for statement-like macro with varargs *)
- | Tif "(" condition ")" id_expression
+ | Tif "(" expr ")" id_expression
      { let name = (None, fst $5, snd $5) in
        DefinePrintWrapper ($1, ($2, $3, $4), name)
      }

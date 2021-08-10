@@ -162,8 +162,10 @@ and expr =
 
   (* less: transform into Call (builtin ...) ? *)
   | Postfix of expr * Ast_cpp.fixOp wrap
+  (* TODO: rename prefix and change order *)
   | Infix of expr * Ast_cpp.fixOp wrap
   (* less: contains GetRef and Deref!! lift up? *)
+  (* TODO: change order *)
   | Unary of expr * Ast_cpp.unaryOp wrap
   | Binary of expr * Ast_cpp.binaryOp wrap * expr
 

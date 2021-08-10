@@ -351,21 +351,22 @@ and cpp_directive env x =
       (match def_kind with
        | DefineVar ->
            A.Define (tok, name, v)
-       | DefineFunc(args) ->
+       | DefineMacro(args) ->
            A.Macro(tok, name,
                    args |> unparen |> List.map (fun (s, ii) ->
                      (s, ii)
                    ),
                    v)
       )
-  | Include (tok, inc_kind, path) ->
+  | Include (tok, inc_kind) ->
       let s =
         match inc_kind with
-        | Local -> "\"" ^ path ^ "\""
-        | Standard -> "<" ^ path ^ ">"
-        | Weird when AST_generic_.is_metavar_name path ->
-            path
-        | Weird ->
+        | IncLocal (path, _)  -> "\"" ^ path ^ "\""
+        | IncSystem (path, _) -> "<" ^ path ^ ">"
+        | IncOther (Id ((None, [], IdIdent (x, _t)), _))
+          when AST_generic_.is_metavar_name x ->
+            x
+        | IncOther _ ->
             debug (Cpp x); raise Todo
       in
       A.Include (tok, (s, tok))
@@ -405,18 +406,18 @@ and stmt env st =
   match st with
   | Compound x -> A.Block (compound env x)
 
-  | If (t, (_, e, _), st1, Some (_, st2)) ->
+  | If (t, _, (_, CondClassic e, _), st1, Some (_, st2)) ->
       A.If (t, expr env e, stmt env st1, Some (stmt env st2))
-  | If (t, (_, e, _), st1, None) ->
+  | If (t, _, (_, CondClassic e, _), st1, None) ->
       A.If (t, expr env e, stmt env st1, None)
-  | Switch (tok, (_, e, _), st) ->
+  | Switch (tok, (_, CondClassic e, _), st) ->
       A.Switch (tok, expr env e, cases env st)
 
-  | While (t, (_, e, _), st) ->
+  | While (t, (_, CondClassic e, _), st) ->
       A.While (t, expr env e, stmt env st)
   | DoWhile (t, st, _, (_, e, _), _) ->
       A.DoWhile (t, stmt env st, expr env e)
-  | For (t, (_, (est1, _, est2, _, est3), _), st) ->
+  | For (t, (_, ForClassic (est1, est2, est3), _), st) ->
       A.For (t,
              expr_or_vars env est1,
              Common2.fmap (expr env) est2,
@@ -427,7 +428,7 @@ and stmt env st =
   | MacroIteration _ ->
       debug (Stmt st); raise Todo
 
-  | ExprStatement (eopt, t) ->
+  | ExprStmt (eopt, t) ->
       (match eopt with
        | None -> A.Block (PI.fake_bracket [])
        | Some e -> A.ExprSt (expr env e, t)
@@ -547,8 +548,8 @@ and expr env e =
   | ArrayAccess (e1, e2) ->
       A.ArrayAccess (expr env e1, bracket_keep (expr env) e2)
   | Binary (e1, op, e2) -> A.Binary (expr env e1, (op), expr env e2)
-  | Unary (e, op) -> A.Unary (expr env e, (op))
-  | Infix  (e, op) -> A.Infix (expr env e, (op))
+  | Unary (op, e) -> A.Unary (expr env e, (op))
+  | Prefix  (op, e) -> A.Infix (expr env e, (op))
   | Postfix (e, op) -> A.Postfix (expr env e, (op))
 
   | Assign (e1, op, e2) ->
@@ -580,17 +581,19 @@ and expr env e =
       debug (Expr e);
       raise CplusplusConstruct
 
-  | StatementExpr _
-  | ExprTodo _
-    ->
-      debug (Expr e); raise Todo
   | Throw _|DeleteArray (_, _, _, _)|Delete (_, _, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
-  | This _
+  | IdSpecial (This, _)
   | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)
   | TypeId (_, _)
     ->
       debug (Expr e); raise CplusplusConstruct
+
+  | StatementExpr _
+  | ExprTodo _
+  | IdSpecial _
+    ->
+      debug (Expr e); raise Todo
 
   | ParenExpr (_, e, _) -> expr env e
   (* sgrep-ext: *)

@@ -38,7 +38,7 @@ type 'a wrapx  = 'a * tok list
 type decl = {
   storageD: storage;
   typeD: (sign option * shortLong option * typeC option) wrapx;
-  qualifD: typeQualifier;
+  qualifD: type_qualifiers;
   inlineD: bool wrapx;
 }
 
@@ -98,16 +98,19 @@ let addTypeD ty decl =
 
 
 let addQualif tq1 tq2 =
-  match tq1, tq2 with
-  | {const=Some _; _},   {const=Some _; _} ->
-      tq2 |> warning "duplicate 'const'"
-  | {volatile=Some _; _}, {volatile=Some _; _} ->
-      tq2 |> warning "duplicate 'volatile'"
-  | {const=Some x; _},   _ ->
-      { tq2 with const = Some x}
-  | {volatile=Some x; _}, _ ->
-      { tq2 with volatile = Some x}
-  | _ -> Common2.internal_error "there is no noconst or novolatile keyword"
+  (* TODO
+     match tq1, tq2 with
+     | {const=Some _; _},   {const=Some _; _} ->
+        tq2 |> warning "duplicate 'const'"
+     | {volatile=Some _; _}, {volatile=Some _; _} ->
+         tq2 |> warning "duplicate 'volatile'"
+         | {const=Some x; _},   _ ->
+         { tq2 with const = Some x}
+         | {volatile=Some x; _}, _ ->
+         { tq2 with volatile = Some x}
+         | _ -> Common2.internal_error "there is no noconst or novolatile keyword"
+       *)
+  tq1::tq2
 
 let addQualifD qu qu2 =
   { qu2 with qualifD = addQualif qu qu2.qualifD }

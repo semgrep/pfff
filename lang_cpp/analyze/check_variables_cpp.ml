@@ -149,7 +149,7 @@ let visit_prog prog =
                 V.kcpp = (fun (k, _) x ->
                   do_in_new_scope_and_check (fun () ->
                     (match x with
-                     | Define (_, _id, DefineFunc params, _body) ->
+                     | Define (_, _id, DefineMacro params, _body) ->
                          params |> Ast.unparen |> List.iter (fun (s, ii) ->
                            add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
                          );
