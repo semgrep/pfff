@@ -161,8 +161,12 @@ let visit_prog prog =
 
                 (* 2: adding defs of name in environment *)
                 V.kparameter = (fun (k, _) param ->
-                  param.p_name  |> Common.do_option (fun ident ->
-                    add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
+                  (match param with
+                   | P param ->
+                       param.p_name  |> Common.do_option (fun ident ->
+                         add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
+                       );
+                       (*| _ -> () *)
                   );
                   k param
                 );
@@ -188,7 +192,7 @@ let visit_prog prog =
                   | MacroDecl _ ->
                       k x
                   | (Asm (_, _, _, _)
-                    |NameSpaceAlias (_, _, _, _, _)|UsingDirective (_, _, _, _)
+                    |NameSpaceAlias (_, _, _, _, _)
                     | UsingDecl _) -> ()
                 );
 

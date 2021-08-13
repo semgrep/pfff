@@ -216,7 +216,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           k x
 
       | ( Asm (_, _, _, _)
-        | NameSpaceAlias (_, _, _, _, _) | UsingDirective (_, _, _, _)
+        | NameSpaceAlias (_, _, _, _, _)
         | UsingDecl _
         ) -> ()
     );
@@ -324,9 +324,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     );
 
     V.kparameter = (fun (k, _) x ->
-      (match x.p_name with
-       | Some (_s, ii) -> tag ii (Parameter Def)
-       | None -> ()
+      (match x with
+       | P {p_name = Some (_s, ii); _} -> tag ii (Parameter Def)
+       | _ -> ()
       );
       k x
     );

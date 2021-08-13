@@ -32,7 +32,7 @@ let is_function_type x =
 
 let rec is_method_type x =
   match Ast.unwrap_typeC x with
-  | TPointer (_, y) ->
+  | TPointer (_, y, _) ->
       is_method_type y
   | ParenType paren_ft ->
       is_method_type (Ast.unparen paren_ft)

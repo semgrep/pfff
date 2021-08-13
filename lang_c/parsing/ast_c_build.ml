@@ -234,11 +234,12 @@ and function_type env x =
 
 and parameter env x =
   match x with
-    { p_name = n;
-      p_type = t;
-      p_register = _regTODO;
-      p_val = v;
-    } ->
+  | P { p_name = n;
+        p_type = t;
+        p_register = _regTODO;
+        p_val = v;
+        p_specs = _TODO;
+      } ->
       (match v with
        | None -> ()
        | Some _ -> debug (Parameter x); raise CplusplusConstruct
@@ -398,8 +399,8 @@ and cpp_def_val for_debug env x =
 
 and expr_or_vars env x =
   match x with
-  | Some e -> let e = expr env e in Right e
-  | None -> Left []
+  | Left (Some e, _sc) -> let e = expr env e in Right e
+  | _TODO -> Left []
 
 and stmt env st =
   match st with
@@ -423,6 +424,7 @@ and stmt env st =
              Common2.fmap (expr env) est3,
              stmt env st
             )
+  | For (_, (_, ForRange _, _), _) -> raise CplusplusConstruct
 
   | MacroIteration _ ->
       debug (Stmt st); raise Todo
@@ -520,7 +522,7 @@ and block_declaration env block_decl =
 
   | MacroDecl _ -> debug (BlockDecl2 block_decl); raise Todo
 
-  | UsingDecl _ | UsingDirective _ | NameSpaceAlias _ ->
+  | UsingDecl _ | NameSpaceAlias _ ->
       raise CplusplusConstruct
 
 
@@ -625,7 +627,7 @@ and full_type env x =
   let (_qu, (t)) = x in
   match t with
   | TypeTodo _ -> raise CplusplusConstruct
-  | TPointer (tok, t) -> A.TPointer (tok, full_type env t)
+  | TPointer (tok, t, _) -> A.TPointer (tok, full_type env t)
   | TBase t ->
       let s, ii =
         (match t with

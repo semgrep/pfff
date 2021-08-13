@@ -39,7 +39,7 @@ type decl = {
   storageD: storage_opt;
   typeD: (sign option * shortLong option * typeC option) wrapx;
   qualifD: type_qualifiers;
-  inlineD: bool wrapx;
+  modifierD: modifier list;
 }
 
 let noii = []
@@ -48,7 +48,7 @@ let nullDecl = {
   storageD = NoSto;
   typeD = (None, None, None), noii;
   qualifD = Ast.nQ;
-  inlineD = false, noii;
+  modifierD = [];
 }
 
 let addStorageD x decl  =
@@ -59,12 +59,14 @@ let addStorageD x decl  =
       then decl |> warning "duplicate storage classes"
       else raise (Semantic ("multiple storage classes", ii))
 
-let addInlineD ii decl =
+let addModifierD x decl =
+  { decl with modifierD = x::decl.modifierD }
+(*
   match decl with
   | {inlineD = (false,[]); _} -> { decl with inlineD=(true,[ii])}
   | {inlineD = (true, _ii2); _} -> decl |> warning "duplicate inline"
   | _ -> raise Impossible
-
+*)
 
 let addTypeD ty decl =
   match ty, decl with
@@ -128,7 +130,7 @@ let type_and_storage_from_decl
     {storageD = st;
      qualifD = qu;
      typeD = (ty,iit);
-     inlineD = (inline,iinl);
+     modifierD = mods;
     }  =
   (qu,
    (match ty with
@@ -194,7 +196,7 @@ let type_and_storage_from_decl
      * {....} and never with a typedef cos now we parse short uint i
      * as short ident ident => parse error (cos after first short i
      * pass in dt() mode) *)
-   )), st, (inline, iinl)
+   )), st, mods
 
 
 let type_and_register_from_decl decl =
@@ -241,7 +243,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
        * definition), then you must write a name within the declarator.
        * Otherwise, you can omit the name. *)
       (match Ast.unparen params with
-       | [{p_name = None; p_type = ty2;_}] ->
+       | [P {p_name = None; p_type = ty2;_}] ->
            (match Ast.unwrap_typeC ty2 with
             | TBase (Void _) -> ty
             | _ ->
@@ -259,7 +261,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
        | params ->
            (params |> List.iter (fun (param) ->
               match param with
-              | {p_name = None; p_type = _ty2; _} ->
+              | P {p_name = None; p_type = _ty2; _} ->
                   (* see above
                      let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
                      (* if majuscule, then certainly macro-parameter *)
@@ -288,7 +290,7 @@ let fixFunc ((name, ty, sto), cp) =
       assert (aQ =*= nQ);
 
       (match Ast.unparen params with
-         [{p_name= None; p_type = ty2;_}] ->
+       | [P {p_name= None; p_type = ty2;_}] ->
            (match Ast.unwrap_typeC ty2 with
             | TBase (Void _) -> ()
             (* failwith "internal errror: fixOldCDecl not good" *)
@@ -296,7 +298,7 @@ let fixFunc ((name, ty, sto), cp) =
            )
        | params ->
            params |> List.iter (function
-             | ({p_name = Some _s;_}) -> ()
+             | (P {p_name = Some _s;_}) -> ()
              (* failwith "internal errror: fixOldCDecl not good" *)
              | _ -> ()
            )

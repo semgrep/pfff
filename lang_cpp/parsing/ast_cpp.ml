@@ -30,7 +30,7 @@
  * Then, it was extented again to deal with gcc extensions (see gccext:),
  * and C++ constructs (see c++ext:), and a few kencc (the plan9 compiler)
  * extensions (see kenccext:). Then, it was extended to deal with
- * a few C++0x and C++11 extensions (see c++0x:).
+ * a few C++0x (see c++0x:) and C++11 extensions (see c++11:).
  * Finally it was converted back to an AST (actually half AST, half CST)
  * for semgrep and to be the target of tree-sitter-cpp.
  *
@@ -124,7 +124,7 @@ and ident_or_op =
   (* c++ext: for operator overloading *)
   | IdDestructor of tok(*~*) * ident
   (* TODO: tok list?? *)
-  | IdOperator of tok * (operator * tok list)
+  | IdOperator of (tok * (operator * tok list))
   (* ?? paren? *)
   | IdConverter of tok * type_
 
@@ -178,7 +178,7 @@ and type_ = type_qualifiers * typeC
 and typeC =
   | TBase        of baseType
 
-  | TPointer         of tok (*'*'*) * type_
+  | TPointer         of tok (*'*'*) * type_ * pointer_modifier list
   (* c++ext: *)
   | TReference       of tok (*'&'*) * type_
   (* c++0x: *)
@@ -188,6 +188,7 @@ and typeC =
   | TFunction        of functionType
 
   | EnumName  of tok (* 'enum' *) * ident (* a_enum_name *)
+  (* less: ms declspec option after struct/union *)
   | ClassName of class_key wrap * ident (* a_ident_name *)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and it is a name so it can have some IdTemplateId in it.
@@ -216,6 +217,7 @@ and typeC =
   (* forunparser: *)
   | ParenType of type_ paren (* less: delete *)
 
+  (* TODO: TypeDots, DeclType *)
   | TypeTodo of todo_category * type_ list
 
 (* TODO: simplify, it is now possible to do 'signed foo' so make
@@ -292,7 +294,8 @@ and expr =
   | RecordAccess   of expr * tok (* . *)  * name
   | RecordPtAccess of expr * tok (* -> *) * name
 
-  (* c++ext: note that second paramater is an expr, not a name *)
+  (* pfffonly, TODO still valid?
+   * c++ext: note that second paramater is an expr, not a name *)
   | RecordStarAccess   of expr * tok (* .* *) * expr
   | RecordPtStarAccess of expr * tok (* ->* *) * expr
 
@@ -315,6 +318,7 @@ and expr =
   | New of tok (*::*) option * tok (* 'new' *) *
            argument list paren option (* placement *) *
            type_ *
+           (* TODO: c++11? rectype option *)
            argument list paren option (* initializer *)
 
   | Delete      of tok (*::*) option * tok * expr
@@ -428,7 +432,7 @@ and a_lhs = expr
 *)
 and stmt =
   | Compound      of compound   (* new scope *)
-  | ExprStmt of expr option * sc
+  | ExprStmt of expr_stmt
 
   (* selection *)
   | If of tok * tok (* 'constexpr' *) option * condition_clause paren *
@@ -450,10 +454,10 @@ and stmt =
   (* labeled *)
   | Label   of a_label * tok (* : *) * stmt
   (* TODO: only inside Switch in theory *)
-  | Case      of tok * expr * tok (* : *) * stmt
+  | Case      of tok * expr * tok (* : *) * stmt (* TODO list *)
   (* gccext: *)
   | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt
-  | Default of tok * tok (* : *) * stmt
+  | Default of tok * tok (* : *) * stmt (* TODO list *)
 
   (* c++ext: in C this constructor could be outside the statement type, in a
    * decl type, because declarations are only at the beginning of a compound
@@ -477,13 +481,16 @@ and stmt =
 *)
 and compound = stmt sequencable list brace
 
+and expr_stmt = expr option * sc
+
 and condition_clause =
   | CondClassic of expr
 
 (* TODO *)
 and for_header =
-  | ForClassic of a_expr_or_decl option * expr option * expr option
-and a_expr_or_decl = expr
+  | ForClassic of a_expr_or_vars * expr option * expr option
+  | ForRange of (entity * var_decl) * tok (*':'*) * initialiser
+and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 
 and a_label = string wrap
 
@@ -515,6 +522,14 @@ and entity = {
   *)
   name: name;
   specs: specifier list;
+  (* TODO? put type_ also? *)
+}
+
+(* ------------------------------------------------------------------------- *)
+(* Simple var *)
+(* ------------------------------------------------------------------------- *)
+and var_decl = {
+  v__type: type_;
 }
 
 (* ------------------------------------------------------------------------- *)
@@ -531,18 +546,19 @@ and block_declaration =
    * note: before the need for unparser, I didn't have a DeclList but just
    * a Decl.
   *)
-  | DeclList of onedecl list * sc
+  | DeclList of vars_decl
 
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * ident * argument list paren * tok
 
   (* c++ext: using namespace *)
-  | UsingDecl of (tok * name * sc)
-  | UsingDirective of tok * tok (*'namespace'*) *  a_namespace_name * sc
-  (* type_ is usually just a name *)
-  | NameSpaceAlias of tok * ident * tok (*=*) * type_ * sc
+  | UsingDecl of using
+  (* type_ is usually just a name TODO tsonly is using, but pfff is namespace? *)
+  | NameSpaceAlias of tok (*'namespace'*) * ident * tok (*=*) * type_ * sc
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * sc
+
+and vars_decl = onedecl list * sc
 
 (* gccext: *)
 and asmbody = string wrap list * colon list
@@ -577,7 +593,10 @@ and storage_opt = NoSto | StoTypedef of tok | Sto of storage wrap
 and init =
   | EqInit of tok (*=*) * initialiser
   (* c++ext: constructed object *)
-  | ObjInit of argument list paren
+  | ObjInit of obj_init
+
+(* TODO: ObjArgs or ObjInits *)
+and obj_init = argument list paren
 
 and initialiser =
   (* in lhs and rhs *)
@@ -625,17 +644,22 @@ and functionType = {
   ft_const: tok option; (* only for methods, TODO put in attribute? *)
   ft_throw: exn_spec option;
 }
-(* TODO: ParamClassic of parameter_classic | ParamEllipsis of tok *)
-and parameter = parameter_classic
+(* TODO: | ParamDots of tok, sgrep-ext or not *)
+and parameter =
+  | P of parameter_classic
 and parameter_classic = {
   p_name: ident option;
   p_type: type_;
-  (* TODO: via attribute *)
   p_register: tok option; (* TODO put in attribute? *)
+  p_specs: specifier list;
   (* c++ext: *)
   p_val: (tok (*=*) * expr) option;
 }
-and exn_spec = (tok (*'throw'*) * type_ (* usually just a name *) list paren)
+and exn_spec =
+  (* c++ext: *)
+  | ThrowSpec of tok (*'throw'*) * type_ (* usually just a name *) list paren
+  (* c++11: *)
+  | Noexcept of tok * a_const_expr option paren option
 
 (* TODO: = default, = delete? *)
 and function_body =
@@ -691,12 +715,10 @@ and class_key =
 
 and base_clause = {
   i_name: a_class_name;
-  i_virtual: tok option;
+  (* TODO: i_specs? i_dots ? *)
+  i_virtual: tok option; (* ?? still c++ valid? pfff-only *)
   i_access: access_spec wrap option;
 }
-
-(* used in inheritance spec (base_clause) and class_member *)
-and access_spec = Public | Private | Protected
 
 (* was called 'field wrap' before *)
 and class_member =
@@ -711,7 +733,7 @@ and class_member =
   | QualifiedIdInClass of name (* ?? *) * sc
 
   | TemplateDeclInClass of (tok * template_parameters * declaration)
-  | UsingDeclInClass of (tok (*using*) * name * sc)
+  | UsingDeclInClass of using
 
   (* gccext: and maybe c++ext: *)
   | EmptyField  of sc
@@ -734,7 +756,7 @@ and fieldkind =
 (* not a great name, but the C++ grammar often uses that term *)
 and specifier =
   | A of attribute
-  | M of modifier wrap
+  | M of modifier
   | Q of type_qualifier wrap
   | S of storage wrap
 
@@ -748,12 +770,17 @@ and attribute =
 
 and modifier =
   (* what is a prototype inline?? gccaccepts it. *)
-  | Inline
+  | Inline of tok
   (* virtual specifier *)
-  | Virtual
-  | Final | Override
+  | Virtual of tok
+  | Final of tok | Override of tok
   (* just for functions *)
-  | MsCall of string (* msext: e.g., __cdecl, __stdcall *)
+  | MsCall of string wrap (* msext: e.g., __cdecl, __stdcall *)
+  (* just for constructor *)
+  | Explicit of tok * expr paren option
+
+(* used in inheritance spec (base_clause) and class_member *)
+and access_spec = Public | Private | Protected
 
 and type_qualifier =
   (* classic C type qualifiers *)
@@ -775,6 +802,15 @@ and storage  =
   | StoInline
   (* Friend ???? Mutable? *)
 
+(* only in declarator (not in abstract declarator) *)
+and pointer_modifier =
+  (* msext: tsonly: *)
+  | Based of tok (* '__based' *) * argument list paren
+  | PtrRestrict of tok (* '__restrict' *)
+  | Uptr of tok (* '__uptr' *)
+  | Sptr of tok (* '__sptr' *)
+  | Unaligned of tok
+
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
  * and attribute = attributebis wrap
@@ -782,6 +818,15 @@ and storage  =
  *   | Attribute of string
 *)
 
+(*****************************************************************************)
+(* Namespace (using) *)
+(*****************************************************************************)
+and using = tok (*'using'*) * using_kind * sc
+and using_kind =
+  | UsingName of name
+  | UsingNamespace of tok (*'namespace'*) * a_namespace_name
+  (* tsonly, type_ is usually just a name *)
+  | UsingAlias of ident * tok (*'='*) * type_
 
 (*****************************************************************************)
 (* Cpp *)
@@ -846,7 +891,8 @@ and 'a sequencable =
 (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
 and ifdef_directive =
   | Ifdef of tok (* todo? of string? *)
-  (* less: IfIf of formula_cpp ? *)
+  (* TODO: IfIf of formula_cpp ? *)
+  (* TODO: Ifndef *)
   | IfdefElse of tok
   | IfdefElseif of tok
   | IfdefEndif of tok
@@ -992,6 +1038,10 @@ let make_expanded ii =
   { ii with Parse_info.token = Parse_info.ExpandedTok
                 (Parse_info.get_original_token_location ii.Parse_info.token, a, b) }
 
+let basic_param id t specs =
+  { p_name = Some id; p_type = t; p_specs = specs; p_register = None;
+    p_val = None }
+
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =
   {ii with Parse_info.token = pi}
@@ -1012,3 +1062,12 @@ let (ii_of_id_name: name -> tok list) = fun name ->
   | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
   | IdDestructor (tok, (_s, ii)) -> [tok;ii]
   | IdTemplateId ((_s, ii), _args) -> [ii]
+
+let (ii_of_name: name -> tok) = fun name ->
+  let (_opt, _qu, id) = name in
+  match id with
+  | IdIdent (_s,ii) -> ii
+  | IdOperator (_, (_op, ii)) -> List.hd ii
+  | IdConverter (tok, _ft) -> tok
+  | IdDestructor (tok, (_s, _ii)) -> tok
+  | IdTemplateId ((_s, ii), _args) -> ii

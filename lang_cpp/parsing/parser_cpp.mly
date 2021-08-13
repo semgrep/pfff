@@ -663,7 +663,7 @@ cpp_cast_operator:
 *)
 cast_constructor_expr:
  | TIdent_TypedefConstr "(" optl(listc(argument)) ")"
-     { let name = None, noQscope, IdIdent $1 in
+     { let name = name_of_id $1 in
        let ft = nQ, (TypeName name) in
        ConstructedObject (ft, ($2, $3, $4))
      }
@@ -826,7 +826,7 @@ iteration:
  | Tdo statement Twhile "(" expr ")" ";"
      { DoWhile ($1, $2, $3, ($4, $5, $6), $7) }
  | Tfor "(" for_init_stmt expr_statement expr? ")" statement
-     { For ($1, ($2, ForClassic (fst $3, fst $4, $5), $6), $7) }
+     { For ($1, ($2, ForClassic ($3, fst $4, $5), $6), $7) }
  (* c++ext: *)
  | Tfor "(" for_range_decl ":" for_range_init ")" statement
      { StmtTodo (("ForEach", $1), [$7]) }
@@ -867,9 +867,9 @@ condition:
      { CondClassic (ExprTodo (("DeclCondition", $3), [])) }
 
 for_init_stmt:
- | expr_statement { $1 }
+ | expr_statement { Left $1 }
  (* c++ext: for(int i = 0; i < n; i++)*)
- | simple_declaration { None, PI.fake_info ";" }
+ | simple_declaration { Right $1 }
 
 for_range_decl: type_spec_seq2 declarator { }
 
@@ -999,14 +999,14 @@ cv_qualif:
 
 declarator:
  | pointer direct_d { (fst $2, fun x -> x |> $1 |> (snd $2)  ) }
- | direct_d         { $1  }
+ | direct_d         { $1 }
 
 (* so must do  int * const p; if the pointer is constant, not the pointee *)
 pointer:
- | "*"                        { fun x ->(nQ,         (TPointer ($1, x)))}
- | "*" cv_qualif_list         { fun x ->($2.qualifD, (TPointer ($1, x)))}
- | "*" pointer                { fun x ->(nQ,         (TPointer ($1, $2 x)))}
- | "*" cv_qualif_list pointer { fun x ->($2.qualifD, (TPointer ($1, $3 x)))}
+ | "*"                        { fun x ->(nQ,         (TPointer ($1, x, [])))}
+ | "*" cv_qualif_list         { fun x ->($2.qualifD, (TPointer ($1, x, [])))}
+ | "*" pointer                { fun x ->(nQ,         (TPointer ($1, $2 x, [])))}
+ | "*" cv_qualif_list pointer { fun x ->($2.qualifD, (TPointer ($1, $3 x, [])))}
  (*c++ext: no qualif for ref *)
  | "&"                        { fun x ->(nQ,    (TReference ($1, x)))}
  | "&" pointer                { fun x ->(nQ,    (TReference ($1, $2 x)))}
@@ -1049,6 +1049,7 @@ declarator_id:
 abstract_declarator:
  | pointer                            { $1 }
  |         direct_abstract_declarator { $1 }
+ (* TODO: bug? seems different order than in declarator *)
  | pointer direct_abstract_declarator { fun x -> x |> $2 |> $1 }
 
 direct_abstract_declarator:
@@ -1090,30 +1091,30 @@ parameter_decl:
  | decl_spec_seq declarator
      { let (t_ret,reg) = type_and_register_from_decl $1 in
        let (name, ftyp) = fixNameForParam $2 in
-       { p_name = Some name; p_type = ftyp t_ret;
-         p_register = reg; p_val = None } }
+       P { (basic_param name (ftyp t_ret) []) with
+         p_register = reg; } }
  | decl_spec_seq abstract_declarator
      { let (t_ret, reg) = type_and_register_from_decl $1 in
-       { p_name = None; p_type = $2 t_ret;
-         p_register = reg; p_val = None } }
+       P { p_name = None; p_type = $2 t_ret;
+         p_register = reg; p_val = None; p_specs = [] } }
  | decl_spec_seq
      { let (t_ret, reg) = type_and_register_from_decl $1 in
-       { p_name = None; p_type = t_ret; p_register = reg; p_val = None } }
+       P { p_name = None; p_type = t_ret; p_register = reg; p_val = None; p_specs = [] } }
 
 (*c++ext: default parameter value, copy paste *)
  | decl_spec_seq declarator "=" assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
        let (name, ftyp) = fixNameForParam $2 in
-       { p_name = Some name; p_type = ftyp t_ret;
-         p_register = reg; p_val = Some ($3, $4) } }
+       P { (basic_param name (ftyp t_ret) []) with
+           p_register = reg; p_val = Some ($3, $4)} }
  | decl_spec_seq abstract_declarator "=" assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
-       { p_name = None; p_type = $2 t_ret;
-         p_register = reg; p_val = Some ($3, $4) } }
+       P { p_name = None; p_type = $2 t_ret;
+         p_register = reg; p_val = Some ($3, $4); p_specs = [] } }
  | decl_spec_seq "=" assign_expr
      { let (t_ret, reg) = type_and_register_from_decl $1 in
-       { p_name = None; p_type = t_ret;
-         p_register = reg; p_val = Some($2,$3) } }
+       P { p_name = None; p_type = t_ret;
+         p_register = reg; p_val = Some($2,$3); p_specs = [] } }
 
 (*----------------------------*)
 (* workarounds *)
@@ -1127,8 +1128,8 @@ parameter_decl2:
  | parameter_decl { $1 }
  (* when the typedef inference didn't work *)
  | TIdent
-     { let t = nQ, (TypeName (None, [], IdIdent $1)) in
-       { p_name = None; p_type = t; p_val = None; p_register = None; } }
+     { let t = nQ, (TypeName (name_of_id $1)) in
+       P { p_name = None; p_type = t; p_val = None; p_register = None; p_specs = [] } }
 
 (*----------------------------*)
 (* c++ext: *)
@@ -1138,12 +1139,11 @@ parameter_decl2:
  * need typedef heuristic for throw() but can be also an expression ...
  *)
 exn_spec:
- | Tthrow "(" ")"                        { ($1, ($2, [], $3)) }
- | Tthrow "(" exn_name ")"               { ($1, ($2, [$3], $4)) }
- | Tthrow "(" exn_name "," exn_name ")"
-     { ($1, ($2, [$3; $5], $6))  }
+ | Tthrow "(" ")"                        { ThrowSpec ($1, ($2, [], $3)) }
+ | Tthrow "(" exn_name ")"               { ThrowSpec ($1, ($2, [$3], $4)) }
+ | Tthrow "(" exn_name "," exn_name ")"  { ThrowSpec ($1, ($2, [$3; $5], $6)) }
 
-exn_name: ident { nQ, TypeName (None, [], IdIdent $1) }
+exn_name: ident { nQ, TypeName (name_of_id $1) }
 
 (*c++ext: in orig they put cv-qualifier-seqopt but it's never volatile so *)
 const_opt:
@@ -1258,10 +1258,10 @@ class_head:
  | class_key
      { $1, None, [] }
  | class_key ident base_clause?
-     { let name = None, noQscope, IdIdent $2 in
+     { let name = name_of_id $2 in
        $1, Some name, optlist_to_list $3 }
  | class_key nested_name_specifier ident base_clause?
-     { let name = None, $2, IdIdent $3 in
+     { let name = name_of_id $3 in
        $1, Some name, optlist_to_list $4 }
 
 (* was called struct_union before *)
@@ -1293,7 +1293,7 @@ base_specifier:
 (* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)
 class_name:
  | type_cplusplus_id  { $1 }
- | TIdent             { None, noQscope, IdIdent $1 }
+ | TIdent             { name_of_id $1 }
 
 (*----------------------------*)
 (* c++ext: members *)
@@ -1416,11 +1416,11 @@ enum_base: ":" type_spec_seq2 { }
 simple_declaration:
  | decl_spec_seq ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto}],$2)
+       ([{v_namei = None; v_type = t_ret; v_storage = sto}],$2)
      }
  | decl_spec_seq listc(init_declarator) ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       DeclList (
+       (
          ($2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            { v_namei = Some (name, iniopt);
@@ -1428,6 +1428,9 @@ simple_declaration:
            }
          )), $3)
      }
+
+simple_declaration_or_macro:
+ | simple_declaration { DeclList $1 }
  (* cppext: *)
  | TIdent_MacroDecl "(" listc(argument) ")" ";"
      { MacroDecl ([], $1, ($2, $3, $4), $5) }
@@ -1446,7 +1449,7 @@ decl_spec_seq:
 decl_spec:
  | storage_class_spec { addStorageD $1 }
  | type_spec          { addTypeD  $1 }
- | function_spec      { addInlineD (snd $1)(*TODO*) }
+ | function_spec      { addModifierD $1 }
 
 (* grammar_c++: cv_qualif is not here but instead inline in type_spec.
  * I prefer to keep as before but I take care when
@@ -1455,8 +1458,10 @@ decl_spec:
  | cv_qualif          { addQualifD $1 }
 
  | Ttypedef           { addStorageD (StoTypedef $1) }
- | Tfriend            { addInlineD $1 (*TODO*) }
- | Tconstexpr         { addInlineD $1 (*TODO*) }
+(* TODO
+ | Tfriend            { addModifierD (Friend $1) }
+ | Tconstexpr         { addModifierD (Constexpr $1) }
+*)
 
 (* grammar_c++: they put 'explicit' in function_spec, 'typedef' and 'friend'
  * in decl_spec. But it's just estethic as no other rules directly
@@ -1468,9 +1473,9 @@ decl_spec:
  *)
 function_spec:
  (*gccext: and c++ext: *)
- | Tinline { Inline, $1 }
+ | Tinline { Inline $1 }
  (*c++ext: *)
- | Tvirtual { Virtual, $1 }
+ | Tvirtual { Virtual $1 }
 
 storage_class_spec:
  | Tstatic      { Sto (Static,  $1) }
@@ -1560,13 +1565,13 @@ designator:
 (*************************************************************************)
 
 block_declaration:
- | simple_declaration { $1 }
+ | simple_declaration_or_macro { $1 }
  (*gccext: *)
  | asm_definition     { $1 }
  (*c++ext: *)
  | namespace_alias_definition { $1 }
  | using_declaration { UsingDecl $1 }
- | using_directive   { $1 }
+ | using_directive   { UsingDecl $1 }
 
 
 (*----------------------------*)
@@ -1577,7 +1582,7 @@ namespace_alias_definition: Tnamespace TIdent "=" qualified_namespace_spec ";"
   { NameSpaceAlias ($1, $2, $3, $4, $5) }
 
 using_directive: Tusing Tnamespace qualified_namespace_spec2 ";"
-  { UsingDirective ($1, $2, $3, $4) }
+  { $1, UsingNamespace ($2, $3), $4 }
 
 qualified_namespace_spec: "::"? optl(nested_name_specifier) namespace_name
   { nQ, TypeName ($1, $2, IdIdent $3) }
@@ -1590,10 +1595,10 @@ qualified_namespace_spec2: "::"? optl(nested_name_specifier) namespace_name
  * or put opt on nested_name_specifier too *)
 using_declaration:
  | Tusing Ttypename? "::"? nested_name_specifier unqualified_id ";"
-     { let name = ($3, $4, $5) in $1, name, $6 (*$2*) }
+     { let name = ($3, $4, $5) in $1, UsingName name, $6 (*$2*) }
 (* TODO: remove once we don't skip qualifier ? *)
  | Tusing Ttypename? "::"? unqualified_id ";"
-     { let name = ($3, [], $4) in $1, name, $5 (*$2*) }
+     { let name = ($3, [], $4) in $1, UsingName name, $5 (*$2*) }
 
 (*----------------------------*)
 (* gccext: c++ext: *)
