@@ -1458,10 +1458,8 @@ decl_spec:
  | cv_qualif          { addQualifD $1 }
 
  | Ttypedef           { addStorageD (StoTypedef $1) }
-(* TODO
- | Tfriend            { addModifierD (Friend $1) }
- | Tconstexpr         { addModifierD (Constexpr $1) }
-*)
+ | Tfriend            { fun x -> x (* addModifierD (Friend $1) TODO *) }
+ | Tconstexpr         { fun x -> x (* addModifierD (Constexpr $1) TODO *) }
 
 (* grammar_c++: they put 'explicit' in function_spec, 'typedef' and 'friend'
  * in decl_spec. But it's just estethic as no other rules directly
