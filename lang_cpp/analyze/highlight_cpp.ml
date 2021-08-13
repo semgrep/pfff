@@ -344,13 +344,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       | Ast_cpp.EnumName (_tok, (_s, ii)) ->
           tag ii (Entity (Type, Use2 fake_no_use2))
 
-      | StructUnionName (_su, (_s, ii)) ->
+      | ClassName (_su, (_s, ii)) ->
           tag ii (StructName Use);
           k x
 
-      | TypenameKwd (_tok, name) ->
-          Ast.ii_of_id_name name |> List.iter (fun ii ->
-            tag ii (Entity (Type, Use2 fake_no_use2)));
+      | TypenameKwd (_tok, _t_was_name) ->
+          (*Ast.ii_of_id_name name |> List.iter (fun ii ->
+            tag ii (Entity (Type, Use2 fake_no_use2))); *)
           k x
 
       | EnumDef (_tok, _sopt, xs) ->
@@ -385,31 +385,29 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           )
     );
 
-    V.kclass_def = (fun (k,_) def ->
-      let name = def.c_name in
-      name |> Common.do_option (fun name ->
+    V.kclass_def = (fun (k,_) ((c_nameopt, _def) as x) ->
+      c_nameopt |> Common.do_option (fun name ->
         Ast.ii_of_id_name name |> List.iter (fun ii ->
           tag ii (Entity (Class, (Def2 fake_no_def2)));
         )
       );
-      k def
+      k x
     );
-    V.kfunc_def = (fun (k,_) def ->
-      let name = def.f_name in
+    V.kfunc_def = (fun (k,_) (({name; specs = _}, _def) as x) ->
       Ast.ii_of_id_name name |> List.iter (fun ii ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii (Entity (Class, (Def2 fake_no_def2)));
       );
-      k def
+      k x
     );
     V.kclass_member = (fun (k,_) def ->
       (match def with
        | MemberFunc x ->
-           let def =
+           let ({name = f_name; specs = _}, _def) =
              match x with
              | FunctionOrMethod def | Ast.Constructor def | Destructor def -> def
            in
-           let name = def.f_name in
+           let name = f_name in
            Ast.ii_of_id_name name |> List.iter (fun ii ->
              tag ii (Entity (Method, (Def2 fake_no_def2)))
            );
@@ -432,14 +430,14 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       k def
     );
     V.kdeclaration = (fun (k,_) def ->
-      k def
-    );
-    V.ktoplevel = (fun (k,_) def ->
       (match def with
        | NotParsedCorrectly ii ->
            ii |> List.iter (fun ii -> tag ii NotParsed)
-       | _ ->()
+       | _ -> ()
       );
+      k def
+    );
+    V.ktoplevel = (fun (k,_) def ->
       k def
     );
   }

@@ -278,6 +278,7 @@ val do_option : ('a -> unit) -> 'a option -> unit
 (*s: signature [[Common.opt_to_list]] *)
 val opt_to_list: 'a option -> 'a list
 (*e: signature [[Common.opt_to_list]] *)
+val optlist_to_list: 'a list option -> 'a list
 (*s: signature [[Common.TODOOPERATOR (pfff/commons/Common.mli)6]] *)
 val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 (*e: signature [[Common.TODOOPERATOR (pfff/commons/Common.mli)6]] *)

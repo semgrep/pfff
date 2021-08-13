@@ -293,8 +293,8 @@ main: translation_unit EOF     { $1 }
 translation_unit: external_declaration+ { $1 }
 
 external_declaration:
- | function_definition            { DeclElem (Func (FunctionOrMethod $1)) }
- | block_declaration              { DeclElem (BlockDecl $1) }
+ | function_definition            { X (Func (FunctionOrMethod $1)) }
+ | block_declaration              { X (BlockDecl $1) }
 
 (*************************************************************************)
 (* toplevel *)
@@ -305,14 +305,14 @@ toplevel:
  | EOF          { None }
 
 toplevel_aux:
- | declaration         { DeclElem $1 }
+ | declaration         { X $1 }
  (* cppext: *)
- | cpp_directive       { CppDirectiveDecl $1 }
- | cpp_ifdef_directive (*external_declaration_list ...*) { IfdefDecl $1 }
+ | cpp_directive       { CppDirective $1 }
+ | cpp_ifdef_directive (*external_declaration_list ...*) { CppIfdef $1 }
  | cpp_other           { $1 }
  (* when have error recovery, we can end up skipping the
   * beginning of the file, and so get trailing unclosed } at the end *)
- | "}" { DeclElem (EmptyDef $1) }
+ | "}" { X (EmptyDef $1) }
 
 (*************************************************************************)
 (* sgrep *)
@@ -323,7 +323,7 @@ sgrep_spatch_pattern:
  | statement            EOF  { Stmt $1 }
  | statement statement+ EOF  { Stmts ($1::$2) }
 
- | cpp_directive        EOF  { Toplevel (CppDirectiveDecl $1) }
+ | cpp_directive        EOF  { Toplevel (CppDirective $1) }
 
 (*************************************************************************)
 (* Ident, scope *)
@@ -753,16 +753,16 @@ argument:
 const_expr: cond_expr { $1  }
 
 basic_type_2:
- | Tchar_Constr    { (BaseType (IntType (CChar, $1))) }
- | Tint_Constr     { (BaseType (IntType (Si (Signed,CInt), $1)))}
- | Tfloat_Constr   { (BaseType (FloatType (CFloat, $1))) }
- | Tdouble_Constr  { (BaseType (FloatType (CDouble, $1))) }
+ | Tchar_Constr    { (TBase (IntType (CChar, $1))) }
+ | Tint_Constr     { (TBase (IntType (Si (Signed,CInt), $1)))}
+ | Tfloat_Constr   { (TBase (FloatType (CFloat, $1))) }
+ | Tdouble_Constr  { (TBase (FloatType (CDouble, $1))) }
 
- | Twchar_t_Constr { (BaseType (IntType (WChar_t, $1))) }
+ | Twchar_t_Constr { (TBase (IntType (WChar_t, $1))) }
 
- | Tshort_Constr   { (BaseType (IntType (Si (Signed, CShort), $1))) }
- | Tlong_Constr    { (BaseType (IntType (Si (Signed, CLong), $1))) }
- | Tbool_Constr    { (BaseType (IntType (CBool, $1))) }
+ | Tshort_Constr   { (TBase (IntType (Si (Signed, CShort), $1))) }
+ | Tlong_Constr    { (TBase (IntType (Si (Signed, CLong), $1))) }
+ | Tbool_Constr    { (TBase (IntType (CBool, $1))) }
 
 (*************************************************************************)
 (* Statements *)
@@ -848,10 +848,10 @@ jump:
 (*----------------------------*)
 
 statement_cpp:
- | statement { StmtElem $1 }
+ | statement { X $1 }
  (* cppext: *)
- | cpp_directive                                  { CppDirectiveStmt $1 }
- | cpp_ifdef_directive(* stat_or_decl_list ...*)  { IfdefStmt $1 }
+ | cpp_directive                                  { CppDirective $1 }
+ | cpp_ifdef_directive(* stat_or_decl_list ...*)  { CppIfdef $1 }
 
 (*----------------------------*)
 (* c++ext: *)
@@ -896,21 +896,21 @@ type_spec:
  | simple_type_specifier { $1 }
  | elaborated_type_specifier { $1 }
  | enum_specifier  { Right3 $1, noii }
- | class_specifier { Right3 (StructDef $1), noii }
+ | class_specifier { Right3 (ClassDef $1), noii }
 
 simple_type_specifier:
- | Tvoid                { Right3 (BaseType (Void $1)),            noii }
- | Tchar                { Right3 (BaseType (IntType (CChar, $1))), noii}
- | Tint                 { Right3 (BaseType (IntType (Si (Signed,CInt), $1))), noii}
- | Tfloat               { Right3 (BaseType (FloatType (CFloat, $1))),  noii}
- | Tdouble              { Right3 (BaseType (FloatType (CDouble, $1))), noii }
+ | Tvoid                { Right3 (TBase (Void $1)),            noii }
+ | Tchar                { Right3 (TBase (IntType (CChar, $1))), noii}
+ | Tint                 { Right3 (TBase (IntType (Si (Signed,CInt), $1))), noii}
+ | Tfloat               { Right3 (TBase (FloatType (CFloat, $1))),  noii}
+ | Tdouble              { Right3 (TBase (FloatType (CDouble, $1))), noii }
  | Tshort               { Middle3 Short,  [$1]}
  | Tlong                { Middle3 Long,   [$1]}
  | Tsigned              { Left3 Signed,   [$1]}
  | Tunsigned            { Left3 UnSigned, [$1]}
  (*c++ext: *)
- | Tbool                { Right3 (BaseType (IntType (CBool, $1))), noii }
- | Twchar_t             { Right3 (BaseType (IntType (WChar_t, $1))), noii }
+ | Tbool                { Right3 (TBase (IntType (CBool, $1))), noii }
+ | Twchar_t             { Right3 (TBase (IntType (WChar_t, $1))), noii }
 
  (* gccext: *)
  | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))), noii}
@@ -934,9 +934,9 @@ decltype_specifier:
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier:
  | Tenum ident                  { Right3 (EnumName ($1, $2)), noii }
- | class_key ident              { Right3 (StructUnionName ($1, $2)), noii }
+ | class_key ident              { Right3 (ClassName ($1, $2)), noii }
  (* c++ext:  *)
- | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, $2)), noii }
+ | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2))), noii }
 
 (*----------------------------*)
 (* c++ext:  *)
@@ -1003,16 +1003,16 @@ declarator:
 
 (* so must do  int * const p; if the pointer is constant, not the pointee *)
 pointer:
- | "*"                        { fun x ->(nQ,         (Pointer ($1, x)))}
- | "*" cv_qualif_list         { fun x ->($2.qualifD, (Pointer ($1, x)))}
- | "*" pointer                { fun x ->(nQ,         (Pointer ($1, $2 x)))}
- | "*" cv_qualif_list pointer { fun x ->($2.qualifD, (Pointer ($1, $3 x)))}
+ | "*"                        { fun x ->(nQ,         (TPointer ($1, x)))}
+ | "*" cv_qualif_list         { fun x ->($2.qualifD, (TPointer ($1, x)))}
+ | "*" pointer                { fun x ->(nQ,         (TPointer ($1, $2 x)))}
+ | "*" cv_qualif_list pointer { fun x ->($2.qualifD, (TPointer ($1, $3 x)))}
  (*c++ext: no qualif for ref *)
- | "&"                        { fun x ->(nQ,    (Reference ($1, x)))}
- | "&" pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
- (* c++0x: TODO AST *)
- | "&&"                        { fun x ->(nQ,    (Reference ($1, x)))}
- | "&&" pointer                { fun x ->(nQ,    (Reference ($1, $2 x)))}
+ | "&"                        { fun x ->(nQ,    (TReference ($1, x)))}
+ | "&" pointer                { fun x ->(nQ,    (TReference ($1, $2 x)))}
+ (* c++0x: *)
+ | "&&"                        { fun x ->(nQ,    (TRefRef ($1, x)))}
+ | "&&" pointer                { fun x ->(nQ,    (TRefRef ($1, $2 x)))}
 
 direct_d:
  | declarator_id
@@ -1020,18 +1020,18 @@ direct_d:
  | "(" declarator ")"      (* forunparser: old: $2 *)
      { (fst $2, fun x -> (nQ, (ParenType ($1, (snd $2) x, $3)))) }
  | direct_d "["            "]"
-     { (fst $1, fun x->(snd $1) (nQ,(Array (($2,None,$3),x)))) }
+     { (fst $1, fun x->(snd $1) (nQ,(TArray (($2,None,$3),x)))) }
  | direct_d "[" const_expr "]"
-     { (fst $1, fun x->(snd $1) (nQ,(Array (($2, Some $3, $4),x)))) }
+     { (fst $1, fun x->(snd $1) (nQ,(TArray (($2, Some $3, $4),x)))) }
  | direct_d "(" ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1)
-         (nQ, (FunctionType {
+         (nQ, (TFunction {
            ft_ret= x; ft_params = ($2, [], $3);
            ft_dots = None; ft_const = $4; ft_throw = $5; })))
      }
  | direct_d "(" parameter_type_list ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1)
-          (nQ,(FunctionType {
+          (nQ,(TFunction {
             ft_ret = x; ft_params = ($2,fst $3,$4);
             ft_dots = snd $3; ft_const = $5; ft_throw = $6; })))
      }
@@ -1055,27 +1055,27 @@ direct_abstract_declarator:
  | "(" abstract_declarator ")" (* forunparser: old: $2 *)
      { (fun x -> (nQ, (ParenType ($1, $2 x, $3)))) }
  | "["            "]"
-     { fun x ->   (nQ, (Array (($1,None, $2), x)))}
+     { fun x ->   (nQ, (TArray (($1,None, $2), x)))}
  | "[" const_expr "]"
-     { fun x ->   (nQ, (Array (($1, Some $2, $3), x)))}
+     { fun x ->   (nQ, (TArray (($1, Some $2, $3), x)))}
  | direct_abstract_declarator "["            "]"
-     { fun x ->$1 (nQ, (Array (($2, None, $3), x))) }
+     { fun x ->$1 (nQ, (TArray (($2, None, $3), x))) }
  | direct_abstract_declarator "[" const_expr "]"
-     { fun x ->$1 (nQ, (Array (($2, Some $3, $4), x))) }
+     { fun x ->$1 (nQ, (TArray (($2, Some $3, $4), x))) }
  | "(" ")"
-     { fun x -> (nQ, (FunctionType {
+     { fun x -> (nQ, (TFunction {
        ft_ret = x; ft_params = ($1,[],$2);
        ft_dots = None; ft_const = None; ft_throw = None;})) }
  | "(" parameter_type_list ")"
-     { fun x -> (nQ, (FunctionType {
+     { fun x -> (nQ, (TFunction {
          ft_ret = x; ft_params = ($1,fst $2,$3);
          ft_dots = snd $2; ft_const = None; ft_throw = None; })) }
  | direct_abstract_declarator "(" ")" const_opt exn_spec?
-     { fun x -> $1 (nQ, (FunctionType {
+     { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,[],$3);
          ft_dots = None; ft_const = $4; ft_throw = $5; })) }
  | direct_abstract_declarator "(" parameter_type_list ")" const_opt exn_spec?
-     { fun x -> $1 (nQ, (FunctionType {
+     { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,fst $3,$4);
          ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
 
@@ -1243,8 +1243,8 @@ conversion_declarator:
 (* this can come from a simple_declaration/decl_spec *)
 class_specifier: class_head "{" optl(member_specification) "}"
      { let (kind, nameopt, baseopt) = $1 in
-       { c_kind = kind; c_name = nameopt;
-         c_inherit = baseopt; c_members = ($2, $3, $4) } }
+       nameopt, { c_kind = kind;
+                  c_inherit = baseopt; c_members = ($2, $3, $4) } }
 
 (* todo in grammar they allow anon class with base_clause, weird.
  * bugfix_c++: in c++ grammar they put identifier but when we do template
@@ -1256,13 +1256,13 @@ class_specifier: class_head "{" optl(member_specification) "}"
 *)
 class_head:
  | class_key
-     { $1, None, None }
+     { $1, None, [] }
  | class_key ident base_clause?
      { let name = None, noQscope, IdIdent $2 in
-       $1, Some name, $3 }
+       $1, Some name, optlist_to_list $3 }
  | class_key nested_name_specifier ident base_clause?
      { let name = None, $2, IdIdent $3 in
-       $1, Some name, $4 }
+       $1, Some name, optlist_to_list $4 }
 
 (* was called struct_union before *)
 class_key:
@@ -1274,7 +1274,7 @@ class_key:
 (*----------------------------*)
 (* c++ext: inheritance rules *)
 (*----------------------------*)
-base_clause: ":" listc(base_specifier) { $1, $2 }
+base_clause: ":" listc(base_specifier) { $2 }
 
 (* base-specifier:
    *  ::opt nested-name-specifieropt class-name
@@ -1302,9 +1302,9 @@ class_name:
 (* todo? add cpp_directive possibility here too *)
 member_specification:
  | member_declaration optl(member_specification)
-     { ClassElem $1::$2 }
+     { X $1::$2 }
  | access_specifier ":" optl(member_specification)
-     { ClassElem (Access ($1, $2))::$3 }
+     { X (Access ($1, $2))::$3 }
 
 access_specifier:
  | Tpublic    { Public, $1 }
@@ -1648,10 +1648,10 @@ declaration:
 (*----------------------------*)
 
 declaration_cpp:
- | declaration { DeclElem $1 }
+ | declaration { X $1 }
  (* cppext: *)
- | cpp_directive                                 { CppDirectiveDecl $1 }
- | cpp_ifdef_directive(* stat_or_decl_list ...*) { IfdefDecl $1 }
+ | cpp_directive                                 { CppDirective $1 }
+ | cpp_ifdef_directive(* stat_or_decl_list ...*) { CppIfdef $1 }
 
 (*----------------------------*)
 (* c++ext: *)
@@ -1868,14 +1868,14 @@ param_define:
 
 
 cpp_ifdef_directive:
- | TIfdef     { Ifdef, $1 }
- | TIfdefelse { IfdefElse, $1 }
- | TIfdefelif { IfdefElseif, $1 }
- | TEndif     { IfdefEndif, $1 }
+ | TIfdef     { Ifdef $1 }
+ | TIfdefelse { IfdefElse $1 }
+ | TIfdefelif { IfdefElseif $1 }
+ | TEndif     { IfdefEndif $1 }
 
- | TIfdefBool  { Ifdef, snd $1 }
- | TIfdefMisc  { Ifdef, snd $1 }
- | TIfdefVersion { Ifdef, snd $1 }
+ | TIfdefBool  { Ifdef (snd $1) }
+ | TIfdefMisc  { Ifdef (snd $1) }
+ | TIfdefVersion { Ifdef (snd $1) }
 
 cpp_other:
 (* cppext: *)

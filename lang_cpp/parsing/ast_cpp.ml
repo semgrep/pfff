@@ -63,7 +63,7 @@
 *)
 
 (*****************************************************************************)
-(* Token and names *)
+(* Tokens and names *)
 (*****************************************************************************)
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
@@ -175,25 +175,31 @@ and a_ident_name = name (* only IdIdent *)
  * himself (but we can do it for pointer).
 *)
 and type_ = type_qualifiers * typeC
-(* less: rename to TBase, TPointer, etc *)
 and typeC =
-  | BaseType        of baseType
+  | TBase        of baseType
 
-  | Pointer         of tok (*'*'*) * type_
+  | TPointer         of tok (*'*'*) * type_
   (* c++ext: *)
-  | Reference       of tok (*'&'*) * type_
+  | TReference       of tok (*'&'*) * type_
+  (* c++0x: *)
+  | TRefRef       of tok (*'&&'*) * type_
 
-  | Array           of a_constExpression option bracket * type_
-  | FunctionType    of functionType
+  | TArray           of a_const_expr (* or star? *) option bracket * type_
+  | TFunction        of functionType
 
-  | EnumName        of tok (* 'enum' *) * ident (* a_enum_name *)
-  | StructUnionName of structUnion wrap * ident (* a_ident_name *)
+  | EnumName  of tok (* 'enum' *) * ident (* a_enum_name *)
+  | ClassName of class_key wrap * ident (* a_ident_name *)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and it is a name so it can have some IdTemplateId in it.
   *)
   | TypeName of name (* a_typedef_name*)
   (* only to disambiguate I think *)
-  | TypenameKwd of tok (* 'typename' *) * name (* a_typedef_name *)
+  | TypenameKwd of tok (* 'typename' *) * type_ (* usually a TypeName *)
+
+  (* should be really just at toplevel *)
+  | EnumDef of enum_definition (* => string * int list *)
+  (* c++ext: bigger type now *)
+  | ClassDef of class_definition
 
   (* gccext: TypeOfType may seems useless, why declare a __typeof__(int)
    * x; ? But when used with macro, it allows to fix a problem of C which
@@ -204,13 +210,13 @@ and typeC =
    * macro(type, ident) __typeof(type) ident;' it will work. *)
   | TypeOf of tok * (type_, expr) Common.either paren
 
-  (* should be really just at toplevel *)
-  | EnumDef of enum_definition (* => string * int list *)
-  (* c++ext: bigger type now *)
-  | StructDef of class_definition
+  (* c++0x: *)
+  | TAuto of tok
 
   (* forunparser: *)
   | ParenType of type_ paren (* less: delete *)
+
+  | TypeTodo of todo_category * type_ list
 
 (* TODO: simplify, it is now possible to do 'signed foo' so make
  * sign and base possible qualifier?
@@ -237,15 +243,6 @@ and sign = Signed | UnSigned
 and floatType = CFloat | CDouble | CLongDouble
 
 and type_qualifiers = type_qualifier wrap list
-and type_qualifier =
-  (* classic C type qualifiers *)
-  | Const | Volatile
-  (* cext? *)
-  | Restrict
-  | Atomic
-  (* c++ext? *)
-  | Mutable
-  | Constexpr
 
 (*****************************************************************************)
 (* Expressions *)
@@ -416,7 +413,7 @@ and operator =
 and cast_operator =
   | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
 
-and a_constExpression = expr (* => int *)
+and a_const_expr = expr (* => int *)
 
 (* expr subset: Id, XxxAccess, Deref, ParenExpr, ...*)
 and a_lhs = expr
@@ -478,7 +475,7 @@ and stmt =
  * old: compound = (declaration list * stmt list)
  * old: (declaration, stmt) either list
 *)
-and compound = stmt_sequencable list brace
+and compound = stmt sequencable list brace
 
 and condition_clause =
   | CondClassic of expr
@@ -506,16 +503,20 @@ and exception_declaration =
   (* sgrep-ext? *)
   | ExnDeclEllipsis of tok
 
-(* easier to put at stmt_list level than stmt level *)
-and stmt_sequencable =
-  | StmtElem of stmt
-  (* cppext: *)
-  | CppDirectiveStmt of cpp_directive
-  | IfdefStmt of ifdef_directive (* * stmt list *)
+(*****************************************************************************)
+(* Definitions/Declarations *)
+(*****************************************************************************)
 
-(*****************************************************************************)
-(* Declarations *)
-(*****************************************************************************)
+(* see also ClassDef in type_ which can also define entities *)
+
+and entity = {
+  (* Usually a simple ident.
+   * Can be an ident_or_op for functions
+  *)
+  name: name;
+  specs: specifier list;
+}
+
 (* ------------------------------------------------------------------------- *)
 (* Block Declaration *)
 (* ------------------------------------------------------------------------- *)
@@ -557,6 +558,7 @@ and colon_option =
 (* note: onedecl includes prototype declarations and class_declarations!
  * c++ext: onedecl now covers also field definitions as fields can have
  * storage in C++.
+ * TODO: split in EmptyDecl vs OneDecl with a name and use entity!
 *)
 and onedecl = {
   (* option cos can have empty declaration or struct tag declaration.
@@ -564,15 +566,13 @@ and onedecl = {
   *)
   v_namei: (name * init option) option;
   v_type: type_;
-  v_storage: storage; (* TODO: use for c++0x 'auto' inferred locals *)
+  v_storage: storage_opt; (* TODO: use for c++0x 'auto' inferred locals *)
   (* v_attr: attribute list; *) (* gccext: *)
 }
 (* TODO: migrate with annotation? S of storage? and move
  * in entity?
 *)
-and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap
-and storageClass  = Auto | Static | Register | Extern
-(* Friend ???? Mutable? *)
+and storage_opt = NoSto | StoTypedef of tok | Sto of storage wrap
 
 and init =
   | EqInit of tok (*=*) * initialiser
@@ -608,26 +608,26 @@ and designator =
  * can maybe factorize annotations in this entity type (e.g., storage).
  * Also will remove the need for func_or_else
 *)
-and func_definition = {
-  f_name: name;
+and func_definition = entity * function_definition
+and function_definition = {
   f_type: functionType;
-  f_storage: storage;
-  (* todo: gccext: inline or not:, f_inline: tok option
-   * TODO: = default, = delete? special f_body type?
-  *)
-  f_body: compound;
+  f_storage: storage_opt;
+  (* todo: gccext: inline or not:, f_inline: tok option *)
+  f_body: function_body;
   (*f_attr: attribute list;*) (* gccext: *)
 }
 and functionType = {
   ft_ret: type_; (* fake return type for ctor/dtor *)
   ft_params: parameter list paren;
-  ft_dots: (tok(*,*) (* TODO DELETE *) * tok(*...*)) option;
+  ft_dots: (tok(*,*) (* TODO DELETE, via ParamDots *) * tok(*...*)) option;
   (* c++ext: *)
   (* TODO: via attribute *)
   ft_const: tok option; (* only for methods, TODO put in attribute? *)
   ft_throw: exn_spec option;
 }
-and parameter = {
+(* TODO: ParamClassic of parameter_classic | ParamEllipsis of tok *)
+and parameter = parameter_classic
+and parameter_classic = {
   p_name: ident option;
   p_type: type_;
   (* TODO: via attribute *)
@@ -636,6 +636,10 @@ and parameter = {
   p_val: (tok (*=*) * expr) option;
 }
 and exn_spec = (tok (*'throw'*) * type_ (* usually just a name *) list paren)
+
+(* TODO: = default, = delete? *)
+and function_body =
+  compound
 
 (* less: simplify? need differentiate at this level? could have
  * is_ctor, is_dtor helper instead.
@@ -663,22 +667,24 @@ and enum_definition =
 
 and enum_elem = {
   e_name: ident;
-  e_val: (tok (*=*) * a_constExpression) option;
+  e_val: (tok (*=*) * a_const_expr) option;
 }
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
-(* TODO: move c_name in separate entity type *)
-and class_definition = {
-  c_kind: structUnion wrap;
-  (* the ident can be a template_id when do template specialization. *)
-  c_name: a_ident_name (* a_class_name?? *) option;
+(* the ident can be a template_id when do template specialization. *)
+and class_definition =
+  a_ident_name (* a_class_name?? *) option * class_definition_bis
+
+and class_definition_bis = {
+  c_kind: class_key wrap;
   (* c++ext: *)
-  c_inherit: (tok (* ':' *) * base_clause list) option;
-  c_members: class_member_sequencable list brace (* new scope *);
+  c_inherit: base_clause list;
+  c_members: class_member sequencable list brace (* new scope *);
 }
-and structUnion =
+and class_key =
+  (* classic C *)
   | Struct | Union
   (* c++ext: *)
   | Class
@@ -719,14 +725,8 @@ and class_member =
 *)
 and fieldkind =
   | FieldDecl of onedecl
-  | BitField of ident option * tok(*:*) * type_ * a_constExpression
+  | BitField of ident option * tok(*:*) * type_ * a_const_expr
   (* type_ => BitFieldInt | BitFieldUnsigned *)
-
-and class_member_sequencable =
-  | ClassElem of class_member
-  (* cppext: *)
-  | CppDirectiveStruct of cpp_directive
-  | IfdefStruct of ifdef_directive (*  * field list *)
 
 (*****************************************************************************)
 (* Attributes, modifiers *)
@@ -736,7 +736,7 @@ and specifier =
   | A of attribute
   | M of modifier wrap
   | Q of type_qualifier wrap
-  | S of storage
+  | S of storage wrap
 
 and attribute =
   (* __attribute__((...)), double paren *)
@@ -755,6 +755,26 @@ and modifier =
   (* just for functions *)
   | MsCall of string (* msext: e.g., __cdecl, __stdcall *)
 
+and type_qualifier =
+  (* classic C type qualifiers *)
+  | Const | Volatile
+  (* cext? *)
+  | Restrict
+  | Atomic
+  (* c++ext? *)
+  | Mutable
+  | Constexpr
+
+and storage  =
+  (* only in C, in C++ auto is for TAuto *)
+  | Auto
+  | Static
+  | Register
+  | Extern
+  (* c++0x? *)
+  | StoInline
+  (* Friend ???? Mutable? *)
+
 (* TODO: like in parsing_c/
  * (* gccext: cppext: *)
  * and attribute = attributebis wrap
@@ -762,17 +782,22 @@ and modifier =
  *   | Attribute of string
 *)
 
+
 (*****************************************************************************)
 (* Cpp *)
 (*****************************************************************************)
 (* ------------------------------------------------------------------------- *)
-(* cppext: cpp directives, #ifdef, #define and #include body *)
+(* cppext: #define and #include body *)
 (* ------------------------------------------------------------------------- *)
+
+(* all except ifdefs which are treated separately *)
 and cpp_directive =
   | Define of tok (* #define*) * ident * define_kind * define_val
   (* tsonly: in pfff the first tok contains everything actually *)
   | Include of tok (* #include *) * include_kind
+  (* other stuff *)
   | Undef of ident (* #undef xxx *)
+  (* e.g., #line *)
   | PragmaAndCo of tok
 
 and define_kind =
@@ -805,14 +830,26 @@ and include_kind =
 (* this is restricted to simple expressions like a && b *)
 and a_cppExpr = expr
 
+(* ------------------------------------------------------------------------- *)
+(* cppext: #ifdefs *)
+(* ------------------------------------------------------------------------- *)
+
+and 'a sequencable =
+  | X of 'a
+  (* cppext: *)
+  | CppDirective of cpp_directive
+  | CppIfdef of ifdef_directive (* * 'a list *)
+  (* todo: right now just at the toplevel, but could have elsewhere *)
+  | MacroTop of ident * argument list paren * tok option
+  | MacroVarTop of ident * sc
+
 (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
-and ifdef_directive = ifdefkind wrap
-and ifdefkind =
-  | Ifdef (* todo? of string? *)
+and ifdef_directive =
+  | Ifdef of tok (* todo? of string? *)
   (* less: IfIf of formula_cpp ? *)
-  | IfdefElse
-  | IfdefElseif
-  | IfdefEndif
+  | IfdefElse of tok
+  | IfdefElseif of tok
+  | IfdefEndif of tok
   (* less:
    * set in Parsing_hacks.set_ifdef_parenthize_info. It internally use
    * a global so it means if you parse the same file twice you may get
@@ -845,39 +882,27 @@ and declaration =
   | TemplateSpecialization of tok * unit angle * declaration
   (* the list can be empty *)
   | ExternC     of tok * tok * declaration
-  | ExternCList of tok * tok * declaration_sequencable list brace
+  | ExternCList of tok * tok * declaration sequencable list brace
   (* the list can be empty *)
-  | NameSpace of tok * ident * declaration_sequencable list brace
+  | NameSpace of tok * ident * declaration sequencable list brace
   (* after have some semantic info *)
-  | NameSpaceExtend of string * declaration_sequencable list
-  | NameSpaceAnon   of tok * declaration_sequencable list brace
+  | NameSpaceExtend of string * declaration sequencable list
+  | NameSpaceAnon   of tok * declaration sequencable list brace
 
   (* gccext: allow redundant ';' *)
   | EmptyDef of sc
+
+  | NotParsedCorrectly of tok list
 
   | DeclTodo of todo_category
 
 (* c++ext: *)
 and template_parameter = parameter (* todo? more? *)
 and template_parameters = template_parameter list angle
-
-(* easier to put at stmt_list level than stmt level *)
-and declaration_sequencable =
-  | DeclElem of declaration
-
-  (* cppext: *)
-  | CppDirectiveDecl of cpp_directive
-  | IfdefDecl of ifdef_directive (* * toplevel list *)
-  (* cppext: *)
-  | MacroTop of ident * argument list paren * tok option
-  | MacroVarTop of ident * sc
-
-  (* could also be in decl *)
-  | NotParsedCorrectly of tok list
-
 [@@deriving show { with_path = false }]
 
-type toplevel = declaration_sequencable
+
+type toplevel = declaration sequencable
 [@@deriving show]
 
 (* finally *)
@@ -899,14 +924,10 @@ type any =
   | Cpp of cpp_directive
   | Type of type_
   | Name of name
-
-  | BlockDecl2 of block_declaration
-  | ClassDef of class_definition
-  | FuncDef of func_definition
-  | FuncOrElse of func_or_else
-  | ClassMember of class_member
   | OneDecl of onedecl
   | Init of initialiser
+  | BlockDecl2 of block_declaration
+  | ClassMember of class_member
 
   | Constant of constant
 
@@ -919,6 +940,22 @@ type any =
   | InfoList of tok list
 
 [@@deriving show { with_path = false }] (* with tarzan *)
+
+(*****************************************************************************)
+(* Extra types, used just during parsing *)
+(*****************************************************************************)
+(* Take the left part of the type and build around it with the right part
+ * to return a final type. For example in int[2], the
+ * left part will be int and the right part [2] and the final
+ * type will be int[2].
+*)
+type abstract_declarator = type_ -> type_
+
+(* A couple with a name and an abstract_declarator.
+ * Note that with 'int* f(int)' we must return Func(Pointer int,int) and not
+ * Pointer (Func(int,int)).
+*)
+type declarator = { dn: name; dt: abstract_declarator }
 
 (*****************************************************************************)
 (* Some constructors *)

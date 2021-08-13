@@ -692,6 +692,9 @@ let opt_to_list : 'a option -> 'a list = function
   | None -> []
   | Some x -> [x]
 
+(* often used in grammar actions in menhir *)
+let optlist_to_list = function None -> [] | Some xs -> xs
+
 (* not sure why but can't use let (?:) a b = ... then at use time ocaml yells*)
 let (|||) a b =
   match a with

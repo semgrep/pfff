@@ -414,7 +414,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
          let info_of_bads =
            Common2.map_eff_rev TH.info_of_tok tr.PI.passed in
 
-         Some (Ast.NotParsedCorrectly info_of_bads)
+         Some (X (Ast.NotParsedCorrectly info_of_bads))
       )
     in
 
@@ -440,7 +440,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
     stat.Stat.commentized <-
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
-     | Some (Ast.NotParsedCorrectly _xs) ->
+     | Some (Ast.X (Ast.NotParsedCorrectly _xs)) ->
          (* todo: could count same line multiple times! use Hashtbl.add
           * and a simple Hashtbl.length at the end to add in error_line_count
          *)
@@ -480,7 +480,7 @@ let parse file : (Ast.program, T.token) PI.parsing_result  =
       parse2 file
     with Stack_overflow ->
       logger#error "PB stack overflow in %s" file;
-      { PI.ast = [Ast.NotParsedCorrectly []];
+      { PI.ast = [];
         tokens = [];
         stat = { (Stat.bad_stat file) with Stat.have_timeout = true }
       }

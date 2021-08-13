@@ -27,15 +27,15 @@ module Ast = Ast_cpp
 
 let is_function_type x =
   match Ast.unwrap_typeC x with
-  | FunctionType _ -> true
+  | TFunction _ -> true
   | _ -> false
 
 let rec is_method_type x =
   match Ast.unwrap_typeC x with
-  | Pointer (_, y) ->
+  | TPointer (_, y) ->
       is_method_type y
   | ParenType paren_ft ->
       is_method_type (Ast.unparen paren_ft)
-  | FunctionType _ ->
+  | TFunction _ ->
       true
   | _ -> false

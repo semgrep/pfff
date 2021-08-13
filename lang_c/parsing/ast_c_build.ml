@@ -86,25 +86,25 @@ let rec ifdef_skipper xs f =
        | None -> x::ifdef_skipper xs f
        | Some ifdef ->
            (match ifdef with
-            | Ifdef, tok ->
+            | Ifdef tok ->
                 logger#info "skipping: %s" (Parse_info.str_of_info tok);
                 (try
                    let (_, x, rest) =
                      xs |> Common2.split_when (fun x ->
                        match f x with
-                       | Some (IfdefElse, _) -> true
-                       | Some (IfdefEndif, _) -> true
+                       | Some (IfdefElse _) -> true
+                       | Some (IfdefEndif _) -> true
                        | _ -> false
                      )
                    in
                    (match f x with
-                    | Some (IfdefEndif, _) ->
+                    | Some (IfdefEndif _) ->
                         ifdef_skipper rest f
-                    | Some (IfdefElse, _) ->
+                    | Some (IfdefElse _) ->
                         let (before, _x, rest) =
                           rest |> Common2.split_when (fun x ->
                             match f x with
-                            | Some (IfdefEndif, _) -> true
+                            | Some (IfdefEndif _) -> true
                             | _ -> false
                           )
                         in
@@ -114,7 +114,7 @@ let rec ifdef_skipper xs f =
                  with Not_found ->
                    failwith (spf "%s: unclosed ifdef" (Parse_info.string_of_info tok))
                 )
-            | _, tok ->
+            | (IfdefElse tok | IfdefElseif (tok) | IfdefEndif tok) ->
                 failwith (spf "%s: no ifdef" (Parse_info.string_of_info tok))
            )
       )
@@ -134,24 +134,18 @@ let rec program xs =
 (* ---------------------------------------------------------------------- *)
 
 and toplevels env xs =
-  ifdef_skipper xs (function IfdefDecl x -> Some x | _ -> None)
+  ifdef_skipper xs (function CppIfdef x -> Some x | _ -> None)
   |> List.map (toplevel env)
 
 and toplevel env x =
   match x with
-  | DeclElem decl ->
+  | X decl ->
       declaration env decl |> List.map (fun x -> A.DefStmt x)
-  | CppDirectiveDecl x ->
+  | CppDirective x ->
       [A.DirStmt (cpp_directive env x)]
 
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) ->
-      debug (Toplevel x); raise Todo
-
-  | IfdefDecl _ -> raise Impossible (* see ifdef_skipper *)
-  (* not much we can do here, at least the parsing statistics should warn the
-   * user that some code was not processed
-  *)
-  | NotParsedCorrectly _ -> []
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | CppIfdef _ -> raise Impossible (* see ifdef_skipper *)
 
 
 and declaration env x =
@@ -161,7 +155,7 @@ and declaration env x =
        | FunctionOrMethod def ->
            [A.FuncDef (func_def env def)]
        | Constructor _ | Destructor _ ->
-           debug (Toplevel (DeclElem x)); raise CplusplusConstruct
+           debug (Toplevel (X x)); raise CplusplusConstruct
       )
 
   | BlockDecl bd ->
@@ -189,7 +183,7 @@ and declaration env x =
               | _ -> A.VarDef x
             ))
        | _ ->
-           debug (Toplevel (DeclElem x)); raise Todo
+           debug (Toplevel (X x)); raise Todo
       )
 
   | EmptyDef _ -> []
@@ -197,17 +191,21 @@ and declaration env x =
   | NameSpaceAnon (_, _)|NameSpaceExtend (_, _)|NameSpace (_, _, _)
   | ExternCList (_, _, _)|ExternC (_, _, _)|TemplateSpecialization (_, _, _)
   | TemplateDecl _ ->
-      debug (Toplevel (DeclElem x)); raise CplusplusConstruct
+      debug (Toplevel (X x)); raise CplusplusConstruct
   | DeclTodo _ ->
-      debug (Toplevel (DeclElem x)); raise Todo
+      debug (Toplevel (X x)); raise Todo
+  (* not much we can do here, at least the parsing statistics should warn the
+   * user that some code was not processed
+  *)
+  | NotParsedCorrectly _ -> []
 
 
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
 (* ---------------------------------------------------------------------- *)
-and func_def env def =
+and func_def env ({name = f_name; specs = _}, def) =
   { A.
-    f_name = name env def.f_name;
+    f_name = name env f_name;
     f_type = function_type env def.f_type;
     f_static =
       (match def.f_storage with
@@ -289,11 +287,11 @@ and onedecl env d =
             (* it's ok to not have any var decl as long as a type
              * was defined. struct_defs_toadd should not be empty then.
             *)
-            | StructDef _ | EnumDef _ ->
+            | ClassDef _ | EnumDef _ ->
                 let _ = full_type env ft in
                 None
             (* forward declaration *)
-            | StructUnionName _ ->
+            | ClassName _ ->
                 None
 
             | _ -> debug (OneDecl d); raise Todo
@@ -338,6 +336,7 @@ and storage _env x =
        | Static -> A.Static
        | Extern -> A.Extern
        | Auto | Register -> A.DefaultStorage
+       | StoInline -> raise CplusplusConstruct
       )
 
 (* ---------------------------------------------------------------------- *)
@@ -461,15 +460,16 @@ and compound env (t1, xs, t2) =
   t1, (statements_sequencable env xs |> List.flatten), t2
 
 and statements_sequencable env xs =
-  ifdef_skipper xs (function IfdefStmt x -> Some x | _ -> None)
+  ifdef_skipper xs (function CppIfdef x -> Some x | _ -> None)
   |> List.map (statement_sequencable env)
 
 
 and statement_sequencable env x =
   match x with
-  | StmtElem st -> [stmt env st]
-  | CppDirectiveStmt x -> debug (Cpp x); raise Todo
-  | IfdefStmt _ -> raise Impossible
+  | X st -> [stmt env st]
+  | CppDirective x -> debug (Cpp x); raise Todo
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | CppIfdef _ -> raise Impossible
 
 and cases env st =
   match st with
@@ -479,26 +479,26 @@ and cases env st =
         | [] -> []
         | x::xs ->
             (match x with
-             | StmtElem (((Case (_, _, _, st))))
-             | StmtElem (((Default (_, _, st))))
+             | X (((Case (_, _, _, st))))
+             | X (((Default (_, _, st))))
                ->
                  let xs', rest =
-                   (StmtElem st::xs) |> Common.span (function
-                     | StmtElem (((Case (_, _, _, _st))))
-                     | StmtElem (((Default (_, _, _st)))) -> false
+                   (X st::xs) |> Common.span (function
+                     | X (((Case (_, _, _, _st))))
+                     | X (((Default (_, _, _st)))) -> false
                      | _ -> true
                    )
                  in
                  let stmts = List.map (function
-                   | StmtElem st -> stmt env st
+                   | X st -> stmt env st
                    | x ->
                        debug (Stmt (Compound (l, [x], r)));
                        raise MacroInCase
                  ) xs' in
                  (match x with
-                  | StmtElem (((Case (tok, e, _, _)))) ->
+                  | X (((Case (tok, e, _, _)))) ->
                       A.Case (tok, expr env e, stmts)
-                  | StmtElem (((Default (tok, _, _st)))) ->
+                  | X (((Default (tok, _, _st)))) ->
                       A.Default (tok, stmts)
                   | _ -> raise Impossible
                  )::aux rest
@@ -624,8 +624,9 @@ and argument env x =
 and full_type env x =
   let (_qu, (t)) = x in
   match t with
-  | Pointer (tok, t) -> A.TPointer (tok, full_type env t)
-  | BaseType t ->
+  | TypeTodo _ -> raise CplusplusConstruct
+  | TPointer (tok, t) -> A.TPointer (tok, full_type env t)
+  | TBase t ->
       let s, ii =
         (match t with
          | Void ii -> "void", ii
@@ -659,17 +660,16 @@ and full_type env x =
       in
       A.TBase (s, ii)
 
-  | FunctionType ft -> A.TFunction (function_type env ft)
-  | Array ((_, eopt, _), ft) ->
+  | TFunction ft -> A.TFunction (function_type env ft)
+  | TArray ((_, eopt, _), ft) ->
       A.TArray (Common.map_opt (expr env) eopt, full_type env ft)
   | TypeName n -> A.TTypeName (name env n)
 
-  | StructUnionName ((kind, _), name) ->
+  | ClassName ((kind, _), name) ->
       A.TStructName (struct_kind env kind, name)
-  | StructDef def ->
+  | ClassDef (name_opt, def) ->
       (match def with
          { c_kind = (kind, tok);
-           c_name = name_opt;
            c_inherit = _inh;
            c_members = (t1, xs, t2);
          } ->
@@ -716,7 +716,7 @@ and full_type env x =
 
   | TypeOf (_, _) ->
       debug (Type x); raise Todo
-  | TypenameKwd (_, _) | Reference _ ->
+  | TypenameKwd (_, _) | TReference _ | TAuto _ | TRefRef _ ->
       debug (Type x); raise CplusplusConstruct
 
   | ParenType (_, t, _) -> full_type env t
@@ -737,15 +737,15 @@ and class_member env x =
 
 
 and class_members_sequencable env xs =
-  ifdef_skipper xs (function IfdefStruct x -> Some x | _ -> None)
+  ifdef_skipper xs (function CppIfdef x -> Some x | _ -> None)
   |> List.map (class_member_sequencable env)
 
 and class_member_sequencable env x =
   match x with
-  | ClassElem x -> class_member env x
-  | CppDirectiveStruct dir ->
-      debug (Cpp dir); raise Todo
-  | IfdefStruct _ -> raise Impossible
+  | X x -> class_member env x
+  | CppDirective dir -> debug (Cpp dir); raise Todo
+  | CppIfdef _ -> raise Impossible
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
 
 and fieldkind env x =
   match x with
@@ -808,8 +808,5 @@ let any any =
       )
   | Toplevels xs -> A.Stmts (List.map (toplevel env) xs |> List.flatten)
 
-  | (Program _|Cpp _|Type _|Name _|BlockDecl2 _|ClassDef _|FuncDef _|
-     FuncOrElse _|ClassMember _|OneDecl _|Init _|Constant _|Argument _|
-     Parameter _|Body _|Info _|InfoList _
-    )
+  | _
     -> failwith "Ast_c_simple_build.any: only Expr/Stmt/Stmts handled"
