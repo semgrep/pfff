@@ -313,23 +313,21 @@ let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
   | [FieldDecl({
     v_namei = Some (name, ini_opt);
-    v_type = (q, (TFunction ft));
+    v_type = (_q, (TFunction ft));
     v_storage = sto;
   })] ->
       (* todo? define another type instead of onedecl? *)
-      MemberDecl (MethodDecl ({
-        v_namei = Some (name, None);
-        v_type = (q, (TFunction ft));
-        v_storage = sto;
-      },
-        (match ini_opt with
-         | None -> None
-         | Some (EqInit(tokeq, InitExpr(C(Int (Some 0, iizero))))) ->
-             Some (tokeq, iizero)
-         | _ ->
-             raise (Semantic ("can't assign expression to method decl", semicolon))
-        ), semicolon
-      ))
+      let ent = { name; specs = [] } in
+      let fbody =
+        match ini_opt with
+        | None -> FBDecl semicolon
+        | Some (EqInit(tokeq, InitExpr(C(Int (Some 0, iizero))))) ->
+            FBZero (tokeq, iizero, semicolon)
+        | _ ->
+            raise (Semantic ("can't assign expression to method decl", semicolon))
+      in
+      let def = { f_type = ft; f_storage = sto; f_body = fbody } in
+      MemberDecl (Func (ent, def))
 
   | _ -> MemberField (xs, semicolon)
 
@@ -355,7 +353,7 @@ let mk_constructor id (lp, params, rp) cp =
     ft_dots = None;
     (* TODO *)
     ft_const = None;
-    ft_throw = None;
+    ft_throw = [];
   }
   in
   let name = name_of_id id in
@@ -368,7 +366,7 @@ let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
     ft_params= (lp,  [], rp);
     ft_dots = None;
     ft_const = None;
-    ft_throw = exnopt;
+    ft_throw = opt_to_list exnopt;
   }
   in
   let name = None, noQscope, IdDestructor (tilde, id) in

@@ -192,7 +192,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       )
     );
 
-    V.kblock_decl = (fun (k, _) x ->
+    V.kdeclaration = (fun (k, _) x ->
       match x with
       | DeclList (xs, _) ->
           xs |> List.iter (fun onedecl ->
@@ -215,10 +215,10 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       | MacroDecl _ ->
           k x
 
-      | ( Asm (_, _, _, _)
-        | NameSpaceAlias (_, _, _, _, _)
-        | UsingDecl _
-        ) -> ()
+      | NotParsedCorrectly ii ->
+          ii |> List.iter (fun ii -> tag ii NotParsed)
+
+      | _ -> k x
     );
 
     V.kstmt = (fun (k, _) x ->
@@ -402,20 +402,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     );
     V.kclass_member = (fun (k,_) def ->
       (match def with
-       | MemberFunc x ->
-           let ({name = f_name; specs = _}, _def) =
-             match x with
-             | FunctionOrMethod def | Ast.Constructor def | Destructor def -> def
-           in
+       | (MemberDecl (Func x)) ->
+           let ({name = f_name; specs = _}, _def) = x in
            let name = f_name in
            Ast.ii_of_id_name name |> List.iter (fun ii ->
              tag ii (Entity (Method, (Def2 fake_no_def2)))
            );
-       | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _
-         |QualifiedIdInClass (_, _)
-         |MemberField _|MemberDecl _ | Access (_, _)
-         )
-         -> ()
+       | _ -> ()
       );
       k def
     );
@@ -425,14 +418,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
            params |> Ast.unparen |> List.iter (fun (_s, ii) ->
              tag ii (Parameter Def)
            )
-       | _ -> ()
-      );
-      k def
-    );
-    V.kdeclaration = (fun (k,_) def ->
-      (match def with
-       | NotParsedCorrectly ii ->
-           ii |> List.iter (fun ii -> tag ii NotParsed)
        | _ -> ()
       );
       k def

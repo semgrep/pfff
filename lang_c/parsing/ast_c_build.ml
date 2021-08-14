@@ -150,41 +150,42 @@ and toplevel env x =
 
 and declaration env x =
   match x with
-  | Func func_or_else ->
-      (match func_or_else with
-       | FunctionOrMethod def ->
-           [A.FuncDef (func_def env def)]
-       | Constructor _ | Destructor _ ->
-           debug (Toplevel (X x)); raise CplusplusConstruct
-      )
+  | Func def -> [A.FuncDef (func_def env def)]
 
-  | BlockDecl bd ->
-      (match block_declaration env bd with
-       | A.Vars xs ->
-           let structs = env.struct_defs_toadd in
-           let enums = env.enum_defs_toadd in
-           let typedefs = env.typedefs_toadd in
-           env.struct_defs_toadd <- [];
-           env.enum_defs_toadd <- [];
-           env.typedefs_toadd <- [];
-           (structs |> List.map (fun x -> A.StructDef x)) @
-           (enums |> List.map (fun x -> A.EnumDef x)) @
-           (typedefs |> List.map (fun x -> A.TypeDef x)) @
-           (xs |> List.map (fun x ->
-              (* could skip extern declaration? *)
-              match x with
-              | { A.v_type = A.TFunction ft; v_storage = storage; _ } ->
-                  A.Prototype { A.
-                                f_name = x.A.v_name;
-                                f_type = ft;
-                                f_static = (storage =*= A.Static);
-                                f_body = PI.fake_bracket [];
-                              }
-              | _ -> A.VarDef x
-            ))
-       | _ ->
-           debug (Toplevel (X x)); raise Todo
-      )
+  (* was in block_declaration before *)
+  | DeclList (xs, _) ->
+      let xs = Common.map_filter (onedecl env) xs in
+
+      let structs = env.struct_defs_toadd in
+      let enums = env.enum_defs_toadd in
+      let typedefs = env.typedefs_toadd in
+      env.struct_defs_toadd <- [];
+      env.enum_defs_toadd <- [];
+      env.typedefs_toadd <- [];
+      (structs |> List.map (fun x -> A.StructDef x)) @
+      (enums |> List.map (fun x -> A.EnumDef x)) @
+      (typedefs |> List.map (fun x -> A.TypeDef x)) @
+      (xs |> List.map (fun x ->
+         (* could skip extern declaration? *)
+         match x with
+         | { A.v_type = A.TFunction ft; v_storage = storage; _ } ->
+             A.Prototype { A.
+                           f_name = x.A.v_name;
+                           f_type = ft;
+                           f_static = (storage =*= A.Static);
+                           f_body = PI.fake_bracket [];
+                         }
+         | _ -> A.VarDef x
+       ))
+
+
+  (* todo *)
+  | Asm (_tok1, _volatile_opt, _asmbody, _tok2) ->
+      raise Todo
+  | MacroDecl _ -> raise Todo
+  | UsingDecl _ | NameSpaceAlias _ ->
+      raise CplusplusConstruct
+
 
   | EmptyDef _ -> []
 
@@ -212,8 +213,14 @@ and func_def env ({name = f_name; specs = _}, def) =
        | Sto (Static, _) -> true
        | _ -> false
       );
-    f_body = compound env def.f_body;
+    f_body = function_body env def.f_body;
   }
+
+and function_body env x =
+  match x with
+  | FBDef x -> compound env x
+  | FBDecl sc -> sc, [], sc
+  | FBDelete _ | FBDefault _ | FBZero _ -> raise CplusplusConstruct
 
 and function_type env x =
   match x with
@@ -224,7 +231,7 @@ and function_type env x =
       ft_throw = throw;
     } ->
       (match const, throw with
-       | None, None -> ()
+       | None, [] -> ()
        | _ -> raise CplusplusConstruct
       );
 
@@ -512,19 +519,12 @@ and cases env st =
       debug (Stmt st); raise Todo
 
 and block_declaration env block_decl =
-  match block_decl with
-  | DeclList (xs, _) ->
-      A.Vars (Common.map_filter (onedecl env) xs)
-
-  (* todo *)
-  | Asm (_tok1, _volatile_opt, _asmbody, _tok2) ->
-      A.Asm []
-
-  | MacroDecl _ -> debug (BlockDecl2 block_decl); raise Todo
-
-  | UsingDecl _ | NameSpaceAlias _ ->
-      raise CplusplusConstruct
-
+  let xs = declaration env block_decl in
+  let ys = xs |> Common.map_filter (function
+    | A.VarDef x -> Some x
+    | _ -> None
+  ) in
+  Vars ys
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -731,11 +731,11 @@ and class_member env x =
   | MemberField (fldkind, _) ->
       let xs = fldkind in
       xs |> List.map (fieldkind env)
-  | ( UsingDeclInClass _| TemplateDeclInClass _
-    | QualifiedIdInClass (_, _)| MemberDecl _| MemberFunc _| Access (_, _)
-    ) ->
+  | ( QualifiedIdInClass (_, _)| Access (_, _) ) ->
       debug (ClassMember x); raise Todo
-  | EmptyField _ -> []
+  | MemberDecl (EmptyDef _) -> []
+  | MemberDecl _
+    -> debug (ClassMember x); raise Todo
 
 
 and class_members_sequencable env xs =

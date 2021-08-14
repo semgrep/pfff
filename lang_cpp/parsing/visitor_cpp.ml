@@ -40,7 +40,6 @@ type visitor_in = {
   kclass_def: class_definition vin;
   kfunc_def: func_definition vin;
   kcpp: cpp_directive vin;
-  kblock_decl: block_declaration vin;
 
   kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
@@ -55,7 +54,6 @@ let default_visitor =
     kfieldkind = (fun (k,_) x -> k x);
     kparameter = (fun (k,_) x -> k x);
     ktypeC = (fun (k,_) x -> k x);
-    kblock_decl  = (fun (k,_) x -> k x);
     kcompound = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
@@ -482,43 +480,6 @@ and v_exception_declaration =
   function
   | ExnDeclEllipsis v1 -> let v1 = v_tok v1 in ()
   | ExnDecl v1 -> let v1 = v_parameter v1 in ()
-and v_block_declaration x =
-  let k = function
-  | DeclList (v1, v2) ->
-      let v1 = v_comma_list v_onedecl v1 and v2 = v_tok v2 in ()
-  | MacroDecl (v1, v2, v3, v4) ->
-      let v1 = v_list v_tok v1
-      and v2 = v_wrap v_string v2
-      and v3 = v_paren (v_comma_list v_argument) v3
-      and v4 = v_tok v4
-      in ()
-  | UsingDecl v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2, v3) ->
-             let v1 = v_tok v1 and v2 = v_name v2 and v3 = v_tok v3 in ())
-      in ()
-  | UsingDirective (v1, v2, v3, v4) ->
-      let v1 = v_tok v1
-      and v2 = v_tok v2
-      and v3 = v_namespace_name v3
-      and v4 = v_tok v4
-      in ()
-  | NameSpaceAlias (v1, v2, v3, v4, v5) ->
-      let v1 = v_tok v1
-      and v2 = v_wrap v_string v2
-      and v3 = v_tok v3
-      and v4 = v_namespace_name v4
-      and v5 = v_tok v5
-      in ()
-  | Asm (v1, v2, v3, v4) ->
-      let v1 = v_tok v1
-      and v2 = v_option v_tok v2
-      and v3 = v_paren v_asmbody v3
-      and v4 = v_tok v4
-      in ()
-  in
-  vin.kblock_decl (k, all_functions) x
 and
   v_onedecl { v_namei = v_v_namei; v_type = v_v_type; v_storage = v_v_storage
             } =
@@ -829,6 +790,42 @@ and v_declaration x =
       in ()
   | EmptyDef v1 -> let v1 = v_tok v1 in ()
   | DeclTodo -> ()
+
+  | DeclList (v1, v2) ->
+      let v1 = v_comma_list v_onedecl v1 and v2 = v_tok v2 in ()
+  | MacroDecl (v1, v2, v3, v4) ->
+      let v1 = v_list v_tok v1
+      and v2 = v_wrap v_string v2
+      and v3 = v_paren (v_comma_list v_argument) v3
+      and v4 = v_tok v4
+      in ()
+  | UsingDecl v1 ->
+      let v1 =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let v1 = v_tok v1 and v2 = v_name v2 and v3 = v_tok v3 in ())
+      in ()
+  | UsingDirective (v1, v2, v3, v4) ->
+      let v1 = v_tok v1
+      and v2 = v_tok v2
+      and v3 = v_namespace_name v3
+      and v4 = v_tok v4
+      in ()
+  | NameSpaceAlias (v1, v2, v3, v4, v5) ->
+      let v1 = v_tok v1
+      and v2 = v_wrap v_string v2
+      and v3 = v_tok v3
+      and v4 = v_namespace_name v4
+      and v5 = v_tok v5
+      in ()
+  | Asm (v1, v2, v3, v4) ->
+      let v1 = v_tok v1
+      and v2 = v_option v_tok v2
+      and v3 = v_paren v_asmbody v3
+      and v4 = v_tok v4
+      in ()
+
+
   in
   vin.kdeclaration (k, all_functions) x
 

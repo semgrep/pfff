@@ -293,8 +293,8 @@ main: translation_unit EOF     { $1 }
 translation_unit: external_declaration+ { $1 }
 
 external_declaration:
- | function_definition            { X (Func (FunctionOrMethod $1)) }
- | block_declaration              { X (BlockDecl $1) }
+ | function_definition            { X (Func ($1)) }
+ | block_declaration              { X ($1) }
 
 (*************************************************************************)
 (* toplevel *)
@@ -1027,13 +1027,13 @@ direct_d:
      { (fst $1, fun x-> (snd $1)
          (nQ, (TFunction {
            ft_ret= x; ft_params = ($2, [], $3);
-           ft_dots = None; ft_const = $4; ft_throw = $5; })))
+           ft_dots = None; ft_const = $4; ft_throw = opt_to_list $5; })))
      }
  | direct_d "(" parameter_type_list ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1)
           (nQ,(TFunction {
             ft_ret = x; ft_params = ($2,fst $3,$4);
-            ft_dots = snd $3; ft_const = $5; ft_throw = $6; })))
+            ft_dots = snd $3; ft_const = $5; ft_throw = opt_to_list $6; })))
      }
 
 (*----------------------------*)
@@ -1066,19 +1066,19 @@ direct_abstract_declarator:
  | "(" ")"
      { fun x -> (nQ, (TFunction {
        ft_ret = x; ft_params = ($1,[],$2);
-       ft_dots = None; ft_const = None; ft_throw = None;})) }
+       ft_dots = None; ft_const = None; ft_throw = [];})) }
  | "(" parameter_type_list ")"
      { fun x -> (nQ, (TFunction {
          ft_ret = x; ft_params = ($1,fst $2,$3);
-         ft_dots = snd $2; ft_const = None; ft_throw = None; })) }
+         ft_dots = snd $2; ft_const = None; ft_throw = []; })) }
  | direct_abstract_declarator "(" ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,[],$3);
-         ft_dots = None; ft_const = $4; ft_throw = $5; })) }
+         ft_dots = None; ft_const = $4; ft_throw = opt_to_list $5; })) }
  | direct_abstract_declarator "(" parameter_type_list ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,fst $3,$4);
-         ft_dots = snd $3; ft_const = $5; ft_throw = $6; })) }
+         ft_dots = snd $3; ft_const = $5; ft_throw = opt_to_list $6; })) }
 
 (*-----------------------------------------------------------------------*)
 (* Parameters (use decl_spec_seq not type_spec just for 'register') *)
@@ -1316,13 +1316,13 @@ access_specifier:
    * there is a conflict as it can also be an EmptyField *)
 member_declaration:
  | field_declaration      { fixFieldOrMethodDecl $1 }
- | function_definition    { MemberFunc (FunctionOrMethod $1) }
+ | function_definition    { MemberDecl (Func ($1)) }
  | qualified_id ";"
      { let name = (None, fst $1, snd $1) in
        QualifiedIdInClass (name, $2)
      }
- | using_declaration      { UsingDeclInClass $1 }
- | template_declaration   { TemplateDeclInClass $1 }
+ | using_declaration      { MemberDecl (UsingDecl $1) }
+ | template_declaration   { MemberDecl ($1) }
 
  (* not in c++ grammar as merged with function_definition, but I can't *)
  | ctor_dtor_member       { $1 }
@@ -1335,7 +1335,7 @@ member_declaration:
     * 'x;' in a structure, maybe default to int but not practical for my way of
     * parsing
     *)
- | ";"    { EmptyField $1 }
+ | ";"    { MemberDecl (EmptyDef $1) }
 
 (*-----------------------------------------------------------------------*)
 (* field declaration *)
@@ -1632,13 +1632,13 @@ asm_expr: assign_expr { $1 }
  * could be renamed declaration_or_definition
  *)
 declaration:
- | block_declaration                 { BlockDecl $1 }
+ | block_declaration                 { $1 }
 
- | function_definition               { Func (FunctionOrMethod $1) }
+ | function_definition               { Func ($1) }
 
  (* not in c++ grammar as merged with function_definition, but I can't *)
  | ctor_dtor { $1 }
- | template_declaration              { let (a,b,c) = $1 in TemplateDecl (a,b,c)}
+ | template_declaration              { $1 }
  | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
  | namespace_definition              { $1 }
@@ -1662,7 +1662,7 @@ declaration_cpp:
 
 template_declaration:
   Ttemplate TInf_Template listc(template_parameter) TSup_Template declaration
-   { ($1, ($2, $3, $4), $5) }
+   { TemplateDecl ($1, ($2, $3, $4), $5) }
 
 explicit_specialization: Ttemplate TInf_Template TSup_Template declaration
    { TemplateSpecialization ($1, ($2, (), $3), $4) }
@@ -1724,7 +1724,7 @@ function_definition:
      }
 *)
 function_body:
- | compound { $1 }
+ | compound { FBDef $1 }
 
 (*-----------------------------------------------------------------------*)
 (* c++ext: constructor special case *)
@@ -1760,22 +1760,22 @@ ctor_dtor_member:
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { MemberFunc (Constructor (mk_constructor $2 ($3, $4, $5) $7)) }
+     { MemberDecl (Func ((mk_constructor $2 ($3, $4, $5) (FBDef $7)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" ";"
-     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
+     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDecl $6))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdelete ";"
-     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
+     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDelete ($6, $7, $8)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdefault ";"
-     { MemberDecl (ConstructorDecl ($2, ($3, opt_to_list_params $4, $5), $6)) }
+     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDefault ($6, $7, $8)))) }
 
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
-     { MemberFunc (Destructor (mk_destructor $2 $3 ($4, $5, $6) $7 $8)) }
+     { MemberDecl (Func ((mk_destructor $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? ";"
-     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
+     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdelete ";"
-     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
+     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdefault ";"
-     { MemberDecl (DestructorDecl ($2, $3, ($4, $5, $6), $7, $8)) }
+     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
 
 
 ctor_spec:

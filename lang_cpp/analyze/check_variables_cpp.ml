@@ -171,7 +171,7 @@ let visit_prog prog =
                   k param
                 );
 
-                V.kblock_decl = (fun (k, _) x ->
+                V.kdeclaration = (fun (k, _) x ->
                   match x with
                   | DeclList (xs_comma, _) ->
                       xs_comma |> List.iter (fun onedecl ->
@@ -191,9 +191,7 @@ let visit_prog prog =
                       k x
                   | MacroDecl _ ->
                       k x
-                  | (Asm (_, _, _, _)
-                    |NameSpaceAlias (_, _, _, _, _)
-                    | UsingDecl _) -> ()
+                  | _ -> k x
                 );
 
 

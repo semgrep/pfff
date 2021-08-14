@@ -290,6 +290,7 @@ and expr =
   (* The Pt is redundant normally, could be replace by DeRef RecordAccess.
    * name is usually just an ident_or_op. In rare cases it can be
    * a template_method name.
+   * TODO: factorize RecordAccessOp
   *)
   | RecordAccess   of expr * tok (* . *)  * name
   | RecordPtAccess of expr * tok (* -> *) * name
@@ -318,7 +319,7 @@ and expr =
   | New of tok (*::*) option * tok (* 'new' *) *
            argument list paren option (* placement *) *
            type_ *
-           (* TODO: c++11? rectype option *)
+           (* less: c++11? rectype option *)
            argument list paren option (* initializer *)
 
   | Delete      of tok (*::*) option * tok * expr
@@ -386,10 +387,10 @@ and unaryOp  =
   | GetRefLabel
 and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
 
-(* TODO: migrate to AST_generic_.incr_decr? *)
+(* less: migrate to AST_generic_.incr_decr? *)
 and fixOp    = Dec | Inc
 
-(* TODO: migrate to AST_generic_.op? *)
+(* less: migrate to AST_generic_.op? *)
 and binaryOp = Arith of arithOp | Logical of logicalOp
 and arithOp   =
   | Plus | Minus | Mul | Div | Mod
@@ -431,7 +432,7 @@ and a_lhs = expr
  * expressions, so we need mutual recursive type definition now.
 *)
 and stmt =
-  | Compound      of compound   (* new scope *)
+  | Compound of compound   (* new scope *)
   | ExprStmt of expr_stmt
 
   (* selection *)
@@ -454,16 +455,17 @@ and stmt =
   (* labeled *)
   | Label   of a_label * tok (* : *) * stmt
   (* TODO: only inside Switch in theory *)
-  | Case      of tok * expr * tok (* : *) * stmt (* TODO list *)
+  | Case      of tok * expr * tok (* : *) * stmt (* TODO stmt_or_decls list *)
   (* gccext: *)
   | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt
-  | Default of tok * tok (* : *) * stmt (* TODO list *)
+  | Default of tok * tok (* : *) * stmt (* TODO stmt_or_decls list *)
 
   (* c++ext: in C this constructor could be outside the statement type, in a
    * decl type, because declarations are only at the beginning of a compound
    * normally. But in C++ we can freely mix declarations and statements.
    * TODO: if mix stmt and tolevel, can factorize with a general
    * DeclStmt encompassing lots of stuff?
+   * TODO: move out of stmt, and make compound use an either?
   *)
   | DeclStmt  of block_declaration
   (* c++ext: *)
@@ -476,8 +478,9 @@ and stmt =
   | StmtTodo of todo_category * stmt list
 
 (* cppext: c++ext:
- * old: compound = (declaration list * stmt list)
+ * old: (declaration list * stmt list)
  * old: (declaration, stmt) either list
+ * TODO: decl_or_stmt ... D of declaration | S of stmt
 *)
 and compound = stmt sequencable list brace
 
@@ -486,7 +489,6 @@ and expr_stmt = expr option * sc
 and condition_clause =
   | CondClassic of expr
 
-(* TODO *)
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
   | ForRange of (entity * var_decl) * tok (*':'*) * initialiser
@@ -522,7 +524,7 @@ and entity = {
   *)
   name: name;
   specs: specifier list;
-  (* TODO? put type_ also? *)
+  (* less: put type_ also? *)
 }
 
 (* ------------------------------------------------------------------------- *)
@@ -533,10 +535,17 @@ and var_decl = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* Block Declaration *)
+(* "Declaration" *)
 (* ------------------------------------------------------------------------- *)
-(* a.k.a declaration_stmt *)
-and block_declaration =
+
+(* it's not really 'toplevel' because the elements below can be nested
+ * inside namespaces or some extern. It's not really 'declaration'
+ * either because it can defines stuff. But I keep the C++ standard
+ * terminology.
+ *
+ * old: was split in intermediate 'block_declaration' before
+*)
+and declaration =
   (* TODO: Have an EmptyDecl of type_ * sc ? *)
 
   (* Before I had a Typedef constructor, but why make this special case and not
@@ -547,10 +556,8 @@ and block_declaration =
    * a Decl.
   *)
   | DeclList of vars_decl
-
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * ident * argument list paren * tok
-
   (* c++ext: using namespace *)
   | UsingDecl of using
   (* type_ is usually just a name TODO tsonly is using, but pfff is namespace? *)
@@ -558,7 +565,33 @@ and block_declaration =
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * sc
 
+  | Func of func_definition
+
+  (* c++ext: *)
+  | TemplateDecl of tok * template_parameters * declaration
+  | TemplateSpecialization of tok * unit angle * declaration
+
+  (* the list can be empty *)
+  | ExternC     of tok * tok * declaration
+  | ExternCList of tok * tok * declaration sequencable list brace
+
+  (* the list can be empty *)
+  | NameSpace of tok * ident * declaration sequencable list brace
+  (* after have some semantic info *)
+  | NameSpaceExtend of string * declaration sequencable list
+  | NameSpaceAnon   of tok * declaration sequencable list brace
+
+  (* gccext: allow redundant ';' *)
+  | EmptyDef of sc
+
+  | NotParsedCorrectly of tok list
+
+  | DeclTodo of todo_category
+
 and vars_decl = onedecl list * sc
+
+(* a.k.a declaration_stmt *)
+and block_declaration = declaration
 
 (* gccext: *)
 and asmbody = string wrap list * colon list
@@ -614,24 +647,31 @@ and designator =
   | DesignatorRange of (expr * tok (*...*) * expr) bracket
 
 (* ------------------------------------------------------------------------- *)
-(* Function definition *)
+(* Function/method/ctor/dtor definition/declaration *)
 (* ------------------------------------------------------------------------- *)
-(* Normally we should define another type functionType2 because there
- * are more restrictions on what can define a function than a pointer
- * function. For instance a function declaration can omit the name of the
- * parameter whereas a function definition can not. But, in some cases such
- * as 'f(void) {', there is no name too, so I simplified and reused the
- * same functionType type for both declarations and function definitions.
+(* I used to separate functions from methods from ctor/dtor, but simpler
+ * to just use one type. The entity will say if it's a ctor/dtor.
  *
- * TODO: split in entity * func_definition, to factorize things with lambdas?
- * can maybe factorize annotations in this entity type (e.g., storage).
- * Also will remove the need for func_or_else
+ * invariant:
+ *  - if dtor, then f_params = [] or [TVoid].
+ *  - if ctor/dtor, f_ret should be fake void.
+ *
+ * less: can maybe factorize annotations in this entity type (e.g., storage).
 *)
 and func_definition = entity * function_definition
+
 and function_definition = {
+  (* Normally we should define another type functionType2 because there
+   * are more restrictions on what can define a function than a pointer
+   * function. For instance a function declaration can omit the name of the
+   * parameter whereas a function definition can not. But, in some cases such
+   * as 'f(void) {', there is no name too, so I simplified and reused the
+   * same functionType type for both declarations and function definitions.
+  *)
   f_type: functionType;
   f_storage: storage_opt;
   (* todo: gccext: inline or not:, f_inline: tok option *)
+  (* TODO: chain call for ctor *)
   f_body: function_body;
   (*f_attr: attribute list;*) (* gccext: *)
 }
@@ -642,8 +682,9 @@ and functionType = {
   (* c++ext: *)
   (* TODO: via attribute *)
   ft_const: tok option; (* only for methods, TODO put in attribute? *)
-  ft_throw: exn_spec option;
+  ft_throw: exn_spec list;
 }
+
 (* TODO: | ParamDots of tok, sgrep-ext or not *)
 and parameter =
   | P of parameter_classic
@@ -661,26 +702,14 @@ and exn_spec =
   (* c++11: *)
   | Noexcept of tok * a_const_expr option paren option
 
-(* TODO: = default, = delete? *)
 and function_body =
-  compound
-
-(* less: simplify? need differentiate at this level? could have
- * is_ctor, is_dtor helper instead.
- * TODO do via attributes?
-*)
-and func_or_else =
-  | FunctionOrMethod of func_definition
-  (* c++ext: special member function *)
-  | Constructor of func_definition (* TODO explicit/inline, chain_call *)
-  | Destructor of func_definition
-
-and method_decl =
-  | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * sc
-  | ConstructorDecl of
-      ident * parameter list paren * sc
-  | DestructorDecl of
-      tok(*~*) * ident * tok option paren * exn_spec option * sc
+  | FBDef of compound
+  (* TODO: prototype, but can also be hidden in a DeclList! *)
+  | FBDecl of sc
+  (* only for methods *)
+  | FBDefault of tok (* '=' *) * tok (* 'default' *) * sc
+  | FBDelete of tok (* '=' *) * tok (* 'delete' *) * sc
+  | FBZero of tok (* '=' *) * tok (* '0' *) * sc
 
 (* ------------------------------------------------------------------------- *)
 (* enum definition *)
@@ -727,16 +756,13 @@ and class_member =
 
   (* before unparser, I didn't have a FieldDeclList but just a Field. *)
   | MemberField of fieldkind list * sc
-  | MemberFunc of func_or_else
-  | MemberDecl of method_decl
 
   | QualifiedIdInClass of name (* ?? *) * sc
 
-  | TemplateDeclInClass of (tok * template_parameters * declaration)
-  | UsingDeclInClass of using
-
-  (* gccext: and maybe c++ext: *)
-  | EmptyField  of sc
+  (* valid declarations in class_member:
+   *  Func(for methods)/TemplateDecl/UsingDecl/EmptyDef/...
+  *)
+  | MemberDecl of declaration
 
 (* At first I thought that a bitfield could be only Signed/Unsigned.
  * But it seems that gcc allows char i:4. C rule must say that you
@@ -750,6 +776,17 @@ and fieldkind =
   | BitField of ident option * tok(*:*) * type_ * a_const_expr
   (* type_ => BitFieldInt | BitFieldUnsigned *)
 
+(* ------------------------------------------------------------------------- *)
+(* Template definition/declaration *)
+(* ------------------------------------------------------------------------- *)
+
+(* see also template_arguments in name section *)
+
+(* c++ext: *)
+and template_parameter = parameter (* todo? more? *)
+and template_parameters = template_parameter list angle
+
+
 (*****************************************************************************)
 (* Attributes, modifiers *)
 (*****************************************************************************)
@@ -757,8 +794,8 @@ and fieldkind =
 and specifier =
   | A of attribute
   | M of modifier
-  | Q of type_qualifier wrap
-  | S of storage wrap
+  | TQ of type_qualifier wrap
+  | ST of storage wrap
 
 and attribute =
   (* __attribute__((...)), double paren *)
@@ -910,44 +947,10 @@ and ifdef_directive =
 (* Toplevel *)
 (*****************************************************************************)
 
-(* it's not really 'toplevel' because the elements below can be nested
- * inside namespaces or some extern. It's not really 'declaration'
- * either because it can defines stuff. But I keep the C++ standard
- * terminology.
- *
- * note that we use 'block_declaration' below, not 'statement'.
- *
- * TODO: merge with stmt?
-*)
-and declaration =
-  | BlockDecl of block_declaration (* include struct/globals/... definitions *)
-  | Func of func_or_else
 
-  (* c++ext: *)
-  | TemplateDecl of tok * template_parameters * declaration
-  | TemplateSpecialization of tok * unit angle * declaration
-  (* the list can be empty *)
-  | ExternC     of tok * tok * declaration
-  | ExternCList of tok * tok * declaration sequencable list brace
-  (* the list can be empty *)
-  | NameSpace of tok * ident * declaration sequencable list brace
-  (* after have some semantic info *)
-  | NameSpaceExtend of string * declaration sequencable list
-  | NameSpaceAnon   of tok * declaration sequencable list brace
-
-  (* gccext: allow redundant ';' *)
-  | EmptyDef of sc
-
-  | NotParsedCorrectly of tok list
-
-  | DeclTodo of todo_category
-
-(* c++ext: *)
-and template_parameter = parameter (* todo? more? *)
-and template_parameters = template_parameter list angle
 [@@deriving show { with_path = false }]
 
-
+(* TODO decl_or_stmt sequencable *)
 type toplevel = declaration sequencable
 [@@deriving show]
 

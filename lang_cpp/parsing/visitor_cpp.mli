@@ -17,7 +17,6 @@ type visitor_in = {
   kclass_def: class_definition vin;
   kfunc_def: func_definition vin;
   kcpp: cpp_directive vin;
-  kblock_decl: block_declaration vin;
 
   kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
