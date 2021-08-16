@@ -570,9 +570,9 @@ and expr env e =
       A.Call (expr env e,
               (t1, Common.map_filter (argument env) (args), t2))
 
-  | SizeOfExpr (tok, e) ->
+  | SizeOf (tok, Left e) ->
       A.SizeOf(tok, Left (expr env e))
-  | SizeOfType (tok, (_, ft, _)) ->
+  | SizeOf (tok, Right (_, ft, _)) ->
       A.SizeOf(tok, Right (full_type env ft))
   | GccConstructor ((_, ft, _), xs) ->
       A.GccConstructor (full_type env ft,
@@ -583,7 +583,7 @@ and expr env e =
       debug (Expr e);
       raise CplusplusConstruct
 
-  | Throw _|DeleteArray (_, _, _, _)|Delete (_, _, _)|New (_, _, _, _, _)
+  | Throw _|Delete (_, _, _, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | IdSpecial (This, _)
   | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)

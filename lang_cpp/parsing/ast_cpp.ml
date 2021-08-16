@@ -6,14 +6,15 @@
  * Copyright (C) 2010-2014 Facebook
  * Copyright (C) 2019-2021 r2c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License (GPL)
- * version 2 as published by the Free Software Foundation.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * file license.txt for more details.
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
 *)
 
 (*****************************************************************************)
@@ -103,8 +104,8 @@ type todo_category = string wrap
 type ident = string wrap
 [@@deriving show]
 
-(* c++ext: in C 'name' and 'ident' are equivalent and are just strings.
- * In C++ 'name' can have a complex form like 'A::B::list<int>::size'.
+(* c++ext: In C, 'name' and 'ident' are equivalent and are just strings.
+ * In C++, 'name' can have a complex form like 'A::B::list<int>::size'.
  * I use Q for qualified. I also have a special type to make the difference
  * between intermediate idents (the classname or template_id) and final idents.
  * Note that sometimes final idents are also classnames and can have final
@@ -121,10 +122,11 @@ and ident_or_op =
   | IdIdent of ident
   (* c++ext: *)
   | IdTemplateId of ident * template_arguments
+
   (* c++ext: for operator overloading *)
-  | IdDestructor of tok(*~*) * ident
   (* TODO: tok list?? *)
   | IdOperator of (tok * (operator * tok list))
+  | IdDestructor of tok(*~*) * ident
   (* ?? paren? *)
   | IdConverter of tok * type_
 
@@ -184,7 +186,7 @@ and typeC =
   (* c++0x: *)
   | TRefRef       of tok (*'&&'*) * type_
 
-  | TArray           of a_const_expr (* or star? *) option bracket * type_
+  | TArray           of a_const_expr (* less: or star *) option bracket * type_
   | TFunction        of functionType
 
   | EnumName  of tok (* 'enum' *) * ident (* a_enum_name *)
@@ -260,7 +262,7 @@ and expr =
    *  "an identifier with a meaning is a symbol".
    * c++ext: Id is now a 'name' instead of a 'string' and can be
    *  also an operator name.
-   * todo: split in Id vs IdQualified like in ast_generic.ml?
+   * less: split in Id vs IdQualified like in ast_generic.ml?
    * TODO: Id -> Name
   *)
   | Id of name * ident_info (* semantic: see check_variables_cpp.ml *)
@@ -275,7 +277,7 @@ and expr =
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
   | CondExpr       of expr * tok * expr option * tok * expr
 
-  (* should be considered as statements, bad C langage *)
+  (* should be considered as statements, bad C language *)
   | Sequence       of expr * tok (* , *) * expr
   | Assign         of a_lhs * assignOp * expr
 
@@ -287,7 +289,7 @@ and expr =
 
   | ArrayAccess    of expr * expr bracket
 
-  (* The Pt is redundant normally, could be replace by DeRef RecordAccess.
+  (* The Pt is redundant; could be replaced by DeRef RecordAccess.
    * name is usually just an ident_or_op. In rare cases it can be
    * a template_method name.
    * TODO: factorize RecordAccessOp
@@ -300,8 +302,7 @@ and expr =
   | RecordStarAccess   of expr * tok (* .* *) * expr
   | RecordPtStarAccess of expr * tok (* ->* *) * expr
 
-  | SizeOfExpr     of tok * expr
-  | SizeOfType     of tok * type_ paren
+  | SizeOf of tok * (expr, type_ paren) Common.either
   (* TODO: SizeOfDots of tok * tok * ident paren ??? *)
 
   | Cast          of type_ paren * expr
@@ -322,8 +323,7 @@ and expr =
            (* less: c++11? rectype option *)
            argument list paren option (* initializer *)
 
-  | Delete      of tok (*::*) option * tok * expr
-  | DeleteArray of tok (*::*) option * tok * unit bracket * expr
+  | Delete of tok (*::*) option * tok * unit bracket option * expr
   (* TODO: tsonly it's a stmt *)
   | Throw of tok * expr option
 
@@ -333,15 +333,13 @@ and expr =
   (* sgrep-ext: *)
   | Ellipses of tok
   | DeepEllipsis of expr bracket
-
   | TypedMetavar of ident * type_
 
   | ExprTodo of todo_category * expr list
 
 (* see check_variables_cpp.ml *)
 and ident_info = {
-  mutable i_scope: Scope_code.t
-                   [@printer fun _fmt _ -> "??"];
+  mutable i_scope: Scope_code.t [@printer fun _fmt _ -> "??"];
 }
 
 and special =
@@ -491,7 +489,9 @@ and condition_clause =
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
+  (* c++0x? *)
   | ForRange of (entity * var_decl) * tok (*':'*) * initialiser
+
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 
 and a_label = string wrap
@@ -504,7 +504,6 @@ and jump  =
   | GotoComputed of tok * tok * expr
 
 (* c++ext: *)
-
 and handler =
   tok (* 'catch' *) * exception_declaration list paren (* list??? *) * compound
 and exception_declaration =
@@ -706,10 +705,11 @@ and function_body =
   | FBDef of compound
   (* TODO: prototype, but can also be hidden in a DeclList! *)
   | FBDecl of sc
-  (* only for methods *)
+  (* c++ext: only for methods *)
+  | FBZero of tok (* '=' *) * tok (* '0' *) * sc
+  (* c++0x? *)
   | FBDefault of tok (* '=' *) * tok (* 'default' *) * sc
   | FBDelete of tok (* '=' *) * tok (* 'delete' *) * sc
-  | FBZero of tok (* '=' *) * tok (* '0' *) * sc
 
 (* ------------------------------------------------------------------------- *)
 (* enum definition *)
@@ -786,7 +786,6 @@ and fieldkind =
 and template_parameter = parameter (* todo? more? *)
 and template_parameters = template_parameter list angle
 
-
 (*****************************************************************************)
 (* Attributes, modifiers *)
 (*****************************************************************************)
@@ -798,22 +797,23 @@ and specifier =
   | ST of storage wrap
 
 and attribute =
-  (* __attribute__((...)), double paren *)
+  (* gccext? __attribute__((...)), double paren *)
   | UnderscoresAttr of tok (* __attribute__ *) * argument list paren paren
-  (* [[ ... ]], double bracket *)
+  (* c++0x? [[ ... ]], double bracket *)
   | BracketsAttr of expr list bracket (* actually double [[ ]] *)
   (* msext: __declspec(id) *)
   | DeclSpec of tok * ident paren
 
 and modifier =
-  (* what is a prototype inline?? gccaccepts it. *)
+  (* what is a prototype inline?? gcc accepts it. *)
   | Inline of tok
   (* virtual specifier *)
   | Virtual of tok
-  | Final of tok | Override of tok
-  (* just for functions *)
+  | Final of tok
+  | Override of tok
+  (* msext: just for functions *)
   | MsCall of string wrap (* msext: e.g., __cdecl, __stdcall *)
-  (* just for constructor *)
+  (* c++ext: just for constructor *)
   | Explicit of tok * expr paren option
 
 (* used in inheritance spec (base_clause) and class_member *)
@@ -943,12 +943,11 @@ and ifdef_directive =
    *     IfdefTag of (int (* tag *) * int (* total with this tag *))
   *)
 
+[@@deriving show { with_path = false }]
+
 (*****************************************************************************)
 (* Toplevel *)
 (*****************************************************************************)
-
-
-[@@deriving show { with_path = false }]
 
 (* TODO decl_or_stmt sequencable *)
 type toplevel = declaration sequencable

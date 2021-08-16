@@ -533,8 +533,8 @@ unary_expr:
  | TInc unary_expr         { Prefix ((Inc, $1), $2) }
  | TDec unary_expr         { Prefix ((Dec, $1), $2) }
  | unary_op cast_expr      { Unary ($1, $2) }
- | Tsizeof unary_expr      { SizeOfExpr ($1, $2) }
- | Tsizeof "(" type_id ")" { SizeOfType ($1, ($2, $3, $4)) }
+ | Tsizeof unary_expr      { SizeOf ($1, Left $2) }
+ | Tsizeof "(" type_id ")" { SizeOf ($1, Right ($2, $3, $4)) }
  (*c++ext: *)
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -682,9 +682,9 @@ new_expr:
 
 delete_expr:
  | "::"? Tdelete cast_expr
-    { Delete ($1, $2, $3) }
+    { Delete ($1, $2, None, $3) }
  | "::"? Tdelete TOCro_new TCCro_new cast_expr
-     { DeleteArray ($1,$2,($3,(),$4), $5) }
+    { Delete ($1,$2, Some ($3,(),$4), $5) }
 
 new_placement: "(" listc(argument) ")" { ($1, $2, $3) }
 
