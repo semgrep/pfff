@@ -71,6 +71,7 @@ let utf8 = ascii
 let unicode_character_property = ['A'-'Z'] alnum*
 
 rule token conf = parse
+  | "(?#" [^')'] ')' as s { COMMENT (loc lexbuf, s) }
   | "(?" {
     let start = start lexbuf in
     open_group conf start lexbuf
@@ -237,10 +238,6 @@ and open_group conf start = parse
   | "<!" {
       let loc = start, end_ lexbuf in
       OPEN_GROUP (loc, Neg_lookbehind)
-    }
-  | '#' {
-      let loc = start, end_ lexbuf in
-      OPEN_GROUP (loc, Comment)
     }
   | utf8 as other {
       let loc = start, end_ lexbuf in

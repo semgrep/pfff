@@ -46,10 +46,10 @@ type group_kind =
   | Neg_lookahead
   | Lookbehind
   | Neg_lookbehind
-  | Comment
   | Other of int (* some unrecognized character following '(?' *)
 
 type t =
+  | Empty of loc
   | Char of loc * char_class
   (* match a single character from a set *)
 

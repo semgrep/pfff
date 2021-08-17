@@ -26,7 +26,7 @@ open AST
   There is also the single sequence \N, which matches a non-newline character.
 *)
 
-let rec list chars =
+let rec list chars : char_class =
   match chars with
   | [] -> Empty
   | [last] -> Singleton last

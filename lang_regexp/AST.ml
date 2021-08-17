@@ -34,10 +34,10 @@ type group_kind =
   | Neg_lookahead
   | Lookbehind
   | Neg_lookbehind
-  | Comment
   | Other of int (* some unrecognized character following '(?' *)
 
 type t =
+  | Empty of loc
   | Char of loc * char_class
   | Shorthand of loc * char
   | Seq of loc * t * t
@@ -46,6 +46,7 @@ type t =
   | Group of loc * group_kind * t
 
 let location = function
+  | Empty loc
   | Char (loc, _)
   | Shorthand (loc, _)
   | Seq (loc, _, _)
