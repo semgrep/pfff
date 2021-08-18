@@ -103,6 +103,7 @@ let test regexp =
       *)
       Unit_parsing_cpp.unittest;
       Unit_parsing_go.unittest;
+      Pfff_lang_regexp.Unit_parsing.unittest;
 
       (* generic AST tests *)
       (* Unit_naming_generic.unittest;

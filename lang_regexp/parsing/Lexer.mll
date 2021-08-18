@@ -5,11 +5,9 @@
 open AST
 open Parser
 
-let start = Lexing.lexeme_start_p
-let end_ = Lexing.lexeme_end_p
-
 let loc lexbuf : loc =
-  (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf)
+  let tok = Parse_info.tokinfo lexbuf in
+  (tok, tok)
 
 let int = int_of_string
 
@@ -73,7 +71,7 @@ let unicode_character_property = ['A'-'Z'] alnum*
 rule token conf = parse
   | "(?#" [^')'] ')' as s { COMMENT (loc lexbuf, s) }
   | "(?" {
-    let start = start lexbuf in
+    let start = loc lexbuf in
     open_group conf start lexbuf
   }
   | '(' { OPEN_GROUP (loc lexbuf, Capturing) }
@@ -88,10 +86,10 @@ rule token conf = parse
 *)
 
   | '[' ('^'? as compl) {
-      let start = start lexbuf in
+      let start = loc lexbuf in
       let set = char_class conf lexbuf in
-      let end_ = end_ lexbuf in
-      let loc = start, end_ in
+      let end_ = loc lexbuf in
+      let loc = range start end_ in
       let set =
         match compl with
         | "" -> set
@@ -100,7 +98,7 @@ rule token conf = parse
       CHAR (loc, set)
     }
 
-  | '\\' { let loc, x = backslash_escape conf (fst (loc lexbuf)) lexbuf in
+  | '\\' { let loc, x = backslash_escape conf (loc lexbuf) lexbuf in
            CHAR (loc, x) }
 
   | '?' { QUANTIFIER (loc lexbuf, (0, Some 1), Longest_first) }
@@ -153,17 +151,17 @@ rule token conf = parse
 
 and backslash_escape conf start = parse
   | '\\' {
-      ((start, end_ lexbuf), Singleton (Char.code '\\'))
+      (range start (loc lexbuf), Singleton (Char.code '\\'))
     }
 
   | 'p' (['A'-'Z' 'a'-'z' '_'] as c) {
       let name = String.make 1 c in
-      ((start, end_ lexbuf), Abstract (Unicode_character_property name))
+      (range start (loc lexbuf), Abstract (Unicode_character_property name))
     }
   | 'P' (['A'-'Z' 'a'-'z' '_'] as c) {
       let name = String.make 1 c in
       (
-        (start, end_ lexbuf),
+        range start (loc lexbuf),
         Complement (Abstract (Unicode_character_property name))
       )
     }
@@ -176,7 +174,7 @@ and backslash_escape conf start = parse
         | "" -> set
         | _ -> Complement set
       in
-      ((start, end_ lexbuf), set)
+      (range start (loc lexbuf), set)
     }
   | "P{" ('^'? as compl) (unicode_character_property as name) "}" {
       let set =
@@ -187,11 +185,11 @@ and backslash_escape conf start = parse
         | "" -> Complement set
         | _ -> (* double complement cancels out *) set
       in
-      ((start, end_ lexbuf), set)
+      (range start (loc lexbuf), set)
     }
 
   | (['A'-'Z''a'-'z'] as c) {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       match c with
       | 'd' -> (loc, Char_class.decimal_digit)
       | 'D' -> (loc, Complement Char_class.decimal_digit)
@@ -220,32 +218,32 @@ and backslash_escape conf start = parse
 
 and open_group conf start = parse
   | ':' {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Non_capturing)
   }
   | '=' {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Lookahead)
   }
   | '!' {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Neg_lookahead)
     }
   | "<=" {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Lookbehind)
     }
   | "<!" {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Neg_lookbehind)
     }
   | utf8 as other {
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Other (decode other))
     }
   | _ as c {
       (* malformed UTF-8 *)
-      let loc = start, end_ lexbuf in
+      let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Other (Char.code c))
     }
   | eof { END (loc lexbuf) }
@@ -259,7 +257,7 @@ and char_class conf = parse
       Union (range, char_class conf lexbuf)
     }
   | '\\' {
-      let _loc, x = backslash_escape conf (start lexbuf) lexbuf in
+      let _loc, x = backslash_escape conf (loc lexbuf) lexbuf in
       Union (x, char_class conf lexbuf)
     }
   | utf8 as s {

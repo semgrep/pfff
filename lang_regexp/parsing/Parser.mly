@@ -24,7 +24,7 @@ main: regexp0 END { $1 }
 regexp0:
   | alt                  { $1 }
   | seq                  { $1 }
-  |                      { Empty (Lexing.dummy_pos, Lexing.dummy_pos) }
+  |                      { Empty AST.dummy_loc }
 
 alt:
   | regexp0 BAR regexp0  { let a = $1 and b = $3 in

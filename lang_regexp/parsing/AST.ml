@@ -2,7 +2,7 @@
    Regexp AST
 *)
 
-type loc = Lexing.position * Lexing.position
+type loc = Parse_info.t * Parse_info.t
 
 type abstract_char_class =
   | Word_character
@@ -58,6 +58,13 @@ let location2 a b =
   let start, _ = location a in
   let _, end_ = location b in
   (start, end_)
+
+let range (a, _) (_, b) =
+  (a, b)
+
+let dummy_loc =
+  let tok = Parse_info.fake_info "" in
+  (tok, tok)
 
 type pp =
   | Line of string

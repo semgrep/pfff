@@ -2,7 +2,7 @@
    Regexp AST
 *)
 
-type loc = Lexing.position * Lexing.position
+type loc = Parse_info.t * Parse_info.t
 
 type abstract_char_class =
   | Word_character
@@ -65,6 +65,8 @@ type t =
 
 val location : t -> loc
 val location2 : t -> t -> loc
+val range : loc -> loc -> loc
+val dummy_loc : loc
 
 (* Show the general structure of the AST. *)
 val print : t -> unit
