@@ -3,6 +3,7 @@
 *)
 {
 open AST
+open Conf
 open Parser
 
 let loc lexbuf : loc =
@@ -44,6 +45,7 @@ let decode s =
             assert false
 }
 
+let line = [^'\n']* '\n'?
 let alnum = ['A'-'Z' 'a'-'z' '0'-'9']
 let nonneg = ['0'-'9']+
 
@@ -68,11 +70,30 @@ let utf8 = ascii
 
 let unicode_character_property = ['A'-'Z'] alnum*
 
+(* This is for the extended mode, which ignores whitespace like in usual
+   programming languages.
+   TODO: check if non-ascii whitespace should also be ignored in that mode
+   (it would be annoying to implement but doable).
+*)
+let ascii_whitespace =  ['\t' '\n' '\011' '\012' '\r' ' ']
+
 rule token conf = parse
+  | '#' {
+      if conf.ignore_hash_comments then
+        comment_in_token conf lexbuf
+      else
+        CHAR (loc lexbuf, Singleton (Char.code '#'))
+    }
+  | ascii_whitespace as c {
+      if conf.ignore_whitespace then
+        token conf lexbuf
+      else
+        CHAR (loc lexbuf, Singleton (Char.code c))
+    }
   | "(?#" [^')'] ')' as s { COMMENT (loc lexbuf, s) }
   | "(?" {
-    let start = loc lexbuf in
-    open_group conf start lexbuf
+      let start = loc lexbuf in
+      open_group conf start lexbuf
   }
   | '(' { OPEN_GROUP (loc lexbuf, Capturing) }
   | ')' { CLOSE_GROUP (loc lexbuf) }
@@ -217,6 +238,15 @@ and backslash_escape conf start = parse
     }
 
 and open_group conf start = parse
+  | '#' {
+      (* In extended mode, PCRE allows comments here but not whitespace.
+         Not sure why. We do the same. *)
+      if conf.ignore_hash_comments then
+        comment_in_open_group conf start lexbuf
+      else
+        let loc = range start (loc lexbuf) in
+        OPEN_GROUP (loc, Other (Char.code '#'))
+    }
   | ':' {
       let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Non_capturing)
@@ -249,6 +279,18 @@ and open_group conf start = parse
   | eof { END (loc lexbuf) }
 
 and char_class conf = parse
+  | '#' {
+      if conf.ignore_hash_comments then
+        comment_in_char_class conf lexbuf
+      else
+        Singleton (Char.code '#')
+    }
+  | ascii_whitespace as c {
+      if conf.ignore_whitespace_in_char_classes then
+        char_class conf lexbuf
+      else
+        Singleton (Char.code c)
+    }
   | ']' {
       Empty
     }
@@ -271,3 +313,12 @@ and char_class conf = parse
       (* truncated input, should be an error *)
       Empty
     }
+
+and comment_in_token conf = parse
+  | line { token conf lexbuf }
+
+and comment_in_open_group conf start = parse
+  | line { open_group conf start lexbuf }
+
+and comment_in_char_class conf = parse
+  | line { char_class conf lexbuf }

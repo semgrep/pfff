@@ -11,11 +11,24 @@ let default = {
   ignore_hash_comments = false;
 }
 
-(* https://perldoc.perl.org/perlre *)
-let perl = default
-
 (* https://www.pcre.org/original/doc/html/pcrepattern.html *)
-let pcre = perl
+let pcre = default
+
+let pcre_extended = {
+  default with
+  ignore_whitespace = true;
+  ignore_hash_comments = true;
+}
+
+(* https://perldoc.perl.org/perlre *)
+let perl = pcre
+
+let perl_x = pcre_extended
+
+let perl_xx = {
+  pcre_extended with
+  ignore_whitespace_in_char_classes = true;
+}
 
 (* https://docs.python.org/3/library/re.html *)
 let python = default
