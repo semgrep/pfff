@@ -58,3 +58,35 @@ let location2 a b =
   let start, _ = location a in
   let _, end_ = location b in
   (start, end_)
+
+type pp =
+  | Line of string
+  | Block of pp list
+  | Inline of pp list
+
+let to_buf buf l =
+  let open Printf in
+  let rec pp indent = function
+    | Line s ->
+        bprintf buf "%s%s\n" indent s
+    | Block l ->
+        List.iter (pp (indent ^ "  ")) l
+    | Inline l ->
+        List.iter (pp indent) l
+  in
+  pp "" (Inline l)
+
+let rec pp (node : t) =
+  match node with
+  | Empty _ -> [Line "Empty"]
+  | Char (_, _) -> [Line "Char"]
+  | Shorthand (_, _) -> [Line "Shorthand"]
+  | Seq (_, a, b) -> [Block (pp a); Line "."; Block (pp b)]
+  | Alt (_, a, b) -> [Block (pp a); Line "|"; Block (pp b)]
+  | Repeat (_, a, _, _) -> [Line "Repeat:"; Block (pp a)]
+  | Group (_, _, a) -> [Line "Group:"; Block (pp a)]
+
+let print node =
+  let buf = Buffer.create 1000 in
+  to_buf buf (pp node);
+  print_string (Buffer.contents buf)

@@ -65,3 +65,6 @@ type t =
 
 val location : t -> loc
 val location2 : t -> t -> loc
+
+(* Show the general structure of the AST. *)
+val print : t -> unit
