@@ -6,6 +6,12 @@ open Printf
 
 type loc = Parse_info.t * Parse_info.t
 
+type special =
+  | Beginning_of_line
+  | End_of_line
+  | Beginning_of_input
+  | End_of_input
+
 type abstract_char_class =
   | Word_character
   | Unicode_character_property of string
@@ -41,7 +47,7 @@ type group_kind =
 type t =
   | Empty of loc
   | Char of loc * char_class
-  | Shorthand of loc * char
+  | Special of loc * special
   | Seq of loc * t * t
   | Alt of loc * t * t
   | Repeat of loc * t * repeat_range * matching_pref
@@ -50,7 +56,7 @@ type t =
 let location = function
   | Empty loc
   | Char (loc, _)
-  | Shorthand (loc, _)
+  | Special (loc, _)
   | Seq (loc, _, _)
   | Alt (loc, _, _)
   | Repeat (loc, _, _, _)
@@ -97,6 +103,13 @@ let to_buf buf l =
   in
   pp "" (Inline l)
 
+let pp_special (x : special) =
+  match x with
+  | Beginning_of_line -> "Beginning_of_line"
+  | End_of_line -> "End_of_line"
+  | Beginning_of_input -> "Beginning_of_input"
+  | End_of_input -> "End_of_input"
+
 let show_char code =
   if code < 128 then
     sprintf "%C" (Char.chr code)
@@ -133,7 +146,7 @@ let rec pp (node : t) =
   match node with
   | Empty _ -> [Line "Empty"]
   | Char (_, x) -> [Line ("Char: " ^ pp_char_class x)]
-  | Shorthand (_, _) -> [Line "Shorthand"]
+  | Special (_, x) -> [Line ("Special: " ^ pp_special x)]
   | Seq (_, a, b) -> [Block (pp a); Line "."; Block (pp b)]
   | Alt (_, a, b) -> [Block (pp a); Line "|"; Block (pp b)]
   | Repeat (_, a, _, _) -> [Line "Repeat:"; Block (pp a)]

@@ -10,6 +10,7 @@ open AST
 %token <AST.loc * AST.group_kind> OPEN_GROUP
 %token <AST.loc> CLOSE_GROUP BAR END
 %token <AST.loc * AST.char_class> CHAR
+%token <AST.loc * AST.special> SPECIAL
 %token <AST.loc * AST.repeat_range * AST.matching_pref> QUANTIFIER
 
 %left BAR
@@ -50,6 +51,9 @@ regexp1:
   | CHAR                         { let loc, char_class = $1 in
                                    Char (loc, char_class)
                                  }
+
+  | SPECIAL                      { let loc, special = $1 in
+                                   Special (loc, special) }
 
   | OPEN_GROUP regexp0 CLOSE_GROUP
                                  { let (start, _), kind = $1 in

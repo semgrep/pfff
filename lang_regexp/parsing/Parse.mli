@@ -13,7 +13,6 @@
    - dialect comparison: https://www.regular-expressions.info/refcharacters.html
 
    Main to-dos:
-   - beginning and end of line assertions ^, $
    - javascript extensions: \U is not special, \u1234
    - posix character classes e.g. [:alpha:]
    - backslash assertions like \A, \b, etc.

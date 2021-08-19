@@ -4,8 +4,12 @@
 
 type t = {
   (* Match all characters with '.', including LF which otherwise is
-     excluded. *)
+     excluded. Same as PCRE_DOTALL. *)
   dotall: bool;
+
+  (* If enabled, '^' and '$' will match only that the beginning and at the
+     end of the input, respectively. Same as PCRE_MULTILINE. *)
+  multiline: bool;
 
   (* Support comments in the form of '(?# ... )' *)
   with_comment_groups: bool;

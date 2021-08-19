@@ -110,10 +110,19 @@ rule token conf = parse
       CHAR (loc lexbuf, set)
     }
 
-(*
-   TODO: predefined assertions ^ $ \A \b etc.
-  | '^' { ... }
-*)
+  | '^' {
+      if conf.multiline then
+        SPECIAL (loc lexbuf, Beginning_of_input)
+      else
+        SPECIAL (loc lexbuf, Beginning_of_line)
+    }
+
+  | '$' {
+      if conf.multiline then
+        SPECIAL (loc lexbuf, End_of_input)
+      else
+        SPECIAL (loc lexbuf, End_of_line)
+    }
 
   | '[' ('^'? as compl) {
       let start = loc lexbuf in

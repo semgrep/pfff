@@ -4,6 +4,7 @@
 
 type t = {
   dotall: bool;
+  multiline: bool;
   with_comment_groups: bool;
   ignore_whitespace: bool;
   ignore_whitespace_in_char_classes: bool;

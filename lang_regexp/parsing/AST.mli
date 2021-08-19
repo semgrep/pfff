@@ -4,6 +4,16 @@
 
 type loc = Parse_info.t * Parse_info.t
 
+(*
+   Any atomic sequence that doesn't consume a character of input,
+   such as '^', '\A', '\w', etc.
+*)
+type special =
+  | Beginning_of_line
+  | End_of_line
+  | Beginning_of_input
+  | End_of_input
+
 type abstract_char_class =
   | Word_character
   (* \w a "word character", whose definition is locale-dependent. *)
@@ -53,7 +63,7 @@ type t =
   | Char of loc * char_class
   (* match a single character from a set *)
 
-  | Shorthand of loc * char
+  | Special of loc * special
   (* all the backslash sequences like '\A' that don't consume
      a character. Some of them are assertions, others may modify the
      behavior of the matching engine. *)
