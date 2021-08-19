@@ -33,7 +33,7 @@ alt:
 
 seq:
   | repeat seq           { let a = $1 and b = $2 in
-                                   Seq (location2 a b, a, b)
+                           seq (location2 a b) a b
                          }
   | repeat               { $1 }
 

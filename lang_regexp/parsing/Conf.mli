@@ -3,6 +3,11 @@
 *)
 
 type t = {
+  (* Match all characters with '.', including LF which otherwise is
+     excluded. *)
+  dotall: bool;
+
+  (* Support comments in the form of '(?# ... )' *)
   with_comment_groups: bool;
 
   (* Ignore whitespace outside of character classes.

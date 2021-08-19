@@ -5,6 +5,7 @@
 open Conf
 
 let default = {
+  dotall = false;
   with_comment_groups = true;
   ignore_whitespace = false;
   ignore_whitespace_in_char_classes = false;

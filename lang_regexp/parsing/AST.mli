@@ -63,6 +63,14 @@ type t =
   | Repeat of loc * t * repeat_range * matching_pref
   | Group of loc * group_kind * t
 
+(* Eliminate one of the terms if it's'Empty' since we get that a lot due
+   to how parsing is done *)
+val union : char_class -> char_class -> char_class
+
+(* Eliminate one of the terms if it's'Empty' since we get that a lot due
+   to how parsing is done *)
+val seq : loc -> t -> t -> t
+
 val location : t -> loc
 val location2 : t -> t -> loc
 val range : loc -> loc -> loc

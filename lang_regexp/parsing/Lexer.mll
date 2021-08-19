@@ -1,5 +1,7 @@
 (*
    Lexer for the regexp parser.
+
+   See Parse.mli for a list of to-dos.
 *)
 {
 open AST
@@ -99,7 +101,14 @@ rule token conf = parse
   | ')' { CLOSE_GROUP (loc lexbuf) }
   | '|' { BAR (loc lexbuf) }
 
-  | '.' { CHAR (loc lexbuf, Complement Empty) }
+  | '.' {
+      let set =
+        match conf.dotall with
+        | true -> Complement Empty
+        | false -> Complement (Singleton (Char.code '\n'))
+      in
+      CHAR (loc lexbuf, set)
+    }
 
 (*
    TODO: predefined assertions ^ $ \A \b etc.
@@ -296,18 +305,18 @@ and char_class conf = parse
     }
   | (utf8 as a) '-' (utf8 as b) {
       let range = Range (decode a, decode b) in
-      Union (range, char_class conf lexbuf)
+      union range (char_class conf lexbuf)
     }
   | '\\' {
       let _loc, x = backslash_escape conf (loc lexbuf) lexbuf in
-      Union (x, char_class conf lexbuf)
+      union x (char_class conf lexbuf)
     }
   | utf8 as s {
-      Union (Singleton (decode s), char_class conf lexbuf)
+      union (Singleton (decode s)) (char_class conf lexbuf)
     }
   | _ as c {
       (* malformed UTF-8 *)
-      Union (Singleton (Char.code c), char_class conf lexbuf)
+      union (Singleton (Char.code c)) (char_class conf lexbuf)
     }
   | eof {
       (* truncated input, should be an error *)
