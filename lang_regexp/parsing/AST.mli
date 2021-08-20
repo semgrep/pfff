@@ -13,6 +13,7 @@ type special =
   | End_of_line
   | Beginning_of_input
   | End_of_input
+  | Back_reference of int
 
 type abstract_char_class =
   | Unicode_character_property of string

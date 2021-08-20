@@ -15,7 +15,6 @@
    Main to-dos:
    - javascript extensions: \U is not special, \u1234
    - backslash assertions like \A, \b, etc.
-   - backreferences \2
    - hexadecimal character notation \xFF
    - octal character notation \011, \o{11}
    - [add feature request here]

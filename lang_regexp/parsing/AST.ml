@@ -11,6 +11,7 @@ type special =
   | End_of_line
   | Beginning_of_input
   | End_of_input
+  | Back_reference of int
 
 type abstract_char_class =
   | Unicode_character_property of string
@@ -115,6 +116,7 @@ let pp_special (x : special) =
   | End_of_line -> "End_of_line"
   | Beginning_of_input -> "Beginning_of_input"
   | End_of_input -> "End_of_input"
+  | Back_reference n -> (sprintf "Back_reference %i" n)
 
 let show_char code =
   if code < 128 then

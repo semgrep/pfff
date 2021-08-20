@@ -143,6 +143,12 @@ rule token conf = parse
       | Error (loc, s) -> STRING (loc, s)
     }
 
+  | '\\' ('-'? ['1'-'9']['0'-'9']* as n)
+  | "\\g" ('-'? ['0'-'9']+ as n)
+  | "\\g{" ('-'? ['0'-'9']+ as n) "}" {
+      SPECIAL (loc lexbuf, Back_reference (int_of_string n))
+    }
+
   | '\\' { let loc, x = backslash_escape conf (loc lexbuf) lexbuf in
            CHAR (loc, x) }
 
