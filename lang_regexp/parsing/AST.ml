@@ -13,7 +13,6 @@ type special =
   | End_of_input
 
 type abstract_char_class =
-  | Word_character
   | Unicode_character_property of string
   | Extended_grapheme_cluster (* \X *)
 
@@ -74,6 +73,13 @@ let seq loc (a : t) (b : t) =
   | Empty _, b -> b
   | a, b -> Seq (loc, a, b)
 
+let code_points_of_ascii_string s : int list =
+  let codes = ref [] in
+  for i = String.length s - 1 downto 0 do
+    codes := Char.code s.[i] :: !codes
+  done;
+  !codes
+
 let location2 a b =
   let start, _ = location a in
   let _, end_ = location b in
@@ -130,13 +136,12 @@ let pp_char_class (x : char_class) =
     | Inter (a, b) -> bprintf buf "(%a&%a)" pp a pp b
     | Diff (a, b) -> bprintf buf "(%a-%a)" pp a pp b
     | Complement a -> bprintf buf "^%a" pp a
-    | Abstract Word_character -> bprintf buf "word_char"
     | Abstract (Unicode_character_property name) ->
-        bprintf buf "(unicode_property %s)" name
+        bprintf buf "(Unicode_property %s)" name
     | Abstract Extended_grapheme_cluster ->
-        bprintf buf "(extended_grapheme_cluster)"
+        bprintf buf "(Extended_grapheme_cluster)"
     | Other data ->
-        bprintf buf "(other %S)" data
+        bprintf buf "(Other %S)" data
   in
   let buf = Buffer.create 64 in
   pp buf x;

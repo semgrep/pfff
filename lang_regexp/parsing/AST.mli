@@ -15,11 +15,10 @@ type special =
   | End_of_input
 
 type abstract_char_class =
-  | Word_character
-  (* \w a "word character", whose definition is locale-dependent. *)
   | Unicode_character_property of string
   (* Unicode character property introduced with \p{...}
      e.g. \p{Meroitic_Hieroglyphs} *)
+
   | Extended_grapheme_cluster (* \X *)
 
 (*
@@ -73,6 +72,10 @@ type t =
   | Repeat of loc * t * repeat_range * matching_pref
   | Group of loc * group_kind * t
 
+(***************************************************************************)
+(* Constructors, meant for the parser or for testing. *)
+(***************************************************************************)
+
 (* Eliminate one of the terms if it's'Empty' since we get that a lot due
    to how parsing is done *)
 val union : char_class -> char_class -> char_class
@@ -81,10 +84,16 @@ val union : char_class -> char_class -> char_class
    to how parsing is done *)
 val seq : loc -> t -> t -> t
 
+val code_points_of_ascii_string : string -> int list
+
 val location : t -> loc
 val location2 : t -> t -> loc
 val range : loc -> loc -> loc
 val dummy_loc : loc
+
+(***************************************************************************)
+(* AST dump *)
+(***************************************************************************)
 
 (* Show the general structure of the AST. *)
 val print : t -> unit

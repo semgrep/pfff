@@ -137,6 +137,12 @@ rule token conf = parse
       CHAR (loc, set)
     }
 
+  | "[:" {
+      match posix_char_class conf (loc lexbuf) lexbuf with
+      | Ok (loc, x) -> CHAR (loc, x)
+      | Error (loc, s) -> STRING (loc, s)
+    }
+
   | '\\' { let loc, x = backslash_escape conf (loc lexbuf) lexbuf in
            CHAR (loc, x) }
 
@@ -229,18 +235,28 @@ and backslash_escape conf start = parse
 
   | (['A'-'Z''a'-'z'] as c) {
       let loc = range start (loc lexbuf) in
-      match c with
-      | 'd' -> (loc, Char_class.decimal_digit)
-      | 'D' -> (loc, Complement Char_class.decimal_digit)
-      | 'h' -> (loc, Char_class.horizontal_whitespace)
-      | 'H' -> (loc, Complement (Char_class.horizontal_whitespace))
-      | 's' -> (loc, Char_class.whitespace)
-      | 'S' -> (loc, Complement (Char_class.whitespace))
-      | 'v' -> (loc, Char_class.vertical_whitespace)
-      | 'V' -> (loc, Complement (Char_class.vertical_whitespace))
-      | 'w' -> (loc, Char_class.vertical_whitespace)
-      | 'W' -> (loc, Complement (Char_class.vertical_whitespace))
-      | c -> (loc, Singleton (Char.code c))
+      let ucp = conf.ucp in
+      let set =
+        match c with
+        | 'd' when ucp -> Char_class.unicode_digit
+        | 'd' -> Char_class.posix_digit
+        | 'D' when ucp -> Complement Char_class.unicode_digit
+        | 'D' -> Complement Char_class.posix_digit
+        | 'h' -> Char_class.unicode_horizontal_whitespace
+        | 'H' -> Complement (Char_class.unicode_horizontal_whitespace)
+        | 's' when ucp -> Char_class.unicode_whitespace
+        | 's' -> Char_class.perl_whitespace
+        | 'S' when ucp -> Complement (Char_class.unicode_whitespace)
+        | 'S' -> Complement (Char_class.perl_whitespace)
+        | 'v' -> Char_class.unicode_vertical_whitespace
+        | 'V' -> Complement (Char_class.unicode_vertical_whitespace)
+        | 'w' when ucp -> Char_class.unicode_word
+        | 'w' -> Char_class.perl_word
+        | 'W' when ucp -> Complement Char_class.unicode_word
+        | 'W' -> Complement Char_class.perl_word
+        | c -> Singleton (Char.code c)
+      in
+      (loc, set)
     }
   | utf8 as s {
         (* just ignore the backslash *)
@@ -296,6 +312,51 @@ and open_group conf start = parse
     }
   | eof { END (loc lexbuf) }
 
+and posix_char_class conf start = parse
+  | ('^'? as compl) (['a'-'z']+ as name) ":]" {
+      let loc = range start (loc lexbuf) in
+      let compl x =
+        match compl with
+        | "" -> x
+        | _ -> Complement x
+      in
+      let ascii char_class =
+        Ok (loc, compl char_class)
+      in
+      let unicode prop_name =
+        Ok (loc, compl (Abstract (Unicode_character_property prop_name)))
+      in
+      let ucp = conf.ucp in
+      match name with
+      | "alnum" when ucp -> unicode "Xan"
+      | "alnum" -> ascii Char_class.posix_alnum
+      | "alpha" when ucp -> unicode "L"
+      | "alpha" -> ascii Char_class.posix_alpha
+      | "ascii" -> ascii Char_class.posix_ascii
+      | "blank" when ucp -> unicode "h"
+      | "blank" -> ascii Char_class.perl_blank
+      | "cntrl" -> ascii Char_class.posix_cntrl
+      | "digit" when ucp -> unicode "Nd"
+      | "digit" -> ascii Char_class.posix_digit
+      | "graph" -> ascii Char_class.posix_graph
+      | "lower" when ucp -> unicode "Ll"
+      | "lower" -> ascii Char_class.posix_lower
+      | "print" -> ascii Char_class.posix_print
+      | "punct" -> ascii Char_class.posix_punct
+      | "space" when ucp -> unicode "Xps"
+      | "space" -> ascii Char_class.posix_space
+      | "upper" when ucp -> unicode "Lu"
+      | "upper" -> ascii Char_class.posix_upper
+      | "word" when ucp -> unicode "Xwd"
+      | "word" -> ascii Char_class.perl_word
+      | "xdigit" -> ascii Char_class.posix_xdigit
+      | _ ->
+          Error (
+            loc,
+            AST.code_points_of_ascii_string ("[:" ^ Lexing.lexeme lexbuf)
+          )
+}
+
 and char_class conf = parse
   | '#' {
       if conf.ignore_hash_comments then
@@ -315,6 +376,13 @@ and char_class conf = parse
   | (utf8 as a) '-' (utf8 as b) {
       let range = Range (decode a, decode b) in
       union range (char_class conf lexbuf)
+    }
+  | "[:" {
+      match posix_char_class conf (loc lexbuf) lexbuf with
+      | Ok (_loc, x) ->
+          union x (char_class conf lexbuf)
+      | Error (_loc, chars) ->
+          union (Char_class.of_list chars) (char_class conf lexbuf)
     }
   | '\\' {
       let _loc, x = backslash_escape conf (loc lexbuf) lexbuf in

@@ -5,6 +5,7 @@
 type t = {
   dotall: bool;
   multiline: bool;
+  ucp: bool;
   with_comment_groups: bool;
   ignore_whitespace: bool;
   ignore_whitespace_in_char_classes: bool;

@@ -11,6 +11,10 @@ type t = {
      end of the input, respectively. Same as PCRE_MULTILINE. *)
   multiline: bool;
 
+  (* If enabled, some sets of characters like '\w' or '[:alnum:]' are extended
+     with non-ascii unicode characters. Same as PCRE_UCP. *)
+  ucp: bool;
+
   (* Support comments in the form of '(?# ... )' *)
   with_comment_groups: bool;
 

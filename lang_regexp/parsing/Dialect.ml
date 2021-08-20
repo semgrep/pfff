@@ -7,6 +7,7 @@ open Conf
 let default = {
   dotall = false;
   multiline = false;
+  ucp = false;
   with_comment_groups = true;
   ignore_whitespace = false;
   ignore_whitespace_in_char_classes = false;
