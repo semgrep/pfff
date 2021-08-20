@@ -156,6 +156,9 @@ rule token conf = parse
   | "*+" { QUANTIFIER (loc lexbuf, (0, None), Possessive) }
   | "++" { QUANTIFIER (loc lexbuf, (1, None), Possessive) }
 
+  | '{' (nonneg as a) '}' {
+      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Longest_first)
+    }
   | '{' (nonneg as a) ',' (nonneg as b) '}' {
       QUANTIFIER (loc lexbuf, (int a, Some (int b)), Longest_first)
     }
@@ -166,6 +169,9 @@ rule token conf = parse
       QUANTIFIER (loc lexbuf, (int a, None), Longest_first)
     }
 
+  | '{' (nonneg as a) "}?" {
+      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Shortest_first)
+    }
   | '{' (nonneg as a) ',' (nonneg as b) "}?" {
       QUANTIFIER (loc lexbuf, (int a, Some (int b)), Shortest_first)
     }
@@ -176,6 +182,9 @@ rule token conf = parse
       QUANTIFIER (loc lexbuf, (int a, None), Shortest_first)
     }
 
+  | '{' (nonneg as a) "}+" {
+      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Possessive)
+    }
   | '{' (nonneg as a) ',' (nonneg as b) "}+" {
       QUANTIFIER (loc lexbuf, (int a, Some (int b)), Possessive)
     }

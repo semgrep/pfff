@@ -60,10 +60,12 @@ regexp1:
                                    Special (loc, special) }
 
   | STRING                       { let loc, code_points = $1 in
-                                   List.fold_left (fun acc c ->
+                                   (* safe fold_right *)
+                                   List.rev code_points
+                                   |> List.fold_left (fun acc c ->
                                      (* TODO: narrow location to one char *)
-                                     seq loc acc (Char (loc, Singleton c))
-                                   ) (Empty loc : AST.t) code_points
+                                     seq loc (Char (loc, Singleton c)) acc
+                                   ) (Empty loc : AST.t)
                                  }
 
   | OPEN_GROUP regexp0 CLOSE_GROUP

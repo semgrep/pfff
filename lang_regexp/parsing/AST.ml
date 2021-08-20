@@ -147,6 +147,19 @@ let pp_char_class (x : char_class) =
   pp buf x;
   Buffer.contents buf
 
+let string_of_repeat_range (low, high) =
+  let s n = if n > 1 then "s" else "" in
+  match low, high with
+  | 0, Some high -> sprintf "up to %i time%s" high (s high)
+  | low, None -> sprintf "%i or more times" low
+  | low, Some high when low = high -> sprintf "%i time%s" high (s high)
+  | low, Some high -> sprintf "%i-%i time%s" low high (s high)
+
+let string_of_matching_pref = function
+  | Longest_first -> "longest match first"
+  | Shortest_first -> "shortest match first"
+  | Possessive -> "longest match, no backtracking"
+
 let rec pp (node : t) =
   match node with
   | Empty _ -> [Line "Empty"]
@@ -154,7 +167,13 @@ let rec pp (node : t) =
   | Special (_, x) -> [Line ("Special: " ^ pp_special x)]
   | Seq (_, a, b) -> [Block (pp a); Line "."; Block (pp b)]
   | Alt (_, a, b) -> [Block (pp a); Line "|"; Block (pp b)]
-  | Repeat (_, a, _, _) -> [Line "Repeat:"; Block (pp a)]
+  | Repeat (_, a, range, pref) ->
+      [
+        Line (sprintf "Repeat %s, %s:"
+                (string_of_repeat_range range)
+                (string_of_matching_pref pref));
+        Block (pp a)
+      ]
   | Group (_, _, a) -> [Line "Group:"; Block (pp a)]
 
 let print node =

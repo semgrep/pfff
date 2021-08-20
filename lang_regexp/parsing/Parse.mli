@@ -14,7 +14,6 @@
 
    Main to-dos:
    - javascript extensions: \U is not special, \u1234
-   - posix character classes e.g. [:alpha:]
    - backslash assertions like \A, \b, etc.
    - backreferences \2
    - hexadecimal character notation \xFF
