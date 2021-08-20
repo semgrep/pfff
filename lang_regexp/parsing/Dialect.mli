@@ -27,6 +27,9 @@ val perl_x : Conf.t
 (* Perl with the '/xx' option *)
 val perl_xx : Conf.t
 
+(* PCRE with JavaScript compatibility mode *)
+val javascript : Conf.t
+
 (*
    The following variants are meant to match the standard regexp
    implementation provided by these languages or their standard library.
@@ -34,4 +37,3 @@ val perl_xx : Conf.t
 val python : Conf.t
 val go : Conf.t
 val java : Conf.t
-val javascript : Conf.t

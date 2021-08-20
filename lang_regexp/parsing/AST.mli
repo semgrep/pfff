@@ -85,7 +85,12 @@ val union : char_class -> char_class -> char_class
    to how parsing is done *)
 val seq : loc -> t -> t -> t
 
+(*
+   Break down a string into a list of characters.
+   TODO: compute the correct location for character based on its offset.
+*)
 val code_points_of_ascii_string : string -> int list
+val code_points_of_ascii_string_loc : loc -> string -> (loc * int) list
 
 val location : t -> loc
 val location2 : t -> t -> loc

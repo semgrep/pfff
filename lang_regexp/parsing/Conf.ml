@@ -3,9 +3,10 @@
 *)
 
 type t = {
-  dotall: bool;
-  multiline: bool;
-  ucp: bool;
+  pcre_dotall: bool;
+  pcre_multiline: bool;
+  pcre_ucp: bool;
+  pcre_javascript_compat: bool;
   with_comment_groups: bool;
   ignore_whitespace: bool;
   ignore_whitespace_in_char_classes: bool;

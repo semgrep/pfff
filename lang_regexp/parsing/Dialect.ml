@@ -5,9 +5,10 @@
 open Conf
 
 let default = {
-  dotall = false;
-  multiline = false;
-  ucp = false;
+  pcre_dotall = false;
+  pcre_multiline = false;
+  pcre_ucp = false;
+  pcre_javascript_compat = false;
   with_comment_groups = true;
   ignore_whitespace = false;
   ignore_whitespace_in_char_classes = false;
@@ -33,11 +34,14 @@ let perl_xx = {
   ignore_whitespace_in_char_classes = true;
 }
 
+(* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet *)
+let javascript = {
+  pcre with
+  pcre_javascript_compat = true;
+}
+
 (* https://docs.python.org/3/library/re.html *)
 let python = default
-
-(* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet *)
-let javascript = default
 
 (* https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html *)
 let java = default

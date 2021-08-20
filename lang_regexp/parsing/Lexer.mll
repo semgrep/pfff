@@ -49,6 +49,8 @@ let decode s =
 
 let line = [^'\n']* '\n'?
 let alnum = ['A'-'Z' 'a'-'z' '0'-'9']
+let digit = ['0'-'9']
+let xdigit = ['A'-'F' 'a'-'f' '0'-'9']
 let nonneg = ['0'-'9']+
 
 let ascii = ['\000'-'\127']
@@ -79,7 +81,46 @@ let unicode_character_property = ['A'-'Z'] alnum*
 *)
 let ascii_whitespace =  ['\t' '\n' '\011' '\012' '\r' ' ']
 
+let btk_name = [^')']*
+
 rule token conf = parse
+  (* Some of these are only allowed at the beginning of the input.
+     For now, we allow them everywhere and ignore them if possible. *)
+  | "(*LIMIT_MATCH=" digit+ ")" { token conf lexbuf }
+  | "(*LIMIT_RECURSION=" digit+ ")" { token conf lexbuf }
+  | "(*NO_AUTO_POSSESS)" { token conf lexbuf }
+  | "(*NO_START_OPT)" { token conf lexbuf }
+  | "(*UTF8)" { token conf lexbuf }
+  | "(*UTF16)" { (* unsupported; should fail? *) token conf lexbuf }
+  | "(*UTF32)" { (* unsupported; should fail? *) token conf lexbuf }
+  | "(*UTF)" { token conf lexbuf }
+  | "(*UCP)" { token { conf with pcre_ucp = true } lexbuf }
+  | "(*CR)" { token conf lexbuf }
+  | "(*LF)" { token conf lexbuf }
+  | "(*CRLF)" { token conf lexbuf }
+  | "(*ANYCRLF)" { token conf lexbuf }
+  | "(*ANY)" { token conf lexbuf }
+  | "(*BSR_ANYCRLF)" { token conf lexbuf }
+  | "(*BSR_UNICODE)" { token conf lexbuf }
+  | "(*ACCEPT)" { token conf lexbuf }
+  | "(*FAIL)" { token conf lexbuf }
+  | "(*MARK:" btk_name ")" { token conf lexbuf }
+  | "(*COMMIT)" { token conf lexbuf }
+  | "(*PRUNE)" { token conf lexbuf }
+  | "(*PRUNE:" btk_name ")" { token conf lexbuf }
+  | "(*SKIP)" { token conf lexbuf }
+  | "(*SKIP:" btk_name ")" { token conf lexbuf }
+  | "(*MARK:" btk_name ")" { token conf lexbuf }
+  | "(*THEN)" { token conf lexbuf }
+  | "(*THEN:" btk_name ")" { token conf lexbuf }
+
+  | "\\Q" {
+      let start = loc lexbuf in
+      let chars = literal_chars lexbuf in
+      let end_ = loc lexbuf in
+      STRING (range start end_, chars)
+    }
+
   | '#' {
       if conf.ignore_hash_comments then
         comment_in_token conf lexbuf
@@ -103,7 +144,7 @@ rule token conf = parse
 
   | '.' {
       let set =
-        match conf.dotall with
+        match conf.pcre_dotall with
         | true -> Complement Empty
         | false -> Complement (Singleton (Char.code '\n'))
       in
@@ -111,14 +152,14 @@ rule token conf = parse
     }
 
   | '^' {
-      if conf.multiline then
+      if conf.pcre_multiline then
         SPECIAL (loc lexbuf, Beginning_of_input)
       else
         SPECIAL (loc lexbuf, Beginning_of_line)
     }
 
   | '$' {
-      if conf.multiline then
+      if conf.pcre_multiline then
         SPECIAL (loc lexbuf, End_of_input)
       else
         SPECIAL (loc lexbuf, End_of_line)
@@ -209,9 +250,52 @@ rule token conf = parse
 
   | eof { END (loc lexbuf) }
 
+and literal_chars = parse
+  | "\\E" { [] }
+  | utf8 as c {
+      let loc = loc lexbuf in
+      let code = decode c in
+      (loc, code) :: literal_chars lexbuf
+    }
+
 and backslash_escape conf start = parse
-  | '\\' {
-      (range start (loc lexbuf), Singleton (Char.code '\\'))
+  | '\\' { (range start (loc lexbuf), Singleton (Char.code '\\')) }
+  | 'a' { (range start (loc lexbuf), Singleton 0x7) }
+  | 'c' (ascii as c) { (range start (loc lexbuf), Singleton (Char.code c)) }
+  | 'e' { (range start (loc lexbuf), Singleton 0x1B) }
+  | 'f' { (range start (loc lexbuf), Singleton 0x1C) }
+  | 'n' { (range start (loc lexbuf), Singleton 0x0A) }
+  | 'r' { (range start (loc lexbuf), Singleton 0x0D) }
+  | 't' { (range start (loc lexbuf), Singleton 0x09) }
+
+  | (['0'-'9']+ as n)
+  | "o{" (['0'-'9']+ as n) "}" {
+      (range start (loc lexbuf), Singleton (int_of_string ("0o" ^ n)))
+    }
+
+  | "x" (xdigit+ as n) {
+      (range start (loc lexbuf), Singleton (int_of_string ("0x" ^ n)))
+    }
+
+  | "x{" (xdigit+ as n) "}" {
+      let loc = range start (loc lexbuf) in
+      (* TODO: conf.pcre_javascript_compat should not allow this syntax.
+         It should treat \x{42} as x{42} ('x' repeated 42 times)
+         and \x{0A} as x\{0A\} (literal 'x{0A}').
+         This is very complicated to implemented without rolling back the
+         lexbuf and calling another lexer to the rescue.
+         Sedlex offers such functionality for sure. Otherwise it might
+         be possible to tweak the lexbuf to achieve this as well,
+         see https://sympa.inria.fr/sympa/arc/caml-list/2006-07/msg00133.html
+      *)
+      (loc, Singleton (int_of_string ("0x" ^ n)))
+    }
+
+  | "u" (xdigit+ as n) {
+      let loc = range start (loc lexbuf) in
+      (* TODO: only conf.pcre_javascript_compat should allow this syntax.
+         See remark above about the need to roll back. *)
+      (loc, Singleton (int_of_string ("0x" ^ n)))
     }
 
   | 'p' (['A'-'Z' 'a'-'z' '_'] as c) {
@@ -250,7 +334,7 @@ and backslash_escape conf start = parse
 
   | (['A'-'Z''a'-'z'] as c) {
       let loc = range start (loc lexbuf) in
-      let ucp = conf.ucp in
+      let ucp = conf.pcre_ucp in
       let set =
         match c with
         | 'd' when ucp -> Char_class.unicode_digit
@@ -341,7 +425,7 @@ and posix_char_class conf start = parse
       let unicode prop_name =
         Ok (loc, compl (Abstract (Unicode_character_property prop_name)))
       in
-      let ucp = conf.ucp in
+      let ucp = conf.pcre_ucp in
       match name with
       | "alnum" when ucp -> unicode "Xan"
       | "alnum" -> ascii Char_class.posix_alnum
@@ -368,7 +452,8 @@ and posix_char_class conf start = parse
       | _ ->
           Error (
             loc,
-            AST.code_points_of_ascii_string ("[:" ^ Lexing.lexeme lexbuf)
+            AST.code_points_of_ascii_string_loc loc
+              ("[:" ^ Lexing.lexeme lexbuf)
           )
 }
 
@@ -397,7 +482,7 @@ and char_class conf = parse
       | Ok (_loc, x) ->
           union x (char_class conf lexbuf)
       | Error (_loc, chars) ->
-          union (Char_class.of_list chars) (char_class conf lexbuf)
+          union (Char_class.of_list_pos chars) (char_class conf lexbuf)
     }
   | '\\' {
       let _loc, x = backslash_escape conf (loc lexbuf) lexbuf in

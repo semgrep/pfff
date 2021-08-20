@@ -81,6 +81,13 @@ let code_points_of_ascii_string s : int list =
   done;
   !codes
 
+let code_points_of_ascii_string_loc loc s : (loc * int) list =
+  let codes = ref [] in
+  for i = String.length s - 1 downto 0 do
+    codes := (loc, Char.code s.[i]) :: !codes
+  done;
+  !codes
+
 let location2 a b =
   let start, _ = location a in
   let _, end_ = location b in

@@ -24,6 +24,9 @@ let rec of_list chars : char_class =
   | [last] -> Singleton last
   | x :: chars -> Union (Singleton x, of_list chars)
 
+let of_list_pos chars : char_class =
+  List.map snd chars |> of_list
+
 (*
    Each byte of the list becomes a unicode code point in the set.
    Use with ascii strings only.

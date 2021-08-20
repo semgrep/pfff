@@ -11,7 +11,7 @@ open AST
 %token <AST.loc> CLOSE_GROUP BAR END
 %token <AST.loc * AST.char_class> CHAR
 %token <AST.loc * AST.special> SPECIAL
-%token <AST.loc * int list> STRING
+%token <AST.loc * (AST.loc * int) list> STRING
 %token <AST.loc * AST.repeat_range * AST.matching_pref> QUANTIFIER
 
 /* Choosing right associativity for aesthetic purposes when dumping the AST
@@ -23,7 +23,7 @@ open AST
 %type <AST.t> main
 %%
 
-main: regexp0 END { $1 }
+main: regexp0 END       { $1 }
 
 /* May be empty */
 regexp0:
@@ -62,8 +62,7 @@ regexp1:
   | STRING                       { let loc, code_points = $1 in
                                    (* safe fold_right *)
                                    List.rev code_points
-                                   |> List.fold_left (fun acc c ->
-                                     (* TODO: narrow location to one char *)
+                                   |> List.fold_left (fun acc (loc, c) ->
                                      seq loc (Char (loc, Singleton c)) acc
                                    ) (Empty loc : AST.t)
                                  }
