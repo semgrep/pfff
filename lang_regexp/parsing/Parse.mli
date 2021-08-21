@@ -13,16 +13,8 @@
    - dialect comparison: https://www.regular-expressions.info/refcharacters.html
 
    Missing features (see 'man pcresyntax'):
-   - anchors and simple assertions: \b \B \A \Z \z \G
-   - match point reset: \K
-   - named capture: (?<name>...) (?'name'...) (?P<name>...)
-   - back reference by name: perl/.NET/python
    - subroutine reference: perl/python/oniguruma/pcre
-   - non-capturing group with group number reset: (?|...)
-   - atomic groups: (?>...)
-   - option setting: (?i) (?J) (?m) (?s) (?U) (?x) (?-...)
    - conditional patterns
-   - callouts (?C) (?Cn)
    - clean separation between pure pcre and javascript modes: requires lexbuf
      rollback
 *)

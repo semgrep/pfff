@@ -52,6 +52,7 @@ let alnum = ['A'-'Z' 'a'-'z' '0'-'9']
 let digit = ['0'-'9']
 let xdigit = ['A'-'F' 'a'-'f' '0'-'9']
 let nonneg = ['0'-'9']+
+let capture_name = ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '_' '0'-'9']*
 
 let ascii = ['\000'-'\127']
 
@@ -143,12 +144,7 @@ rule token conf = parse
   | '|' { BAR (loc lexbuf) }
 
   | '.' {
-      let set =
-        match conf.pcre_dotall with
-        | true -> Complement Empty
-        | false -> Complement (Singleton (Char.code '\n'))
-      in
-      CHAR (loc lexbuf, set)
+      CHAR (loc lexbuf, Abstract Dot)
     }
 
   | '^' {
@@ -178,55 +174,93 @@ rule token conf = parse
       CHAR (loc, set)
     }
 
+  | "(?i)" { SPECIAL (loc lexbuf, Set_option Caseless) }
+  | "(?J)" { SPECIAL (loc lexbuf, Set_option Allow_duplicate_names) }
+  | "(?m)" { SPECIAL (loc lexbuf, Set_option Multiline) }
+  | "(?s)" { SPECIAL (loc lexbuf, Set_option Dotall) }
+  | "(?U)" { SPECIAL (loc lexbuf, Set_option Default_lazy) }
+  | "(?x)" { SPECIAL (loc lexbuf, Set_option Ignore_whitespace) }
+
+  | "(?-i)" { SPECIAL (loc lexbuf, Clear_option Caseless) }
+  | "(?-J)" { SPECIAL (loc lexbuf, Clear_option Allow_duplicate_names) }
+  | "(?-m)" { SPECIAL (loc lexbuf, Clear_option Multiline) }
+  | "(?-s)" { SPECIAL (loc lexbuf, Clear_option Dotall) }
+  | "(?-U)" { SPECIAL (loc lexbuf, Clear_option Default_lazy) }
+  | "(?-x)" { SPECIAL (loc lexbuf, Clear_option Ignore_whitespace) }
+
+  | "(?C)" { SPECIAL (loc lexbuf, Callout 0) }
+  | "(?C" (digit+ as n) ")" { SPECIAL (loc lexbuf, Callout (int_of_string n)) }
+
+(***************************************************************************)
+(* '\' sequences that aren't allowed in character classes *)
+(***************************************************************************)
+  | '\\' ('-'? ['1'-'9']['0'-'9']* as n)
+  | "\\g" ('-'? ['0'-'9']+ as n)
+  | "\\g{" ('-'? ['0'-'9']+ as n) "}" {
+      SPECIAL (loc lexbuf, Numeric_back_reference (int_of_string n))
+    }
+
+  | "\\k{" (capture_name as name) "}" (* pcre, .NET *)
+  | "\\k<" (capture_name as name) ">" (* pcre, perl *)
+  | "\\k'" (capture_name as name) "'" (* pcre, perl *)
+  | "(?P=" (capture_name as name) ")" (* pcre, python *)
+  | "\\g{" (capture_name as name) "}" (* pcre, perl *) {
+      SPECIAL (loc lexbuf, Named_back_reference name)
+    }
+
+  | "\\A" { SPECIAL (loc lexbuf, Beginning_of_input) }
+  | "\\Z" { SPECIAL (loc lexbuf, End_of_last_line) }
+  | "\\z" { SPECIAL (loc lexbuf, End_of_input) }
+  | "\\b" { SPECIAL (loc lexbuf, Word_boundary) }
+  | "\\B" { SPECIAL (loc lexbuf, Not_word_boundary) }
+  | "\\G" { SPECIAL (loc lexbuf, Beginning_of_match) }
+  | "\\K" { SPECIAL (loc lexbuf, Match_point_reset) }
+
+(***************************************************************************)
+
   | "[:" {
       match posix_char_class conf (loc lexbuf) lexbuf with
       | Ok (loc, x) -> CHAR (loc, x)
       | Error (loc, s) -> STRING (loc, s)
     }
 
-  | '\\' ('-'? ['1'-'9']['0'-'9']* as n)
-  | "\\g" ('-'? ['0'-'9']+ as n)
-  | "\\g{" ('-'? ['0'-'9']+ as n) "}" {
-      SPECIAL (loc lexbuf, Back_reference (int_of_string n))
-    }
-
   | '\\' { let loc, x = backslash_escape conf (loc lexbuf) lexbuf in
            CHAR (loc, x) }
 
-  | '?' { QUANTIFIER (loc lexbuf, (0, Some 1), Longest_first) }
-  | '*' { QUANTIFIER (loc lexbuf, (0, None), Longest_first) }
-  | '+' { QUANTIFIER (loc lexbuf, (1, None), Longest_first) }
-  | "??" { QUANTIFIER (loc lexbuf, (0, Some 1), Shortest_first) }
-  | "*?" { QUANTIFIER (loc lexbuf, (0, None), Shortest_first) }
-  | "+?" { QUANTIFIER (loc lexbuf, (1, None), Shortest_first) }
+  | '?' { QUANTIFIER (loc lexbuf, (0, Some 1), Default) }
+  | '*' { QUANTIFIER (loc lexbuf, (0, None), Default) }
+  | '+' { QUANTIFIER (loc lexbuf, (1, None), Default) }
+  | "??" { QUANTIFIER (loc lexbuf, (0, Some 1), Lazy) }
+  | "*?" { QUANTIFIER (loc lexbuf, (0, None), Lazy) }
+  | "+?" { QUANTIFIER (loc lexbuf, (1, None), Lazy) }
   | "?+" { QUANTIFIER (loc lexbuf, (0, Some 1), Possessive) }
   | "*+" { QUANTIFIER (loc lexbuf, (0, None), Possessive) }
   | "++" { QUANTIFIER (loc lexbuf, (1, None), Possessive) }
 
   | '{' (nonneg as a) '}' {
-      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Longest_first)
+      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Default)
     }
   | '{' (nonneg as a) ',' (nonneg as b) '}' {
-      QUANTIFIER (loc lexbuf, (int a, Some (int b)), Longest_first)
+      QUANTIFIER (loc lexbuf, (int a, Some (int b)), Default)
     }
   | '{' ',' (nonneg as b) '}' {
-      QUANTIFIER (loc lexbuf, (0, Some (int b)), Longest_first)
+      QUANTIFIER (loc lexbuf, (0, Some (int b)), Default)
     }
   | '{' (nonneg as a) ',' '}' {
-      QUANTIFIER (loc lexbuf, (int a, None), Longest_first)
+      QUANTIFIER (loc lexbuf, (int a, None), Default)
     }
 
   | '{' (nonneg as a) "}?" {
-      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Shortest_first)
+      QUANTIFIER (loc lexbuf, (int a, Some (int a)), Lazy)
     }
   | '{' (nonneg as a) ',' (nonneg as b) "}?" {
-      QUANTIFIER (loc lexbuf, (int a, Some (int b)), Shortest_first)
+      QUANTIFIER (loc lexbuf, (int a, Some (int b)), Lazy)
     }
   | '{' ',' (nonneg as b) "}?" {
-      QUANTIFIER (loc lexbuf, (0, Some (int b)), Shortest_first)
+      QUANTIFIER (loc lexbuf, (0, Some (int b)), Lazy)
     }
   | '{' (nonneg as a) ',' "}?" {
-      QUANTIFIER (loc lexbuf, (int a, None), Shortest_first)
+      QUANTIFIER (loc lexbuf, (int a, None), Lazy)
     }
 
   | '{' (nonneg as a) "}+" {
@@ -400,6 +434,28 @@ and open_group conf start = parse
       let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Neg_lookbehind)
     }
+  | ">" {
+      let loc = range start (loc lexbuf) in
+      OPEN_GROUP (loc, Atomic)
+    }
+
+  | "<" (capture_name as name) ">" {
+      (* pcre, perl *)
+      let loc = range start (loc lexbuf) in
+      OPEN_GROUP (loc, Named_capture name)
+    }
+
+  | "'" (capture_name as name) "'" {
+      (* pcre, python *)
+      let loc = range start (loc lexbuf) in
+      OPEN_GROUP (loc, Named_capture name)
+    }
+
+  | "|" {
+      let loc = range start (loc lexbuf) in
+      OPEN_GROUP (loc, Non_capturing_reset)
+    }
+
   | utf8 as other {
       let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Other (decode other))

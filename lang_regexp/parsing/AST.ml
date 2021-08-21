@@ -6,14 +6,32 @@ open Printf
 
 type loc = Parse_info.t * Parse_info.t
 
+type opt =
+  | Caseless
+  | Allow_duplicate_names
+  | Multiline
+  | Dotall
+  | Default_lazy
+  | Ignore_whitespace
+
 type special =
   | Beginning_of_line
   | End_of_line
   | Beginning_of_input
+  | End_of_last_line
   | End_of_input
-  | Back_reference of int
+  | Beginning_of_match
+  | Numeric_back_reference of int
+  | Named_back_reference of string
+  | Word_boundary
+  | Not_word_boundary
+  | Match_point_reset
+  | Set_option of opt
+  | Clear_option of opt
+  | Callout of int
 
 type abstract_char_class =
+  | Dot
   | Unicode_character_property of string
   | Extended_grapheme_cluster (* \X *)
 
@@ -31,17 +49,20 @@ type char_class =
 type repeat_range = int * int option
 
 type matching_pref =
-  | Longest_first (* default e.g. 'a*' *)
-  | Shortest_first (* lazy e.g. 'a*?' *)
-  | Possessive (* disable backtracking e.g. 'a*+' *)
+  | Default
+  | Lazy
+  | Possessive
 
 type group_kind =
   | Non_capturing
+  | Non_capturing_reset
   | Capturing
+  | Named_capture of string
   | Lookahead
   | Neg_lookahead
   | Lookbehind
   | Neg_lookbehind
+  | Atomic
   | Other of int (* some unrecognized character following '(?' *)
 
 type t =
@@ -117,13 +138,31 @@ let to_buf buf l =
   in
   pp "" (Inline l)
 
+let show_opt (x : opt) =
+  match x with
+  | Caseless -> "Caseless"
+  | Allow_duplicate_names -> "Allow_duplicate_names"
+  | Multiline -> "Multiline"
+  | Dotall -> "Dotall"
+  | Default_lazy -> "Default_lazy"
+  | Ignore_whitespace -> "Ignore_whitespace"
+
 let pp_special (x : special) =
   match x with
   | Beginning_of_line -> "Beginning_of_line"
   | End_of_line -> "End_of_line"
   | Beginning_of_input -> "Beginning_of_input"
+  | End_of_last_line -> "End_of_last_line"
   | End_of_input -> "End_of_input"
-  | Back_reference n -> (sprintf "Back_reference %i" n)
+  | Numeric_back_reference n -> sprintf "Numeric_back_reference %i" n
+  | Named_back_reference name -> sprintf "Named_back_reference %s" name
+  | Word_boundary -> "Word_boundary"
+  | Not_word_boundary -> "Not_word_boundary"
+  | Beginning_of_match -> "Beginning_of_match"
+  | Match_point_reset -> "Match_point_reset"
+  | Set_option opt -> sprintf "Set_option %s" (show_opt opt)
+  | Clear_option opt -> sprintf "Clear_option %s" (show_opt opt)
+  | Callout n -> sprintf "Callout %i" n
 
 let show_char code =
   if code < 128 then
@@ -145,6 +184,7 @@ let pp_char_class (x : char_class) =
     | Inter (a, b) -> bprintf buf "(%a&%a)" pp a pp b
     | Diff (a, b) -> bprintf buf "(%a-%a)" pp a pp b
     | Complement a -> bprintf buf "^%a" pp a
+    | Abstract Dot -> bprintf buf "."
     | Abstract (Unicode_character_property name) ->
         bprintf buf "(Unicode_property %s)" name
     | Abstract Extended_grapheme_cluster ->
@@ -156,7 +196,7 @@ let pp_char_class (x : char_class) =
   pp buf x;
   Buffer.contents buf
 
-let string_of_repeat_range (low, high) =
+let show_repeat_range (low, high) =
   let s n = if n > 1 then "s" else "" in
   match low, high with
   | 0, Some high -> sprintf "up to %i time%s" high (s high)
@@ -164,10 +204,22 @@ let string_of_repeat_range (low, high) =
   | low, Some high when low = high -> sprintf "%i time%s" high (s high)
   | low, Some high -> sprintf "%i-%i time%s" low high (s high)
 
-let string_of_matching_pref = function
-  | Longest_first -> "longest match first"
-  | Shortest_first -> "shortest match first"
+let show_matching_pref = function
+  | Default -> "[longest match first]"
+  | Lazy -> "shortest match first"
   | Possessive -> "longest match, no backtracking"
+
+let show_group_kind = function
+  | Non_capturing -> "Non_capturing"
+  | Non_capturing_reset -> "Non_capturing_reset"
+  | Capturing -> "Capturing"
+  | Named_capture name -> ("Named_capture " ^ name)
+  | Lookahead -> "Lookahead"
+  | Neg_lookahead -> "Neg_lookahead"
+  | Lookbehind -> "Lookbehind"
+  | Neg_lookbehind -> "Neg_lookbehind"
+  | Atomic -> "Atomic"
+  | Other c -> sprintf "Other %s" (show_char c)
 
 let rec pp (node : t) =
   match node with
@@ -179,11 +231,14 @@ let rec pp (node : t) =
   | Repeat (_, a, range, pref) ->
       [
         Line (sprintf "Repeat %s, %s:"
-                (string_of_repeat_range range)
-                (string_of_matching_pref pref));
+                (show_repeat_range range)
+                (show_matching_pref pref));
         Block (pp a)
       ]
-  | Group (_, _, a) -> [Line "Group:"; Block (pp a)]
+  | Group (_, kind, a) -> [
+      Line (sprintf "Group: %s" (show_group_kind kind));
+      Block (pp a)
+    ]
 
 let print node =
   let buf = Buffer.create 1000 in

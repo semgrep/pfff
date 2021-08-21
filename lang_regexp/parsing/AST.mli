@@ -5,17 +5,40 @@
 type loc = Parse_info.t * Parse_info.t
 
 (*
+   Matching options set with (?X) or (?-X), where X is a letter that specify
+   the option to turn on or off.
+*)
+type opt =
+  | Caseless (* i *)
+  | Allow_duplicate_names (* J *)
+  | Multiline (* m *)
+  | Dotall (* s (pcre_dotall) *)
+  | Default_lazy (* U *)
+  | Ignore_whitespace (* x (pcre_extended) *)
+
+(*
    Any atomic sequence that doesn't consume a character of input,
    such as '^', '\A', '\w', etc.
 *)
 type special =
-  | Beginning_of_line
-  | End_of_line
-  | Beginning_of_input
-  | End_of_input
-  | Back_reference of int
+  | Beginning_of_line (* ^ *)
+  | End_of_line (* $ *)
+  | Beginning_of_input (* \A *)
+  | End_of_last_line (* \Z *)
+  | End_of_input (* \z *)
+  | Beginning_of_match (* \G *)
+  | Numeric_back_reference of int
+  | Named_back_reference of string
+  | Word_boundary (* \b *)
+  | Not_word_boundary (* \B *)
+  | Match_point_reset (* \K *)
+  | Set_option of opt (* (?i) (?J) (?m) (?s) (?U) (?x) *)
+  | Clear_option of opt (* (?-i) (?-J) (?-m) (?-s) (?-U) (?-x) *)
+  | Callout of int (* (?C) or (?Cn) for n in [0, 255] *)
 
 type abstract_char_class =
+  | Dot (* any character except newline, unless we're in dotall mode *)
+
   | Unicode_character_property of string
   (* Unicode character property introduced with \p{...}
      e.g. \p{Meroitic_Hieroglyphs} *)
@@ -45,17 +68,20 @@ type char_class =
 type repeat_range = int * int option
 
 type matching_pref =
-  | Longest_first (* default e.g. 'a*' *)
-  | Shortest_first (* lazy e.g. 'a*?' *)
+  | Default (* longest first or greedy e.g. 'a*', unless in (?U) mode *)
+  | Lazy (* shortest first or lazy e.g. 'a*?' *)
   | Possessive (* disable backtracking e.g. 'a*+' *)
 
 type group_kind =
   | Non_capturing
+  | Non_capturing_reset (* (?| ... ) *)
   | Capturing
+  | Named_capture of string
   | Lookahead
   | Neg_lookahead
   | Lookbehind
   | Neg_lookbehind
+  | Atomic (* (?> ... ) *)
   | Other of int (* some unrecognized character following '(?' *)
 
 type t =
