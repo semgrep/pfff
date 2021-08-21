@@ -15,8 +15,13 @@
    Missing features (see 'man pcresyntax'):
    - subroutine reference: perl/python/oniguruma/pcre
    - conditional patterns
-   - clean separation between pure pcre and javascript modes: requires lexbuf
-     rollback
+   - disable extra features not applicable for the chosen dialect. Requires
+     lexbuf rollback (maybe requires switching to sedlex, not sure).
+     - perl
+     - javascript
+     - python
+     - oniguruma/ruby
+     - pcre without pcre_javascript_compat (\uXXXX)
 *)
 
 (* Parse a file *)
