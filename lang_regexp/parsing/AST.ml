@@ -77,6 +77,16 @@ type t =
   | Alt of loc * t * t
   | Repeat of loc * t * repeat_range * matching_pref
   | Group of loc * group_kind * t
+  | Conditional of loc * condition * t * t option
+
+and condition =
+  | Abs_ref_cond of int
+  | Rel_ref_cond of int
+  | Named_ref_cond of string
+  | Num_group_recursion_cond of int
+  | Named_group_recursion_cond of string
+  | Define
+  | Assertion of t
 
 let location = function
   | Empty loc
@@ -86,6 +96,7 @@ let location = function
   | Alt (loc, _, _)
   | Repeat (loc, _, _, _)
   | Group (loc, _, _) -> loc
+  | Conditional (loc, _, _, _) -> loc
 
 let location2 a b =
   let start, _ = location a in
@@ -269,10 +280,58 @@ let rec pp (node : t) =
                 (show_matching_pref pref));
         Block (pp a)
       ]
-  | Group (_, kind, a) -> [
-      Line (sprintf "Group: %s" (show_group_kind kind));
-      Block (pp a)
-    ]
+  | Group (_, kind, a) ->
+      [
+        Line (sprintf "Group: %s" (show_group_kind kind));
+        Block (pp a)
+      ]
+  | Conditional (_, cond, then_, else_) ->
+      let cond =
+        match cond with
+        | Abs_ref_cond n ->
+            `Simple (sprintf "Abs_ref_cond %i" n)
+        | Rel_ref_cond n ->
+            `Simple (sprintf "Rel_ref_cond %i" n)
+        | Named_ref_cond name ->
+            `Simple (sprintf "Named_ref_cond %s" name)
+        | Num_group_recursion_cond n ->
+            `Simple (sprintf "Num_group_recursion_cond %i" n)
+        | Named_group_recursion_cond name ->
+            `Simple (sprintf "Named_group_recursion_cond %s" name)
+        | Define ->
+            `Simple "Define"
+        | Assertion x ->
+            `Complex (pp x)
+      in
+      let if_ =
+        match cond with
+        | `Simple s -> [ Line (sprintf "If %s" s) ]
+        | `Complex x ->
+            [
+              Line "If:";
+              Block x;
+            ]
+      in
+      let then_ =
+        [
+          Line "Then:";
+          Block (pp then_);
+        ]
+      in
+      let else_ =
+        match else_ with
+        | None -> []
+        | Some else_ ->
+            [
+              Line "Else:";
+              Block (pp else_);
+            ]
+      in
+      [
+        Inline if_;
+        Inline then_;
+        Inline else_
+      ]
 
 let print node =
   let buf = Buffer.create 1000 in

@@ -102,6 +102,17 @@ type t =
   | Alt of loc * t * t
   | Repeat of loc * t * repeat_range * matching_pref
   | Group of loc * group_kind * t
+  | Conditional of loc * condition * t * t option
+
+and condition =
+  | Abs_ref_cond of int
+  | Rel_ref_cond of int
+  | Named_ref_cond of string
+  | Num_group_recursion_cond of int
+  | Named_group_recursion_cond of string
+  | Define
+  | Assertion of t (* must be one of the 4
+                      positive/negative lookahead/lookbehind assertions *)
 
 (***************************************************************************)
 (* Constructors, meant for the parser or for testing. *)

@@ -62,7 +62,7 @@ let alnum = ['A'-'Z' 'a'-'z' '0'-'9']
 let digit = ['0'-'9']
 let xdigit = ['A'-'F' 'a'-'f' '0'-'9']
 let nonneg = ['0'-'9']+
-let capture_name = ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '_' '0'-'9']*
+let group_name = ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '_' '0'-'9']*
 
 let subroutine_name = (* TODO: is this correct? *)
   ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '_' '0'-'9']*
@@ -223,11 +223,11 @@ rule token conf = parse
       NODE (Special (loc lexbuf, Numeric_back_reference (int_of_string n)))
     }
 
-  | "\\k{" (capture_name as name) "}" (* pcre, .NET *)
-  | "\\k<" (capture_name as name) ">" (* pcre, perl *)
-  | "\\k'" (capture_name as name) "'" (* pcre, perl *)
-  | "(?P=" (capture_name as name) ")" (* pcre, python *)
-  | "\\g{" (capture_name as name) "}" (* pcre, perl *) {
+  | "\\k{" (group_name as name) "}" (* pcre, .NET *)
+  | "\\k<" (group_name as name) ">" (* pcre, perl *)
+  | "\\k'" (group_name as name) "'" (* pcre, perl *)
+  | "(?P=" (group_name as name) ")" (* pcre, python *)
+  | "\\g{" (group_name as name) "}" (* pcre, perl *) {
       NODE (Special (loc lexbuf, Named_back_reference name))
     }
 
@@ -523,13 +523,13 @@ and open_group conf start = parse
       OPEN_GROUP (loc, Atomic, None)
     }
 
-  | "<" (capture_name as name) ">" {
+  | "<" (group_name as name) ">" {
       (* pcre, perl *)
       let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Named_capture name, None)
     }
 
-  | "'" (capture_name as name) "'" {
+  | "'" (group_name as name) "'" {
       (* pcre, python *)
       let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Named_capture name, None)
@@ -539,6 +539,51 @@ and open_group conf start = parse
       let loc = range start (loc lexbuf) in
       OPEN_GROUP (loc, Non_capturing_reset, None)
     }
+
+
+(***************************************************************************)
+(* Conditional patterns *)
+(***************************************************************************)
+
+  | "(" (digit+ as n) ")" {
+      OPEN_COND (range start (loc lexbuf), Abs_ref_cond (int_of_string n))
+    }
+  | "(+" (digit+ as n) ")" {
+      OPEN_COND (range start (loc lexbuf), Rel_ref_cond (int_of_string n))
+    }
+  | "(-" (digit+ as n) ")" {
+      OPEN_COND (range start (loc lexbuf), Rel_ref_cond (- int_of_string n))
+    }
+  | "(R)" {
+      (* TODO: this is actually a named reference condition if a group
+         named 'R' was defined earlier. *)
+      OPEN_COND (range start (loc lexbuf), Num_group_recursion_cond 0)
+    }
+  | "(R" (digit+ as n) ")" {
+      OPEN_COND (range start (loc lexbuf), Num_group_recursion_cond (int_of_string n))
+    }
+  | "(R&" (group_name as name) ")" {
+      OPEN_COND (range start (loc lexbuf), Named_group_recursion_cond name)
+    }
+  | "(DEFINE)" {
+      (* TODO: this is a named reference condition if a group
+         named 'DEFINE' was defined earlier. *)
+      OPEN_COND (range start (loc lexbuf), Define)
+    }
+
+  | "(<" (group_name as name) ">)" (* perl, pcre *)
+  | "('" (group_name as name) "')" (* perl, pcre *)
+  | "(" (group_name as name) ")" (* pcre; ambiguous: must come after
+                                     ?(R) and ?(DEFINE) *) {
+      OPEN_COND (range start (loc lexbuf), Named_ref_cond name)
+    }
+
+  | "(=" { OPEN_COND_ASSERT (range start (loc lexbuf), Lookahead) }
+  | "(!" { OPEN_COND_ASSERT (range start (loc lexbuf), Neg_lookahead) }
+  | "(<=" { OPEN_COND_ASSERT (range start (loc lexbuf), Lookbehind) }
+  | "(=" { OPEN_COND_ASSERT (range start (loc lexbuf), Neg_lookbehind) }
+
+(***************************************************************************)
 
   | utf8 as other {
       let loc = range start (loc lexbuf) in
