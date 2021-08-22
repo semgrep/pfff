@@ -45,6 +45,16 @@ let decode s =
             lor d
           else
             assert false
+
+let opt_of_char c =
+  match c with
+  | 'i' -> Caseless
+  | 'J' -> Allow_duplicate_names
+  | 'm' -> Multiline
+  | 's' -> Dotall
+  | 'U' -> Default_lazy
+  | 'x' -> Ignore_whitespace
+  | _ -> assert false
 }
 
 let line = [^'\n']* '\n'?
@@ -53,6 +63,9 @@ let digit = ['0'-'9']
 let xdigit = ['A'-'F' 'a'-'f' '0'-'9']
 let nonneg = ['0'-'9']+
 let capture_name = ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '_' '0'-'9']*
+
+let subroutine_name = (* TODO: is this correct? *)
+  ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '_' '0'-'9']*
 
 let ascii = ['\000'-'\127']
 
@@ -116,25 +129,23 @@ rule token conf = parse
   | "(*THEN:" btk_name ")" { token conf lexbuf }
 
   | "\\Q" {
-      let start = loc lexbuf in
-      let chars = literal_chars lexbuf in
-      let end_ = loc lexbuf in
-      STRING (range start end_, chars)
+      let code_points = literal_chars lexbuf in
+      NODE (seq_of_code_points code_points)
     }
 
   | '#' {
       if conf.ignore_hash_comments then
         comment_in_token conf lexbuf
       else
-        CHAR (loc lexbuf, Singleton (Char.code '#'))
+        NODE (Char (loc lexbuf, Singleton (Char.code '#')))
     }
   | ascii_whitespace as c {
       if conf.ignore_whitespace then
         token conf lexbuf
       else
-        CHAR (loc lexbuf, Singleton (Char.code c))
+        NODE (Char (loc lexbuf, Singleton (Char.code c)))
     }
-  | "(?#" [^')'] ')' as s { COMMENT (loc lexbuf, s) }
+  | "(?#" [^')'] ')' { token conf lexbuf }
   | "(?" {
       let start = loc lexbuf in
       open_group conf start lexbuf
@@ -144,21 +155,21 @@ rule token conf = parse
   | '|' { BAR (loc lexbuf) }
 
   | '.' {
-      CHAR (loc lexbuf, Abstract Dot)
+      NODE (Char (loc lexbuf, Abstract Dot))
     }
 
   | '^' {
       if conf.pcre_multiline then
-        SPECIAL (loc lexbuf, Beginning_of_input)
+        NODE (Special (loc lexbuf, Beginning_of_input))
       else
-        SPECIAL (loc lexbuf, Beginning_of_line)
+        NODE (Special (loc lexbuf, Beginning_of_line))
     }
 
   | '$' {
       if conf.pcre_multiline then
-        SPECIAL (loc lexbuf, End_of_input)
+        NODE (Special (loc lexbuf, End_of_input))
       else
-        SPECIAL (loc lexbuf, End_of_line)
+        NODE (Special (loc lexbuf, End_of_line))
     }
 
   | '[' ('^'? as compl) {
@@ -171,25 +182,37 @@ rule token conf = parse
         | "" -> set
         | _ -> Complement set
       in
-      CHAR (loc, set)
+      NODE (Char (loc, set))
     }
 
-  | "(?i)" { SPECIAL (loc lexbuf, Set_option Caseless) }
-  | "(?J)" { SPECIAL (loc lexbuf, Set_option Allow_duplicate_names) }
-  | "(?m)" { SPECIAL (loc lexbuf, Set_option Multiline) }
-  | "(?s)" { SPECIAL (loc lexbuf, Set_option Dotall) }
-  | "(?U)" { SPECIAL (loc lexbuf, Set_option Default_lazy) }
-  | "(?x)" { SPECIAL (loc lexbuf, Set_option Ignore_whitespace) }
+  | "(?" (['i' 'J' 'm' 's' 'U' 'x']+ as options) ")" {
+      NODE (
+        options
+        |> chars_of_ascii_string
+        |> List.map (fun c ->
+          let opt = opt_of_char c in
+          Special (loc lexbuf, Set_option opt)
+        )
+        |> seq_of_list
+      )
+    }
 
-  | "(?-i)" { SPECIAL (loc lexbuf, Clear_option Caseless) }
-  | "(?-J)" { SPECIAL (loc lexbuf, Clear_option Allow_duplicate_names) }
-  | "(?-m)" { SPECIAL (loc lexbuf, Clear_option Multiline) }
-  | "(?-s)" { SPECIAL (loc lexbuf, Clear_option Dotall) }
-  | "(?-U)" { SPECIAL (loc lexbuf, Clear_option Default_lazy) }
-  | "(?-x)" { SPECIAL (loc lexbuf, Clear_option Ignore_whitespace) }
+  | "(?-" (['i' 'J' 'm' 's' 'U' 'x']+ as options) ")" {
+      NODE (
+        options
+        |> chars_of_ascii_string
+        |> List.map (fun c ->
+          let opt = opt_of_char c in
+          Special (loc lexbuf, Clear_option opt)
+        )
+        |> seq_of_list
+      )
+    }
 
-  | "(?C)" { SPECIAL (loc lexbuf, Callout 0) }
-  | "(?C" (digit+ as n) ")" { SPECIAL (loc lexbuf, Callout (int_of_string n)) }
+  | "(?C)" { NODE (Special (loc lexbuf, Callout 0)) }
+  | "(?C" (digit+ as n) ")" {
+      NODE (Special (loc lexbuf, Callout (int_of_string n)))
+    }
 
 (***************************************************************************)
 (* '\' sequences that aren't allowed in character classes *)
@@ -197,7 +220,7 @@ rule token conf = parse
   | '\\' ('-'? ['1'-'9']['0'-'9']* as n)
   | "\\g" ('-'? ['0'-'9']+ as n)
   | "\\g{" ('-'? ['0'-'9']+ as n) "}" {
-      SPECIAL (loc lexbuf, Numeric_back_reference (int_of_string n))
+      NODE (Special (loc lexbuf, Numeric_back_reference (int_of_string n)))
     }
 
   | "\\k{" (capture_name as name) "}" (* pcre, .NET *)
@@ -205,27 +228,69 @@ rule token conf = parse
   | "\\k'" (capture_name as name) "'" (* pcre, perl *)
   | "(?P=" (capture_name as name) ")" (* pcre, python *)
   | "\\g{" (capture_name as name) "}" (* pcre, perl *) {
-      SPECIAL (loc lexbuf, Named_back_reference name)
+      NODE (Special (loc lexbuf, Named_back_reference name))
     }
 
-  | "\\A" { SPECIAL (loc lexbuf, Beginning_of_input) }
-  | "\\Z" { SPECIAL (loc lexbuf, End_of_last_line) }
-  | "\\z" { SPECIAL (loc lexbuf, End_of_input) }
-  | "\\b" { SPECIAL (loc lexbuf, Word_boundary) }
-  | "\\B" { SPECIAL (loc lexbuf, Not_word_boundary) }
-  | "\\G" { SPECIAL (loc lexbuf, Beginning_of_match) }
-  | "\\K" { SPECIAL (loc lexbuf, Match_point_reset) }
+  | "\\A" { NODE (Special (loc lexbuf, Beginning_of_input)) }
+  | "\\Z" { NODE (Special (loc lexbuf, End_of_last_line)) }
+  | "\\z" { NODE (Special (loc lexbuf, End_of_input)) }
+  | "\\b" { NODE (Special (loc lexbuf, Word_boundary)) }
+  | "\\B" { NODE (Special (loc lexbuf, Not_word_boundary)) }
+  | "\\G" { NODE (Special (loc lexbuf, Beginning_of_match)) }
+  | "\\K" { NODE (Special (loc lexbuf, Match_point_reset)) }
 
+
+(***************************************************************************)
+(* Subroutine references *)
+(***************************************************************************)
+  | "(?R)" { NODE (Special (loc lexbuf, Recurse_whole_pattern)) }
+
+  | "(?" (digit+ as n) ")" (* perl, pcre *)
+  | "\\g<" (digit+ as n) ">" (* oniguruma, pcre *)
+  | "\\g'" (digit+ as n) "'" (* oniguruma, pcre *) {
+      NODE (
+        Special (loc lexbuf, Call_subpattern_by_abs_number (int_of_string n))
+      )
+    }
+
+  | "(?+" (digit+ as n) ")" (* perl, pcre *)
+  | "\\g<+" (digit+ as n) ">" (* oniguruma, pcre *)
+  | "\\g'+" (digit+ as n) "'" (* oniguruma, pcre *) {
+      NODE (
+        Special (loc lexbuf, Call_subpattern_by_rel_number (int_of_string n))
+      )
+    }
+
+  | "(?-" (digit+ as n) ")" (* perl, pcre *)
+  | "\\g<-" (digit+ as n) ">" (* oniguruma, pcre *)
+  | "\\g'-" (digit+ as n) "'" (* oniguruma, pcre *) {
+      NODE (
+        Special (loc lexbuf, Call_subpattern_by_rel_number (- int_of_string n))
+      )
+    }
+
+  | "(?&" (subroutine_name as name) ")" (* perl, pcre *)
+  | "(?P>" (subroutine_name as name) ")" (* python, pcre *)
+  | "\\g<" (subroutine_name as name) ">" (* oniguruma, pcre *)
+  | "\\g'" (subroutine_name as name) "'" (* oniguruma, pcre *) {
+      NODE (
+        Special (loc lexbuf, Call_subpattern_by_name name)
+      )
+    }
+
+(***************************************************************************)
+(* POSIX character classes *)
 (***************************************************************************)
 
   | "[:" {
       match posix_char_class conf (loc lexbuf) lexbuf with
-      | Ok (loc, x) -> CHAR (loc, x)
-      | Error (loc, s) -> STRING (loc, s)
+      | Ok (loc, x) -> NODE (Char (loc, x))
+      | Error (_loc, code_points) -> NODE (seq_of_code_points code_points)
     }
 
+(***************************************************************************)
   | '\\' { let loc, x = backslash_escape conf (loc lexbuf) lexbuf in
-           CHAR (loc, x) }
+           NODE (Char (loc, x)) }
 
   | '?' { QUANTIFIER (loc lexbuf, (0, Some 1), Default) }
   | '*' { QUANTIFIER (loc lexbuf, (0, None), Default) }
@@ -276,10 +341,10 @@ rule token conf = parse
       QUANTIFIER (loc lexbuf, (int a, None), Possessive)
     }
 
-  | utf8 as s { CHAR (loc lexbuf, Singleton (decode s)) }
+  | utf8 as s { NODE (Char (loc lexbuf, Singleton (decode s))) }
   | _ as c {
       (* malformed UTF-8 *)
-      CHAR (loc lexbuf, Singleton (Char.code c))
+      NODE (Char (loc lexbuf, Singleton (Char.code c)))
     }
 
   | eof { END (loc lexbuf) }
@@ -537,8 +602,8 @@ and char_class conf = parse
       match posix_char_class conf (loc lexbuf) lexbuf with
       | Ok (_loc, x) ->
           union x (char_class conf lexbuf)
-      | Error (_loc, chars) ->
-          union (Char_class.of_list_pos chars) (char_class conf lexbuf)
+      | Error (_loc, code_points) ->
+          union (Char_class.of_list_pos code_points) (char_class conf lexbuf)
     }
   | '\\' {
       let _loc, x = backslash_escape conf (loc lexbuf) lexbuf in

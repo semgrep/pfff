@@ -35,6 +35,10 @@ type special =
   | Set_option of opt (* (?i) (?J) (?m) (?s) (?U) (?x) *)
   | Clear_option of opt (* (?-i) (?-J) (?-m) (?-s) (?-U) (?-x) *)
   | Callout of int (* (?C) or (?Cn) for n in [0, 255] *)
+  | Recurse_whole_pattern (* (?R) *)
+  | Call_subpattern_by_abs_number of int
+  | Call_subpattern_by_rel_number of int
+  | Call_subpattern_by_name of string
 
 type abstract_char_class =
   | Dot (* any character except newline, unless we're in dotall mode *)
@@ -111,10 +115,15 @@ val union : char_class -> char_class -> char_class
    to how parsing is done *)
 val seq : loc -> t -> t -> t
 
+val seq_of_list : t list -> t
+val seq_of_code_points : (loc * int) list -> t
+val seq_of_ascii_string : loc -> string -> t
+
 (*
    Break down a string into a list of characters.
    TODO: compute the correct location for character based on its offset.
 *)
+val chars_of_ascii_string : string -> char list
 val code_points_of_ascii_string : string -> int list
 val code_points_of_ascii_string_loc : loc -> string -> (loc * int) list
 

@@ -29,6 +29,10 @@ type special =
   | Set_option of opt
   | Clear_option of opt
   | Callout of int
+  | Recurse_whole_pattern (* (?R) *)
+  | Call_subpattern_by_abs_number of int
+  | Call_subpattern_by_rel_number of int
+  | Call_subpattern_by_name of string
 
 type abstract_char_class =
   | Dot
@@ -83,6 +87,18 @@ let location = function
   | Repeat (loc, _, _, _)
   | Group (loc, _, _) -> loc
 
+let location2 a b =
+  let start, _ = location a in
+  let _, end_ = location b in
+  (start, end_)
+
+let range (a, _) (_, b) =
+  (a, b)
+
+let dummy_loc =
+  let tok = Parse_info.fake_info "" in
+  (tok, tok)
+
 let union (a : char_class) (b : char_class) =
   match a, b with
   | a, Empty -> a
@@ -95,6 +111,13 @@ let seq loc (a : t) (b : t) =
   | Empty _, b -> b
   | a, b -> Seq (loc, a, b)
 
+let chars_of_ascii_string s : char list =
+  let codes = ref [] in
+  for i = String.length s - 1 downto 0 do
+    codes := s.[i] :: !codes
+  done;
+  !codes
+
 let code_points_of_ascii_string s : int list =
   let codes = ref [] in
   for i = String.length s - 1 downto 0 do
@@ -105,21 +128,30 @@ let code_points_of_ascii_string s : int list =
 let code_points_of_ascii_string_loc loc s : (loc * int) list =
   let codes = ref [] in
   for i = String.length s - 1 downto 0 do
+    (* TODO: set correct location for the character *)
     codes := (loc, Char.code s.[i]) :: !codes
   done;
   !codes
 
-let location2 a b =
-  let start, _ = location a in
-  let _, end_ = location b in
-  (start, end_)
+let rec get_last_loc fallback_loc = function
+  | [] -> fallback_loc
+  | [last] -> location last
+  | _ :: l -> get_last_loc fallback_loc l
 
-let range (a, _) (_, b) =
-  (a, b)
+let seq_of_list (l : t list) : t =
+  let last_loc = get_last_loc dummy_loc l in
+  List.fold_right (fun x acc ->
+    let loc = location x in
+    seq (range loc last_loc) x acc
+  ) l (Empty last_loc)
 
-let dummy_loc =
-  let tok = Parse_info.fake_info "" in
-  (tok, tok)
+let seq_of_code_points (l : (loc * int) list) : t =
+  List.map (fun (loc, c) -> Char (loc, Singleton c)) l
+  |> seq_of_list
+
+let seq_of_ascii_string loc s =
+  code_points_of_ascii_string_loc loc s
+  |> seq_of_code_points
 
 type pp =
   | Line of string
@@ -163,6 +195,13 @@ let pp_special (x : special) =
   | Set_option opt -> sprintf "Set_option %s" (show_opt opt)
   | Clear_option opt -> sprintf "Clear_option %s" (show_opt opt)
   | Callout n -> sprintf "Callout %i" n
+  | Recurse_whole_pattern -> "Recurse_whole_pattern"
+  | Call_subpattern_by_abs_number n ->
+      sprintf "Call_subpattern_by_abs_number %i" n
+  | Call_subpattern_by_rel_number n ->
+      sprintf "Call_subpattern_by_rel_number %i" n
+  | Call_subpattern_by_name name ->
+      sprintf "Call_subpattern_by_name %s" name
 
 let show_char code =
   if code < 128 then

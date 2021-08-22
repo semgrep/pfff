@@ -6,12 +6,9 @@
 open AST
 %}
 
-%token <AST.loc * string> COMMENT
+%token <AST.t> NODE
 %token <AST.loc * AST.group_kind> OPEN_GROUP
 %token <AST.loc> CLOSE_GROUP BAR END
-%token <AST.loc * AST.char_class> CHAR
-%token <AST.loc * AST.special> SPECIAL
-%token <AST.loc * (AST.loc * int) list> STRING
 %token <AST.loc * AST.repeat_range * AST.matching_pref> QUANTIFIER
 
 /* Choosing right associativity for aesthetic purposes when dumping the AST
@@ -52,28 +49,11 @@ repeat:
 
 /* May not be empty */
 regexp1:
-  | CHAR                         { let loc, char_class = $1 in
-                                   Char (loc, char_class)
-                                 }
-
-  | SPECIAL                      { let loc, special = $1 in
-                                   Special (loc, special) }
-
-  | STRING                       { let loc, code_points = $1 in
-                                   (* safe fold_right *)
-                                   List.rev code_points
-                                   |> List.fold_left (fun acc (loc, c) ->
-                                     seq loc (Char (loc, Singleton c)) acc
-                                   ) (Empty loc : AST.t)
-                                 }
+  | NODE                         { $1 }
 
   | OPEN_GROUP regexp0 CLOSE_GROUP
                                  { let (start, _), kind = $1 in
                                    let _, end_ = $3 in
                                    let loc = start, end_ in
                                    Group (loc, kind, $2)
-                                 }
-
-  | COMMENT                      { let loc, _s = $1 in
-                                   Empty loc
                                  }
