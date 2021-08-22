@@ -150,7 +150,7 @@ rule token conf = parse
       let start = loc lexbuf in
       open_group conf start lexbuf
   }
-  | '(' { OPEN_GROUP (loc lexbuf, Capturing) }
+  | '(' { OPEN_GROUP (loc lexbuf, Capturing, None) }
   | ')' { CLOSE_GROUP (loc lexbuf) }
   | '|' { BAR (loc lexbuf) }
 
@@ -477,58 +477,74 @@ and open_group conf start = parse
         comment_in_open_group conf start lexbuf
       else
         let loc = range start (loc lexbuf) in
-        OPEN_GROUP (loc, Other (Char.code '#'))
+        OPEN_GROUP (loc, Other (Char.code '#'), None)
     }
-  | ':' {
+
+  | (['i' 'J' 'm' 's' 'U' 'x']* as options) ':' {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Non_capturing)
+      let opts =
+        match options with
+        | "" -> None
+        | _ ->
+            Some (
+              options
+              |> chars_of_ascii_string
+              |> List.map (fun c ->
+                let opt = opt_of_char c in
+                Special (loc, Set_option opt)
+              )
+              |> seq_of_list
+            )
+      in
+      OPEN_GROUP (loc, Non_capturing, opts)
   }
+
   | '=' {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Lookahead)
+      OPEN_GROUP (loc, Lookahead, None)
   }
   | '!' {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Neg_lookahead)
+      OPEN_GROUP (loc, Neg_lookahead, None)
     }
   | "<=" {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Lookbehind)
+      OPEN_GROUP (loc, Lookbehind, None)
     }
   | "<!" {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Neg_lookbehind)
+      OPEN_GROUP (loc, Neg_lookbehind, None)
     }
   | ">" {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Atomic)
+      OPEN_GROUP (loc, Atomic, None)
     }
 
   | "<" (capture_name as name) ">" {
       (* pcre, perl *)
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Named_capture name)
+      OPEN_GROUP (loc, Named_capture name, None)
     }
 
   | "'" (capture_name as name) "'" {
       (* pcre, python *)
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Named_capture name)
+      OPEN_GROUP (loc, Named_capture name, None)
     }
 
   | "|" {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Non_capturing_reset)
+      OPEN_GROUP (loc, Non_capturing_reset, None)
     }
 
   | utf8 as other {
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Other (decode other))
+      OPEN_GROUP (loc, Other (decode other), None)
     }
   | _ as c {
       (* malformed UTF-8 *)
       let loc = range start (loc lexbuf) in
-      OPEN_GROUP (loc, Other (Char.code c))
+      OPEN_GROUP (loc, Other (Char.code c), None)
     }
   | eof { END (loc lexbuf) }
 

@@ -7,7 +7,7 @@ open AST
 %}
 
 %token <AST.t> NODE DIRECTIVE
-%token <AST.loc * AST.group_kind> OPEN_GROUP
+%token <AST.loc * AST.group_kind * AST.t option> OPEN_GROUP
 %token <AST.loc> CLOSE_GROUP BAR END
 %token <AST.loc * AST.repeat_range * AST.matching_pref> QUANTIFIER
 
@@ -32,17 +32,13 @@ regexp0:
   |                      { Empty AST.dummy_loc }
 
 alt:
-  | DIRECTIVE regexp0    { let a = $1 and b = $2 in
-                           seq (location2 a b) a b
-                         }
+  | DIRECTIVE regexp0    { seq $1 $2 }
   | regexp0 BAR regexp0  { let a = $1 and b = $3 in
                            Alt (location2 a b, a, b)
                          }
 
 seq:
-  | repeat seq           { let a = $1 and b = $2 in
-                           seq (location2 a b) a b
-                         }
+  | repeat seq           { seq $1 $2 }
   | repeat               { $1 }
 
 repeat:
@@ -58,8 +54,14 @@ regexp1:
   | NODE                         { $1 }
 
   | OPEN_GROUP regexp0 CLOSE_GROUP
-                                 { let (start, _), kind = $1 in
+                                 { let (start, _), kind, opts = $1 in
+                                   let contents = $2 in
                                    let _, end_ = $3 in
                                    let loc = start, end_ in
-                                   Group (loc, kind, $2)
+                                   let contents =
+                                     match opts with
+                                     | None -> contents
+                                     | Some node -> seq node contents
+                                   in
+                                   Group (loc, kind, contents)
                                  }

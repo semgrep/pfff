@@ -105,11 +105,13 @@ let union (a : char_class) (b : char_class) =
   | Empty, b -> b
   | a, b -> Union (a, b)
 
-let seq loc (a : t) (b : t) =
+let seq (a : t) (b : t) =
   match a, b with
   | a, Empty _ -> a
   | Empty _, b -> b
-  | a, b -> Seq (loc, a, b)
+  | a, b ->
+      let loc = range (location a) (location b) in
+      Seq (loc, a, b)
 
 let chars_of_ascii_string s : char list =
   let codes = ref [] in
@@ -133,17 +135,10 @@ let code_points_of_ascii_string_loc loc s : (loc * int) list =
   done;
   !codes
 
-let rec get_last_loc fallback_loc = function
-  | [] -> fallback_loc
-  | [last] -> location last
-  | _ :: l -> get_last_loc fallback_loc l
-
 let seq_of_list (l : t list) : t =
-  let last_loc = get_last_loc dummy_loc l in
   List.fold_right (fun x acc ->
-    let loc = location x in
-    seq (range loc last_loc) x acc
-  ) l (Empty last_loc)
+    seq x acc
+  ) l (Empty dummy_loc)
 
 let seq_of_code_points (l : (loc * int) list) : t =
   List.map (fun (loc, c) -> Char (loc, Singleton c)) l

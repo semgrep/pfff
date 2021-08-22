@@ -113,7 +113,7 @@ val union : char_class -> char_class -> char_class
 
 (* Eliminate one of the terms if it's'Empty' since we get that a lot due
    to how parsing is done *)
-val seq : loc -> t -> t -> t
+val seq : t -> t -> t
 
 val seq_of_list : t list -> t
 val seq_of_code_points : (loc * int) list -> t
