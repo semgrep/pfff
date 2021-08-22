@@ -29,7 +29,7 @@ type special =
   | Set_option of opt
   | Clear_option of opt
   | Callout of int
-  | Recurse_whole_pattern (* (?R) *)
+  | Recurse_pattern of int
   | Call_subpattern_by_abs_number of int
   | Call_subpattern_by_rel_number of int
   | Call_subpattern_by_name of string
@@ -190,7 +190,7 @@ let pp_special (x : special) =
   | Set_option opt -> sprintf "Set_option %s" (show_opt opt)
   | Clear_option opt -> sprintf "Clear_option %s" (show_opt opt)
   | Callout n -> sprintf "Callout %i" n
-  | Recurse_whole_pattern -> "Recurse_whole_pattern"
+  | Recurse_pattern n -> sprintf "Recurse_pattern %i" n
   | Call_subpattern_by_abs_number n ->
       sprintf "Call_subpattern_by_abs_number %i" n
   | Call_subpattern_by_rel_number n ->

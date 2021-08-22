@@ -243,7 +243,10 @@ rule token conf = parse
 (***************************************************************************)
 (* Subroutine references *)
 (***************************************************************************)
-  | "(?R)" { NODE (Special (loc lexbuf, Recurse_whole_pattern)) }
+  | "(?R)" { NODE (Special (loc lexbuf, Recurse_pattern 0)) }
+  | "(?R" (digit+ as n) ")" {
+      NODE (Special (loc lexbuf, Recurse_pattern (int_of_string n)))
+    }
 
   | "(?" (digit+ as n) ")" (* perl, pcre *)
   | "\\g<" (digit+ as n) ">" (* oniguruma, pcre *)

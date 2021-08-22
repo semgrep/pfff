@@ -35,7 +35,7 @@ type special =
   | Set_option of opt (* (?i) (?J) (?m) (?s) (?U) (?x) *)
   | Clear_option of opt (* (?-i) (?-J) (?-m) (?-s) (?-U) (?-x) *)
   | Callout of int (* (?C) or (?Cn) for n in [0, 255] *)
-  | Recurse_whole_pattern (* (?R) *)
+  | Recurse_pattern of int (* (?R), (?R1), ..., (?R42), ... *)
   | Call_subpattern_by_abs_number of int
   | Call_subpattern_by_rel_number of int
   | Call_subpattern_by_name of string
