@@ -6,11 +6,12 @@
 open AST
 %}
 
-%token <AST.t> NODE
+%token <AST.t> NODE DIRECTIVE
 %token <AST.loc * AST.group_kind> OPEN_GROUP
 %token <AST.loc> CLOSE_GROUP BAR END
 %token <AST.loc * AST.repeat_range * AST.matching_pref> QUANTIFIER
 
+%nonassoc DIRECTIVE
 /* Choosing right associativity for aesthetic purposes when dumping the AST
    and consistency with the sequence operation.
    Any associativity is correct. */
@@ -29,6 +30,9 @@ regexp0:
   |                      { Empty AST.dummy_loc }
 
 alt:
+  | DIRECTIVE regexp0    { let a = $1 and b = $2 in
+                           seq (location2 a b) a b
+                         }
   | regexp0 BAR regexp0  { let a = $1 and b = $3 in
                            Alt (location2 a b, a, b)
                          }

@@ -186,7 +186,7 @@ rule token conf = parse
     }
 
   | "(?" (['i' 'J' 'm' 's' 'U' 'x']+ as options) ")" {
-      NODE (
+      DIRECTIVE (
         options
         |> chars_of_ascii_string
         |> List.map (fun c ->
