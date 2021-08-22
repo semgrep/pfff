@@ -11,6 +11,8 @@ open AST
 %token <AST.loc> CLOSE_GROUP BAR END
 %token <AST.loc * AST.repeat_range * AST.matching_pref> QUANTIFIER
 
+/* "Directives" like '(?i)' have weaker precedence than even alternatives.
+   e.g. '(?i)a|b' matches the same input as '(?i)(a|b)'. */
 %nonassoc DIRECTIVE
 /* Choosing right associativity for aesthetic purposes when dumping the AST
    and consistency with the sequence operation.

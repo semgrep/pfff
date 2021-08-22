@@ -13,7 +13,7 @@
    - dialect comparison: https://www.regular-expressions.info/refcharacters.html
 
    Missing features (see 'man pcresyntax'):
-   - subroutine reference: perl/python/oniguruma/pcre
+   - (?im: ... ) shortcut for (?:(?im) ...)
    - conditional patterns
    - disable extra features not applicable for the chosen dialect. Requires
      lexbuf rollback (maybe requires switching to sedlex, not sure).
