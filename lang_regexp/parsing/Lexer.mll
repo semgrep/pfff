@@ -105,8 +105,8 @@ rule token conf = parse
   | "(*NO_AUTO_POSSESS)" { token conf lexbuf }
   | "(*NO_START_OPT)" { token conf lexbuf }
   | "(*UTF8)" { token conf lexbuf }
-  | "(*UTF16)" { (* unsupported; should fail? *) token conf lexbuf }
-  | "(*UTF32)" { (* unsupported; should fail? *) token conf lexbuf }
+  | "(*UTF16)" { token conf lexbuf }
+  | "(*UTF32)" { token conf lexbuf }
   | "(*UTF)" { token conf lexbuf }
   | "(*UCP)" { token { conf with pcre_ucp = true } lexbuf }
   | "(*CR)" { token conf lexbuf }
