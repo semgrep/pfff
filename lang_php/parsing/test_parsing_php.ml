@@ -23,7 +23,7 @@ let test_tokens_php file =
 let test_parse_php xs  =
   let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
 
-  let fullxs =
+  let fullxs, _skipped_paths =
     match xs with
     | [x] when Common2.is_directory x ->
         let skip_list =
@@ -32,7 +32,7 @@ let test_parse_php xs  =
           else []
         in
         Skip_code.filter_files skip_list x fullxs
-    | _ -> fullxs
+    | _ -> fullxs, []
   in
 
   let stat_list = ref [] in

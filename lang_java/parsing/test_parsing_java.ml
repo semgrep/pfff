@@ -24,7 +24,7 @@ module Ast = Ast_java
 let test_parse xs  =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs =
+  let fullxs, _skipped_paths =
     Lib_parsing_java.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in

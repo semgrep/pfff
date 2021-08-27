@@ -23,7 +23,7 @@ let test_tokens_js file =
   ()
 
 let test_parse_common xs fullxs ext  =
-  let fullxs =
+  let fullxs, _skipped_paths =
     match xs with
     | [x] when Common2.is_directory x ->
         let skip_list =
@@ -32,7 +32,7 @@ let test_parse_common xs fullxs ext  =
           else []
         in
         Skip_code.filter_files skip_list x fullxs
-    | _ -> fullxs
+    | _ -> fullxs, []
   in
 
   let stat_list = ref [] in

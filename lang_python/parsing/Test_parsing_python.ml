@@ -27,7 +27,7 @@ let test_tokens_python file =
 let test_parse_python_common parsing_mode xs =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs =
+  let fullxs, _skipped_paths =
     Lib_parsing_python.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in

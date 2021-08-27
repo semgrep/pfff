@@ -757,6 +757,15 @@ let partition_either3 f l =
          | Right3 e -> part_either left middle (e :: right) l) in
   part_either [] [] [] l
 
+let partition_result f l =
+  let rec aux left right = function
+    | [] -> (List.rev left, List.rev right)
+    | x :: l ->
+        (match f x with
+         | Ok x -> aux (x :: left) right l
+         | Error x -> aux left (x :: right) l) in
+  aux [] [] l
+
 let rec filter_some = function
   | [] -> []
   | None :: l -> filter_some l
