@@ -625,18 +625,18 @@ literal:
 primary_cplusplus_id:
  | id_expression
      { let name = (None, fst $1, snd $1) in
-       Id (name, noIdInfo()) }
+       N (name, noIdInfo()) }
  (* grammar_c++: is in qualified_id inside id_expression instead? *)
  | "::" TIdent
      { let name = Some $1, noQscope, IdIdent $2 in
-       Id (name, noIdInfo()) }
+       N (name, noIdInfo()) }
  | "::" operator_function_id
      { let qop = $2 in
        let name = (Some $1, noQscope, qop) in
-       Id (name, noIdInfo()) }
+       N (name, noIdInfo()) }
  | "::" qualified_id
      { let name = (Some $1, fst $2, snd $2) in
-       Id (name, noIdInfo()) }
+       N (name, noIdInfo()) }
 
 (*could use TInf here *)
 cast_operator_expr:
@@ -665,11 +665,11 @@ cast_constructor_expr:
  | TIdent_TypedefConstr "(" optl(listc(argument)) ")"
      { let name = name_of_id $1 in
        let ft = nQ, (TypeName name) in
-       ConstructedObject (ft, ($2, $3, $4))
+       ConstructedObject (ft, Args ($2, $3, $4))
      }
  | basic_type_2 "(" optl(listc(argument)) ")"
      { let ft = nQ, $1 in
-       ConstructedObject (ft, ($2, $3, $4))
+       ConstructedObject (ft, Args ($2, $3, $4))
      }
 
 (* c++ext: * simple case: new A(x1, x2); *)
@@ -688,7 +688,7 @@ delete_expr:
 
 new_placement: "(" listc(argument) ")" { ($1, $2, $3) }
 
-new_initializer: "(" optl(listc(argument)) ")" { ($1, $2, $3) }
+new_initializer: "(" optl(listc(argument)) ")" { Args($1, $2, $3) }
 
 (*----------------------------*)
 (* c++0x: lambdas! *)
@@ -840,7 +840,7 @@ jump:
  | Tcontinue    { Continue $1 }
  | Tbreak       { Break $1 }
  | Treturn      { Return ($1, None) }
- | Treturn expr { Return ($1, Some $2) }
+ | Treturn expr { Return ($1, Some (Arg $2)) }
  | Tgoto "*" expr { GotoComputed ($1, $2, $3) }
 
 (*----------------------------*)
@@ -934,7 +934,7 @@ decltype_specifier:
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier:
  | Tenum ident                  { Right3 (EnumName ($1, $2)), noii }
- | class_key ident              { Right3 (ClassName ($1, $2)), noii }
+ | class_key ident              { Right3 (ClassName ($1, name_of_id $2)), noii }
  (* c++ext:  *)
  | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2))), noii }
 
@@ -1027,13 +1027,13 @@ direct_d:
      { (fst $1, fun x-> (snd $1)
          (nQ, (TFunction {
            ft_ret= x; ft_params = ($2, [], $3);
-           ft_dots = None; ft_const = $4; ft_throw = opt_to_list $5; })))
+           ft_specs = []; ft_const = $4; ft_throw = opt_to_list $5; })))
      }
  | direct_d "(" parameter_type_list ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1)
           (nQ,(TFunction {
-            ft_ret = x; ft_params = ($2,fst $3,$4);
-            ft_dots = snd $3; ft_const = $5; ft_throw = opt_to_list $6; })))
+            ft_ret = x; ft_params = ($2,$3,$4);
+            ft_specs = []; ft_const = $5; ft_throw = opt_to_list $6; })))
      }
 
 (*----------------------------*)
@@ -1066,26 +1066,26 @@ direct_abstract_declarator:
  | "(" ")"
      { fun x -> (nQ, (TFunction {
        ft_ret = x; ft_params = ($1,[],$2);
-       ft_dots = None; ft_const = None; ft_throw = [];})) }
+       ft_specs = []; ft_const = None; ft_throw = [];})) }
  | "(" parameter_type_list ")"
      { fun x -> (nQ, (TFunction {
-         ft_ret = x; ft_params = ($1,fst $2,$3);
-         ft_dots = snd $2; ft_const = None; ft_throw = []; })) }
+         ft_ret = x; ft_params = ($1,$2,$3);
+         ft_specs = []; ft_const = None; ft_throw = []; })) }
  | direct_abstract_declarator "(" ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,[],$3);
-         ft_dots = None; ft_const = $4; ft_throw = opt_to_list $5; })) }
+         ft_specs = []; ft_const = $4; ft_throw = opt_to_list $5; })) }
  | direct_abstract_declarator "(" parameter_type_list ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (TFunction {
-         ft_ret = x; ft_params = ($2,fst $3,$4);
-         ft_dots = snd $3; ft_const = $5; ft_throw = opt_to_list $6; })) }
+         ft_ret = x; ft_params = ($2,$3,$4);
+         ft_specs = []; ft_const = $5; ft_throw = opt_to_list $6; })) }
 
 (*-----------------------------------------------------------------------*)
 (* Parameters (use decl_spec_seq not type_spec just for 'register') *)
 (*-----------------------------------------------------------------------*)
 parameter_type_list:
- | parameter_list           { $1, None }
- | parameter_list "," "..." { $1, Some ($2,$3) }
+ | parameter_list           { $1 }
+ | parameter_list "," "..." { $1 @ [ParamDots $3] }
 
 parameter_decl:
  | decl_spec_seq declarator
@@ -1344,7 +1344,8 @@ field_declaration:
  | decl_spec_seq ";"
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
+       let onedecl =
+         { v_namei = None; v_type = t_ret; v_storage = sto; v_specs = [] } in
        ([(FieldDecl onedecl)], $2)
      }
  | decl_spec_seq listc(member_declarator) ";"
@@ -1358,14 +1359,14 @@ member_declarator:
      { let (name, partialt) = $1 in (fun t_ret sto ->
        FieldDecl {
          v_namei = Some (name, None);
-         v_type = partialt t_ret; v_storage = sto; })
+         v_type = partialt t_ret; v_storage = sto; v_specs = [] })
      }
  (* can also be an abstract when it's =0 on a function type *)
  | declarator "=" const_expr
      { let (name, partialt) = $1 in (fun t_ret sto ->
        FieldDecl {
          v_namei = Some (name, Some (EqInit ($2, InitExpr $3)));
-         v_type = partialt t_ret; v_storage = sto;
+         v_type = partialt t_ret; v_storage = sto; v_specs = [];
        })
      }
 
@@ -1416,7 +1417,7 @@ enum_base: ":" type_spec_seq2 { }
 simple_declaration:
  | decl_spec_seq ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       ([{v_namei = None; v_type = t_ret; v_storage = sto}],$2)
+       ([{v_namei = None; v_type = t_ret; v_storage = sto; v_specs = [] }],$2)
      }
  | decl_spec_seq listc(init_declarator) ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
@@ -1424,7 +1425,7 @@ simple_declaration:
          ($2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            { v_namei = Some (name, iniopt);
-             v_type = f t_ret; v_storage = sto
+             v_type = f t_ret; v_storage = sto; v_specs = [];
            }
          )), $3)
      }
@@ -1498,7 +1499,7 @@ init_declarator:
   * not the constructorname hence the need for a TOPar_CplusplusInit
   *)
  | declaratori TOPar_CplusplusInit optl(listc(argument)) ")"
-     { ($1, Some (ObjInit ($2, $3, $4))) }
+     { ($1, Some (ObjInit (Args ($2, $3, $4)))) }
 
 (*----------------------------*)
 (* gccext: *)
@@ -1651,7 +1652,7 @@ declaration:
 (*----------------------------*)
 
 declaration_cpp:
- | declaration { X $1 }
+ | declaration { X (DeclStmt $1) }
  (* cppext: *)
  | cpp_directive                                 { CppDirective $1 }
  | cpp_ifdef_directive(* stat_or_decl_list ...*) { CppIfdef $1 }
@@ -1672,15 +1673,15 @@ explicit_specialization: Ttemplate TInf_Template TSup_Template declaration
  | Tclass ident { raise Todo }
    *)
 template_parameter:
- | parameter_decl { $1 }
+ | parameter_decl { TP $1 }
 
 
 (* c++ext: could also do a extern_string_opt to factorize stuff *)
 linkage_specification:
  | Textern TString declaration
-     { ExternC ($1, (snd (fst $2)), $3) }
+     { ExternDecl ($1, fst $2, $3) }
  | Textern TString "{" optl(declaration_cpp+) "}"
-     { ExternCList ($1, (snd (fst $2)), ($3, $4, $5)) }
+     { ExternList ($1, fst $2, ($3, $4, $5))}
 
 
 namespace_definition:
@@ -1693,10 +1694,10 @@ namespace_definition:
  *)
 named_namespace_definition:
  | Tnamespace TIdent "{" optl(declaration_cpp+) "}"
-     { NameSpace ($1, $2, ($3, $4, $5)) }
+     { NameSpace ($1, Some $2, ($3, $4, $5)) }
 
 unnamed_namespace_definition: Tnamespace "{" optl(declaration_cpp+) "}"
-     { NameSpaceAnon ($1, ($2, $3, $4)) }
+     { NameSpace ($1, None, ($2, $3, $4)) }
 
 (*************************************************************************)
 (* Function definition *)
@@ -1816,7 +1817,7 @@ cpp_directive:
          | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
           IncSystem (Common.matched1 filename, tok)
          | _ ->
-          IncOther (Id (name_of_id (filename, tok), noIdInfo()))
+          IncOther (N (name_of_id (filename, tok), noIdInfo()))
        in
        Include (tok, inc_kind)
      }

@@ -142,7 +142,7 @@ let type_and_storage_from_decl
              (* mine (originally default to int, but this looks like bad style) *)
              let decl =
                { v_namei = None; v_type = qu, (TBase (Void (List.hd iit)));
-                 v_storage = st }
+                 v_storage = st; v_specs = [] }
              in
              raise (Semantic ("no type (could default to 'int')",
                               List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
@@ -304,7 +304,7 @@ let fixFunc ((name, ty, sto), cp) =
            )
       );
       let ent = { name; specs = [] } in
-      ent, { f_type = ftyp; f_storage = sto; f_body = cp; }
+      ent, { f_type = ftyp; f_storage = sto; f_body = cp; f_specs = [] }
   | _ ->
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
       raise (Semantic ("function definition without parameters", ii))
@@ -315,6 +315,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
     v_namei = Some (name, ini_opt);
     v_type = (_q, (TFunction ft));
     v_storage = sto;
+    v_specs = specs;
   })] ->
       (* todo? define another type instead of onedecl? *)
       let ent = { name; specs = [] } in
@@ -326,7 +327,8 @@ let fixFieldOrMethodDecl (xs, semicolon) =
         | _ ->
             raise (Semantic ("can't assign expression to method decl", semicolon))
       in
-      let def = { f_type = ft; f_storage = sto; f_body = fbody } in
+      let def =
+        { f_type = ft; f_storage = sto; f_body = fbody; f_specs = specs } in
       MemberDecl (Func (ent, def))
 
   | _ -> MemberField (xs, semicolon)
@@ -341,16 +343,11 @@ let mk_funcall e1 args =
   Call (e1, args)
 
 let mk_constructor id (lp, params, rp) cp =
-  let params, _hasdots =
-    match params with
-    | Some (params, ellipsis) ->
-        params, ellipsis
-    | None -> [], None
-  in
+  let params = Common.optlist_to_list params in
   let ftyp = {
     ft_ret = nQ, (TBase (Void (fake "void")));
     ft_params= (lp, params, rp);
-    ft_dots = None;
+    ft_specs = [];
     (* TODO *)
     ft_const = None;
     ft_throw = [];
@@ -358,24 +355,17 @@ let mk_constructor id (lp, params, rp) cp =
   in
   let name = name_of_id id in
   let ent = { name; specs = [] } in
-  ent, { f_type = ftyp; f_storage = NoSto; f_body = cp }
+  ent, { f_type = ftyp; f_storage = NoSto; f_body = cp; f_specs = [] }
 
 let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
     ft_ret = nQ, (TBase (Void (fake "void")));
     ft_params= (lp,  [], rp);
-    ft_dots = None;
+    ft_specs = [];
     ft_const = None;
     ft_throw = opt_to_list exnopt;
   }
   in
   let name = None, noQscope, IdDestructor (tilde, id) in
   let ent = { name; specs = [] } in
-  ent, { f_type = ftyp; f_storage = NoSto; f_body = cp; }
-
-let opt_to_list_params params =
-  match params with
-  | Some (params, _ellipsis) ->
-      (* todo? raise a warning that should not have ellipsis? *)
-      params
-  | None -> []
+  ent, { f_type = ftyp; f_storage = NoSto; f_body = cp; f_specs = [] }

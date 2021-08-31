@@ -191,7 +191,7 @@ and typeC =
 
   | EnumName  of tok (* 'enum' *) * ident (* a_enum_name *)
   (* less: ms declspec option after struct/union *)
-  | ClassName of class_key wrap * ident (* a_ident_name *)
+  | ClassName of class_key wrap * a_class_name
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and it is a name so it can have some IdTemplateId in it.
   *)
@@ -263,9 +263,8 @@ and expr =
    * c++ext: Id is now a 'name' instead of a 'string' and can be
    *  also an operator name.
    * less: split in Id vs IdQualified like in ast_generic.ml?
-   * TODO: Id -> Name
   *)
-  | Id of name * ident_info (* semantic: see check_variables_cpp.ml *)
+  | N of name * ident_info (* semantic: see check_variables_cpp.ml *)
   | C of constant
   | IdSpecial of special wrap
 
@@ -309,11 +308,12 @@ and expr =
 
   (* gccext: *)
   | StatementExpr of compound paren (* ( {  } ) new scope*)
+
   (* gccext: kenccext: *)
   | GccConstructor  of type_ paren * initialiser list brace
+  (* c++ext: parens with TBase and braces with TypeName *)
+  | ConstructedObject of type_ * obj_init
 
-  (* c++ext: *)
-  | ConstructedObject of type_ * argument list paren
   (* ?? *)
   | TypeId     of tok * (type_, expr) Common.either paren
   | CplusplusCast of cast_operator wrap * type_ angle * expr paren
@@ -321,11 +321,14 @@ and expr =
            argument list paren option (* placement *) *
            type_ *
            (* less: c++11? rectype option *)
-           argument list paren option (* initializer *)
+           obj_init option (* initializer *)
 
   | Delete of tok (*::*) option * tok * unit bracket option * expr
   (* TODO: tsonly it's a stmt *)
   | Throw of tok * expr option
+
+  (* ?? tsonly: *)
+  | ParamPackExpansion of expr * tok (* '...' *)
 
   (* forunparser: *)
   | ParenExpr of expr paren
@@ -345,7 +348,7 @@ and ident_info = {
 and special =
   (* c++ext: *)
   | This
-  (* cppext: tsonly *)
+  (* cppext: tsonly, always in a Call, with Id as single arg *)
   | Defined
 
 (* cppext: normally should just have type argument = expr *)
@@ -355,6 +358,8 @@ and argument =
   | ArgType of type_
   (* cppext: for really unparsable stuff ... we just bailout *)
   | ArgAction of action_macro
+  (* c++0x? *)
+  | ArgInits of initialiser list brace
 and action_macro =
   | ActMisc of tok list
 
@@ -453,16 +458,14 @@ and stmt =
   (* labeled *)
   | Label   of a_label * tok (* : *) * stmt
   (* TODO: only inside Switch in theory *)
-  | Case      of tok * expr * tok (* : *) * stmt (* TODO stmt_or_decls list *)
+  | Case      of tok * expr * tok (* : *) * stmt (* TODO stmt_or_decl list *)
   (* gccext: *)
   | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt
-  | Default of tok * tok (* : *) * stmt (* TODO stmt_or_decls list *)
+  | Default of tok * tok (* : *) * stmt (* TODO stmt_or_decl list *)
 
   (* c++ext: in C this constructor could be outside the statement type, in a
    * decl type, because declarations are only at the beginning of a compound
    * normally. But in C++ we can freely mix declarations and statements.
-   * TODO: if mix stmt and tolevel, can factorize with a general
-   * DeclStmt encompassing lots of stuff?
    * TODO: move out of stmt, and make compound use an either?
   *)
   | DeclStmt  of block_declaration
@@ -478,14 +481,18 @@ and stmt =
 (* cppext: c++ext:
  * old: (declaration list * stmt list)
  * old: (declaration, stmt) either list
- * TODO: decl_or_stmt ... D of declaration | S of stmt
+ * TODO: stmt_or_decl ... D of declaration | S of stmt
 *)
 and compound = stmt sequencable list brace
+(* In theory we could restrict to just decls, but in ts they are more
+ * general and accept also stmts *)
+and declarations = compound
 
 and expr_stmt = expr option * sc
 
 and condition_clause =
   | CondClassic of expr
+  (* TODO: more *)
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
@@ -499,7 +506,7 @@ and a_label = string wrap
 and jump  =
   | Goto of tok * a_label
   | Continue of tok | Break of tok
-  | Return of tok * expr(*TODO _or_inits*) option
+  | Return of tok * argument (* just Arg or ArgInits *) option
   (* gccext: goto *exp *)
   | GotoComputed of tok * tok * expr
 
@@ -571,15 +578,14 @@ and declaration =
   | TemplateSpecialization of tok * unit angle * declaration
 
   (* the list can be empty *)
-  | ExternC     of tok * tok * declaration
-  | ExternCList of tok * tok * declaration sequencable list brace
+  | ExternDecl     of tok * string wrap (* usually "C" *) * declaration
+  | ExternList of tok * string wrap * declarations
 
   (* the list can be empty *)
-  | NameSpace of tok * ident * declaration sequencable list brace
-  (* after have some semantic info *)
-  | NameSpaceExtend of string * declaration sequencable list
-  | NameSpaceAnon   of tok * declaration sequencable list brace
+  | NameSpace of tok * ident option * declarations
 
+  (* c++0x?: tsonly: at toplevel or in class *)
+  | StaticAssert of tok * argument list paren (* last args are strings *)
   (* gccext: allow redundant ';' *)
   | EmptyDef of sc
 
@@ -607,6 +613,7 @@ and colon_option =
  * c++ext: onedecl now covers also field definitions as fields can have
  * storage in C++.
  * TODO: split in EmptyDecl vs OneDecl with a name and use entity!
+ * TODO: split typedefs from onedecl, remove StoTypedef
 *)
 and onedecl = {
   (* option cos can have empty declaration or struct tag declaration.
@@ -615,9 +622,9 @@ and onedecl = {
   v_namei: (name * init option) option;
   v_type: type_;
   v_storage: storage_opt; (* TODO: use for c++0x 'auto' inferred locals *)
-  (* v_attr: attribute list; *) (* gccext: *)
+  v_specs: specifier list; (* gccext: *)
 }
-(* TODO: migrate with annotation? S of storage? and move
+(* TODO: migrate with annotation? Sto of storage? and move
  * in entity?
 *)
 and storage_opt = NoSto | StoTypedef of tok | Sto of storage wrap
@@ -627,8 +634,9 @@ and init =
   (* c++ext: constructed object *)
   | ObjInit of obj_init
 
-(* TODO: ObjArgs or ObjInits *)
-and obj_init = argument list paren
+and obj_init =
+  | Args of argument list paren
+  | Inits of initialiser list brace
 
 and initialiser =
   (* in lhs and rhs *)
@@ -670,23 +678,28 @@ and function_definition = {
   f_type: functionType;
   f_storage: storage_opt;
   (* todo: gccext: inline or not:, f_inline: tok option *)
-  (* TODO: chain call for ctor *)
+  (* TODO: chain call for ctor or put in function body? *)
   f_body: function_body;
-  (*f_attr: attribute list;*) (* gccext: *)
+  (* we could use the specs in entity, but for Lambdas there are no entity *)
+  f_specs: specifier list; (* gccext: *)
 }
 and functionType = {
   ft_ret: type_; (* fake return type for ctor/dtor *)
   ft_params: parameter list paren;
-  ft_dots: (tok(*,*) (* TODO DELETE, via ParamDots *) * tok(*...*)) option;
+  ft_specs: specifier list;
   (* c++ext: *)
-  (* TODO: via attribute *)
   ft_const: tok option; (* only for methods, TODO put in attribute? *)
   ft_throw: exn_spec list;
 }
 
-(* TODO: | ParamDots of tok, sgrep-ext or not *)
 and parameter =
   | P of parameter_classic
+  (* c++0x?? *)
+  | ParamVariadic of tok option (* &/&& *) * tok (* ... *) *
+                     parameter_classic (* p_val = None and p_name = None *)
+  (* sgrep-ext: also part of C, in which case it must be the last parameter *)
+  | ParamDots of tok
+
 and parameter_classic = {
   p_name: ident option;
   p_type: type_;
@@ -703,6 +716,7 @@ and exn_spec =
 
 and function_body =
   | FBDef of compound
+  (* TODO? FBDefCtor of field_initializer * compound *)
   (* TODO: prototype, but can also be hidden in a DeclList! *)
   | FBDecl of sc
   (* c++ext: only for methods *)
@@ -728,7 +742,7 @@ and enum_elem = {
 (* ------------------------------------------------------------------------- *)
 (* the ident can be a template_id when do template specialization. *)
 and class_definition =
-  a_ident_name (* a_class_name?? *) option * class_definition_bis
+  a_class_name option * class_definition_bis
 
 and class_definition_bis = {
   c_kind: class_key wrap;
@@ -757,6 +771,7 @@ and class_member =
   (* before unparser, I didn't have a FieldDeclList but just a Field. *)
   | MemberField of fieldkind list * sc
 
+  | Friend of tok (* 'friend' *) * declaration (* Func or DeclList *)
   | QualifiedIdInClass of name (* ?? *) * sc
 
   (* valid declarations in class_member:
@@ -769,7 +784,7 @@ and class_member =
  * can cast into int so enum too, ...
  * c++ext: FieldDecl was before Simple of string option * type_
  * but in c++ fields can also have storage (e.g. static) so now reuse
- * ondecl.
+ * onedecl.
 *)
 and fieldkind =
   | FieldDecl of onedecl
@@ -783,7 +798,13 @@ and fieldkind =
 (* see also template_arguments in name section *)
 
 (* c++ext: *)
-and template_parameter = parameter (* todo? more? *)
+and template_parameter =
+  | TP of parameter
+  | TPClass of tok (* 'class' or 'typename' *) * ident option * type_ option
+  | TPVariadic of tok (* 'class/typename'*) * tok (* '...' *) * ident option
+  (* ??? *)
+  | TPNested of tok (* 'template' *) * template_parameters *
+                template_parameter (* not TPNested *)
 and template_parameters = template_parameter list angle
 
 (*****************************************************************************)
@@ -848,13 +869,6 @@ and pointer_modifier =
   | Sptr of tok (* '__sptr' *)
   | Unaligned of tok
 
-(* TODO: like in parsing_c/
- * (* gccext: cppext: *)
- * and attribute = attributebis wrap
- *  and attributebis =
- *   | Attribute of string
-*)
-
 (*****************************************************************************)
 (* Namespace (using) *)
 (*****************************************************************************)
@@ -862,7 +876,7 @@ and using = tok (*'using'*) * using_kind * sc
 and using_kind =
   | UsingName of name
   | UsingNamespace of tok (*'namespace'*) * a_namespace_name
-  (* tsonly, type_ is usually just a name *)
+  (* tsonly: type_ is usually just a name *)
   | UsingAlias of ident * tok (*'='*) * type_
 
 (*****************************************************************************)
@@ -949,7 +963,7 @@ and ifdef_directive =
 (* Toplevel *)
 (*****************************************************************************)
 
-(* TODO decl_or_stmt sequencable *)
+(* TODO stmt_or_decl sequencable *)
 type toplevel = declaration sequencable
 [@@deriving show]
 
@@ -1024,7 +1038,7 @@ let unwrap_typeC (_qu, typeC) = typeC
 let name_of_id (id: ident) : name =
   None, [], IdIdent id
 let expr_of_id id =
-  Id (name_of_id id, noIdInfo())
+  N (name_of_id id, noIdInfo())
 let expr_to_arg e =
   Arg e
 

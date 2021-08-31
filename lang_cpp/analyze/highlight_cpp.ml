@@ -234,7 +234,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
     V.kexpr = (fun (k, _) x ->
       match x with
-      | Id (name, idinfo) ->
+      | N (name, idinfo) ->
           (match name with
            | (_, _, IdIdent (s, ii)) ->
                (* the Call case might have already tagged it with something *)
@@ -261,7 +261,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
       | Call (e, _args) ->
           (match e with
-           | Id (name, scope) ->
+           | N (name, scope) ->
                (match name with
                 | _, _, IdIdent (s, ii) ->
                     if Hashtbl.mem h_debug_functions s
@@ -344,8 +344,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       | Ast_cpp.EnumName (_tok, (_s, ii)) ->
           tag ii (Entity (Type, Use2 fake_no_use2))
 
-      | ClassName (_su, (_s, ii)) ->
-          tag ii (StructName Use);
+      | ClassName (_su, _n_was_id_before) ->
+          (*tag ii (StructName Use); TODO *)
           k x
 
       | TypenameKwd (_tok, _t_was_name) ->

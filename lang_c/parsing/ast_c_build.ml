@@ -183,14 +183,11 @@ and declaration env x =
   | Asm (_tok1, _volatile_opt, _asmbody, _tok2) ->
       raise Todo
   | MacroDecl _ -> raise Todo
-  | UsingDecl _ | NameSpaceAlias _ ->
-      raise CplusplusConstruct
-
-
   | EmptyDef _ -> []
 
-  | NameSpaceAnon (_, _)|NameSpaceExtend (_, _)|NameSpace (_, _, _)
-  | ExternCList (_, _, _)|ExternC (_, _, _)|TemplateSpecialization (_, _, _)
+  | UsingDecl _ | NameSpaceAlias _ | StaticAssert _
+  | NameSpace (_, _, _)
+  | ExternList (_, _, _)|ExternDecl (_, _, _)|TemplateSpecialization (_, _, _)
   | TemplateDecl _ ->
       debug (Toplevel (X x)); raise CplusplusConstruct
   | DeclTodo _ ->
@@ -226,7 +223,7 @@ and function_type env x =
   match x with
     { ft_ret = ret;
       ft_params = params;
-      ft_dots = _dotsTODO;
+      ft_specs = _TODO;
       ft_const = const;
       ft_throw = throw;
     } ->
@@ -260,6 +257,8 @@ and parameter env x =
                          );
                        p_type = full_type env t;
                      }
+  | ParamDots t -> A.ParamDots t
+  | ParamVariadic _ -> debug (Parameter x); raise CplusplusConstruct
 
 (* ---------------------------------------------------------------------- *)
 (* Variables *)
@@ -269,6 +268,7 @@ and onedecl env d =
     { v_namei = ni;
       v_type = ft;
       v_storage = sto;
+      v_specs = _;
     } ->
       (match ni, sto with
        | Some (n, iopt), (NoSto | Sto _)  ->
@@ -370,7 +370,7 @@ and cpp_directive env x =
         match inc_kind with
         | IncLocal (path, _)  -> "\"" ^ path ^ "\""
         | IncSystem (path, _) -> "<" ^ path ^ ">"
-        | IncOther (Id ((None, [], IdIdent (x, _t)), _))
+        | IncOther (N ((None, [], IdIdent (x, _t)), _))
           when AST_generic_.is_metavar_name x ->
             x
         | IncOther _ ->
@@ -453,10 +453,11 @@ and stmt env st =
       (match j with
        | Goto (tok, s) -> A.Goto (tok, s)
        | Return (tok, None) -> A.Return (tok, None);
-       | Return (tok, Some e) -> A.Return (tok, Some (expr env e))
+       | Return (tok, Some (Arg e)) -> A.Return (tok, Some (expr env e))
        | Continue tok -> A.Continue tok
        | Break tok -> A.Break tok
        | GotoComputed _ -> debug (Stmt st); raise Todo
+       | Return (_tok, Some _) -> raise CplusplusConstruct
       )
 
   | Try (_, _, _) ->
@@ -534,7 +535,7 @@ and expr env e =
   match e with
   | C cst -> constant env cst
 
-  | Id (n, _) -> A.Id (name env n)
+  | N (n, _) -> A.Id (name env n)
   | Ellipses tok -> A.Ellipses tok
   | DeepEllipsis v1 -> let v1 = bracket_keep (expr env) v1 in A.DeepEllipsis v1
 
@@ -588,6 +589,7 @@ and expr env e =
   | IdSpecial (This, _)
   | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)
   | TypeId (_, _)
+  | ParamPackExpansion _
     ->
       debug (Expr e); raise CplusplusConstruct
 
@@ -619,6 +621,7 @@ and argument env x =
       logger#error "type argument, maybe wrong typedef inference!";
       debug (Argument x);
       None
+  | ArgInits _ -> raise CplusplusConstruct
 
 (* ---------------------------------------------------------------------- *)
 (* Type *)
@@ -667,8 +670,8 @@ and full_type env x =
       A.TArray (Common.map_opt (expr env) eopt, full_type env ft)
   | TypeName n -> A.TTypeName (name env n)
 
-  | ClassName ((kind, _), name) ->
-      A.TStructName (struct_kind env kind, name)
+  | ClassName ((kind, _), n) ->
+      A.TStructName (struct_kind env kind, name env n)
   | ClassDef (name_opt, def) ->
       (match def with
          { c_kind = (kind, tok);
@@ -731,8 +734,8 @@ and class_member env x =
   | MemberField (fldkind, _) ->
       let xs = fldkind in
       xs |> List.map (fieldkind env)
-  | ( QualifiedIdInClass (_, _)| Access (_, _) ) ->
-      debug (ClassMember x); raise Todo
+  | ( QualifiedIdInClass (_, _)| Access (_, _) | Friend _ ) ->
+      debug (ClassMember x); raise CplusplusConstruct
   | MemberDecl (EmptyDef _) -> []
   | MemberDecl _
     -> debug (ClassMember x); raise Todo
@@ -756,6 +759,7 @@ and fieldkind env x =
          { v_namei = ni;
            v_type = ft;
            v_storage = sto;
+           v_specs = _;
          } ->
            (match ni, sto with
             | Some (n, None), NoSto ->

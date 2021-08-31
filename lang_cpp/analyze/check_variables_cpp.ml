@@ -162,11 +162,13 @@ let visit_prog prog =
                 (* 2: adding defs of name in environment *)
                 V.kparameter = (fun (k, _) param ->
                   (match param with
-                   | P param ->
+                   | P param
+                   | ParamVariadic (_, _, param) ->
                        param.p_name  |> Common.do_option (fun ident ->
                          add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
                        );
                        (*| _ -> () *)
+                   | ParamDots _ -> ()
                   );
                   k param
                 );
@@ -199,7 +201,7 @@ let visit_prog prog =
 
                 V.kexpr = (fun (k, _) x ->
                   match x with
-                  | Id (name, idinfo) ->
+                  | N (name, idinfo) ->
                       (* assert scope_ref = S.Unknown ? *)
                       let s = Ast.string_of_name_tmp name in
                       (match lookup_env_opt s !_scoped_env with
