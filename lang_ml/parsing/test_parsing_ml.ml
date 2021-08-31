@@ -21,7 +21,7 @@ let test_tokens_ml file =
 let test_parse_ml_or_mli xs =
   let xs = List.map Common.fullpath xs in
 
-  let fullxs =
+  let fullxs, _skipped_paths =
     Lib_parsing_ml.find_source_files_of_dir_or_files xs
     |> Skip_code.filter_files_if_skip_list ~root:xs
   in

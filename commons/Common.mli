@@ -313,7 +313,12 @@ val partition_either3 :
   ('a -> ('b, 'c, 'd) either3) -> 'a list -> 'b list * 'c list * 'd list
 (*e: signature [[Common.partition_either3]] *)
 
-
+(*
+   Same as 'partition_either' but operates on the standard type 'result'
+   (Ok or Error).
+*)
+val partition_result :
+  ('a -> ('ok, 'error) result) -> 'a list -> 'ok list * 'error list
 
 (*s: type [[Common.arg_spec_full]] *)
 type arg_spec_full = Arg.key * Arg.spec * Arg.doc
@@ -556,6 +561,9 @@ val erase_this_temp_file : filename -> unit
 
 (*s: signature [[Common.fullpath]] *)
 (* for realpath, see efuns_c library  *)
+(*
+   Check that the file exists and produce a valid absolute path for the file.
+*)
 val fullpath: filename -> filename
 (*e: signature [[Common.fullpath]] *)
 

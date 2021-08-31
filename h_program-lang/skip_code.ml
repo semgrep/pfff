@@ -67,8 +67,7 @@ let load file =
 (* Main entry point *)
 (*****************************************************************************)
 
-(* less: say when skipped stuff? *)
-let filter_files skip_list root xs =
+let filter_files skip_list ~root relative_paths : string list * string list =
   let skip_files =
     skip_list |> Common.map_filter (function
       | File s -> Some s
@@ -87,21 +86,32 @@ let filter_files skip_list root xs =
       | _ -> None
     )
   in
-  xs |> Common.exclude (fun file ->
-    let readable = Common.readable ~root file in
-    (Hashtbl.mem skip_files readable) ||
-    (skip_dirs |> List.exists
-       (fun dir -> readable =~ (dir ^ ".*"))) ||
-    (skip_dir_elements |> List.exists
-       (fun dir -> readable =~ (".*/" ^ dir ^ "/.*")))
-  )
+  let skipped_abs_paths = ref [] in
+  let relative_paths =
+    relative_paths
+    |> List.filter (fun rel_path ->
+      let path = Common.readable ~root rel_path in
+      if Hashtbl.mem skip_files path
+      || (skip_dirs |> List.exists
+            (fun dir -> path =~ (dir ^ ".*")))
+      || (skip_dir_elements |> List.exists
+            (fun dir -> path =~ (".*/" ^ dir ^ "/.*")))
+      then (
+        skipped_abs_paths := path :: !skipped_abs_paths;
+        false
+      )
+      else
+        true
+    )
+  in
+  (relative_paths, List.rev !skipped_abs_paths)
 
 
 (* copy paste of h_version_control/git.ml *)
 let find_vcs_root_from_absolute_path file =
   let xs = Common.split "/" (Common2.dirname file) in
   let xxs = Common2.inits xs in
-  xxs |> List.rev |> Common.find_some (fun xs ->
+  xxs |> List.rev |> Common.find_some_opt (fun xs ->
     let dir = "/" ^ Common.join "/" xs in
     if Sys.file_exists (Filename.concat dir ".git") ||
        Sys.file_exists (Filename.concat dir ".hg") ||
@@ -119,7 +129,7 @@ let find_skip_file_from_root root =
     "conf/codegraph/skip_list.txt";
   ]
   in
-  candidates |> Common.find_some (fun f ->
+  candidates |> Common.find_some_opt (fun f ->
     let full = Filename.concat root f in
     if Sys.file_exists full
     then Some full
@@ -134,17 +144,18 @@ let filter_files_if_skip_list ~root xs =
         (match xs with
          | [] -> "/"
          | x::_ ->
-             try
-               find_vcs_root_from_absolute_path x
-             with Not_found -> "/"
+             match find_vcs_root_from_absolute_path x with
+             | Some root -> root
+             | None -> "/"
         )
   in
-  try
-    let skip_file = find_skip_file_from_root root in
-    let skip_list = load skip_file in
-    logger#info "using skip list in %s" skip_file;
-    filter_files skip_list root xs
-  with Not_found -> xs
+  match find_skip_file_from_root root with
+  | Some skip_file ->
+      let skip_list = load skip_file in
+      logger#info "using skip list in %s" skip_file;
+      filter_files skip_list root xs
+  | None ->
+      (xs, [])
 
 (*****************************************************************************)
 (* Helpers *)
