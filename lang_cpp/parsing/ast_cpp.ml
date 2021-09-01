@@ -64,11 +64,8 @@
 *)
 
 (*****************************************************************************)
-(* Tokens and names *)
+(* Tokens *)
 (*****************************************************************************)
-(* ------------------------------------------------------------------------- *)
-(* Token/info *)
-(* ------------------------------------------------------------------------- *)
 
 (* Contains among other things the position of the token through
  * the Parse_info.token_location embedded inside it, as well as the
@@ -97,9 +94,10 @@ type sc = tok
 type todo_category = string wrap
 [@@deriving show]
 
-(* ------------------------------------------------------------------------- *)
+(*****************************************************************************)
+(* Names *)
+(*****************************************************************************)
 (* Ident, name, scope qualifier *)
-(* ------------------------------------------------------------------------- *)
 
 type ident = string wrap
 [@@deriving show]
@@ -257,12 +255,11 @@ and type_qualifiers = type_qualifier wrap list
  * Constructor.
 *)
 and expr =
-  (* Id can be an enumeration constant, variable, function name.
-   * cppext: Id can also be the name of a macro. sparse says
+  (* N can be an enumeration constant, variable, function name.
+   * cppext: N can also be the name of a macro. sparse says
    *  "an identifier with a meaning is a symbol".
-   * c++ext: Id is now a 'name' instead of a 'string' and can be
+   * c++ext: N is now a 'name' instead of a 'string' and can be
    *  also an operator name.
-   * less: split in Id vs IdQualified like in ast_generic.ml?
   *)
   | N of name * ident_info (* semantic: see check_variables_cpp.ml *)
   | C of constant
@@ -437,6 +434,8 @@ and a_lhs = expr
 and stmt =
   | Compound of compound   (* new scope *)
   | ExprStmt of expr_stmt
+  (* cppext: *)
+  | MacroStmt of tok
 
   (* selection *)
   | If of tok * tok (* 'constexpr' *) option * condition_clause paren *
@@ -463,30 +462,13 @@ and stmt =
   | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt
   | Default of tok * tok (* : *) * stmt (* TODO stmt_or_decl list *)
 
-  (* c++ext: in C this constructor could be outside the statement type, in a
-   * decl type, because declarations are only at the beginning of a compound
-   * normally. But in C++ we can freely mix declarations and statements.
-   * TODO: move out of stmt, and make compound use an either?
-  *)
-  | DeclStmt  of block_declaration
   (* c++ext: *)
   | Try of tok * compound * handler list
-  (* gccext: TODO if mix stmt and toplevel, no need NestedFunc *)
-  | NestedFunc of func_definition
-  (* cppext: *)
-  | MacroStmt of tok
+
+  (* old: c++ext: gccext: there was a DeclStmt and NestedFunc before, but they
+   * are now handled by stmt_or_decl *)
 
   | StmtTodo of todo_category * stmt list
-
-(* cppext: c++ext:
- * old: (declaration list * stmt list)
- * old: (declaration, stmt) either list
- * TODO: stmt_or_decl ... D of declaration | S of stmt
-*)
-and compound = stmt sequencable list brace
-(* In theory we could restrict to just decls, but in ts they are more
- * general and accept also stmts *)
-and declarations = compound
 
 and expr_stmt = expr option * sc
 
@@ -513,10 +495,31 @@ and jump  =
 (* c++ext: *)
 and handler =
   tok (* 'catch' *) * exception_declaration list paren (* list??? *) * compound
+
 and exception_declaration =
   | ExnDecl of parameter
   (* sgrep-ext? *)
   | ExnDeclEllipsis of tok
+
+(*****************************************************************************)
+(* Stmt or Decl *)
+(*****************************************************************************)
+
+and stmt_or_decl =
+  | S of stmt
+  | D of decl
+
+(* cppext: c++ext:
+ * old: (declaration list * stmt list)
+ * old: (declaration, stmt) either list
+ * old: smt sequencable list brace, with a DeclStmt of block_declaration
+ *  in the stmt type.
+*)
+and compound = stmt_or_decl sequencable list brace
+
+(* In theory we should restrict to just decl, but tree-sitter-cpp is more
+ * general and accept also stmts *)
+and declarations = stmt_or_decl sequencable list brace
 
 (*****************************************************************************)
 (* Definitions/Declarations *)
@@ -534,24 +537,17 @@ and entity = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* Simple var *)
-(* ------------------------------------------------------------------------- *)
-and var_decl = {
-  v__type: type_;
-}
-
-(* ------------------------------------------------------------------------- *)
 (* "Declaration" *)
 (* ------------------------------------------------------------------------- *)
 
-(* it's not really 'toplevel' because the elements below can be nested
+(* It's not really 'toplevel' because the elements below can be nested
  * inside namespaces or some extern. It's not really 'declaration'
  * either because it can defines stuff. But I keep the C++ standard
  * terminology.
  *
- * old: was split in intermediate 'block_declaration' before
+ * old: was split in intermediate 'block_declaration' before.
 *)
-and declaration =
+and decl =
   (* TODO: Have an EmptyDecl of type_ * sc ? *)
 
   (* Before I had a Typedef constructor, but why make this special case and not
@@ -564,21 +560,23 @@ and declaration =
   | DeclList of vars_decl
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * ident * argument list paren * tok
+
   (* c++ext: using namespace *)
   | UsingDecl of using
-  (* type_ is usually just a name TODO tsonly is using, but pfff is namespace? *)
+  (* type_ is usually just a name TODO tsonly is using, but pfff namespace?*)
   | NameSpaceAlias of tok (*'namespace'*) * ident * tok (*=*) * type_ * sc
+
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * sc
 
   | Func of func_definition
 
   (* c++ext: *)
-  | TemplateDecl of tok * template_parameters * declaration
-  | TemplateSpecialization of tok * unit angle * declaration
+  | TemplateDecl of tok * template_parameters * decl
+  | TemplateSpecialization of tok * unit angle * decl
 
   (* the list can be empty *)
-  | ExternDecl     of tok * string wrap (* usually "C" *) * declaration
+  | ExternDecl     of tok * string wrap (* usually "C" *) * decl
   | ExternList of tok * string wrap * declarations
 
   (* the list can be empty *)
@@ -586,6 +584,7 @@ and declaration =
 
   (* c++0x?: tsonly: at toplevel or in class *)
   | StaticAssert of tok * argument list paren (* last args are strings *)
+
   (* gccext: allow redundant ';' *)
   | EmptyDef of sc
 
@@ -595,15 +594,19 @@ and declaration =
 
 and vars_decl = onedecl list * sc
 
-(* a.k.a declaration_stmt *)
-and block_declaration = declaration
-
 (* gccext: *)
 and asmbody = string wrap list * colon list
 and colon = Colon of tok (* : *) * colon_option list
 and colon_option =
   | ColonExpr of tok list * expr paren
   | ColonMisc of tok list
+
+(* ------------------------------------------------------------------------- *)
+(* Simple var *)
+(* ------------------------------------------------------------------------- *)
+and var_decl = {
+  v__type: type_;
+}
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition (and also field definition) *)
@@ -771,13 +774,13 @@ and class_member =
   (* before unparser, I didn't have a FieldDeclList but just a Field. *)
   | MemberField of fieldkind list * sc
 
-  | Friend of tok (* 'friend' *) * declaration (* Func or DeclList *)
+  | Friend of tok (* 'friend' *) * decl (* Func or DeclList *)
   | QualifiedIdInClass of name (* ?? *) * sc
 
   (* valid declarations in class_member:
    *  Func(for methods)/TemplateDecl/UsingDecl/EmptyDef/...
   *)
-  | MemberDecl of declaration
+  | MemberDecl of decl
 
 (* At first I thought that a bitfield could be only Signed/Unsigned.
  * But it seems that gcc allows char i:4. C rule must say that you
@@ -872,6 +875,7 @@ and pointer_modifier =
 (*****************************************************************************)
 (* Namespace (using) *)
 (*****************************************************************************)
+
 and using = tok (*'using'*) * using_kind * sc
 and using_kind =
   | UsingName of name
@@ -963,8 +967,7 @@ and ifdef_directive =
 (* Toplevel *)
 (*****************************************************************************)
 
-(* TODO stmt_or_decl sequencable *)
-type toplevel = declaration sequencable
+type toplevel = stmt_or_decl sequencable
 [@@deriving show]
 
 (* finally *)
@@ -988,7 +991,6 @@ type any =
   | Name of name
   | OneDecl of onedecl
   | Init of initialiser
-  | BlockDecl2 of block_declaration
   | ClassMember of class_member
 
   | Constant of constant
@@ -1031,7 +1033,6 @@ let noQscope = []
 (*****************************************************************************)
 let unwrap x = fst x
 let unparen (_, x, _) = x
-let unbrace (_, x, _) = x
 
 let unwrap_typeC (_qu, typeC) = typeC
 

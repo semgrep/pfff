@@ -5,16 +5,17 @@
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2019-2020 r2c
+ * Copyright (C) 2019-2021 r2c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License (GPL)
- * version 2 as published by the Free Software Foundation.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * file license.txt for more details.
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
  *)
 open Common
 
@@ -27,7 +28,7 @@ module PI = Parse_info
 (* Prelude *)
 (*************************************************************************)
 (* This file contains a grammar for C/C++/Cpp.
- * See cst_cpp.ml for more information.
+ * See ast_cpp.ml for more information.
  *
  * reference:
  *  - orig_c.mly and orig_cpp.mly in this directory
@@ -293,8 +294,8 @@ main: translation_unit EOF     { $1 }
 translation_unit: external_declaration+ { $1 }
 
 external_declaration:
- | function_definition            { X (Func ($1)) }
- | block_declaration              { X ($1) }
+ | function_definition            { X (D (Func ($1))) }
+ | block_declaration              { X (D $1) }
 
 (*************************************************************************)
 (* toplevel *)
@@ -305,14 +306,16 @@ toplevel:
  | EOF          { None }
 
 toplevel_aux:
- | declaration         { X $1 }
+ | declaration         { X (D $1) }
+
  (* cppext: *)
  | cpp_directive       { CppDirective $1 }
  | cpp_ifdef_directive (*external_declaration_list ...*) { CppIfdef $1 }
  | cpp_other           { $1 }
+
  (* when have error recovery, we can end up skipping the
   * beginning of the file, and so get trailing unclosed } at the end *)
- | "}" { X (EmptyDef $1) }
+ | "}" { X (D (EmptyDef $1)) }
 
 (*************************************************************************)
 (* sgrep *)
@@ -779,25 +782,12 @@ statement:
  (* cppext: *)
  | TIdent_MacroStmt { MacroStmt $1 }
 
- (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
-  * fact statement but too hard to figure out, and if parse them as
-  * expression, then we force to have first decls and then exprs, then
-  * will have a parse error. So easier to let mix decl/statement.
-  * Moreover it helps to not make such a difference between decl and
-  * statement for further coccinelle phases to factorize code.
-  *
-  * update: now a c++ext and handle slightly differently. It's inlined
-  * in statement instead of going through a stat_or_decl.
-  *)
- | declaration_statement { $1 }
- (* gccext: if move in statement then can have r/r conflict with define *)
- | function_definition { NestedFunc $1 }
  (* c++ext: *)
  | try_block { $1 }
  (* sgrep-ext: *)
  | "..." { Flag_parsing.sgrep_guard (ExprStmt (Some (Ellipses $1), $1)) }
 
-compound: "{" statement_cpp* "}" { ($1, $2, $3) }
+compound: "{" statement_or_decl_cpp* "}" { ($1, $2, $3) }
 
 expr_statement: expr? ";" { $1, $2 }
 
@@ -847,8 +837,24 @@ jump:
 (* cppext: *)
 (*----------------------------*)
 
-statement_cpp:
- | statement { X $1 }
+statement_or_decl_cpp:
+ | statement { X (S $1) }
+
+ (* gccext: Nested functions *)
+ | function_definition { X (D (Func $1)) }
+
+ (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
+  * fact statement but too hard to figure out, and if parse them as
+  * expression, then we force to have first decls and then exprs, then
+  * will have a parse error. So easier to let mix decl/statement.
+  * Moreover it helps to not make such a difference between decl and
+  * statement for further coccinelle phases to factorize code.
+  *
+  * update: now a c++ext and handle slightly differently. It's inlined
+  * in statement instead of going through a stat_or_decl.
+  *)
+ | block_declaration { X (D $1) }
+
  (* cppext: *)
  | cpp_directive                                  { CppDirective $1 }
  | cpp_ifdef_directive(* stat_or_decl_list ...*)  { CppIfdef $1 }
@@ -856,8 +862,6 @@ statement_cpp:
 (*----------------------------*)
 (* c++ext: *)
 (*----------------------------*)
-
-declaration_statement: block_declaration { DeclStmt $1 }
 
 %inline
 condition:
@@ -1624,10 +1628,10 @@ colon_option:
 asm_expr: assign_expr { $1 }
 
 (*************************************************************************)
-(* Declaration, in c++ sense *)
+(* Declaration, in C++ sense *)
 (*************************************************************************)
-(* in grammar they have 'explicit_instantiation' but it is equal to
- * to template_declaration and so is ambiguous.
+(* In the C++ grammar they have 'explicit_instantiation' but it is equal to
+ * template_declaration and so is ambiguous.
  *
  * declaration > block_declaration > simple_declaration, hmmm
  * could be renamed declaration_or_definition
@@ -1652,7 +1656,7 @@ declaration:
 (*----------------------------*)
 
 declaration_cpp:
- | declaration { X (DeclStmt $1) }
+ | declaration { X (D $1) }
  (* cppext: *)
  | cpp_directive                                 { CppDirective $1 }
  | cpp_ifdef_directive(* stat_or_decl_list ...*) { CppIfdef $1 }

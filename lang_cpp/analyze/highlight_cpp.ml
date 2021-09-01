@@ -354,7 +354,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           k x
 
       | EnumDef (_tok, _sopt, xs) ->
-          xs |> unbrace |> List.iter (fun enum_elem ->
+          xs |> unparen |> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
             tag ii (Entity (Constructor,(Def2 fake_no_def2)))
           );

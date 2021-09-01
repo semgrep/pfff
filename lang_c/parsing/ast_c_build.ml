@@ -139,8 +139,10 @@ and toplevels env xs =
 
 and toplevel env x =
   match x with
-  | X decl ->
+  | X (D decl) ->
       declaration env decl |> List.map (fun x -> A.DefStmt x)
+  | X (S st) ->
+      [stmt env st]
   | CppDirective x ->
       [A.DirStmt (cpp_directive env x)]
 
@@ -189,9 +191,9 @@ and declaration env x =
   | NameSpace (_, _, _)
   | ExternList (_, _, _)|ExternDecl (_, _, _)|TemplateSpecialization (_, _, _)
   | TemplateDecl _ ->
-      debug (Toplevel (X x)); raise CplusplusConstruct
+      debug (Toplevel (X (D x))); raise CplusplusConstruct
   | DeclTodo _ ->
-      debug (Toplevel (X x)); raise Todo
+      debug (Toplevel (X (D x))); raise Todo
   (* not much we can do here, at least the parsing statistics should warn the
    * user that some code was not processed
   *)
@@ -311,7 +313,7 @@ and initialiser env x =
   match x with
   | InitExpr e -> expr env e
   | InitList xs ->
-      (match xs |> unbrace with
+      (match xs |> unparen with
        | [] -> debug (Init x); raise Impossible
        | (InitDesignators ([DesignatorField (_, _)], _, _init))::_ ->
            A.RecordInit (bracket_keep (fun xs ->
@@ -441,8 +443,6 @@ and stmt env st =
        | None -> A.Block (PI.fake_bracket [])
        | Some e -> A.ExprSt (expr env e, t)
       )
-  | DeclStmt block_decl ->
-      block_declaration env block_decl
 
   | Label (s, _, st) ->
       A.Label (s, stmt env st)
@@ -463,7 +463,7 @@ and stmt env st =
   | Try (_, _, _) ->
       debug (Stmt st); raise CplusplusConstruct
 
-  | (NestedFunc _ | StmtTodo _ | MacroStmt _ ) ->
+  | (StmtTodo _ | MacroStmt _ ) ->
       debug (Stmt st); raise Todo
 
 and compound env (t1, xs, t2) =
@@ -476,10 +476,11 @@ and statements_sequencable env xs =
 
 and statement_sequencable env x =
   match x with
-  | X st -> [stmt env st]
+  | X (S st) -> [stmt env st]
   | CppDirective x -> debug (Cpp x); raise Todo
   | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
   | CppIfdef _ -> raise Impossible
+  | X (D x) -> [block_declaration env x]
 
 and cases env st =
   match st with
@@ -489,26 +490,26 @@ and cases env st =
         | [] -> []
         | x::xs ->
             (match x with
-             | X (((Case (_, _, _, st))))
-             | X (((Default (_, _, st))))
+             | X (S ((Case (_, _, _, st))))
+             | X (S ((Default (_, _, st))))
                ->
                  let xs', rest =
-                   (X st::xs) |> Common.span (function
-                     | X (((Case (_, _, _, _st))))
-                     | X (((Default (_, _, _st)))) -> false
+                   (X (S st)::xs) |> Common.span (function
+                     | X (S ((Case (_, _, _, _st))))
+                     | X (S ((Default (_, _, _st)))) -> false
                      | _ -> true
                    )
                  in
                  let stmts = List.map (function
-                   | X st -> stmt env st
+                   | X (S st) -> stmt env st
                    | x ->
                        debug (Stmt (Compound (l, [x], r)));
                        raise MacroInCase
                  ) xs' in
                  (match x with
-                  | X (((Case (tok, e, _, _)))) ->
+                  | X (S ((Case (tok, e, _, _)))) ->
                       A.Case (tok, expr env e, stmts)
-                  | X (((Default (tok, _, _st)))) ->
+                  | X (S ((Default (tok, _, _st)))) ->
                       A.Default (tok, stmts)
                   | _ -> raise Impossible
                  )::aux rest
@@ -707,7 +708,7 @@ and full_type env x =
         | Some n -> n
       in
       let xs' =
-        xs |> unbrace |> List.map (fun eelem ->
+        xs |> unparen |> List.map (fun eelem ->
           let (name, e_opt) = eelem.e_name, eelem.e_val in
           name,
           match e_opt with

@@ -414,7 +414,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
          let info_of_bads =
            Common2.map_eff_rev TH.info_of_tok tr.PI.passed in
 
-         Some (X (Ast.NotParsedCorrectly info_of_bads))
+         Some (X (D (Ast.NotParsedCorrectly info_of_bads)))
       )
     in
 
@@ -440,7 +440,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
     stat.Stat.commentized <-
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
-     | Some (Ast.X (Ast.NotParsedCorrectly _xs)) ->
+     | Some (Ast.X (Ast.D (Ast.NotParsedCorrectly _xs))) ->
          (* todo: could count same line multiple times! use Hashtbl.add
           * and a simple Hashtbl.length at the end to add in error_line_count
          *)
