@@ -63,93 +63,15 @@ exception Timeout of timeout_info
 
 exception UnixExit of int
 
-let rec drop n xs =
-  match (n,xs) with
-  | (0,_) -> xs
-  | (_,[]) -> failwith "drop: not enough"
-  | (n,_x::xs) -> drop (n-1) xs
+(*****************************************************************************)
+(* Equality *)
+(*****************************************************************************)
+let (=|=) : int    -> int    -> bool = (=)
+let (=<=) : char   -> char   -> bool = (=)
+let (=$=) : string -> string -> bool = (=)
+let (=:=) : bool   -> bool   -> bool = (=)
 
-let take n xs =
-  let rec next n xs acc =
-    match (n,xs) with
-    | (0,_) -> List.rev acc
-    | (_,[]) -> failwith "Common.take: not enough"
-    | (n,x::xs) -> next (n-1) xs (x::acc) in
-  next n xs []
-
-let enum x n =
-  if not(x <= n)
-  then failwith (Printf.sprintf "bad values in enum, expect %d <= %d" x n);
-  let rec enum_aux acc x n =
-    if x = n then n::acc else enum_aux (x::acc) (x+1) n
-  in
-  List.rev (enum_aux [] x n)
-
-let push v l =
-  l := v :: !l
-
-
-let unwind_protect f cleanup =
-  if !debugger then f () else
-    try f ()
-    with e -> begin cleanup e; raise e end
-
-let finalize f cleanup =
-  (* bug: we can not just call f in debugger mode because
-   * this change the semantic of the program. I originally
-   * put this code below:
-   *   if !debugger then f () else
-   * because I wanted some errors to pop-out to the top so I can
-   * debug them but because now I use save_excursion and finalize
-   * quite a lot this changes too much the semantic.
-   * TODO: maybe I should not use save_excursion so much ? maybe
-   *  -debugger helps see code that I should refactor ?
-  *)
-  try
-    let res = f () in
-    cleanup ();
-    res
-  with e ->
-    cleanup ();
-    raise e
-
-let (lines: string -> string list) = fun s ->
-  let rec lines_aux = function
-    | [] -> []
-    | [x] -> if x = "" then [] else [x]
-    | x::xs ->
-        x::lines_aux xs
-  in
-  Str.split_delim (Str.regexp "\n") s |> lines_aux
-
-let save_excursion reference newv f =
-  let old = !reference in
-  reference := newv;
-  finalize f (fun _ -> reference := old;)
-
-let memoized ?(use_cache=true) h k f =
-  if not use_cache
-  then f ()
-  else
-    try Hashtbl.find h k
-    with Not_found ->
-      let v = f () in
-      begin
-        Hashtbl.add h k v;
-        v
-      end
-
-exception Todo
-exception Impossible
-
-exception Multi_found (* to be consistent with Not_found *)
-
-let exn_to_s exn =
-  Printexc.to_string exn
-
-(*###########################################################################*)
-(* Basic features *)
-(*###########################################################################*)
+let (=*=) = (=)
 
 (*****************************************************************************)
 (* Debugging/logging *)
@@ -281,7 +203,6 @@ let pr2_gen x = pr2 (dump x)
 let before_return f v =
   f v;
   v
-
 (*****************************************************************************)
 (* Profiling *)
 (*****************************************************************************)
@@ -334,7 +255,7 @@ let adjust_profile_entry category difftime =
   xcount := !xcount + 1;
   ()
 
-(* subtil: don't forget to give all argumens to f, otherwise partial app
+(* subtle: don't forget to give all argumens to f, otherwise partial app
  * and will profile nothing.
  *
  * todo: try also detect when complexity augment each time, so can
@@ -375,12 +296,12 @@ let profile_code_exclusif category f =
         failwith (spf "profile_code_exclusif: %s but already in %s " category s);
     | None ->
         _is_in_exclusif := (Some category);
-        finalize
+        Fun.protect
           (fun () ->
              profile_code category f
           )
-          (fun () ->
-             _is_in_exclusif := None
+          ~finally:(fun () ->
+            _is_in_exclusif := None
           )
 
   end
@@ -413,8 +334,6 @@ let profile_diagnostic () =
       )
     )
 
-
-
 let report_if_take_time timethreshold s f =
   let t = Unix.gettimeofday () in
   let res = f () in
@@ -434,6 +353,308 @@ let profile_code2 category f =
     then pr2 (spf "ending: %s, %fs" category (t' -. t));
     res
   )
+
+(*###########################################################################*)
+(* List functions *)
+(*###########################################################################*)
+
+(*****************************************************************************)
+(* List.map *)
+(*****************************************************************************)
+
+(*
+   Custom list type used to store intermediate lists, while minimizing
+   the number of allocated blocks.
+*)
+type 'a list5 =
+  | Elt of 'a * 'a list5
+  | Tuple of 'a * 'a * 'a * 'a * 'a * 'a list5
+  | Empty
+
+let rev5 l =
+  let rec aux acc l =
+    match l with
+    | Tuple (e, d, c, b, a, l) ->
+        (* common case *)
+        aux (a :: b :: c :: d :: e :: acc) l
+    | Elt (a, l) ->
+        aux (a :: acc) l
+    | Empty -> acc
+  in
+  aux [] l
+
+let rec slow_map acc f l =
+  match l with
+  | [] -> rev5 acc
+  | [a] -> rev5 (Elt (f a, acc))
+  | [a; b] ->
+      let a = f a in
+      let b = f b in
+      rev5 (Elt (b, Elt (a, acc)))
+  | [a; b; c] ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      rev5 (Elt (c, (Elt (b, (Elt (a, acc))))))
+  | [a; b; c; d] ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      let d = f d in
+      rev5 (Elt (d, (Elt (c, (Elt (b, (Elt (a, acc))))))))
+  | [a; b; c; d; e] ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      let d = f d in
+      let e = f e in
+      rev5 (Elt (e, (Elt (d, (Elt (c, (Elt (b, (Elt (a, acc))))))))))
+  | a :: b :: c :: d :: e :: l ->
+      let a = f a in
+      let b = f b in
+      let c = f c in
+      let d = f d in
+      let e = f e in
+      slow_map (Tuple (e, d, c, b, a, acc)) f l
+
+let rec fast_map rec_calls_remaining f l =
+  if rec_calls_remaining <= 0 then
+    slow_map Empty f l
+  else
+    match l with
+    | [] -> []
+    | [a] -> [f a]
+    | [a; b] ->
+        let a = f a in
+        let b = f b in
+        [a; b]
+    | [a; b; c] ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        [a; b; c]
+    | [a; b; c; d] ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        let d = f d in
+        [a; b; c; d]
+    | [a; b; c; d; e] ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        let d = f d in
+        let e = f e in
+        [a; b; c; d; e]
+    | a :: b :: c :: d :: e :: l ->
+        let a = f a in
+        let b = f b in
+        let c = f c in
+        let d = f d in
+        let e = f e in
+        a :: b :: c :: d :: e :: fast_map (rec_calls_remaining - 1) f l
+
+(*
+   This implementation of List.map makes at most 1000 non-tailrec calls
+   before switching to a slower tailrec implementation.
+
+   Additionally, this implementation guarantees left-to-right evaluation.
+*)
+let map f l = fast_map 1000 f l
+
+
+(*****************************************************************************)
+(* Other list functions *)
+(*****************************************************************************)
+
+
+(* Tail-recursive to prevent stack overflows. *)
+let flatten xss =
+  xss
+  |> List.fold_left (fun acc xs ->
+    List.rev_append xs acc)
+    []
+  |> List.rev
+
+let rec drop n xs =
+  match (n,xs) with
+  | (0,_) -> xs
+  | (_,[]) -> failwith "drop: not enough"
+  | (n,_x::xs) -> drop (n-1) xs
+
+let take n xs =
+  let rec next n xs acc =
+    match (n,xs) with
+    | (0,_) -> List.rev acc
+    | (_,[]) -> failwith "Common.take: not enough"
+    | (n,x::xs) -> next (n-1) xs (x::acc) in
+  next n xs []
+
+let enum x n =
+  if not(x <= n)
+  then failwith (Printf.sprintf "bad values in enum, expect %d <= %d" x n);
+  let rec enum_aux acc x n =
+    if x = n then n::acc else enum_aux (x::acc) (x+1) n
+  in
+  List.rev (enum_aux [] x n)
+
+let exclude p xs =
+  List.filter (fun x -> not (p x)) xs
+
+let rec (span: ('a -> bool) -> 'a list -> 'a list * 'a list) =
+  fun p -> function
+    | []    -> ([], [])
+    | x::xs ->
+        if p x then
+          let (l1, l2) = span p xs in
+          (x::l1, l2)
+        else ([], x::xs)
+
+let rec take_safe n xs =
+  match (n,xs) with
+  | (0,_) -> []
+  | (_,[]) -> []
+  | (n,x::xs) -> x::take_safe (n-1) xs
+
+let group_by f xs =
+  (* use Hashtbl.find_all property *)
+  let h = Hashtbl.create 101 in
+
+  (* could use Set *)
+  let hkeys = Hashtbl.create 101 in
+
+  xs |> List.iter (fun x ->
+    let k = f x in
+    Hashtbl.replace hkeys k true;
+    Hashtbl.add h k x
+  );
+  Hashtbl.fold (fun k _ acc -> (k, Hashtbl.find_all h k)::acc) hkeys []
+
+let group_by_multi fkeys xs =
+  (* use Hashtbl.find_all property *)
+  let h = Hashtbl.create 101 in
+
+  (* could use Set *)
+  let hkeys = Hashtbl.create 101 in
+
+  xs |> List.iter (fun x ->
+    let ks = fkeys x in
+    ks |> List.iter (fun k ->
+      Hashtbl.replace hkeys k true;
+      Hashtbl.add h k x;
+    )
+  );
+  Hashtbl.fold (fun k _ acc -> (k, Hashtbl.find_all h k)::acc) hkeys []
+
+
+(* you should really use group_assoc_bykey_eff *)
+let rec group_by_mapped_key fkey l =
+  match l with
+  | [] -> []
+  | x::xs ->
+      let k = fkey x in
+      let (xs1,xs2) = List.partition (fun x' -> let k2 = fkey x' in k=*=k2) xs
+      in
+      (k, (x::xs1))::(group_by_mapped_key fkey xs2)
+
+let rec zip xs ys =
+  match (xs,ys) with
+  | ([],[]) -> []
+  | ([],_) -> failwith "zip: not same length"
+  | (_,[]) -> failwith "zip: not same length"
+  | (x::xs,y::ys) -> (x,y)::zip xs ys
+
+let null xs =
+  match xs with [] -> true | _ -> false
+
+let index_list xs =
+  if null xs then [] (* enum 0 (-1) generate an exception *)
+  else zip xs (enum 0 ((List.length xs) -1))
+
+let index_list_0 xs = index_list xs
+
+let index_list_1 xs =
+  xs |> index_list |> map (fun (x,i) -> x, i+1)
+
+let sort_prof a b =
+  profile_code "Common.sort_by_xxx" (fun () -> List.sort a b)
+
+let sort_by_val_highfirst xs =
+  sort_prof (fun (_k1,v1) (_k2,v2) -> compare v2 v1) xs
+let sort_by_val_lowfirst xs =
+  sort_prof (fun (_k1,v1) (_k2,v2) -> compare v1 v2) xs
+
+let sort_by_key_highfirst xs =
+  sort_prof (fun (k1,_v1) (k2,_v2) -> compare k2 k1) xs
+let sort_by_key_lowfirst xs =
+  sort_prof (fun (k1,_v1) (k2,_v2) -> compare k1 k2) xs
+
+let push v l =
+  l := v :: !l
+
+
+let unwind_protect f cleanup =
+  if !debugger then f () else
+    try f ()
+    with e -> begin cleanup e; raise e end
+
+(* TODO: remove and use Fun.protect instead. *)
+let finalize f cleanup =
+  (* bug: we can not just call f in debugger mode because
+   * this change the semantic of the program. I originally
+   * put this code below:
+   *   if !debugger then f () else
+   * because I wanted some errors to pop-out to the top so I can
+   * debug them but because now I use save_excursion and finalize
+   * quite a lot this changes too much the semantic.
+   * TODO: maybe I should not use save_excursion so much ? maybe
+   *  -debugger helps see code that I should refactor ?
+  *)
+  try
+    let res = f () in
+    cleanup ();
+    res
+  with e ->
+    cleanup ();
+    raise e
+
+let (lines: string -> string list) = fun s ->
+  let rec lines_aux = function
+    | [] -> []
+    | [x] -> if x = "" then [] else [x]
+    | x::xs ->
+        x::lines_aux xs
+  in
+  Str.split_delim (Str.regexp "\n") s |> lines_aux
+
+let save_excursion reference newv f =
+  let old = !reference in
+  reference := newv;
+  finalize f (fun _ -> reference := old;)
+
+let memoized ?(use_cache=true) h k f =
+  if not use_cache
+  then f ()
+  else
+    try Hashtbl.find h k
+    with Not_found ->
+      let v = f () in
+      begin
+        Hashtbl.add h k v;
+        v
+      end
+
+exception Todo
+exception Impossible
+
+exception Multi_found (* to be consistent with Not_found *)
+
+let exn_to_s exn =
+  Printexc.to_string exn
+
+(*###########################################################################*)
+(* Basic features *)
+(*###########################################################################*)
 
 (*****************************************************************************)
 (* Test *)
@@ -582,16 +803,16 @@ type cmdline_actions = action_spec list
 exception WrongNumberOfArguments
 
 let options_of_actions action_ref actions =
-  actions |> List.map (fun (key, doc, _func) ->
+  actions |> map (fun (key, doc, _func) ->
     (key, (Arg.Unit (fun () -> action_ref := key)), doc)
   )
 
 let (action_list: cmdline_actions -> Arg.key list) = fun xs ->
-  List.map (fun (a,_b,_c) -> a) xs
+  map (fun (a,_b,_c) -> a) xs
 
 let (do_action: Arg.key -> string list (* args *) -> cmdline_actions -> unit) =
   fun key args xs ->
-  let assoc = xs |> List.map (fun (a,_b,c) -> (a,c)) in
+  let assoc = xs |> map (fun (a,_b,c) -> (a,c)) in
   let action_func = List.assoc key assoc in
   action_func args
 
@@ -631,16 +852,6 @@ let mk_action_4_arg f =
   )
 
 let mk_action_n_arg f = f
-
-(*****************************************************************************)
-(* Equality *)
-(*****************************************************************************)
-let (=|=) : int    -> int    -> bool = (=)
-let (=<=) : char   -> char   -> bool = (=)
-let (=$=) : string -> string -> bool = (=)
-let (=:=) : bool   -> bool   -> bool = (=)
-
-let (=*=) = (=)
 
 (*###########################################################################*)
 (* Basic types *)
@@ -1229,218 +1440,8 @@ let erase_this_temp_file f =
   end
 
 (*###########################################################################*)
-(* Collection-like types *)
+(* Collection-like types other than List *)
 (*###########################################################################*)
-
-(*****************************************************************************)
-(* List.map *)
-(*****************************************************************************)
-
-(*
-   Custom list type used to store intermediate lists, while minimizing
-   the number of allocated blocks.
-*)
-type 'a list5 =
-  | Elt of 'a * 'a list5
-  | Tuple of 'a * 'a * 'a * 'a * 'a * 'a list5
-  | Empty
-
-let rev5 l =
-  let rec aux acc l =
-    match l with
-    | Tuple (e, d, c, b, a, l) ->
-        (* common case *)
-        aux (a :: b :: c :: d :: e :: acc) l
-    | Elt (a, l) ->
-        aux (a :: acc) l
-    | Empty -> acc
-  in
-  aux [] l
-
-let rec slow_map acc f l =
-  match l with
-  | [] -> rev5 acc
-  | [a] -> rev5 (Elt (f a, acc))
-  | [a; b] ->
-      let a = f a in
-      let b = f b in
-      rev5 (Elt (b, Elt (a, acc)))
-  | [a; b; c] ->
-      let a = f a in
-      let b = f b in
-      let c = f c in
-      rev5 (Elt (c, (Elt (b, (Elt (a, acc))))))
-  | [a; b; c; d] ->
-      let a = f a in
-      let b = f b in
-      let c = f c in
-      let d = f d in
-      rev5 (Elt (d, (Elt (c, (Elt (b, (Elt (a, acc))))))))
-  | [a; b; c; d; e] ->
-      let a = f a in
-      let b = f b in
-      let c = f c in
-      let d = f d in
-      let e = f e in
-      rev5 (Elt (e, (Elt (d, (Elt (c, (Elt (b, (Elt (a, acc))))))))))
-  | a :: b :: c :: d :: e :: l ->
-      let a = f a in
-      let b = f b in
-      let c = f c in
-      let d = f d in
-      let e = f e in
-      slow_map (Tuple (e, d, c, b, a, acc)) f l
-
-let rec fast_map rec_calls_remaining f l =
-  if rec_calls_remaining <= 0 then
-    slow_map Empty f l
-  else
-    match l with
-    | [] -> []
-    | [a] -> [f a]
-    | [a; b] ->
-        let a = f a in
-        let b = f b in
-        [a; b]
-    | [a; b; c] ->
-        let a = f a in
-        let b = f b in
-        let c = f c in
-        [a; b; c]
-    | [a; b; c; d] ->
-        let a = f a in
-        let b = f b in
-        let c = f c in
-        let d = f d in
-        [a; b; c; d]
-    | [a; b; c; d; e] ->
-        let a = f a in
-        let b = f b in
-        let c = f c in
-        let d = f d in
-        let e = f e in
-        [a; b; c; d; e]
-    | a :: b :: c :: d :: e :: l ->
-        let a = f a in
-        let b = f b in
-        let c = f c in
-        let d = f d in
-        let e = f e in
-        a :: b :: c :: d :: e :: fast_map (rec_calls_remaining - 1) f l
-
-(*
-   This implementation of List.map makes at most 1000 non-tailrec calls
-   before switching to a slower tailrec implementation.
-
-   Additionally, this implementation guarantees left-to-right evaluation.
-*)
-let map f l = fast_map 1000 f l
-
-
-(*****************************************************************************)
-(* Other list functions *)
-(*****************************************************************************)
-
-
-
-let exclude p xs =
-  List.filter (fun x -> not (p x)) xs
-
-let rec (span: ('a -> bool) -> 'a list -> 'a list * 'a list) =
-  fun p -> function
-    | []    -> ([], [])
-    | x::xs ->
-        if p x then
-          let (l1, l2) = span p xs in
-          (x::l1, l2)
-        else ([], x::xs)
-
-let rec take_safe n xs =
-  match (n,xs) with
-  | (0,_) -> []
-  | (_,[]) -> []
-  | (n,x::xs) -> x::take_safe (n-1) xs
-
-let group_by f xs =
-  (* use Hashtbl.find_all property *)
-  let h = Hashtbl.create 101 in
-
-  (* could use Set *)
-  let hkeys = Hashtbl.create 101 in
-
-  xs |> List.iter (fun x ->
-    let k = f x in
-    Hashtbl.replace hkeys k true;
-    Hashtbl.add h k x
-  );
-  Hashtbl.fold (fun k _ acc -> (k, Hashtbl.find_all h k)::acc) hkeys []
-
-let group_by_multi fkeys xs =
-  (* use Hashtbl.find_all property *)
-  let h = Hashtbl.create 101 in
-
-  (* could use Set *)
-  let hkeys = Hashtbl.create 101 in
-
-  xs |> List.iter (fun x ->
-    let ks = fkeys x in
-    ks |> List.iter (fun k ->
-      Hashtbl.replace hkeys k true;
-      Hashtbl.add h k x;
-    )
-  );
-  Hashtbl.fold (fun k _ acc -> (k, Hashtbl.find_all h k)::acc) hkeys []
-
-
-(* you should really use group_assoc_bykey_eff *)
-let rec group_by_mapped_key fkey l =
-  match l with
-  | [] -> []
-  | x::xs ->
-      let k = fkey x in
-      let (xs1,xs2) = List.partition (fun x' -> let k2 = fkey x' in k=*=k2) xs
-      in
-      (k, (x::xs1))::(group_by_mapped_key fkey xs2)
-
-let rec zip xs ys =
-  match (xs,ys) with
-  | ([],[]) -> []
-  | ([],_) -> failwith "zip: not same length"
-  | (_,[]) -> failwith "zip: not same length"
-  | (x::xs,y::ys) -> (x,y)::zip xs ys
-
-let null xs =
-  match xs with [] -> true | _ -> false
-
-let index_list xs =
-  if null xs then [] (* enum 0 (-1) generate an exception *)
-  else zip xs (enum 0 ((List.length xs) -1))
-
-let index_list_0 xs = index_list xs
-
-let index_list_1 xs =
-  xs |> index_list |> List.map (fun (x,i) -> x, i+1)
-
-let sort_prof a b =
-  profile_code "Common.sort_by_xxx" (fun () -> List.sort a b)
-
-let sort_by_val_highfirst xs =
-  sort_prof (fun (_k1,v1) (_k2,v2) -> compare v2 v1) xs
-let sort_by_val_lowfirst xs =
-  sort_prof (fun (_k1,v1) (_k2,v2) -> compare v1 v2) xs
-
-let sort_by_key_highfirst xs =
-  sort_prof (fun (k1,_v1) (k2,_v2) -> compare k2 k1) xs
-let sort_by_key_lowfirst xs =
-  sort_prof (fun (k1,_v1) (k2,_v2) -> compare k1 k2) xs
-
-(* Tail-recursive to prevent stack overflows. *)
-let flatten xss =
-  xss
-  |> List.fold_left (fun acc xs ->
-    List.rev_append xs acc)
-    []
-  |> List.rev
 
 (*****************************************************************************)
 (* Assoc *)
@@ -1481,11 +1482,11 @@ type 'a hashset = ('a, bool) Hashtbl.t
 (* with sexp *)
 
 let hashset_to_list h =
-  hash_to_list h |> List.map fst
+  hash_to_list h |> map fst
 
 (* old: slightly slower?
  * let hashset_of_list xs =
- *   xs +> List.map (fun x -> x, true) +> hash_of_list
+ *   xs +> map (fun x -> x, true) +> hash_of_list
 *)
 let hashset_of_list (xs: 'a list) : ('a, bool) Hashtbl.t =
   let h = Hashtbl.create (List.length xs) in
@@ -1501,7 +1502,7 @@ let group_assoc_bykey_eff2 xs =
   let h = Hashtbl.create 101 in
   xs |> List.iter (fun (k, v) -> Hashtbl.add h k v);
   let keys = hkeys h in
-  keys |> List.map (fun k -> k, Hashtbl.find_all h k)
+  keys |> map (fun k -> k, Hashtbl.find_all h k)
 
 let group_assoc_bykey_eff xs =
   profile_code "Common.group_assoc_bykey_eff" (fun () ->
@@ -1628,7 +1629,7 @@ let grep_dash_v_str =
   "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
 
 let files_of_dir_or_files_no_vcs_nofilter xs =
-  xs |> List.map (fun x ->
+  xs |> map (fun x ->
     if is_directory x
     then
       (* todo: should escape x *)
@@ -1645,7 +1646,7 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
                                   cmd (String.concat "\n" xs))))
       )
     else [x]
-  ) |> List.concat
+  ) |> flatten
 
 
 (*****************************************************************************)
