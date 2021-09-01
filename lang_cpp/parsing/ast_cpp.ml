@@ -285,18 +285,13 @@ and expr =
 
   | ArrayAccess    of expr * expr bracket
 
-  (* The Pt is redundant; could be replaced by DeRef RecordAccess.
-   * name is usually just an ident_or_op. In rare cases it can be
-   * a template_method name.
-   * TODO: factorize RecordAccessOp
-  *)
-  | RecordAccess   of expr * tok (* . *)  * name
-  | RecordPtAccess of expr * tok (* -> *) * name
+  (* name is usually just an ident_or_op. In rare cases it can be
+   * a template_method name. *)
+  | DotAccess   of expr * dotOp wrap * name
 
   (* pfffonly, TODO still valid?
    * c++ext: note that second paramater is an expr, not a name *)
-  | RecordStarAccess   of expr * tok (* .* *) * expr
-  | RecordPtStarAccess of expr * tok (* ->* *) * expr
+  | DotStarAccess   of expr * dotOp wrap (* with suffix '*' *) * expr
 
   | SizeOf of tok * (expr, type_ paren) Common.either
   (* TODO: SizeOfDots of tok * tok * ident paren ??? *)
@@ -323,6 +318,9 @@ and expr =
   | Delete of tok (*::*) option * tok * unit bracket option * expr
   (* TODO: tsonly it's a stmt *)
   | Throw of tok * expr option
+
+  (* c++11: finally! *)
+  | Lambda of lambda_definition
 
   (* ?? tsonly: *)
   | ParamPackExpansion of expr * tok (* '...' *)
@@ -389,6 +387,9 @@ and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
 
 (* less: migrate to AST_generic_.incr_decr? *)
 and fixOp    = Dec | Inc
+
+(* The Arrow is redundant; could be replaced by DeRef DotAccess *)
+and dotOp = Dot (* . *) | Arrow (* -> *)
 
 (* less: migrate to AST_generic_.op? *)
 and binaryOp = Arith of arithOp | Logical of logicalOp
@@ -457,10 +458,10 @@ and stmt =
   (* labeled *)
   | Label   of a_label * tok (* : *) * stmt
   (* TODO: only inside Switch in theory *)
-  | Case      of tok * expr * tok (* : *) * stmt (* TODO stmt_or_decl list *)
+  | Case      of tok * expr * tok (* : *) * case_body
   (* gccext: *)
-  | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * stmt
-  | Default of tok * tok (* : *) * stmt (* TODO stmt_or_decl list *)
+  | CaseRange of tok * expr * tok (* ... *) * expr * tok (* : *) * case_body
+  | Default of tok * tok (* : *) * case_body
 
   (* c++ext: *)
   | Try of tok * compound * handler list
@@ -474,7 +475,10 @@ and expr_stmt = expr option * sc
 
 and condition_clause =
   | CondClassic of expr
-  (* TODO: more *)
+  (* c++ext: *)
+  | CondDecl of vars_decl * expr
+  | CondStmt of expr_stmt * expr
+  | CondOneDecl of onedecl
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
@@ -491,6 +495,9 @@ and jump  =
   | Return of tok * argument (* just Arg or ArgInits *) option
   (* gccext: goto *exp *)
   | GotoComputed of tok * tok * expr
+
+(* The decl can actually only be a DeclList *)
+and case_body = stmt_or_decl list
 
 (* c++ext: *)
 and handler =
@@ -728,6 +735,14 @@ and function_body =
   | FBDefault of tok (* '=' *) * tok (* 'default' *) * sc
   | FBDelete of tok (* '=' *) * tok (* 'delete' *) * sc
 
+and lambda_definition = lambda_capture list bracket * function_definition
+
+and lambda_capture =
+  | CaptureEq of tok (* '=' *)
+  | CaptureRef of tok (* '&' *)
+  (* expr can be: id, &id, this, *this, args..., x = foo(), etc. *)
+  | CaptureOther of expr
+
 (* ------------------------------------------------------------------------- *)
 (* enum definition *)
 (* ------------------------------------------------------------------------- *)
@@ -762,7 +777,7 @@ and class_key =
 and base_clause = {
   i_name: a_class_name;
   (* TODO: i_specs? i_dots ? *)
-  i_virtual: tok option; (* ?? still c++ valid? pfff-only *)
+  i_virtual: modifier option; (* tsonly: final/override, pfff: ?  *)
   i_access: access_spec wrap option;
 }
 
@@ -967,10 +982,12 @@ and ifdef_directive =
 (* Toplevel *)
 (*****************************************************************************)
 
+(* should be just 'decl sequencable', but again tree-sitter-cpp is
+ * more general and accept also statements *)
 type toplevel = stmt_or_decl sequencable
 [@@deriving show]
 
-(* finally *)
+(* Finally! *)
 type program = toplevel list
 [@@deriving show]
 

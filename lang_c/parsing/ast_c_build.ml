@@ -460,7 +460,11 @@ and stmt env st =
        | Return (_tok, Some _) -> raise CplusplusConstruct
       )
 
-  | Try (_, _, _) ->
+  | Try (_, _, _)
+  | If (_, _, (_, _, _), _, _)
+  | While (_, (_, _, _), _)
+  | Switch (_, (_, _, _), _)
+    ->
       debug (Stmt st); raise CplusplusConstruct
 
   | (StmtTodo _ | MacroStmt _ ) ->
@@ -490,11 +494,15 @@ and cases env st =
         | [] -> []
         | x::xs ->
             (match x with
-             | X (S ((Case (_, _, _, st))))
-             | X (S ((Default (_, _, st))))
+             | X (S ((Case (_, _, _, sts))))
+             | X (S ((Default (_, _, sts))))
                ->
+                 let stmts_after_case =
+                   sts |> List.map (fun st_or_decl -> X st_or_decl) in
+                 (* sts can contain a Case itself, which we want to pack
+                  * together *)
                  let xs', rest =
-                   (X (S st)::xs) |> Common.span (function
+                   (stmts_after_case @ xs) |> Common.span (function
                      | X (S ((Case (_, _, _, _st))))
                      | X (S ((Default (_, _, _st)))) -> false
                      | _ -> true
@@ -540,10 +548,10 @@ and expr env e =
   | Ellipses tok -> A.Ellipses tok
   | DeepEllipsis v1 -> let v1 = bracket_keep (expr env) v1 in A.DeepEllipsis v1
 
-  | RecordAccess (e, t, n) ->
+  | DotAccess (e, (Dot, t), n) ->
       A.RecordPtAccess (A.Unary (expr env e, (GetRef,t)),
                         t, name env n)
-  | RecordPtAccess (e, t, n) ->
+  | DotAccess (e, (Arrow, t), n) ->
       A.RecordPtAccess (expr env e, t, name env n)
 
   | Cast ((_, ft, _), e) ->
@@ -588,9 +596,10 @@ and expr env e =
   | Throw _|Delete (_, _, _, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | IdSpecial (This, _)
-  | RecordPtStarAccess (_, _, _)|RecordStarAccess (_, _, _)
+  | DotStarAccess (_, _, _)
   | TypeId (_, _)
   | ParamPackExpansion _
+  | Lambda _
     ->
       debug (Expr e); raise CplusplusConstruct
 

@@ -276,7 +276,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
                 | _ -> ()
                );
 
-           | RecordAccess (_e, _, name) | RecordPtAccess (_e, _, name) ->
+           | DotAccess (_e, _, name) ->
                Ast.ii_of_id_name name |> List.iter (fun ii ->
                  let file = PI.file_of_info ii in
                  if File_type.file_type_of_file file =*=
@@ -291,7 +291,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           );
           k x
 
-      | RecordAccess (_e, _, name) | RecordPtAccess (_e, _, name) ->
+      | DotAccess (_e, _, name) ->
           (match name with
            | _, _, IdIdent (_s, ii) ->
                if not (Hashtbl.mem already_tagged ii)

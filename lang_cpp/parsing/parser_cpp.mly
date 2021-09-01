@@ -522,8 +522,8 @@ logical_or_expr:
 pm_expr:
  | cast_expr { $1 }
  (*c++ext: .* and ->*, note that not next to . and -> and take expr *)
- | pm_expr TDotStar   cast_expr   { RecordStarAccess   ($1, $2,$3) }
- | pm_expr TPtrOpStar cast_expr   { RecordPtStarAccess ($1, $2, $3) }
+ | pm_expr TDotStar   cast_expr   { DotStarAccess   ($1, (Dot, $2),$3) }
+ | pm_expr TPtrOpStar cast_expr   { DotStarAccess ($1, (Arrow, $2), $3) }
 
 cast_expr:
  | unary_expr                { $1 }
@@ -562,9 +562,9 @@ postfix_expr:
 
  (*c++ext: ident is now a id_expression *)
  | postfix_expr TDot   Ttemplate? "::"?  id_expression
-     { let name = ($4, fst $5, snd $5) in RecordAccess ($1,$2,name) }
+     { let name = ($4, fst $5, snd $5) in DotAccess ($1,(Dot, $2),name) }
  | postfix_expr TPtrOp Ttemplate? "::"? id_expression
-     { let name = ($4, fst $5, snd $5) in RecordPtAccess($1,$2,name)  }
+     { let name = ($4, fst $5, snd $5) in DotAccess($1,(Arrow, $2),name)  }
 
  | postfix_expr TInc          { Postfix ($1, (Inc, $2)) }
  | postfix_expr TDec          { Postfix ($1, (Dec, $2)) }
@@ -600,7 +600,16 @@ primary_expr:
  (* contains identifier rule *)
  | primary_cplusplus_id { $1 }
  (* c++0x: *)
- | lambda_introducer compound { ExprTodo (("lambda", $1), [(*TODO $2*)]) }
+ | lambda_introducer compound
+    { let (l, xs, r) = $1 in
+      let ft_ret = nQ, TAuto l in
+      let f_type = { ft_ret; ft_params = (l, [], r);
+                     ft_specs = []; ft_const = None; ft_throw = [] }
+      in
+      let fdef = { f_type; f_storage = NoSto; f_body = FBDef $2; f_specs = []}
+      in
+      Lambda ((l, xs, r), fdef)
+    }
  | LDots expr RDots { DeepEllipsis ($1, $2, $3) }
 
 literal:
@@ -697,30 +706,36 @@ new_initializer: "(" optl(listc(argument)) ")" { Args($1, $2, $3) }
 (* c++0x: lambdas! *)
 (*----------------------------*)
 lambda_introducer:
- | TOCro_Lambda                "]" { $1 }
- | TOCro_Lambda lambda_capture "]" { $1 }
+ | TOCro_Lambda                "]" { $1, [], $2 }
+ | TOCro_Lambda lambda_capture "]" { $1, $2, $3 }
 
 lambda_capture:
- | capture_list { }
- | capture_default { }
- | capture_default "," capture_list { }
+ | capture_list { $1 }
+ | capture_default { [$1] }
+ | capture_default "," capture_list { $1::$3 }
 
 capture_default:
- | "&" { }
- | "="  { }
+ | "&"  { CaptureRef $1 }
+ | "="  { CaptureEq $1 }
 
 capture_list:
- | capture { }
- | capture_list "," capture { }
- | capture_list "," capture "..." { }
- | capture "..." { }
+ | capture                        { [CaptureOther $1] }
+ | capture_list "," capture       { $1 @ [CaptureOther $3] }
+ | capture_list "," capture "..."
+    { $1 @ [CaptureOther (ParamPackExpansion ($3, $4))] }
+ | capture "..."
+    { [CaptureOther (ParamPackExpansion ($1, $2))] }
 
+(* todo? could also be more general, like in tree-sitter-cpp and just
+ * use 'expr', but then I get an additional s/r conflict
+ *)
 capture:
- | ident { }
- | "&" ident { }
- | Tthis { }
+ (* expr subset *)
+ | ident     { expr_of_id $1 }
+ | "&" ident { Unary ((GetRef, $1), expr_of_id $2) }
+ | Tthis     { IdSpecial (This, $1) }
  (* grammar_c++: not in latest *)
- | ident "=" assign_expr { }
+ | ident "=" assign_expr { Assign (expr_of_id $1, SimpleAssign $2, $3) }
 
 (*----------------------------*)
 (* gccext: *)
@@ -789,17 +804,36 @@ statement:
 
 compound: "{" statement_or_decl_cpp* "}" { ($1, $2, $3) }
 
+
+statement_or_decl:
+ | statement { (S $1) }
+
+ (* gccext: Nested functions *)
+ | function_definition { (D (Func $1)) }
+
+ (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
+  * fact statement but too hard to figure out, and if parse them as
+  * expression, then we force to have first decls and then exprs, then
+  * will have a parse error. So easier to let mix decl/statement.
+  * Moreover it helps to not make such a difference between decl and
+  * statement for further coccinelle phases to factorize code.
+  *
+  * update: now a c++ext and handle slightly differently. It's inlined
+  * in statement instead of going through a stat_or_decl.
+  *)
+ | block_declaration { (D $1) }
+
 expr_statement: expr? ";" { $1, $2 }
 
 (* note that case 1: case 2: i++;    would be correctly parsed, but with
  * a Case  (1, (Case (2, i++)))  :(  *)
 labeled:
  | ident            ":" statement   { Label ($1, $2, $3) }
- | Tcase const_expr ":" statement   { Case ($1, $2, $3, $4) }
+ | Tcase const_expr ":" statement   { Case ($1, $2, $3, [S $4]) }
+ | Tdefault         ":" statement   { Default ($1, $2, [S $3]) }
   (* gccext: allow range *)
  | Tcase const_expr "..." const_expr ":" statement
-     { CaseRange ($1, $2, $3, $4, $5, $6) }
- | Tdefault         ":" statement   { Default ($1, $2, $3) }
+     { CaseRange ($1, $2, $3, $4, $5, [S $6]) }
 
 (* classic else ambiguity resolved by a %prec, see conflicts.txt *)
 selection:
@@ -838,22 +872,7 @@ jump:
 (*----------------------------*)
 
 statement_or_decl_cpp:
- | statement { X (S $1) }
-
- (* gccext: Nested functions *)
- | function_definition { X (D (Func $1)) }
-
- (* cppext: c++ext: because of cpp, some stuff looks like declaration but are in
-  * fact statement but too hard to figure out, and if parse them as
-  * expression, then we force to have first decls and then exprs, then
-  * will have a parse error. So easier to let mix decl/statement.
-  * Moreover it helps to not make such a difference between decl and
-  * statement for further coccinelle phases to factorize code.
-  *
-  * update: now a c++ext and handle slightly differently. It's inlined
-  * in statement instead of going through a stat_or_decl.
-  *)
- | block_declaration { X (D $1) }
+ | statement_or_decl { X $1 }
 
  (* cppext: *)
  | cpp_directive                                  { CppDirective $1 }
@@ -1291,8 +1310,9 @@ base_specifier:
      { { i_name = $1; i_virtual = None; i_access = None } }
  | access_specifier class_name
      { { i_name = $2; i_virtual = None; i_access = Some $1 } }
+ (* pfffonly? tree-sitter-cpp allows final or override but not virtual *)
  | Tvirtual access_specifier class_name
-     { { i_name = $3; i_virtual = Some $1; i_access = Some $2 } }
+     { { i_name = $3; i_virtual = Some (Virtual $1); i_access = Some $2 } }
 
 (* TODO? specialisation | ident { $1 }, do heuristic so can remove rule2 *)
 class_name:
