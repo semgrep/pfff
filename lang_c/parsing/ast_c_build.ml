@@ -190,7 +190,7 @@ and declaration env x =
   | UsingDecl _ | NameSpaceAlias _ | StaticAssert _
   | NameSpace (_, _, _)
   | ExternList (_, _, _)|ExternDecl (_, _, _)|TemplateSpecialization (_, _, _)
-  | TemplateDecl _ ->
+  | TemplateDecl _ | TemplateInstanciation _ ->
       debug (Toplevel (X (D x))); raise CplusplusConstruct
   | DeclTodo _ ->
       debug (Toplevel (X (D x))); raise Todo
@@ -278,18 +278,19 @@ and onedecl env d =
              match iopt with
              | None -> None
              | Some (EqInit (_, ini)) -> Some (initialiser env ini)
+             | Some (Bitfield _) -> raise Todo
              | Some (ObjInit _) ->
                  debug (OneDecl d);
                  raise CplusplusConstruct
            in
            Some { A.
-                  v_name = name env n;
+                  v_name = dname env n;
                   v_type = full_type env ft;
                   v_storage = storage env sto;
                   v_init = init_opt;
                 }
        | Some (n, None), (StoTypedef _) ->
-           let def = { A.t_name = name env n; t_type = full_type env ft } in
+           let def = { A.t_name = dname env n; t_type = full_type env ft } in
            env.typedefs_toadd <- def :: env.typedefs_toadd;
            None
        | None, NoSto ->
@@ -308,6 +309,10 @@ and onedecl env d =
            )
        | _ -> debug (OneDecl d); raise Todo
       )
+
+and dname env = function
+  | DN n -> name env n
+  | DNStructuredBinding _ -> raise CplusplusConstruct
 
 and initialiser env x =
   match x with
@@ -641,6 +646,20 @@ and full_type env x =
   match t with
   | TypeTodo _ -> raise CplusplusConstruct
   | TPointer (tok, t, _) -> A.TPointer (tok, full_type env t)
+  | TPrimitive (x, t) ->
+      let s  =
+        match x with
+        | TVoid -> "void"
+        | TBool -> "bool"
+        | TChar -> "char"
+        | TInt -> "int"
+        | TFloat -> "float"
+        | TDouble -> "Double"
+      in
+      A.TBase (s, t)
+
+  | TSized (_xs, _base) ->
+      failwith "TODO"
   | TBase t ->
       let s, ii =
         (match t with
@@ -706,15 +725,15 @@ and full_type env x =
            A.TStructName (struct_kind env kind, name)
       )
 
-  | EnumName (_tok, name) -> A.TEnumName name
-  | EnumDef (tok, name_opt, xs) ->
+  | EnumName (_tok, n) -> A.TEnumName (name env n)
+  | EnumDef ({enum_kind = tok; enum_name = name_opt; enum_body = xs}) ->
       let name =
         match name_opt with
         | None ->
             incr cnt;
             let s = gensym_enum !cnt in
             (s, tok)
-        | Some n -> n
+        | Some n -> name env n
       in
       let xs' =
         xs |> unparen |> List.map (fun eelem ->
@@ -741,7 +760,7 @@ and full_type env x =
 (* ---------------------------------------------------------------------- *)
 and class_member env x =
   match x with
-  | MemberField (fldkind, _) ->
+  | FieldList (fldkind, _) ->
       let xs = fldkind in
       xs |> List.map (fieldkind env)
   | ( QualifiedIdInClass (_, _)| Access (_, _) | Friend _ ) ->
@@ -774,7 +793,7 @@ and fieldkind env x =
            (match ni, sto with
             | Some (n, None), NoSto ->
                 { A.
-                  fld_name = Some (name env n);
+                  fld_name = Some (dname env n);
                   fld_type = full_type env ft;
                 }
             | None, NoSto ->
@@ -786,8 +805,9 @@ and fieldkind env x =
             | _ -> debug (OneDecl decl); raise Todo
            )
       )
+  (* TODO: move with code for Bitfield in onedecl *)
   | BitField (name_opt, _tok, ft, e) ->
-      let _ = expr env e in
+      let _TODO = expr env e in
       { A.
         fld_name = name_opt;
         fld_type = full_type env ft;

@@ -196,7 +196,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       match x with
       | DeclList (xs, _) ->
           xs |> List.iter (fun onedecl ->
-            onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
+            onedecl.v_namei |> Common.do_option (fun (dname, _ini_opt) ->
               let storage = onedecl.v_storage in
               let categ =
                 match storage with
@@ -208,7 +208,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
                 | _ when !is_at_toplevel -> Entity (Global, (Def2 fake_no_def2))
                 | _ -> Local Def
               in
-              Ast.ii_of_id_name name |>List.iter (fun ii -> tag ii categ)
+              Ast.iis_of_dname dname |>List.iter (fun ii -> tag ii categ)
             );
           );
           k x
@@ -341,8 +341,10 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           );
           k x
 
-      | Ast_cpp.EnumName (_tok, (_s, ii)) ->
-          tag ii (Entity (Type, Use2 fake_no_use2))
+      | Ast_cpp.EnumName (_tok, name) ->
+          Ast.ii_of_id_name name |> List.iter (fun ii ->
+            tag ii (Entity (Type, Use2 fake_no_use2))
+          )
 
       | ClassName (_su, _n_was_id_before) ->
           (*tag ii (StructName Use); TODO *)
@@ -353,7 +355,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
             tag ii (Entity (Type, Use2 fake_no_use2))); *)
           k x
 
-      | EnumDef (_tok, _sopt, xs) ->
+      | EnumDef ({enum_body = xs; _}) ->
           xs |> unparen |> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
             tag ii (Entity (Constructor,(Def2 fake_no_def2)))
@@ -366,14 +368,14 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     V.kfieldkind = (fun (k, _) x ->
       match x with
       | FieldDecl onedecl ->
-          onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
+          onedecl.v_namei |> Common.do_option (fun (dname, _ini_opt) ->
             let kind =
               (* poor's man object using function pointer; classic C idiom *)
               if Type.is_method_type onedecl.v_type
               then Entity (Method, (Def2 fake_no_def2))
               else Entity (Field, (Def2 NoUse))
             in
-            Ast.ii_of_id_name name |> List.iter (fun ii -> tag ii kind)
+            Ast.iis_of_dname dname |> List.iter (fun ii -> tag ii kind)
           );
           k x
 

@@ -312,7 +312,7 @@ let fixFunc ((name, ty, sto), cp) =
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
   | [FieldDecl({
-    v_namei = Some (name, ini_opt);
+    v_namei = Some (DN name, ini_opt);
     v_type = (_q, (TFunction ft));
     v_storage = sto;
     v_specs = specs;
@@ -331,7 +331,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
         { f_type = ft; f_storage = sto; f_body = fbody; f_specs = specs } in
       MemberDecl (Func (ent, def))
 
-  | _ -> MemberField (xs, semicolon)
+  | _ -> FieldList (xs, semicolon)
 
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)

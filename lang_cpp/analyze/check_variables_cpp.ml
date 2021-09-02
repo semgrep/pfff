@@ -177,7 +177,7 @@ let visit_prog prog =
                   match x with
                   | DeclList (xs_comma, _) ->
                       xs_comma |> List.iter (fun onedecl ->
-                        onedecl.v_namei |> Common.do_option (fun (name, _ini_opt) ->
+                        onedecl.v_namei |> Common.do_option (fun (dname, _ini_opt) ->
                           let scope =
                             if is_top_env !_scoped_env ||
                                (match onedecl.v_storage with
@@ -187,7 +187,11 @@ let visit_prog prog =
                             then S.Global
                             else S.Local
                           in
-                          add_binding name (scope, ref 0);
+                          (match dname with
+                           | DN name ->
+                               add_binding name (scope, ref 0);
+                           | DNStructuredBinding _ -> () (* TODO *)
+                          )
                         );
                       );
                       k x

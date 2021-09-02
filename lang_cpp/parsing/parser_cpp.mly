@@ -956,7 +956,7 @@ decltype_specifier:
 
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier:
- | Tenum ident                  { Right3 (EnumName ($1, $2)), noii }
+ | Tenum ident                  { Right3 (EnumName ($1, name_of_id $2)), noii }
  | class_key ident              { Right3 (ClassName ($1, name_of_id $2)), noii }
  (* c++ext:  *)
  | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2))), noii }
@@ -1382,14 +1382,14 @@ member_declarator:
  | declarator
      { let (name, partialt) = $1 in (fun t_ret sto ->
        FieldDecl {
-         v_namei = Some (name, None);
+         v_namei = Some (DN name, None);
          v_type = partialt t_ret; v_storage = sto; v_specs = [] })
      }
  (* can also be an abstract when it's =0 on a function type *)
  | declarator "=" const_expr
      { let (name, partialt) = $1 in (fun t_ret sto ->
        FieldDecl {
-         v_namei = Some (name, Some (EqInit ($2, InitExpr $3)));
+         v_namei = Some (DN name, Some (EqInit ($2, InitExpr $3)));
          v_type = partialt t_ret; v_storage = sto; v_specs = [];
        })
      }
@@ -1409,10 +1409,12 @@ member_declarator:
 (* gccext: c++0x: most ","? are trailing commas extensions (as in Perl) *)
 enum_specifier:
  | enum_head "{" listc(enumerator) ","? "}"
-     { EnumDef ($1, None(* TODO *), ($2, $3, $5)) (*$4*) }
+     { EnumDef ({enum_kind = $1; enum_name = None(* TODO *);
+                enum_body = ($2, $3, $5)}) (*$4*) }
  (* c++0x: *)
  | enum_head "{" "}"
-     { EnumDef ($1, None(* TODO *), ($2, [], $3)) }
+     { EnumDef ({enum_kind = $1; enum_name = None(* TODO *);
+                 enum_body = ($2, [], $3) }) }
 
 enum_head:
  | enum_key ident? (*ioption(enum_base)*) { $1 }
@@ -1448,7 +1450,7 @@ simple_declaration:
        (
          ($2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
-           { v_namei = Some (name, iniopt);
+           { v_namei = Some (DN name, iniopt);
              v_type = f t_ret; v_storage = sto; v_specs = [];
            }
          )), $3)

@@ -126,7 +126,7 @@ and ident_or_op =
   | IdOperator of (tok * (operator * tok list))
   | IdDestructor of tok(*~*) * ident
   (* ?? paren? *)
-  | IdConverter of tok * type_
+  | IdConverter of tok (* 'operator' *) * type_
 
 
 and template_arguments = template_argument list angle
@@ -138,12 +138,7 @@ and qualifier =
   | QTemplateId of ident * template_arguments
 
 (* special cases *)
-and a_class_name     = name (* only IdIdent or IdTemplateId *)
-and a_namespace_name = name (* only IdIdent *)
-
-and _a_typedef_name   = name (* only IdIdent *)
-and _a_enum_name      = name (* only IdIdent *)
-
+and a_class_name = name (* only IdIdent or IdTemplateId *)
 and a_ident_name = name (* only IdIdent *)
 
 (* less: do like in parsing_c/
@@ -176,7 +171,15 @@ and a_ident_name = name (* only IdIdent *)
 *)
 and type_ = type_qualifiers * typeC
 and typeC =
+  (* TODO: delete TBase *)
   | TBase        of baseType
+
+  | TPrimitive   of primitive_type wrap
+  (* The list is non empty and can contain duplicates,
+   * because 'long long' is not the same than just 'long'.
+   * The type_ below is either Tprimitive or TypeName of IdIdent.
+  *)
+  | TSized of sized_type wrap list * type_ option (*  *)
 
   | TPointer         of tok (*'*'*) * type_ * pointer_modifier list
   (* c++ext: *)
@@ -187,13 +190,13 @@ and typeC =
   | TArray           of a_const_expr (* less: or star *) option bracket * type_
   | TFunction        of functionType
 
-  | EnumName  of tok (* 'enum' *) * ident (* a_enum_name *)
+  | EnumName  of tok (* 'enum' *) * a_ident_name
   (* less: ms declspec option after struct/union *)
   | ClassName of class_key wrap * a_class_name
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and it is a name so it can have some IdTemplateId in it.
   *)
-  | TypeName of name (* a_typedef_name*)
+  | TypeName of a_ident_name
   (* only to disambiguate I think *)
   | TypenameKwd of tok (* 'typename' *) * type_ (* usually a TypeName *)
 
@@ -228,6 +231,7 @@ and  baseType =
   | IntType   of intType   * tok (* TOFIX there should be * tok list *)
   | FloatType of floatType * tok (* TOFIX there should be * tok list *)
 
+(* TODO: delete *)
 (* stdC: type section. 'char' and 'signed char' are different *)
 and intType   =
   | CChar (* obsolete? | CWchar  *)
@@ -242,7 +246,29 @@ and base =
   | CLongLong
 and sign = Signed | UnSigned
 
+(* TODO: delete *)
 and floatType = CFloat | CDouble | CLongDouble
+
+(* old: had a more precise 'intType' and 'floatType' with 'sign * base'
+ * but not worth it, and tree-sitter-cpp allows any sized types
+ * (maybe to handle cpp primitive type aliases? or some c++0x ext?).
+ *
+ * Note that certain types like size_t, ssize_t, int8_t are considered
+ * primitive types by tree-sitter-c, but are converted in TypeName here.
+*)
+and primitive_type =
+  | TVoid
+  | TBool
+  | TChar
+  | TInt
+  | TFloat
+  | TDouble
+
+and sized_type =
+  | TSigned
+  | TUnsigned
+  | TShort
+  | TLong
 
 and type_qualifiers = type_qualifier wrap list
 
@@ -482,8 +508,8 @@ and condition_clause =
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
-  (* c++0x? *)
-  | ForRange of (entity * var_decl) * tok (*':'*) * initialiser
+  (* c++0x? less: entity be DStructrured_binding?  *)
+  | ForRange of var * tok (*':'*) * initialiser
 
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 
@@ -580,7 +606,9 @@ and decl =
 
   (* c++ext: *)
   | TemplateDecl of tok * template_parameters * decl
+  (* pfffonly? delete? *)
   | TemplateSpecialization of tok * unit angle * decl
+  | TemplateInstanciation of tok (* 'template' *) * var * sc
 
   (* the list can be empty *)
   | ExternDecl     of tok * string wrap (* usually "C" *) * decl
@@ -611,6 +639,8 @@ and colon_option =
 (* ------------------------------------------------------------------------- *)
 (* Simple var *)
 (* ------------------------------------------------------------------------- *)
+and var = entity * var_decl
+
 and var_decl = {
   v__type: type_;
 }
@@ -629,11 +659,16 @@ and onedecl = {
   (* option cos can have empty declaration or struct tag declaration.
    * kenccext: name can also be empty because of anonymous fields.
   *)
-  v_namei: (name * init option) option;
+  v_namei: (declarator_name * init option) option;
   v_type: type_;
   v_storage: storage_opt; (* TODO: use for c++0x 'auto' inferred locals *)
   v_specs: specifier list; (* gccext: *)
 }
+and declarator_name =
+  | DN of name
+  (* c++17: structured binding, [n1, n2, n3] = expr *)
+  | DNStructuredBinding of ident list bracket
+
 (* TODO: migrate with annotation? Sto of storage? and move
  * in entity?
 *)
@@ -643,6 +678,8 @@ and init =
   | EqInit of tok (*=*) * initialiser
   (* c++ext: constructed object *)
   | ObjInit of obj_init
+  (* only for fields *)
+  | Bitfield of tok (* : *) * a_const_expr
 
 and obj_init =
   | Args of argument list paren
@@ -746,9 +783,11 @@ and lambda_capture =
 (* ------------------------------------------------------------------------- *)
 (* enum definition *)
 (* ------------------------------------------------------------------------- *)
-(* less: use a record *)
 and enum_definition =
-  tok (*enum*) * ident option * enum_elem list brace
+  { enum_kind: tok (* 'enum' *);
+    enum_name: name option;
+    enum_body: enum_elem list brace;
+  }
 
 and enum_elem = {
   e_name: ident;
@@ -786,8 +825,8 @@ and class_member =
   (* could put outside and take class_member list *)
   | Access of access_spec wrap * tok (*:*)
 
-  (* before unparser, I didn't have a FieldDeclList but just a Field. *)
-  | MemberField of fieldkind list * sc
+  (* before unparser, I just had a Field. Similar to DeclList *)
+  | FieldList of fieldkind list * sc
 
   | Friend of tok (* 'friend' *) * decl (* Func or DeclList *)
   | QualifiedIdInClass of name (* ?? *) * sc
@@ -804,6 +843,7 @@ and class_member =
  * but in c++ fields can also have storage (e.g. static) so now reuse
  * onedecl.
 *)
+(* TODO: just alias to onedecl *)
 and fieldkind =
   | FieldDecl of onedecl
   | BitField of ident option * tok(*:*) * type_ * a_const_expr
@@ -894,7 +934,7 @@ and pointer_modifier =
 and using = tok (*'using'*) * using_kind * sc
 and using_kind =
   | UsingName of name
-  | UsingNamespace of tok (*'namespace'*) * a_namespace_name
+  | UsingNamespace of tok (*'namespace'*) * a_ident_name
   (* tsonly: type_ is usually just a name *)
   | UsingAlias of ident * tok (*'='*) * type_
 
@@ -1036,7 +1076,7 @@ type abstract_declarator = type_ -> type_
  * Note that with 'int* f(int)' we must return Func(Pointer int,int) and not
  * Pointer (Func(int,int)).
 *)
-type declarator = { dn: name; dt: abstract_declarator }
+type declarator = { dn: declarator_name; dt: abstract_declarator }
 
 (*****************************************************************************)
 (* Some constructors *)
@@ -1088,6 +1128,7 @@ let (string_of_name_tmp: name -> string) = fun name ->
   | IdIdent (s,_) -> s
   | _ -> failwith "TODO:string_of_name_tmp"
 
+(* TODO: delete, used in highlight_cpp *)
 let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
@@ -1096,6 +1137,10 @@ let (ii_of_id_name: name -> tok list) = fun name ->
   | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
   | IdDestructor (tok, (_s, ii)) -> [tok;ii]
   | IdTemplateId ((_s, ii), _args) -> [ii]
+let iis_of_dname = function
+  | DN n -> ii_of_id_name n
+  | DNStructuredBinding (l, xs, r) ->
+      [l]@(xs |> List.map snd)@[r]
 
 let (ii_of_name: name -> tok) = fun name ->
   let (_opt, _qu, id) = name in
@@ -1105,3 +1150,7 @@ let (ii_of_name: name -> tok) = fun name ->
   | IdConverter (tok, _ft) -> tok
   | IdDestructor (tok, (_s, _ii)) -> tok
   | IdTemplateId ((_s, ii), _args) -> ii
+
+let ii_of_dname = function
+  | DN n -> ii_of_name n
+  | DNStructuredBinding (l, _xs, _r) -> l
