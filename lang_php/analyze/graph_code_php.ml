@@ -733,6 +733,8 @@ and stmt_bis env x =
       stmt env xs;
   | Return (_, eopt)  | Break (_, eopt) | Continue (_, eopt) ->
       Common2.opt (expr env) eopt
+  | Label (_,_,st) -> stmt env st
+  | Goto _ -> ()
   | Throw (_, e) -> expr env e
   | Try (_, xs, cs, fs) ->
       stmt env xs;

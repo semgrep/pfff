@@ -112,6 +112,8 @@ let keyword_table = Common.hash_of_list [
   "switch",   (fun ii -> T_SWITCH ii); "endswitch",(fun ii -> T_ENDSWITCH ii);
   "case",       (fun ii -> T_CASE ii); "default",    (fun ii -> T_DEFAULT ii);
 
+  "goto",     (fun ii -> T_GOTO ii);
+
   "return",     (fun ii -> T_RETURN ii);
 
   "try",        (fun ii -> T_TRY ii);     "catch",   (fun ii -> T_CATCH ii);

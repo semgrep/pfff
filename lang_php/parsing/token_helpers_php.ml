@@ -95,6 +95,7 @@ let visitor_info_of_tok f = function
   | T_BREAK ii -> T_BREAK(f ii)
   | T_CONTINUE ii -> T_CONTINUE(f ii)
   | T_RETURN ii -> T_RETURN(f ii)
+  | T_GOTO ii -> T_GOTO(f ii)
   | T_TRY ii -> T_TRY(f ii)
   | T_CATCH ii -> T_CATCH(f ii)
   | T_FINALLY ii -> T_FINALLY(f ii)
