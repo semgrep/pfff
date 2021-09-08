@@ -171,6 +171,7 @@ let mk_Toplevel x =
  T_SELF T_PARENT
  (* facebook extension *)
  T_TYPE
+ T_GOTO
 
 (*-----------------------------------------*)
 (* Punctuation tokens *)
@@ -346,7 +347,7 @@ sgrep_spatch_pattern:
 (*************************************************************************)
 statement:
  | expr       ";"         { ExprStmt($1,$2) }
- | (* empty*) ";"         { EmptyStmt($1) }
+ | (* empty *) ";"         { EmptyStmt($1) }
 
  | "{" inner_statement* "}"   { Block($1,$2,$3) }
 
@@ -373,6 +374,9 @@ statement:
 
  | T_BREAK    expr? ";" { Break($1,$2, $3) }
  | T_CONTINUE expr? ";" { Continue($1, $2, $3) }
+
+ | ident ":" statement { Label (Name $1,$2,$3) }
+ | T_GOTO ident ";" { Goto ($1,Name $2,$3) }
 
  | T_RETURN expr_or_dots? ";"  { Return ($1, $2, $3)}
 

@@ -432,6 +432,8 @@ and stmt =
   *)
   | Break    of tok * expr option * tok
   | Continue of tok * expr option * tok
+  | Label of ident * tok (* : *) * stmt
+  | Goto of tok * ident * tok (* ; *)
   | Return of tok * expr option * tok
   | Throw of tok * expr * tok
   | Try of tok * stmt_and_def list brace * catch list * finally list
@@ -450,6 +452,7 @@ and stmt =
   | FuncDefNested of func_def
   (* traits are actually not allowed here *)
   | ClassDefNested of class_def
+
 
 and switch_case_list =
   | CaseList      of

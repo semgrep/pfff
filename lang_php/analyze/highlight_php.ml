@@ -768,7 +768,7 @@ let visit_program ~tag _prefs  _hentities (ast, toks) =
 
     | T.T_THROW ii | T.T_CATCH ii | T.T_FINALLY ii
     | T.T_TRY ii -> tag ii KeywordExn
-    | T.T_RETURN ii | T.T_CONTINUE ii | T.T_BREAK ii -> tag ii Keyword
+    | T.T_RETURN ii | T.T_CONTINUE ii | T.T_BREAK ii | T.T_GOTO ii -> tag ii Keyword
     | T.T_DEFAULT ii | T.T_CASE ii -> tag ii Keyword
     | T.T_ENDSWITCH ii | T.T_SWITCH ii -> tag ii KeywordConditional
 

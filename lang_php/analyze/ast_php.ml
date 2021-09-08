@@ -287,6 +287,9 @@ and stmt =
   | Return of tok * expr option
   | Break of tok * expr option | Continue of tok * expr option
 
+  | Label of ident * tok (* : *) * stmt
+  | Goto of tok * ident
+
   | Throw of tok * expr
   | Try of tok * stmt * catch list * finally list
 
