@@ -558,7 +558,13 @@ let compare_actual_to_expected actual_errors expected_error_lines =
               l   =|= loc.PI.line
             ) |> string_of_error));
   );
-  OUnit.assert_bool
-    (spf "it should find all reported errors and no more (%d errors)"
-       (List.length (only_in_actual @ only_in_expected)))
-    (null only_in_expected && null only_in_actual)
+  let num_errors =
+    List.length only_in_actual + List.length only_in_expected
+  in
+  let msg =
+    spf "it should find all reported errors and no more (%d errors)"
+      num_errors
+  in
+  match num_errors with
+  | 0 -> Stdlib.Ok ()
+  | n -> Error (n, msg)

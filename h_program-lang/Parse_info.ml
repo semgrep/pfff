@@ -944,9 +944,9 @@ let print_regression_information ~ext xs newscore =
   in
   let score_path = Config_pfff.regression_data_dir in
   dirname_opt |> Common.do_option (fun dirname ->
-    pr2 "--------------------------------";
-    pr2 "regression testing  information";
-    pr2 "--------------------------------";
+    pr2 "------------------------------";
+    pr2 "regression testing information";
+    pr2 "------------------------------";
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
     let file = (Filename.concat score_path
                   ("score_parsing__" ^str ^ ext ^ ".marshalled")) in

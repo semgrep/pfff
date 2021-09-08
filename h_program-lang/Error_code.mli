@@ -197,9 +197,8 @@ val expected_error_lines_of_files:
   (Common.filename * int (* line with ERROR *)) list
 (*e: signature [[Error_code.expected_error_lines_of_files]] *)
 
-(*s: signature [[Error_code.compare_actual_to_expected]] *)
-(* use Ounit *)
+(*
+   Return the number of errors and an error message, if there's any error.
+*)
 val compare_actual_to_expected:
-  error list -> (Common.filename * int) list -> unit
-(*e: signature [[Error_code.compare_actual_to_expected]] *)
-(*e: pfff/h_program-lang/Error_code.mli *)
+  error list -> (Common.filename * int) list -> (unit, (int * string)) result
