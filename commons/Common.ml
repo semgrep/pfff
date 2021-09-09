@@ -1203,13 +1203,31 @@ let cat file =
     close_in chan;
     List.rev !acc
 
-let read_file2 file =
-  let ic = open_in_bin file  in
-  let size = in_channel_length ic in
-  let buf = Bytes.create size in
-  really_input ic buf 0 size;
-  close_in ic;
-  buf |> Bytes.to_string
+(*
+   This implementation works even with Linux files like /dev/fd/63
+   created by bash's process substitution e.g.
+
+     my-ocaml-program <(echo contents)
+
+   See https://www.gnu.org/software/bash/manual/html_node/Process-Substitution.html
+*)
+let read_file2 path =
+  let buf_len = 4096 in
+  let extbuf = Buffer.create 4096 in
+  let buf = Bytes.create buf_len in
+  let rec loop fd =
+    match Unix.read fd buf 0 buf_len with
+    | 0 -> Buffer.contents extbuf
+    | num_bytes ->
+        assert (num_bytes > 0);
+        assert (num_bytes <= buf_len);
+        Buffer.add_subbytes extbuf buf 0 num_bytes;
+        loop fd
+  in
+  let fd = Unix.openfile path [Unix.O_RDONLY] 0 in
+  Fun.protect
+    ~finally:(fun () -> Unix.close fd)
+    (fun () -> loop fd)
 
 let read_file a =
   profile_code "Common.read_file" (fun () -> read_file2 a)
