@@ -123,13 +123,14 @@ val cat :      filename -> string list
 val write_file : file:filename -> string -> unit
 (*e: signature [[Common.write_file]] *)
 (*s: signature [[Common.read_file]] *)
-(*
-   Read the contents of file.
+(* Read the contents of file.
 
    This implementation works even with Linux files like /dev/fd/63
-   created by bash when using e.g.
+   created by bash when using "process substitution"* e.g.
 
      my-ocaml-program <(echo contents)
+
+   * https://www.gnu.org/software/bash/manual/html_node/Process-Substitution.html
 *)
 val read_file : filename -> string
 (*e: signature [[Common.read_file]] *)

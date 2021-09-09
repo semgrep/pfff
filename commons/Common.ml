@@ -1210,6 +1210,16 @@ let cat file =
      my-ocaml-program <(echo contents)
 
    See https://www.gnu.org/software/bash/manual/html_node/Process-Substitution.html
+
+   In bash, '<(echo contents)' is replaced by something like
+   '/dev/fd/63' which is a special file of apparent size 0 (as
+   reported by `Unix.stat`) but contains data (here,
+   "contents\n"). So we can't use 'Unix.stat' or 'in_channel_length'
+   to obtain the length of the file contents. Instead, we read the file
+   chunk by chunk until there's nothing left to read.
+
+   Why such a function is not provided by the ocaml standard library is
+   unclear.
 *)
 let read_file2 path =
   let buf_len = 4096 in
