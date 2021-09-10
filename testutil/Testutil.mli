@@ -71,6 +71,22 @@ val pack_suites : string -> test list list -> test list
 val sort : test list -> test list
 
 (*
+   Keep only tests whose path matches the path.
+
+   Each path exists in two variants: "a>b>c" (internal)
+   and "a > b > c" (as known to alcotest). At least one of them must match
+   for the test to be selected.
+
+   The two selection methods right now are:
+   - using a substring
+   - using a regexp in PCRE (Perl) syntax
+
+   Note that the regular command line exposed by Alcotest.run already
+   enables some test filtering.
+*)
+val filter : ?substring:string -> ?pcre:string -> test list -> test list
+
+(*
    Alcotest.test is a list of Alcotest.test_case, so we need to assign
    a test suite name to each test. This is done as follows:
 

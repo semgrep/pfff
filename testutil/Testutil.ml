@@ -89,3 +89,37 @@ let to_alcotest ?(speed_level = `Quick) tests : unit Alcotest.test list =
     let pretty_category = use_pretty_path_separator category in
     (pretty_category, (name, speed_level, func)))
   |> group_by_key
+
+let make_pcre_filter pat =
+  let re =
+    try Re.Pcre.re pat |> Re.compile
+    with e ->
+      failwith (
+        Printf.sprintf "Cannot parse PCRE pattern '%s': %s"
+          pat
+          (Printexc.to_string e)
+      )
+  in
+  fun s -> Re.matches re s <> []
+
+let filter ?substring ?pcre tests =
+  let has_substring =
+    match substring with
+    | None -> (fun _ -> true)
+    | Some sub ->
+        let re = Re.str sub |> Re.compile in
+        fun s -> Re.matches re s <> []
+  in
+  let matches_pcre =
+    match pcre with
+    | None -> (fun _ -> true)
+    | Some pat -> make_pcre_filter pat
+  in
+  tests
+  |> List.filter (fun (path, _test) ->
+    let pretty_path = use_pretty_path_separator path in
+    (has_substring path
+     || has_substring pretty_path)
+    && (matches_pcre path
+        || matches_pcre pretty_path)
+  )

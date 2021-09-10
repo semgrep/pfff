@@ -30,7 +30,6 @@ Update 2: checkout [sorbet](https://sorbet.run/), a project by Stripe.
 - install to local dir instead of global
 - setup distribution of gems from continuous integration, like Flow, does
 - update dypgen, use [opam package](http://opam.ocaml.org/packages/dypgen/) instead of embedded version
-- update to use OUnit2
 - create an opam package file
 - can we reuse [ruby/spec](ruby/spec) to generate type signatures?
 - can we get type signatures from [ActiveRecord schema file](http://api.rubyonrails.org/classes/ActiveRecord/Schema.html), or [virtus](https://github.com/solnic/virtus), or [dry-types](http://dry-rb.org/gems/dry-types/)?

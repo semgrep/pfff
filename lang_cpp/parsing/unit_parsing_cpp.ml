@@ -1,5 +1,4 @@
 open Common
-open OUnit
 
 module Flag = Flag_parsing
 
@@ -16,8 +15,8 @@ let parse file =
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "parsing_cpp" >::: [
+let tests =
+  Testutil.pack_tests "parsing_cpp" [
 
     (*-----------------------------------------------------------------------*)
     (* Lexing *)
@@ -31,7 +30,7 @@ let unittest =
     (*-----------------------------------------------------------------------*)
     (* Parsing *)
     (*-----------------------------------------------------------------------*)
-    "regression files" >:: (fun () ->
+    "regression files", (fun () ->
       let dir = Config_pfff.tests_path "cpp/parsing" in
       let files =
         Common2.glob (spf "%s/*.cpp" dir) @ Common2.glob (spf "%s/*.h" dir) in
@@ -40,26 +39,26 @@ let unittest =
           let _ast = parse file in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
+          Alcotest.failf "it should correctly parse %s" file
       )
     );
 
-    "rejecting bad code" >:: (fun () ->
+    "rejecting bad code", (fun () ->
       let dir = Config_pfff.tests_path "cpp/parsing_errors" in
       let files = Common2.glob (spf "%s/*.cpp" dir) in
       files |> List.iter (fun file ->
         try
           let _ast = parse file in
-          assert_failure (spf "it should have thrown a Parse_error %s" file)
+          Alcotest.failf "it should have thrown a Parse_error %s" file
         with
         | Parse_info.Parsing_error _ -> ()
-        | exn -> assert_failure (spf "throwing wrong exn %s on %s"
-                                   (Common.exn_to_s exn) file)
+        | exn -> Alcotest.failf "throwing wrong exn %s on %s"
+                   (Common.exn_to_s exn) file
       )
     );
 
     (* parsing C files (and not C++ files) possibly containing C++ keywords *)
-    "C regression files" >:: (fun () ->
+    "C regression files", (fun () ->
       let dir = Config_pfff.tests_path "c/parsing" in
       let files =
         Common2.glob (spf "%s/*.c" dir)
@@ -69,7 +68,7 @@ let unittest =
           let _ast = parse file in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
+          Alcotest.failf "it should correctly parse %s" file
       )
     );
 

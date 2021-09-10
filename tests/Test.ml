@@ -51,7 +51,7 @@ let tests = List.flatten [
   Unit_graph_code.tests ~graph_of_string;
 
   (* PHP related tests *)
-  Unit_parsing_php.unittest;
+  Unit_parsing_php.tests;
   (* TODO dune .opam file
         Unit_pretty_print_php.unittest;
   *)
@@ -73,29 +73,29 @@ let tests = List.flatten [
 
   (* non PHP related tests *)
 
-  Unit_parsing_ml.unittest;
-  Unit_parsing_scala.unittest;
+  Unit_parsing_ml.tests;
+  Unit_parsing_scala.tests;
   (* TODO path issue when run outside of pfff (e.g., in semgrep-core)
         Unit_analyze_ml.unittest;
   *)
-  Unit_parsing_java.unittest;
-  Unit_analyze_java.unittest;
+  Unit_parsing_java.tests;
+  Unit_analyze_java.tests;
   (* TODO dune
      #if FEATURE_BYTECODE
         Unit_analyze_bytecode.unittest;
      #endif
   *)
-  Unit_parsing_js.unittest;
-  Unit_analyze_js.unittest;
-  Unit_parsing_json.unittest;
-  Unit_parsing_python.unittest;
-  Unit_parsing_ruby.unittest;
+  Unit_parsing_js.tests;
+  Unit_analyze_js.tests;
+  Unit_parsing_json.tests;
+  Unit_parsing_python.tests;
+  Unit_parsing_ruby.tests;
   (* TODO dune .opan files
         Unit_parsing_html.unittest;
   *)
-  Unit_parsing_cpp.unittest;
-  Unit_parsing_go.unittest;
-  Pfff_lang_regexp.Unit_parsing.unittest;
+  Unit_parsing_cpp.tests;
+  Unit_parsing_go.tests;
+  Pfff_lang_regexp.Unit_parsing.tests;
 
   (* generic AST tests *)
   (* Unit_naming_generic.unittest;
@@ -104,33 +104,17 @@ let tests = List.flatten [
   *)
 ]
 
-let make_pcre_filter pat =
-  let re =
-    try Re.Pcre.re pat
-    with e ->
-      failwith (
-        spf "Invalid PCRE pattern '%s': %s"
-          pat
-          (Printexc.to_string e)
-      )
-  in
-  Re.compile re
-
 (*
    Run the alcotest tests while ignoring command-line options which would
-   otherwise be interpreted by alcotests.
+   otherwise be interpreted by alcotest.
 
    The default alcotest CLI offers a way to filter tests but we're not
    using it, so we specify our own filter with the 'filter' option instead.
 *)
 let run_alcotest_tests ?pcre_filter () =
+  let tests = Testutil.filter ?pcre:pcre_filter tests in
   let alcotest_tests = Testutil.to_alcotest tests in
-  let filter =
-    match pcre_filter with
-    | None -> None
-    | Some pat -> Some (Some (make_pcre_filter pat), None)
-  in
-  Alcotest.run ~argv:[||] ?filter "semgrep-core" alcotest_tests
+  Alcotest.run ~argv:[| "<dummy>" |] "pfff" alcotest_tests
 
 (*****************************************************************************)
 (* Extra Actions *)

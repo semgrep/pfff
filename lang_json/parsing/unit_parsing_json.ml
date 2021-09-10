@@ -1,14 +1,13 @@
 open Common
-open OUnit
 
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "parsing_json" >::: [
+let tests =
+  Testutil.pack_tests "parsing_json" [
 
-    "regression files" >:: (fun () ->
+    "regression files", (fun () ->
       let dir = Config_pfff.tests_path "json/parsing" in
       let files =
         Common2.glob (spf "%s/*.json" dir)
@@ -18,7 +17,7 @@ let unittest =
           let _ = Parse_json.parse_program file in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
+          Alcotest.failf "it should correctly parse %s" file
       )
     );
   ]

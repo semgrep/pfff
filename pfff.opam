@@ -41,7 +41,7 @@ depends: [
   "ppxlib" {= "0.20.0" }
   "uutf"
   "uucp"
-  "ounit2"
+  "alcotest"
   "ANSITerminal"
   "easy_logging" { = "0.8.1" }
   "easy_logging_yojson" { = "0.8.1" }

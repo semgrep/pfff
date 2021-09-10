@@ -1,24 +1,21 @@
-open Common
-
 open Ast_html
-open OUnit
 
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "parsing_html" >::: [
+let tests =
+  Testutil.pack_tests "parsing_html" [
 
-    "lexing regular code" >:: (fun () ->
+    "lexing regular code", (fun () ->
       ()
     );
 
-    "parsing regular code" >:: (fun () ->
+    "parsing regular code", (fun () ->
       ()
     );
 
-    "html tree correctness" >:: (fun () ->
+    "html tree correctness", (fun () ->
 
       let s = "<div>a</div><div>b</div>" in
       let ast = Parse_html.html_tree_of_string s in
@@ -37,9 +34,9 @@ let unittest =
         ]
       ) -> ()
       | _ ->
-          assert_failure (spf "wrong ast for %s, got %s"
-                            s
-                            ((*Export_html.ml_pattern_string_of_html_tree*)
-                              (Common.dump ast)))
+          Alcotest.failf "wrong ast for %s, got %s"
+            s
+            ((*Export_html.ml_pattern_string_of_html_tree*)
+              (Common.dump ast))
     );
   ]

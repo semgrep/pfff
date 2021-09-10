@@ -1,6 +1,5 @@
 (*s: unit_parsing_php.ml *)
 open Common
-open OUnit
 
 open Cst_php
 module Ast = Cst_php
@@ -27,24 +26,28 @@ module Flag = Flag_parsing
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "parsing_php" >::: [
+let tests =
+  Testutil.pack_tests "parsing_php" [
 
     (*-----------------------------------------------------------------------*)
     (* Lexing *)
     (*-----------------------------------------------------------------------*)
 
-    "lexing regular code" >:: (fun () ->
+    "lexing regular code", (fun () ->
       let toks = Parse_php.tokens_of_string "echo 1+2;" in
-      assert_bool "it should have a Echo token"
+      Alcotest.(check bool)
+        "it should have a Echo token"
+        true
         (toks |> List.exists (function
              Parser_php.T_ECHO _ -> true | _ -> false));
     );
 
-    "lexing and case sensitivity" >:: (fun () ->
+    "lexing and case sensitivity", (fun () ->
       let toks = Parse_php.tokens_of_string
           "function foo() { echo __function__; }" in
-      assert_bool "it should have a __FUNCTION__ token"
+      Alcotest.(check bool)
+        "it should have a __FUNCTION__ token"
+        true
         (toks |> List.exists (function
              Parser_php.T_FUNC_C _ -> true | _ -> false));
     );
@@ -53,21 +56,21 @@ let unittest =
     (* Parsing *)
     (*-----------------------------------------------------------------------*)
 
-    "parsing regular code" >:: (fun () ->
+    "parsing regular code", (fun () ->
       let _ast = Parse_php.program_of_string "echo 1+2;" in
       ()
     );
     (* had such a bug one day ... *)
-    "parsing empty comments" >:: (fun () ->
+    "parsing empty comments", (fun () ->
       let _ast = Parse_php.program_of_string "$a/**/ =1;" in
       ()
     );
 
-    "rejecting bad code" >:: (fun () ->
+    "rejecting bad code", (fun () ->
       Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "echo 1+" in
-        assert_failure "it should have thrown a Parse_error exception"
+        Alcotest.fail "it should have thrown a Parse_error exception"
       with
         Parse_info.Parsing_error _ ->
           ()
@@ -84,46 +87,46 @@ let unittest =
           *)
     );
 
-    "rejecting variadic param with default" >:: (fun () ->
+    "rejecting variadic param with default", (fun () ->
       Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo($x, ...$rest=123) {}" in
-        assert_failure "it should have thrown a Parse_error exception"
+        Alcotest.fail "it should have thrown a Parse_error exception"
       with
         Parse_info.Parsing_error _ ->
           ()
     );
 
-    "rejecting multiple variadic params" >:: (fun () ->
+    "rejecting multiple variadic params", (fun () ->
       Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo($x, ...$rest, ...$another) {}" in
-        assert_failure "it should have thrown a Parse_error exception"
+        Alcotest.fail "it should have thrown a Parse_error exception"
       with
         Parse_info.Parsing_error _ ->
           ()
     );
-    "rejecting non-tail variadic param without variable name" >:: (fun () ->
+    "rejecting non-tail variadic param without variable name", (fun () ->
       Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo($x, ..., ...$rest) {}" in
-        assert_failure "it should have thrown a Parse_error exception"
+        Alcotest.fail "it should have thrown a Parse_error exception"
       with
         Parse_info.Parsing_error _ ->
           ()
     );
 
-    "rejecting ellipsis with optional constructs" >:: (fun () ->
+    "rejecting ellipsis with optional constructs", (fun () ->
       Flag.show_parsing_error := false;
       try
         let _ = Parse_php.program_of_string "function foo(int ...) {}" in
-        assert_failure "it should have thrown a Parse_error exception"
+        Alcotest.fail "it should have thrown a Parse_error exception"
       with
         Parse_info.Parsing_error _ ->
           ()
     );
 
-    "regression files" >:: (fun () ->
+    "regression files", (fun () ->
       let dir = Config_pfff.tests_path "php/parsing" in
       let files = Common2.glob (spf "%s/*.php" dir) in
       files |> List.iter (fun file ->
@@ -131,7 +134,7 @@ let unittest =
           let _ = Parse_php.parse_program file in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
+          Alcotest.failf "it should correctly parse %s" file
       )
     );
 
@@ -139,13 +142,13 @@ let unittest =
     (* Types *)
     (*-----------------------------------------------------------------------*)
 
-    "sphp" >:: (fun () ->
+    "sphp", (fun () ->
       let t x =
         try
           let _ = Parse_php.program_of_string x in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" x)
+          Alcotest.failf "it should correctly parse %s" x
       in
 
       t "class A<T> { }";
@@ -181,7 +184,7 @@ let unittest =
      * sub-sub expressions inside parenthesis).
     *)
 (*
-    "visitor" >:: (fun () ->
+    "visitor", (fun () ->
       let ast = Parse_php.program_of_string "echo 1+2+(3+4);" in
 
       let cnt = ref 0 in
@@ -200,7 +203,7 @@ let unittest =
       assert_equal 4 !cnt ;
     );
 *)
-    "checking column numbers" >:: (fun () ->
+    "checking column numbers", (fun () ->
 
       (* See bug reported by dreiss, because the lexer had a few todos
        * regarding objects. *)
@@ -208,16 +211,16 @@ let unittest =
       match e with
       | ObjGet (_v, _tok, Id name) ->
           let info = Ast.info_of_name name in
-          assert_equal 4 (Parse_info.col_of_info info)
+          Alcotest.(check int) "same values" 4 (Parse_info.col_of_info info)
       | _ ->
-          assert_failure "not good AST"
+          Alcotest.fail "not good AST"
     );
 
     (*-----------------------------------------------------------------------*)
     (* Sgrep *)
     (*-----------------------------------------------------------------------*)
 (*
-    "parsing sgrep expressions" >:: (fun () ->
+    "parsing sgrep expressions", (fun () ->
 
       let _e = Parse_php.any_of_string "debug_rlog(1)" in
       assert_bool "it should not generate an error" true;
@@ -232,13 +235,13 @@ let unittest =
             Parse_php.any_of_string "debug_rlog(X, 0"
           )
         in
-        assert_failure "it should generate an error"
+        Alcotest.fail "it should generate an error"
       with _exn ->
         ()
       );
     );
 
-    "parsing sgrep patterns" >:: (fun () ->
+    "parsing sgrep patterns", (fun () ->
       let any = Parse_php.any_of_string "foo();" in
       let ok = match any with
        | Toplevel(StmtList[ExprStmt( _)]) -> true
