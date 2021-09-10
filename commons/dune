@@ -3,7 +3,7 @@
  (wrapped false)
  (libraries
    yojson easy_logging_yojson
-   ounit2
+   pfff-testutil
  )
  (preprocess (pps ppx_deriving.show ppx_deriving.eq))
 )
