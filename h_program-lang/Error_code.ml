@@ -461,4 +461,3 @@ let annotation_at2 loc =
 
 let annotation_at a =
   Common.profile_code "Errors_code.annotation" (fun () -> annotation_at2 a)
-
