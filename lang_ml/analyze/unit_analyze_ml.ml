@@ -1,4 +1,3 @@
-open OUnit
 
 (*****************************************************************************)
 (* Prelude *)
@@ -9,24 +8,26 @@ open OUnit
 (*****************************************************************************)
 let verbose = false
 
-let unittest =
-  "analyze_ml" >::: [
+let tests =
+  Testutil.pack_suites "analyze_ml" [
 
     (*****************************************************************************)
     (* Database building *)
     (*****************************************************************************)
-    "building light database" >:: (fun () ->
-      let data_dir = Config_pfff.tests_path "ml/db" in
-      let _db = Database_light_ml.compute_database ~verbose [data_dir] in
-      ()
-    );
+    [
+      "building light database", (fun () ->
+        let data_dir = Config_pfff.tests_path "ml/db" in
+        let _db = Database_light_ml.compute_database ~verbose [data_dir] in
+        ()
+      )
+    ];
 
     (*****************************************************************************)
     (* Coverage *)
     (*****************************************************************************)
-    "coverage_ml" >::: ([
+    Testutil.pack_tests "coverage_ml" ([
 
-      "basename to readable" >:: (fun () ->
+      "basename to readable", (fun () ->
         let dummy_coverage = { Coverage_code.
                                covered_sites = []; all_sites = []
                              }
@@ -41,8 +42,8 @@ let unittest =
           Coverage_ml.basename_coverage_to_readable_coverage cover root
           |> List.map fst
         in
-        assert_equal
-          ~msg:"it should map basename'd files to readable paths"
+        Alcotest.(check (list string))
+          "it should map basename'd files to readable paths"
           ["analyze/unit_analyze_ml.ml";
            "analyze/coverage_ml.ml";
           ]

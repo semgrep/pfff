@@ -3,7 +3,6 @@
 *)
 
 open Printf
-open OUnit
 
 (*
    This only checks the correctness of the results of the map function.
@@ -42,7 +41,7 @@ let test_common_map =
     List.map (fun len ->
       let name = sprintf "list length = %i" len in
       let test () = test len in
-      name >:: test
+      (name, test)
     ) list_lengths
   in
   tests
@@ -69,10 +68,10 @@ world\n\
       flush stderr;
       assert false
 
-let unittest =
-  "commons" >::: [
-    "common" >::: [
-      "map" >::: test_common_map;
-      "cat" >:: test_cat;
+let tests =
+  Testutil.pack_suites "commons" [
+    Testutil.pack_suites "common" [
+      Testutil.pack_tests "map" test_common_map;
+      ["cat", test_cat];
     ]
   ]

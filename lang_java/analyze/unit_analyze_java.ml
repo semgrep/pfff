@@ -1,14 +1,12 @@
-open OUnit
-
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "analyze_java" >::: [
+let tests =
+  Testutil.pack_tests "analyze_java" [
 
     (* now done in semgrep/Test.ml
-        "regression files" >:: (fun () ->
+        "regression files", (fun () ->
           let dir = Config_pfff.tests_path "java/parsing" in
           let files = Common2.glob (spf "%s/*.java" dir) in
           files |> List.iter (fun file ->
@@ -23,9 +21,9 @@ let unittest =
     *)
 
 (*
- "tags_java" >::: [
+ "tags_java" [
 
-   "basic tags" >:: (fun () ->
+   "basic tags", (fun () ->
      let file_content = "
        package foo;
        class Bar { }

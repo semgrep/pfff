@@ -1,6 +1,5 @@
 (* module E = Entity_code *)
 
-open OUnit
 
 (*****************************************************************************)
 (* Prelude *)
@@ -9,10 +8,10 @@ open OUnit
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
-let unittest =
-  "analyze_js" >::: [
+let tests =
+  Testutil.pack_tests "analyze_js" [
 
-    "commonjs annotations" >:: (fun () ->
+    "commonjs annotations", (fun () ->
       let file_content = "
 /**
  * @providesModule my-module
@@ -29,17 +28,18 @@ function bar() {}
           Annotation_js.annotations_of_program_with_comments res
           |> List.map fst
         in
-        assert_equal
-          ~msg:"it should extract @providesModule annotations"
-          [Annotation_js.ProvidesModule "my-module";
-           Annotation_js.ProvidesLegacy "other-module";
-          ]
-          annots
+        Alcotest.(check bool)
+          "it should extract @providesModule annotations"
+          true
+          ([Annotation_js.ProvidesModule "my-module";
+            Annotation_js.ProvidesLegacy "other-module";
+           ] =
+           annots)
       )
     );
 
     (* TODO need Class_pre_es6
-       "commonjs tags support" >:: (fun () ->
+       "commonjs tags support", (fun () ->
          let file_content = "
        /**
      * @providesModule my-module

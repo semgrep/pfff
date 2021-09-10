@@ -3,16 +3,15 @@ open Common
 open Ast_java
 module Vis = Visitor_java
 
-open OUnit
 
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "parsing_java" >::: [
+let tests =
+  Testutil.pack_tests "parsing_java" [
 
-    "regression files" >:: (fun () ->
+    "regression files", (fun () ->
       let dir = Config_pfff.tests_path "java/parsing" in
       let files = Common2.glob (spf "%s/*.java" dir) in
       files |> List.iter (fun file ->
@@ -20,11 +19,11 @@ let unittest =
           let _ = Parse_java.parse file in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
+          Alcotest.failf "it should correctly parse %s" file
       )
     );
 
-    "basic_expr_visitor" >:: (fun () ->
+    "basic_expr_visitor", (fun () ->
       let count = ref 0 in
 
       let vis = Vis.mk_visitor
@@ -59,7 +58,7 @@ let unittest =
 
       vis (AProgram ast);
 
-      OUnit.assert_equal ~msg:"Expecting two anonymous class definitions"
+      Alcotest.(check int) "Expecting two anonymous class definitions"
         2 !count;
 
     );

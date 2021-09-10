@@ -1,5 +1,3 @@
-open OUnit
-
 open Dependencies_matrix_code
 module E = Entity_code
 module G = Graph_code
@@ -68,15 +66,15 @@ let build_g_and_dm () =
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest ~graph_of_string =
-  "graph_code" >::: [
+let tests ~graph_of_string =
+  Testutil.pack_suites "graph_code" [
 
     (*---------------------------------------------------------------------------*)
     (* The graph *)
     (*---------------------------------------------------------------------------*)
-    "graph" >::: [
+    Testutil.pack_tests "graph" [
 
-      "scc" >:: (fun () ->
+      "scc", (fun () ->
         let g = G.create () in
         let (-->) f1 f2 =
           let f1 = f1, E.Function in
@@ -97,41 +95,41 @@ let unittest ~graph_of_string =
         "bar" --> "bar_bis";
 
         let (scc, _hscc) = G.strongly_connected_components_use_graph g in
-        assert_equal
-          ~msg:"it should find the right strongly connected components"
-          [|
+        Alcotest.(check bool)
+          "it should find the right strongly connected components"
+          true (scc = [|
             [("bar_bis", E.Function)];
             [("bar_mutual", E.Function); ("bar", E.Function)];
             [("foo", E.Function)]
-          |]
-          scc;
+          |]);
 
         let numbering = G.top_down_numbering g in
         let xs = Common.hash_to_list numbering |> Common.sort_by_val_lowfirst in
-        assert_equal
-          ~msg:"it should find the right ordering of nodes"
-          [("foo", E.Function), 0;
-           ("bar", E.Function), 1;
-           ("bar_mutual", E.Function), 1;
-           ("bar_bis", E.Function), 2;
-          ]
-          xs;
+        Alcotest.(check bool)
+          "it should find the right ordering of nodes"
+          true
+          (xs = [
+             ("foo", E.Function), 0;
+             ("bar", E.Function), 1;
+             ("bar_mutual", E.Function), 1;
+             ("bar_bis", E.Function), 2;
+           ]);
 
         let numbering = G.bottom_up_numbering g in
         let xs = Common.hash_to_list numbering |> Common.sort_by_val_lowfirst in
-        assert_equal
-          ~msg:"it should find the right ordering of nodes"
-          [
-            ("bar_bis", E.Function), 0;
-            ("bar", E.Function), 1;
-            ("bar_mutual", E.Function), 1;
-            ("foo", E.Function), 2;
-          ]
-          xs;
+        Alcotest.(check bool)
+          "it should find the right ordering of nodes"
+          true
+          (xs = [
+             ("bar_bis", E.Function), 0;
+             ("bar", E.Function), 1;
+             ("bar_mutual", E.Function), 1;
+             ("foo", E.Function), 2;
+           ]);
       );
 
 
-      "adjust graph" >:: (fun () ->
+      "adjust graph", (fun () ->
         let (g, _dm) = build_g_and_dm () in
         let adjust = [("a", "EXTRA_DIR")] in
         Graph_code.adjust_graph g adjust [];
@@ -141,7 +139,7 @@ let unittest ~graph_of_string =
         ()
       );
 
-      "create fake dotdotdot entries" >:: (fun () ->
+      "create fake dotdotdot entries", (fun () ->
         let (g, _dm) = build_g_and_dm () in
         let gopti = Graph_code_opti.convert g in
         Common.save_excursion DMBuild.threshold_pack 2 (fun () ->
@@ -158,7 +156,7 @@ let unittest ~graph_of_string =
       );
 
 (*
-      "uses and users of file XXX" >:: (fun () ->
+      "uses and users of file XXX", (fun () ->
         let g = G.create () in
         let nodeinfo f =
           { G.
@@ -197,18 +195,18 @@ let unittest ~graph_of_string =
           Graph_code_analysis.build_uses_and_users_of_file g in
         let uses = List.assoc "bar.php" uses_of_file in
         let users = List.assoc "bar.php" users_of_file in
-        assert_equal
-          ~msg:"it should find all uses"
+        Alcotest.(check bool)
+          "it should find all uses"
           ["bar_bis.php"; "bar_mutual.php"]
           uses;
-        assert_equal
-          ~msg:"it should find all users"
+        Alcotest.(check bool)
+          "it should find all users"
           ["bar_mutual.php"; "foo.php"]
           users;
       );
 *)
 
-      "class analysis" >:: (fun () ->
+      "class analysis", (fun () ->
         let file_content = "
 class A {
 public function foo() { }
@@ -225,20 +223,23 @@ public function foo() { }
 
         let node = ("A", E.Class) in
         let children = Graphe.succ node dag in
-        assert_equal ~msg:"it should find the direct children of a class"
+        Alcotest.(check (list string))
+          "it should find the direct children of a class"
           ["B"]
           (children |> List.map fst);
 
         let dag = Graph_code_class_analysis.class_hierarchy g in
         let hmethods = Graph_code_class_analysis.toplevel_methods g dag in
         let xs = Hashtbl.find_all hmethods "foo" in
-        assert_equal ~msg:"it should find the toplevel methods"
+        Alcotest.(check (list string))
+          "it should find the toplevel methods"
           ["C.foo";"A.foo"]
           (xs |> List.map fst);
 
         let node = ("A.foo", E.Method) in
         let methods = Graph_code_class_analysis.dispatched_methods g dag node in
-        assert_equal ~msg:"it should find the dispatched methods"
+        Alcotest.(check (list string))
+          "it should find the dispatched methods"
           ["B.foo"]
           (methods |> List.map fst);
       );
@@ -248,48 +249,51 @@ public function foo() { }
     (* The matrix *)
     (*---------------------------------------------------------------------------*)
 
-    "dm" >::: [
+    Testutil.pack_tests "dm" [
 
-      "dead columns" >:: (fun () ->
+      "dead columns", (fun () ->
         let (_, dm) = build_g_and_dm () in
-        assert_equal false (DM.is_dead_column 0 dm);
-        assert_equal true (DM.is_dead_column 3 dm);
+        Alcotest.(check bool) "same bools" false (DM.is_dead_column 0 dm);
+        Alcotest.(check bool) "same bools" true (DM.is_dead_column 3 dm);
         ()
       );
-      "internal helpers" >:: (fun () ->
+      "internal helpers", (fun () ->
         let (_, dm) = build_g_and_dm () in
         let arr = DM.parents_of_indexes dm in
-        assert_equal arr
-          [| [(".", E.Dir)];
-             [(".", E.Dir); ("a", E.Dir); ];
-             [(".", E.Dir); ("a", E.Dir); ];
-             [(".", E.Dir)];
-          |];
-        assert_equal
-          ~msg:"It should not find distance between foo.ml and a/x.ml"
+        Alcotest.(check bool)
+          "same values" true
+          (arr =
+           [| [(".", E.Dir)];
+              [(".", E.Dir); ("a", E.Dir); ];
+              [(".", E.Dir); ("a", E.Dir); ];
+              [(".", E.Dir)];
+           |]);
+        Alcotest.(check int)
+          "It should not find distance between foo.ml and a/x.ml"
           (DM.distance_entity (0, 1) arr) 0;
-        assert_equal
-          ~msg:"It should find distance between a/x.ml and foo.ml"
+        Alcotest.(check int)
+          "It should find distance between a/x.ml and foo.ml"
           (DM.distance_entity (1, 0) arr) 1;
-        assert_equal
-          ~msg:"It should not find distance between a/x.ml a/y.ml"
+        Alcotest.(check int)
+          "It should not find distance between a/x.ml a/y.ml"
           (DM.distance_entity (1, 2) arr) 0;
 
-        assert_equal
-          false (DM.is_internal_helper 0 dm);
-        assert_equal
-          true (DM.is_internal_helper 1 dm);
-        assert_equal
-          false (DM.is_internal_helper 2 dm);
+        Alcotest.(check bool)
+          "same values" false (DM.is_internal_helper 0 dm);
+        Alcotest.(check bool)
+          "same values" true (DM.is_internal_helper 1 dm);
+        Alcotest.(check bool)
+          "same values" false (DM.is_internal_helper 2 dm);
       );
 
-      "explain cell" >:: (fun () ->
+      "explain cell", (fun () ->
         let (g, dm) = build_g_and_dm () in
         let gopti = Graph_code_opti.convert g in
         let xs = DM.explain_cell_list_use_edges (2, 1) dm gopti in
-        assert_equal xs [
-          ("a/y.ml", E.File), ("a/x.ml", E.File);
-        ];
+        Alcotest.(check bool) "same values" true
+          (xs = [
+             ("a/y.ml", E.File), ("a/x.ml", E.File);
+           ]);
       );
     ]
   ]
