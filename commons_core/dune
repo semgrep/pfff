@@ -4,6 +4,6 @@
  (libraries
    ANSITerminal
    commons
-   ounit2
+   alcotest
  )
 )

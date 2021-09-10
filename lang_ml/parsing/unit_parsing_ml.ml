@@ -1,14 +1,13 @@
 open Common
-open OUnit
 
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
-  "parsing_ml" >::: [
+let tests =
+  Testutil.pack_tests "parsing_ml" [
 
-    "regression files" >:: (fun () ->
+    "regression files", (fun () ->
       let dir = Config_pfff.tests_path "ml/parsing" in
       let files = Common2.glob (spf "%s/*.ml" dir) in
       files |> List.iter (fun file ->
@@ -16,7 +15,7 @@ let unittest =
           let _ = Parse_ml.parse_program file in
           ()
         with Parse_info.Parsing_error _ ->
-          assert_failure (spf "it should correctly parse %s" file)
+          Alcotest.failf "it should correctly parse %s" file
       )
     );
 
@@ -24,7 +23,7 @@ let unittest =
      * subelements, even when they are deep inside the AST tree (e.g.
      * sub-sub expressions inside parenthesis).
     *)
-    "visitor" >:: (fun () ->
+    "visitor", (fun () ->
       Common2.with_tmp_file ~ext:".ml" ~str:
         "open Foo1
 module A = Foo2

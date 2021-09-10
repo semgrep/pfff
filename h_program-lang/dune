@@ -3,7 +3,7 @@
  (name pfff_h_program_lang)
  (wrapped false)
  (libraries
-   yojson uucp uutf ounit2
+   yojson uucp uutf alcotest
 
    commons
    pfff-h_files-format pfff-config

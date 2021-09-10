@@ -4,7 +4,6 @@
  *)
 open Common
 
-open OUnit
 module J = JSON
 
 (*****************************************************************************)
@@ -44,99 +43,78 @@ let graph_of_string str =
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
 
-let test regexp =
+let tests = List.flatten [
 
-  (* There is no reflection in OCaml so the unit test framework OUnit requires
-   * us to explicitely build the test suites (which is not that bad).
+  (* general tests *)
+  Unit_commons.tests;
+  Unit_commons_core.tests;
+  Unit_graph_code.tests ~graph_of_string;
+
+  (* PHP related tests *)
+  Unit_parsing_php.tests;
+  (* TODO dune .opam file
+        Unit_pretty_print_php.unittest;
   *)
-  let tests =
-    "all" >::: [
-
-      (* general tests *)
-      Unit_commons.unittest;
-      Unit_commons_core.unittest;
-      Unit_program_lang.unittest;
-      Unit_graph_code.unittest ~graph_of_string;
-
-      (* PHP related tests *)
-      Unit_parsing_php.unittest;
-      (* TODO dune .opam file
-            Unit_pretty_print_php.unittest;
-      *)
 (*
-      Unit_foundation_php.unittest;
-      Unit_static_analysis_php.unittest;
-      Unit_typeinfer_php.unittest;
+   Unit_foundation_php.unittest;
+   Unit_static_analysis_php.unittest;
+   Unit_typeinfer_php.unittest;
 *)
-      (*      Unit_analyze_db_php.unittest; *)
-      (*      Unit_static_analysis_simple_php.unittest;*)
-      (* TODO need extra deps to swipl
-            Unit_prolog_php.unittest;
-      *)
-      (*      Unit_checker_php.unittest; should be in check_generic/ now *)
-      (* this one needs xdebug to work *)
-      (* TODO dune .opam file
-            Unit_coverage_php.unittest;
-      *)
+  (*      Unit_analyze_db_php.unittest; *)
+  (*      Unit_static_analysis_simple_php.unittest;*)
+  (* TODO need extra deps to swipl
+        Unit_prolog_php.unittest;
+  *)
+  (*      Unit_checker_php.unittest; should be in check_generic/ now *)
+  (* this one needs xdebug to work *)
+  (* TODO dune .opam file
+        Unit_coverage_php.unittest;
+  *)
 
-      (* non PHP related tests *)
+  (* non PHP related tests *)
 
-      Unit_parsing_ml.unittest;
-      Unit_parsing_scala.unittest;
-      (* TODO path issue when run outside of pfff (e.g., in semgrep-core)
-            Unit_analyze_ml.unittest;
-      *)
-      Unit_parsing_java.unittest;
-      Unit_analyze_java.unittest;
-      (* TODO dune
-         #if FEATURE_BYTECODE
-            Unit_analyze_bytecode.unittest;
-         #endif
-      *)
-      Unit_parsing_js.unittest;
-      Unit_analyze_js.unittest;
-      Unit_parsing_json.unittest;
-      Unit_parsing_python.unittest;
-      Unit_parsing_ruby.unittest;
-      (* TODO dune .opan files
-            Unit_parsing_html.unittest;
-      *)
-      Unit_parsing_cpp.unittest;
-      Unit_parsing_go.unittest;
-      Pfff_lang_regexp.Unit_parsing.unittest;
+  Unit_parsing_ml.tests;
+  Unit_parsing_scala.tests;
+  (* TODO path issue when run outside of pfff (e.g., in semgrep-core)
+        Unit_analyze_ml.unittest;
+  *)
+  Unit_parsing_java.tests;
+  Unit_analyze_java.tests;
+  (* TODO dune
+     #if FEATURE_BYTECODE
+        Unit_analyze_bytecode.unittest;
+     #endif
+  *)
+  Unit_parsing_js.tests;
+  Unit_analyze_js.tests;
+  Unit_parsing_json.tests;
+  Unit_parsing_python.tests;
+  Unit_parsing_ruby.tests;
+  (* TODO dune .opan files
+        Unit_parsing_html.unittest;
+  *)
+  Unit_parsing_cpp.tests;
+  Unit_parsing_go.tests;
+  Pfff_lang_regexp.Unit_parsing.tests;
 
-      (* generic AST tests *)
-      (* Unit_naming_generic.unittest;
-         Unit_typing_generic.unittest;
-         Unit_dataflow.unittest;
-      *)
-    ]
-  in
-  let suite =
-    if regexp = "all"
-    then tests
-    else
-      let paths =
-        OUnit.test_case_paths tests |> List.map OUnit.string_of_path in
-      let keep = paths
-                 |> List.filter (fun path ->
-                   pr2 path;
-                   path =~ (".*" ^ regexp))
-      in
-      Common2.some (OUnit.test_filter keep tests)
-  in
+  (* generic AST tests *)
+  (* Unit_naming_generic.unittest;
+     Unit_typing_generic.unittest;
+     Unit_dataflow.unittest;
+  *)
+]
 
-  let results = OUnit.run_test_tt ~verbose:!verbose suite in
-  let has_an_error =
-    results |> List.exists (function
-      | OUnit.RSuccess _ | OUnit.RSkip _ | OUnit.RTodo _ -> false
-      | OUnit.RFailure _ | OUnit.RError _ -> true
-    )
-  in
-  raise (Common.UnixExit (if has_an_error then 1 else 0))
+(*
+   Run the alcotest tests while ignoring command-line options which would
+   otherwise be interpreted by alcotest.
 
-let main_action x =
-  test x
+   The default alcotest CLI offers a way to filter tests but we're not
+   using it, so we specify our own filter with the 'filter' option instead.
+*)
+let run_alcotest_tests ?pcre_filter () =
+  let tests = Testutil.filter ?pcre:pcre_filter tests in
+  let alcotest_tests = Testutil.to_alcotest tests in
+  Alcotest.run ~argv:[| "<dummy>" |] "pfff" alcotest_tests
 
 (*****************************************************************************)
 (* Extra Actions *)
@@ -329,7 +307,7 @@ let options () = [
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () =
+let run_cli () =
 
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
 
@@ -358,12 +336,12 @@ let main () =
      (* main entry *)
      (* --------------------------------------------------------- *)
      | [x] ->
-         main_action x
+         run_alcotest_tests ~pcre_filter:x ()
 
      (* --------------------------------------------------------- *)
      (* empty entry *)
      (* --------------------------------------------------------- *)
-     | [] -> main_action "all"
+     | [] -> run_alcotest_tests ()
      | _ ->
          Common.usage usage_msg (options());
          failwith "too few or too many arguments"
@@ -371,7 +349,7 @@ let main () =
   )
 
 (*****************************************************************************)
-let _ =
+let () =
   Common.main_boilerplate (fun () ->
-    main ();
+    run_cli ();
   )
