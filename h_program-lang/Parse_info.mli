@@ -131,13 +131,19 @@ val lexical_error: string -> Lexing.lexbuf -> unit
 val fake_token_location : token_location
 (*e: signature [[Parse_info.fake_token_location]] *)
 (*s: signature [[Parse_info.fake_info]] *)
-val fake_info : string -> t
+val unsafe_fake_info : string -> t
+val fake_info_loc : token_location -> string -> t
+val fake_info : t -> string -> t
 (*e: signature [[Parse_info.fake_info]] *)
 val abstract_info: t
 
-val fake_bracket: 'a -> t * 'a * t
+val unsafe_fake_bracket: 'a -> t * 'a * t
+val fake_bracket_loc : token_location -> 'a -> t * 'a * t
+val fake_bracket : t -> 'a -> t * 'a * t
 val unbracket: t * 'a * t -> 'a
-val sc: t
+val unsafe_sc: t
+val sc_loc : token_location -> t
+val sc : t -> t
 
 val mk_info_of_loc: token_location -> t
 
@@ -172,8 +178,9 @@ val is_origintok: t -> bool
 (*e: signature [[Parse_info.is_origintok]] *)
 
 (*s: signature [[Parse_info.token_location_of_info]] *)
-val token_location_of_info: t -> token_location
+val token_location_of_info: t -> (token_location, string) result
 (*e: signature [[Parse_info.token_location_of_info]] *)
+val unsafe_token_location_of_info: t -> token_location
 (*s: signature [[Parse_info.get_original_token_location]] *)
 val get_original_token_location: token_origin -> token_location
 (*e: signature [[Parse_info.get_original_token_location]] *)

@@ -191,8 +191,8 @@ let instrs_of_expr env e =
           in
           let access =
             match idxopt with
-            | Some e -> A.ArrayAccess(e1, PI.fake_bracket e)
-            | None -> A.ArrayAccess(e1, PI.fake_bracket (A.Int (Some 0, tok)))
+            | Some e -> A.ArrayAccess(e1, PI.fake_bracket tok e)
+            | None -> A.ArrayAccess(e1, PI.fake_bracket tok (A.Int (Some 0, tok)))
           in
           A.Assign(op, access, value)
         )
@@ -210,7 +210,7 @@ let instrs_of_expr env e =
           let access =
             A.RecordPtAccess
               (A.Unary (e1, (A2.GetRef, tok)),
-               Parse_info.fake_info "->",
+               Parse_info.fake_info tok "->",
                name)
           in
           A.Assign(op, access, value)

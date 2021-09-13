@@ -601,11 +601,11 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
       make_call_expr acc (Some e') msg [] None pos
 
   (* A::m is really a method call *)
-  | Ast.ScopedId(Ast.Scope(_e1BUG, _pos, Ast.SV (_, Ast.ID_Lowercase))) ->
+  | Ast.ScopedId(Ast.Scope(_e1BUG, pos, Ast.SV (_, Ast.ID_Lowercase))) ->
       let acc,v = fresh acc in
       let v' = match v with LId id -> id | _ -> failwith "Impossible" in
       let acc = seen_lhs acc v in
-      let e' = Ast.Call(e,fb [], None) in
+      let e' = Ast.Call(e,fb pos [], None) in
       (refactor_method_call_assign acc (Some v) e'), EId v'
 
   | Ast.ScopedId(Ast.Scope(e1,pos,_e2_var_or_method_name_now)) ->
@@ -707,7 +707,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
         let lhs' = match lhs with LId id -> id | _ -> failwith "Impossible" in
 
         (refactor_super acc (Some lhs) pos), EId lhs'
-      else refactor_expr acc (Ast.Call(e, fb [],None))
+      else refactor_expr acc (Ast.Call(e, fb pos [],None))
 
   (* handles $0 *)
   | Ast.Id(("0", _pos), Ast.ID_Global) ->
@@ -1349,9 +1349,9 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
       let acc = refactor_method_call_assign acc (Some lhs') m in
       acc_append acc after
 
-  | e1,        (Ast.Id((s, _pos'),Ast.ID_Lowercase) as e)
+  | e1,        (Ast.Id((s, pos'),Ast.ID_Lowercase) as e)
     when not (StrSet.mem s acc.seen || is_special s) ->
-      refactor_assignment acc e1 (Ast.Call(e,fb [],None)) pos
+      refactor_assignment acc e1 (Ast.Call(e,fb pos' [],None)) pos
 
   | _ ->
       let acc,lhs',after = refactor_lhs acc lhs in
@@ -1454,8 +1454,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       refactor_assignment acc lhs rhs pos
 
   (* A::m is really a method call *)
-  | Ast.ScopedId(Ast.Scope(_e1,_pos,(Ast.SV((_,_),Ast.ID_Lowercase)))) ->
-      refactor_method_call_assign acc None (Ast.Call(e,fb [], None))
+  | Ast.ScopedId(Ast.Scope(_e1,pos,(Ast.SV((_,_),Ast.ID_Lowercase)))) ->
+      refactor_method_call_assign acc None (Ast.Call(e,fb pos [], None))
 
   | Ast.Call _ as m ->
       refactor_method_call_assign acc None m
@@ -1502,7 +1502,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.Id((s, pos),Ast.ID_Lowercase)
     when not (StrSet.mem s acc.seen || is_special s) ->
       if s = "super" then refactor_super acc None pos
-      else refactor_stmt acc (Ast.Call(e,fb [],None))
+      else refactor_stmt acc (Ast.Call(e,fb pos [],None))
 
   | Ast.Id _
   | Ast.Literal _ | Ast.Atom _

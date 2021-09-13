@@ -560,6 +560,10 @@ type var_decl_id =
   | IdentDecl of ident
   | ArrayDecl of var_decl_id
 
+let rec tok_of_var = function
+  | IdentDecl i -> snd i
+  | ArrayDecl v -> tok_of_var v
+
 let mk_param_id id =
   ParamClassic (entity_of_id id)
 
@@ -570,12 +574,12 @@ let rec canon_var mods t_opt v =
   | ArrayDecl v' ->
       (match t_opt with
        | None -> raise Common.Impossible
-       | Some t -> canon_var mods (Some (TArray (Parse_info.fake_bracket t))) v'
+       | Some t -> canon_var mods (Some (TArray (Parse_info.fake_bracket (tok_of_var v') t))) v'
       )
 
 let method_header mods mtype (v, formals) throws =
   { m_var = canon_var mods (Some mtype) v; m_formals = formals;
-    m_throws = throws; m_body = EmptyStmt (Parse_info.fake_info ";") }
+    m_throws = throws; m_body = EmptyStmt (Parse_info.fake_info (tok_of_var v) ";") }
 
 (* Return a list of field declarations in canonical form. *)
 let decls f = fun mods vtype vars ->

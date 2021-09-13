@@ -37,7 +37,7 @@ module M = Parser_ruby_helpers
 (* for fake_xxx *)
 module PI = Parse_info
 
-let fb = Parse_info.fake_bracket
+let fb = Parse_info.unsafe_fake_bracket
 
 (*************************************************************************)
 (*1 Dypgen merge directives *)
@@ -127,7 +127,7 @@ let dyp_merge xs =
 let token_immediate_check t1 t2 =
   ()
 
-let fake s = Parse_info.fake_info s
+let fake s = Parse_info.unsafe_fake_info s
 
 (*************************************************************************)
 (*1 AST helpers *)
@@ -599,7 +599,7 @@ one_string:
 interp_str:
   | T_SINGLE_STRING {[StrChars $1]}
   | interp_str_work<i>
-      {match i with [] -> [StrChars ("", Parse_info.fake_info "")] | lst -> lst}
+      {match i with [] -> [StrChars ("", Parse_info.unsafe_fake_info "")] | lst -> lst}
 
 interp_str_work:
   | T_INTERP_STR<s,pos> interp_code<tl>
@@ -614,7 +614,7 @@ interp_code:
         let mk_block lst =
           match lst with
           | [x] -> x
-          | _ -> S (Block(PI.fake_bracket lst))
+          | _ -> S (Block(PI.unsafe_fake_bracket lst))
         in
           match ss with
           | [] -> tl

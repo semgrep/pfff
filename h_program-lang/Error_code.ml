@@ -257,7 +257,7 @@ let string_of_error err =
 let g_errors = ref []
 
 let mk_error tok err =
-  let loc = PI.token_location_of_info tok in
+  let loc = PI.unsafe_token_location_of_info tok in
   { loc = loc; typ = err; sev = Error }
 
 let mk_error_loc loc err =
@@ -266,10 +266,10 @@ let mk_error_loc loc err =
 let error tok err =
   Common.push (mk_error tok err) g_errors
 let warning tok err =
-  let loc = PI.token_location_of_info tok in
+  let loc = PI.unsafe_token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Warning } g_errors
 let info tok err =
-  let loc = PI.token_location_of_info tok in
+  let loc = PI.unsafe_token_location_of_info tok in
   Common.push { loc = loc; typ = err; sev = Info } g_errors
 
 let error_loc loc err =

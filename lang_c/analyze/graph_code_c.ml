@@ -432,7 +432,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
         in
         (* try but should never happen, see comment below *)
         try
-          let pos = Parse_info.token_location_of_info (snd name) in
+          let pos = Parse_info.unsafe_token_location_of_info (snd name) in
           (*        let pos = { pos with Parse_info.file = env.c_file_readable } in *)
           let nodeinfo = { Graph_code.
                            pos; typ;
@@ -477,7 +477,7 @@ let add_use_edge env (name, kind) =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
 
-      let pos = Parse_info.token_location_of_info (snd name) in
+      let pos = Parse_info.unsafe_token_location_of_info (snd name) in
       (*     let pos = { pos with Parse_info.file = env.c_file_readable } in *)
       !hook_use_edge env.ctx env.in_assign (src, dst) env.g pos
 

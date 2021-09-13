@@ -142,4 +142,4 @@ let info_of_tok tok =
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with
   | Some x -> x
-  | None -> Parse_info.fake_info "NOTOK"
+  | None -> Parse_info.unsafe_fake_info "NOTOK"

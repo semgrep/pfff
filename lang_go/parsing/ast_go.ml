@@ -389,11 +389,15 @@ type any =
 (*****************************************************************************)
 let mk_Id id = Id (id (*, ref None*))
 
-let stmt1 xs =
+let stmt1_with b xs =
   match xs with
   | [] -> Empty
   | [st] -> st
-  | xs -> Block (Parse_info.fake_bracket xs)
+  | xs -> Block (b xs)
+
+let stmt1 tok xs = stmt1_with (Parse_info.fake_bracket tok) xs
+
+let unsafe_stmt1 xs = stmt1_with Parse_info.unsafe_fake_bracket xs
 
 let item1 xs =
   match xs with
