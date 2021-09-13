@@ -1309,26 +1309,27 @@ ident_in_name:
  | ident { $1 }
  | T_INSTANCEOF { PI.str_of_info $1, $1 }
 
-ident_constant_name:
- | ident { $1 }
- | T_LIST        { PI.str_of_info $1, $1 }
- | T_LOGICAL_AND { PI.str_of_info $1, $1 }
- | T_NEW         { PI.str_of_info $1, $1 }
- | T_FROM     { PI.str_of_info $1, $1 }
-
 ident_class_name:
 | ident          { Name $1 }
 
 ident_method_name:
  | ident { $1 }
- | T_PARENT { "parent", $1 }
- | T_SELF   { "self", $1 }
- | T_ASYNC  { "async", $1 }
- | T_INCLUDE { "include", $1 }
- | T_PUBLIC { "public", $1 }
- | T_DEFAULT { "default", $1 }
- | T_INSTANCEOF { "instanceof", $1 }
- | T_FROM     { PI.str_of_info $1, $1 }
+ (* I would like to put all keywords, but some generate s/r conflicts, so
+  * for now I add them on-demand
+  *)
+ | T_PARENT      { PI.str_of_info $1, $1 }
+ | T_SELF        { PI.str_of_info $1, $1 }
+ | T_ASYNC       { PI.str_of_info $1, $1 }
+ | T_INCLUDE     { PI.str_of_info $1, $1 }
+ | T_PUBLIC      { PI.str_of_info $1, $1 }
+ | T_DEFAULT     { PI.str_of_info $1, $1 }
+ | T_INSTANCEOF  { PI.str_of_info $1, $1 }
+ | T_LIST        { PI.str_of_info $1, $1 }
+ | T_LOGICAL_AND { PI.str_of_info $1, $1 }
+ | T_NEW         { PI.str_of_info $1, $1 }
+ | T_FROM        { PI.str_of_info $1, $1 }
+
+ident_constant_name: ident_method_name { $1 }
 
 (*************************************************************************)
 (* Namespace *)
