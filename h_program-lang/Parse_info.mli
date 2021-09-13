@@ -127,21 +127,36 @@ val lexical_error: string -> Lexing.lexbuf -> unit
 (* Info accessors and builders *)
 (*****************************************************************************)
 
+(* Fake tokens: safe vs unsafe
+ * ---------------------------
+ * "Safe" fake tokens require an existing location to attach to, and so
+ * token_location_of_info will work on these fake tokens. "Unsafe" fake tokens
+ * do not carry any location info, so calling token_location_of_info on these
+ * will raise a NoTokenLocation exception.
+ *
+ * Always prefer "safe" functions (no "unsafe_" prefix), which only introduce
+ * "safe" fake tokens. The unsafe_* functions introduce "unsafe" fake tokens,
+ * please use them only as a last resort. *)
+
 (*s: signature [[Parse_info.fake_token_location]] *)
 val fake_token_location : token_location
 (*e: signature [[Parse_info.fake_token_location]] *)
-(*s: signature [[Parse_info.fake_info]] *)
+
+(* NOTE: These functions introduce unsafe fake tokens, prefer safe functions
+ * below, use these only as a last resort! *)
 val unsafe_fake_info : string -> t
+val unsafe_fake_bracket: 'a -> t * 'a * t
+val unsafe_sc: t
+
 val fake_info_loc : token_location -> string -> t
+(*s: signature [[Parse_info.fake_info]] *)
 val fake_info : t -> string -> t
 (*e: signature [[Parse_info.fake_info]] *)
 val abstract_info: t
 
-val unsafe_fake_bracket: 'a -> t * 'a * t
 val fake_bracket_loc : token_location -> 'a -> t * 'a * t
 val fake_bracket : t -> 'a -> t * 'a * t
 val unbracket: t * 'a * t -> 'a
-val unsafe_sc: t
 val sc_loc : token_location -> t
 val sc : t -> t
 
@@ -180,6 +195,7 @@ val is_origintok: t -> bool
 (*s: signature [[Parse_info.token_location_of_info]] *)
 val token_location_of_info: t -> (token_location, string) result
 (*e: signature [[Parse_info.token_location_of_info]] *)
+(** @raise NoTokenLocation if given an unsafe fake token (without location info) *)
 val unsafe_token_location_of_info: t -> token_location
 (*s: signature [[Parse_info.get_original_token_location]] *)
 val get_original_token_location: token_origin -> token_location
