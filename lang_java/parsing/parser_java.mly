@@ -35,8 +35,8 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let empty_body = PI.fake_bracket []
-let fake_dot = Parse_info.fake_info "."
+let empty_body = PI.unsafe_fake_bracket []
+let fake_dot = Parse_info.unsafe_fake_info "."
 
 (* todo? use a Ast.special? *)
 let super_ident ii = ("super", ii)
@@ -768,7 +768,7 @@ variable_arity_parameter:
 
 (* no need %prec LOW_PRIORITY_RULE as in parser_js.mly ?*)
 lambda_body:
- | expression { Expr ($1, PI.sc) }
+ | expression { Expr ($1, PI.unsafe_sc) }
  | block      { $1 }
 
 (*----------------------------*)
@@ -816,7 +816,7 @@ statement:
  | while_statement  { $1 }
  | for_statement  { $1 }
  (* sgrep-ext: *)
- | "..." { Flag_parsing.sgrep_guard (Expr (Ellipsis $1, PI.sc)) }
+ | "..." { Flag_parsing.sgrep_guard (Expr (Ellipsis $1, PI.sc $1)) }
 
 statement_without_trailing_substatement:
  | block  { $1 }

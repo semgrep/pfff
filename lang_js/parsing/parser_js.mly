@@ -59,6 +59,7 @@ module H = AST_generic_
 (* Helpers *)
 (*************************************************************************)
 let fb = PI.fake_bracket
+let unsafe_fb = PI.unsafe_fake_bracket
 
 let sndopt = function
   | None -> None
@@ -116,7 +117,7 @@ let mk_def (idopt, defkind) =
   (* TODO: fun default_opt -> ... *)
   let name =
     match idopt with
-    | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, PI.fake_info "")
+    | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, PI.unsafe_fake_info "")
     | Some id -> id
   in
   basic_entity name, defkind
@@ -132,10 +133,10 @@ let mk_pattern binding_pattern init_opt =
 
 (* Javascript has implicit returns for arrows with expression body *)
 let mk_block_return e =
-  fb [Return (PI.fake_info "return", Some e, PI.sc)]
+  unsafe_fb [Return (PI.unsafe_fake_info "return", Some e, PI.unsafe_sc)]
 
 let special spec tok xs =
-  Apply (IdSpecial (spec, tok), fb xs)
+  Apply (IdSpecial (spec, tok), fb tok xs)
 
 let bop op a b c = special (ArithOp op) b [a;c]
 let uop op tok x = special op tok [x]
@@ -352,7 +353,7 @@ program: module_item* { List.flatten $1 }
 
 (* parse item by item, to allow error recovery and skipping some code *)
 module_item_or_eof:
- | module_item { Some (stmt1 $1) }
+ | module_item { Some (unsafe_stmt1 $1) }
  | EOF         { None }
 
 module_item:
@@ -430,9 +431,9 @@ sgrep_spatch_pattern:
 
  (* partial defs *)
  | T_FUNCTION id? call_signature EOF
-   { Partial (PartialDef (mk_def ($2, mk_FuncDef [] (Function,$1) $3 (fb[]))))}
+   { Partial (PartialDef (mk_def ($2, mk_FuncDef [] (Function,$1) $3 (fb $1 []))))}
  | T_CLASS binding_id? generics? class_heritage EOF
-   { Partial (PartialDef (mk_def ($2, mk_ClassDef $1 $3 $4 (fb [])))) }
+   { Partial (PartialDef (mk_def ($2, mk_ClassDef $1 $3 $4 (unsafe_fb [])))) }
  (* partial stmts *)
  | T_IF "(" expr ")" EOF
    { Partial (PartialIf ($1, $3)) }
@@ -1084,10 +1085,10 @@ stmt:
  (* sgrep-ext:
   * TODO add an sc? then remove the other ugly "..." and less conflicts?
   *)
- | "..." { [ExprStmt (Ellipsis $1, PI.sc)] }
+ | "..." { [ExprStmt (Ellipsis $1, PI.sc $1)] }
 
 %inline
-stmt1: stmt { stmt1 $1 }
+stmt1: stmt { unsafe_stmt1 $1 }
 
 block: "{" optl(stmt_list) "}" { Block ($1, $2, $3) }
 
@@ -1167,9 +1168,9 @@ case_block:
  | "{" case_clause* default_clause case_clause* "}"
      { ($2 @ [$3] @ $4) }
 
-case_clause: T_CASE expr ":" optl(stmt_list)  { Case ($1, $2, stmt1 $4) }
+case_clause: T_CASE expr ":" optl(stmt_list)  { Case ($1, $2, stmt1 $1 $4) }
 
-default_clause: T_DEFAULT ":" optl(stmt_list) { Default ($1, stmt1 $3) }
+default_clause: T_DEFAULT ":" optl(stmt_list) { Default ($1, stmt1 $1 $3) }
 
 (*************************************************************************)
 (* Exprs *)
@@ -1485,7 +1486,7 @@ xhp_attribute:
     { XmlAttrExpr ($1, special Spread $2 [$3],$4)}
  (* reactjs-ext: see https://www.reactenlightenment.com/react-jsx/5.7.html *)
  | T_XHP_ATTR
-    { XmlAttr ($1, PI.fake_info "=", L (Bool(true, snd $1))) }
+    { XmlAttr ($1, PI.fake_info (snd $1) "=", L (Bool(true, snd $1))) }
  | "..."
     { XmlEllipsis $1 }
 
@@ -1514,9 +1515,9 @@ encaps:
 arrow_function:
  (* es7: *)
  | T_ASYNC id T_ARROW arrow_body
-     { mk_Fun ~props:[Async, $1] (Arrow, $3) ((), fb [ParamClassic (mk_param $2)], None) $4 }
+     { mk_Fun ~props:[Async, $1] (Arrow, $3) ((), fb $3 [ParamClassic (mk_param $2)], None) $4 }
  | id T_ARROW arrow_body
-     { mk_Fun (Arrow, $2) ((), fb [ParamClassic (mk_param $1)], None) $3 }
+     { mk_Fun (Arrow, $2) ((), fb $2 [ParamClassic (mk_param $1)], None) $3 }
 
  (* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)
  (* es7: *)

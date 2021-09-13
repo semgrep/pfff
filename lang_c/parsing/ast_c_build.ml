@@ -175,7 +175,7 @@ and declaration env x =
                            f_name = x.A.v_name;
                            f_type = ft;
                            f_static = (storage =*= A.Static);
-                           f_body = PI.fake_bracket [];
+                           f_body = PI.fake_bracket (snd x.A.v_name) [];
                          }
          | _ -> A.VarDef x
        ))
@@ -445,7 +445,7 @@ and stmt env st =
 
   | ExprStmt (eopt, t) ->
       (match eopt with
-       | None -> A.Block (PI.fake_bracket [])
+       | None -> A.Block (PI.fake_bracket t [])
        | Some e -> A.ExprSt (expr env e, t)
       )
 

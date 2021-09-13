@@ -42,14 +42,20 @@ let error tok s =
 *)
 let wrap tok = tok
 
-let fake s = Parse_info.fake_info s
+let fake tok s = Parse_info.fake_info tok s
+let unsafe_fake s = Parse_info.unsafe_fake_info s
 let fb = PI.fake_bracket
+let unsafe_fb = PI.unsafe_fake_bracket
 
-let stmt1 xs =
+let stmt1_with b xs =
   match xs with
-  | [] -> A.Block (fb [])
+  | [] -> A.Block (b [])
   | [st] -> st
-  | xs -> A.Block (fb xs)
+  | xs -> A.Block (b xs)
+
+let stmt1 tok xs = stmt1_with (fb tok) xs
+
+let unsafe_stmt1 xs = stmt1_with unsafe_fb xs
 
 (*****************************************************************************)
 (* Helpers *)
@@ -74,7 +80,7 @@ let brace (_, x, _) = x
 
 let bracket f (a, b, c) = (a, f b, c)
 
-let noop = A.Block (fb[])
+let noop tok = A.Block (fb tok [])
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -97,7 +103,7 @@ and any_aux env = function
       let e = expr env e in
       A.Expr2 e
   | Stmt2 st ->
-      let st = stmt1 (stmt env st []) in
+      let st = unsafe_stmt1 (stmt env st []) in
       A.Stmt st
   | Toplevel x ->
       (match toplevel env x with
@@ -146,7 +152,7 @@ and toplevels env xs =
            in
            let body = toplevels env xs in
            let rest = toplevels env rest in
-           A.NamespaceDef (t, qualified_ident env qi, PI.fake_bracket body)::rest
+           A.NamespaceDef (t, qualified_ident env qi, fb t body)::rest
 
        | _ ->
            (toplevel env x) @ toplevels env xs
@@ -235,25 +241,25 @@ and stmt env st acc =
       let e = expr env e in
       A.Expr (e, t) :: acc
   (* Why not just acc? because we abuse noop in the abstract interpreter? *)
-  | EmptyStmt _ -> noop :: acc
+  | EmptyStmt t -> noop t :: acc
   | Block (lb, stdl, rb) -> A.Block (lb, List.fold_right (stmt_and_def env) stdl [], rb) :: acc
   | If (tok, (_, e, _), st, il, io) ->
       let e = expr env e in
-      let st = stmt1 (stmt env st []) in
-      let il = List.fold_right (if_elseif env) il (if_else env io) in
+      let st = stmt1 tok (stmt env st []) in
+      let il = List.fold_right (if_elseif env) il (if_else tok env io) in
       A.If (tok, e, st, il) :: acc
   | IfColon (tok, (_, e,_), _, st, il, io, _, _) ->
       let e = expr env e in
-      let st = stmt1 (List.fold_right (stmt_and_def env) st []) in
-      let il = List.fold_right (new_elseif env) il (new_else env io) in
+      let st = stmt1 tok (List.fold_right (stmt_and_def env) st []) in
+      let il = List.fold_right (new_elseif env) il (new_else tok env io) in
       A.If (tok, e, st, il) :: acc
   | While (tok, (_, e, _), cst) ->
-      let cst = colon_stmt env cst in
+      let cst = colon_stmt tok env cst in
       A.While (tok, expr env e, cst) :: acc
   | Do (tok, st, _, (_, e, _), _) ->
-      A.Do (tok, stmt1 (stmt env st []), expr env e) :: acc
+      A.Do (tok, stmt1 tok (stmt env st []), expr env e) :: acc
   | For (tok, _, e1, _, e2, _, e3, _, st) ->
-      let st = colon_stmt env st in
+      let st = colon_stmt tok env st in
       let e1 = for_expr env e1 in
       let e2 = for_expr env e2 in
       let e3 = for_expr env e3 in
@@ -264,12 +270,12 @@ and stmt env st acc =
       A.Switch (tok, e, scl) :: acc
   | Foreach (tok, _, e, _awaitTodo, tas, pat, _, cst) ->
       let e = expr env e in
-      let pat = foreach_pattern env pat in
-      let cst = colon_stmt env cst in
+      let pat = foreach_pattern tok env pat in
+      let cst = colon_stmt tok env cst in
       A.Foreach (tok, e, tas, pat, cst) :: acc
   | Break (tok, e, _) -> A.Break (tok, opt expr env e) :: acc
   | Continue (tok, eopt, _) -> A.Continue (tok, opt expr env eopt) :: acc
-  | Label (id,tok,st) -> A.Label (ident env id,tok,stmt1 (stmt env st [])) :: acc
+  | Label (id,tok,st) -> A.Label (ident env id,tok,stmt1 tok (stmt env st [])) :: acc
   | Goto (tok,id,_) -> A.Goto (tok,ident env id) :: acc
   | Return (tok, eopt, _) -> A.Return (tok, opt expr env eopt) :: acc
   | Throw (tok, e, _) -> A.Throw (tok, expr env e) :: acc
@@ -280,14 +286,14 @@ and stmt env st acc =
       A.Try (tok, A.Block (lb, stl, rb), cl, fl) :: acc
   | Echo (tok, el, t) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
-                      fb (List.map (expr env) (comma_list el))), t) :: acc
+                      fb tok (List.map (expr env) (comma_list el))), t) :: acc
   | Globals (tok, gvl, _) ->
       A.Global (tok, List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (tok, svl, _) ->
       A.StaticVars (tok, List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
-                      fb [A.String (s, wrap tok)]), tok) :: acc
+                      fb tok [A.String (s, wrap tok)]), tok) :: acc
   | Use (tok, _fn, _) ->
       error tok "TODO:Use"
   | Unset (tok, (t1, lp, t2), sc) ->
@@ -311,7 +317,7 @@ and stmt env st acc =
 
        | (_,[Common.Left((Name("ticks",_), (_,Sc(C(Int(((Some 1),_)))))))],_), _
          ->
-           let cst = colon_stmt env colon_st in
+           let cst = colon_stmt tok env colon_st in
            cst :: acc
 
        |  _ -> error tok "TODO: declare"
@@ -323,26 +329,26 @@ and stmt env st acc =
 
 and if_elseif env (tok, (_, e, _), st) acc =
   let e = expr env e in
-  let st = stmt1 (stmt env st []) in
+  let st = stmt1 tok (stmt env st []) in
   A.If (tok, e, st, acc)
 
-and if_else env = function
-  | None -> noop
+and if_else tok env = function
+  | None -> noop tok
   | Some (_, (If _ as st)) ->
       (match stmt env st [] with
        | [x] -> x
        | _l -> assert false
       )
-  | Some (_, st) -> stmt1 (stmt env st [])
+  | Some (tok, st) -> stmt1 tok (stmt env st [])
 
 and new_elseif env (tok, (_, e, _), _, stl) acc =
   let e = expr env e in
-  let st = stmt1 (List.fold_right (stmt_and_def env) stl []) in
+  let st = stmt1 tok (List.fold_right (stmt_and_def env) stl []) in
   A.If (tok, e, st, acc)
 
-and new_else env = function
-  | None -> noop
-  | Some (_, _, st) -> stmt1 (List.fold_right (stmt_and_def env) st [])
+and new_else tok env = function
+  | None -> noop tok
+  | Some (tok, _, st) -> stmt1 tok (List.fold_right (stmt_and_def env) st [])
 
 and stmt_and_def env st acc = stmt env st acc
 
@@ -393,7 +399,7 @@ and expr env = function
   | BraceIdent (_l, e, _r) ->
       expr env e
   | Deref (tok, e) ->
-      A.Call (A.Id [A.builtin "eval_var", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "eval_var", wrap tok], fb tok [expr env e])
 
   | Binary (e1, (bop, tok), e2) ->
       let e1 = expr env e1 in
@@ -445,7 +451,7 @@ and expr env = function
       A.NewAnonClass (tok, args, cdef)
 
   | Clone (tok, e) ->
-      A.Call (A.Id [A.builtin "clone", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "clone", wrap tok], fb tok [expr env e])
   | AssignRef (e1, tokeq, tokref, e2) ->
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
@@ -476,23 +482,23 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [expr env e]
       in
-      A.Call (A.Id [A.builtin "exit", wrap tok], fb arg)
+      A.Call (A.Id [A.builtin "exit", wrap tok], fb tok arg)
   | At (tok, e) ->
       let arg = expr env e in
-      A.Call (A.Id [A.builtin "at", wrap tok], fb [arg])
+      A.Call (A.Id [A.builtin "at", wrap tok], fb tok [arg])
   | Print (tok, e) ->
-      A.Call (A.Id [A.builtin "print", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "print", wrap tok], fb tok [expr env e])
   | BackQuote (t1, el, t2) ->
       A.Call (A.Id [A.builtin "exec", wrap t1 (* not really an exec token *)],
-              fb [A.Guil (t1, List.map (encaps env) el, t2)])
+              fb t1 [A.Guil (t1, List.map (encaps env) el, t2)])
   | Include (tok, e) ->
-      A.Call (A.Id [A.builtin "include", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "include", wrap tok], fb tok [expr env e])
   | IncludeOnce (tok, e) ->
-      A.Call (A.Id [A.builtin "include_once", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "include_once", wrap tok], fb tok [expr env e])
   | Require (tok, e) ->
-      A.Call (A.Id [A.builtin "require", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "require", wrap tok], fb tok [expr env e])
   | RequireOnce (tok, e) ->
-      A.Call (A.Id [A.builtin "require_once", wrap tok], fb [expr env e])
+      A.Call (A.Id [A.builtin "require_once", wrap tok], fb tok [expr env e])
 
   | Empty (tok, (lp, lv, rp)) ->
       A.Call (A.Id [A.builtin "empty", wrap tok], (lp, [lvalue env lv], rp))
@@ -501,13 +507,13 @@ and expr env = function
               (lp, List.map (lvalue env) (comma_list lvl), rp))
 
   | Yield (tok, e) ->
-      A.Call (A.Id [A.builtin "yield", wrap tok], fb[array_pair env e])
+      A.Call (A.Id [A.builtin "yield", wrap tok], fb tok [array_pair env e])
   (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
       A.Call (A.Id [A.builtin "yield", wrap tok],
-              fb[A.Id [A.builtin "yield_break", wrap tok2]])
+              fb tok [A.Id [A.builtin "yield_break", wrap tok2]])
   | Await (tok, e) ->
-      A.Call (A.Id [A.builtin "await", wrap tok], fb[expr env e])
+      A.Call (A.Id [A.builtin "await", wrap tok], fb tok [expr env e])
   | Ellipsis t -> A.Ellipsis t
   | ParenExpr (_, e, _) -> expr env e
 
@@ -666,7 +672,7 @@ and short_lambda_def env def =
   let sl_tok =
     match def.sl_tok with
     | Some tok -> wrap tok
-    | None -> wrap (fake "_lambda")
+    | None -> wrap (unsafe_fake "_lambda")
   in
   { A.
     f_ref = false;
@@ -680,7 +686,7 @@ and short_lambda_def env def =
     f_return_type = None;
     f_body =
       (match def.sl_body with
-       | SLExpr e -> A.Expr (expr env e, PI.sc)
+       | SLExpr e -> A.Expr (expr env e, PI.sc sl_tok)
        | SLBody (lb, body, rb) ->
            Block (lb, List.fold_right (stmt_and_def env) body [], rb)
       );
@@ -884,9 +890,9 @@ and array_pair env = function
 
 and for_expr env el = List.map (expr env) (comma_list el)
 
-and colon_stmt env = function
-  | SingleStmt st -> stmt1 (stmt env st [])
-  | ColonStmt (_, stl, _, _) -> stmt1 (List.fold_right (stmt_and_def env) stl [])
+and colon_stmt tok env = function
+  | SingleStmt st -> stmt1 tok (stmt env st [])
+  | ColonStmt (tok, stl, _, _) -> stmt1 tok (List.fold_right (stmt_and_def env) stl [])
 (*of tok (* : *) * stmt_and_def list * tok (* endxxx *) * tok (* ; *) *)
 
 and switch_case_list env = function
@@ -901,16 +907,16 @@ and case env = function
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Default (tok, stl)
 
-and foreach_variable env (r, lv) =
+and foreach_variable tok env (r, lv) =
   let e = lvalue env lv in
-  let e = if r <> None then A.Ref (fake "&", e) else e in
+  let e = if r <> None then A.Ref (fake tok "&", e) else e in
   e
 
-and foreach_pattern env pat =
+and foreach_pattern tok env pat =
   match pat with
-  | ForeachVar v -> foreach_variable env v
+  | ForeachVar v -> foreach_variable tok env v
   | ForeachArrow (v1, tok, v2) ->
-      A.Arrow(foreach_pattern env v1, tok, foreach_pattern env v2)
+      A.Arrow(foreach_pattern tok env v1, tok, foreach_pattern tok env v2)
   | ForeachList (_, (t1, xs, t2)) ->
       let xs = comma_list xs in
       let xs = List.fold_right (list_assign env) xs [] in
@@ -949,9 +955,9 @@ and global_var env = function
   | GlobalVar dn -> A.Var (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) ->
-      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb[lvalue env lv])
+      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb tok [lvalue env lv])
   | GlobalDollarExpr (tok, (_, e, _)) ->
-      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb[expr env e])
+      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb tok [expr env e])
 
 
 and attributes env = function

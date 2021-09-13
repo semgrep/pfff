@@ -345,7 +345,7 @@ let mk_funcall e1 args =
 let mk_constructor id (lp, params, rp) cp =
   let params = Common.optlist_to_list params in
   let ftyp = {
-    ft_ret = nQ, (TBase (Void (fake "void")));
+    ft_ret = nQ, (TBase (Void (fake (snd id) "void")));
     ft_params= (lp, params, rp);
     ft_specs = [];
     (* TODO *)
@@ -359,7 +359,7 @@ let mk_constructor id (lp, params, rp) cp =
 
 let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
-    ft_ret = nQ, (TBase (Void (fake "void")));
+    ft_ret = nQ, (TBase (Void (fake (snd id) "void")));
     ft_params= (lp,  [], rp);
     ft_specs = [];
     ft_const = None;

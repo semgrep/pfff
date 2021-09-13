@@ -128,7 +128,7 @@ let s_of_n (s, _) =
   s
 
 let pos_of_tok tok file =
-  { (Parse_info.token_location_of_info tok) with PI.file }
+  { (Parse_info.unsafe_token_location_of_info tok) with PI.file }
 
 let is_undefined_ok (src, _kindsrc) (dst, _kinddst) =
   src =~ "^node_modules/.*" ||
@@ -537,7 +537,7 @@ and expr env e =
         match nopt with
         | None -> env
         | Some n ->
-            let v = basic_entity n, VarDef { v_kind = Let, fake "let";
+            let v = basic_entity n, VarDef { v_kind = Let, fake (snd n) "let";
                                              v_init = None; v_type = None;
                                              (* v_resolved = ref Local *)}
             in
@@ -566,7 +566,7 @@ and expr env e =
         match nopt with
         | None -> env
         | Some n ->
-            let v = basic_entity n, VarDef {v_kind = Let, fake "let";
+            let v = basic_entity n, VarDef {v_kind = Let, fake (snd n) "let";
                                             v_init = None; v_type = None;
                                             (*v_resolved = ref Local*)}
             in

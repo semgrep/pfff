@@ -94,7 +94,7 @@ let filter_for_typedef multi_groups =
    * declaration.
   *)
   let multi_groups =
-    Tok(mk_token_fake (TPtVirg (Parse_info.fake_info ";")))::multi_groups in
+    Tok(mk_token_fake (TPtVirg (Parse_info.unsafe_fake_info ";")))::multi_groups in
 
   let _template_args = ref [] in
 

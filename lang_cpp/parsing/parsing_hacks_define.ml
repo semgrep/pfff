@@ -75,7 +75,7 @@ let mark_end_define ii =
   let ii' =
     { Parse_info.
       token = Parse_info.OriginTok {
-        (Parse_info.token_location_of_info ii) with
+        (Parse_info.unsafe_token_location_of_info ii) with
         Parse_info.str = "";
         Parse_info.charpos = PI.pos_of_info ii + 1
       };
