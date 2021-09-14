@@ -46,7 +46,7 @@ and error_kind =
 and entity = (string * Entity_code.entity_kind)
 (*e: type [[Error_code.entity]] *)
 
-val try_with_exn_to_error : Common.filename -> (unit -> unit) -> unit
+val mk_error_loc: Parse_info.token_location -> error_kind -> error
 
 (*s: type [[Error_code.annotation]] *)
 (* @xxx to acknowledge or explain false positives *)
