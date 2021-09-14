@@ -81,6 +81,7 @@ and config_type =
   | Json
   | Jsonnet (* kinda pl_type *)
   | Yaml
+  | HCL
 
 and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
@@ -222,6 +223,7 @@ let file_type_of_file2 file =
   | "json" -> Config Json
   | "jsonnet" -> Config Jsonnet
   | "yml" | "yaml" -> Config Yaml
+  | "tf" -> Config HCL
   | "sql" -> PL (Web Sql)
   | "sqlite" -> PL (Web Sql)
 

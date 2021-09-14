@@ -33,6 +33,7 @@ and config_type =
   | Json
   | Jsonnet
   | Yaml
+  | HCL
 
 and lisp_type = CommonLisp | Elisp | Scheme | Clojure
 
