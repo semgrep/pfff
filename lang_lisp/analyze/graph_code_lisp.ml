@@ -103,7 +103,7 @@ let add_node_and_edge_if_defs_mode env (s, kind) tok =
        Hashtbl.replace env.dupes node true;
      end
      else begin
-       let pos = Parse_info.token_location_of_info tok in
+       let pos = Parse_info.unsafe_token_location_of_info tok in
        let pos = { pos with Parse_info.file = env.readable_file } in
        let nodeinfo = { Graph_code.
                         pos;

@@ -639,11 +639,15 @@ let idexp_or_special id =
  * what was before a simple sequence of stmts in the same block can suddently
  * be in different blocks.
 *)
-and stmt1 xs =
+let stmt1_with b xs =
   match xs with
-  | [] -> Block (Parse_info.fake_bracket [])
+  | [] -> Block (b [])
   | [x] -> x
-  | xs -> Block (Parse_info.fake_bracket xs)
+  | xs -> Block (b xs)
+
+let stmt1 tok xs = stmt1_with (Parse_info.fake_bracket tok) xs
+
+let unsafe_stmt1 xs = stmt1_with Parse_info.unsafe_fake_bracket xs
 
 let basic_entity id =
   { name = id; attrs = [] }
@@ -695,7 +699,7 @@ let vars_to_stmts xs =
    Left-handside patterns and function parameters happen to use the same
    syntax. This for converting one to the other.
 *)
-let parameter_to_pattern (param : parameter) : a_pattern =
+let parameter_to_pattern tok (param : parameter) : a_pattern =
   match param with
   | ParamClassic { p_name; p_default; p_type; p_dots; p_attrs } ->
       let pat =
@@ -706,12 +710,12 @@ let parameter_to_pattern (param : parameter) : a_pattern =
       let pat =
         match p_type with
         | None -> pat
-        | Some type_ -> Cast (pat, Parse_info.fake_info ":", type_)
+        | Some type_ -> Cast (pat, Parse_info.fake_info tok ":", type_)
       in
       let pat =
         match p_default with
         | None -> pat
-        | Some expr -> Assign (pat, Parse_info.fake_info "=", expr)
+        | Some expr -> Assign (pat, Parse_info.fake_info tok "=", expr)
       in
       (* TODO? *)
       ignore p_attrs;
@@ -740,7 +744,7 @@ module PI = Parse_info
 (* used both by Parsing_hacks_js and Parse_js *)
 let fakeInfoAttach info =
   let info = PI.rewrap_str "';' (from ASI)" info in
-  let pinfo = PI.token_location_of_info info in
+  let pinfo = PI.unsafe_token_location_of_info info in
   { PI.
     token = PI.FakeTokStr (";", Some (pinfo, -1));
     transfo = PI.NoTransfo;

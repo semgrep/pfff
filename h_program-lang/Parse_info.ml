@@ -118,13 +118,38 @@ and add =
 
 [@@deriving show { with_path = false} ] (* with tarzan *)
 
+exception NoTokenLocation of string
 
 let mk_info_of_loc loc =
   { token = OriginTok loc; transfo = NoTransfo }
 
+let token_location_of_info ii =
+  match ii.token with
+  | OriginTok pinfo -> Ok pinfo
+  (* TODO ? dangerous ? *)
+  | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> Ok pinfo_pp
+  | FakeTokStr (_, (Some (pi, _))) -> Ok pi
+
+  | FakeTokStr (_, None) -> Error "FakeTokStr"
+  | Ab -> Error "Ab"
+
+let unsafe_token_location_of_info ii =
+  match token_location_of_info ii with
+  | Ok pinfo -> pinfo
+  | Error msg -> raise (NoTokenLocation msg)
+
 (* Synthesize a token. *)
-let fake_info str : token_mutable =
+let unsafe_fake_info str : token_mutable =
   { token = FakeTokStr (str, None); transfo = NoTransfo; }
+
+let fake_info_loc next_to_loc str : token_mutable =
+  (* TODO: offset seems to have no use right now (?) *)
+  { token = FakeTokStr (str, Some (next_to_loc, -1)); transfo = NoTransfo; }
+
+let fake_info next_to_tok str : token_mutable =
+  match token_location_of_info next_to_tok with
+  | Ok loc -> fake_info_loc loc str
+  | Error _ -> unsafe_fake_info str
 
 let abstract_info =
   { token = Ab; transfo = NoTransfo }
@@ -135,9 +160,17 @@ let is_fake tok =
   | _ -> false
 
 (* used to be in AST_generic.ml *)
-let fake_bracket x = fake_info "(", x, fake_info ")"
+let unsafe_fake_bracket x = unsafe_fake_info "(", x, unsafe_fake_info ")"
+let fake_bracket_loc next_to_loc x =
+  fake_info_loc next_to_loc "(", x, fake_info_loc next_to_loc ")"
+let fake_bracket next_to_tok x =
+  fake_info next_to_tok "(", x, fake_info next_to_tok ")"
+
 let unbracket (_, x, _) = x
-let sc = fake_info ";"
+
+let unsafe_sc = unsafe_fake_info ";"
+let sc_loc next_to_loc = fake_info_loc next_to_loc ";"
+let sc next_to_tok = fake_info next_to_tok ";"
 
 type token_kind =
   (* for the fuzzy parser and sgrep/spatch fuzzy AST *)
@@ -293,8 +326,6 @@ exception Parsing_error of t
 exception Ast_builder_error of string * t
 exception Other_error of string * t
 
-exception NoTokenLocation of string
-
 let tokinfo lexbuf  =
   tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
@@ -311,22 +342,12 @@ let lexical_error s lexbuf =
 (* Accessors *)
 (*****************************************************************************)
 
-let token_location_of_info ii =
-  match ii.token with
-  | OriginTok pinfo -> pinfo
-  (* TODO ? dangerous ? *)
-  | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> pinfo_pp
-  | FakeTokStr (_, (Some (pi, _))) -> pi
-
-  | FakeTokStr (_, None) -> raise (NoTokenLocation "FakeTokStr")
-  | Ab -> raise (NoTokenLocation "Ab")
-
 (* for error reporting *)
 let string_of_token_location x =
   spf "%s:%d:%d" x.file x.line x.column
 
 let string_of_info x =
-  string_of_token_location (token_location_of_info x)
+  string_of_token_location (unsafe_token_location_of_info x)
 
 let str_of_info  ii =
   match ii.token  with
@@ -335,12 +356,12 @@ let str_of_info  ii =
   | ExpandedTok _ | Ab ->
       raise (NoTokenLocation "str_of_info: Expanded or Ab")
 
-let _str_of_info ii = (token_location_of_info ii).str
-let file_of_info ii = (token_location_of_info ii).file
-let line_of_info ii = (token_location_of_info ii).line
-let col_of_info  ii = (token_location_of_info ii).column
+let _str_of_info ii = (unsafe_token_location_of_info ii).str
+let file_of_info ii = (unsafe_token_location_of_info ii).file
+let line_of_info ii = (unsafe_token_location_of_info ii).line
+let col_of_info  ii = (unsafe_token_location_of_info ii).column
 (* todo: return a Real | Virt position ? *)
-let pos_of_info  ii = (token_location_of_info ii).charpos
+let pos_of_info  ii = (unsafe_token_location_of_info ii).charpos
 
 (*****************************************************************************)
 (* Misc *)
@@ -511,7 +532,7 @@ let combine_infos x xs =
   tok_add_s str x
 
 let split_info_at_pos pos ii =
-  let loc = token_location_of_info ii in
+  let loc = unsafe_token_location_of_info ii in
   let str = loc.str in
   let loc1_str =
     String.sub str 0 pos in
@@ -816,7 +837,7 @@ let error_message_token_location = fun info ->
        " given out of file:" ^ filename)
 
 let error_message_info info =
-  let pinfo = token_location_of_info info in
+  let pinfo = unsafe_token_location_of_info info in
   error_message_token_location pinfo
 
 

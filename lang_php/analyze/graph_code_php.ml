@@ -355,7 +355,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
        * the duplicate are all in a skip_errors dir).
       *)
       env.g |> G.add_edge (env.cur.node, node) G.Has;
-      let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
+      let pos = Parse_info.unsafe_token_location_of_info (Ast.tok_of_ident ident) in
       let pos = { pos with Parse_info.file = env.cur.readable } in
       let typ = None in (* todo *)
       let nodeinfo = { Graph_code. pos; props; typ } in
@@ -922,15 +922,15 @@ and expr env x =
 
        (* static method call *)
        | Class_get (Id[ ("__special__self", tokopt)], tok, e2) ->
-           expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), fb es))
+           expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), fb tok es))
        | Class_get (Id[ ("__special__parent", tokopt)], tok, e2) ->
            let name = name_of_parent env tokopt in
-           expr env (Call (Class_get (Id name, tok, e2), fb es))
+           expr env (Call (Class_get (Id name, tok, e2), fb tok es))
        (* Incorrect actually ... but good enough for codegraph.
         * todo: should put that in the phase_dispatch
        *)
        | Class_get (Id[ ("__special__static", tokopt)], tok, e2) ->
-           expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), fb es))
+           expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], tok, e2), fb tok es))
 
        | Class_get (Id name1, _, Id [name2]) ->
            (* can be static or regular method as transform $this->foo()
@@ -945,7 +945,7 @@ and expr env x =
             (* handle easy case *)
             | IdSpecial (This, tok) ->
                 expr env
-                  (Call (Class_get (Id[ (env.cur.self, tok)], tok, Id name2), fb es));
+                  (Call (Class_get (Id[ (env.cur.self, tok)], tok, Id name2), fb tok es));
                 env.phase_dispatch |> Common.push (env.cur, name2);
                 (* need class analysis ... *)
             | _ ->
@@ -1016,7 +1016,7 @@ and expr env x =
       )
 
   | New (tok, e, es) ->
-      expr env (Call (Class_get(e, tok, Id[ ("__construct", tok)]), fb es))
+      expr env (Call (Class_get(e, tok, Id[ ("__construct", tok)]), fb tok es))
   | NewAnonClass _ -> raise Todo
 
   (* -------------------------------------------------- *)

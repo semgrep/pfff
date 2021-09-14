@@ -284,7 +284,7 @@ end
 let pos_of s = s.pos
 
 let empty_stmt () = mkstmt (I (Expression (EId Nil)))
-    (Parse_info.fake_info "empty_stmt")
+    (Parse_info.unsafe_fake_info "empty_stmt")
 
 let fresh_local _s =
   let i = uniq () in

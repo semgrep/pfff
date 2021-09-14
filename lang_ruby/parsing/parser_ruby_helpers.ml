@@ -276,13 +276,13 @@ and unfold_dot l r pos =
   match l with
   (* unfold nested a.b.c to become (a.b()).c() *)
   | DotAccess(a,(p),b) ->
-      let l' = methodcall (unfold_dot a b p) (fb []) None in
+      let l' = methodcall (unfold_dot a b p) (fb pos []) None in
       DotAccess(l',(pos),r)
 
   | _ -> DotAccess(l,(pos),r)
 
 and check_for_dot = function
-  | DotAccess(l,(p),r) -> methodcall (unfold_dot l r p) (fb []) None
+  | DotAccess(l,(p),r) -> methodcall (unfold_dot l r p) (fb p []) None
   | e -> e
 
 and scope tk l r =
@@ -293,9 +293,9 @@ and scope tk l r =
 let command_codeblock cmd cb =
   match cmd with
   | Call(c,args,None) -> Call(c,args,Some cb)
-  | DotAccess(_,(_p),_)
-  | ScopedId(Scope(_,(_p),_)) -> Call(cmd,fb [],Some cb)
-  | Id((_,_p),_) -> Call(cmd,fb [],Some cb)
+  | DotAccess(_,(p),_)
+  | ScopedId(Scope(_,(p),_)) -> Call(cmd,fb p [],Some cb)
+  | Id((_,p),_) -> Call(cmd,fb p [],Some cb)
   | _ -> raise Dyp.Giveup
 
 (* sometimes the lexer gets can't properly handle x!= as x(!=) and
@@ -334,7 +334,7 @@ let fix_broken_assoc l op r =
     | Atom(tk, AtomFromString(lt, sc, rt)) ->
         let (astr, t), rest = match List.rev sc with
           | (Ast_ruby.StrChars (s, t))::tl -> (s,t),tl
-          | _ -> ("a", Parse_info.fake_info "a"),[]
+          | _ -> ("a", Parse_info.fake_info tk "a"),[]
         in
         let len = String.length astr in
         if astr.[len-1] == '='

@@ -107,7 +107,7 @@ let range (a, _) (_, b) =
   (a, b)
 
 let dummy_loc =
-  let tok = Parse_info.fake_info "" in
+  let tok = Parse_info.unsafe_fake_info "" in
   (tok, tok)
 
 let union (a : char_class) (b : char_class) =

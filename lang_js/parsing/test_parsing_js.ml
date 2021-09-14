@@ -110,7 +110,7 @@ let test_dump_ts file =
 (*****************************************************************************)
 
 let info_to_json_range info =
-  let loc = PI.token_location_of_info info in
+  let loc = PI.unsafe_token_location_of_info info in
   J.Object [
     "line", J.Int loc.PI.line;
     "col", J.Int loc.PI.column;

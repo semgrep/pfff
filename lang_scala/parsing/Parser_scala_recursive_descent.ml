@@ -234,7 +234,7 @@ let convertToParam tk e =
 let convertToParams tk e =
   match e with
   | Tuple (lb, xs, rb) -> (lb, xs |> List.map (convertToParam tk), rb)
-  | _ -> fb [convertToParam tk e]
+  | _ -> fb tk [convertToParam tk e]
 
 let makeMatchFromExpr e =
   match e with
@@ -1653,7 +1653,7 @@ and parseOther location (in_: env) : expr =
          let fbody =
            if location <> InBlock
            then FExpr (ii, expr in_)
-           else FBlock (fb (BEBlock (block in_ )))
+           else FBlock (fb ii (BEBlock (block in_ )))
          in
          let params = convertToParams ii !t in
          let def = { fkind = LambdaArrow, ii;
@@ -2013,12 +2013,12 @@ and implicitClosure implicitmod location in_ =
     then FExpr (iarrow, expr in_)
     else
       let xs = block in_ in
-      FBlock (fb (BEBlock xs))
+      FBlock (fb iarrow (BEBlock xs))
 
   in
   (* ast: Function(List(param), x) *)
   let def = { fkind = (LambdaArrow, iarrow);
-              fparams = [fb [param]]; frettype = None;
+              fparams = [fb iarrow [param]]; frettype = None;
               fbody = Some body } in
   Lambda def
 

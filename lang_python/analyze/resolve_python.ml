@@ -63,7 +63,7 @@ let add_name_env name kind env =
 let with_new_context ctx env f =
   Common.save_excursion env.ctx ctx f
 
-let params_of_parameters params =
+let params_of_parameters tok params =
   let param_pattern_name ix = function
     | PatternName name -> name
     | PatternTuple _names ->
@@ -71,7 +71,7 @@ let params_of_parameters params =
          * They will, however, parse.
          * TODO: Add factoring similar to lang_js/analyze/transpile_js patterns
         *)
-        (spf "!arg%d!" ix, Parse_info.fake_info "tuple")
+        (spf "!arg%d!" ix, Parse_info.fake_info tok "tuple")
   in
   let collect_param_names (ix, out) = function
     | ParamPattern (pat, _) ->
@@ -177,8 +177,8 @@ let resolve prog =
                                );
                                V.kstmt = (fun (k, v) x ->
                                  match x with
-                                 | FunctionDef (_t, name, params, _typopt, _body, _decorators) ->
-                                     let new_params = params_of_parameters (params: parameters) in
+                                 | FunctionDef (t, name, params, _typopt, _body, _decorators) ->
+                                     let new_params = params_of_parameters t (params: parameters) in
                                      let new_names = new_params |> List.map (fun name ->
                                        Ast.str_of_name name, Ast.Parameter
                                      ) in
