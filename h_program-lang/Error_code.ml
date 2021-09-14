@@ -349,6 +349,9 @@ let exn_to_error file exn =
         Common.spf "%s\n%s" (Common.exn_to_s exn) (Printexc.get_backtrace ()) in
       mk_error_loc loc (FatalError msg)
 
+let try_with_exn_to_error file f =
+  try f () with exn -> Common.push (exn_to_error file exn) g_errors
+
 let try_with_print_exn_and_reraise file f =
   try
     f ()
@@ -461,3 +464,26 @@ let annotation_at2 loc =
 
 let annotation_at a =
   Common.profile_code "Errors_code.annotation" (fun () -> annotation_at2 a)
+
+(*****************************************************************************)
+(* Helper functions to use in testing code *)
+(*****************************************************************************)
+let default_error_regexp = ".*\\(ERROR\\|MATCH\\):"
+
+let (expected_error_lines_of_files :
+       ?regexp:string ->
+     Common.filename list ->
+     (Common.filename * int) (* line *) list) =
+  fun ?(regexp = default_error_regexp) test_files ->
+  test_files
+  |> List.map (fun file ->
+    Common.cat file |> Common.index_list_1
+    |> Common.map_filter (fun (s, idx) ->
+      (* Right now we don't care about the actual error messages. We
+       * don't check if they match. We are just happy to check for
+       * correct lines error reporting.
+      *)
+      if s =~ regexp (* + 1 because the comment is one line before *)
+      then Some (file, idx + 1)
+      else None))
+  |> List.flatten

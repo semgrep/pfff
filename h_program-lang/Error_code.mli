@@ -46,6 +46,8 @@ and error_kind =
 and entity = (string * Entity_code.entity_kind)
 (*e: type [[Error_code.entity]] *)
 
+val try_with_exn_to_error : Common.filename -> (unit -> unit) -> unit
+
 (*s: type [[Error_code.annotation]] *)
 (* @xxx to acknowledge or explain false positives *)
 type annotation =
@@ -148,6 +150,8 @@ val adjust_paths_relative_to_root:
 val exn_to_error: Common.filename -> exn -> error
 (*e: signature [[Error_code.exn_to_error]] *)
 
+val try_with_exn_to_error : Common.filename -> (unit -> unit) -> unit
+
 (*s: signature [[Error_code.try_with_print_exn_and_reraise]] *)
 val try_with_print_exn_and_reraise:
   Common.filename -> (unit -> unit) -> unit
@@ -170,3 +174,13 @@ type identifier_index = (string, Parse_info.token_location) Hashtbl.t
 val adjust_errors:
   error list -> error list
 (*e: signature [[Error_code.adjust_errors]] *)
+
+(*****************************************************************************)
+(* Helpers for unit testing *)
+(*****************************************************************************)
+
+(* extract all the lines with ERROR: comment in test files *)
+val expected_error_lines_of_files :
+  ?regexp:string ->
+  Common.filename list ->
+  (Common.filename * int) (* line with ERROR *) list
