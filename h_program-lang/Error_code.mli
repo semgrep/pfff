@@ -22,11 +22,6 @@ and error_kind =
   | AstGenericError of string
   | OtherParsingError of string
 
-  (* matching (semgrep) related *)
-  | MatchingError of string (* internal error, e.g., NoTokenLocation *)
-  | SemgrepMatchFound of (string (* check_id *) * string (* msg *))
-  | TooManyMatches of string (* can contain offending pattern *)
-
   (* global analysis *)
   | Deadcode of entity
 
@@ -51,7 +46,6 @@ and error_kind =
 and entity = (string * Entity_code.entity_kind)
 (*e: type [[Error_code.entity]] *)
 
-(* internal: you should prefer to use the error function below *)
 val mk_error_loc: Parse_info.token_location -> error_kind -> error
 
 (*s: type [[Error_code.annotation]] *)
@@ -95,10 +89,6 @@ val string_of_error: error -> string
 (*s: signature [[Error_code.string_of_error_kind]] *)
 val string_of_error_kind: error_kind -> string
 (*e: signature [[Error_code.string_of_error_kind]] *)
-
-(*s: signature [[Error_code.check_id_of_error_kind]] *)
-val check_id_of_error_kind: error_kind -> string
-(*e: signature [[Error_code.check_id_of_error_kind]] *)
 
 (* ranking *)
 
@@ -160,10 +150,7 @@ val adjust_paths_relative_to_root:
 val exn_to_error: Common.filename -> exn -> error
 (*e: signature [[Error_code.exn_to_error]] *)
 
-(*s: signature [[Error_code.try_with_exn_to_error]] *)
-val try_with_exn_to_error:
-  Common.filename -> (unit -> unit) -> unit
-(*e: signature [[Error_code.try_with_exn_to_error]] *)
+val try_with_exn_to_error : Common.filename -> (unit -> unit) -> unit
 
 (*s: signature [[Error_code.try_with_print_exn_and_reraise]] *)
 val try_with_print_exn_and_reraise:
@@ -188,17 +175,12 @@ val adjust_errors:
   error list -> error list
 (*e: signature [[Error_code.adjust_errors]] *)
 
-(* helpers for unit testing code *)
+(*****************************************************************************)
+(* Helpers for unit testing *)
+(*****************************************************************************)
 
-(*s: signature [[Error_code.expected_error_lines_of_files]] *)
 (* extract all the lines with ERROR: comment in test files *)
-val expected_error_lines_of_files:
-  ?regexp:string -> Common.filename list ->
-  (Common.filename * int (* line with ERROR *)) list
-(*e: signature [[Error_code.expected_error_lines_of_files]] *)
-
-(*
-   Return the number of errors and an error message, if there's any error.
-*)
-val compare_actual_to_expected:
-  error list -> (Common.filename * int) list -> (unit, (int * string)) result
+val expected_error_lines_of_files :
+  ?regexp:string ->
+  Common.filename list ->
+  (Common.filename * int) (* line with ERROR *) list

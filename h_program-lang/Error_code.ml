@@ -75,11 +75,6 @@ and error_kind =
   | AstGenericError of string
   | OtherParsingError of string
 
-  (* matching (semgrep) related *)
-  | MatchingError of string (* internal error, e.g., NoTokenLocation *)
-  | SemgrepMatchFound of (string (* check_id *) * string (* msg *))
-  | TooManyMatches of string (* can contain offending pattern *)
-
   (* entities *)
   (* done while building the graph:
    *  - UndefinedEntity (UseOfUndefined)
@@ -174,9 +169,6 @@ let string_of_error_kind error_kind =
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name
         (Scope_code.string_of_scope scope)
-  | SemgrepMatchFound (_title, message) -> message
-  | MatchingError (s) -> spf "matching internal error: %s" s
-  | TooManyMatches s -> spf "too many matches: %s" s
 
   | UnusedStatement -> spf "unreachable statement"
   | UnusedAssign s ->
@@ -196,39 +188,6 @@ let string_of_error_kind error_kind =
   | Timeout (Some s) -> "Timeout:" ^ s
   | OutOfMemory None -> "Out of memory"
   | OutOfMemory (Some s) -> "Out of memory:" ^ s
-
-(* for r2c/bento error format *)
-let check_id_of_error_kind = function
-  | LexicalError _ -> "LexicalError"
-  | ParseError -> "ParseError"
-  | AstBuilderError _ -> "AstBuilderError"
-  | AstGenericError _ -> "AstGenericError"
-  | OtherParsingError _ -> "OtherParsingError"
-
-  (* global analysis *)
-  | Deadcode _ -> "Deadcode"
-
-  (* use/def entities *)
-  | UndefinedDefOfDecl _ -> "UndefinedDefOfDecl"
-  | UnusedExport _ -> "UnusedExport"
-  | UnusedVariable _ -> "UnusedVariable"
-
-  (* CFG/DFG *)
-  | UnusedStatement -> "UnusedStatement"
-  | UnusedAssign _ -> "UnusedAssign"
-  | UseOfUninitialized _ -> "UseOfUninitialized"
-  | CFGError _ -> "CFGError"
-
-  (* semgrep *)
-  | SemgrepMatchFound (check_id, _) -> spf "sgrep-lint-<%s>" check_id
-  | MatchingError _ -> "MatchingError"
-  | TooManyMatches _ -> "TooManyMatches"
-
-  (* other *)
-  | FatalError _ -> "FatalError"
-  | Timeout _  -> "Timeout"
-  | OutOfMemory _ -> "OutOfMemory"
-
 
 (*
 let loc_of_node root n g =
@@ -305,7 +264,6 @@ let rank_of_error err =
   (* we want to simplify interfaces as much as possible! *)
   | UnusedExport _ -> ReallyImportant
   | UnusedVariable _ -> Less
-  | SemgrepMatchFound _ -> Important
   | UnusedStatement | UnusedAssign _ | UseOfUninitialized _ -> Important
   | CFGError _ -> Important
 
@@ -315,7 +273,6 @@ let rank_of_error err =
     -> OnlyStrict
   (* usually a bug somewhere in my code *)
   | FatalError _ | Timeout _ | OutOfMemory _
-  | MatchingError _ | TooManyMatches _
     -> OnlyStrict
 
 
@@ -393,10 +350,7 @@ let exn_to_error file exn =
       mk_error_loc loc (FatalError msg)
 
 let try_with_exn_to_error file f =
-  try
-    f ()
-  with exn ->
-    Common.push (exn_to_error file exn) g_errors
+  try f () with exn -> Common.push (exn_to_error file exn) g_errors
 
 let try_with_print_exn_and_reraise file f =
   try
@@ -511,60 +465,25 @@ let annotation_at2 loc =
 let annotation_at a =
   Common.profile_code "Errors_code.annotation" (fun () -> annotation_at2 a)
 
-
 (*****************************************************************************)
 (* Helper functions to use in testing code *)
 (*****************************************************************************)
-
 let default_error_regexp = ".*\\(ERROR\\|MATCH\\):"
 
-let (expected_error_lines_of_files:
+let (expected_error_lines_of_files :
        ?regexp:string ->
-     Common.filename list -> (Common.filename * int (* line *)) list) =
-  fun ?(regexp=default_error_regexp) test_files ->
-  test_files |> List.map (fun file ->
-    Common.cat file |> Common.index_list_1 |> Common.map_filter
-      (fun (s, idx) ->
-         (* Right now we don't care about the actual error messages. We
-          * don't check if they match. We are just happy to check for
-          * correct lines error reporting.
-         *)
-         if s =~ regexp
-         (* + 1 because the comment is one line before *)
-         then Some (file, idx + 1)
-         else None
-      )
-  ) |> List.flatten
-
-let compare_actual_to_expected actual_errors expected_error_lines =
-  let actual_error_lines =
-    actual_errors |> List.map (fun err ->
-      let loc = err.loc in
-      loc.PI.file, loc.PI.line
-    )
-  in
-  (* diff report *)
-  let (_common, only_in_expected, only_in_actual) =
-    Common2.diff_set_eff expected_error_lines actual_error_lines in
-
-  only_in_expected |> List.iter (fun (src, l) ->
-    pr2 (spf "this one error is missing: %s:%d" src l);
-  );
-  only_in_actual |> List.iter (fun (src, l) ->
-    pr2 (spf "this one error was not expected: %s:%d (%s)" src l
-           (actual_errors |> List.find (fun err ->
-              let loc = err.loc in
-              src =$= loc.PI.file &&
-              l   =|= loc.PI.line
-            ) |> string_of_error));
-  );
-  let num_errors =
-    List.length only_in_actual + List.length only_in_expected
-  in
-  let msg =
-    spf "it should find all reported errors and no more (%d errors)"
-      num_errors
-  in
-  match num_errors with
-  | 0 -> Stdlib.Ok ()
-  | n -> Error (n, msg)
+     Common.filename list ->
+     (Common.filename * int) (* line *) list) =
+  fun ?(regexp = default_error_regexp) test_files ->
+  test_files
+  |> List.map (fun file ->
+    Common.cat file |> Common.index_list_1
+    |> Common.map_filter (fun (s, idx) ->
+      (* Right now we don't care about the actual error messages. We
+       * don't check if they match. We are just happy to check for
+       * correct lines error reporting.
+      *)
+      if s =~ regexp (* + 1 because the comment is one line before *)
+      then Some (file, idx + 1)
+      else None))
+  |> List.flatten
