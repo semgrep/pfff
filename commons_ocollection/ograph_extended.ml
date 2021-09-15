@@ -289,6 +289,22 @@ let generate_ograph_xxx g filename =
   ()
 
 
+let get_os =
+  let ic = Unix.open_process_in "uname" in
+  let uname = input_line ic in
+  let () = close_in ic in
+  match uname with
+  | "Darwin" -> `MacOs
+  | "Linux" -> `Linux
+  | _ -> `Unknown
+
+let launch_png_cmd filename = 
+    let _status = 
+      Unix.system (Printf.sprintf "dot -Tpng %s -o %s.png" filename filename) in
+    let _status =
+        Unix.system (Printf.sprintf "open %s.png" filename)
+    in ()
+
 let launch_gv_cmd filename =
   let _status =
     Unix.system ("dot " ^ filename ^ " -Tps  -o " ^ filename ^ ".ps;") in
@@ -301,19 +317,25 @@ let launch_gv_cmd filename =
   *)
   ()
 
-let print_ograph_extended g filename launchgv =
-  generate_ograph_xxx g filename;
-  if launchgv then launch_gv_cmd filename
+let display_graph_cmd = 
+    match get_os with
+    | `MacOs -> launch_png_cmd
+    | `Linux -> launch_gv_cmd
+    | _ -> fun _ -> ()
 
-let print_ograph_mutable g filename launchgv =
+let print_ograph_extended g filename display_graph =
   generate_ograph_xxx g filename;
-  if launchgv then launch_gv_cmd filename
+  if display_graph then display_graph_cmd filename
+
+let print_ograph_mutable g filename display_graph =
+  generate_ograph_xxx g filename;
+  if display_graph then display_graph_cmd filename
 
 let print_ograph_mutable_generic
     ?(title=None)
-    ?(launch_gv = true)
+    ?(display_graph = true)
     ?(output_file = "/tmp/ograph.dot")
     ~s_of_node
     g =
   generate_ograph_generic g title s_of_node output_file;
-  if launch_gv then launch_gv_cmd output_file
+  if display_graph then display_graph_cmd output_file
