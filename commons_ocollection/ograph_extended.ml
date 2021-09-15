@@ -299,11 +299,11 @@ let get_os =
   | _ -> `Unknown
 
 let launch_png_cmd filename =
-    let _status =
-      Unix.system (Printf.sprintf "dot -Tpng %s -o %s.png" filename filename) in
-    let _status =
-        Unix.system (Printf.sprintf "open %s.png" filename)
-    in ()
+  let _status =
+    Unix.system (Printf.sprintf "dot -Tpng %s -o %s.png" filename filename) in
+  let _status =
+    Unix.system (Printf.sprintf "open %s.png" filename)
+  in ()
 
 let launch_gv_cmd filename =
   let _status =
@@ -318,10 +318,10 @@ let launch_gv_cmd filename =
   ()
 
 let display_graph_cmd =
-    match get_os with
-    | `MacOs -> launch_png_cmd
-    | `Linux -> launch_gv_cmd
-    | _ -> fun _ -> ()
+  match get_os with
+  | `MacOs -> launch_png_cmd
+  | `Linux -> launch_gv_cmd
+  | _ -> fun _ -> ()
 
 let print_ograph_extended g filename display_graph =
   generate_ograph_xxx g filename;
