@@ -1,11 +1,9 @@
-(*s: pfff/lang_python/parsing/Unit_parsing_python.ml *)
 open Common
 
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
 
-(*s: constant [[Unit_parsing_python.tests]] *)
 let tests =
   Testutil.pack_tests "parsing_python" [
 
@@ -21,5 +19,3 @@ let tests =
       )
     );
   ]
-(*e: constant [[Unit_parsing_python.tests]] *)
-(*e: pfff/lang_python/parsing/Unit_parsing_python.ml *)

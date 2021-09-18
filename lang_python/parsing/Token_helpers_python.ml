@@ -1,4 +1,3 @@
-(*s: pfff/lang_python/parsing/Token_helpers_python.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -19,23 +18,18 @@ open Parser_python
 (*****************************************************************************)
 (* Token Helpers *)
 (*****************************************************************************)
-(*s: function [[Token_helpers_python.is_eof]] *)
 let is_eof = function
   | EOF _ -> true
   | _ -> false
-(*e: function [[Token_helpers_python.is_eof]] *)
 
-(*s: function [[Token_helpers_python.is_comment]] *)
 let is_comment = function
   | TComment _ | TCommentSpace _ -> true
   | _ -> false
-(*e: function [[Token_helpers_python.is_comment]] *)
 
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)
 
-(*s: function [[Token_helpers_python.visitor_info_of_tok]] *)
 let visitor_info_of_tok f = function
 
   | TUnknown ii -> TUnknown (f ii)
@@ -148,14 +142,10 @@ let visitor_info_of_tok f = function
   | INDENT ii -> INDENT (f ii)
   | DEDENT ii -> DEDENT (f ii)
   | NEWLINE ii -> NEWLINE (f ii)
-(*e: function [[Token_helpers_python.visitor_info_of_tok]] *)
 
-(*s: function [[Token_helpers_python.info_of_tok]] *)
 let info_of_tok tok =
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok |> ignore;
   match !res with
   | Some x -> x
   | None -> Parse_info.unsafe_fake_info "NOTOK"
-(*e: function [[Token_helpers_python.info_of_tok]] *)
-(*e: pfff/lang_python/parsing/Token_helpers_python.ml *)

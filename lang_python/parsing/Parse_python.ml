@@ -1,4 +1,3 @@
-(*s: pfff/lang_python/parsing/Parse_python.ml *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
@@ -28,30 +27,23 @@ module T = Parser_python
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(*s: type [[Parse_python.program_and_tokens]] *)
-(*e: type [[Parse_python.program_and_tokens]] *)
 
-(*s: type [[Parse_python.parsing_mode]] *)
 type parsing_mode =
   | Python2
   | Python3
   (* will start with Python3 and fallback to Python2 in case of an error *)
   | Python
-  (*e: type [[Parse_python.parsing_mode]] *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
-(*s: function [[Parse_python.error_msg_tok]] *)
 let error_msg_tok tok =
   Parse_info.error_message_info (TH.info_of_tok tok)
-(*e: function [[Parse_python.error_msg_tok]] *)
 
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
 
-(*s: function [[Parse_python.tokens2]] *)
 let tokens parsing_mode file =
   let state = Lexer.create () in
   let python2 = parsing_mode = Python2 in
@@ -90,17 +82,13 @@ let tokens parsing_mode file =
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
-(*e: function [[Parse_python.tokens2]] *)
 [@@profiling]
 
-(*s: function [[Parse_python.tokens]] *)
-(*e: function [[Parse_python.tokens]] *)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-(*s: function [[Parse_python.parse_basic]] *)
 let rec parse_basic ?(parsing_mode=Python) filename =
   let stat = Parse_info.default_stat filename in
 
@@ -164,20 +152,15 @@ let rec parse_basic ?(parsing_mode=Python) filename =
       stat.PI.error_line_count <- stat.PI.total_line_count;
       { Parse_info. ast = []; tokens = toks; stat }
     end
-(*e: function [[Parse_python.parse_basic]] *)
 
 
-(*s: function [[Parse_python.parse]] *)
 let parse ?parsing_mode a =
   Common.profile_code "Parse_python.parse" (fun () ->
     parse_basic ?parsing_mode a)
-(*e: function [[Parse_python.parse]] *)
 
-(*s: function [[Parse_python.parse_program]] *)
 let parse_program ?parsing_mode file =
   let res = parse ?parsing_mode file in
   res.PI.ast
-(*e: function [[Parse_python.parse_program]] *)
 
 (*****************************************************************************)
 (* Sub parsers *)
@@ -188,7 +171,6 @@ let (program_of_string: string -> AST_python.program) = fun s ->
     parse_program file
   )
 
-(*s: function [[Parse_python.any_of_string]] *)
 (* for sgrep/spatch *)
 let any_of_string ?(parsing_mode=Python) s =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
@@ -201,7 +183,6 @@ let any_of_string ?(parsing_mode=Python) s =
       (* -------------------------------------------------- *)
       Parser_python.sgrep_spatch_pattern lexer lexbuf_fake
     ))
-(*e: function [[Parse_python.any_of_string]] *)
 
 
 (*****************************************************************************)
@@ -218,4 +199,3 @@ let parse_fuzzy file =
   in
   trees, toks
 *)
-(*e: pfff/lang_python/parsing/Parse_python.ml *)

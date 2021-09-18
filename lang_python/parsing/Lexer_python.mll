@@ -1,4 +1,3 @@
-(*s: pfff/lang_python/parsing/Lexer_python.mll *)
 {
 (* Yoann Padioleau
  *
@@ -607,4 +606,3 @@ and fstring_triple_double state pre = parse
 
  | eof { error "EOF in string" lexbuf; EOF (tokinfo lexbuf) }
  | _  { error "unrecognized symbol in string" lexbuf; TUnknown(tokinfo lexbuf)}
-(*e: pfff/lang_python/parsing/Lexer_python.mll *)

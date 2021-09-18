@@ -1,11 +1,9 @@
-(*s: pfff/commons/OCaml.mli *)
 (*
  * OCaml hacks to support reflection (works with ocamltarzan).
  *
  * See also sexp.ml, json.ml, and xml.ml for other "reflective" techniques.
  *)
 
-(*s: type [[OCaml.t]] *)
 (* OCaml core type definitions (no objects, no modules) *)
 type t =
   | Unit
@@ -26,16 +24,10 @@ type t =
   | List of t
 
   | TTODO of string
-  (*e: type [[OCaml.t]] *)
 
-(*s: signature [[OCaml.add_new_type]] *)
 val add_new_type: string -> t -> unit
-(*e: signature [[OCaml.add_new_type]] *)
-(*s: signature [[OCaml.get_type]] *)
 val get_type: string -> t
-(*e: signature [[OCaml.get_type]] *)
 
-(*s: type [[OCaml.v]] *)
 (* OCaml values (a restricted form of expressions) *)
 type v =
   | VUnit
@@ -55,9 +47,7 @@ type v =
   | VRef of v
 
   | VTODO of string
-  (*e: type [[OCaml.v]] *)
 
-(*s: signature [[OCaml.vof_xxx]] functions *)
 (* building blocks, used by code generated using ocamltarzan *)
 val vof_unit   : unit -> v
 val vof_bool   : bool -> v
@@ -71,21 +61,16 @@ val vof_either    : ('a -> v) -> ('b -> v) -> ('a, 'b) Common.either -> v
 val vof_either3    : ('a -> v) -> ('b -> v) -> ('c -> v) ->
   ('a, 'b, 'c) Common.either3 -> v
 val vof_all3   : ('a -> v) -> ('b -> v) -> ('c -> v) -> 'a * 'b * 'c -> v
-(*e: signature [[OCaml.vof_xxx]] functions *)
 
-(*s: signature [[OCaml.xxx_ofv]] functions *)
 val int_ofv:    v -> int
 val float_ofv:  v -> float
 val unit_ofv: v -> unit
 val string_ofv: v -> string
 val list_ofv: (v -> 'a) -> v -> 'a list
 val option_ofv: (v -> 'a) -> v -> 'a option
-(*e: signature [[OCaml.xxx_ofv]] functions *)
 
-(*s: signature [[OCaml.string_of_v]] *)
 (* regular pretty printer (not via sexp, but using Format) *)
 val string_of_v: v -> string
-(*e: signature [[OCaml.string_of_v]] *)
 
 (* sexp converters *)
 (*
@@ -107,15 +92,12 @@ val save_json: Common.filename -> Json_type.json_type -> unit
 val load_json: Common.filename -> Json_type.json_type
 *)
 
-(*s: signature [[OCaml.map_v]] *)
 (* mapper/visitor *)
 val map_v:
   f:( k:(v -> v) -> v -> v) ->
   v ->
   v
-(*e: signature [[OCaml.map_v]] *)
 
-(*s: signature [[OCaml.map_of_xxx]] functions *)
 (* other building blocks, used by code generated using ocamltarzan *)
 val map_of_unit: unit -> unit
 val map_of_bool: bool -> bool
@@ -134,9 +116,7 @@ val map_of_either3:
   ('a -> 'b) -> ('c -> 'd) -> ('e -> 'f) ->
   ('a, 'c, 'e) Common.either3 -> ('b, 'd, 'f) Common.either3
 val map_of_all3: ('a -> 'b) -> ('c -> 'd) -> ('e -> 'f) -> 'a * 'c * 'e -> 'b * 'd * 'f
-(*e: signature [[OCaml.map_of_xxx]] functions *)
 
-(*s: signature [[OCaml.v_xxx]] functions *)
 (* pure visitor building blocks, used by code generated using ocamltarzan *)
 val v_unit: unit -> unit
 val v_bool: bool -> unit
@@ -153,5 +133,3 @@ val v_either:
 val v_either3:
   ('a -> unit) -> ('b -> unit) -> ('c -> unit) ->
   ('a, 'b, 'c) Common.either3 -> unit
-(*e: signature [[OCaml.v_xxx]] functions *)
-(*e: pfff/commons/OCaml.mli *)
