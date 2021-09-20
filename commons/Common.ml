@@ -61,6 +61,8 @@ type timeout_info = {
 
 exception Timeout of timeout_info
 
+exception ExceededMemoryLimit of string
+
 exception UnixExit of int
 
 (*****************************************************************************)
