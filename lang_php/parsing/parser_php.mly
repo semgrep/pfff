@@ -1076,7 +1076,9 @@ member_expr:
  | member_expr "->" "{" expr "}"
      { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
  | member_expr "::" primary_expr { ClassGet($1, $2, $3) }
- (* TODO: member_expr "::" ident_keywords? to avoid ambiguities *)
+ (* conflicts: special rule to avoid conflicts in primary_expr *)
+ | member_expr "::" keyword_as_ident_for_field
+    { ClassGet($1, $2, Id (XName [QI (Name $3)]))  }
  (* php 5.5 extension *)
  | member_expr "::" T_CLASS
      { ClassGet($1, $2, Id (XName [QI (Name("class", $3))])) }
@@ -1307,6 +1309,7 @@ ident_encaps:
 (* In namespace and class name. Used notably indirectly in primary_expr. *)
 ident_in_name:
  | ident { $1 }
+ (* can't use keyword_as_ident here, too many conflicts *)
  | T_INSTANCEOF { PI.str_of_info $1, $1 }
 
 ident_class_name:
@@ -1317,19 +1320,28 @@ ident_method_name:
  (* I would like to put all keywords, but some generate s/r conflicts, so
   * for now I add them on-demand
   *)
+ | keyword_as_ident { $1 }
+
+ident_constant_name: ident_method_name { $1 }
+
+keyword_as_ident:
  | T_PARENT      { PI.str_of_info $1, $1 }
  | T_SELF        { PI.str_of_info $1, $1 }
+ | T_INSTANCEOF  { PI.str_of_info $1, $1 }
+ | keyword_as_ident_for_field { $1 }
+
+(* can't put T_PARENT/T_SELF/... here because they are already used
+ * in primary_expr
+ *)
+keyword_as_ident_for_field:
  | T_ASYNC       { PI.str_of_info $1, $1 }
  | T_INCLUDE     { PI.str_of_info $1, $1 }
  | T_PUBLIC      { PI.str_of_info $1, $1 }
  | T_DEFAULT     { PI.str_of_info $1, $1 }
- | T_INSTANCEOF  { PI.str_of_info $1, $1 }
  | T_LIST        { PI.str_of_info $1, $1 }
  | T_LOGICAL_AND { PI.str_of_info $1, $1 }
  | T_NEW         { PI.str_of_info $1, $1 }
  | T_FROM        { PI.str_of_info $1, $1 }
-
-ident_constant_name: ident_method_name { $1 }
 
 (*************************************************************************)
 (* Namespace *)
