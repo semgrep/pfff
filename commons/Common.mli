@@ -257,6 +257,8 @@ val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 val memoized :
   ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 
+exception ExceededMemoryLimit of string
+
 exception UnixExit of int
 
 (* Contains the name given by the user to the timer and the time limit *)
