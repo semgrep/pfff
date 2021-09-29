@@ -1292,7 +1292,15 @@ exit_expr:
 (* Ident *)
 (*************************************************************************)
 
-(* ugly, PHP allows to use keywords for method/constant/classe names *)
+(* Ugly, PHP allows to use keywords for method/constant/classe names.
+ * Right now we partially handle that by allowing keywords in
+ * addition to T_IDENT at a few places.
+ * alt: handle that in lexer_php.mll, look at the
+ * _last_non_whitespace_like_token and if after 'function', or '::'
+ * then we should transform keywords as T_IDENT. We actually
+ * do that in a hacky way for '->' in lexer_php.mll. We should
+ * generalize.
+ *)
 
 (* this is used for function names, labels, declare, type names, etc. *)
 ident:

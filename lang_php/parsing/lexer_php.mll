@@ -510,6 +510,11 @@ rule st_in_scripting = parse
         push_mode ST_IN_SCRIPTING;
         TOBRACE(tokinfo lexbuf)
       }
+    (* TODO: alt: remove this and interpret LABEL differently when
+     * the _last_non_whitespace_like_token is '->' (we should
+     * also look for '::', 'function', '\\', etc. to transform more
+     * keywords as identifiers.
+     *)
     | (("->" | "?->") as sym) (WHITESPACEOPT as white) (LABEL as label) {
      (* todo: use yyback() instead of using pending_token with push_token.
       * buggy: push_mode ST_LOOKING_FOR_PROPERTY;
