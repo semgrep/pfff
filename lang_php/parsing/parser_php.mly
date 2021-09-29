@@ -1294,6 +1294,7 @@ exit_expr:
 
 (* ugly, PHP allows to use keywords for method/constant/classe names *)
 
+(* this is used for function names, labels, declare, type names, etc. *)
 ident:
  | T_IDENT { $1 }
 
@@ -1303,18 +1304,22 @@ ident:
  (* semgrep-ext: *)
  | T_METAVAR   { $1 }
 
+(* ident used in encapsulation *)
 ident_encaps:
  | T_IDENT { $1 }
 
-(* In namespace and class name. Used notably indirectly in primary_expr. *)
+(* used in namespace and class name. Used notably indirectly
+ * in primary_expr. *)
 ident_in_name:
  | ident { $1 }
  (* can't use keyword_as_ident here, too many conflicts *)
  | T_INSTANCEOF { PI.str_of_info $1, $1 }
 
+(* used in class definitions *)
 ident_class_name:
 | ident          { Name $1 }
 
+(* used in method definitions *)
 ident_method_name:
  | ident { $1 }
  (* I would like to put all keywords, but some generate s/r conflicts, so
@@ -1322,16 +1327,20 @@ ident_method_name:
   *)
  | keyword_as_ident { $1 }
 
+(* used in constant definitions *)
 ident_constant_name: ident_method_name { $1 }
 
 keyword_as_ident:
  | T_PARENT      { PI.str_of_info $1, $1 }
  | T_SELF        { PI.str_of_info $1, $1 }
  | T_INSTANCEOF  { PI.str_of_info $1, $1 }
+ | T_ARRAY       { PI.str_of_info $1, $1 }
  | keyword_as_ident_for_field { $1 }
 
-(* can't put T_PARENT/T_SELF/... here because they are already used
- * in primary_expr
+(* This is used in 'keyword_as_ident' above, as well as in 'member_expr' via:
+ *  | member_expr "::" keyword_as_ident_for_field
+ * note: can't put T_PARENT/T_SELF/... here because they are already used
+ * in primary_expr, hence the move in keyword_as_ident instead.
  *)
 keyword_as_ident_for_field:
  | T_ASYNC       { PI.str_of_info $1, $1 }
@@ -1342,6 +1351,9 @@ keyword_as_ident_for_field:
  | T_LOGICAL_AND { PI.str_of_info $1, $1 }
  | T_NEW         { PI.str_of_info $1, $1 }
  | T_FROM        { PI.str_of_info $1, $1 }
+ | T_GLOBAL       { PI.str_of_info $1, $1 }
+ | T_AS       { PI.str_of_info $1, $1 }
+ | T_FOR       { PI.str_of_info $1, $1 }
 
 (*************************************************************************)
 (* Namespace *)

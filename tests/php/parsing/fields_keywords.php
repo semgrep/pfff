@@ -14,3 +14,7 @@ class A {
 $o = new A();
 echo $o->if;
 echo $o->parent;
+
+$a = Entity::for;
+$b = Entity::GLOBAL;
+$c = Entity::AS;
