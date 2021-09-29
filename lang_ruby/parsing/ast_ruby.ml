@@ -194,7 +194,7 @@ type expr =
   | ScopedId of scope_resolution
 
   | Hash of bool * expr list bracket
-  | Array of expr list bracket
+  | Array of arguments bracket
   | Tuple of expr list
 
   | Unary of unary_op wrap * expr
@@ -202,7 +202,7 @@ type expr =
   | Ternary of expr * tok (* ? *) * expr * tok (* : *) * expr
 
   (* the brackets can be fake when the call is a "Command" *)
-  | Call of expr * expr list bracket * expr option
+  | Call of expr * arguments bracket * expr option
   (* TODO: ArrayAccess of expr * expr list bracket *)
   (* old: was Binop(e1, Op_DOT, e2) before *)
   | DotAccess of expr * tok (* . or &. *) * method_name
@@ -227,6 +227,17 @@ type expr =
 
 (* less: use for Assign, can be Id, Tuple, Array, more? *)
 and lhs = expr
+
+and argument =
+  | Arg of expr
+  (* less: ArgSplat, ArgHashSplat, ArgBlock *)
+  (* Ruby 2.0 argument keywords. Note that currently
+   * only the 'k: v' format is supported. Old style keyword args like
+   * ':k => v' are not converted to ArgKwd.
+  *)
+  | ArgKwd of ident * tok (* : *) * expr
+
+and arguments = argument list
 
 (* the pattern: below are copy pasted from tree-sitter-ruby, they may not be
  * the one actually used in lexer_ruby.mll *)
@@ -341,12 +352,12 @@ and stmt =
   | For of tok * pattern * tok * expr * stmts
 
   (* stmt and also as "command" *)
-  | Return of tok * expr list (* bracket option *)
-  | Yield of tok * expr list (* option *)
+  | Return of tok * arguments (* bracket option *)
+  | Yield of tok * arguments (* option *)
   (* treesitter: TSNOTDYP *)
-  | Break of tok * expr list | Next of tok * expr list
+  | Break of tok * arguments | Next of tok * arguments
   (* not as "command" *)
-  | Redo of tok * expr list | Retry of tok * expr list
+  | Redo of tok * arguments | Retry of tok * arguments
 
   | Case of tok * case_block
 
@@ -483,7 +494,17 @@ let opt_stmts_to_stmts = function
   | None -> []
   | Some (_, xs) -> xs
 
-(* x: v  <=>  :x => v  in Ruby in hash and calls *)
+(* x: v  <=>  :x => v  in Ruby in hash and calls.
+ * update: in Calls we actually prefer to use ArgKwd now.
+ * alt: have a better type for hash elements.
+*)
 let keyword_arg_to_expr id tk arg =
   let (s, t) = id in
   Binop (((Atom (tk, AtomSimple ((s), t)))), (Op_ASSOC, tk), arg)
+
+let arg_to_expr = function
+  | Arg e -> e
+  | ArgKwd (id, tk, arg) -> keyword_arg_to_expr id tk arg
+
+let args_to_exprs xs = List.map arg_to_expr xs
+let exprs_to_args xs = List.map (fun x -> Arg x) xs

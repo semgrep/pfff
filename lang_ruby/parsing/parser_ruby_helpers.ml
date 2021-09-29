@@ -64,7 +64,8 @@ let seen_str _dyp id =
 
 let rec seen dyp = function
   | Id((s, _), ID_Lowercase) -> seen_str dyp s
-  | Array(_, es,_) | Tuple(es) -> List.iter (seen dyp) es
+  | Tuple(es) -> List.iter (seen dyp) es
+  | Array(_, es,_) -> es |> args_to_exprs |> List.iter (seen dyp)
   | _ -> ()
 
 (*****************************************************************************)
@@ -97,7 +98,7 @@ let split_single_string_to_array str pos =
     in reduce [] chunks
   in
   let strings = List.map
-      (fun s -> Literal(String(Single (s, pos)))) strings
+      (fun s -> Arg (Literal(String(Single (s, pos))))) strings
   in
   Array(pos, strings,pos) (* TODO pos1 *)
 
@@ -138,7 +139,7 @@ let split_double_string_to_array sc pos =
   in
   let toks = tokenize [] sc in
   let lst = parse [] [] toks in
-  Array(pos, lst, pos) (* TODO pos1 *)
+  Array(pos, lst |> List.map (fun x -> Arg x), pos) (* TODO pos1 *)
 
 let str_of_interp sc = match sc with
   | []  -> ""
@@ -205,7 +206,9 @@ let well_formed_do guard _body = match ends_with guard with
       raise Dyp.Giveup
   | _ ->()
 
-let well_formed_return args = match args with
+let well_formed_return args =
+  let args = args_to_exprs args in
+  match args with
   | [] -> ()
   | hd::_tl ->
       if is_cond_modifier (Utils.last args) then raise Dyp.Giveup;
@@ -216,7 +219,9 @@ let well_formed_return args = match args with
       | S Block _ -> raise Dyp.Giveup
       | _ -> ()
 
-let well_formed_command _m args = match args with
+let well_formed_command _m args =
+  let args = args_to_exprs args in
+  match args with
   | [] -> ()
   (* f(x) should be not be f(x)
      needed e.g. f(x)[y] *)
@@ -477,7 +482,7 @@ let resolve_block_delim with_cb no_cb = match with_cb,no_cb with
   | Call(_m1',_args1,Some _do_block),
     Call(_m2',(_, args_ne, _),None) ->
       (* look for cmd arg1,...,(argn do block end) *)
-      if rhs_do_codeblock (Utils.last args_ne)
+      if rhs_do_codeblock (Utils.last args_ne |> arg_to_expr)
       then [with_cb]
       else [with_cb;no_cb]
   | _ -> assert false
@@ -587,6 +592,13 @@ let merge_expr s xs =
     l'
   )
 
+let merge_argument s xs =
+  wrap xs (fun xs ->
+    let l' = uniq_list compare_argument xs in
+    do_fail s l' Ast_printer.show_argument;
+    l'
+  )
+
 let merge_method_name s xs =
   wrap xs (fun xs ->
     let l' = uniq_list compare_method_name xs in
@@ -606,6 +618,13 @@ let merge_expr_list s xs =
   wrap xs (fun xs ->
     let l' = uniq_list compare_stmts (xs) in
     do_fail s l' Ast_printer.show_program;
+    l'
+  )
+
+let merge_argument_list s xs =
+  wrap xs (fun xs ->
+    let l' = uniq_list compare_arguments (xs) in
+    do_fail s l' Ast_printer.show_arguments;
     l'
   )
 

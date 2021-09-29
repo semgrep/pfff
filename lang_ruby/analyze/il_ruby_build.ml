@@ -723,8 +723,11 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
   | Ast.Literal(l) -> refactor_lit acc l
   | Ast.Atom(l) -> refactor_atom acc l
 
-  | Ast.Tuple(l)
+  | Ast.Tuple(l) ->
+      let acc,l' = refactor_list refactor_star_expr (acc,DQueue.empty) l in
+      acc, ELit (Array (DQueue.to_list l'))
   | Ast.Array(_, l,_) ->
+      let l = Ast.args_to_exprs l in
       let acc,l' = refactor_list refactor_star_expr (acc,DQueue.empty) l in
       acc, ELit (Array (DQueue.to_list l'))
 
@@ -743,7 +746,7 @@ and refactor_defined acc lhs args pos =
   let lhs' = match lhs with LId id -> id | _ -> failwith "Impossible" in
 
   let arg = match args with
-    | (_, [x], _) -> x
+    | (_, [x], _) -> x |> Ast.arg_to_expr
     | _ -> Log.fatal (Log.of_tok pos) "multiple args to defined?"
   in
   let inside_acc = refactor_stmt (acc_emptyq acc) arg in
@@ -873,6 +876,7 @@ and refactor_method_arg_no_cb acc e : stmt acc * star_expr = match e with
   | e -> refactor_star_expr acc e
 
 and refactor_method_args_and_cb acc (_lp, arg_list, _rp) cb =
+  let arg_list = Ast.args_to_exprs arg_list in
   let acc, lst, cb_arg = match List.rev arg_list, cb with
     | Ast.Unary((Ast.Op_UAmper, _pos), e)::rest, None ->
         let acc, e' = refactor_expr acc e in
@@ -1222,11 +1226,13 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       acc_enqueue (C.redo p1) acc
 
   | Ast.Call(Ast.Id(("next",p1),Ast.ID_Lowercase), (_, args, _), None) ->
+      let args = Ast.args_to_exprs args in
       let _envBUG, es = refactor_list refactor_tuple_expr (acc, DQueue.empty) args in
       let tup = make_tuple_option (DQueue.to_list es) in
       acc_enqueue (C.next ?v:tup p1) acc
 
   | Ast.Call(Ast.Id(("break",p1),Ast.ID_Lowercase), (_, args, _), None) ->
+      let args = Ast.args_to_exprs args in
       let _env, es = refactor_list refactor_tuple_expr (acc, DQueue.empty) args in
       let tup = make_tuple_option (DQueue.to_list es) in
       acc_enqueue (C.break ?v:tup p1) acc
@@ -1251,7 +1257,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       acc_enqueue call acc
 
   | Ast.Call(Ast.Id(("define_method",pos),Ast.ID_Lowercase),
-             (_, [Ast.Atom(_tk, Ast.AtomSimple (mname,atompos))], _),
+             (_, [Ast.Arg (Ast.Atom(_tk, Ast.AtomSimple (mname,atompos)))], _),
              Some(Ast.CodeBlock(_,params_o,cb_body))) ->
       let params = Utils.default_opt [] params_o in
       let name = (* H.msg_of_str *) Ast.MethodId ((mname,atompos), Ast.ID_Lowercase) in
@@ -1276,7 +1282,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
   | Ast.Call(msg, args, cb) ->
       let () = match msg, args with
         | Ast.Id((("proc"|"lambda"),pos),Ast.ID_Lowercase),
-          (_, [Ast.Unary((Ast.Op_UAmper,_),_)], _) ->
+          (_, [Ast.Arg (Ast.Unary((Ast.Op_UAmper,_),_))], _) ->
             Log.err ~ctx:(Log.of_tok pos) "unsupported proc/lambda with &block param"
         | _ -> ()
       in
@@ -1301,7 +1307,7 @@ and refactor_assignment (acc: stmt acc) (lhs: Ast.expr) (rhs: Ast.expr)
     _ ->
       let acc,targ' = refactor_expr acc targ in
       let acc,rhs_arg = refactor_star_expr acc rhs in
-      let acc,(lhs_args: star_expr DQueue.t) = refactor_list refactor_star_expr (acc,DQueue.empty) args in
+      let acc,(lhs_args: star_expr DQueue.t) = refactor_list refactor_star_expr (acc,DQueue.empty) (args |> Ast.args_to_exprs) in
       let lhs_list = DQueue.to_list lhs_args in
       (* We need to be careful here because the lhs arguments can
          contain a star expression (x[*y] = z) and x.[]=( *y,z) is not
@@ -1408,12 +1414,13 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
   | Ast.S Ast.Case(pos, case) -> refactor_case acc case pos
 
   | Ast.S Ast.Return(pos, args) ->
-      let acc,args' = refactor_list refactor_tuple_expr (acc,DQueue.empty) args in
+      let acc,args' = refactor_list refactor_tuple_expr (acc,DQueue.empty)
+          (args |> Ast.args_to_exprs) in
       let tup = make_tuple_option (DQueue.to_list args') in
       acc_enqueue (C.return ?v:tup pos) acc
 
   | Ast.S Ast.Yield(pos, args) ->
-      let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
+      let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) (args |> Ast.args_to_exprs) in
       acc_enqueue (C.yield ~args:(DQueue.to_list args') pos) acc
   | Ast.S Ast.Break _
   | Ast.S Ast.Next _
@@ -1429,7 +1436,7 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
 
   | Ast.Binop(e1,(Ast.Op_ASSIGN, pos2),(Ast.S Ast.Yield(_pos1, args))) ->
       let acc,e1',after = refactor_lhs acc e1 in
-      let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) args in
+      let acc,args' = refactor_list refactor_method_arg_no_cb (acc,DQueue.empty) (args |> Ast.args_to_exprs) in
       let yield_s = C.yield ~lhs:e1' ~args:(DQueue.to_list args') pos2 in
       let acc = acc_enqueue yield_s acc in
       acc_append acc after

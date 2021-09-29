@@ -51,7 +51,7 @@ let dyp_merge_Obj_command                = M.merge_expr "command"
 let dyp_merge_Obj_command_name           = M.merge_expr "command_name"
 let dyp_merge_Obj_expr                   = M.merge_expr "expr"
 let dyp_merge_Obj_primary                = M.merge_expr "primary"
-let dyp_merge_Obj_argument               = M.merge_expr "argument"
+let dyp_merge_Obj_argument               = M.merge_argument "argument"
 let dyp_merge_Obj_array                  = M.merge_expr "array"
 let dyp_merge_Obj_hash                   = M.merge_expr "hash"
 let dyp_merge_Obj_hash_elem              = M.merge_expr "hash_elem"
@@ -60,7 +60,7 @@ let dyp_merge_Obj_method_name            = M.merge_method_name "method_name"
 let dyp_merge_Obj_method_kind            = M.merge_method_kind "method_kind"
 
 let dyp_merge_Obj_stmt_list              = M.merge_expr_list "stmt_list"
-let dyp_merge_Obj_call_args              = M.merge_expr_list "call_args"
+let dyp_merge_Obj_call_args              = M.merge_argument_list "call_args"
 let dyp_merge_Obj_array_body             = M.merge_expr_list "array_body"
 let dyp_merge_Obj_mlhs_clean             = M.merge_expr_list "mlhs_clean"
 let dyp_merge_Obj_mrhs                   = M.merge_expr_list "mrhs"
@@ -412,9 +412,9 @@ expr:
  /*(* call_args-->arg_comma_star_list-->arg_comma_nonempty_list->arg vs arg*)*/
   | K_RETURN<pos> arg<p>
       { match p with
-        | S Block(_, [x], _) -> S (Return(pos, [x]))
+        | S Block(_, [x], _) -> S (Return(pos, [Arg x]))
         | arg -> if M.is_cond_modifier arg then raise Dyp.Giveup;
-                 S (Return(pos, [arg]))
+                 S (Return(pos, [Arg arg]))
       }
   /*(* stmt-->topcall-->command-->K_YIELD vs stmt-->expr-->K_YIELD *)*/
   | K_YIELD<pos> call_args<xs>
@@ -495,11 +495,11 @@ primary:
   | K_RETURN<pos> { S (Return(pos, [])) }
 /*
  * | K_RETURN<pos>T_LPAREN eols call_args<args> eols T_RPAREN{Return(pos, args)}
- * | K_RETURN<pos> any_LPAREN eols expr<arg> eols T_RPAREN { S (Return(pos, [arg]))}
+ * | K_RETURN<pos> any_LPAREN eols expr<arg> eols T_RPAREN { S (Return(pos, [Arg arg]))}
  */
   | K_YIELD<pos> { S (Yield(pos, [])) }
   | K_YIELD<pos> any_LPAREN eols call_args<xs> eols T_RPAREN { S (Yield(pos, xs))}
-  | K_YIELD<pos> any_LPAREN eols expr<e>       eols T_RPAREN { S (Yield(pos, [e]))}
+  | K_YIELD<pos> any_LPAREN eols expr<e>       eols T_RPAREN { S (Yield(pos, [Arg e]))}
 
   | K_IF<pos> expr<g> then_sep stmt_list<xs> if_else_clauses<else_e> K_lEND
     { S (If(pos, g, xs, else_e)) }
@@ -640,9 +640,9 @@ rescue_clause:
   | K_RESCUE<pos> T_ASSOC seen_id<bind>    then_sep stmt_list<xs>
       { ($1, [], Some ($2, bind), xs) }
   | K_RESCUE<pos> arg_comma_star_list<exn> then_sep stmt_list<xs>
-    { ($1, exn, None, xs) }
+    { ($1, exn |> args_to_exprs, None, xs) }
   | K_RESCUE<pos> arg_comma_star_list<exn>
-    { ($1, exn, None, []) }
+    { ($1, exn |> args_to_exprs, None, []) }
 
 seen_id: variable<i> { M.seen dyp (Id i); Id i}
 
@@ -680,13 +680,13 @@ when_clauses:
   | /* empty */ { [] }
   | K_WHEN arg_comma_star_list<e> then_sep stmt_list<es>
     when_clauses<rest>
-    { ($1, e, es) :: rest }
+    { ($1, e |> args_to_exprs, es) :: rest }
 
 /*(*----------------------------*)*/
 /*(*2 containers *)*/
 /*(*----------------------------*)*/
 
-array: T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs, $5) }
+array: T_LBRACK eols array_body<xs> eols T_RBRACK { Array($1, xs |> exprs_to_args, $5) }
 
 array_body:
   | command<c> { [c] }
@@ -716,13 +716,13 @@ hash_elem_list:
 
 hash_elem:
   | arg { $1 }
-  | pair { $1 }
+  | pair { let (a,b,c) = $1 in keyword_arg_to_expr a b c }
 
 /*(* TODO: move arg bin_op OP_ASSOC here like in tree-sitter-ruby *)*/
 pair:
   | identifier T_COLON arg
     { token_immediate_check (snd $1) $2;
-      keyword_arg_to_expr $1 $2 $3
+      $1, $2, $3
      }
 
 /*(*************************************************************************)*/
@@ -757,8 +757,8 @@ command:
 
   /*(* recursive *)*/
   | command_name<cmd> command<cmd2>
-      { M.well_formed_command cmd [cmd2];
-        M.methodcall cmd (fb [cmd2]) None}
+      { M.well_formed_command cmd [Arg cmd2];
+        M.methodcall cmd (fb [Arg cmd2]) None}
 
 command_name:
   | variable<id>
@@ -785,7 +785,7 @@ func:
         | _ -> M.methodcall c ($2, xs, $6) None
       }
   | command_name<c> any_LPAREN eols command<a> eols T_RPAREN
-      { Call(c,($2, [a], $6),None)}
+      { Call(c,($2, [Arg a], $6),None)}
 
 any_LPAREN:
   | T_LPAREN<pos> {pos}
@@ -798,16 +798,16 @@ any_LPAREN:
 call_args:
   | /*empty*/                 { [] }
   | arg_comma_star_list<xs>   { xs }
-  | T_LBRACK eols call_args<xs> eols T_RBRACK { [Array($1, xs, $5)] }
+  | T_LBRACK eols call_args<xs> eols T_RBRACK { [Arg (Array($1, xs, $5))] }
 
 arg_comma_star_list:
   /*(* call_args-->empty vs call_args-->arg_comma_star_list-->empty *)*/
   | /*empty*/     { [] }
-  | star_amper<a> { a }
+  | star_amper<a> { a |> exprs_to_args }
 
   | arg_comma_nonempty_list<xs> { xs }
   | arg_comma_nonempty_list<xs> T_COMMA eols star_amper<a>
-      @{ xs @ a, [Dyp.Dont_shift] }
+      @{ xs @ (a |> exprs_to_args), [Dyp.Dont_shift] }
 
 arg_comma_nonempty_list:
   | argument { [$1] }
@@ -824,8 +824,8 @@ star_amper:
       { [Splat(pos1, Some a1); Unary((Op_UAmper,pos2),a2)] }
 
 argument:
- | arg { $1 }
- | pair { $1 }
+ | arg { Arg $1 }
+ | pair { let (a,b,c) = $1 in ArgKwd (a, b, c) }
 
 /*(*************************************************************************)*/
 /*(*1 LHS/RHS *)*/
@@ -893,7 +893,7 @@ lhs_prune_binop: lhs<l> {match l with Binop _ -> raise Dyp.Giveup | _ -> l}
 /*(*----------------------------*)*/
 
 mrhs:
-  | arg_comma_star_list<xs> { match xs with [] -> raise Dyp.Giveup | _ -> xs }
+  | arg_comma_star_list<xs> { match xs with [] -> raise Dyp.Giveup | _ -> xs |> args_to_exprs }
   | topcall<c> { [c] }
   | T_LBRACK eols call_args<xs> eols T_RBRACK { [Array($1, xs, $5)] }
   | T_USTAR<pos> arg<a>                       { [Splat(pos, Some a)] }

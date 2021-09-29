@@ -168,11 +168,11 @@ val pp :
    | `Obj_T_EOL of Parse_info.t
    | `Obj_T_EQ of Parse_info.t
    | `Obj_T_EQQ of Parse_info.t
-   | `Obj_T_FLOAT of string Ast_ruby.wrap
+   | `Obj_T_FLOAT of string * Parse_info.t
    | `Obj_T_GEQ of Parse_info.t
-   | `Obj_T_GLOBAL_VAR of Ast_ruby.ident
+   | `Obj_T_GLOBAL_VAR of string * Parse_info.t
    | `Obj_T_GT of Parse_info.t
-   | `Obj_T_INST_VAR of Ast_ruby.ident
+   | `Obj_T_INST_VAR of string * Parse_info.t
    | `Obj_T_INTERP_END of string * Parse_info.t
    | `Obj_T_INTERP_STR of string * Parse_info.t
    | `Obj_T_LBRACE of Parse_info.t
@@ -180,7 +180,7 @@ val pp :
    | `Obj_T_LBRACK of Parse_info.t
    | `Obj_T_LBRACK_ARG of Parse_info.t
    | `Obj_T_LEQ of Parse_info.t
-   | `Obj_T_LID of Ast_ruby.ident
+   | `Obj_T_LID of string * Parse_info.t
    | `Obj_T_LPAREN of Parse_info.t
    | `Obj_T_LPAREN_ARG of Parse_info.t
    | `Obj_T_LSHFT of Parse_info.t
@@ -189,7 +189,7 @@ val pp :
    | `Obj_T_MINUS of Parse_info.t
    | `Obj_T_NEQ of Parse_info.t
    | `Obj_T_NMATCH of Parse_info.t
-   | `Obj_T_NUM of string Ast_ruby.wrap
+   | `Obj_T_NUM of string * Parse_info.t
    | `Obj_T_OP_ASGN of string * Parse_info.t
    | `Obj_T_OROP of Parse_info.t
    | `Obj_T_PERCENT of Parse_info.t
@@ -211,7 +211,7 @@ val pp :
    | `Obj_T_TICK_BEG of Parse_info.t
    | `Obj_T_TILDE of Parse_info.t
    | `Obj_T_UAMPER of Parse_info.t
-   | `Obj_T_UID of Ast_ruby.ident
+   | `Obj_T_UID of string * Parse_info.t
    | `Obj_T_UMINUS of Parse_info.t
    | `Obj_T_UNKNOWN of Parse_info.t
    | `Obj_T_UPLUS of Parse_info.t
@@ -219,62 +219,63 @@ val pp :
    | `Obj_T_USER_BEG of string * Parse_info.t
    | `Obj_T_USTAR of Parse_info.t
    | `Obj_T_VBAR of Parse_info.t
-   | `Obj_any_LPAREN of Parse_info.t
-   | `Obj_arg of Ast_ruby.pattern
-   | `Obj_arg_comma_list_trail of Ast_ruby.program
-   | `Obj_arg_comma_nonempty_list of Ast_ruby.program
-   | `Obj_arg_comma_star_list of Ast_ruby.program
-   | `Obj_argument of Ast_ruby.pattern
-   | `Obj_array of Ast_ruby.pattern
+   | `Obj_any_LPAREN of Ast_ruby.tok
+   | `Obj_arg of Ast_ruby.expr
+   | `Obj_arg_comma_list_trail of Ast_ruby.arguments
+   | `Obj_arg_comma_nonempty_list of Ast_ruby.arguments
+   | `Obj_arg_comma_star_list of Ast_ruby.arguments
+   | `Obj_argument of Ast_ruby.argument
+   | `Obj_array of Ast_ruby.expr
    | `Obj_array_body of Ast_ruby.program
    | `Obj_array_body_rest of Ast_ruby.program
-   | `Obj_array_item of Ast_ruby.pattern
+   | `Obj_array_item of Ast_ruby.expr
    | `Obj_assign_op of Ast_ruby.binary_op * Parse_info.t
    | `Obj_bin_op of Ast_ruby.binary_op * Ast_ruby.tok
    | `Obj_body_exn of Ast_ruby.body_exn
    | `Obj_brace_codeblock of Ast_ruby.expr
-   | `Obj_call_args of Ast_ruby.program
+   | `Obj_call_args of Ast_ruby.arguments
    | `Obj_case_else of (Ast_ruby.tok * Ast_ruby.stmts) option
-   | `Obj_class_definition of Ast_ruby.pattern
-   | `Obj_class_inheritance of (Ast_ruby.tok * Ast_ruby.pattern) option
+   | `Obj_class_definition of Ast_ruby.expr
+   | `Obj_class_inheritance of
+        (Ast_ruby.tok * Ast_ruby.expr) option
    | `Obj_code_block of Ast_ruby.expr
    | `Obj_code_block_body of
         Ast_ruby.formal_param list option * Ast_ruby.stmts
-   | `Obj_command of Ast_ruby.pattern
-   | `Obj_command_codeblock of Ast_ruby.pattern
+   | `Obj_command of Ast_ruby.expr
+   | `Obj_command_codeblock of Ast_ruby.expr
    | `Obj_command_name of Ast_ruby.expr
-   | `Obj_constant of Ast_ruby.pattern
+   | `Obj_constant of Ast_ruby.expr
    | `Obj_cst_or_scoped_id of Ast_ruby.class_or_module_name
    | `Obj_do_codeblock of Ast_ruby.expr
    | `Obj_do_sep of unit
    | `Obj_ensure_clause of (Ast_ruby.tok * Ast_ruby.stmts) option
    | `Obj_eol_or_semi of unit
    | `Obj_eols of unit
-   | `Obj_expr of Ast_ruby.pattern
+   | `Obj_expr of Ast_ruby.expr
    | `Obj_formal_arg of Ast_ruby.formal_param
    | `Obj_formal_arg_list of Ast_ruby.formal_param list
    | `Obj_formal_arg_nonempty_list of Ast_ruby.formal_param list
-   | `Obj_func of Ast_ruby.pattern
-   | `Obj_hash of Ast_ruby.pattern
-   | `Obj_hash_elem of Ast_ruby.pattern
-   | `Obj_hash_elem_list of Ast_ruby.pattern list
+   | `Obj_func of Ast_ruby.expr
+   | `Obj_hash of Ast_ruby.expr
+   | `Obj_hash_elem of Ast_ruby.expr
+   | `Obj_hash_elem_list of Ast_ruby.expr list
    | `Obj_identifier of Ast_ruby.ident
    | `Obj_if_else_clauses of (Ast_ruby.tok * Ast_ruby.stmts) option
    | `Obj_interp_code of Ast_ruby.interp list
    | `Obj_interp_str of Ast_ruby.interp list
    | `Obj_interp_str_work of Ast_ruby.interp list
    | `Obj_keyword_as_id of Ast_ruby.ident
-   | `Obj_lhs of Ast_ruby.pattern
+   | `Obj_lhs of Ast_ruby.expr
    | `Obj_lhs_assign_op of
-        Ast_ruby.pattern * Ast_ruby.binary_op * Parse_info.t
-   | `Obj_lhs_prune_binop of Ast_ruby.pattern
+        Ast_ruby.expr * Ast_ruby.binary_op * Parse_info.t
+   | `Obj_lhs_prune_binop of Ast_ruby.expr
    | `Obj_lhs_pruned_assign_op of
-        Ast_ruby.pattern * Ast_ruby.binary_op * Ast_ruby.tok
+        Ast_ruby.expr * Ast_ruby.binary_op * Ast_ruby.tok
    | `Obj_main of Ast_ruby.program
    | `Obj_message_identifier of Ast_ruby.method_name
    | `Obj_meth_or_atom of Ast_ruby.method_name
    | `Obj_meth_or_atom_list of Ast_ruby.method_name list
-   | `Obj_method_definition of Ast_ruby.pattern
+   | `Obj_method_definition of Ast_ruby.expr
    | `Obj_method_formals of Ast_ruby.formal_param list
    | `Obj_method_kind of Ast_ruby.method_kind
    | `Obj_method_name of Ast_ruby.method_name
@@ -282,13 +283,13 @@ val pp :
    | `Obj_mlhs_assign_op of
         Ast_ruby.program * Ast_ruby.binary_op * Ast_ruby.tok
    | `Obj_mlhs_clean of Ast_ruby.program
-   | `Obj_mlhs_item of Ast_ruby.pattern
-   | `Obj_mlhs_rest of Ast_ruby.pattern list
-   | `Obj_module_definition of Ast_ruby.pattern
+   | `Obj_mlhs_item of Ast_ruby.expr
+   | `Obj_mlhs_rest of Ast_ruby.expr list
+   | `Obj_module_definition of Ast_ruby.expr
    | `Obj_mrhs of Ast_ruby.program
-   | `Obj_one_string of Ast_ruby.pattern
-   | `Obj_pair of Ast_ruby.pattern
-   | `Obj_primary of Ast_ruby.pattern
+   | `Obj_one_string of Ast_ruby.expr
+   | `Obj_pair of Ast_ruby.ident * Ast_ruby.tok * Ast_ruby.expr
+   | `Obj_primary of Ast_ruby.expr
    | `Obj_rescue_clause of Ast_ruby.rescue_clause
    | `Obj_rescue_list of Ast_ruby.rescue_clause list
    | `Obj_scope_BEGIN of Ast_ruby.tok
@@ -300,18 +301,18 @@ val pp :
    | `Obj_sgrep_spatch_pattern of Ast_ruby.any
    | `Obj_some_eols of unit
    | `Obj_star_amper of Ast_ruby.program
-   | `Obj_stmt of Ast_ruby.pattern
+   | `Obj_stmt of Ast_ruby.expr
    | `Obj_stmt_list of Ast_ruby.program
-   | `Obj_string of Ast_ruby.pattern
+   | `Obj_string of Ast_ruby.expr
    | `Obj_then_sep of unit
-   | `Obj_topcall of Ast_ruby.pattern
+   | `Obj_topcall of Ast_ruby.expr
    | `Obj_unary_op of Ast_ruby.unary_msg * Ast_ruby.tok
-   | `Obj_var_or_scoped_id of Ast_ruby.pattern
+   | `Obj_var_or_scoped_id of Ast_ruby.expr
    | `Obj_variable of Ast_ruby.variable
    | `Obj_variable2 of Ast_ruby.variable
    | `Obj_when_clauses of
-        (Ast_ruby.tok * Ast_ruby.program * Ast_ruby.stmts) list ],
-   unit, unit, Lexing.lexbuf)
+        (Ast_ruby.tok * Ast_ruby.pattern list * Ast_ruby.stmts) list
+   ], unit, unit, Lexing.lexbuf)
     Dyp.parser_pilot
 
 val sgrep_spatch_pattern :
