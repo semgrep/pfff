@@ -1256,6 +1256,25 @@ let filemtime file =
   else (Unix.stat file).Unix.st_mtime
 
 
+let copy_fifos_to_temp files =
+  let builder memo file =
+    logger#debug "FILE: %s; Is FIFO: %b" file ((Unix.stat file).st_kind == Unix.S_FIFO);
+    match memo with | (all_file_list, tmp_file_list) -> (
+        match (Unix.stat file).st_kind with
+        | Unix.S_FIFO -> (
+            match Filename.open_temp_file "semgrep_fifo_" "" with
+            | (tmp_file, fd) -> (
+                let data = read_file file in
+                Printf.fprintf fd "%s" data;
+                close_out fd;
+                (tmp_file :: all_file_list, tmp_file :: tmp_file_list)
+              )
+          )
+        | _ -> (file :: all_file_list, tmp_file_list)
+      )
+  in
+  List.fold_left builder ([], []) files
+
 
 (*
 Using an external C functions complicates the linking process of

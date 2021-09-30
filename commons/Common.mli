@@ -80,6 +80,11 @@ val write_file : file:filename -> string -> unit
 *)
 val read_file : filename -> string
 
+(* Copies any FIFO queues to temp files for repeatable reads
+ * Returns (all files (including copied temp files), copied temp files)
+*)
+val copy_fifos_to_temp: filename list -> filename list * filename list
+
 val with_open_outfile :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
 val with_open_infile :
