@@ -391,10 +391,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           in ()
     in
     vin.kvar (k, all_functions) x
-  and v_catch_var (v1, v2) =
-    let v1 = v_var v1 in
-    let v2 = v_list v_typ v2 in
-    ()
+  and v_catch_var = function
+    | CatchParam (v1, v2) ->
+        let v1 = v_var v1 in
+        let v2 = v_list v_typ v2 in
+        ()
+    | CatchEllipsis t -> v_tok t
 
   and v_var_with_init { f_var = v_f_var; f_init = v_f_init } =
     let arg = v_var v_f_var in let arg = v_option v_init v_f_init in ()

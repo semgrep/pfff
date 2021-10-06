@@ -297,8 +297,12 @@ and for_init =
   | ForInitVars of var_with_init list
   | ForInitExprs of expr list
 
-and catch = tok * var_with_union_type * stmt
+and catch = tok * catch_exn * stmt
 and catches = catch list
+and catch_exn =
+  | CatchParam of var_definition * typ list (* union type *)
+  (* sgrep-ext: *)
+  | CatchEllipsis of tok
 
 (* javaext: java 8 *)
 and resources = resource list bracket
@@ -336,8 +340,6 @@ and var_with_init = {
 and init =
   | ExprInit of expr
   | ArrayInit of init list bracket
-
-and var_with_union_type = (var_definition * typ list)
 
 (* ------------------------------------------------------------------------- *)
 (* Methods, fields *)

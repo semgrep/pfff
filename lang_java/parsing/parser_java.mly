@@ -965,9 +965,11 @@ catch_clause:
 (* javaext: ? was just formal_parameter before *)
 catch_formal_parameter:
   | variable_modifier+ catch_type variable_declarator_id
-      { canon_var $1 (Some (fst $2)) $3, snd $2 }
+      { CatchParam (canon_var $1 (Some (fst $2)) $3, snd $2) }
   |                    catch_type variable_declarator_id
-      { canon_var [] (Some (fst $1)) $2, snd $1 }
+      { CatchParam (canon_var [] (Some (fst $1)) $2, snd $1) }
+  (* sgrep-ext: *)
+  | "..." { CatchEllipsis $1 }
 
 (* javaext: ? *)
 catch_type: list_sep(type_, OR) { List.hd $1, List.tl $1 }

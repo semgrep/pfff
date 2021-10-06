@@ -678,10 +678,14 @@ and case env = function
   | Default _ -> ()
 
 and catches env xs = List.iter (catch env) xs
-and catch env (_, (v, _uniontypes), st) =
-  var env v;
-  let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
-  stmt env st
+and catch env (_, catch_exn, st) =
+  match catch_exn with
+  | CatchParam (v, _uniontypes) ->
+      var env v;
+      let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
+      stmt env st
+  | CatchEllipsis _ ->
+      stmt env st
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
