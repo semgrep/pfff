@@ -503,12 +503,12 @@ and condition_clause =
   (* c++ext: *)
   | CondDecl of vars_decl * expr
   | CondStmt of expr_stmt * expr
-  | CondOneDecl of onedecl
+  | CondOneDecl of onedecl (* TODO change to var_decl with always vinit *)
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
   (* c++0x? less: entity be DStructrured_binding?  *)
-  | ForRange of var * tok (*':'*) * initialiser
+  | ForRange of var_range * tok (*':'*) * initialiser
 
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 
@@ -579,12 +579,11 @@ and entity = {
  * old: was split in intermediate 'block_declaration' before.
 *)
 and decl =
-  (* TODO: Have an EmptyDecl of type_ * sc ? *)
-
   (* Before I had a Typedef constructor, but why make this special case and not
    * have also StructDef, EnumDef, so that 'struct t {...} v' which would
    * then generate two declarations.
    * If you want a cleaner C AST use ast_c.ml.
+   * update: I actually moved out Typedef at least out of var_decl now.
    * note: before the need for unparser, I didn't have a DeclList but just
    * a Decl.
   *)
@@ -606,7 +605,7 @@ and decl =
   | TemplateDecl of tok * template_parameters * decl
   (* pfffonly? delete? *)
   | TemplateSpecialization of tok * unit angle * decl
-  | TemplateInstanciation of tok (* 'template' *) * var * sc
+  | TemplateInstanciation of tok (* 'template' *) * var_range * sc
 
   (* the list can be empty *)
   | ExternDecl     of tok * string wrap (* usually "C" *) * decl
@@ -637,9 +636,10 @@ and colon_option =
 (* ------------------------------------------------------------------------- *)
 (* Simple var *)
 (* ------------------------------------------------------------------------- *)
-and var = entity * var_decl
+(* TODO: delete, just reuse var_decl *)
+and var_range = entity * var_decl_range
 
-and var_decl = {
+and var_decl_range = {
   v__type: type_;
 }
 
@@ -650,27 +650,26 @@ and var_decl = {
 (* note: onedecl includes prototype declarations and class_declarations!
  * c++ext: onedecl now covers also field definitions as fields can have
  * storage in C++.
- * TODO: split in EmptyDecl vs OneDecl with a name and use entity!
- * TODO: split typedefs from onedecl, remove StoTypedef
 *)
-and onedecl = {
-  (* option cos can have empty declaration or struct tag declaration.
-   * kenccext: name can also be empty because of anonymous fields.
+and onedecl =
+  | TypedefDecl of tok (*'typedef'*) * type_ * ident
+  (* You can have empty declaration or struct tag declaration.
+   * kenccext: you can also have anonymous fields.
   *)
-  v_namei: (declarator_name * init option) option;
+  | EmptyDecl of type_
+  | V of var_decl
+
+(* TODO: reuse entity *)
+and var_decl = {
+  v_name: declarator_name;
+  v_init: init option;
   v_type: type_;
-  v_storage: storage_opt; (* TODO: use for c++0x 'auto' inferred locals *)
-  v_specs: specifier list; (* gccext: *)
+  v_specs: specifier list;
 }
 and declarator_name =
   | DN of name
   (* c++17: structured binding, [n1, n2, n3] = expr *)
   | DNStructuredBinding of ident list bracket
-
-(* TODO: migrate with annotation? Sto of storage? and move
- * in entity?
-*)
-and storage_opt = NoSto | StoTypedef of tok | Sto of storage wrap
 
 and init =
   | EqInit of tok (*=*) * initialiser
@@ -721,8 +720,6 @@ and function_definition = {
    * same functionType type for both declarations and function definitions.
   *)
   f_type: functionType;
-  f_storage: storage_opt;
-  (* todo: gccext: inline or not:, f_inline: tok option *)
   (* TODO: chain call for ctor or put in function body? *)
   f_body: function_body;
   (* we could use the specs in entity, but for Lambdas there are no entity *)

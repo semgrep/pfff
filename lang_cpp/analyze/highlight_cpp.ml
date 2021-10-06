@@ -196,19 +196,20 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       match x with
       | DeclList (xs, _) ->
           xs |> List.iter (fun onedecl ->
-            onedecl.v_namei |> Common.do_option (fun (dname, _ini_opt) ->
-              let storage = onedecl.v_storage in
-              let categ =
-                match storage with
-                | StoTypedef _ -> Entity (Type, Def2 fake_no_def2)
-                | _ when Type.is_function_type onedecl.v_type ->
-                    FunctionDecl NoUse
-                (* could be a global too when the decl is at the top *)
-                | Sto (Extern, _) -> Entity (Global, (Def2 fake_no_def2))
-                | _ when !is_at_toplevel -> Entity (Global, (Def2 fake_no_def2))
-                | _ -> Local Def
-              in
-              Ast.iis_of_dname dname |>List.iter (fun ii -> tag ii categ)
+            (match onedecl with
+             | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
+             | V { v_name = dname; v_specs; v_type; _ } ->
+                 let categ =
+                   match v_specs with
+                   (* TODO | StoTypedef _ -> Entity (Type, Def2 fake_no_def2) *)
+                   | _ when Type.is_function_type v_type ->
+                       FunctionDecl NoUse
+                   (* could be a global too when the decl is at the top *)
+                   | [ST (Extern, _)] -> Entity (Global, (Def2 fake_no_def2))
+                   | _ when !is_at_toplevel -> Entity (Global, (Def2 fake_no_def2))
+                   | _ -> Local Def
+                 in
+                 Ast.iis_of_dname dname |>List.iter (fun ii -> tag ii categ)
             );
           );
           k x
@@ -368,14 +369,16 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     V.kfieldkind = (fun (k, _) x ->
       match x with
       | FieldDecl onedecl ->
-          onedecl.v_namei |> Common.do_option (fun (dname, _ini_opt) ->
-            let kind =
-              (* poor's man object using function pointer; classic C idiom *)
-              if Type.is_method_type onedecl.v_type
-              then Entity (Method, (Def2 fake_no_def2))
-              else Entity (Field, (Def2 NoUse))
-            in
-            Ast.iis_of_dname dname |> List.iter (fun ii -> tag ii kind)
+          (match onedecl with
+           | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
+           | V {v_name = dname; v_type; _} ->
+               let kind =
+                 (* poor's man object using function pointer; classic C idiom *)
+                 if Type.is_method_type v_type
+                 then Entity (Method, (Def2 fake_no_def2))
+                 else Entity (Field, (Def2 NoUse))
+               in
+               Ast.iis_of_dname dname |> List.iter (fun ii -> tag ii kind)
           );
           k x
 

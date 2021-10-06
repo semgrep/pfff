@@ -26,6 +26,8 @@ let fake s = Parse_info.fake_info s
 (* Type related *)
 (*-------------------------------------------------------------------------- *)
 
+type storage_opt = NoSto | StoTypedef of tok | Sto of storage wrap
+
 type shortLong = Short | Long | LongLong
 
 (* TODO: delete *)
@@ -140,12 +142,7 @@ let type_and_storage_from_decl
          | Sto (Auto, ii) -> TBase (Void ii)(* TODO AST *)
          | _ ->
              (* mine (originally default to int, but this looks like bad style) *)
-             let decl =
-               { v_namei = None; v_type = qu, (TBase (Void (List.hd iit)));
-                 v_storage = st; v_specs = [] }
-             in
-             raise (Semantic ("no type (could default to 'int')",
-                              List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
+             raise (Semantic ("no type (could default to 'int')", List.hd iit))
         )
     | (None, None, Some t)   ->
         t
@@ -198,6 +195,34 @@ let type_and_storage_from_decl
      * pass in dt() mode) *)
    )), st, mods
 
+
+let id_of_dname_for_typedef dname =
+  match dname with
+  | DN (None, [], IdIdent id) -> id
+  | _ ->
+      raise
+        (Parse_info.Other_error
+           ("expecting an ident for typedef", ii_of_dname dname))
+
+
+let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
+  let specs = mods |> List.map (fun m -> M m) in
+  match v_namei with
+  (* less: could check sto, because typedef can't be anonymous since c++17
+   * lesS: use mods?
+  *)
+  | None -> EmptyDecl v_type
+  | Some (dn, iniopt) ->
+      (match sto with
+       | StoTypedef t ->
+           (* less: use mods? *)
+           let id = id_of_dname_for_typedef dn in
+           TypedefDecl (t, v_type, id)
+       | NoSto ->
+           V { v_name = dn; v_init = iniopt; v_specs = specs; v_type }
+       | Sto sto ->
+           V { v_name = dn; v_init = iniopt; v_specs = specs @ [ST sto]; v_type }
+      )
 
 let type_and_specs_from_decl decl =
   let {storageD = st; _} = decl in
@@ -284,7 +309,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
       raise (Semantic ("seems this is not a function", ii))
 
 (* TODO: this is ugly ... use record! *)
-let fixFunc ((name, ty, sto), cp) =
+let fixFunc ((name, ty, _stoTODO), cp) =
   match ty with
   | (aQ,(TFunction ({ft_params=params; _} as ftyp))) ->
       (* it must be nullQualif, cos parser construct only this *)
@@ -305,17 +330,17 @@ let fixFunc ((name, ty, sto), cp) =
            )
       );
       let ent = { name; specs = [] } in
-      ent, { f_type = ftyp; f_storage = sto; f_body = cp; f_specs = [] }
+      ent, { f_type = ftyp; (* TODO move in f_specs f_storage = sto; *) f_body = cp; f_specs = [] }
   | _ ->
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
       raise (Semantic ("function definition without parameters", ii))
 
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
-  | [FieldDecl({
-    v_namei = Some (DN name, ini_opt);
+  | [FieldDecl(V {
+    v_name = DN name;
+    v_init = ini_opt;
     v_type = (_q, (TFunction ft));
-    v_storage = sto;
     v_specs = specs;
   })] ->
       (* todo? define another type instead of onedecl? *)
@@ -329,7 +354,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
             raise (Semantic ("can't assign expression to method decl", semicolon))
       in
       let def =
-        { f_type = ft; f_storage = sto; f_body = fbody; f_specs = specs } in
+        { f_type = ft; f_body = fbody; f_specs = specs } in
       MemberDecl (Func (ent, def))
 
   | _ -> FieldList (xs, semicolon)
@@ -356,7 +381,7 @@ let mk_constructor id (lp, params, rp) cp =
   in
   let name = name_of_id id in
   let ent = { name; specs = [] } in
-  ent, { f_type = ftyp; f_storage = NoSto; f_body = cp; f_specs = [] }
+  ent, { f_type = ftyp; f_body = cp; f_specs = [] }
 
 let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
@@ -369,4 +394,4 @@ let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   in
   let name = None, noQscope, IdDestructor (tilde, id) in
   let ent = { name; specs = [] } in
-  ent, { f_type = ftyp; f_storage = NoSto; f_body = cp; f_specs = [] }
+  ent, { f_type = ftyp; f_body = cp; f_specs = [] }

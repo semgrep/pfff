@@ -606,7 +606,7 @@ primary_expr:
       let f_type = { ft_ret; ft_params = (l, [], r);
                      ft_specs = []; ft_const = None; ft_throw = [] }
       in
-      let fdef = { f_type; f_storage = NoSto; f_body = FBDef $2; f_specs = []}
+      let fdef = { f_type; f_body = FBDef $2; f_specs = []}
       in
       Lambda ((l, xs, r), fdef)
     }
@@ -1363,9 +1363,8 @@ member_declaration:
 field_declaration:
  | decl_spec_seq ";"
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
-       let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       let onedecl =
-         { v_namei = None; v_type = t_ret; v_storage = sto; v_specs = [] } in
+       let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
+       let onedecl = make_onedecl t_ret ~v_namei:None ~sto ~mods in
        ([(FieldDecl onedecl)], $2)
      }
  | decl_spec_seq listc(member_declarator) ";"
@@ -1376,18 +1375,20 @@ field_declaration:
 (* was called struct_declarator before *)
 member_declarator:
  | declarator
-     { let (name, partialt) = $1 in (fun t_ret sto ->
-       FieldDecl {
-         v_namei = Some (DN name, None);
-         v_type = partialt t_ret; v_storage = sto; v_specs = [] })
+     { let (name, partialt) = $1 in
+       (fun t_ret sto ->
+       FieldDecl (make_onedecl (partialt t_ret)
+         ~v_namei:(Some (DN name, None)) ~sto ~mods:[]
+         ))
      }
  (* can also be an abstract when it's =0 on a function type *)
  | declarator "=" const_expr
-     { let (name, partialt) = $1 in (fun t_ret sto ->
-       FieldDecl {
-         v_namei = Some (DN name, Some (EqInit ($2, InitExpr $3)));
-         v_type = partialt t_ret; v_storage = sto; v_specs = [];
-       })
+     { let (name, partialt) = $1 in
+       (fun t_ret sto ->
+       FieldDecl (make_onedecl (partialt t_ret)
+          ~v_namei:(Some (DN name, Some (EqInit ($2, InitExpr $3)))) ~sto
+          ~mods:[]
+       ))
      }
 
  (* normally just ident, but ambiguity so solve by inspetcing declarator *)
@@ -1438,17 +1439,15 @@ enum_base: ":" type_spec_seq2 { }
 
 simple_declaration:
  | decl_spec_seq ";"
-     { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
-       ([{v_namei = None; v_type = t_ret; v_storage = sto; v_specs = [] }],$2)
+     { let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
+       ([make_onedecl t_ret ~v_namei:None ~mods ~sto],$2)
      }
  | decl_spec_seq listc(init_declarator) ";"
-     { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
+     { let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
        (
          ($2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
-           { v_namei = Some (DN name, iniopt);
-             v_type = f t_ret; v_storage = sto; v_specs = [];
-           }
+           make_onedecl (f t_ret) ~v_namei:(Some (DN name, iniopt)) ~mods ~sto
          )), $3)
      }
 
