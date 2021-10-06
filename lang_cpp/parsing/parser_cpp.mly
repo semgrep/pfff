@@ -1112,32 +1112,28 @@ parameter_type_list:
 
 parameter_decl:
  | decl_spec_seq declarator
-     { let (t_ret,reg) = type_and_register_from_decl $1 in
+     { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
        let (name, ftyp) = fixNameForParam $2 in
-       P { (basic_param name (ftyp t_ret) []) with
-         p_register = reg; } }
+       P (make_param (ftyp t_ret) ~p_name:(Some name) ~p_specs) }
  | decl_spec_seq abstract_declarator
-     { let (t_ret, reg) = type_and_register_from_decl $1 in
-       P { p_name = None; p_type = $2 t_ret;
-         p_register = reg; p_val = None; p_specs = [] } }
+     { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
+       P (make_param ($2 t_ret) ~p_specs ) }
+
  | decl_spec_seq
-     { let (t_ret, reg) = type_and_register_from_decl $1 in
-       P { p_name = None; p_type = t_ret; p_register = reg; p_val = None; p_specs = [] } }
+     { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
+       P (make_param t_ret ~p_specs) }
 
 (*c++ext: default parameter value, copy paste *)
  | decl_spec_seq declarator "=" assign_expr
-     { let (t_ret, reg) = type_and_register_from_decl $1 in
+     { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
        let (name, ftyp) = fixNameForParam $2 in
-       P { (basic_param name (ftyp t_ret) []) with
-           p_register = reg; p_val = Some ($3, $4)} }
+       P (make_param (ftyp t_ret) ~p_name:(Some name) ~p_specs ~p_val:(Some ($3, $4))) }
  | decl_spec_seq abstract_declarator "=" assign_expr
-     { let (t_ret, reg) = type_and_register_from_decl $1 in
-       P { p_name = None; p_type = $2 t_ret;
-         p_register = reg; p_val = Some ($3, $4); p_specs = [] } }
+     { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
+       P (make_param ($2 t_ret) ~p_specs ~p_val:(Some ($3, $4))) }
  | decl_spec_seq "=" assign_expr
-     { let (t_ret, reg) = type_and_register_from_decl $1 in
-       P { p_name = None; p_type = t_ret;
-         p_register = reg; p_val = Some($2,$3); p_specs = [] } }
+     { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
+       P (make_param t_ret ~p_specs ~p_val:(Some($2,$3)) ) }
 
 (*----------------------------*)
 (* workarounds *)
@@ -1152,7 +1148,7 @@ parameter_decl2:
  (* when the typedef inference didn't work *)
  | TIdent
      { let t = nQ, (TypeName (name_of_id $1)) in
-       P { p_name = None; p_type = t; p_val = None; p_register = None; p_specs = [] } }
+       P { p_name = None; p_type = t; p_val = None; p_specs = [] } }
 
 (*----------------------------*)
 (* c++ext: *)

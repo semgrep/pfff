@@ -199,12 +199,13 @@ let type_and_storage_from_decl
    )), st, mods
 
 
-let type_and_register_from_decl decl =
+let type_and_specs_from_decl decl =
   let {storageD = st; _} = decl in
   let (t,_storage, _inline) = type_and_storage_from_decl decl in
   match st with
-  | NoSto -> t, None
-  | Sto (Register, ii) -> t, Some ii
+  | NoSto -> t, []
+  | Sto (Register, ii) ->
+      t, [ST (Register, ii)]
   | StoTypedef ii | Sto (_, ii) ->
       raise (Semantic ("storage class specified for parameter of function", ii))
 

@@ -242,7 +242,6 @@ and parameter env x =
   match x with
   | P { p_name = n;
         p_type = t;
-        p_register = _regTODO;
         p_val = v;
         p_specs = _TODO;
       } ->
