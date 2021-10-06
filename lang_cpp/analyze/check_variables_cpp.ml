@@ -175,24 +175,26 @@ let visit_prog prog =
 
                 V.kdeclaration = (fun (k, _) x ->
                   match x with
-                  | DeclList (xs_comma, _) ->
-                      xs_comma |> List.iter (fun onedecl ->
-                        onedecl.v_namei |> Common.do_option (fun (dname, _ini_opt) ->
-                          let scope =
-                            if is_top_env !_scoped_env ||
-                               (match onedecl.v_storage with
-                                | Sto (Extern,_) -> true
-                                | _ -> false
-                               )
-                            then S.Global
-                            else S.Local
-                          in
-                          (match dname with
-                           | DN name ->
-                               add_binding name (scope, ref 0);
-                           | DNStructuredBinding _ -> () (* TODO *)
-                          )
-                        );
+                  | DeclList (xs, _) ->
+                      xs |> List.iter (fun onedecl ->
+                        match onedecl with
+                        (* TODO? *)
+                        | EmptyDecl _ | TypedefDecl _ -> ()
+                        | V {v_name = dname; v_specs; _} ->
+                            let scope =
+                              if is_top_env !_scoped_env ||
+                                 (match v_specs with
+                                  | [ST (Extern,_)] -> true
+                                  | _ -> false
+                                 )
+                              then S.Global
+                              else S.Local
+                            in
+                            (match dname with
+                             | DN name ->
+                                 add_binding name (scope, ref 0);
+                             | DNStructuredBinding _ -> () (* TODO *)
+                            )
                       );
                       k x
                   | MacroDecl _ ->

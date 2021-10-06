@@ -203,13 +203,13 @@ and declaration env x =
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
 (* ---------------------------------------------------------------------- *)
-and func_def env ({name = f_name; specs = _}, def) =
+and func_def env ({name = f_name; specs = _specsTODO}, def) =
   { A.
     f_name = name env f_name;
     f_type = function_type env def.f_type;
     f_static =
-      (match def.f_storage with
-       | Sto (Static, _) -> true
+      (match def.f_specs with
+       | [ST (Static, _)] -> true
        | _ -> false
       );
     f_body = function_body env def.f_body;
@@ -266,48 +266,41 @@ and parameter env x =
 (* ---------------------------------------------------------------------- *)
 and onedecl env d =
   match d with
-    { v_namei = ni;
-      v_type = ft;
-      v_storage = sto;
-      v_specs = _;
-    } ->
-      (match ni, sto with
-       | Some (n, iopt), (NoSto | Sto _)  ->
-           let init_opt =
-             match iopt with
-             | None -> None
-             | Some (EqInit (_, ini)) -> Some (initialiser env ini)
-             | Some (Bitfield _) -> raise Todo
-             | Some (ObjInit _) ->
-                 debug (OneDecl d);
-                 raise CplusplusConstruct
-           in
-           Some { A.
-                  v_name = dname env n;
-                  v_type = full_type env ft;
-                  v_storage = storage env sto;
-                  v_init = init_opt;
-                }
-       | Some (n, None), (StoTypedef _) ->
-           let def = { A.t_name = dname env n; t_type = full_type env ft } in
-           env.typedefs_toadd <- def :: env.typedefs_toadd;
+  | EmptyDecl ft ->
+      (match Ast_cpp.unwrap_typeC ft with
+       (* it's ok to not have any var decl as long as a type
+        * was defined. struct_defs_toadd should not be empty then.
+       *)
+       | ClassDef _ | EnumDef _ ->
+           let _ = full_type env ft in
            None
-       | None, NoSto ->
-           (match Ast_cpp.unwrap_typeC ft with
-            (* it's ok to not have any var decl as long as a type
-             * was defined. struct_defs_toadd should not be empty then.
-            *)
-            | ClassDef _ | EnumDef _ ->
-                let _ = full_type env ft in
-                None
-            (* forward declaration *)
-            | ClassName _ ->
-                None
+       (* forward declaration *)
+       | ClassName _ ->
+           None
 
-            | _ -> debug (OneDecl d); raise Todo
-           )
        | _ -> debug (OneDecl d); raise Todo
       )
+  | TypedefDecl (_t, ft, id) ->
+      let def = { A.t_name = id; t_type = full_type env ft } in
+      env.typedefs_toadd <- def :: env.typedefs_toadd;
+      None
+
+  | V { v_name = n; v_init = iopt; v_type = ft; v_specs = specs_and_sto;} ->
+      let init_opt =
+        match iopt with
+        | None -> None
+        | Some (EqInit (_, ini)) -> Some (initialiser env ini)
+        | Some (Bitfield _) -> raise Todo
+        | Some (ObjInit _) ->
+            debug (OneDecl d);
+            raise CplusplusConstruct
+      in
+      Some { A.
+             v_name = dname env n;
+             v_type = full_type env ft;
+             v_storage = storage_in_specs env specs_and_sto;
+             v_init = init_opt;
+           }
 
 and dname env = function
   | DN n -> name env n
@@ -341,17 +334,17 @@ and initialiser env x =
   | InitDesignators _ -> debug (Init x); raise Todo
   | InitIndexOld _ | InitFieldOld _ -> debug (Init x); raise Todo
 
-and storage _env x =
-  match x with
-  | NoSto -> A.DefaultStorage
-  | StoTypedef _ -> raise Impossible
-  | Sto (y, _) ->
+(* TODO: filter and focus on ST *)
+and storage_in_specs _env xs =
+  match xs with
+  | [ST (y, _)] ->
       (match y with
        | Static -> A.Static
        | Extern -> A.Extern
        | Auto | Register -> A.DefaultStorage
        | StoInline -> raise CplusplusConstruct
       )
+  | [] | _ -> A.DefaultStorage
 
 (* ---------------------------------------------------------------------- *)
 (* Cpp *)
@@ -784,25 +777,14 @@ and fieldkind env x =
   match x with
   | FieldDecl decl ->
       (match decl with
-         { v_namei = ni;
-           v_type = ft;
-           v_storage = sto;
-           v_specs = _;
-         } ->
-           (match ni, sto with
-            | Some (n, None), NoSto ->
-                { A.
-                  fld_name = Some (dname env n);
-                  fld_type = full_type env ft;
-                }
-            | None, NoSto ->
-                { A.
-                  fld_name = None;
-                  fld_type = full_type env ft;
-                }
-
-            | _ -> debug (OneDecl decl); raise Todo
-           )
+       | EmptyDecl ft ->  { A.fld_name = None; fld_type = full_type env ft }
+       | TypedefDecl (_tk, _ty, _id) ->
+           debug (OneDecl decl); raise Todo
+       | V { v_name = n; v_init = _TODOcheckNone; v_type = ft; v_specs = _check_sto_emptyTODO;} ->
+           { A.
+             fld_name = Some (dname env n);
+             fld_type = full_type env ft;
+           }
       )
   (* TODO: move with code for Bitfield in onedecl *)
   | BitField (name_opt, _tok, ft, e) ->
