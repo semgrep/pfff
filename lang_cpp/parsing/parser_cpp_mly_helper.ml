@@ -218,10 +218,22 @@ let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
            (* less: use mods? *)
            let id = id_of_dname_for_typedef dn in
            TypedefDecl (t, v_type, id)
-       | NoSto ->
-           V { v_name = dn; v_init = iniopt; v_specs = specs; v_type }
-       | Sto sto ->
-           V { v_name = dn; v_init = iniopt; v_specs = specs @ [ST sto]; v_type }
+       | NoSto | Sto _ ->
+           let more_specs =
+             match sto with
+             | NoSto -> []
+             | Sto sto -> [ST sto]
+             | _ -> raise Impossible
+           in
+           match dn, iniopt with
+           | DN n, _ -> V ({ name = n; specs = specs @ more_specs},
+                           { v_init = iniopt; v_type })
+           | DNStructuredBinding ids, Some ini ->
+               StructuredBinding (v_type, ids, ini)
+           | DNStructuredBinding _ids, None ->
+               raise
+                 (Parse_info.Other_error
+                    ("expecting an init for structured_binding", ii_of_dname dn))
       )
 
 let type_and_specs_from_decl decl =
@@ -335,29 +347,22 @@ let fixFunc ((name, ty, _stoTODO), cp) =
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
       raise (Semantic ("function definition without parameters", ii))
 
-let fixFieldOrMethodDecl (xs, semicolon) =
+let fixFieldOrMethodDecl (xs, semicolon) : class_member =
   match xs with
-  | [FieldDecl(V {
-    v_name = DN name;
-    v_init = ini_opt;
-    v_type = (_q, (TFunction ft));
-    v_specs = specs;
-  })] ->
+  | [(V (ent, { v_init; v_type = (_q, (TFunction ft)); }))] ->
       (* todo? define another type instead of onedecl? *)
-      let ent = { name; specs = [] } in
       let fbody =
-        match ini_opt with
+        match v_init with
         | None -> FBDecl semicolon
         | Some (EqInit(tokeq, InitExpr(C(Int (Some 0, iizero))))) ->
             FBZero (tokeq, iizero, semicolon)
         | _ ->
             raise (Semantic ("can't assign expression to method decl", semicolon))
       in
-      let def =
-        { f_type = ft; f_body = fbody; f_specs = specs } in
-      MemberDecl (Func (ent, def))
+      let def = { f_type = ft; f_body = fbody; f_specs = [] } in
+      F (Func (ent, def))
 
-  | _ -> FieldList (xs, semicolon)
+  | _ -> F (DeclList (xs, semicolon))
 
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)

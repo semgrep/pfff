@@ -180,24 +180,19 @@ let visit_prog prog =
                         match onedecl with
                         (* TODO? *)
                         | EmptyDecl _ | TypedefDecl _ -> ()
-                        | V {v_name = dname; v_specs; _} ->
+                        | StructuredBinding _ | BitField _ -> () (* TODO *)
+                        | V ({name; specs}, _) ->
                             let scope =
                               if is_top_env !_scoped_env ||
-                                 (match v_specs with
+                                 (match specs with
                                   | [ST (Extern,_)] -> true
                                   | _ -> false
                                  )
                               then S.Global
                               else S.Local
                             in
-                            (match dname with
-                             | DN name ->
-                                 add_binding name (scope, ref 0);
-                             | DNStructuredBinding _ -> () (* TODO *)
-                            )
+                            add_binding name (scope, ref 0)
                       );
-                      k x
-                  | MacroDecl _ ->
                       k x
                   | _ -> k x
                 );

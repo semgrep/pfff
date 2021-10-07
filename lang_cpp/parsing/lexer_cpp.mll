@@ -418,16 +418,16 @@ rule token = parse
 
   | "="  { TEq(tokinfo lexbuf) }
 
-  | "-=" { TAssign (OpAssign (Minus, (tokinfo lexbuf)))}
-  | "+=" { TAssign (OpAssign (Plus, (tokinfo lexbuf)))}
-  | "*=" { TAssign (OpAssign (Mul, (tokinfo lexbuf)))}
-  | "/=" { TAssign (OpAssign (Div, (tokinfo lexbuf)))}
-  | "%=" { TAssign (OpAssign (Mod, (tokinfo lexbuf)))}
-  | "&=" { TAssign (OpAssign (And, (tokinfo lexbuf)))}
-  | "|=" { TAssign (OpAssign (Or, (tokinfo lexbuf))) }
-  | "^=" { TAssign(OpAssign (Xor, (tokinfo lexbuf)))}
-  | "<<=" {TAssign (OpAssign (DecLeft, (tokinfo lexbuf))) }
-  | ">>=" {TAssign (OpAssign (DecRight, (tokinfo lexbuf)))}
+  | "-=" { TAssign ((Minus, (tokinfo lexbuf)))}
+  | "+=" { TAssign ((Plus, (tokinfo lexbuf)))}
+  | "*=" { TAssign ((Mul, (tokinfo lexbuf)))}
+  | "/=" { TAssign ((Div, (tokinfo lexbuf)))}
+  | "%=" { TAssign ((Mod, (tokinfo lexbuf)))}
+  | "&=" { TAssign ((And, (tokinfo lexbuf)))}
+  | "|=" { TAssign ((Or, (tokinfo lexbuf))) }
+  | "^=" { TAssign ((Xor, (tokinfo lexbuf)))}
+  | "<<=" {TAssign ((DecLeft, (tokinfo lexbuf))) }
+  | ">>=" {TAssign ((DecRight, (tokinfo lexbuf)))}
 
   | "==" { TEqEq(tokinfo lexbuf) }  | "!=" { TNotEq(tokinfo lexbuf) }
   | ">=" { TSupEq(tokinfo lexbuf) } | "<=" { TInfEq(tokinfo lexbuf) }

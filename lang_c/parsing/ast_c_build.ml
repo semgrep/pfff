@@ -146,7 +146,7 @@ and toplevel env x =
   | CppDirective x ->
       [A.DirStmt (cpp_directive env x)]
 
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | (MacroVar (_, _)|MacroDecl (_, _, _, _)) -> raise Todo
   | CppIfdef _ -> raise Impossible (* see ifdef_skipper *)
 
 
@@ -184,12 +184,11 @@ and declaration env x =
   (* todo *)
   | Asm (_tok1, _volatile_opt, _asmbody, _tok2) ->
       raise Todo
-  | MacroDecl _ -> raise Todo
   | EmptyDef _ -> []
 
   | UsingDecl _ | NameSpaceAlias _ | StaticAssert _
   | NameSpace (_, _, _)
-  | ExternList (_, _, _)|ExternDecl (_, _, _)|TemplateSpecialization (_, _, _)
+  | ExternList (_, _, _)|ExternDecl (_, _, _)
   | TemplateDecl _ | TemplateInstanciation _ ->
       debug (Toplevel (X (D x))); raise CplusplusConstruct
   | DeclTodo _ ->
@@ -285,7 +284,7 @@ and onedecl env d =
       env.typedefs_toadd <- def :: env.typedefs_toadd;
       None
 
-  | V { v_name = n; v_init = iopt; v_type = ft; v_specs = specs_and_sto;} ->
+  | V ({ name = n; specs = specs_and_sto}, { v_init = iopt; v_type = ft}) ->
       let init_opt =
         match iopt with
         | None -> None
@@ -296,15 +295,14 @@ and onedecl env d =
             raise CplusplusConstruct
       in
       Some { A.
-             v_name = dname env n;
+             v_name = name env n;
              v_type = full_type env ft;
              v_storage = storage_in_specs env specs_and_sto;
              v_init = init_opt;
            }
-
-and dname env = function
-  | DN n -> name env n
-  | DNStructuredBinding _ -> raise CplusplusConstruct
+  | StructuredBinding _ -> raise CplusplusConstruct
+  (* should happen only inside fields, and should be covered in fieldkind *)
+  | BitField _ -> raise Impossible
 
 and initialiser env x =
   match x with
@@ -479,7 +477,7 @@ and statement_sequencable env x =
   match x with
   | X (S st) -> [stmt env st]
   | CppDirective x -> debug (Cpp x); raise Todo
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | (MacroVar (_, _)|MacroDecl (_, _, _, _)) -> raise Todo
   | CppIfdef _ -> raise Impossible
   | X (D x) -> [block_declaration env x]
 
@@ -752,14 +750,12 @@ and full_type env x =
 (* ---------------------------------------------------------------------- *)
 and class_member env x =
   match x with
-  | FieldList (fldkind, _) ->
-      let xs = fldkind in
+  | F (DeclList (xs, _)) ->
       xs |> List.map (fieldkind env)
   | ( QualifiedIdInClass (_, _)| Access (_, _) | Friend _ ) ->
       debug (ClassMember x); raise CplusplusConstruct
-  | MemberDecl (EmptyDef _) -> []
-  | MemberDecl _
-    -> debug (ClassMember x); raise Todo
+  | F (EmptyDef _) -> []
+  | F _ -> debug (ClassMember x); raise Todo
 
 
 and class_members_sequencable env xs =
@@ -771,22 +767,19 @@ and class_member_sequencable env x =
   | X x -> class_member env x
   | CppDirective dir -> debug (Cpp dir); raise Todo
   | CppIfdef _ -> raise Impossible
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | (MacroVar (_, _)|MacroDecl (_, _, _, _)) -> raise Todo
 
-and fieldkind env x =
-  match x with
-  | FieldDecl decl ->
-      (match decl with
-       | EmptyDecl ft ->  { A.fld_name = None; fld_type = full_type env ft }
-       | TypedefDecl (_tk, _ty, _id) ->
-           debug (OneDecl decl); raise Todo
-       | V { v_name = n; v_init = _TODOcheckNone; v_type = ft; v_specs = _check_sto_emptyTODO;} ->
-           { A.
-             fld_name = Some (dname env n);
-             fld_type = full_type env ft;
-           }
-      )
-  (* TODO: move with code for Bitfield in onedecl *)
+and fieldkind env decl =
+  match decl with
+  | EmptyDecl ft ->  { A.fld_name = None; fld_type = full_type env ft }
+  | TypedefDecl (_tk, _ty, _id) ->
+      debug (OneDecl decl); raise Todo
+  | V ({ name = n; specs = _check_sto_emptyTODO}, { v_init = _TODOcheckNone; v_type = ft }) ->
+      { A.
+        fld_name = Some (name env n);
+        fld_type = full_type env ft;
+      }
+  | StructuredBinding _ -> raise CplusplusConstruct
   | BitField (name_opt, _tok, ft, e) ->
       let _TODO = expr env e in
       { A.

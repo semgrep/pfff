@@ -89,7 +89,7 @@ module PI = Parse_info
 
 %token <Parse_info.t> TDot TPtrOp     TInc TDec
 %token <Parse_info.t> TComma "," TPtVirg ";"
-%token <Ast_cpp.assignOp> TAssign
+%token <Ast_cpp.arithOp * Parse_info.t> TAssign
 %token <Parse_info.t> TEq "=" TWhy "?"  TTilde TBang TCol ":" TEllipsis "..."
 %token <Parse_info.t>
   TOrLog TAndLog "&&" TOr TXor TAnd "&"  TEqEq TNotEq TInfEq TSupEq
@@ -155,8 +155,8 @@ module PI = Parse_info
 (* fresh_token: appear after fix_tokens in parsing_hacks_pp.ml *)
 %token <Parse_info.t>            TIdent_MacroStmt
 %token <Parse_info.t>            TIdent_MacroString
-%token <(string * Parse_info.t)> TIdent_MacroIterator
-%token <(string * Parse_info.t)> TIdent_MacroDecl
+%token <string * Parse_info.t> TIdent_MacroIterator
+%token <string * Parse_info.t> TIdent_MacroDecl
 %token <Parse_info.t>            Tconst_MacroDeclConst
 
 (* fresh_token: appear after parsing_hack_pp.ml, alt to TIdent_MacroTop *)
@@ -353,43 +353,46 @@ conversion_function_id: Toperator conversion_type_id { IdConverter ($1, $2) }
  * no unaryplus/minus op either *)
 operator_kind:
  (* != == *)
- | TEqEq  { BinaryOp (Logical Eq),    [$1] }
- | TNotEq { BinaryOp (Logical NotEq), [$1] }
+ | TEqEq  { BinaryOp (Logical Eq),    $1 }
+ | TNotEq { BinaryOp (Logical NotEq), $1 }
  (* =    +=   -=   *=   /=   %=       ^=   &=   |=   >>=  <<=   *)
- | "="     { AssignOp (SimpleAssign $1), noii }
- | TAssign { AssignOp ($1), noii }
+ | "="     { AssignOp (SimpleAssign $1), $1 }
+ | TAssign { AssignOp (OpAssign $1), (snd $1) }
  (* ! ~ *)
- | TTilde { UnaryTildeOp, [$1] } | TBang { UnaryNotOp,   [$1] }
+ | TTilde { UnaryTildeOp, $1 } | TBang { UnaryNotOp,   $1 }
  (* , *)
- | "," { CommaOp,  [$1] }
+ | "," { CommaOp,  $1 }
  (* +    -    *    /    %  *)
- | TPlus { BinaryOp (Arith Plus),  [$1] }
- | TMinus { BinaryOp (Arith Minus), [$1] }
- | "*"   { BinaryOp (Arith Mul),   [$1] }
- | TDiv { BinaryOp (Arith Div), [$1] } | TMod { BinaryOp (Arith Mod),[$1] }
+ | TPlus { BinaryOp (Arith Plus),  $1 }
+ | TMinus { BinaryOp (Arith Minus), $1 }
+ | "*"   { BinaryOp (Arith Mul),   $1 }
+ | TDiv { BinaryOp (Arith Div), $1 } | TMod { BinaryOp (Arith Mod), $1 }
  (* ^ & |     <<   >>  *)
- | TOr { BinaryOp (Arith Or),  [$1] } | TXor { BinaryOp (Arith Xor), [$1] }
- | "&"  { BinaryOp (Arith And), [$1]  }
- | TShl { BinaryOp (Arith DecLeft), [$1] }
- | TShr { BinaryOp (Arith DecRight), [$1] }
+ | TOr { BinaryOp (Arith Or),  $1 } | TXor { BinaryOp (Arith Xor), $1 }
+ | "&"  { BinaryOp (Arith And), $1  }
+ | TShl { BinaryOp (Arith DecLeft), $1 }
+ | TShr { BinaryOp (Arith DecRight), $1 }
  (* &&   || *)
- | TOrLog  { BinaryOp (Logical OrLog), [$1] }
- | "&&" { BinaryOp (Logical AndLog), [$1] }
+ | TOrLog  { BinaryOp (Logical OrLog), $1 }
+ | "&&" { BinaryOp (Logical AndLog), $1 }
  (* < >  <=   >=  *)
- | TInf { BinaryOp (Logical Inf), [$1] } | TSup { BinaryOp (Logical Sup), [$1]}
- | TInfEq { BinaryOp (Logical InfEq), [$1] }
- | TSupEq { BinaryOp (Logical SupEq), [$1] }
+ | TInf { BinaryOp (Logical Inf), $1 } | TSup { BinaryOp (Logical Sup), $1}
+ | TInfEq { BinaryOp (Logical InfEq), $1 }
+ | TSupEq { BinaryOp (Logical SupEq), $1 }
  (* ++   -- *)
- | TInc { FixOp Inc, [$1] } | TDec { FixOp Dec, [$1] }
+ | TInc { FixOp Inc, $1 } | TDec { FixOp Dec, $1 }
  (* ->*  -> *)
- | TPtrOpStar { PtrOpOp PtrStarOp, [$1] } | TPtrOp { PtrOpOp PtrOp,     [$1] }
+ | TPtrOpStar { PtrOpOp PtrStarOp, $1 } | TPtrOp { PtrOpOp PtrOp,     $1 }
  (* () [] (double tokens) *)
- | "(" ")" { AccessOp ParenOp, [$1;$2] } | "[" "]" { AccessOp ArrayOp, [$1;$2]}
+ | "(" ")" { AccessOp ParenOp, PI.combine_infos $1 [$2] }
+ | "[" "]" { AccessOp ArrayOp, PI.combine_infos $1 [$2] }
  (* new delete *)
- | Tnew    { AllocOp NewOp,    [$1] } | Tdelete { AllocOp DeleteOp, [$1] }
+ | Tnew    { AllocOp NewOp,    $1 } | Tdelete { AllocOp DeleteOp, $1 }
  (*new[] delete[] (tripple tokens) *)
- | Tnew    TOCro_new TCCro_new { AllocOp NewArrayOp,    [$1;$2;$3] }
- | Tdelete TOCro_new TCCro_new { AllocOp DeleteArrayOp, [$1;$2;$3] }
+ | Tnew    TOCro_new TCCro_new
+    { AllocOp NewArrayOp,  PI.combine_infos $1 [$2;$3] }
+ | Tdelete TOCro_new TCCro_new
+    { AllocOp DeleteArrayOp, PI.combine_infos $1 [$2;$3] }
 
 
 qualified_id:
@@ -455,7 +458,7 @@ expr:
  * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed *)
 assign_expr:
  | cond_expr                     { $1 }
- | cast_expr TAssign assign_expr { Assign ($1, $2,$3)}
+ | cast_expr TAssign assign_expr { Assign ($1,OpAssign $2,$3)}
  | cast_expr "="     assign_expr { Assign ($1,SimpleAssign $2,$3)}
  (* c++ext: TODO in treesitter it's a stmt *)
  | Tthrow assign_expr?        { Throw ($1, $2) }
@@ -877,6 +880,7 @@ statement_or_decl_cpp:
  (* cppext: *)
  | cpp_directive                                  { CppDirective $1 }
  | cpp_ifdef_directive(* stat_or_decl_list ...*)  { CppIfdef $1 }
+ | cpp_macro_decl { $1 }
 
 (*----------------------------*)
 (* c++ext: *)
@@ -1251,9 +1255,9 @@ conversion_type_id:
 
 conversion_declarator:
  | ptr_operator conversion_declarator
-     { () }
+     { () (* TODO *) }
  | ptr_operator %prec LOW_PRIORITY_RULE
-     { () }
+     { () (* TODO *) }
 
 (*************************************************************************)
 (* Class and struct definitions *)
@@ -1336,13 +1340,13 @@ access_specifier:
    * there is a conflict as it can also be an EmptyField *)
 member_declaration:
  | field_declaration      { fixFieldOrMethodDecl $1 }
- | function_definition    { MemberDecl (Func ($1)) }
+ | function_definition    { F (Func ($1)) }
  | qualified_id ";"
      { let name = (None, fst $1, snd $1) in
        QualifiedIdInClass (name, $2)
      }
- | using_declaration      { MemberDecl (UsingDecl $1) }
- | template_declaration   { MemberDecl ($1) }
+ | using_declaration      { F (UsingDecl $1) }
+ | template_declaration   { F ($1) }
 
  (* not in c++ grammar as merged with function_definition, but I can't *)
  | ctor_dtor_member       { $1 }
@@ -1355,7 +1359,7 @@ member_declaration:
     * 'x;' in a structure, maybe default to int but not practical for my way of
     * parsing
     *)
- | ";"    { MemberDecl (EmptyDef $1) }
+ | ";"    { F (EmptyDef $1) }
 
 (*-----------------------------------------------------------------------*)
 (* field declaration *)
@@ -1365,7 +1369,7 @@ field_declaration:
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
        let onedecl = make_onedecl t_ret ~v_namei:None ~sto ~mods in
-       ([(FieldDecl onedecl)], $2)
+       ([onedecl], $2)
      }
  | decl_spec_seq listc(member_declarator) ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
@@ -1377,24 +1381,25 @@ member_declarator:
  | declarator
      { let (name, partialt) = $1 in
        (fun t_ret sto ->
-       FieldDecl (make_onedecl (partialt t_ret)
-         ~v_namei:(Some (DN name, None)) ~sto ~mods:[]
-         ))
+         make_onedecl (partialt t_ret)
+           ~v_namei:(Some (DN name, None)) ~sto ~mods:[]
+         )
      }
  (* can also be an abstract when it's =0 on a function type *)
  | declarator "=" const_expr
      { let (name, partialt) = $1 in
        (fun t_ret sto ->
-       FieldDecl (make_onedecl (partialt t_ret)
+         make_onedecl (partialt t_ret)
           ~v_namei:(Some (DN name, Some (EqInit ($2, InitExpr $3)))) ~sto
           ~mods:[]
-       ))
+       )
      }
 
  (* normally just ident, but ambiguity so solve by inspetcing declarator *)
  | declarator ":" const_expr
-     { let (name, _partialt) = fixNameForParam $1 in (fun t_ret _stoTODO ->
-       BitField (Some name, $2, t_ret, $3))
+     { let (name, _partialt) = fixNameForParam $1 in
+       (fun t_ret _stoTODO ->
+         (BitField (Some name, $2, t_ret, $3)))
      }
  | ":" const_expr
      { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
@@ -1445,22 +1450,12 @@ simple_declaration:
  | decl_spec_seq listc(init_declarator) ";"
      { let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
        (
-         ($2 |> List.map (fun (((name, f), iniopt)) ->
+         $2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            make_onedecl (f t_ret) ~v_namei:(Some (DN name, iniopt)) ~mods ~sto
-         )), $3)
+         ), $3)
      }
 
-simple_declaration_or_macro:
- | simple_declaration { DeclList $1 }
- (* cppext: *)
- | TIdent_MacroDecl "(" listc(argument) ")" ";"
-     { MacroDecl ([], $1, ($2, $3, $4), $5) }
- | Tstatic TIdent_MacroDecl "(" listc(argument) ")" ";"
-     { MacroDecl ([$1], $2, ($3, $4, $5), $6) }
- | Tstatic Tconst_MacroDeclConst
-    TIdent_MacroDecl "(" listc(argument) ")" ";"
-     { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 (*-----------------------------------------------------------------------*)
 
@@ -1585,7 +1580,7 @@ designator:
 (*************************************************************************)
 
 block_declaration:
- | simple_declaration_or_macro { $1 }
+ | simple_declaration { DeclList $1 }
  (*gccext: *)
  | asm_definition     { $1 }
  (*c++ext: *)
@@ -1661,7 +1656,6 @@ declaration:
  (* not in c++ grammar as merged with function_definition, but I can't *)
  | ctor_dtor { $1 }
  | template_declaration              { $1 }
- | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
  | namespace_definition              { $1 }
 
@@ -1683,13 +1677,10 @@ declaration_cpp:
 (*----------------------------*)
 
 template_declaration:
-  Ttemplate TInf_Template listc(template_parameter) TSup_Template declaration
+  Ttemplate TInf_Template optl(listc(template_parameter)) TSup_Template declaration
    { TemplateDecl ($1, ($2, $3, $4), $5) }
 
-explicit_specialization: Ttemplate TInf_Template TSup_Template declaration
-   { TemplateSpecialization ($1, ($2, (), $3), $4) }
-
-(*todo: '| type_paramter'
+(*todo: '| type_parameter'
    * ambiguity with parameter_decl cos a type can also be 'class X'
  | Tclass ident { raise Todo }
    *)
@@ -1782,22 +1773,22 @@ ctor_dtor_member:
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { MemberDecl (Func ((mk_constructor $2 ($3, $4, $5) (FBDef $7)))) }
+     { F (Func ((mk_constructor $2 ($3, $4, $5) (FBDef $7)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" ";"
-     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDecl $6))) }
+     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDecl $6))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdelete ";"
-     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDelete ($6, $7, $8)))) }
+     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDelete ($6, $7, $8)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdefault ";"
-     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDefault ($6, $7, $8)))) }
+     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDefault ($6, $7, $8)))) }
 
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
-     { MemberDecl (Func ((mk_destructor $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
+     { F (Func ((mk_destructor $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? ";"
-     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
+     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdelete ";"
-     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
+     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdefault ";"
-     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
+     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
 
 
 ctor_spec:
@@ -1902,10 +1893,20 @@ cpp_ifdef_directive:
  | TIfdefMisc  { Ifdef (snd $1) }
  | TIfdefVersion { Ifdef (snd $1) }
 
+(* cppext: *)
+cpp_macro_decl:
+ | TIdent_MacroDecl "(" listc(argument) ")" ";"
+     { MacroDecl ([], $1, ($2, $3, $4), $5) }
+ | Tstatic TIdent_MacroDecl "(" listc(argument) ")" ";"
+     { MacroDecl ([ST (Static, $1)], $2, ($3, $4, $5), $6) }
+ | Tstatic Tconst_MacroDeclConst
+    TIdent_MacroDecl "(" listc(argument) ")" ";"
+     { MacroDecl ([ST (Static, $1); TQ (Const, $2)], $3, ($4, $5, $6), $7) }
+
 cpp_other:
 (* cppext: *)
- | TIdent "(" listc(argument) ")" ";"   { MacroTop ($1, ($2, $3, $4),Some $5)}
+ | TIdent "(" listc(argument) ")" ";"   { MacroDecl ([],$1, ($2, $3, $4), $5)}
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
- | TIdent "(" listc(argument) TCPar_EOL { MacroTop ($1, ($2, $3, $4),None) }
+ | TIdent "(" listc(argument) TCPar_EOL { MacroDecl ([], $1, ($2, $3, $4),$4)}
   (* ex: EXPORT_NO_SYMBOLS; *)
- | TIdent ";"                           { MacroVarTop ($1, $2) }
+ | TIdent ";"                           { MacroVar ($1, $2) }

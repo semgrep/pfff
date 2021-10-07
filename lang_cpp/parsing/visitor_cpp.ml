@@ -32,7 +32,6 @@ type visitor_in = {
   ktypeC: typeC vin;
 
   kclass_member: class_member vin;
-  kfieldkind: fieldkind vin;
 
   kparameter: parameter vin;
   kcompound: compound vin;
@@ -51,7 +50,6 @@ and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
 let default_visitor =
   { kexpr    = (fun (k,_) x -> k x);
-    kfieldkind = (fun (k,_) x -> k x);
     kparameter = (fun (k,_) x -> k x);
     ktypeC = (fun (k,_) x -> k x);
     kcompound = (fun (k,_) x -> k x);

@@ -306,8 +306,7 @@ let visitor_info_of_tok f = function
   | TString ((s, i), isWchar)  -> TString ((s, f i),isWchar)
   | TChar  ((s, i), isWchar)   -> TChar  ((s, f i), isWchar)
   | TFloat ((s, i), floatType) -> TFloat ((s, f i), floatType)
-  | TAssign  (Ast_cpp.SimpleAssign i) -> TAssign  (Ast_cpp.SimpleAssign (f i))
-  | TAssign  (Ast_cpp.OpAssign (x, i)) -> TAssign  (Ast_cpp.OpAssign (x, f i))
+  | TAssign  ((x, i)) -> TAssign ((x, f i))
 
   | TIdent  (s, i)       -> TIdent  (s, f i)
   | TIdent_Typedef  (s, i) -> TIdent_Typedef (s, f i)

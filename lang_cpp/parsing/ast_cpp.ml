@@ -119,12 +119,9 @@ and ident_or_op =
   | IdIdent of ident
   (* c++ext: *)
   | IdTemplateId of ident * template_arguments
-
-  (* c++ext: for operator overloading *)
-  (* TODO: tok list?? *)
-  | IdOperator of (tok * (operator * tok list))
   | IdDestructor of tok(*~*) * ident
-  (* ?? paren? *)
+  (* c++ext: operator overloading *)
+  | IdOperator  of tok (* 'operator' *) * operator wrap
   | IdConverter of tok (* 'operator' *) * type_
 
 
@@ -314,7 +311,7 @@ and expr =
    * a template_method name. *)
   | DotAccess   of expr * dotOp wrap * name
 
-  (* pfffonly, TODO still valid?
+  (* pfffonly, but we should add it to ts too.
    * c++ext: note that second paramater is an expr, not a name *)
   | DotStarAccess   of expr * dotOp wrap (* with suffix '*' *) * expr
 
@@ -503,12 +500,12 @@ and condition_clause =
   (* c++ext: *)
   | CondDecl of vars_decl * expr
   | CondStmt of expr_stmt * expr
-  | CondOneDecl of onedecl (* TODO change to var_decl with always vinit *)
+  | CondOneDecl of var_decl (* vinit always Some *)
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
   (* c++0x? less: entity be DStructrured_binding?  *)
-  | ForRange of var_range * tok (*':'*) * initialiser
+  | ForRange of var_decl (* vinit = None *)  * tok (*':'*) * initialiser
 
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 
@@ -588,40 +585,30 @@ and decl =
    * a Decl.
   *)
   | DeclList of vars_decl
-  (* cppext: todo? now factorize with MacroTop ?  *)
-  | MacroDecl of tok list * ident * argument list paren * tok
+  | Func of func_definition
+  (* c++ext: *)
+  | TemplateDecl of tok * template_parameters * decl
+  | TemplateInstanciation of tok (* 'template' *) * var_decl (*vinit=None*)*sc
 
   (* c++ext: using namespace *)
   | UsingDecl of using
   (* type_ is usually just a name TODO tsonly is using, but pfff namespace?*)
   | NameSpaceAlias of tok (*'namespace'*) * ident * tok (*=*) * type_ * sc
 
-  (* gccext: *)
-  | Asm of tok * tok option (*volatile*) * asmbody paren * sc
-
-  | Func of func_definition
-
-  (* c++ext: *)
-  | TemplateDecl of tok * template_parameters * decl
-  (* pfffonly? delete? *)
-  | TemplateSpecialization of tok * unit angle * decl
-  | TemplateInstanciation of tok (* 'template' *) * var_range * sc
+  (* the list can be empty *)
+  | NameSpace of tok * ident option * declarations
 
   (* the list can be empty *)
   | ExternDecl     of tok * string wrap (* usually "C" *) * decl
   | ExternList of tok * string wrap * declarations
 
-  (* the list can be empty *)
-  | NameSpace of tok * ident option * declarations
-
+  (* gccext: *)
+  | Asm of tok * tok option (*volatile*) * asmbody paren * sc
   (* c++0x?: tsonly: at toplevel or in class *)
   | StaticAssert of tok * argument list paren (* last args are strings *)
-
   (* gccext: allow redundant ';' *)
   | EmptyDef of sc
-
   | NotParsedCorrectly of tok list
-
   | DeclTodo of todo_category
 
 and vars_decl = onedecl list * sc
@@ -632,16 +619,6 @@ and colon = Colon of tok (* : *) * colon_option list
 and colon_option =
   | ColonExpr of tok list * expr paren
   | ColonMisc of tok list
-
-(* ------------------------------------------------------------------------- *)
-(* Simple var *)
-(* ------------------------------------------------------------------------- *)
-(* TODO: delete, just reuse var_decl *)
-and var_range = entity * var_decl_range
-
-and var_decl_range = {
-  v__type: type_;
-}
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition (and also field definition) *)
@@ -657,19 +634,30 @@ and onedecl =
    * kenccext: you can also have anonymous fields.
   *)
   | EmptyDecl of type_
+  (* This covers variables but also fields.
+   * old: there was a separate 'FieldDecl of fieldkind' before,
+   * like DeclList, but simpler to reuse onedecl.
+   * c++ext: FieldDecl was before Simple of string option * type_
+   * but in c++ fields can also have storage (e.g. static) so again simpler
+   * to reuse onedecl.
+  *)
   | V of var_decl
+  (* c++17: structured binding, [n1, n2, n3] = expr *)
+  | StructuredBinding of type_ * ident list bracket * init
 
-(* TODO: reuse entity *)
-and var_decl = {
-  v_name: declarator_name;
+  (* BitField can appear only inside struct/classes in class_member.
+   * At first I thought that a bitfield could be only Signed/Unsigned.
+   * But it seems that gcc allows char i:4. C rule must say that you
+   * can cast into int so enum too, ...
+  *)
+  | BitField of ident option * tok(*:*) * type_ * a_const_expr
+  (* type_ => BitFieldInt | BitFieldUnsigned *)
+
+and var_decl = entity * variable_definition
+and variable_definition = {
   v_init: init option;
   v_type: type_;
-  v_specs: specifier list;
 }
-and declarator_name =
-  | DN of name
-  (* c++17: structured binding, [n1, n2, n3] = expr *)
-  | DNStructuredBinding of ident list bracket
 
 and init =
   | EqInit of tok (*=*) * initialiser
@@ -814,34 +802,16 @@ and base_clause = {
   i_access: access_spec wrap option;
 }
 
-(* was called 'field wrap' before *)
+(* old:was called 'field wrap' before *)
 and class_member =
   (* could put outside and take class_member list *)
   | Access of access_spec wrap * tok (*:*)
-
-  (* before unparser, I just had a Field. Similar to DeclList *)
-  | FieldList of fieldkind list * sc
-
   | Friend of tok (* 'friend' *) * decl (* Func or DeclList *)
   | QualifiedIdInClass of name (* ?? *) * sc
-
   (* valid declarations in class_member:
-   *  Func(for methods)/TemplateDecl/UsingDecl/EmptyDef/...
+   * DeclList/Func(for methods)/TemplateDecl/UsingDecl/EmptyDef/...
   *)
-  | MemberDecl of decl
-
-(* At first I thought that a bitfield could be only Signed/Unsigned.
- * But it seems that gcc allows char i:4. C rule must say that you
- * can cast into int so enum too, ...
- * c++ext: FieldDecl was before Simple of string option * type_
- * but in c++ fields can also have storage (e.g. static) so now reuse
- * onedecl.
-*)
-(* TODO: just alias to onedecl *)
-and fieldkind =
-  | FieldDecl of onedecl
-  | BitField of ident option * tok(*:*) * type_ * a_const_expr
-  (* type_ => BitFieldInt | BitFieldUnsigned *)
+  | F of decl
 
 (* ------------------------------------------------------------------------- *)
 (* Template definition/declaration *)
@@ -988,9 +958,8 @@ and 'a sequencable =
   (* cppext: *)
   | CppDirective of cpp_directive
   | CppIfdef of ifdef_directive (* * 'a list *)
-  (* todo: right now just at the toplevel, but could have elsewhere *)
-  | MacroTop of ident * argument list paren * tok option
-  | MacroVarTop of ident * sc
+  | MacroDecl of specifier list * ident * argument list paren * sc
+  | MacroVar of ident * sc
 
 (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
 and ifdef_directive =
@@ -1071,6 +1040,10 @@ type abstract_declarator = type_ -> type_
  * Pointer (Func(int,int)).
 *)
 type declarator = { dn: declarator_name; dt: abstract_declarator }
+and declarator_name =
+  | DN of name
+  (* c++17: structured binding, [n1, n2, n3] = expr *)
+  | DNStructuredBinding of ident list bracket
 
 (*****************************************************************************)
 (* Some constructors *)
@@ -1126,7 +1099,7 @@ let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (_s,ii) -> [ii]
-  | IdOperator (_, (_op, ii)) -> ii
+  | IdOperator (_, (_op, ii)) -> [ii]
   | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
   | IdDestructor (tok, (_s, ii)) -> [tok;ii]
   | IdTemplateId ((_s, ii), _args) -> [ii]
@@ -1139,7 +1112,7 @@ let (ii_of_name: name -> tok) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (_s,ii) -> ii
-  | IdOperator (_, (_op, ii)) -> List.hd ii
+  | IdOperator (_, (_op, ii)) -> ii
   | IdConverter (tok, _ft) -> tok
   | IdDestructor (tok, (_s, _ii)) -> tok
   | IdTemplateId ((_s, ii), _args) -> ii
