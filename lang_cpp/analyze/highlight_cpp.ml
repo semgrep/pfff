@@ -198,7 +198,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           xs |> List.iter (fun onedecl ->
             (match onedecl with
              | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
-             | StructuredBinding _ -> ()
+             | StructuredBinding _ | BitField _ -> ()
              | V ({ name; specs}, {v_type; _ }) ->
                  let categ =
                    match specs with
@@ -367,31 +367,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       | _ -> k x
     );
 
-    V.kfieldkind = (fun (k, _) x ->
-      match x with
-      | FieldDecl onedecl ->
-          (match onedecl with
-           | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
-           | StructuredBinding _ -> (* TODO *) ()
-           | V ({name; _}, { v_type; _}) ->
-               let kind =
-                 (* poor's man object using function pointer; classic C idiom *)
-                 if Type.is_method_type v_type
-                 then Entity (Method, (Def2 fake_no_def2))
-                 else Entity (Field, (Def2 NoUse))
-               in
-               Ast.ii_of_id_name name |> List.iter (fun ii -> tag ii kind)
-          );
-          k x
-
-      | BitField (sopt, _tok, _ft, _e) ->
-          (match sopt with
-           | Some (_s, iiname) ->
-               tag iiname (Entity (Field, (Def2 NoUse)))
-           | None -> ()
-          )
-    );
-
     V.kclass_def = (fun (k,_) ((c_nameopt, _def) as x) ->
       c_nameopt |> Common.do_option (fun name ->
         Ast.ii_of_id_name name |> List.iter (fun ii ->
@@ -409,12 +384,32 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     );
     V.kclass_member = (fun (k,_) def ->
       (match def with
-       | (MemberDecl (Func x)) ->
+       | F (Func x) ->
            let ({name = f_name; specs = _}, _def) = x in
            let name = f_name in
            Ast.ii_of_id_name name |> List.iter (fun ii ->
              tag ii (Entity (Method, (Def2 fake_no_def2)))
            );
+       | F (DeclList (xs, _)) ->
+           xs |> List.iter (fun onedecl ->
+             (match onedecl with
+              | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
+              | StructuredBinding _ -> (* TODO *) ()
+              | V ({name; _}, { v_type; _}) ->
+                  let kind =
+                    (* poor's man object using function pointer; classic C idiom *)
+                    if Type.is_method_type v_type
+                    then Entity (Method, (Def2 fake_no_def2))
+                    else Entity (Field, (Def2 NoUse))
+                  in
+                  Ast.ii_of_id_name name |> List.iter (fun ii -> tag ii kind)
+              | BitField (sopt, _tok, _ft, _e) ->
+                  (match sopt with
+                   | Some (_s, iiname) ->
+                       tag iiname (Entity (Field, (Def2 NoUse)))
+                   | None -> ()
+                  )
+             ));
        | _ -> ()
       );
       k def

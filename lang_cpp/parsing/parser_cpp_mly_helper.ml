@@ -347,9 +347,9 @@ let fixFunc ((name, ty, _stoTODO), cp) =
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
       raise (Semantic ("function definition without parameters", ii))
 
-let fixFieldOrMethodDecl (xs, semicolon) =
+let fixFieldOrMethodDecl (xs, semicolon) : class_member =
   match xs with
-  | [FieldDecl(V (ent, { v_init; v_type = (_q, (TFunction ft)); }))] ->
+  | [(V (ent, { v_init; v_type = (_q, (TFunction ft)); }))] ->
       (* todo? define another type instead of onedecl? *)
       let fbody =
         match v_init with
@@ -360,9 +360,9 @@ let fixFieldOrMethodDecl (xs, semicolon) =
             raise (Semantic ("can't assign expression to method decl", semicolon))
       in
       let def = { f_type = ft; f_body = fbody; f_specs = [] } in
-      MemberDecl (Func (ent, def))
+      F (Func (ent, def))
 
-  | _ -> FieldList (xs, semicolon)
+  | _ -> F (DeclList (xs, semicolon))
 
 (*-------------------------------------------------------------------------- *)
 (* shortcuts *)

@@ -9,7 +9,6 @@ type visitor_in = {
   ktypeC: typeC vin;
 
   kclass_member: class_member vin;
-  kfieldkind: fieldkind vin;
 
   kparameter: parameter vin;
   kcompound: compound vin;

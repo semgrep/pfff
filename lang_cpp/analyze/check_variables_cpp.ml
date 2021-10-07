@@ -180,7 +180,7 @@ let visit_prog prog =
                         match onedecl with
                         (* TODO? *)
                         | EmptyDecl _ | TypedefDecl _ -> ()
-                        | StructuredBinding _ -> () (* TODO *)
+                        | StructuredBinding _ | BitField _ -> () (* TODO *)
                         | V ({name; specs}, _) ->
                             let scope =
                               if is_top_env !_scoped_env ||

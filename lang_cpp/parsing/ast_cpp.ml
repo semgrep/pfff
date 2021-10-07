@@ -585,6 +585,11 @@ and decl =
    * a Decl.
   *)
   | DeclList of vars_decl
+  | Func of func_definition
+  (* c++ext: *)
+  | TemplateDecl of tok * template_parameters * decl
+  | TemplateInstanciation of tok (* 'template' *) * var_decl (*vinit=None*)*sc
+
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * ident * argument list paren * tok
 
@@ -593,30 +598,20 @@ and decl =
   (* type_ is usually just a name TODO tsonly is using, but pfff namespace?*)
   | NameSpaceAlias of tok (*'namespace'*) * ident * tok (*=*) * type_ * sc
 
-  (* gccext: *)
-  | Asm of tok * tok option (*volatile*) * asmbody paren * sc
-
-  | Func of func_definition
-
-  (* c++ext: *)
-  | TemplateDecl of tok * template_parameters * decl
-  | TemplateInstanciation of tok (* 'template' *) * var_decl (*vinit=None*)*sc
+  (* the list can be empty *)
+  | NameSpace of tok * ident option * declarations
 
   (* the list can be empty *)
   | ExternDecl     of tok * string wrap (* usually "C" *) * decl
   | ExternList of tok * string wrap * declarations
 
-  (* the list can be empty *)
-  | NameSpace of tok * ident option * declarations
-
+  (* gccext: *)
+  | Asm of tok * tok option (*volatile*) * asmbody paren * sc
   (* c++0x?: tsonly: at toplevel or in class *)
   | StaticAssert of tok * argument list paren (* last args are strings *)
-
   (* gccext: allow redundant ';' *)
   | EmptyDef of sc
-
   | NotParsedCorrectly of tok list
-
   | DeclTodo of todo_category
 
 and vars_decl = onedecl list * sc
@@ -642,9 +637,24 @@ and onedecl =
    * kenccext: you can also have anonymous fields.
   *)
   | EmptyDecl of type_
+  (* This covers variables but also fields.
+   * old: there was a separate 'FieldDecl of fieldkind' before,
+   * like DeclList, but simpler to reuse onedecl.
+   * c++ext: FieldDecl was before Simple of string option * type_
+   * but in c++ fields can also have storage (e.g. static) so again simpler
+   * to reuse onedecl.
+  *)
   | V of var_decl
   (* c++17: structured binding, [n1, n2, n3] = expr *)
   | StructuredBinding of type_ * ident list bracket * init
+
+  (* BitField can appear only inside struct/classes in class_member.
+   * At first I thought that a bitfield could be only Signed/Unsigned.
+   * But it seems that gcc allows char i:4. C rule must say that you
+   * can cast into int so enum too, ...
+  *)
+  | BitField of ident option * tok(*:*) * type_ * a_const_expr
+  (* type_ => BitFieldInt | BitFieldUnsigned *)
 
 and var_decl = entity * variable_definition
 and variable_definition = {
@@ -795,34 +805,16 @@ and base_clause = {
   i_access: access_spec wrap option;
 }
 
-(* was called 'field wrap' before *)
+(* old:was called 'field wrap' before *)
 and class_member =
   (* could put outside and take class_member list *)
   | Access of access_spec wrap * tok (*:*)
-
-  (* before unparser, I just had a Field. Similar to DeclList *)
-  | FieldList of fieldkind list * sc
-
   | Friend of tok (* 'friend' *) * decl (* Func or DeclList *)
   | QualifiedIdInClass of name (* ?? *) * sc
-
   (* valid declarations in class_member:
-   *  Func(for methods)/TemplateDecl/UsingDecl/EmptyDef/...
+   * DeclList/Func(for methods)/TemplateDecl/UsingDecl/EmptyDef/...
   *)
-  | MemberDecl of decl
-
-(* At first I thought that a bitfield could be only Signed/Unsigned.
- * But it seems that gcc allows char i:4. C rule must say that you
- * can cast into int so enum too, ...
- * c++ext: FieldDecl was before Simple of string option * type_
- * but in c++ fields can also have storage (e.g. static) so now reuse
- * onedecl.
-*)
-(* less: just alias to onedecl? *)
-and fieldkind =
-  | FieldDecl of onedecl
-  | BitField of ident option * tok(*:*) * type_ * a_const_expr
-  (* type_ => BitFieldInt | BitFieldUnsigned *)
+  | F of decl
 
 (* ------------------------------------------------------------------------- *)
 (* Template definition/declaration *)

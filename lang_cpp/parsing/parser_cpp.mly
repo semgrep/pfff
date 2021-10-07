@@ -1339,13 +1339,13 @@ access_specifier:
    * there is a conflict as it can also be an EmptyField *)
 member_declaration:
  | field_declaration      { fixFieldOrMethodDecl $1 }
- | function_definition    { MemberDecl (Func ($1)) }
+ | function_definition    { F (Func ($1)) }
  | qualified_id ";"
      { let name = (None, fst $1, snd $1) in
        QualifiedIdInClass (name, $2)
      }
- | using_declaration      { MemberDecl (UsingDecl $1) }
- | template_declaration   { MemberDecl ($1) }
+ | using_declaration      { F (UsingDecl $1) }
+ | template_declaration   { F ($1) }
 
  (* not in c++ grammar as merged with function_definition, but I can't *)
  | ctor_dtor_member       { $1 }
@@ -1358,7 +1358,7 @@ member_declaration:
     * 'x;' in a structure, maybe default to int but not practical for my way of
     * parsing
     *)
- | ";"    { MemberDecl (EmptyDef $1) }
+ | ";"    { F (EmptyDef $1) }
 
 (*-----------------------------------------------------------------------*)
 (* field declaration *)
@@ -1368,7 +1368,7 @@ field_declaration:
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
        let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
        let onedecl = make_onedecl t_ret ~v_namei:None ~sto ~mods in
-       ([(FieldDecl onedecl)], $2)
+       ([onedecl], $2)
      }
  | decl_spec_seq listc(member_declarator) ";"
      { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
@@ -1380,24 +1380,25 @@ member_declarator:
  | declarator
      { let (name, partialt) = $1 in
        (fun t_ret sto ->
-       FieldDecl (make_onedecl (partialt t_ret)
-         ~v_namei:(Some (DN name, None)) ~sto ~mods:[]
-         ))
+         make_onedecl (partialt t_ret)
+           ~v_namei:(Some (DN name, None)) ~sto ~mods:[]
+         )
      }
  (* can also be an abstract when it's =0 on a function type *)
  | declarator "=" const_expr
      { let (name, partialt) = $1 in
        (fun t_ret sto ->
-       FieldDecl (make_onedecl (partialt t_ret)
+         make_onedecl (partialt t_ret)
           ~v_namei:(Some (DN name, Some (EqInit ($2, InitExpr $3)))) ~sto
           ~mods:[]
-       ))
+       )
      }
 
  (* normally just ident, but ambiguity so solve by inspetcing declarator *)
  | declarator ":" const_expr
-     { let (name, _partialt) = fixNameForParam $1 in (fun t_ret _stoTODO ->
-       BitField (Some name, $2, t_ret, $3))
+     { let (name, _partialt) = fixNameForParam $1 in
+       (fun t_ret _stoTODO ->
+         (BitField (Some name, $2, t_ret, $3)))
      }
  | ":" const_expr
      { (fun t_ret _stoTODO -> BitField (None, $1, t_ret, $2)) }
@@ -1781,22 +1782,22 @@ ctor_dtor_member:
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { MemberDecl (Func ((mk_constructor $2 ($3, $4, $5) (FBDef $7)))) }
+     { F (Func ((mk_constructor $2 ($3, $4, $5) (FBDef $7)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" ";"
-     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDecl $6))) }
+     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDecl $6))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdelete ";"
-     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDelete ($6, $7, $8)))) }
+     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDelete ($6, $7, $8)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdefault ";"
-     { MemberDecl (Func (mk_constructor $2 ($3, $4, $5) (FBDefault ($6, $7, $8)))) }
+     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDefault ($6, $7, $8)))) }
 
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
-     { MemberDecl (Func ((mk_destructor $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
+     { F (Func ((mk_destructor $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? ";"
-     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
+     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdelete ";"
-     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
+     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdefault ";"
-     { MemberDecl (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
+     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
 
 
 ctor_spec:

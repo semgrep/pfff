@@ -302,6 +302,8 @@ and onedecl env d =
              v_init = init_opt;
            }
   | StructuredBinding _ -> raise CplusplusConstruct
+  (* should happen only inside fields, and should be covered in fieldkind *)
+  | BitField _ -> raise Impossible
 
 and initialiser env x =
   match x with
@@ -749,14 +751,12 @@ and full_type env x =
 (* ---------------------------------------------------------------------- *)
 and class_member env x =
   match x with
-  | FieldList (fldkind, _) ->
-      let xs = fldkind in
+  | F (DeclList (xs, _)) ->
       xs |> List.map (fieldkind env)
   | ( QualifiedIdInClass (_, _)| Access (_, _) | Friend _ ) ->
       debug (ClassMember x); raise CplusplusConstruct
-  | MemberDecl (EmptyDef _) -> []
-  | MemberDecl _
-    -> debug (ClassMember x); raise Todo
+  | F (EmptyDef _) -> []
+  | F _ -> debug (ClassMember x); raise Todo
 
 
 and class_members_sequencable env xs =
@@ -770,21 +770,17 @@ and class_member_sequencable env x =
   | CppIfdef _ -> raise Impossible
   | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
 
-and fieldkind env x =
-  match x with
-  | FieldDecl decl ->
-      (match decl with
-       | EmptyDecl ft ->  { A.fld_name = None; fld_type = full_type env ft }
-       | TypedefDecl (_tk, _ty, _id) ->
-           debug (OneDecl decl); raise Todo
-       | V ({ name = n; specs = _check_sto_emptyTODO}, { v_init = _TODOcheckNone; v_type = ft }) ->
-           { A.
-             fld_name = Some (name env n);
-             fld_type = full_type env ft;
-           }
-       | StructuredBinding _ -> raise CplusplusConstruct
-      )
-  (* TODO: move with code for Bitfield in onedecl *)
+and fieldkind env decl =
+  match decl with
+  | EmptyDecl ft ->  { A.fld_name = None; fld_type = full_type env ft }
+  | TypedefDecl (_tk, _ty, _id) ->
+      debug (OneDecl decl); raise Todo
+  | V ({ name = n; specs = _check_sto_emptyTODO}, { v_init = _TODOcheckNone; v_type = ft }) ->
+      { A.
+        fld_name = Some (name env n);
+        fld_type = full_type env ft;
+      }
+  | StructuredBinding _ -> raise CplusplusConstruct
   | BitField (name_opt, _tok, ft, e) ->
       let _TODO = expr env e in
       { A.
