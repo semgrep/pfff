@@ -199,9 +199,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
             (match onedecl with
              | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
              | StructuredBinding _ -> ()
-             | V { v_name = name; v_specs; v_type; _ } ->
+             | V ({ name; specs}, {v_type; _ }) ->
                  let categ =
-                   match v_specs with
+                   match specs with
                    (* TODO | StoTypedef _ -> Entity (Type, Def2 fake_no_def2) *)
                    | _ when Type.is_function_type v_type ->
                        FunctionDecl NoUse
@@ -373,7 +373,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           (match onedecl with
            | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
            | StructuredBinding _ -> (* TODO *) ()
-           | V {v_name = name; v_type; _} ->
+           | V ({name; _}, { v_type; _}) ->
                let kind =
                  (* poor's man object using function pointer; classic C idiom *)
                  if Type.is_method_type v_type

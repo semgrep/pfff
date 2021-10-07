@@ -285,7 +285,7 @@ and onedecl env d =
       env.typedefs_toadd <- def :: env.typedefs_toadd;
       None
 
-  | V { v_name = n; v_init = iopt; v_type = ft; v_specs = specs_and_sto;} ->
+  | V ({ name = n; specs = specs_and_sto}, { v_init = iopt; v_type = ft}) ->
       let init_opt =
         match iopt with
         | None -> None
@@ -777,7 +777,7 @@ and fieldkind env x =
        | EmptyDecl ft ->  { A.fld_name = None; fld_type = full_type env ft }
        | TypedefDecl (_tk, _ty, _id) ->
            debug (OneDecl decl); raise Todo
-       | V { v_name = n; v_init = _TODOcheckNone; v_type = ft; v_specs = _check_sto_emptyTODO;} ->
+       | V ({ name = n; specs = _check_sto_emptyTODO}, { v_init = _TODOcheckNone; v_type = ft }) ->
            { A.
              fld_name = Some (name env n);
              fld_type = full_type env ft;

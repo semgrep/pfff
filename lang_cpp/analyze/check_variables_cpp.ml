@@ -181,10 +181,10 @@ let visit_prog prog =
                         (* TODO? *)
                         | EmptyDecl _ | TypedefDecl _ -> ()
                         | StructuredBinding _ -> () (* TODO *)
-                        | V {v_name = name; v_specs; _} ->
+                        | V ({name; specs}, _) ->
                             let scope =
                               if is_top_env !_scoped_env ||
-                                 (match v_specs with
+                                 (match specs with
                                   | [ST (Extern,_)] -> true
                                   | _ -> false
                                  )

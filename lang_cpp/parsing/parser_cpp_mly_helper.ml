@@ -225,9 +225,9 @@ let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
              | Sto sto -> [ST sto]
              | _ -> raise Impossible
            in
-           let v_specs = specs @ more_specs in
            match dn, iniopt with
-           | DN n, _ -> V { v_name = n; v_init = iniopt; v_specs; v_type }
+           | DN n, _ -> V ({ name = n; specs = specs @ more_specs},
+                           { v_init = iniopt; v_type })
            | DNStructuredBinding ids, Some ini ->
                StructuredBinding (v_type, ids, ini)
            | DNStructuredBinding _ids, None ->
@@ -349,24 +349,17 @@ let fixFunc ((name, ty, _stoTODO), cp) =
 
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
-  | [FieldDecl(V {
-    v_name = name;
-    v_init = ini_opt;
-    v_type = (_q, (TFunction ft));
-    v_specs = specs;
-  })] ->
+  | [FieldDecl(V (ent, { v_init; v_type = (_q, (TFunction ft)); }))] ->
       (* todo? define another type instead of onedecl? *)
-      let ent = { name; specs = [] } in
       let fbody =
-        match ini_opt with
+        match v_init with
         | None -> FBDecl semicolon
         | Some (EqInit(tokeq, InitExpr(C(Int (Some 0, iizero))))) ->
             FBZero (tokeq, iizero, semicolon)
         | _ ->
             raise (Semantic ("can't assign expression to method decl", semicolon))
       in
-      let def =
-        { f_type = ft; f_body = fbody; f_specs = specs } in
+      let def = { f_type = ft; f_body = fbody; f_specs = [] } in
       MemberDecl (Func (ent, def))
 
   | _ -> FieldList (xs, semicolon)

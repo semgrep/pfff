@@ -659,12 +659,10 @@ and onedecl =
   (* c++17: structured binding, [n1, n2, n3] = expr *)
   | StructuredBinding of type_ * ident list bracket * init
 
-(* TODO: reuse entity *)
-and var_decl = {
-  v_name: name;
+and var_decl = entity * variable_definition
+and variable_definition = {
   v_init: init option;
   v_type: type_;
-  v_specs: specifier list;
 }
 
 and init =
