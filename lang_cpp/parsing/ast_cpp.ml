@@ -508,7 +508,7 @@ and condition_clause =
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
   (* c++0x? less: entity be DStructrured_binding?  *)
-  | ForRange of var_range * tok (*':'*) * initialiser
+  | ForRange of var_decl (* vinit = None *)  * tok (*':'*) * initialiser
 
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 
@@ -603,7 +603,7 @@ and decl =
 
   (* c++ext: *)
   | TemplateDecl of tok * template_parameters * decl
-  | TemplateInstanciation of tok (* 'template' *) * var_range * sc
+  | TemplateInstanciation of tok (* 'template' *) * var_decl (*vinit=None*)*sc
 
   (* the list can be empty *)
   | ExternDecl     of tok * string wrap (* usually "C" *) * decl
@@ -630,16 +630,6 @@ and colon = Colon of tok (* : *) * colon_option list
 and colon_option =
   | ColonExpr of tok list * expr paren
   | ColonMisc of tok list
-
-(* ------------------------------------------------------------------------- *)
-(* Simple var *)
-(* ------------------------------------------------------------------------- *)
-(* TODO: delete, just reuse var_decl *)
-and var_range = entity * var_decl_range
-
-and var_decl_range = {
-  v__type: type_;
-}
 
 (* ------------------------------------------------------------------------- *)
 (* Variable definition (and also field definition) *)
@@ -831,7 +821,7 @@ and class_member =
  * but in c++ fields can also have storage (e.g. static) so now reuse
  * onedecl.
 *)
-(* TODO: just alias to onedecl *)
+(* less: just alias to onedecl? *)
 and fieldkind =
   | FieldDecl of onedecl
   | BitField of ident option * tok(*:*) * type_ * a_const_expr
