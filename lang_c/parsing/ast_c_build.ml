@@ -189,7 +189,7 @@ and declaration env x =
 
   | UsingDecl _ | NameSpaceAlias _ | StaticAssert _
   | NameSpace (_, _, _)
-  | ExternList (_, _, _)|ExternDecl (_, _, _)|TemplateSpecialization (_, _, _)
+  | ExternList (_, _, _)|ExternDecl (_, _, _)
   | TemplateDecl _ | TemplateInstanciation _ ->
       debug (Toplevel (X (D x))); raise CplusplusConstruct
   | DeclTodo _ ->
@@ -296,15 +296,12 @@ and onedecl env d =
             raise CplusplusConstruct
       in
       Some { A.
-             v_name = dname env n;
+             v_name = name env n;
              v_type = full_type env ft;
              v_storage = storage_in_specs env specs_and_sto;
              v_init = init_opt;
            }
-
-and dname env = function
-  | DN n -> name env n
-  | DNStructuredBinding _ -> raise CplusplusConstruct
+  | StructuredBinding _ -> raise CplusplusConstruct
 
 and initialiser env x =
   match x with
@@ -782,9 +779,10 @@ and fieldkind env x =
            debug (OneDecl decl); raise Todo
        | V { v_name = n; v_init = _TODOcheckNone; v_type = ft; v_specs = _check_sto_emptyTODO;} ->
            { A.
-             fld_name = Some (dname env n);
+             fld_name = Some (name env n);
              fld_type = full_type env ft;
            }
+       | StructuredBinding _ -> raise CplusplusConstruct
       )
   (* TODO: move with code for Bitfield in onedecl *)
   | BitField (name_opt, _tok, ft, e) ->

@@ -1661,7 +1661,6 @@ declaration:
  (* not in c++ grammar as merged with function_definition, but I can't *)
  | ctor_dtor { $1 }
  | template_declaration              { $1 }
- | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
  | namespace_definition              { $1 }
 
@@ -1683,13 +1682,10 @@ declaration_cpp:
 (*----------------------------*)
 
 template_declaration:
-  Ttemplate TInf_Template listc(template_parameter) TSup_Template declaration
+  Ttemplate TInf_Template optl(listc(template_parameter)) TSup_Template declaration
    { TemplateDecl ($1, ($2, $3, $4), $5) }
 
-explicit_specialization: Ttemplate TInf_Template TSup_Template declaration
-   { TemplateSpecialization ($1, ($2, (), $3), $4) }
-
-(*todo: '| type_paramter'
+(*todo: '| type_parameter'
    * ambiguity with parameter_decl cos a type can also be 'class X'
  | Tclass ident { raise Todo }
    *)

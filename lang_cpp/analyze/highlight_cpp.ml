@@ -198,7 +198,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
           xs |> List.iter (fun onedecl ->
             (match onedecl with
              | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
-             | V { v_name = dname; v_specs; v_type; _ } ->
+             | StructuredBinding _ -> ()
+             | V { v_name = name; v_specs; v_type; _ } ->
                  let categ =
                    match v_specs with
                    (* TODO | StoTypedef _ -> Entity (Type, Def2 fake_no_def2) *)
@@ -209,7 +210,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
                    | _ when !is_at_toplevel -> Entity (Global, (Def2 fake_no_def2))
                    | _ -> Local Def
                  in
-                 Ast.iis_of_dname dname |>List.iter (fun ii -> tag ii categ)
+                 Ast.ii_of_id_name name |>List.iter (fun ii -> tag ii categ)
             );
           );
           k x
@@ -371,14 +372,15 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
       | FieldDecl onedecl ->
           (match onedecl with
            | EmptyDecl _ | TypedefDecl _ -> () (* TODO? *)
-           | V {v_name = dname; v_type; _} ->
+           | StructuredBinding _ -> (* TODO *) ()
+           | V {v_name = name; v_type; _} ->
                let kind =
                  (* poor's man object using function pointer; classic C idiom *)
                  if Type.is_method_type v_type
                  then Entity (Method, (Def2 fake_no_def2))
                  else Entity (Field, (Def2 NoUse))
                in
-               Ast.iis_of_dname dname |> List.iter (fun ii -> tag ii kind)
+               Ast.ii_of_id_name name |> List.iter (fun ii -> tag ii kind)
           );
           k x
 

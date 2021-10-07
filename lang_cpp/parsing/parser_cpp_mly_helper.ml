@@ -218,10 +218,22 @@ let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
            (* less: use mods? *)
            let id = id_of_dname_for_typedef dn in
            TypedefDecl (t, v_type, id)
-       | NoSto ->
-           V { v_name = dn; v_init = iniopt; v_specs = specs; v_type }
-       | Sto sto ->
-           V { v_name = dn; v_init = iniopt; v_specs = specs @ [ST sto]; v_type }
+       | NoSto | Sto _ ->
+           let more_specs =
+             match sto with
+             | NoSto -> []
+             | Sto sto -> [ST sto]
+             | _ -> raise Impossible
+           in
+           let v_specs = specs @ more_specs in
+           match dn, iniopt with
+           | DN n, _ -> V { v_name = n; v_init = iniopt; v_specs; v_type }
+           | DNStructuredBinding ids, Some ini ->
+               StructuredBinding (v_type, ids, ini)
+           | DNStructuredBinding _ids, None ->
+               raise
+                 (Parse_info.Other_error
+                    ("expecting an init for structured_binding", ii_of_dname dn))
       )
 
 let type_and_specs_from_decl decl =
@@ -338,7 +350,7 @@ let fixFunc ((name, ty, _stoTODO), cp) =
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
   | [FieldDecl(V {
-    v_name = DN name;
+    v_name = name;
     v_init = ini_opt;
     v_type = (_q, (TFunction ft));
     v_specs = specs;

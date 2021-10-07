@@ -314,7 +314,7 @@ and expr =
    * a template_method name. *)
   | DotAccess   of expr * dotOp wrap * name
 
-  (* pfffonly, TODO still valid?
+  (* pfffonly, but we should add it to ts too.
    * c++ext: note that second paramater is an expr, not a name *)
   | DotStarAccess   of expr * dotOp wrap (* with suffix '*' *) * expr
 
@@ -503,7 +503,7 @@ and condition_clause =
   (* c++ext: *)
   | CondDecl of vars_decl * expr
   | CondStmt of expr_stmt * expr
-  | CondOneDecl of onedecl (* TODO change to var_decl with always vinit *)
+  | CondOneDecl of var_decl (* vinit always Some *)
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
@@ -603,8 +603,6 @@ and decl =
 
   (* c++ext: *)
   | TemplateDecl of tok * template_parameters * decl
-  (* pfffonly? delete? *)
-  | TemplateSpecialization of tok * unit angle * decl
   | TemplateInstanciation of tok (* 'template' *) * var_range * sc
 
   (* the list can be empty *)
@@ -658,18 +656,16 @@ and onedecl =
   *)
   | EmptyDecl of type_
   | V of var_decl
+  (* c++17: structured binding, [n1, n2, n3] = expr *)
+  | StructuredBinding of type_ * ident list bracket * init
 
 (* TODO: reuse entity *)
 and var_decl = {
-  v_name: declarator_name;
+  v_name: name;
   v_init: init option;
   v_type: type_;
   v_specs: specifier list;
 }
-and declarator_name =
-  | DN of name
-  (* c++17: structured binding, [n1, n2, n3] = expr *)
-  | DNStructuredBinding of ident list bracket
 
 and init =
   | EqInit of tok (*=*) * initialiser
@@ -1071,6 +1067,10 @@ type abstract_declarator = type_ -> type_
  * Pointer (Func(int,int)).
 *)
 type declarator = { dn: declarator_name; dt: abstract_declarator }
+and declarator_name =
+  | DN of name
+  (* c++17: structured binding, [n1, n2, n3] = expr *)
+  | DNStructuredBinding of ident list bracket
 
 (*****************************************************************************)
 (* Some constructors *)
