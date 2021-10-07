@@ -89,7 +89,7 @@ module PI = Parse_info
 
 %token <Parse_info.t> TDot TPtrOp     TInc TDec
 %token <Parse_info.t> TComma "," TPtVirg ";"
-%token <Ast_cpp.assignOp> TAssign
+%token <Ast_cpp.arithOp * Parse_info.t> TAssign
 %token <Parse_info.t> TEq "=" TWhy "?"  TTilde TBang TCol ":" TEllipsis "..."
 %token <Parse_info.t>
   TOrLog TAndLog "&&" TOr TXor TAnd "&"  TEqEq TNotEq TInfEq TSupEq
@@ -353,43 +353,46 @@ conversion_function_id: Toperator conversion_type_id { IdConverter ($1, $2) }
  * no unaryplus/minus op either *)
 operator_kind:
  (* != == *)
- | TEqEq  { BinaryOp (Logical Eq),    [$1] }
- | TNotEq { BinaryOp (Logical NotEq), [$1] }
+ | TEqEq  { BinaryOp (Logical Eq),    $1 }
+ | TNotEq { BinaryOp (Logical NotEq), $1 }
  (* =    +=   -=   *=   /=   %=       ^=   &=   |=   >>=  <<=   *)
- | "="     { AssignOp (SimpleAssign $1), noii }
- | TAssign { AssignOp ($1), noii }
+ | "="     { AssignOp (SimpleAssign $1), $1 }
+ | TAssign { AssignOp (OpAssign $1), (snd $1) }
  (* ! ~ *)
- | TTilde { UnaryTildeOp, [$1] } | TBang { UnaryNotOp,   [$1] }
+ | TTilde { UnaryTildeOp, $1 } | TBang { UnaryNotOp,   $1 }
  (* , *)
- | "," { CommaOp,  [$1] }
+ | "," { CommaOp,  $1 }
  (* +    -    *    /    %  *)
- | TPlus { BinaryOp (Arith Plus),  [$1] }
- | TMinus { BinaryOp (Arith Minus), [$1] }
- | "*"   { BinaryOp (Arith Mul),   [$1] }
- | TDiv { BinaryOp (Arith Div), [$1] } | TMod { BinaryOp (Arith Mod),[$1] }
+ | TPlus { BinaryOp (Arith Plus),  $1 }
+ | TMinus { BinaryOp (Arith Minus), $1 }
+ | "*"   { BinaryOp (Arith Mul),   $1 }
+ | TDiv { BinaryOp (Arith Div), $1 } | TMod { BinaryOp (Arith Mod), $1 }
  (* ^ & |     <<   >>  *)
- | TOr { BinaryOp (Arith Or),  [$1] } | TXor { BinaryOp (Arith Xor), [$1] }
- | "&"  { BinaryOp (Arith And), [$1]  }
- | TShl { BinaryOp (Arith DecLeft), [$1] }
- | TShr { BinaryOp (Arith DecRight), [$1] }
+ | TOr { BinaryOp (Arith Or),  $1 } | TXor { BinaryOp (Arith Xor), $1 }
+ | "&"  { BinaryOp (Arith And), $1  }
+ | TShl { BinaryOp (Arith DecLeft), $1 }
+ | TShr { BinaryOp (Arith DecRight), $1 }
  (* &&   || *)
- | TOrLog  { BinaryOp (Logical OrLog), [$1] }
- | "&&" { BinaryOp (Logical AndLog), [$1] }
+ | TOrLog  { BinaryOp (Logical OrLog), $1 }
+ | "&&" { BinaryOp (Logical AndLog), $1 }
  (* < >  <=   >=  *)
- | TInf { BinaryOp (Logical Inf), [$1] } | TSup { BinaryOp (Logical Sup), [$1]}
- | TInfEq { BinaryOp (Logical InfEq), [$1] }
- | TSupEq { BinaryOp (Logical SupEq), [$1] }
+ | TInf { BinaryOp (Logical Inf), $1 } | TSup { BinaryOp (Logical Sup), $1}
+ | TInfEq { BinaryOp (Logical InfEq), $1 }
+ | TSupEq { BinaryOp (Logical SupEq), $1 }
  (* ++   -- *)
- | TInc { FixOp Inc, [$1] } | TDec { FixOp Dec, [$1] }
+ | TInc { FixOp Inc, $1 } | TDec { FixOp Dec, $1 }
  (* ->*  -> *)
- | TPtrOpStar { PtrOpOp PtrStarOp, [$1] } | TPtrOp { PtrOpOp PtrOp,     [$1] }
+ | TPtrOpStar { PtrOpOp PtrStarOp, $1 } | TPtrOp { PtrOpOp PtrOp,     $1 }
  (* () [] (double tokens) *)
- | "(" ")" { AccessOp ParenOp, [$1;$2] } | "[" "]" { AccessOp ArrayOp, [$1;$2]}
+ | "(" ")" { AccessOp ParenOp, PI.combine_infos $1 [$2] }
+ | "[" "]" { AccessOp ArrayOp, PI.combine_infos $1 [$2] }
  (* new delete *)
- | Tnew    { AllocOp NewOp,    [$1] } | Tdelete { AllocOp DeleteOp, [$1] }
+ | Tnew    { AllocOp NewOp,    $1 } | Tdelete { AllocOp DeleteOp, $1 }
  (*new[] delete[] (tripple tokens) *)
- | Tnew    TOCro_new TCCro_new { AllocOp NewArrayOp,    [$1;$2;$3] }
- | Tdelete TOCro_new TCCro_new { AllocOp DeleteArrayOp, [$1;$2;$3] }
+ | Tnew    TOCro_new TCCro_new
+    { AllocOp NewArrayOp,  PI.combine_infos $1 [$2;$3] }
+ | Tdelete TOCro_new TCCro_new
+    { AllocOp DeleteArrayOp, PI.combine_infos $1 [$2;$3] }
 
 
 qualified_id:
@@ -455,7 +458,7 @@ expr:
  * 'cast_expr', otherwise (int * ) xxx = &yy; is not allowed *)
 assign_expr:
  | cond_expr                     { $1 }
- | cast_expr TAssign assign_expr { Assign ($1, $2,$3)}
+ | cast_expr TAssign assign_expr { Assign ($1,OpAssign $2,$3)}
  | cast_expr "="     assign_expr { Assign ($1,SimpleAssign $2,$3)}
  (* c++ext: TODO in treesitter it's a stmt *)
  | Tthrow assign_expr?        { Throw ($1, $2) }
@@ -1251,9 +1254,9 @@ conversion_type_id:
 
 conversion_declarator:
  | ptr_operator conversion_declarator
-     { () }
+     { () (* TODO *) }
  | ptr_operator %prec LOW_PRIORITY_RULE
-     { () }
+     { () (* TODO *) }
 
 (*************************************************************************)
 (* Class and struct definitions *)

@@ -119,12 +119,9 @@ and ident_or_op =
   | IdIdent of ident
   (* c++ext: *)
   | IdTemplateId of ident * template_arguments
-
-  (* c++ext: for operator overloading *)
-  (* TODO: tok list?? *)
-  | IdOperator of (tok * (operator * tok list))
   | IdDestructor of tok(*~*) * ident
-  (* ?? paren? *)
+  (* c++ext: operator overloading *)
+  | IdOperator  of tok (* 'operator' *) * operator wrap
   | IdConverter of tok (* 'operator' *) * type_
 
 
@@ -1114,7 +1111,7 @@ let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (_s,ii) -> [ii]
-  | IdOperator (_, (_op, ii)) -> ii
+  | IdOperator (_, (_op, ii)) -> [ii]
   | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
   | IdDestructor (tok, (_s, ii)) -> [tok;ii]
   | IdTemplateId ((_s, ii), _args) -> [ii]
@@ -1127,7 +1124,7 @@ let (ii_of_name: name -> tok) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (_s,ii) -> ii
-  | IdOperator (_, (_op, ii)) -> List.hd ii
+  | IdOperator (_, (_op, ii)) -> ii
   | IdConverter (tok, _ft) -> tok
   | IdDestructor (tok, (_s, _ii)) -> tok
   | IdTemplateId ((_s, ii), _args) -> ii
