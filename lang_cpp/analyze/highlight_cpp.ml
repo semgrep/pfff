@@ -214,8 +214,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
             );
           );
           k x
-      | MacroDecl _ ->
-          k x
 
       | NotParsedCorrectly ii ->
           ii |> List.iter (fun ii -> tag ii NotParsed)

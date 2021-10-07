@@ -146,7 +146,7 @@ and toplevel env x =
   | CppDirective x ->
       [A.DirStmt (cpp_directive env x)]
 
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | (MacroVar (_, _)|MacroDecl (_, _, _, _)) -> raise Todo
   | CppIfdef _ -> raise Impossible (* see ifdef_skipper *)
 
 
@@ -184,7 +184,6 @@ and declaration env x =
   (* todo *)
   | Asm (_tok1, _volatile_opt, _asmbody, _tok2) ->
       raise Todo
-  | MacroDecl _ -> raise Todo
   | EmptyDef _ -> []
 
   | UsingDecl _ | NameSpaceAlias _ | StaticAssert _
@@ -478,7 +477,7 @@ and statement_sequencable env x =
   match x with
   | X (S st) -> [stmt env st]
   | CppDirective x -> debug (Cpp x); raise Todo
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | (MacroVar (_, _)|MacroDecl (_, _, _, _)) -> raise Todo
   | CppIfdef _ -> raise Impossible
   | X (D x) -> [block_declaration env x]
 
@@ -768,7 +767,7 @@ and class_member_sequencable env x =
   | X x -> class_member env x
   | CppDirective dir -> debug (Cpp dir); raise Todo
   | CppIfdef _ -> raise Impossible
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)) -> raise Todo
+  | (MacroVar (_, _)|MacroDecl (_, _, _, _)) -> raise Todo
 
 and fieldkind env decl =
   match decl with

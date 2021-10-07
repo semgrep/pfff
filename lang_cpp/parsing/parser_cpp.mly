@@ -155,8 +155,8 @@ module PI = Parse_info
 (* fresh_token: appear after fix_tokens in parsing_hacks_pp.ml *)
 %token <Parse_info.t>            TIdent_MacroStmt
 %token <Parse_info.t>            TIdent_MacroString
-%token <(string * Parse_info.t)> TIdent_MacroIterator
-%token <(string * Parse_info.t)> TIdent_MacroDecl
+%token <string * Parse_info.t> TIdent_MacroIterator
+%token <string * Parse_info.t> TIdent_MacroDecl
 %token <Parse_info.t>            Tconst_MacroDeclConst
 
 (* fresh_token: appear after parsing_hack_pp.ml, alt to TIdent_MacroTop *)
@@ -880,6 +880,7 @@ statement_or_decl_cpp:
  (* cppext: *)
  | cpp_directive                                  { CppDirective $1 }
  | cpp_ifdef_directive(* stat_or_decl_list ...*)  { CppIfdef $1 }
+ | cpp_macro_decl { $1 }
 
 (*----------------------------*)
 (* c++ext: *)
@@ -1449,22 +1450,12 @@ simple_declaration:
  | decl_spec_seq listc(init_declarator) ";"
      { let (t_ret, sto, mods) = type_and_storage_from_decl $1 in
        (
-         ($2 |> List.map (fun (((name, f), iniopt)) ->
+         $2 |> List.map (fun (((name, f), iniopt)) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
            make_onedecl (f t_ret) ~v_namei:(Some (DN name, iniopt)) ~mods ~sto
-         )), $3)
+         ), $3)
      }
 
-simple_declaration_or_macro:
- | simple_declaration { DeclList $1 }
- (* cppext: *)
- | TIdent_MacroDecl "(" listc(argument) ")" ";"
-     { MacroDecl ([], $1, ($2, $3, $4), $5) }
- | Tstatic TIdent_MacroDecl "(" listc(argument) ")" ";"
-     { MacroDecl ([$1], $2, ($3, $4, $5), $6) }
- | Tstatic Tconst_MacroDeclConst
-    TIdent_MacroDecl "(" listc(argument) ")" ";"
-     { MacroDecl ([$1;$2], $3, ($4, $5, $6), $7) }
 
 (*-----------------------------------------------------------------------*)
 
@@ -1589,7 +1580,7 @@ designator:
 (*************************************************************************)
 
 block_declaration:
- | simple_declaration_or_macro { $1 }
+ | simple_declaration { DeclList $1 }
  (*gccext: *)
  | asm_definition     { $1 }
  (*c++ext: *)
@@ -1902,10 +1893,20 @@ cpp_ifdef_directive:
  | TIfdefMisc  { Ifdef (snd $1) }
  | TIfdefVersion { Ifdef (snd $1) }
 
+(* cppext: *)
+cpp_macro_decl:
+ | TIdent_MacroDecl "(" listc(argument) ")" ";"
+     { MacroDecl ([], $1, ($2, $3, $4), $5) }
+ | Tstatic TIdent_MacroDecl "(" listc(argument) ")" ";"
+     { MacroDecl ([ST (Static, $1)], $2, ($3, $4, $5), $6) }
+ | Tstatic Tconst_MacroDeclConst
+    TIdent_MacroDecl "(" listc(argument) ")" ";"
+     { MacroDecl ([ST (Static, $1); TQ (Const, $2)], $3, ($4, $5, $6), $7) }
+
 cpp_other:
 (* cppext: *)
- | TIdent "(" listc(argument) ")" ";"   { MacroTop ($1, ($2, $3, $4),Some $5)}
+ | TIdent "(" listc(argument) ")" ";"   { MacroDecl ([],$1, ($2, $3, $4), $5)}
  (* TCPar_EOL to fix the end-of-stream bug of ocamlyacc *)
- | TIdent "(" listc(argument) TCPar_EOL { MacroTop ($1, ($2, $3, $4),None) }
+ | TIdent "(" listc(argument) TCPar_EOL { MacroDecl ([], $1, ($2, $3, $4),$4)}
   (* ex: EXPORT_NO_SYMBOLS; *)
- | TIdent ";"                           { MacroVarTop ($1, $2) }
+ | TIdent ";"                           { MacroVar ($1, $2) }

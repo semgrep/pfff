@@ -194,8 +194,6 @@ let visit_prog prog =
                             add_binding name (scope, ref 0)
                       );
                       k x
-                  | MacroDecl _ ->
-                      k x
                   | _ -> k x
                 );
 

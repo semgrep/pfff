@@ -590,9 +590,6 @@ and decl =
   | TemplateDecl of tok * template_parameters * decl
   | TemplateInstanciation of tok (* 'template' *) * var_decl (*vinit=None*)*sc
 
-  (* cppext: todo? now factorize with MacroTop ?  *)
-  | MacroDecl of tok list * ident * argument list paren * tok
-
   (* c++ext: using namespace *)
   | UsingDecl of using
   (* type_ is usually just a name TODO tsonly is using, but pfff namespace?*)
@@ -961,9 +958,8 @@ and 'a sequencable =
   (* cppext: *)
   | CppDirective of cpp_directive
   | CppIfdef of ifdef_directive (* * 'a list *)
-  (* todo: right now just at the toplevel, but could have elsewhere *)
-  | MacroTop of ident * argument list paren * tok option
-  | MacroVarTop of ident * sc
+  | MacroDecl of specifier list * ident * argument list paren * sc
+  | MacroVar of ident * sc
 
 (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
 and ifdef_directive =
