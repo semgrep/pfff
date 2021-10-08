@@ -70,9 +70,9 @@ module PI = Parse_info
 (*-----------------------------------------*)
 (* The C tokens *)
 (*-----------------------------------------*)
-%token <int option * Parse_info.t>                       TInt
-%token <(float option * Parse_info.t) * Ast_cpp.floatType> TFloat
-%token <(string * Parse_info.t) * Ast_cpp.isWchar>   TChar TString
+%token <int option * Parse_info.t>   TInt
+%token <float option * Parse_info.t> TFloat
+%token <string * Parse_info.t>       TChar TString
 
 %token <string * Parse_info.t> TIdent
 (* fresh_token: appear after some fix_tokens in parsing_hack.ml *)
@@ -745,7 +745,7 @@ capture:
 (*----------------------------*)
 
 string_elem:
- | TString            { fst $1 }
+ | TString            { $1 }
  (* cppext:  ex= printk (KERN_INFO "xxx" UTS_RELEASE)  *)
  | TIdent_MacroString { "<MACRO>", $1 }
 
@@ -774,16 +774,16 @@ argument:
 const_expr: cond_expr { $1  }
 
 basic_type_2:
- | Tchar_Constr    { (TBase (IntType (CChar, $1))) }
- | Tint_Constr     { (TBase (IntType (Si (Signed,CInt), $1)))}
- | Tfloat_Constr   { (TBase (FloatType (CFloat, $1))) }
- | Tdouble_Constr  { (TBase (FloatType (CDouble, $1))) }
+ | Tchar_Constr    { TPrimitive (TChar, $1) }
+ | Tint_Constr     { TPrimitive (TInt, $1) }
+ | Tfloat_Constr   { TPrimitive (TFloat, $1) }
+ | Tdouble_Constr  { TPrimitive (TDouble, $1) }
 
- | Twchar_t_Constr { (TBase (IntType (WChar_t, $1))) }
+ | Twchar_t_Constr { TypeName (name_of_id ("wchar_t", $1)) }
 
- | Tshort_Constr   { (TBase (IntType (Si (Signed, CShort), $1))) }
- | Tlong_Constr    { (TBase (IntType (Si (Signed, CLong), $1))) }
- | Tbool_Constr    { (TBase (IntType (CBool, $1))) }
+ | Tshort_Constr   { TSized ([TShort, $1], None) }
+ | Tlong_Constr    { TSized ([TLong, $1], None) }
+ | Tbool_Constr    { TPrimitive (TBool, $1) }
 
 (*************************************************************************)
 (* Statements *)
@@ -922,35 +922,35 @@ exception_decl:
 type_spec:
  | simple_type_specifier { $1 }
  | elaborated_type_specifier { $1 }
- | enum_specifier  { Right3 $1, noii }
- | class_specifier { Right3 (ClassDef $1), noii }
+ | enum_specifier  { Right3 $1 }
+ | class_specifier { Right3 (ClassDef $1) }
 
 simple_type_specifier:
- | Tvoid                { Right3 (TBase (Void $1)),            noii }
- | Tchar                { Right3 (TBase (IntType (CChar, $1))), noii}
- | Tint                 { Right3 (TBase (IntType (Si (Signed,CInt), $1))), noii}
- | Tfloat               { Right3 (TBase (FloatType (CFloat, $1))),  noii}
- | Tdouble              { Right3 (TBase (FloatType (CDouble, $1))), noii }
- | Tshort               { Middle3 Short,  [$1]}
- | Tlong                { Middle3 Long,   [$1]}
- | Tsigned              { Left3 Signed,   [$1]}
- | Tunsigned            { Left3 UnSigned, [$1]}
+ | Tvoid                { Right3 (TPrimitive (TVoid, $1)) }
+ | Tchar                { Right3 (TPrimitive (TChar, $1)) }
+ | Tint                 { Right3 (TPrimitive (TInt, $1)) }
+ | Tfloat               { Right3 (TPrimitive (TFloat, $1)) }
+ | Tdouble              { Right3 (TPrimitive (TDouble, $1)) }
+ | Tshort               { Middle3 (Short $1)}
+ | Tlong                { Middle3 (Long $1)}
+ | Tsigned              { Left3 (Signed $1)}
+ | Tunsigned            { Left3 (UnSigned $1)}
  (*c++ext: *)
- | Tbool                { Right3 (TBase (IntType (CBool, $1))), noii }
- | Twchar_t             { Right3 (TBase (IntType (WChar_t, $1))), noii }
+ | Tbool                { Right3 (TPrimitive (TBool, $1)) }
+ | Twchar_t             { Right3 (TypeName (name_of_id ("wchar_t", $1)))}
 
  (* gccext: *)
- | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))), noii}
- | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4))), noii}
+ | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4)))}
+ | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4)))}
 
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and
   * generates lots of conflicts => we must use some tricks.
   * See parsing_hacks_typedef.ml. See also conflicts.txt
   *)
- | type_cplusplus_id { Right3 (TypeName $1), noii }
+ | type_cplusplus_id { Right3 (TypeName $1) }
 
  (* c++0x: *)
- | decltype_specifier { Middle3 Long, [$1] }
+ | decltype_specifier { Middle3 (Long $1) }
 
 decltype_specifier:
  (* c++0x: TODO *)
@@ -960,10 +960,10 @@ decltype_specifier:
 
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier:
- | Tenum ident                  { Right3 (EnumName ($1, name_of_id $2)), noii }
- | class_key ident              { Right3 (ClassName ($1, name_of_id $2)), noii }
+ | Tenum ident                  { Right3 (EnumName ($1, name_of_id $2)) }
+ | class_key ident              { Right3 (ClassName ($1, name_of_id $2)) }
  (* c++ext:  *)
- | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2))), noii }
+ | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2)))}
 
 (*----------------------------*)
 (* c++ext:  *)
@@ -1629,11 +1629,11 @@ asmbody:
 colon_asm: ":" listc(colon_option) { Colon ($1, $2) }
 
 colon_option:
- | TString                  { ColonMisc [snd (fst $1)] }
- | TString "(" asm_expr ")" { ColonExpr ([snd (fst $1)], ($2, $3, $4)) }
+ | TString                  { ColonMisc [snd $1] }
+ | TString "(" asm_expr ")" { ColonExpr ([snd $1], ($2, $3, $4)) }
  (* cppext: certainly a macro *)
  | "[" TIdent "]" TString "(" asm_expr ")"
-     { ColonExpr ([$1;snd $2;$3;snd (fst $4)], ($5, $6, $7))  }
+     { ColonExpr ([$1;snd $2;$3;snd $4], ($5, $6, $7))  }
  | TIdent                   { ColonMisc [snd $1] }
  | (* empty *)              { ColonMisc [] }
 
@@ -1691,9 +1691,9 @@ template_parameter:
 (* c++ext: could also do a extern_string_opt to factorize stuff *)
 linkage_specification:
  | Textern TString declaration
-     { ExternDecl ($1, fst $2, $3) }
+     { ExternDecl ($1, $2, $3) }
  | Textern TString "{" optl(declaration_cpp+) "}"
-     { ExternList ($1, fst $2, ($3, $4, $5))}
+     { ExternList ($1, $2, ($3, $4, $5))}
 
 
 namespace_definition:

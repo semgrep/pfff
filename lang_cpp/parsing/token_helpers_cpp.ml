@@ -303,9 +303,9 @@ let visitor_info_of_tok f = function
   | Tthread_local i -> Tthread_local (f i)
   | Tnullptr i -> Tnullptr (f i)
   | Tconstexpr i -> Tconstexpr (f i)
-  | TString ((s, i), isWchar)  -> TString ((s, f i),isWchar)
-  | TChar  ((s, i), isWchar)   -> TChar  ((s, f i), isWchar)
-  | TFloat ((s, i), floatType) -> TFloat ((s, f i), floatType)
+  | TString (s, i)  -> TString (s, f i)
+  | TChar  (s, i)   -> TChar  (s, f i)
+  | TFloat (s, i) -> TFloat (s, f i)
   | TAssign  ((x, i)) -> TAssign ((x, f i))
 
   | TIdent  (s, i)       -> TIdent  (s, f i)

@@ -167,13 +167,10 @@ and a_ident_name = name (* only IdIdent *)
 *)
 and type_ = type_qualifiers * typeC
 and typeC =
-  (* TODO: delete TBase *)
-  | TBase        of baseType
-
   | TPrimitive   of primitive_type wrap
-  (* The list is non empty and can contain duplicates,
-   * because 'long long' is not the same than just 'long'.
-   * The type_ below is either Tprimitive or TypeName of IdIdent.
+  (* The list below is non empty and can contain duplicates.
+   * Indeed, 'long long' is not the same than just 'long'.
+   * The type_ below is either a TPrimitive or TypeName of IdIdent.
   *)
   | TSized of sized_type wrap list * type_ option (*  *)
 
@@ -218,32 +215,6 @@ and typeC =
 
   (* TODO: TypeDots, DeclType *)
   | TypeTodo of todo_category * type_ list
-
-(* TODO: simplify, it is now possible to do 'signed foo' so make
- * sign and base possible qualifier?
-*)
-and  baseType =
-  | Void of tok
-  | IntType   of intType   * tok (* TOFIX there should be * tok list *)
-  | FloatType of floatType * tok (* TOFIX there should be * tok list *)
-
-(* TODO: delete *)
-(* stdC: type section. 'char' and 'signed char' are different *)
-and intType   =
-  | CChar (* obsolete? | CWchar  *)
-  | Si of signed
-  (* c++ext: maybe could be put in baseType instead ? *)
-  | CBool | WChar_t
-
-and signed = sign * base
-and base =
-  | CChar2 | CShort | CInt | CLong
-  (* gccext: *)
-  | CLongLong
-and sign = Signed | UnSigned
-
-(* TODO: delete *)
-and floatType = CFloat | CDouble | CLongDouble
 
 (* old: had a more precise 'intType' and 'floatType' with 'sign * base'
  * but not worth it, and tree-sitter-cpp allows any sized types
@@ -377,6 +348,7 @@ and argument =
   | ArgAction of action_macro
   (* c++0x? *)
   | ArgInits of initialiser list brace
+
 and action_macro =
   | ActMisc of tok list
 
@@ -384,50 +356,40 @@ and action_macro =
  * note: '-2' is not a constant; it is the unary operator '-'
  * applied to the constant '2'. So the string must represent a positive
  * integer only.
+ * old: the Int and Float had a intType and floatType, and Char and
+ * String had isWchar param, but not worth it.
 *)
 and constant =
-  | Int    of (int option wrap  (* * intType*))
-  | Float  of (float option wrap * floatType)
-  | Char   of (string wrap * isWchar) (* normally it is equivalent to Int *)
-  | String of (string wrap * isWchar)
+  | Int    of int option wrap
+  (* the wrap can contain the f/F/l/L suffix *)
+  | Float  of float option wrap
+  | Char   of string wrap (* normally it is equivalent to Int *)
+  (* the wrap can contain the L/u/U/u8 prefix *)
+  | String of string wrap
 
   | MultiString of string wrap list  (* can contain MacroString *)
   (* c++ext: *)
   | Bool of bool wrap
   | Nullptr of tok
 
-(* TODO? remove? *)
-and isWchar = IsWchar | IsChar
+(* c++ext: *)
+and cast_operator =
+  | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
 
 and unaryOp  =
   | UnPlus |  UnMinus | Tilde | Not
-  (* less: could be lift up, those are really important operators *)
+  (* TODO? lift up, those are really important operators *)
   | GetRef | DeRef
   (* gccext: via &&label notation *)
   | GetRefLabel
-and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
-
-(* less: migrate to AST_generic_.incr_decr? *)
-and fixOp    = Dec | Inc
 
 (* The Arrow is redundant; could be replaced by DeRef DotAccess *)
 and dotOp = Dot (* . *) | Arrow (* -> *)
 
-(* less: migrate to AST_generic_.op? *)
-and binaryOp = Arith of arithOp | Logical of logicalOp
-and arithOp   =
-  | Plus | Minus | Mul | Div | Mod
-  | DecLeft | DecRight
-  | And | Or | Xor
-and logicalOp =
-  | Inf | Sup | InfEq | SupEq
-  | Eq | NotEq
-  | AndLog | OrLog
+(* ------------------------------------------------------------------------- *)
+(* Overloaded operators *)
+(* ------------------------------------------------------------------------- *)
 
-(* c++ext: used elsewhere but prefer to define it close to other operators *)
-and ptrOp = PtrStarOp | PtrOp
-and allocOp = NewOp | DeleteOp | NewArrayOp | DeleteArrayOp
-and accessop = ParenOp | ArrayOp
 and operator =
   | BinaryOp of binaryOp
   | AssignOp of assignOp
@@ -437,9 +399,34 @@ and operator =
   | AllocOp of allocOp
   | UnaryTildeOp | UnaryNotOp | CommaOp
 
-(* c++ext: *)
-and cast_operator =
-  | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
+(* less: migrate to AST_generic_.op? *)
+and binaryOp = Arith of arithOp | Logical of logicalOp
+
+and arithOp   =
+  | Plus | Minus | Mul | Div | Mod
+  | DecLeft | DecRight
+  | And | Or | Xor
+
+and logicalOp =
+  | Inf | Sup | InfEq | SupEq
+  | Eq | NotEq
+  | AndLog | OrLog
+
+and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
+
+(* less: migrate to AST_generic_.incr_decr? *)
+and fixOp    = Dec | Inc
+
+(* c++ext: used elsewhere but prefer to define it close to other operators *)
+and ptrOp = PtrStarOp | PtrOp
+
+and accessop = ParenOp | ArrayOp
+
+and allocOp = NewOp | DeleteOp | NewArrayOp | DeleteArrayOp
+
+(* ------------------------------------------------------------------------- *)
+(* Aliases *)
+(* ------------------------------------------------------------------------- *)
 
 and a_const_expr = expr (* => int *)
 
@@ -554,7 +541,7 @@ and declarations = stmt_or_decl sequencable list brace
 (* Definitions/Declarations *)
 (*****************************************************************************)
 
-(* see also ClassDef in type_ which can also define entities *)
+(* see also ClassDef/EnumDef in type_ which can also define entities *)
 
 and entity = {
   (* Usually a simple ident.
@@ -565,7 +552,7 @@ and entity = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* "Declaration" *)
+(* Decl *)
 (* ------------------------------------------------------------------------- *)
 
 (* It's not really 'toplevel' because the elements below can be nested
@@ -611,8 +598,6 @@ and decl =
   | NotParsedCorrectly of tok list
   | DeclTodo of todo_category
 
-and vars_decl = onedecl list * sc
-
 (* gccext: *)
 and asmbody = string wrap list * colon list
 and colon = Colon of tok (* : *) * colon_option list
@@ -621,8 +606,10 @@ and colon_option =
   | ColonMisc of tok list
 
 (* ------------------------------------------------------------------------- *)
-(* Variable definition (and also field definition) *)
+(* Vars_decl and onedecl *)
 (* ------------------------------------------------------------------------- *)
+
+and vars_decl = onedecl list * sc
 
 (* note: onedecl includes prototype declarations and class_declarations!
  * c++ext: onedecl now covers also field definitions as fields can have
@@ -653,7 +640,12 @@ and onedecl =
   | BitField of ident option * tok(*:*) * type_ * a_const_expr
   (* type_ => BitFieldInt | BitFieldUnsigned *)
 
+(* ------------------------------------------------------------------------- *)
+(* Variable definition (and also field definition) *)
+(* ------------------------------------------------------------------------- *)
+
 and var_decl = entity * variable_definition
+
 and variable_definition = {
   v_init: init option;
   v_type: type_;
@@ -1066,6 +1058,10 @@ let expr_of_id id =
   N (name_of_id id, noIdInfo())
 let expr_to_arg e =
   Arg e
+
+(* often used for fake return type for constructor *)
+let tvoid ii =
+  nQ, TPrimitive (TVoid, ii)
 
 (* When want add some info in AST that does not correspond to
  * an existing C element.

@@ -370,7 +370,7 @@ let rec find_macro_paren xs =
   *)
 
   (* string macro variable, before case *)
-  | PToken ({t=TString ((str,_),_)})::PToken ({t=TIdent (_s,_)} as id)
+  | PToken ({t=TString (str,_)})::PToken ({t=TIdent (_s,_)} as id)
     ::xs ->
 
       (* c++ext: *)

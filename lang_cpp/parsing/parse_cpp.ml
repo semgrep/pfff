@@ -23,7 +23,6 @@ module Flag_cpp = Flag_parsing_cpp
 module T = Parser_cpp
 module TH = Token_helpers_cpp
 module Lexer = Lexer_cpp
-module Semantic = Parser_cpp_mly_helper
 
 let logger = Logging.get_logger [__MODULE__]
 
@@ -368,7 +367,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
             (* menhir *)
             | Parser_cpp.Error ->
                 pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
-            | Semantic.Semantic (s, _i) ->
+            | Parse_info.Other_error (s, _i) ->
                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
             | e -> raise e
            );
