@@ -1,3 +1,3 @@
 ### Security
 
-- [ ] Change has security implications (if so, ping the security team)
+- [ ] Change has no security implications (otherwise, ping the security team)
