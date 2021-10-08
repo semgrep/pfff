@@ -337,64 +337,68 @@ let add_sep xs =
  * useful when you want to pattern match over complex ocaml value.
  *)
 
-let string_of_v v =
+let string_of_v ?(max_depth = max_int) v =
   Common2.format_to_string (fun () ->
     let ppf = Format.printf in
-    let rec aux v =
-      match v with
-      | VUnit -> ppf "()"
-      | VBool v1 ->
-          if v1
-          then ppf "true"
-          else ppf "false"
-      | VFloat v1 -> ppf "%f" v1
-      | VChar v1 -> ppf "'%c'" v1
-      | VString v1 -> ppf "\"%s\"" v1
-      | VInt i -> ppf "%d" i
-      | VTuple xs ->
-          ppf "(@[";
-          xs |> add_sep |> List.iter (function
-            | Left _ -> ppf ",@ ";
-            | Right v -> aux v
-          );
-          ppf "@])";
-      | VDict xs ->
-          ppf "{@[";
-          xs |> List.iter (fun (s, v) ->
-            (* less: could open a box there too? *)
-            ppf "@,%s=" s;
-            aux v;
-            ppf ";@ ";
-          );
-          ppf "@]}";
+    let rec aux max_depth v =
+      if max_depth <= 0 then
+        ppf "..."
+      else (
+        match v with
+        | VUnit -> ppf "()"
+        | VBool v1 ->
+            if v1
+            then ppf "true"
+            else ppf "false"
+        | VFloat v1 -> ppf "%f" v1
+        | VChar v1 -> ppf "'%c'" v1
+        | VString v1 -> ppf "\"%s\"" v1
+        | VInt i -> ppf "%d" i
+        | VTuple xs ->
+            ppf "(@[";
+            xs |> add_sep |> List.iter (function
+              | Left _ -> ppf ",@ ";
+              | Right v -> aux (max_depth - 1) v
+            );
+            ppf "@])";
+        | VDict xs ->
+            ppf "{@[";
+            xs |> List.iter (fun (s, v) ->
+              (* less: could open a box there too? *)
+              ppf "@,%s=" s;
+              aux (max_depth - 1) v;
+              ppf ";@ ";
+            );
+            ppf "@]}";
 
-      | VSum (s, xs) ->
-          (match xs with
-           | [] -> ppf "%s" s
-           | _y::_ys ->
-               ppf "@[<hov 2>%s(@," s;
-               xs |> add_sep |> List.iter (function
-                 | Left _ -> ppf ",@ ";
-                 | Right v -> aux v
-               );
-               ppf "@])";
-          )
+        | VSum (s, xs) ->
+            (match xs with
+             | [] -> ppf "%s" s
+             | _y::_ys ->
+                 ppf "@[<hov 2>%s(@," s;
+                 xs |> add_sep |> List.iter (function
+                   | Left _ -> ppf ",@ ";
+                   | Right v -> aux (max_depth - 1) v
+                 );
+                 ppf "@])";
+            )
 
-      | VVar (s, i64) -> ppf "%s_%d" s (Int64.to_int i64)
-      | VArrow _v1 -> failwith "Arrow TODO"
-      | VNone -> ppf "None";
-      | VSome v -> ppf "Some(@["; aux v; ppf "@])";
-      | VRef v -> ppf "Ref(@["; aux v; ppf "@])";
-      | VList xs ->
-          ppf "[@[<hov>";
-          xs |> add_sep |> List.iter (function
-            | Left _ -> ppf ";@ ";
-            | Right v -> aux v
-          );
-          ppf "@]]";
-      | VTODO _v1 -> ppf "VTODO"
+        | VVar (s, i64) -> ppf "%s_%d" s (Int64.to_int i64)
+        | VArrow _v1 -> failwith "Arrow TODO"
+        | VNone -> ppf "None";
+        | VSome v -> ppf "Some(@["; aux (max_depth - 1) v; ppf "@])";
+        | VRef v -> ppf "Ref(@["; aux (max_depth - 1) v; ppf "@])";
+        | VList xs ->
+            ppf "[@[<hov>";
+            xs |> add_sep |> List.iter (function
+              | Left _ -> ppf ";@ ";
+              | Right v -> aux (max_depth - 1) v
+            );
+            ppf "@]]";
+        | VTODO _v1 -> ppf "VTODO"
+      )
     in
-    aux v
+    aux max_depth v
   )
 
 (*****************************************************************************)

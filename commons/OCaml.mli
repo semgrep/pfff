@@ -69,8 +69,13 @@ val string_ofv: v -> string
 val list_ofv: (v -> 'a) -> v -> 'a list
 val option_ofv: (v -> 'a) -> v -> 'a option
 
-(* regular pretty printer (not via sexp, but using Format) *)
-val string_of_v: v -> string
+(*
+   Regular pretty printer (not via sexp, but using Format).
+
+   Use max_depth=1 to show only the root construct, use max_depth=2 to
+   show two levels deep, etc. The default is to show the whole tree.
+*)
+val string_of_v: ?max_depth:int -> v -> string
 
 (* sexp converters *)
 (*
