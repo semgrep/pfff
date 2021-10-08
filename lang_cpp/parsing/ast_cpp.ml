@@ -296,7 +296,7 @@ and expr =
 
   (* gccext: kenccext: *)
   | GccConstructor  of type_ paren * initialiser list brace
-  (* c++ext: parens with TBase and braces with TypeName *)
+  (* c++ext: parens with TPrimitive and braces with TypeName *)
   | ConstructedObject of type_ * obj_init
 
   (* ?? *)
@@ -487,6 +487,7 @@ and condition_clause =
   (* c++ext: *)
   | CondDecl of vars_decl * expr
   | CondStmt of expr_stmt * expr
+  (* TODO? can have also StructuredBinding? switch to onedecl? *)
   | CondOneDecl of var_decl (* vinit always Some *)
 
 and for_header =
@@ -758,8 +759,9 @@ and lambda_capture =
 (* enum definition *)
 (* ------------------------------------------------------------------------- *)
 and enum_definition =
-  { enum_kind: tok (* 'enum' *);
+  { enum_kind: tok (* 'enum'  TODO also enum class/struct *);
     enum_name: name option;
+    (* TODO: enum_base: *)
     enum_body: enum_elem list brace;
   }
 

@@ -33,8 +33,6 @@ module PI = Parse_info
  * reference:
  *  - orig_c.mly and orig_cpp.mly in this directory
  *  - http://www.nongnu.org/hcb/ for an up-to-date hyperlinked C++ grammar
- *
- * TODO:
  *  - http://www.externsoft.ch/download/cpp-iso.html
  *  - tree-sitter-cpp grammar
  *)
@@ -460,7 +458,7 @@ assign_expr:
  | cond_expr                     { $1 }
  | cast_expr TAssign assign_expr { Assign ($1,OpAssign $2,$3)}
  | cast_expr "="     assign_expr { Assign ($1,SimpleAssign $2,$3)}
- (* c++ext: TODO in treesitter it's a stmt *)
+ (* c++ext: in treesitter it's a stmt, but in the spec it is an expr *)
  | Tthrow assign_expr?        { Throw ($1, $2) }
 
 (* gccext: allow optional then part hence expr?
@@ -583,10 +581,14 @@ postfix_expr:
 
  (* c++0x: *)
  | simple_type_specifier braced_init_list
-    { ExprTodo (("CtorBrace", Common2.fst3 $2), []) }
- (* TODO: should be typename, but require new parsing_hack_typedef *)
+    { let tx = addTypeD $1 nullDecl in
+      let (ty, _, _) = type_and_storage_from_decl tx in
+      ConstructedObject (ty, Inits $2) }
+ (* less: should be typename, but require new parsing_hack_typedef *)
  | TIdent braced_init_list
-    { ExprTodo (("CtorBrace", snd $1), [(*TODO $2*)]) }
+    { let ty = nQ, TypeName (name_of_id $1) in
+      ConstructedObject (ty, Inits $2)
+    }
 
 
 primary_expr:
@@ -856,7 +858,7 @@ iteration:
      { For ($1, ($2, ForClassic ($3, fst $4, $5), $6), $7) }
  (* c++ext: *)
  | Tfor "(" for_range_decl ":" for_range_init ")" statement
-     { StmtTodo (("ForEach", $1), [$7]) }
+     { For ($1, ($2, ForRange ($3, $4, $5), $6), $7) }
  (* cppext: *)
  | TIdent_MacroIterator "(" optl(listc(argument)) ")" statement
      { MacroIteration ($1, ($2, $3, $4), $5) }
@@ -891,16 +893,25 @@ condition:
  | expr { CondClassic $1 }
  (* c++ext: *)
  | decl_spec_seq declaratori "=" initializer_clause
-     { CondClassic (ExprTodo (("DeclCondition", $3), [])) }
+     { let (t_ret, _sto, mods) = type_and_storage_from_decl $1 in
+       let (name, ftyp) = $2 in
+       let ent = { name; specs = mods |> List.map (fun x -> M x) } in
+       let var = { v_type = ftyp t_ret; v_init = Some (EqInit ($3, $4)) } in
+       CondOneDecl (ent, var) }
+
 
 for_init_stmt:
  | expr_statement { Left $1 }
  (* c++ext: for(int i = 0; i < n; i++)*)
  | simple_declaration { Right $1 }
 
-for_range_decl: type_spec_seq2 declarator { }
+for_range_decl: type_spec_seq2 declarator
+  { let (t_ret, _sto, mods) = type_and_storage_from_decl $1 in
+    let (name, ftyp) = $2 in
+    let ent = { name; specs = mods |> List.map (fun x -> M x) } in
+    ent, { v_type = ftyp t_ret; v_init = None } }
 
-for_range_init: expr { }
+for_range_init: expr { InitExpr $1 }
 
 try_block: Ttry compound handler+ { Try ($1, $2, $3) }
 
@@ -950,13 +961,13 @@ simple_type_specifier:
  | type_cplusplus_id { Right3 (TypeName $1) }
 
  (* c++0x: *)
- | decltype_specifier { Middle3 (Long $1) }
+ | decltype_specifier { $1 }
 
 decltype_specifier:
- (* c++0x: TODO *)
- | Tdecltype "(" expr ")"           { $1  }
+ (* c++0x: *)
+ | Tdecltype "(" expr ")"           { Right3 (TypeTodo(("decltype", $1), [])) }
  (* TODO: because of wrong typedef inference *)
- | Tdecltype "(" TIdent_Typedef ")" { $1 }
+ | Tdecltype "(" TIdent_Typedef ")" { Right3 (TypeTodo(("decltype", $1), [])) }
 
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier:
@@ -1215,26 +1226,29 @@ new_type_id:
  | spec_qualif_list %prec LOW_PRIORITY_RULE
      { let (t_ret, _, _) = type_and_storage_from_decl $1 in  t_ret }
  | spec_qualif_list new_declarator
-     { let (t_ret, _, _) = type_and_storage_from_decl $1 in (* TODOAST *) t_ret }
+     { let (t_ret, _, _) = type_and_storage_from_decl $1 in
+       $2 t_ret }
 
+(* similar to abstract_declarator *)
 new_declarator:
- | ptr_operator new_declarator
-     { () }
- | ptr_operator %prec LOW_PRIORITY_RULE
-     { () }
- | direct_new_declarator
-     { () }
+ | ptr_operator      %prec LOW_PRIORITY_RULE { $1 }
+ |              direct_new_declarator  { $1 }
+ (* TODO? bug? different order than in declarator? *)
+ (* direct_new_declarator? typo? *)
+ | ptr_operator new_declarator          { (fun t -> t |> $2 |> $1) }
 
 ptr_operator:
- | "*" { () }
+ | "*" { fun t -> nQ, TPointer ($1, t, []) }
  (* c++ext: *)
- | "&" { () }
- (* c++0x: TODO AST *)
- | "&&" { () }
+ | "&" { fun t -> nQ, TReference ($1, t) }
+ (* c++0x: *)
+ | "&&" { fun t -> nQ, TRefRef ($1, t)  }
 
 direct_new_declarator:
- | "[" expr "]"                       { () }
- | direct_new_declarator "[" expr "]" { () }
+ | "[" expr "]"
+    { (fun t -> nQ, TArray (($1, Some $2, $3), t)) }
+ | direct_new_declarator "[" expr "]"
+    { (fun t -> $1 (nQ, TArray (($2, Some $3, $4), t))) }
 
 (* in c++ grammar they do 'type_spec_seq conversion_declaratoropt'. We
  * can not replace with a simple 'type_id' cos here we must not allow
@@ -1246,18 +1260,18 @@ direct_new_declarator:
 conversion_type_id:
  | simple_type_specifier conversion_declarator
      { let tx = addTypeD $1 nullDecl in
-       let (t_ret, _, _) = type_and_storage_from_decl tx in t_ret
+       let (t_ret, _, _) = type_and_storage_from_decl tx in
+       $2 t_ret
      }
  | simple_type_specifier %prec LOW_PRIORITY_RULE
      { let tx = addTypeD $1 nullDecl in
-       let (t_ret, _, _) = type_and_storage_from_decl tx in t_ret
+       let (t_ret, _, _) = type_and_storage_from_decl tx in
+       t_ret
      }
 
 conversion_declarator:
- | ptr_operator conversion_declarator
-     { () (* TODO *) }
- | ptr_operator %prec LOW_PRIORITY_RULE
-     { () (* TODO *) }
+ | ptr_operator %prec LOW_PRIORITY_RULE   { $1 }
+ | ptr_operator conversion_declarator     { (fun x -> x |> $2 |> $1) }
 
 (*************************************************************************)
 (* Class and struct definitions *)
@@ -1411,15 +1425,16 @@ member_declarator:
 (* gccext: c++0x: most ","? are trailing commas extensions (as in Perl) *)
 enum_specifier:
  | enum_head "{" listc(enumerator) ","? "}"
-     { EnumDef ({enum_kind = $1; enum_name = None(* TODO *);
+     { EnumDef ({enum_kind = fst $1; enum_name = snd $1;
                 enum_body = ($2, $3, $5)}) (*$4*) }
  (* c++0x: *)
  | enum_head "{" "}"
-     { EnumDef ({enum_kind = $1; enum_name = None(* TODO *);
+     { EnumDef ({enum_kind = fst $1; enum_name = snd $1;
                  enum_body = ($2, [], $3) }) }
 
 enum_head:
- | enum_key ident? (*ioption(enum_base)*) { $1 }
+ | enum_key ident? (*ioption(enum_base)*)
+     { $1, $2 |> Common.map_opt name_of_id }
 
 enumerator:
  | ident                { { e_name = $1; e_val = None; } }
@@ -1467,6 +1482,8 @@ decl_spec:
  | storage_class_spec { addStorageD $1 }
  | type_spec          { addTypeD  $1 }
  | function_spec      { addModifierD $1 }
+ (* c++ext: *)
+ | type_qualifier     { (fun x -> x) (* addSpecifierD $1*) (* TODOAST *) }
 
 (* grammar_c++: cv_qualif is not here but instead inline in type_spec.
  * I prefer to keep as before but I take care when
@@ -1475,8 +1492,7 @@ decl_spec:
  | cv_qualif          { addQualifD $1 }
 
  | Ttypedef           { addStorageD (StoTypedef $1) }
- | Tfriend            { fun x -> x (* addModifierD (Friend $1) TODO *) }
- | Tconstexpr         { fun x -> x (* addModifierD (Constexpr $1) TODO *) }
+ | Tfriend            { fun x -> x (* addModifierD (Friend $1) TODOAST *) }
 
 (* grammar_c++: they put 'explicit' in function_spec, 'typedef' and 'friend'
  * in decl_spec. But it's just estethic as no other rules directly
@@ -1498,10 +1514,17 @@ storage_class_spec:
  (* c++ext: now really used, not as in C, for type inferred variables *)
  | Tauto        { Sto (Auto,    $1) }
  | Tregister    { Sto (Register,$1) }
- (* c++ext: *)
- | Tmutable     { Sto (Register,$1) (*TODO*) }
- (* c++0x: *)
- | Tthread_local { Sto (Register,$1) (*TODO*) }
+ (* for thread_local see below *)
+
+type_qualifier:
+ (* c++ext: also considered a storage class specifier in the spec *)
+ | Tmutable     { TQ (Mutable, $1) }
+ (* c++?: *)
+ | Tconstexpr   { TQ (Constexpr, $1) }
+ (* c++11: considered a storafe_class, but can be combined with Extern/Static
+  * so simpler to put as a specifier.
+  *)
+ | Tthread_local { TQ (Constexpr, $1) (*TODOAST*) }
 
 (*-----------------------------------------------------------------------*)
 (* declarators (right part of type and variable) *)
@@ -1743,18 +1766,20 @@ function_body:
 (* c++ext: constructor special case *)
 (*-----------------------------------------------------------------------*)
 
-(* Special case cos ctor/dtor do not have return type. *)
+(* Special case cos ctor/dtor because they do not have a return type.
+ * This is when the ctor/dtor are defined outside the class.
+ *)
 ctor_dtor:
  | nested_name_specifier TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { DeclTodo ("DeclCtor", $3)  }
- (* new_type_id, could also introduce a Tdestructorname or forbidy the
+     { (Func ((mk_constructor [] $2 ($3, $4, $5) $6 (FBDef $7)))) (*TODO$1*) }
+  (* new_type_id, could also introduce a Tdestructorname or forbidy the
       TypedefIdent2 transfo by putting a guard in the lalr(k) rule by
       checking if have a ~ before
    *)
- | nested_name_specifier TTilde ident "(" Tvoid? ")" compound
-     { DeclTodo ("DeclDtor", $2) }
+ | nested_name_specifier TTilde ident "(" Tvoid? ")" exn_spec? compound
+     { (Func ((mk_destructor [] $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
 
 (* TODO: remove once we don't skip qualifiers *)
  | Tinline? TIdent_Constructor "(" parameter_type_list? ")"
@@ -1762,56 +1787,57 @@ ctor_dtor:
      compound
      { DeclTodo ("DeclCtor", $3) }
  | TTilde ident "(" Tvoid? ")" exn_spec? compound
-     { DeclTodo ("DeclDtor", $1) }
+     { (Func ((mk_destructor [] $1 $2 ($3, $4, $5) $6 (FBDef $7)))) }
 
 
 
-(* special case for ctor/dtor because they don't have a return type.
-   * TODOAST on the ctor_spec and chain of calls
-   *)
+(* Special case for ctor/dtor because they do not have a return type.
+ * This is when the ctor/dtor are defined inside the class.
+ * TODOAST on the ctor_spec and chain of calls
+*)
 ctor_dtor_member:
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")"
      ctor_mem_initializer_list_opt
      compound
-     { F (Func ((mk_constructor $2 ($3, $4, $5) (FBDef $7)))) }
+     { F (Func ((mk_constructor $1 $2 ($3, $4, $5) $6 (FBDef $7)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" ";"
-     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDecl $6))) }
+     { F (Func (mk_constructor $1 $2 ($3, $4, $5) None (FBDecl $6))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdelete ";"
-     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDelete ($6, $7, $8)))) }
+     { F (Func (mk_constructor $1 $2 ($3, $4, $5) None (FBDelete ($6, $7, $8)))) }
  | ctor_spec TIdent_Constructor "(" parameter_type_list? ")" "=" Tdefault ";"
-     { F (Func (mk_constructor $2 ($3, $4, $5) (FBDefault ($6, $7, $8)))) }
+     { F (Func (mk_constructor $1 $2 ($3, $4, $5) None (FBDefault ($6, $7, $8)))) }
 
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? compound
-     { F (Func ((mk_destructor $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
+     { F (Func ((mk_destructor $1 $2 $3 ($4, $5, $6) $7 (FBDef $8)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? ";"
-     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
+     { F (Func (mk_destructor $1 $2 $3 ($4, $5, $6) $7 (FBDecl $8))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdelete ";"
-     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
+     { F (Func (mk_destructor $1 $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
  | dtor_spec TTilde ident "(" Tvoid? ")" exn_spec? "=" Tdefault ";"
-     { F (Func (mk_destructor $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
+     { F (Func (mk_destructor $1 $2 $3 ($4, $5, $6) $7 (FBDelete ($8, $9, $10)))) }
 
 
 ctor_spec:
- | Texplicit { }
- | Tinline { }
- | (*empty*) { }
+ | Texplicit { [M (Explicit ($1, None))] }
+ | Tinline   { [M (Inline $1)] }
+ | (*empty*) { [] }
 
 dtor_spec:
- | Tvirtual { }
- | Tinline { }
- | (*empty*) { }
+ | Tvirtual { [M (Virtual $1)] }
+ | Tinline  { [M (Inline $1)] }
+ | (*empty*) { [] }
 
 ctor_mem_initializer_list_opt:
- | ":" listc(mem_initializer) { () }
- | (* empty *) { () }
+ | ":" listc(mem_initializer) { Some ($1, $2) }
+ | (* empty *) { None }
 
 mem_initializer:
- | mem_initializer_id "(" optl(listc(argument)) ")" { () }
+ | mem_initializer_id "(" optl(listc(argument)) ")" { () (* TODOAST*) }
 
 (* factorize with declarator_id ? specialisation *)
 mem_initializer_id:
-(* specialsiation | TIdent { () } *)
- | primary_cplusplus_id { () }
+(* specialisation | TIdent { () } *)
+ | primary_cplusplus_id { $1 }
 
 (*************************************************************************)
 (* Cpp directives *)

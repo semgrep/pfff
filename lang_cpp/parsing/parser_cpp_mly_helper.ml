@@ -338,7 +338,7 @@ let mk_e e = e
 let mk_funcall e1 args =
   Call (e1, args)
 
-let mk_constructor id (lp, params, rp) cp =
+let mk_constructor specs id (lp, params, rp) _cmem_initializer_opt_TODO cp =
   let params = Common.optlist_to_list params in
   let ftyp = {
     ft_ret = nQ, (TPrimitive (TVoid, snd id));
@@ -350,10 +350,10 @@ let mk_constructor id (lp, params, rp) cp =
   }
   in
   let name = name_of_id id in
-  let ent = { name; specs = [] } in
+  let ent = { name; specs } in
   ent, { f_type = ftyp; f_body = cp; f_specs = [] }
 
-let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
+let mk_destructor specs tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
     ft_ret = nQ, (TPrimitive (TVoid, (snd id)));
     ft_params= (lp,  [], rp);
@@ -363,5 +363,5 @@ let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   }
   in
   let name = None, noQscope, IdDestructor (tilde, id) in
-  let ent = { name; specs = [] } in
+  let ent = { name; specs } in
   ent, { f_type = ftyp; f_body = cp; f_specs = [] }
