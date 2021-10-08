@@ -31,25 +31,21 @@ type shortLong = Short of tok | Long of tok | LongLong of tok * tok
 
 type sign = Signed of tok | UnSigned of tok
 
-(* TODO: delete *)
-type 'a wrapx  = 'a * tok list
-
-(* note: have a full_info: parse_info list; to remember ordering
- * between storage, qualifier, type? well this info is already in
- * the Ast_c.info, just have to sort them to get good order
-*)
 type decl = {
   storageD: storage_opt;
-  typeD: (sign option * shortLong option * typeC option) wrapx;
+  typeD: sign option * shortLong option * typeC option;
   qualifD: type_qualifiers;
   modifierD: modifier list;
 }
 
-let noii = []
+let ii_of_sign = function
+  | Signed ii | UnSigned ii -> ii
+let ii_of_short_long = function
+  | Short ii | Long ii | LongLong (ii, _) -> ii
 
 let nullDecl = {
   storageD = NoSto;
-  typeD = (None, None, None), noii;
+  typeD = (None, None, None);
   qualifD = Ast.nQ;
   modifierD = [];
 }
@@ -63,63 +59,47 @@ let addStorageD x decl  =
       else error "multiple storage classes" ii
 
 let addModifierD x decl =
+  (* old: check: warning "duplicate inline" *)
   { decl with modifierD = x::decl.modifierD }
-(*
-  match decl with
-  | {inlineD = (false,[]); _} -> { decl with inlineD=(true,[ii])}
-  | {inlineD = (true, _ii2); _} -> decl |> warning "duplicate inline"
-  | _ -> raise Impossible
-*)
 
 let addTypeD ty decl =
   match ty, decl with
-  | (Left3 (Signed _),_ii), {typeD = ((Some (Signed _),  _b,_c),_ii2); _} ->
+  | (Left3 (Signed _)), {typeD = ((Some (Signed _),_b,_c)); _} ->
       decl |> warning "duplicate 'signed'"
-  | (Left3 (UnSigned _),_ii), {typeD = ((Some (UnSigned _),_b,_c),_ii2); _} ->
+  | (Left3 (UnSigned _)), {typeD = ((Some (UnSigned _),_b,_c)); _} ->
       decl |> warning "duplicate 'unsigned'"
-  | (Left3 _,ii),        {typeD = ((Some _,_b,_c),_ii2); _} ->
-      error "both signed and unsigned specified"  (List.hd ii)
-  | (Left3 x,ii),        {typeD = ((None,b,c),ii2); _} ->
-      { decl with typeD = (Some x,b,c),ii @ ii2}
-  | (Middle3 (Short _),_ii),  {typeD = ((_a,Some (Short _),_c),_ii2); _} ->
+  | (Left3 sign),        {typeD = ((Some _,_b,_c)); _} ->
+      error "both signed and unsigned specified"  (ii_of_sign sign)
+  | (Left3 x),        {typeD = ((None,b,c)); _} ->
+      { decl with typeD = (Some x,b,c)}
+  | (Middle3 (Short _)),  {typeD = ((_a,Some (Short _),_c)); _} ->
       decl |> warning "duplicate 'short'"
 
 
   (* gccext: long long allowed *)
-  | (Middle3 (Long t1),ii),   {typeD = ((a,Some (Long t2),c),ii2); _}->
-      { decl with typeD = (a, Some (LongLong (t1, t2)), c),ii@ii2 }
-  | (Middle3 (Long _),_ii),  {typeD = ((_a,Some (LongLong _),_c),_ii2); _} ->
+  | (Middle3 (Long t1)),   {typeD = ((a,Some (Long t2),c)); _}->
+      { decl with typeD = (a, Some (LongLong (t1, t2)), c)}
+  | (Middle3 (Long _)),  {typeD = ((_a,Some (LongLong _),_c)); _} ->
       decl |> warning "triplicate 'long'"
 
-  | (Middle3 _,ii),     {typeD = ((_a,Some _,_c),_ii2); _} ->
-      error "both long and short specified"  (List.hd ii)
-  | (Middle3 x,ii),      {typeD = ((a,None,c),ii2); _} ->
-      { decl with typeD = (a, Some x,c),ii@ii2}
+  | (Middle3 sl),     {typeD = ((_a,Some _,_c)); _} ->
+      error "both long and short specified"  (ii_of_short_long sl)
+  | (Middle3 x),      {typeD = ((a,None,c)); _} ->
+      { decl with typeD = (a, Some x,c)}
 
-  | (Right3 _t,ii),     {typeD = ((_a,_b,Some _),_ii2); _} ->
-      error "two or more data types"  (List.hd ii)
-  | (Right3 t,ii),       {typeD = ((a,b,None),ii2); _}   ->
-      { decl with typeD = (a,b, Some t),ii@ii2}
+  | (Right3 _t),     {typeD = ((_a,_b,Some _)); _} ->
+      (* old: was error before, but tedious to get an ii for error *)
+      decl |> warning "two or more data types"
+  | (Right3 t),       {typeD = ((a,b,None)); _}   ->
+      { decl with typeD = (a,b, Some t)}
 
 
 let addQualif tq1 tq2 =
-  (* TODO
-     match tq1, tq2 with
-     | {const=Some _; _},   {const=Some _; _} ->
-        tq2 |> warning "duplicate 'const'"
-     | {volatile=Some _; _}, {volatile=Some _; _} ->
-         tq2 |> warning "duplicate 'volatile'"
-         | {const=Some x; _},   _ ->
-         { tq2 with const = Some x}
-         | {volatile=Some x; _}, _ ->
-         { tq2 with volatile = Some x}
-         | _ -> Common2.internal_error "there is no noconst or novolatile keyword"
-       *)
+  (* old: check: warning "duplicate 'const'", warning "duplicate 'volatile'"*)
   tq1::tq2
 
 let addQualifD qu qu2 =
   { qu2 with qualifD = addQualif qu qu2.qualifD }
-
 
 (*-------------------------------------------------------------------------- *)
 (* Declaration/Function related *)
@@ -128,11 +108,26 @@ let addQualifD qu qu2 =
 (* stdC: type section, basic integer types (and ritchie)
  * To understand the code, just look at the result (right part of the PM)
  * and go back.
+ * old: before TSized and TPrimitive, when there was a complex TBase
+ * there was more checks:
+ *  error "signed, unsigned valid only for char and int" (List.hd iit)
+ *  error "long or short specified with floatint type" (List.hd iit)
+ *  error "the only valid combination is long double" (List.hd iit)
+ *  error "long, short valid only for int or float" (List.hd iit)
+ *
+ * if do short uint i, then gcc say parse error, strange ? it is
+ * not a parse error, it is just that we dont allow with typedef
+ * either short/long or signed/unsigned. In fact, with
+ * parse_typedef_fix2 (with et() and dt()) now I say too parse
+ * error so this code is executed only when do short struct
+ * {....} and never with a typedef cos now we parse short uint i
+ * as short ident ident => parse error (cos after first short i
+ * pass in dt() mode)
 *)
 let type_and_storage_from_decl
     {storageD = st;
      qualifD = qu;
-     typeD = (ty, iit);
+     typeD = ty;
      modifierD = mods;
     }  =
   let ty =
@@ -142,8 +137,8 @@ let type_and_storage_from_decl
         (match st with
          | Sto (Auto, ii) -> TAuto ii
          | _ ->
-             (* mine (originally default to int, but this looks like bad style) *)
-             error "no type (could default to 'int')" (List.hd iit)
+             (* old: error "no type (could default to 'int')" (List.hd iit) *)
+             TPrimitive (TInt, Parse_info.unsafe_fake_info "int")
         )
     | (None, None, Some t)   ->
         t
@@ -167,55 +162,6 @@ let type_and_storage_from_decl
           | Some typc -> Some (nQ, typc)
         in
         TSized (sign @ short_long, typ)
-        (* old: before TSized and TPrimitive, when there was a complex TBase
-            | (Some sign,  None, None) ->
-                TBase(IntType (Si (sign, CInt), List.hd iit))
-            | (Some sign,  None, Some (TBase2 (IntType (Si (_,CInt), t1)))) ->
-                TBase(IntType (Si (sign, CInt), t1))
-
-            | ((None|Some Signed), Some x, None) ->
-                TBase(IntType (Si (Signed,
-                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
-                               List.hd iit))
-            | ((None|Some Signed), Some x, Some(TBase2(IntType (Si (_,CInt), t1)))) ->
-                TBase(IntType (Si (Signed,
-                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
-
-            | (Some UnSigned, Some x, None) ->
-                TBase(IntType (Si (UnSigned,
-                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
-                               List.hd iit))
-
-            | (Some UnSigned, Some x, Some (TBase2 (IntType (Si (_,CInt), t1))))->
-                TBase(IntType (Si (UnSigned,
-                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
-
-            | (Some sign,   None, (Some (TBase (IntType (CChar, ii)))))   ->
-                TBase(IntType (Si (sign, CChar2), ii))
-
-            | (None, Some Long,(Some(TBase(FloatType (CDouble, ii)))))    ->
-                TBase (FloatType (CLongDouble, ii))
-
-            | (Some _,_, Some _) ->
-                error "signed, unsigned valid only for char and int" (List.hd iit)
-            | (_,Some _,(Some(TBase(FloatType ((CFloat|CLongDouble), _))))) ->
-                error "long or short specified with floatint type" (List.hd iit)
-            | (_,Some Short,(Some(TBase(FloatType (CDouble, _))))) ->
-                error "the only valid combination is long double" (List.hd iit)
-
-            | (_, Some _, Some _) ->
-                (* mine *)
-                error "long, short valid only for int or float" (List.hd iit)
-
-            (* if do short uint i, then gcc say parse error, strange ? it is
-             * not a parse error, it is just that we dont allow with typedef
-             * either short/long or signed/unsigned. In fact, with
-             * parse_typedef_fix2 (with et() and dt()) now I say too parse
-             * error so this code is executed only when do short struct
-             * {....} and never with a typedef cos now we parse short uint i
-             * as short ident ident => parse error (cos after first short i
-             * pass in dt() mode) *)
-        *)
   in
   (qu, ty), st, mods
 

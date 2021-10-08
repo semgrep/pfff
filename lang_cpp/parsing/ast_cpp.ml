@@ -348,6 +348,7 @@ and argument =
   | ArgAction of action_macro
   (* c++0x? *)
   | ArgInits of initialiser list brace
+
 and action_macro =
   | ActMisc of tok list
 
@@ -371,35 +372,24 @@ and constant =
   | Bool of bool wrap
   | Nullptr of tok
 
+(* c++ext: *)
+and cast_operator =
+  | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
+
 and unaryOp  =
   | UnPlus |  UnMinus | Tilde | Not
-  (* less: could be lift up, those are really important operators *)
+  (* TODO? lift up, those are really important operators *)
   | GetRef | DeRef
   (* gccext: via &&label notation *)
   | GetRefLabel
-and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
-
-(* less: migrate to AST_generic_.incr_decr? *)
-and fixOp    = Dec | Inc
 
 (* The Arrow is redundant; could be replaced by DeRef DotAccess *)
 and dotOp = Dot (* . *) | Arrow (* -> *)
 
-(* less: migrate to AST_generic_.op? *)
-and binaryOp = Arith of arithOp | Logical of logicalOp
-and arithOp   =
-  | Plus | Minus | Mul | Div | Mod
-  | DecLeft | DecRight
-  | And | Or | Xor
-and logicalOp =
-  | Inf | Sup | InfEq | SupEq
-  | Eq | NotEq
-  | AndLog | OrLog
+(* ------------------------------------------------------------------------- *)
+(* Overloaded operators *)
+(* ------------------------------------------------------------------------- *)
 
-(* c++ext: used elsewhere but prefer to define it close to other operators *)
-and ptrOp = PtrStarOp | PtrOp
-and allocOp = NewOp | DeleteOp | NewArrayOp | DeleteArrayOp
-and accessop = ParenOp | ArrayOp
 and operator =
   | BinaryOp of binaryOp
   | AssignOp of assignOp
@@ -409,9 +399,34 @@ and operator =
   | AllocOp of allocOp
   | UnaryTildeOp | UnaryNotOp | CommaOp
 
-(* c++ext: *)
-and cast_operator =
-  | Static_cast | Dynamic_cast | Const_cast | Reinterpret_cast
+(* less: migrate to AST_generic_.op? *)
+and binaryOp = Arith of arithOp | Logical of logicalOp
+
+and arithOp   =
+  | Plus | Minus | Mul | Div | Mod
+  | DecLeft | DecRight
+  | And | Or | Xor
+
+and logicalOp =
+  | Inf | Sup | InfEq | SupEq
+  | Eq | NotEq
+  | AndLog | OrLog
+
+and assignOp = SimpleAssign of tok | OpAssign of arithOp wrap
+
+(* less: migrate to AST_generic_.incr_decr? *)
+and fixOp    = Dec | Inc
+
+(* c++ext: used elsewhere but prefer to define it close to other operators *)
+and ptrOp = PtrStarOp | PtrOp
+
+and accessop = ParenOp | ArrayOp
+
+and allocOp = NewOp | DeleteOp | NewArrayOp | DeleteArrayOp
+
+(* ------------------------------------------------------------------------- *)
+(* Aliases *)
+(* ------------------------------------------------------------------------- *)
 
 and a_const_expr = expr (* => int *)
 
@@ -526,7 +541,7 @@ and declarations = stmt_or_decl sequencable list brace
 (* Definitions/Declarations *)
 (*****************************************************************************)
 
-(* see also ClassDef in type_ which can also define entities *)
+(* see also ClassDef/EnumDef in type_ which can also define entities *)
 
 and entity = {
   (* Usually a simple ident.
@@ -537,7 +552,7 @@ and entity = {
 }
 
 (* ------------------------------------------------------------------------- *)
-(* "Declaration" *)
+(* Decl *)
 (* ------------------------------------------------------------------------- *)
 
 (* It's not really 'toplevel' because the elements below can be nested
@@ -583,8 +598,6 @@ and decl =
   | NotParsedCorrectly of tok list
   | DeclTodo of todo_category
 
-and vars_decl = onedecl list * sc
-
 (* gccext: *)
 and asmbody = string wrap list * colon list
 and colon = Colon of tok (* : *) * colon_option list
@@ -593,8 +606,10 @@ and colon_option =
   | ColonMisc of tok list
 
 (* ------------------------------------------------------------------------- *)
-(* Variable definition (and also field definition) *)
+(* Vars_decl and onedecl *)
 (* ------------------------------------------------------------------------- *)
+
+and vars_decl = onedecl list * sc
 
 (* note: onedecl includes prototype declarations and class_declarations!
  * c++ext: onedecl now covers also field definitions as fields can have
@@ -625,7 +640,12 @@ and onedecl =
   | BitField of ident option * tok(*:*) * type_ * a_const_expr
   (* type_ => BitFieldInt | BitFieldUnsigned *)
 
+(* ------------------------------------------------------------------------- *)
+(* Variable definition (and also field definition) *)
+(* ------------------------------------------------------------------------- *)
+
 and var_decl = entity * variable_definition
+
 and variable_definition = {
   v_init: init option;
   v_type: type_;

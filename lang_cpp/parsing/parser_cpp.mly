@@ -922,35 +922,35 @@ exception_decl:
 type_spec:
  | simple_type_specifier { $1 }
  | elaborated_type_specifier { $1 }
- | enum_specifier  { Right3 $1, noii }
- | class_specifier { Right3 (ClassDef $1), noii }
+ | enum_specifier  { Right3 $1 }
+ | class_specifier { Right3 (ClassDef $1) }
 
 simple_type_specifier:
- | Tvoid                { Right3 (TPrimitive (TVoid, $1)), noii }
- | Tchar                { Right3 (TPrimitive (TChar, $1)), noii }
- | Tint                 { Right3 (TPrimitive (TInt, $1)), noii }
- | Tfloat               { Right3 (TPrimitive (TFloat, $1)),  noii }
- | Tdouble              { Right3 (TPrimitive (TDouble, $1)), noii }
- | Tshort               { Middle3 (Short $1),  noii}
- | Tlong                { Middle3 (Long $1),   noii}
- | Tsigned              { Left3 (Signed $1),   noii}
- | Tunsigned            { Left3 (UnSigned $1), noii}
+ | Tvoid                { Right3 (TPrimitive (TVoid, $1)) }
+ | Tchar                { Right3 (TPrimitive (TChar, $1)) }
+ | Tint                 { Right3 (TPrimitive (TInt, $1)) }
+ | Tfloat               { Right3 (TPrimitive (TFloat, $1)) }
+ | Tdouble              { Right3 (TPrimitive (TDouble, $1)) }
+ | Tshort               { Middle3 (Short $1)}
+ | Tlong                { Middle3 (Long $1)}
+ | Tsigned              { Left3 (Signed $1)}
+ | Tunsigned            { Left3 (UnSigned $1)}
  (*c++ext: *)
- | Tbool                { Right3 (TPrimitive (TBool, $1)), noii }
- | Twchar_t             { Right3 (TypeName (name_of_id ("wchar_t", $1))), noii}
+ | Tbool                { Right3 (TPrimitive (TBool, $1)) }
+ | Twchar_t             { Right3 (TypeName (name_of_id ("wchar_t", $1)))}
 
  (* gccext: *)
- | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))), noii}
- | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4))), noii}
+ | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4)))}
+ | Ttypeof "(" type_id     ")" { Right3(TypeOf ($1,($2,Left $3,$4)))}
 
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and
   * generates lots of conflicts => we must use some tricks.
   * See parsing_hacks_typedef.ml. See also conflicts.txt
   *)
- | type_cplusplus_id { Right3 (TypeName $1), noii }
+ | type_cplusplus_id { Right3 (TypeName $1) }
 
  (* c++0x: *)
- | decltype_specifier { Middle3 (Long $1), [$1] }
+ | decltype_specifier { Middle3 (Long $1) }
 
 decltype_specifier:
  (* c++0x: TODO *)
@@ -960,10 +960,10 @@ decltype_specifier:
 
 (*todo: can have a ::opt optl(nested_name_specifier) before ident*)
 elaborated_type_specifier:
- | Tenum ident                  { Right3 (EnumName ($1, name_of_id $2)), noii }
- | class_key ident              { Right3 (ClassName ($1, name_of_id $2)), noii }
+ | Tenum ident                  { Right3 (EnumName ($1, name_of_id $2)) }
+ | class_key ident              { Right3 (ClassName ($1, name_of_id $2)) }
  (* c++ext:  *)
- | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2))), noii }
+ | Ttypename type_cplusplus_id  { Right3 (TypenameKwd ($1, (nQ, TypeName $2)))}
 
 (*----------------------------*)
 (* c++ext:  *)
