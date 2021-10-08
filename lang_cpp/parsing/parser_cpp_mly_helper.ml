@@ -7,14 +7,13 @@ module Flag = Flag_parsing
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
-
 let warning s v =
   if !Flag.verbose_parsing
   then Common2.warning ("PARSING: " ^ s) v
   else v
 
-exception Semantic of string * Ast_cpp.tok
+let error s tok =
+  raise (Parse_info.Other_error (s, tok))
 
 let fake s = Parse_info.fake_info s
 
@@ -28,7 +27,9 @@ let fake s = Parse_info.fake_info s
 
 type storage_opt = NoSto | StoTypedef of tok | Sto of storage wrap
 
-type shortLong = Short | Long | LongLong
+type shortLong = Short of tok | Long of tok | LongLong of tok * tok
+
+type sign = Signed of tok | UnSigned of tok
 
 (* TODO: delete *)
 type 'a wrapx  = 'a * tok list
@@ -59,7 +60,7 @@ let addStorageD x decl  =
   | {storageD = (StoTypedef ii | Sto (_, ii)) as y; _} ->
       if x = y
       then decl |> warning "duplicate storage classes"
-      else raise (Semantic ("multiple storage classes", ii))
+      else error "multiple storage classes" ii
 
 let addModifierD x decl =
   { decl with modifierD = x::decl.modifierD }
@@ -72,31 +73,31 @@ let addModifierD x decl =
 
 let addTypeD ty decl =
   match ty, decl with
-  | (Left3 Signed,_ii), {typeD = ((Some Signed,  _b,_c),_ii2); _} ->
+  | (Left3 (Signed _),_ii), {typeD = ((Some (Signed _),  _b,_c),_ii2); _} ->
       decl |> warning "duplicate 'signed'"
-  | (Left3 UnSigned,_ii), {typeD = ((Some UnSigned,_b,_c),_ii2); _} ->
+  | (Left3 (UnSigned _),_ii), {typeD = ((Some (UnSigned _),_b,_c),_ii2); _} ->
       decl |> warning "duplicate 'unsigned'"
   | (Left3 _,ii),        {typeD = ((Some _,_b,_c),_ii2); _} ->
-      raise (Semantic ("both signed and unsigned specified", List.hd ii))
+      error "both signed and unsigned specified"  (List.hd ii)
   | (Left3 x,ii),        {typeD = ((None,b,c),ii2); _} ->
       { decl with typeD = (Some x,b,c),ii @ ii2}
-  | (Middle3 Short,_ii),  {typeD = ((_a,Some Short,_c),_ii2); _} ->
+  | (Middle3 (Short _),_ii),  {typeD = ((_a,Some (Short _),_c),_ii2); _} ->
       decl |> warning "duplicate 'short'"
 
 
   (* gccext: long long allowed *)
-  | (Middle3 Long,ii),   {typeD = ((a,Some Long,c),ii2); _}->
-      { decl with typeD = (a, Some LongLong, c),ii@ii2 }
-  | (Middle3 Long,_ii),  {typeD = ((_a,Some LongLong,_c),_ii2); _} ->
+  | (Middle3 (Long t1),ii),   {typeD = ((a,Some (Long t2),c),ii2); _}->
+      { decl with typeD = (a, Some (LongLong (t1, t2)), c),ii@ii2 }
+  | (Middle3 (Long _),_ii),  {typeD = ((_a,Some (LongLong _),_c),_ii2); _} ->
       decl |> warning "triplicate 'long'"
 
   | (Middle3 _,ii),     {typeD = ((_a,Some _,_c),_ii2); _} ->
-      raise (Semantic ("both long and short specified", List.hd ii))
+      error "both long and short specified"  (List.hd ii)
   | (Middle3 x,ii),      {typeD = ((a,None,c),ii2); _} ->
       { decl with typeD = (a, Some x,c),ii@ii2}
 
   | (Right3 _t,ii),     {typeD = ((_a,_b,Some _),_ii2); _} ->
-      raise (Semantic ("two or more data types", List.hd ii))
+      error "two or more data types"  (List.hd ii)
   | (Right3 t,ii),       {typeD = ((a,b,None),ii2); _}   ->
       { decl with typeD = (a,b, Some t),ii@ii2}
 
@@ -131,78 +132,98 @@ let addQualifD qu qu2 =
 let type_and_storage_from_decl
     {storageD = st;
      qualifD = qu;
-     typeD = (ty,iit);
+     typeD = (ty, iit);
      modifierD = mods;
     }  =
-  (qu,
-   (match ty with
+  let ty =
+    match ty with
     | (None, None, None)     ->
         (* c++ext: *)
         (match st with
-         | Sto (Auto, ii) -> TBase (Void ii)(* TODO AST *)
+         | Sto (Auto, ii) -> TAuto ii
          | _ ->
              (* mine (originally default to int, but this looks like bad style) *)
-             raise (Semantic ("no type (could default to 'int')", List.hd iit))
+             error "no type (could default to 'int')" (List.hd iit)
         )
     | (None, None, Some t)   ->
         t
-    | (Some sign,  None, None) ->
-        TBase(IntType (Si (sign, CInt), List.hd iit))
-    | (Some sign,  None, Some (TBase (IntType (Si (_,CInt), t1)))) ->
-        TBase(IntType (Si (sign, CInt), t1))
+    | (sign_opt, short_long_opt, topt) ->
+        let sign =
+          match sign_opt with
+          | None -> []
+          | Some (Signed t) -> [TSigned, t]
+          | Some (UnSigned t) -> [TUnsigned, t]
+        in
+        let short_long =
+          match short_long_opt with
+          | None -> []
+          | Some (Short t) -> [(TShort, t)]
+          | Some (Long t) -> [(TLong, t)]
+          | Some (LongLong (t1, t2)) -> [(TLong, t1); (TLong, t2)]
+        in
+        let typ =
+          match topt with
+          | None -> None
+          | Some typc -> Some (nQ, typc)
+        in
+        TSized (sign @ short_long, typ)
+        (* old: before TSized and TPrimitive, when there was a complex TBase
+            | (Some sign,  None, None) ->
+                TBase(IntType (Si (sign, CInt), List.hd iit))
+            | (Some sign,  None, Some (TBase2 (IntType (Si (_,CInt), t1)))) ->
+                TBase(IntType (Si (sign, CInt), t1))
 
-    | ((None|Some Signed), Some x, None) ->
-        TBase(IntType (Si (Signed,
-                           [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
-                       List.hd iit))
-    | ((None|Some Signed), Some x, Some(TBase(IntType (Si (_,CInt), t1)))) ->
-        TBase(IntType (Si (Signed,
-                           [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
+            | ((None|Some Signed), Some x, None) ->
+                TBase(IntType (Si (Signed,
+                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
+                               List.hd iit))
+            | ((None|Some Signed), Some x, Some(TBase2(IntType (Si (_,CInt), t1)))) ->
+                TBase(IntType (Si (Signed,
+                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
 
-    | (Some UnSigned, Some x, None) ->
-        TBase(IntType (Si (UnSigned,
-                           [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
-                       List.hd iit))
+            | (Some UnSigned, Some x, None) ->
+                TBase(IntType (Si (UnSigned,
+                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x),
+                               List.hd iit))
 
-    | (Some UnSigned, Some x, Some (TBase (IntType (Si (_,CInt), t1))))->
-        TBase(IntType (Si (UnSigned,
-                           [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
+            | (Some UnSigned, Some x, Some (TBase2 (IntType (Si (_,CInt), t1))))->
+                TBase(IntType (Si (UnSigned,
+                                   [Short,CShort; Long, CLong; LongLong, CLongLong] |> List.assoc x), t1))
 
-    | (Some sign,   None, (Some (TBase (IntType (CChar, ii)))))   ->
-        TBase(IntType (Si (sign, CChar2), ii))
+            | (Some sign,   None, (Some (TBase (IntType (CChar, ii)))))   ->
+                TBase(IntType (Si (sign, CChar2), ii))
 
-    | (None, Some Long,(Some(TBase(FloatType (CDouble, ii)))))    ->
-        TBase (FloatType (CLongDouble, ii))
+            | (None, Some Long,(Some(TBase(FloatType (CDouble, ii)))))    ->
+                TBase (FloatType (CLongDouble, ii))
 
-    | (Some _,_, Some _) ->
-        raise (Semantic("signed, unsigned valid only for char and int", List.hd iit))
-    | (_,Some _,(Some(TBase(FloatType ((CFloat|CLongDouble), _))))) ->
-        raise (Semantic ("long or short specified with floatint type", List.hd iit))
-    | (_,Some Short,(Some(TBase(FloatType (CDouble, _))))) ->
-        raise (Semantic ("the only valid combination is long double", List.hd iit))
+            | (Some _,_, Some _) ->
+                error "signed, unsigned valid only for char and int" (List.hd iit)
+            | (_,Some _,(Some(TBase(FloatType ((CFloat|CLongDouble), _))))) ->
+                error "long or short specified with floatint type" (List.hd iit)
+            | (_,Some Short,(Some(TBase(FloatType (CDouble, _))))) ->
+                error "the only valid combination is long double" (List.hd iit)
 
-    | (_, Some _, Some _) ->
-        (* mine *)
-        raise (Semantic ("long, short valid only for int or float", List.hd iit))
+            | (_, Some _, Some _) ->
+                (* mine *)
+                error "long, short valid only for int or float" (List.hd iit)
 
-    (* if do short uint i, then gcc say parse error, strange ? it is
-     * not a parse error, it is just that we dont allow with typedef
-     * either short/long or signed/unsigned. In fact, with
-     * parse_typedef_fix2 (with et() and dt()) now I say too parse
-     * error so this code is executed only when do short struct
-     * {....} and never with a typedef cos now we parse short uint i
-     * as short ident ident => parse error (cos after first short i
-     * pass in dt() mode) *)
-   )), st, mods
+            (* if do short uint i, then gcc say parse error, strange ? it is
+             * not a parse error, it is just that we dont allow with typedef
+             * either short/long or signed/unsigned. In fact, with
+             * parse_typedef_fix2 (with et() and dt()) now I say too parse
+             * error so this code is executed only when do short struct
+             * {....} and never with a typedef cos now we parse short uint i
+             * as short ident ident => parse error (cos after first short i
+             * pass in dt() mode) *)
+        *)
+  in
+  (qu, ty), st, mods
 
 
 let id_of_dname_for_typedef dname =
   match dname with
   | DN (None, [], IdIdent id) -> id
-  | _ ->
-      raise
-        (Parse_info.Other_error
-           ("expecting an ident for typedef", ii_of_dname dname))
+  | _ -> error "expecting an ident for typedef" (ii_of_dname dname)
 
 
 let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
@@ -231,9 +252,7 @@ let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
            | DNStructuredBinding ids, Some ini ->
                StructuredBinding (v_type, ids, ini)
            | DNStructuredBinding _ids, None ->
-               raise
-                 (Parse_info.Other_error
-                    ("expecting an init for structured_binding", ii_of_dname dn))
+               error "expecting an init for structured_binding" (ii_of_dname dn)
       )
 
 let type_and_specs_from_decl decl =
@@ -244,20 +263,20 @@ let type_and_specs_from_decl decl =
   | Sto (Register, ii) ->
       t, [ST (Register, ii)]
   | StoTypedef ii | Sto (_, ii) ->
-      raise (Semantic ("storage class specified for parameter of function", ii))
+      error "storage class specified for parameter of function" ii
 
 let fixNameForParam (name, ftyp) =
   match name with
   | None, [], IdIdent id -> id, ftyp
   | _ ->
       let ii =  Lib_parsing_cpp.ii_of_any (Name name) |> List.hd in
-      raise (Semantic ("parameter have qualifier", ii))
+      error "parameter have qualifier" ii
 
 let type_and_storage_for_funcdef_from_decl decl =
   let (returnType, storage, _inline) = type_and_storage_from_decl decl in
   (match storage with
    | StoTypedef tok ->
-       raise (Semantic ("function definition declared 'typedef'", tok))
+       error "function definition declared 'typedef'" tok
    | _x -> (returnType, storage)
   )
 
@@ -283,7 +302,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
       (match Ast.unparen params with
        | [P {p_name = None; p_type = ty2;_}] ->
            (match Ast.unwrap_typeC ty2 with
-            | TBase (Void _) -> ty
+            | TPrimitive (TVoid, _) -> ty
             | _ ->
                 (* less: there is some valid case actually, when use interfaces
                  * and generic callbacks where specific instances do not
@@ -318,7 +337,7 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
   | _ ->
       (* gcc says parse error but I dont see why *)
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
-      raise (Semantic ("seems this is not a function", ii))
+      error "seems this is not a function" ii
 
 (* TODO: this is ugly ... use record! *)
 let fixFunc ((name, ty, _stoTODO), cp) =
@@ -330,7 +349,7 @@ let fixFunc ((name, ty, _stoTODO), cp) =
       (match Ast.unparen params with
        | [P {p_name= None; p_type = ty2;_}] ->
            (match Ast.unwrap_typeC ty2 with
-            | TBase (Void _) -> ()
+            | TPrimitive (TVoid, _) -> ()
             (* failwith "internal errror: fixOldCDecl not good" *)
             | _ -> ()
            )
@@ -345,7 +364,7 @@ let fixFunc ((name, ty, _stoTODO), cp) =
       ent, { f_type = ftyp; (* TODO move in f_specs f_storage = sto; *) f_body = cp; f_specs = [] }
   | _ ->
       let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
-      raise (Semantic ("function definition without parameters", ii))
+      error "function definition without parameters" ii
 
 let fixFieldOrMethodDecl (xs, semicolon) : class_member =
   match xs with
@@ -357,7 +376,7 @@ let fixFieldOrMethodDecl (xs, semicolon) : class_member =
         | Some (EqInit(tokeq, InitExpr(C(Int (Some 0, iizero))))) ->
             FBZero (tokeq, iizero, semicolon)
         | _ ->
-            raise (Semantic ("can't assign expression to method decl", semicolon))
+            error "can't assign expression to method decl" semicolon
       in
       let def = { f_type = ft; f_body = fbody; f_specs = [] } in
       F (Func (ent, def))
@@ -376,7 +395,7 @@ let mk_funcall e1 args =
 let mk_constructor id (lp, params, rp) cp =
   let params = Common.optlist_to_list params in
   let ftyp = {
-    ft_ret = nQ, (TBase (Void (fake (snd id) "void")));
+    ft_ret = nQ, (TPrimitive (TVoid, snd id));
     ft_params= (lp, params, rp);
     ft_specs = [];
     (* TODO *)
@@ -390,7 +409,7 @@ let mk_constructor id (lp, params, rp) cp =
 
 let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
-    ft_ret = nQ, (TBase (Void (fake (snd id) "void")));
+    ft_ret = nQ, (TPrimitive (TVoid, (snd id)));
     ft_params= (lp,  [], rp);
     ft_specs = [];
     ft_const = None;

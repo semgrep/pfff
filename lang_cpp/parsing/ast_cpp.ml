@@ -167,13 +167,10 @@ and a_ident_name = name (* only IdIdent *)
 *)
 and type_ = type_qualifiers * typeC
 and typeC =
-  (* TODO: delete TBase *)
-  | TBase        of baseType
-
   | TPrimitive   of primitive_type wrap
-  (* The list is non empty and can contain duplicates,
-   * because 'long long' is not the same than just 'long'.
-   * The type_ below is either Tprimitive or TypeName of IdIdent.
+  (* The list below is non empty and can contain duplicates.
+   * Indeed, 'long long' is not the same than just 'long'.
+   * The type_ below is either a TPrimitive or TypeName of IdIdent.
   *)
   | TSized of sized_type wrap list * type_ option (*  *)
 
@@ -218,32 +215,6 @@ and typeC =
 
   (* TODO: TypeDots, DeclType *)
   | TypeTodo of todo_category * type_ list
-
-(* TODO: simplify, it is now possible to do 'signed foo' so make
- * sign and base possible qualifier?
-*)
-and  baseType =
-  | Void of tok
-  | IntType   of intType   * tok (* TOFIX there should be * tok list *)
-  | FloatType of floatType * tok (* TOFIX there should be * tok list *)
-
-(* TODO: delete *)
-(* stdC: type section. 'char' and 'signed char' are different *)
-and intType   =
-  | CChar (* obsolete? | CWchar  *)
-  | Si of signed
-  (* c++ext: maybe could be put in baseType instead ? *)
-  | CBool | WChar_t
-
-and signed = sign * base
-and base =
-  | CChar2 | CShort | CInt | CLong
-  (* gccext: *)
-  | CLongLong
-and sign = Signed | UnSigned
-
-(* TODO: delete *)
-and floatType = CFloat | CDouble | CLongDouble
 
 (* old: had a more precise 'intType' and 'floatType' with 'sign * base'
  * but not worth it, and tree-sitter-cpp allows any sized types
@@ -384,20 +355,21 @@ and action_macro =
  * note: '-2' is not a constant; it is the unary operator '-'
  * applied to the constant '2'. So the string must represent a positive
  * integer only.
+ * old: the Int and Float had a intType and floatType, and Char and
+ * String had isWchar param, but not worth it.
 *)
 and constant =
-  | Int    of (int option wrap  (* * intType*))
-  | Float  of (float option wrap * floatType)
-  | Char   of (string wrap * isWchar) (* normally it is equivalent to Int *)
-  | String of (string wrap * isWchar)
+  | Int    of int option wrap
+  (* the wrap can contain the f/F/l/L suffix *)
+  | Float  of float option wrap
+  | Char   of string wrap (* normally it is equivalent to Int *)
+  (* the wrap can contain the L/u/U/u8 prefix *)
+  | String of string wrap
 
   | MultiString of string wrap list  (* can contain MacroString *)
   (* c++ext: *)
   | Bool of bool wrap
   | Nullptr of tok
-
-(* TODO? remove? *)
-and isWchar = IsWchar | IsChar
 
 and unaryOp  =
   | UnPlus |  UnMinus | Tilde | Not
@@ -1066,6 +1038,10 @@ let expr_of_id id =
   N (name_of_id id, noIdInfo())
 let expr_to_arg e =
   Arg e
+
+(* often used for fake return type for constructor *)
+let tvoid ii =
+  nQ, TPrimitive (TVoid, ii)
 
 (* When want add some info in AST that does not correspond to
  * an existing C element.

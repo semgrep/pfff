@@ -446,9 +446,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
            | _ -> tag ii Comment
           )
 
-    | T.TInt (_,ii) | T.TFloat ((_,ii), _) ->
+    | T.TInt (_,ii) | T.TFloat (_,ii) ->
         tag ii Number
-    | T.TString ((_s,ii), _) | T.TChar ((_s,ii), _) ->
+    | T.TString (_s,ii) | T.TChar (_s,ii) ->
         tag ii String
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean

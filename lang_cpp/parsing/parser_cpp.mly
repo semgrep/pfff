@@ -70,9 +70,9 @@ module PI = Parse_info
 (*-----------------------------------------*)
 (* The C tokens *)
 (*-----------------------------------------*)
-%token <int option * Parse_info.t>                       TInt
-%token <(float option * Parse_info.t) * Ast_cpp.floatType> TFloat
-%token <(string * Parse_info.t) * Ast_cpp.isWchar>   TChar TString
+%token <int option * Parse_info.t>   TInt
+%token <float option * Parse_info.t> TFloat
+%token <string * Parse_info.t>       TChar TString
 
 %token <string * Parse_info.t> TIdent
 (* fresh_token: appear after some fix_tokens in parsing_hack.ml *)
@@ -745,7 +745,7 @@ capture:
 (*----------------------------*)
 
 string_elem:
- | TString            { fst $1 }
+ | TString            { $1 }
  (* cppext:  ex= printk (KERN_INFO "xxx" UTS_RELEASE)  *)
  | TIdent_MacroString { "<MACRO>", $1 }
 
@@ -774,16 +774,16 @@ argument:
 const_expr: cond_expr { $1  }
 
 basic_type_2:
- | Tchar_Constr    { (TBase (IntType (CChar, $1))) }
- | Tint_Constr     { (TBase (IntType (Si (Signed,CInt), $1)))}
- | Tfloat_Constr   { (TBase (FloatType (CFloat, $1))) }
- | Tdouble_Constr  { (TBase (FloatType (CDouble, $1))) }
+ | Tchar_Constr    { TPrimitive (TChar, $1) }
+ | Tint_Constr     { TPrimitive (TInt, $1) }
+ | Tfloat_Constr   { TPrimitive (TFloat, $1) }
+ | Tdouble_Constr  { TPrimitive (TDouble, $1) }
 
- | Twchar_t_Constr { (TBase (IntType (WChar_t, $1))) }
+ | Twchar_t_Constr { TypeName (name_of_id ("wchar_t", $1)) }
 
- | Tshort_Constr   { (TBase (IntType (Si (Signed, CShort), $1))) }
- | Tlong_Constr    { (TBase (IntType (Si (Signed, CLong), $1))) }
- | Tbool_Constr    { (TBase (IntType (CBool, $1))) }
+ | Tshort_Constr   { TSized ([TShort, $1], None) }
+ | Tlong_Constr    { TSized ([TLong, $1], None) }
+ | Tbool_Constr    { TPrimitive (TBool, $1) }
 
 (*************************************************************************)
 (* Statements *)
@@ -926,18 +926,18 @@ type_spec:
  | class_specifier { Right3 (ClassDef $1), noii }
 
 simple_type_specifier:
- | Tvoid                { Right3 (TBase (Void $1)),            noii }
- | Tchar                { Right3 (TBase (IntType (CChar, $1))), noii}
- | Tint                 { Right3 (TBase (IntType (Si (Signed,CInt), $1))), noii}
- | Tfloat               { Right3 (TBase (FloatType (CFloat, $1))),  noii}
- | Tdouble              { Right3 (TBase (FloatType (CDouble, $1))), noii }
- | Tshort               { Middle3 Short,  [$1]}
- | Tlong                { Middle3 Long,   [$1]}
- | Tsigned              { Left3 Signed,   [$1]}
- | Tunsigned            { Left3 UnSigned, [$1]}
+ | Tvoid                { Right3 (TPrimitive (TVoid, $1)), noii }
+ | Tchar                { Right3 (TPrimitive (TChar, $1)), noii }
+ | Tint                 { Right3 (TPrimitive (TInt, $1)), noii }
+ | Tfloat               { Right3 (TPrimitive (TFloat, $1)),  noii }
+ | Tdouble              { Right3 (TPrimitive (TDouble, $1)), noii }
+ | Tshort               { Middle3 (Short $1),  noii}
+ | Tlong                { Middle3 (Long $1),   noii}
+ | Tsigned              { Left3 (Signed $1),   noii}
+ | Tunsigned            { Left3 (UnSigned $1), noii}
  (*c++ext: *)
- | Tbool                { Right3 (TBase (IntType (CBool, $1))), noii }
- | Twchar_t             { Right3 (TBase (IntType (WChar_t, $1))), noii }
+ | Tbool                { Right3 (TPrimitive (TBool, $1)), noii }
+ | Twchar_t             { Right3 (TypeName (name_of_id ("wchar_t", $1))), noii}
 
  (* gccext: *)
  | Ttypeof "(" assign_expr ")" { Right3(TypeOf ($1,($2,Right $3,$4))), noii}
@@ -950,7 +950,7 @@ simple_type_specifier:
  | type_cplusplus_id { Right3 (TypeName $1), noii }
 
  (* c++0x: *)
- | decltype_specifier { Middle3 Long, [$1] }
+ | decltype_specifier { Middle3 (Long $1), [$1] }
 
 decltype_specifier:
  (* c++0x: TODO *)
@@ -1629,11 +1629,11 @@ asmbody:
 colon_asm: ":" listc(colon_option) { Colon ($1, $2) }
 
 colon_option:
- | TString                  { ColonMisc [snd (fst $1)] }
- | TString "(" asm_expr ")" { ColonExpr ([snd (fst $1)], ($2, $3, $4)) }
+ | TString                  { ColonMisc [snd $1] }
+ | TString "(" asm_expr ")" { ColonExpr ([snd $1], ($2, $3, $4)) }
  (* cppext: certainly a macro *)
  | "[" TIdent "]" TString "(" asm_expr ")"
-     { ColonExpr ([$1;snd $2;$3;snd (fst $4)], ($5, $6, $7))  }
+     { ColonExpr ([$1;snd $2;$3;snd $4], ($5, $6, $7))  }
  | TIdent                   { ColonMisc [snd $1] }
  | (* empty *)              { ColonMisc [] }
 
@@ -1691,9 +1691,9 @@ template_parameter:
 (* c++ext: could also do a extern_string_opt to factorize stuff *)
 linkage_specification:
  | Textern TString declaration
-     { ExternDecl ($1, fst $2, $3) }
+     { ExternDecl ($1, $2, $3) }
  | Textern TString "{" optl(declaration_cpp+) "}"
-     { ExternList ($1, fst $2, ($3, $4, $5))}
+     { ExternList ($1, $2, ($3, $4, $5))}
 
 
 namespace_definition:

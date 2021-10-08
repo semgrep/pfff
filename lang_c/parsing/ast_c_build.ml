@@ -611,9 +611,9 @@ and expr env e =
 and constant _env x =
   match x with
   | Int (s, ii) -> A.Int (s, ii)
-  | Float ((s, ii), _) -> A.Float (s, ii)
-  | Char ((s, ii), _) -> A.Char (s, ii)
-  | String ((s, ii), _) -> A.String (s, ii)
+  | Float (s, ii) -> A.Float (s, ii)
+  | Char (s, ii) -> A.Char (s, ii)
+  | String (s, ii) -> A.String (s, ii)
   | Nullptr ii -> A.Null ii
   | Bool x -> A.Bool x
   | MultiString iis -> A.String ("TODO", iis |> List.hd |> snd)
@@ -631,58 +631,54 @@ and argument env x =
 (* ---------------------------------------------------------------------- *)
 (* Type *)
 (* ---------------------------------------------------------------------- *)
+
+and primitive_type _env (x, t) =
+  let s  =
+    match x with
+    | TVoid -> "void"
+    | TBool -> "bool"
+    | TChar -> "char"
+    | TInt -> "int"
+    | TFloat -> "float"
+    | TDouble -> "Double"
+  in
+  s, t
+
+and sized_type (x, _) =
+  match x with
+  | TSigned -> "signed"
+  | TUnsigned -> "unsigned"
+  | TShort -> "short"
+  | TLong -> "long"
+
 and full_type env x =
   let (_qu, (t)) = x in
   match t with
   | TypeTodo _ -> raise CplusplusConstruct
   | TPointer (tok, t, _) -> A.TPointer (tok, full_type env t)
   | TPrimitive (x, t) ->
-      let s  =
-        match x with
-        | TVoid -> "void"
-        | TBool -> "bool"
-        | TChar -> "char"
-        | TInt -> "int"
-        | TFloat -> "float"
-        | TDouble -> "Double"
+      A.TBase (primitive_type env (x, t))
+  | TSized (xs, baseopt) ->
+      let ys = xs |> List.map sized_type in
+      let ii = xs |> List.map snd in
+      let last_s, last_i =
+        match baseopt with
+        | None -> "", []
+        | Some t ->
+            (match unwrap_typeC t with
+             | TPrimitive (x, t) ->
+                 let (s, t) = primitive_type env (x, t) in
+                 s, [t]
+             | _ -> raise CplusplusConstruct
+            )
       in
-      A.TBase (s, t)
-
-  | TSized (_xs, _base) ->
-      failwith "TODO"
-  | TBase t ->
-      let s, ii =
-        (match t with
-         | Void ii -> "void", ii
-         | FloatType (ft, ii) ->
-             (match ft with
-              | CFloat -> "float"
-              | CDouble -> "double"
-              | CLongDouble -> "long_double"
-             ), ii
-         | IntType (it, ii) ->
-             (match it with
-              | CChar -> "char"
-              | Si (si, base) ->
-                  (match si with
-                   | Signed -> ""
-                   | UnSigned -> "unsigned_"
-                  ) ^
-                  (match base with
-                   (* 'char' is a CChar and 'unsigned char' is a Si (_, CChar2) *)
-                   | CChar2 -> "char"
-                   | CShort -> "short"
-                   | CInt -> "int"
-                   | CLong -> "long"
-                   (* gccext: *)
-                   | CLongLong -> "long_long"
-                  )
-              | CBool | WChar_t ->
-                  debug (Type x); raise CplusplusConstruct
-             ), ii
-        )
+      let iis = ii @ last_i in
+      let ii =
+        match iis with
+        | [] -> raise Impossible
+        | x::xs -> PI.combine_infos x xs
       in
-      A.TBase (s, ii)
+      A.TBase ((ys @ [ last_s ]) |> String.concat "_", ii)
 
   | TFunction ft -> A.TFunction (function_type env ft)
   | TArray ((_, eopt, _), ft) ->

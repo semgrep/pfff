@@ -512,26 +512,26 @@ rule token = parse
       { let info = tokinfo lexbuf in
         let s = char lexbuf   in
         let t = info |> tok_add_s (s ^ "'") in
-        TChar     ((s, t),   IsChar)
+        TChar (s, t)
       }
   | '"'
       { let info = tokinfo lexbuf in
         let s = string lexbuf in
         let t = info |> tok_add_s (s ^ "\"") in
-        TString   ((s, t),   IsChar)
+        TString (s, t)
       }
   (* wide character encoding, TODO L'toto' valid ? what is allowed ? *)
   | 'L' "'"
       { let info = tokinfo lexbuf in
         let s = char lexbuf   in
         let t = info |> tok_add_s (s ^ "'") in
-        TChar     ((s,t),   IsWchar)
+        TChar (s,t)
       }
   | 'L' '"'
       { let info = tokinfo lexbuf in
         let s = string lexbuf in
         let t = info |> tok_add_s (s ^ "\"") in
-        TString   ((s,t),   IsWchar)
+        TString (s,t)
       }
 
   (* Take care of the order ? No because lex try the longest match. The
@@ -553,9 +553,9 @@ rule token = parse
         )?
     ) as x { TInt (int_of_string_opt x, tokinfo lexbuf) }
 
-  | (real ['f' 'F']) as x { TFloat ((float_of_string_opt x, tokinfo lexbuf), CFloat) }
-  | (real ['l' 'L']) as x { TFloat ((float_of_string_opt x, tokinfo lexbuf), CLongDouble) }
-  | (real as x)           { TFloat ((float_of_string_opt x, tokinfo lexbuf), CDouble) }
+  | (real ['f' 'F']) as x { TFloat ((float_of_string_opt x, tokinfo lexbuf)) }
+  | (real ['l' 'L']) as x { TFloat ((float_of_string_opt x, tokinfo lexbuf)) }
+  | real as x             { TFloat ((float_of_string_opt x, tokinfo lexbuf)) }
 
   | ['0'] ['0'-'9']+
       { error (error_radix "octal" ^ tok lexbuf) lexbuf;
