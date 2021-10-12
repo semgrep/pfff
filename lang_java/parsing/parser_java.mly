@@ -313,11 +313,16 @@ compilation_unit:
   |                                         type_declaration*
     { List.flatten $1 }
 
-declaration:
+class_and_co_declaration:
  | class_declaration      { Class $1 }
  | interface_declaration  { Class $1 }
+ (* javaext: 1.? *)
  | enum_declaration       { Enum $1 }
- | method_declaration     { Method $1 }
+ | annotation_type_declaration { Class $1 }
+
+declaration:
+ | class_and_co_declaration { $1 }
+ | method_declaration       { Method $1 }
 
 
 sgrep_spatch_pattern:
@@ -379,12 +384,8 @@ import_declaration:
     { (Import ($2, ImportAll ($1, qualified_ident $3, $5)))}
 
 type_declaration:
- | class_declaration      { [DeclStmt (Class $1)] }
- | interface_declaration  { [DeclStmt (Class $1)] }
+ | class_and_co_declaration { [DeclStmt $1] }
  | ";"  { [] }
- (* javaext: 1.? *)
- | enum_declaration            { [DeclStmt (Enum $1)] }
- | annotation_type_declaration { [DeclStmt (Class $1)] }
 
 (*************************************************************************)
 (* Ident, namespace  *)
@@ -1120,14 +1121,7 @@ class_member_declaration:
 
  (* javaext: 1.? *)
  | generic_method_or_constructor_decl { [Method $1] }
- (* javaext: 1.? *)
- | class_declaration  { [Class $1] }
- | interface_declaration  { [Class $1] }
- (* javaext: 1.? *)
- | enum_declaration { [Enum $1] }
- (* javaext: 1.? *)
- | annotation_type_declaration { [Class $1] }
-
+ | class_and_co_declaration  { [$1] }
  | ";"  { [] }
  (* sgrep-ext: allows ... inside class body *)
  | "..." { [DeclEllipsis $1] }
@@ -1282,16 +1276,7 @@ interface_member_declaration:
  (* javaext: 1.? *)
  | interface_generic_method_decl { [Method $1] }
 
- (* javaext: 1.? *)
- | class_declaration      { [Class $1] }
- | interface_declaration  { [Class $1] }
-
- (* javaext: 1.? *)
- | enum_declaration       { [Enum $1] }
-
- (* javaext: 1.? *)
- | annotation_type_declaration { [Class $1] }
-
+ | class_and_co_declaration { [$1] }
  | ";"  { [] }
  (* sgrep-ext: allows ... inside interface body *)
  | "..." { [DeclEllipsis $1] }
@@ -1361,12 +1346,9 @@ annotation_type_element_declaration: annotation_type_element_rest { $1 }
 annotation_type_element_rest:
  | modifiers_opt type_ identifier annotation_method_or_constant_rest ";"
    { AnnotationTypeElementTodo (snd $3) }
-
- | class_declaration           { Class $1 }
- | enum_declaration            { Enum $1 }
- | interface_declaration       { Class $1 }
- | annotation_type_declaration { Class $1 }
-
+ | class_and_co_declaration    { $1 }
+ (* sgrep-ext: allows ... inside @interface body *)
+ | "..." { DeclEllipsis $1 }
 
 annotation_method_or_constant_rest:
  | "(" ")"                       { None }
