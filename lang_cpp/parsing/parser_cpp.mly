@@ -529,7 +529,7 @@ pm_expr:
 cast_expr:
  | unary_expr                { $1 }
  | "(" type_id ")" cast_expr { Cast (($1, $2, $3), $4) }
- (* sgrep-ext: *)
+ (* sgrep-ext: typed metavariable *)
  | "(" type_id TIdent ")" { Flag_parsing.sgrep_guard (TypedMetavar ($3, $2)) }
 
 unary_expr:
@@ -539,6 +539,8 @@ unary_expr:
  | unary_op cast_expr      { Unary ($1, $2) }
  | Tsizeof unary_expr      { SizeOf ($1, Left $2) }
  | Tsizeof "(" type_id ")" { SizeOf ($1, Right ($2, $3, $4)) }
+ (* sgrep-ext: *)
+ | Tsizeof "(" "..." ")"   { SizeOf ($1, Left (Ellipses $3)) }
  (*c++ext: *)
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -760,7 +762,7 @@ argument:
 (* cppext: *)
 (* actually this can happen also when have a wrong typedef inference ...*)
  | type_id     { ArgType $1  }
- (* sgrep-ext: *)
+ (* sgrep-ext: TODO would be better in primary_expr *)
  | "..." { Flag_parsing.sgrep_guard (Arg (Ellipses $1)) }
 
  (* put in comment while trying to parse plan9 *)
