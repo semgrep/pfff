@@ -42,11 +42,19 @@ let cons e = function
 
 let tuple_expr = function
   | Single e -> e
+  (* the fake could be set later in rewrap_paren_if_tuple below *)
   | Tup l -> Tuple (CompList (PI.unsafe_fake_bracket l), Load)
 
 let to_list = function
   | Single e -> [e]
   | Tup l -> l
+
+(* this is important for semgrep, to get the right range (and for autofix) *)
+let rewrap_paren_if_tuple l e r =
+  match e with
+  | Tuple (CompList (_, xs, _), Load) ->
+      Tuple (CompList (l, xs, r), Load)
+  | _ -> e
 
 (* TODO: TypedExpr? ExprStar? then can appear as lvalue
  * CompForIf though is not an lvalue.
@@ -692,7 +700,7 @@ atom_expr:
 atom_and_trailers:
   | atom { $1 }
 
-  | atom_and_trailers "("          ")" { Call ($1, ($2,[],$3)) }
+  | atom_and_trailers "("          ")"             { Call ($1, ($2,[],$3)) }
   | atom_and_trailers "(" list_comma(argument) ")" { Call ($1, ($2,$3,$4)) }
 
   | atom_and_trailers "[" list_comma(subscript)   "]"
@@ -814,7 +822,7 @@ format_token:
 
 atom_tuple:
   | "("               ")"         { Tuple (CompList ($1, [], $2), Load) }
-  | "(" testlist_comp_or_expr ")" { $2 }
+  | "(" testlist_comp_or_expr ")" { rewrap_paren_if_tuple $1 $2 $3 }
   | "(" yield_expr    ")"         { $2 }
 
 atom_list:
@@ -916,11 +924,7 @@ testlist_comp:
  * in parenthesis, e.g., (1) in a regular expr, not a tuple *)
 testlist_comp_or_expr:
   | namedexpr_or_star_expr comp_for  { Tuple (CompForIf ($1, $2), Load) }
-  | tuple(namedexpr_or_star_expr)    {
-    match $1 with
-    | Single e -> e
-    | Tup l -> Tuple (CompList (PI.unsafe_fake_bracket l), Load)
-   }
+  | tuple(namedexpr_or_star_expr)    { tuple_expr $1 }
 
 (* supports comp_for when used generically -- not inside atom_list
  * Note that the division here is necessary to solve a shift-reduce conflict between:
@@ -946,9 +950,7 @@ listcomp_for:
  | ASYNC listsync_comp_for { (* TODO *) $2 }
 
 list_for:
-  or_test "," list_for_rest {
-    List (CompList (PI.unsafe_fake_bracket ($1::$3)), Load)
-  }
+  or_test "," list_for_rest { tuple_expr (Tup ($1::$3)) }
 
 list_for_rest:
   | or_test                   { [$1] }
