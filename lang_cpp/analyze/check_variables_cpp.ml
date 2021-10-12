@@ -168,7 +168,7 @@ let visit_prog prog =
                          add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
                        );
                        (*| _ -> () *)
-                   | ParamDots _ -> ()
+                   | ParamEllipsis _ -> ()
                   );
                   k param
                 );

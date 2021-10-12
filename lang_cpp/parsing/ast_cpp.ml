@@ -322,7 +322,7 @@ and expr =
   | ParenExpr of expr paren
 
   (* sgrep-ext: *)
-  | Ellipses of tok
+  | Ellipsis of tok
   | DeepEllipsis of expr bracket
   | TypedMetavar of ident * type_
 
@@ -515,8 +515,6 @@ and handler =
 
 and exception_declaration =
   | ExnDecl of parameter
-  (* sgrep-ext? *)
-  | ExnDeclEllipsis of tok
 
 (*****************************************************************************)
 (* Stmt or Decl *)
@@ -721,7 +719,7 @@ and parameter =
   | ParamVariadic of tok option (* &/&& *) * tok (* ... *) *
                      parameter_classic (* p_val = None and p_name = None *)
   (* sgrep-ext: also part of C, in which case it must be the last parameter *)
-  | ParamDots of tok
+  | ParamEllipsis of tok
 
 and parameter_classic = {
   p_name: ident option;

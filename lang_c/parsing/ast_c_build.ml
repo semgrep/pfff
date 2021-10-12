@@ -257,7 +257,7 @@ and parameter env x =
                          );
                        p_type = full_type env t;
                      }
-  | ParamDots t -> A.ParamDots t
+  | ParamEllipsis t -> A.ParamDots t
   | ParamVariadic _ -> debug (Parameter x); raise CplusplusConstruct
 
 (* ---------------------------------------------------------------------- *)
@@ -540,7 +540,7 @@ and expr env e =
   | C cst -> constant env cst
 
   | N (n, _) -> A.Id (name env n)
-  | Ellipses tok -> A.Ellipses tok
+  | Ellipsis tok -> A.Ellipses tok
   | DeepEllipsis v1 -> let v1 = bracket_keep (expr env) v1 in A.DeepEllipsis v1
 
   | DotAccess (e, (Dot, t), n) ->

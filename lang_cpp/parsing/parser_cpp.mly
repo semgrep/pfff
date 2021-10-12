@@ -320,11 +320,9 @@ toplevel_aux:
 (*************************************************************************)
 
 sgrep_spatch_pattern:
- | expr                 EOF  { Expr $1 }
- | statement            EOF  { Stmt $1 }
- | statement statement+ EOF  { Stmts ($1::$2) }
-
- | cpp_directive        EOF  { Toplevel (CppDirective $1) }
+ | expr                                         EOF  { Expr $1 }
+ | statement_or_decl_cpp                        EOF  { Toplevel ($1) }
+ | statement_or_decl_cpp statement_or_decl_cpp+ EOF  { Toplevels ($1::$2) }
 
 (*************************************************************************)
 (* Ident, scope *)
@@ -540,7 +538,7 @@ unary_expr:
  | Tsizeof unary_expr      { SizeOf ($1, Left $2) }
  | Tsizeof "(" type_id ")" { SizeOf ($1, Right ($2, $3, $4)) }
  (* sgrep-ext: *)
- | Tsizeof "(" "..." ")"   { SizeOf ($1, Left (Ellipses $3)) }
+ | Tsizeof "(" "..." ")"   { SizeOf ($1, Left (Ellipsis $3)) }
  (*c++ext: *)
  | new_expr      { $1 }
  | delete_expr   { $1 }
@@ -763,7 +761,7 @@ argument:
 (* actually this can happen also when have a wrong typedef inference ...*)
  | type_id     { ArgType $1  }
  (* sgrep-ext: TODO would be better in primary_expr *)
- | "..." { Flag_parsing.sgrep_guard (Arg (Ellipses $1)) }
+ | "..." { Flag_parsing.sgrep_guard (Arg (Ellipsis $1)) }
 
  (* put in comment while trying to parse plan9 *)
  (* was especially used for the Linux kernel *)
@@ -807,7 +805,7 @@ statement:
  (* c++ext: *)
  | try_block { $1 }
  (* sgrep-ext: *)
- | "..." { Flag_parsing.sgrep_guard (ExprStmt (Some (Ellipses $1), $1)) }
+ | "..." { Flag_parsing.sgrep_guard (ExprStmt (Some (Ellipsis $1), $1)) }
 
 compound: "{" statement_or_decl_cpp* "}" { ($1, $2, $3) }
 
@@ -921,7 +919,9 @@ handler: Tcatch "(" exception_decl ")" compound { ($1, ($2, $3, $4), $5) }
 
 exception_decl:
  | parameter_decl { [ExnDecl $1] }
+ (* old: but now handled via sgrep-ext: in parameter_decl
  | "..."          { [ExnDeclEllipsis $1] }
+ *)
 
 (*************************************************************************)
 (* Types *)
@@ -1123,9 +1123,12 @@ direct_abstract_declarator:
 (*-----------------------------------------------------------------------*)
 (* Parameters (use decl_spec_seq not type_spec just for 'register') *)
 (*-----------------------------------------------------------------------*)
+%inline
 parameter_type_list:
  | parameter_list           { $1 }
+ (* old: but with sgrep-ext: part of parameter_decl
  | parameter_list "," "..." { $1 @ [ParamDots $3] }
+ *)
 
 parameter_decl:
  | decl_spec_seq declarator
@@ -1151,6 +1154,8 @@ parameter_decl:
  | decl_spec_seq "=" assign_expr
      { let (t_ret, p_specs) = type_and_specs_from_decl $1 in
        P (make_param t_ret ~p_specs ~p_val:(Some($2,$3)) ) }
+ (* sgrep-ext: allowed only in last position in C, or in exn in C++ *)
+ | "..." { ParamEllipsis $1 }
 
 (*----------------------------*)
 (* workarounds *)
