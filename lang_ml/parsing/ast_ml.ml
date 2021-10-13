@@ -326,6 +326,7 @@ and mutable_opt = tok option (* mutable *)
 (* ------------------------------------------------------------------------- *)
 type module_declaration = {
   mname: ident;
+  (* TODO: mparams: for functors *)
   mbody: module_expr;
 }
 

@@ -396,7 +396,7 @@ just_in_structure:
         | Some (_x, y) -> Module ($1, { mname = $2; mbody = y })
       }
  | Tinclude module_expr
-   { ItemTodo (("Include",$1), [] (* TODO $2 *)) }
+   { ItemTodo (("Include",$1), [] (* TODOAST $2 *)) }
 
  (* objects *)
  | Tclass list_and(class_declaration)
@@ -468,6 +468,7 @@ mod_longident:
 mod_ext_longident:
  | TUpperIdent                                 { [], $1 }
  | mod_ext_longident "." TUpperIdent           { qufix $1 $2 $3 }
+ (* TODOAST *)
  | mod_ext_longident "(" mod_ext_longident ")" { [], ("TODOEXTMO", $2) }
 
 
@@ -512,7 +513,7 @@ expr:
      { let (params, (_tok, e)) = $3 in
        Fun ($1, $2::params, e) }
 
- (* TODO: (type a) is ignored for now *)
+ (* TODOAST: (type a) is ignored for now *)
  | Tfun "(" Ttype TLowerIdent+ ")" fun_def
      { let (params, (_tok, e)) = $6 in
        Fun ($1, params, e) }
@@ -846,7 +847,7 @@ type_constraint:
 (* Types definitions *)
 (*----------------------------*)
 
-type_declaration: type_parameters TLowerIdent type_kind (*TODO constraints*)
+type_declaration: type_parameters TLowerIdent type_kind (*TODOAST constraints*)
    { let tparams = $1 |> List.map (fun id -> TyParam id) in
      match $3 with
      | None ->
@@ -901,12 +902,12 @@ core_type:
 
  (* ext: olabl *)
  | TLowerIdent     ":" core_type "->" core_type
-     { TyFunction ($3, $5) (* TODO $1 $2 *)  }
+     { TyFunction ($3, $5) (* TODOAST $1 $2 *)  }
  | "?" TLowerIdent ":" core_type "->" core_type
-     { TyFunction ($4, $6) (* TODO $1 $2 *)  }
+     { TyFunction ($4, $6) (* TODOAST $1 $2 *)  }
  (* pad: only because of lexer hack around labels *)
  | TOptLabelDecl    core_type "->" core_type
-     { TyFunction ($2, $4) (* TODO $1 $2 *)  }
+     { TyFunction ($2, $4) (* TODOAST $1 $2 *)  }
 
 
 simple_core_type_or_tuple:
@@ -1003,7 +1004,7 @@ strict_binding:
  | "=" seq_expr  { [], (None, $1, $2) }
  (* function values, e.g. 'let x a b c = 1' *)
  | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
- (* TODO: add in AST *)
+ (* TODOAST *)
  | "(" Ttype TLowerIdent+ ")" fun_binding { $5 }
 
 fun_def:
@@ -1044,11 +1045,11 @@ label_let_pattern:
 (* Class types *)
 (*----------------------------*)
 class_description: Tvirtual? class_type_parameters TLowerIdent ":" class_type
-  { mki (ItemTodo (("ClassDescr", $4), [])) (* TODO $5 *)}
+  { mki (ItemTodo (("ClassDescr", $4), [])) (* TODOAST $5 *)}
 
 class_type_declaration:
   Tvirtual? class_type_parameters TLowerIdent "=" class_signature
-  { mki (ItemTodo (("ClassTypeDecl", $4), [])) (* TODO $5 *) }
+  { mki (ItemTodo (("ClassTypeDecl", $4), [])) (* TODOAST $5 *) }
 
 class_type:
   | class_signature { }
@@ -1101,9 +1102,9 @@ class_type_parameters:
 
 class_fun_binding:
   | class_typed? "=" class_expr
-    { mki (ItemTodo (("ClassExpr", $2), [] (* TODO *))) }
+    { mki (ItemTodo (("ClassExpr", $2), [] (* TODOAST *))) }
   | labeled_simple_pattern  class_fun_binding
-    { (* TODO $1 *) $2 }
+    { (* TODOAST $1 *) $2 }
 
 class_typed: ":" class_type { }
 
@@ -1124,7 +1125,7 @@ class_simple_expr:
   | "(" class_expr ")"                             { }
 
 object_expression: Tobject class_structure Tend
-  { ExprTodo (("Object", $1), [](* TODO *)) }
+  { ExprTodo (("Object", $1), [](* TODOAST *)) }
 
 
 class_fun_def:
@@ -1174,8 +1175,9 @@ concrete_method:
 (*************************************************************************)
 
 module_binding:
- | "=" module_expr                                     { Some ($1, $2) }
- | "(" TUpperIdent ":" module_type ")" module_binding  { None }
+ |                 "=" module_expr                      { Some ($1, $2) }
+(* TODOAST params and signature  *)
+ | "(" TUpperIdent ":" module_type ")" module_binding  { $6 }
  | ":" module_type "=" module_expr                     { (*$1 *) Some($3, $4) }
 
 module_declaration:
