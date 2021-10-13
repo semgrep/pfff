@@ -228,12 +228,13 @@ type expr =
 (* less: use for Assign, can be Id, Tuple, Array, more? *)
 and lhs = expr
 
+(* less: ArgSplat, ArgHashSplat, ArgBlock *)
 and argument =
   | Arg of expr
-  (* less: ArgSplat, ArgHashSplat, ArgBlock *)
-  (* Ruby 2.0 argument keywords. Note that currently
+  (* Ruby 2.0 keyword argument. Note that currently
    * only the 'k: v' format is supported. Old style keyword args like
    * ':k => v' are not converted to ArgKwd.
+   * They are converted to AST_generic.ArgKwd in ruby_to_generic.ml though.
   *)
   | ArgKwd of ident * tok (* : *) * expr
 
