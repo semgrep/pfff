@@ -14,7 +14,6 @@
 *)
 open Common
 
-module Flag = Flag_parsing
 module Flag_cpp = Flag_parsing_cpp
 module PI = Parse_info
 
@@ -23,10 +22,7 @@ module TH = Token_helpers_cpp
 open Parser_cpp
 open Token_views_cpp
 
-(*****************************************************************************)
-(* Wrappers  *)
-(*****************************************************************************)
-let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
+let logger = Logging.get_logger [__MODULE__]
 
 (*****************************************************************************)
 (* Helpers  *)
@@ -56,15 +52,15 @@ let pos ii = Parse_info.string_of_info ii
 
 let pr2_pp s =
   if !Flag_cpp.debug_pp
-  then Common.pr2 ("PP-" ^ s)
+  then logger#sinfo ("PP-" ^ s)
 
 let pr2_cplusplus s =
   if !Flag_cpp.debug_cplusplus
-  then Common.pr2 ("C++-" ^ s)
+  then logger#sinfo ("C++-" ^ s)
 
 let pr2_typedef s =
   if !Flag_cpp.debug_typedef
-  then Common.pr2 ("TYPEDEF-" ^ s)
+  then logger#sinfo ("TYPEDEF-" ^ s)
 
 
 let msg_change_tok tok =
@@ -238,7 +234,7 @@ let change_tok extended_tok tok =
    * some ifdef-exp?
   *)
   if TH.is_eof extended_tok.t
-  then pr2 "PB: wierd, I try to tag an EOF token as something else"
+  then logger#error "PB: wierd, I try to tag an EOF token as something else"
   else extended_tok.t <- tok
 
 let fresh_tok tok =

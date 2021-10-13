@@ -325,6 +325,7 @@ let find_typedefs xxs =
     (* [(,] xx [),] where InParameter *)
     (* hmmm: todo: some false positives on InParameter, see mini/constants.c,
      * so now simpler to add a TIdent in the parameter_decl rule
+     * Use -token_views_cpp to debug InParameter false positives issues.
     *)
     | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
       ::({t=(TCPar _ | TComma _)} as tok2)::xs ->

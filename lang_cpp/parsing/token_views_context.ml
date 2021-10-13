@@ -106,7 +106,7 @@ let look_like_typedef s =
  *
  * Many patterns should mimic some heuristics in parsing_hack_typedef.ml
 *)
-let look_like_parameter tok_before xs =
+let look_like_parameter_bis tok_before xs =
 
   (* normalize for C++ *)
   let xs = xs |> List.map (function
@@ -165,6 +165,13 @@ let look_like_parameter tok_before xs =
   in
   xxs |> List.exists aux1 || aux xs
 
+(* TODO: lots of things can mean it's not a parameter, like
+ * a ';' in xs
+*)
+let look_like_parameter tok_before xs =
+  match tok_before with
+  | Tok { t = Tfor _ } -> false
+  | _ -> look_like_parameter_bis tok_before xs
 
 (*****************************************************************************)
 (* Main heuristics *)
