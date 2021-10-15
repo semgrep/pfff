@@ -54,8 +54,11 @@ type 'a bracket = tok * 'a * tok
 type ident = string wrap
 [@@deriving show] (* with tarzan *)
 
+(* a.k.a longident in the OCaml source.
+ * TODO: Lident of string | LDot of t * string | Lapply of t * t
+*)
 type name = qualifier * ident
-and qualifier = ident list (* TODO: functor? *)
+and qualifier = ident list
 [@@deriving show] (* with tarzan *)
 
 type todo_category = string wrap
