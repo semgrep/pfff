@@ -342,9 +342,16 @@ item_list:
 import:
 |   LIMPORT import_stmt
       { [$2 $1] }
-|   LIMPORT "(" listsc_t(import_stmt) ")"
-      {List.map (fun f -> f $1) $3 }
+|   LIMPORT "(" listsc_t(import_stmt_or_dots) ")"
+      { $3 |> Common.filter_some |> List.map (fun f -> f $1) }
 |   LIMPORT "(" ")" { [] }
+
+import_stmt_or_dots:
+ | import_stmt { Some $1 }
+ (* sgrep-ext: simpler to just filter them.
+  * Anyway 'import (a; b)' is translated in 'import a; import b'
+ *)
+ | "..." { Flag_parsing.sgrep_guard None }
 
 import_stmt:
 |        LSTR
