@@ -347,7 +347,9 @@ let string_of_token_location x =
   spf "%s:%d:%d" x.file x.line x.column
 
 let string_of_info x =
-  string_of_token_location (unsafe_token_location_of_info x)
+  match token_location_of_info x with
+  | Ok loc -> string_of_token_location loc
+  | Error msg -> spf "unknown location (%s)" msg
 
 let str_of_info  ii =
   match ii.token  with
