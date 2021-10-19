@@ -741,8 +741,9 @@ and function_body =
   | FBDecl of sc
   (* c++ext: only for methods *)
   | FBZero of tok (* '=' *) * tok (* '0' *) * sc
-  (* c++0x? *)
+  (* c++11: defaulted functions *)
   | FBDefault of tok (* '=' *) * tok (* 'default' *) * sc
+  (* c++11: deleted functions *)
   | FBDelete of tok (* '=' *) * tok (* 'delete' *) * sc
 
 and lambda_definition = lambda_capture list bracket * function_definition
@@ -849,7 +850,7 @@ and modifier =
   (* msext: just for functions *)
   | MsCall of string wrap (* msext: e.g., __cdecl, __stdcall *)
   (* c++ext: just for constructor *)
-  | Explicit of tok * expr paren option
+  | Explicit of tok (* 'explicit' *) * expr paren option
 
 (* used in inheritance spec (base_clause) and class_member *)
 and access_spec = Public | Private | Protected
