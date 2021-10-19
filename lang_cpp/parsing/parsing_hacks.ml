@@ -298,13 +298,17 @@ let fix_tokens_cpp ~macro_defs tokens =
    * a better filter_for_typedef that also
    * works on the nested template arguments.
   *)
-  Parsing_hacks_cpp.find_template_commentize multi_grouped;
+  (* COMMENT OR STUFF NOT IN AST
+     Parsing_hacks_cpp.find_template_commentize multi_grouped;
+  *)
   let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   (* must be done before the qualifier filtering *)
   Parsing_hacks_cpp.find_constructor_outside_class cleaner;
 
-  Parsing_hacks_cpp.find_qualifier_commentize cleaner;
+  (* COMMENT OR STUFF NOT IN AST
+     Parsing_hacks_cpp.find_qualifier_commentize cleaner;
+  *)
   let cleaner = !tokens2 |> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let multi_grouped = TV.mk_multi cleaner in
@@ -312,6 +316,10 @@ let fix_tokens_cpp ~macro_defs tokens =
 
   Parsing_hacks_cpp.find_constructor cleaner;
 
+  (* TODO: need improve if we do not call find_template_commentize and
+   * find_qualifier_commentize. We need to find a way to skip those
+   * tokens just temporarily, and then put them back.
+  *)
   let xxs = Parsing_hacks_typedef.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
 

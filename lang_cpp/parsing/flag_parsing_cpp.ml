@@ -35,13 +35,14 @@ let filter_define_error = ref true
 
 let debug_typedef = ref true
 let debug_pp = ref true
+let debug_cplusplus = ref true
+
 let debug_pp_ast  = ref false
-let debug_cplusplus = ref false
 
 let cmdline_flags_debugging () = [
   "-no_debug_pp",          Arg.Clear  debug_pp, " ";
   "-no_debug_typedef",     Arg.Clear  debug_typedef, "  ";
-  "-debug_cplusplus",   Arg.Set  debug_cplusplus, " ";
+  "-no_debug_cplusplus",   Arg.Clear  debug_cplusplus, " ";
 
   "-debug_cpp", Arg.Unit (fun () ->
     debug_pp := true;
