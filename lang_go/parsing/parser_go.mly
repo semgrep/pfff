@@ -199,7 +199,7 @@ let rev_and_fix_items xs =
 (* operators *)
 %token <Ast_go.tok>
   LPLUS LMINUS LMULT "*" LDIV LPERCENT
-  LPIPE LAND LHAT
+  LPIPE LAND "&" LHAT
   LANDAND LOROR
   LANDNOT
   LINC LDEC
@@ -596,7 +596,7 @@ expr:
 |   expr "*" expr    { mk_bin $1 Mult $2 $3 }
 |   expr LDIV expr     { mk_bin $1 Div $2 $3 }
 |   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
-|   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
+|   expr "&" expr     { mk_bin $1 BitAnd $2 $3 }
 |   expr LANDNOT expr  { mk_bin $1 BitNot (* BitAndNot aka BitClear *) $2 $3 }
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
@@ -612,7 +612,7 @@ uexpr:
 |   pexpr { $1 }
 
 |   "*" uexpr { Deref ($1, $2)}
-|   LAND uexpr
+|   "&" uexpr
     {
            (* // Special case for &T{...}: turn into ( *T){...}. *)
       Ref ($1, $2)
@@ -880,7 +880,7 @@ expr_no_dots:
 |   expr "*" expr    { mk_bin $1 Mult $2 $3 }
 |   expr LDIV expr     { mk_bin $1 Div $2 $3 }
 |   expr LPERCENT expr { mk_bin $1 Mod $2 $3 }
-|   expr LAND expr     { mk_bin $1 BitAnd $2 $3 }
+|   expr "&" expr     { mk_bin $1 BitAnd $2 $3 }
 |   expr LANDNOT expr  { mk_bin $1 BitNot (* BitAndNot aka BitClear *) $2 $3 }
 |   expr LLSH expr     { mk_bin $1 LSL $2 $3 }
 |   expr LRSH expr     { mk_bin $1 LSR $2 $3 }
