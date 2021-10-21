@@ -1624,15 +1624,12 @@ block_declaration:
 (*----------------------------*)
 
 namespace_alias_definition: Tnamespace TIdent "=" qualified_namespace_spec ";"
-  { NameSpaceAlias ($1, $2, $3, $4, $5) }
+  { NamespaceAlias ($1, $2, $3, $4, $5) }
 
-using_directive: Tusing Tnamespace qualified_namespace_spec2 ";"
+using_directive: Tusing Tnamespace qualified_namespace_spec ";"
   { $1, UsingNamespace ($2, $3), $4 }
 
 qualified_namespace_spec: "::"? optl(nested_name_specifier) namespace_name
-  { nQ, TypeName ($1, $2, IdIdent $3) }
-
-qualified_namespace_spec2: "::"? optl(nested_name_specifier) namespace_name
   { ($1, $2, IdIdent $3) }
 
 (* conflict on TColCol in 'Tusing TColCol unqualified_id ";"'
@@ -1736,10 +1733,10 @@ namespace_definition:
  *)
 named_namespace_definition:
  | Tnamespace TIdent "{" optl(declaration_cpp+) "}"
-     { NameSpace ($1, Some $2, ($3, $4, $5)) }
+     { Namespace ($1, Some $2, ($3, $4, $5)) }
 
 unnamed_namespace_definition: Tnamespace "{" optl(declaration_cpp+) "}"
-     { NameSpace ($1, None, ($2, $3, $4)) }
+     { Namespace ($1, None, ($2, $3, $4)) }
 
 (*************************************************************************)
 (* Function definition *)

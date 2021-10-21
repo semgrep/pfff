@@ -186,8 +186,8 @@ and declaration env x =
       raise Todo
   | EmptyDef _ -> []
 
-  | UsingDecl _ | NameSpaceAlias _ | StaticAssert _
-  | NameSpace (_, _, _)
+  | UsingDecl _ | NamespaceAlias _ | StaticAssert _
+  | Namespace (_, _, _)
   | ExternList (_, _, _)|ExternDecl (_, _, _)
   | TemplateDecl _ | TemplateInstanciation _ ->
       debug (Toplevel (X (D x))); raise CplusplusConstruct

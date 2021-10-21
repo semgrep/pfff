@@ -136,6 +136,7 @@ and qualifier =
 (* special cases *)
 and a_class_name = name (* only IdIdent or IdTemplateId *)
 and a_ident_name = name (* only IdIdent *)
+and a_namespace_name = name
 
 (* less: do like in parsing_c/
  * and ident_string =
@@ -578,11 +579,11 @@ and decl =
 
   (* c++ext: using namespace *)
   | UsingDecl of using
-  (* type_ is usually just a name TODO tsonly is using, but pfff namespace?*)
-  | NameSpaceAlias of tok (*'namespace'*) * ident * tok (*=*) * type_ * sc
+  (* pfff-only: but should be added to ts too *)
+  | NamespaceAlias of tok (*'namespace'*) * ident * tok (*=*) * a_namespace_name  * sc
 
   (* the list can be empty *)
-  | NameSpace of tok * ident option * declarations
+  | Namespace of tok * ident option * declarations
 
   (* the list can be empty *)
   | ExternDecl     of tok * string wrap (* usually "C" *) * decl
@@ -889,10 +890,19 @@ and pointer_modifier =
 (*****************************************************************************)
 
 and using = tok (*'using'*) * using_kind * sc
+
+(* Actually 'using' is used for very different things in C++ (because the
+ * C++ committee hates introduce new keywords), not just for namespace.
+*)
 and using_kind =
+  (* To bring a name in scope, =~ ImportFrom *)
   | UsingName of name
+  (* =~ ImportAll *)
   | UsingNamespace of tok (*'namespace'*) * a_ident_name
-  (* tsonly: type_ is usually just a name *)
+  (* equivalent to a TypedefDecl, but
+   * 'using PF = void ( * )(double);' is clearer than old C style
+   * 'typedef void ( * PFD)(double);'
+   * tsonly: type_ is usually just a name *)
   | UsingAlias of ident * tok (*'='*) * type_
 
 (*****************************************************************************)
