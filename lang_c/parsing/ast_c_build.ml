@@ -489,6 +489,7 @@ and cases env st =
         | [] -> []
         | x::xs ->
             (match x with
+             (* TODO? what about CaseRange? *)
              | X (S ((Case (_, _, _, sts))))
              | X (S ((Default (_, _, sts))))
                ->

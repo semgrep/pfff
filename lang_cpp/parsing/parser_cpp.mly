@@ -830,10 +830,16 @@ statement_or_decl:
 
 expr_statement: expr? ";" { $1, $2 }
 
-(* note that case 1: case 2: i++;    would be correctly parsed, but with
- * a Case  (1, (Case (2, i++)))  :(  *)
+(* Note that case 1: case 2: i++;    would be correctly parsed, but with
+ * a Case  (1, (Case (2, i++)))  :(
+ * TODO: there is a single statement, but in fact what follows ':' is
+ * a list of stmt (tree-sitter-cpp does that), so
+ * case 1: i++; break' is not parsed as Case (1, [i++; break]) but instead
+ * as [Case (1, i++); break] so take care!
+*)
 labeled:
  | ident            ":" statement   { Label ($1, $2, $3) }
+ (* always a single statement [S $X] in pfff, but a list in tree-sitter-cpp *)
  | Tcase const_expr ":" statement   { Case ($1, $2, $3, [S $4]) }
  | Tdefault         ":" statement   { Default ($1, $2, [S $3]) }
   (* gccext: allow range *)

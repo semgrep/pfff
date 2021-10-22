@@ -507,7 +507,14 @@ and jump  =
   (* gccext: goto *exp *)
   | GotoComputed of tok * tok * expr
 
-(* The decl can actually only be a DeclList *)
+(* Note that pfff and tree-sitter-cpp parses differently cases.
+ * So 'case 1: case 2: i++; break;' is parsed as:
+ * - [Case (1, []); (Case (2, [i++; break]))] in tree-sitter
+ * - [Case (1, [Case (2, i++)]); break] in pfff
+ * so lots of work has to be done to make this consistent in
+ * cpp_to_generic.ml
+ * The decl below can actually only be a DeclList.
+*)
 and case_body = stmt_or_decl list
 
 (* c++ext: *)
