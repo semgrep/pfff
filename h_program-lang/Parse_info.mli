@@ -92,6 +92,15 @@ exception NoTokenLocation of string
 
 val lexical_error: string -> Lexing.lexbuf -> unit
 
+(*
+   Register printers for the exceptions defined in this module.
+
+   This makes 'Printexc.to_string' print the exceptions in a more complete
+   fashion than the default printer, which only prints ints and strings
+   and doesn't descend any deeper.
+*)
+val register_exception_printer : unit -> unit
+
 (*****************************************************************************)
 (* Info accessors and builders *)
 (*****************************************************************************)
