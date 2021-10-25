@@ -645,9 +645,9 @@ and backquote = parse
   | [^'`' '$' '\\']+ {
       T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
     }
-  | "$" {
+  | "$"[^'`' '$' '\\' '{']* {
       T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
-    }
+  }
   | '\\' {
       let buf = Buffer.create 127 in
       let info = tokinfo lexbuf in
