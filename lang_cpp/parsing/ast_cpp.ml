@@ -823,7 +823,7 @@ and class_member =
 (* c++ext: *)
 and template_parameter =
   | TP of parameter
-  | TPClass of tok (* 'class' or 'typename' *) * ident option * type_ option
+  | TPClass of tok (* 'class/typename' *) * ident option * (* '=' *) type_ option
   | TPVariadic of tok (* 'class/typename'*) * tok (* '...' *) * ident option
   (* ??? *)
   | TPNested of tok (* 'template' *) * template_parameters *
