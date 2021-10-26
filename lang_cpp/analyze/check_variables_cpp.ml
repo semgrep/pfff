@@ -169,6 +169,7 @@ let visit_prog prog =
                        );
                        (*| _ -> () *)
                    | ParamEllipsis _ -> ()
+                   | ParamTodo _ -> ()
                   );
                   k param
                 );

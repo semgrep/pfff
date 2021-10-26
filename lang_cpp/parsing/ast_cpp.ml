@@ -519,7 +519,7 @@ and case_body = stmt_or_decl list
 
 (* c++ext: *)
 and handler =
-  tok (* 'catch' *) * exception_declaration list paren (* list??? *) * compound
+  tok (* 'catch' *) * exception_declaration paren * compound
 
 and exception_declaration =
   | ExnDecl of parameter
@@ -728,6 +728,8 @@ and parameter =
                      parameter_classic (* p_val = None and p_name = None *)
   (* sgrep-ext: also part of C, in which case it must be the last parameter *)
   | ParamEllipsis of tok
+  (* e.g., multi parameter exn handler (tsonly) *)
+  | ParamTodo of todo_category * parameter list
 
 and parameter_classic = {
   p_name: ident option;

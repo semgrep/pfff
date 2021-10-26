@@ -924,7 +924,7 @@ try_block: Ttry compound handler+ { Try ($1, $2, $3) }
 handler: Tcatch "(" exception_decl ")" compound { ($1, ($2, $3, $4), $5) }
 
 exception_decl:
- | parameter_decl { [ExnDecl $1] }
+ | parameter_decl { ExnDecl $1 }
  (* old: but now handled via sgrep-ext: in parameter_decl
  | "..."          { [ExnDeclEllipsis $1] }
  *)

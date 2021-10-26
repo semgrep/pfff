@@ -258,7 +258,9 @@ and parameter env x =
                        p_type = full_type env t;
                      }
   | ParamEllipsis t -> A.ParamDots t
-  | ParamVariadic _ -> debug (Parameter x); raise CplusplusConstruct
+  | ParamVariadic _ | ParamTodo _ ->
+      debug (Parameter x); raise CplusplusConstruct
+
 
 (* ---------------------------------------------------------------------- *)
 (* Variables *)
