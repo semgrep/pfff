@@ -645,6 +645,7 @@ and backquote = parse
   | [^'`' '$' '\\']+ {
       T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
     }
+  (* semgrep-ext: this is for metavariable in semgrep *)
   | "$"[^'`' '$' '\\' '{']* {
       T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
   }
