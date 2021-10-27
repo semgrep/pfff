@@ -91,8 +91,16 @@ let upper = ['A'-'Z''$'] (* todo: and unicode category *)
 let lower = ['a'-'z''_'] (* todo: and unicode category L1 *)
 let letter = upper | lower (* todo: and unicode category Lo, Lt, Nl *)
 
+let nonZeroDigit = ['1'-'9']
 let digit = ['0'-'9']
 let hexDigit = digit | ['a'-'f''A'-'F']
+
+let integerTypeSuffix = ['l' 'L']
+let underscores = '_' '_'*
+
+let digitOrUnderscore = digit | '_'
+let digitsAndUnderscores = digitOrUnderscore digitOrUnderscore*
+let digits = digit | digit digitsAndUnderscores? digit
 
 (* no paren, and no delim, no quotes, no $ or _ *)
 (* the _noxxx is to avoid ambiguity with /** comments *)
@@ -130,9 +138,24 @@ let escapeSeq = unicodeEscape | semgrepEscapeSeq
 let stringElement = charNoDoubleQuoteOrNewline | escapeSeq
 let _multiLineChars = ('"'? '"'? charNoDoubleQuote)* '"'*
 
-let decimalNumeral = digit digit*
-let hexNumeral = '0' ['X''x'] hexDigit hexDigit*
-let integerLiteral = (decimalNumeral | hexNumeral) ['L''l']?
+
+let decimalNumeral =
+  "0"
+| nonZeroDigit digits?
+| nonZeroDigit underscores digits
+
+let decimalIntegerLiteral = decimalNumeral integerTypeSuffix?
+
+let hexDigitOrUndercore = hexDigit | '_'
+let hexDigitsAndUnderscores = hexDigitOrUndercore hexDigitOrUndercore*
+let hexDigits = hexDigit | hexDigit hexDigitsAndUnderscores? hexDigit
+let hexNumeral = ("0x" | "0X") hexDigits
+let hexIntegerLiteral = hexNumeral integerTypeSuffix?
+
+let integerLiteral =
+  decimalIntegerLiteral
+| hexIntegerLiteral
+
 
 let exponentPart = ['E''e'] ['+''-']? digit digit*
 let floatType = ['F''f''D''d']
