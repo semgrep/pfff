@@ -1247,6 +1247,7 @@ and argType in_ =
   warning "argType: STILL? typ() and wildcard or typ()";
   typ in_
 
+(* We want to allow types like (=> Int) => Int, so we parse a paramType, which can also just be a normal type, as before *)
 and functionArgType in_ =
   warning "functionArgType STILL? argType or paramType";
   match !paramType_ ~repeatedParameterOK:false in_ with
