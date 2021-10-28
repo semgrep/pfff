@@ -852,6 +852,7 @@ let tmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let blockStatSeq_ = ref (fun _ -> failwith "forward ref not set")
 let topLevelTmplDef_ = ref (fun _ -> failwith "forward ref not set")
 let packageOrPackageObject_ = ref (fun _ _ -> failwith "forward ref not set")
+let paramType_ = ref (fun ?repeatedParameterOK _ -> ignore repeatedParameterOK; failwith "forward ref not set")
 
 (*****************************************************************************)
 (* Literal  *)
@@ -1248,7 +1249,10 @@ and argType in_ =
 
 and functionArgType in_ =
   warning "functionArgType STILL? argType or paramType";
-  argType in_
+  match !paramType_ ~repeatedParameterOK:false in_ with
+  | PTByNameApplication (tok,t) -> TyByName (tok,t)
+  | PT t -> t
+  | PTRepeatedApplication _ -> error "RepeatedType not allowed here" in_
 
 (* ------------------------------------------------------------------------- *)
 (* Outside PatternContextSensitive but mutually recursive *)
@@ -3479,6 +3483,8 @@ let _ =
   interpolatedString_ := interpolatedString;
 
   annotTypeRest_ := annotTypeRest;
+
+  paramType_ := paramType;
   ()
 
 (** {{{
