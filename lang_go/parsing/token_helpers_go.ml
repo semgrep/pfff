@@ -55,6 +55,7 @@ let token_kind_of_tok t =
 let visitor_info_of_tok f = function
   | LBRACE_SEMGREP ii -> LBRACE_SEMGREP (f ii)
   | LCOLON_SEMGREP ii -> LCOLON_SEMGREP (f ii)
+  | LPAREN_SEMGREP ii -> LPAREN_SEMGREP (f ii)
 
   | TUnknown ii -> TUnknown (f ii)
   | EOF ii -> EOF (f ii)

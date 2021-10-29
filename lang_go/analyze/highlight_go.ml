@@ -342,7 +342,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
     | T.LBRACE ii | T.LBODY ii | T.LBRACE_SEMGREP ii
     | T.RBRACE ii
     | T.LBRACKET ii | T.RBRACKET ii
-    | T.LPAREN ii | T.RPAREN ii
+    | T.LPAREN ii | T.RPAREN ii | LPAREN_SEMGREP ii
       -> tag ii Punctuation
 
     | T.LPLUS ii  -> tag ii Punctuation

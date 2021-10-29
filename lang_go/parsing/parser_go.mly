@@ -217,7 +217,7 @@ let rev_and_fix_items xs =
   LSEMICOLON ";" (* sometimes implicitely inserted, see Parsing_hacks_go.ml *)
 
 (* sgrep-ext: *)
-%token <Ast_go.tok> LBRACE_SEMGREP LCOLON_SEMGREP
+%token <Ast_go.tok> LBRACE_SEMGREP LCOLON_SEMGREP LPAREN_SEMGREP
 
 (*************************************************************************)
 (* Priorities *)
@@ -315,6 +315,28 @@ sgrep_spatch_pattern:
     }
  | item ";" item ";" item_list EOF
     { Items ($1 @ $3 @ rev_and_fix_items $5) }
+
+ (* In interfaces, methods do not require the 'func' keyword, but
+  * that makes them possibly ambiguous with function calls,
+  * hence the need for LPAREN_SEMGREP and lalr(k) hack in Parsing_hacks_go.ml.
+  * Note that we must use 'name' here and not 'sym' or 'new_name' because
+  * of the %prec NotParen used for 'name' used in 'pexpr'. Otherwise
+  * with 'sym "(" oarg_type_list_ocomma ...' we would always shift.
+  * Note that with LPAREN_SEMGREP this is less needed and we could
+  * use sym again.
+  * This is mostly a copy paste of 'interfacedcl', but here I require
+  * a fnret_type (not a fnres which has a return type as an option)
+  * otherwise it can be ambiguous with a function call in certain
+  * situations (e.g., how to parse 'foo(...)'? at least 'foo(...) int'
+  * is not ambiguous.
+  *)
+ | name LPAREN_SEMGREP oarg_type_list_ocomma ")" fnret_type  ";"? EOF
+    { let pret =
+         [ParamClassic { pname = None; ptype = $5; pdots = None }] in
+      let ftype = { fparams = $3; fresults = pret } in
+      let top_decl = DFunc ($2, $1, (ftype, Empty)) in
+      Partial (PartialDecl top_decl)
+    }
 
  (* partials! *)
  | partial EOF { Partial $1 }

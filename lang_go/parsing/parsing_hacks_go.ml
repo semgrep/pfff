@@ -117,6 +117,7 @@ let fix_tokens_lbody toks =
     let retag_lbrace = Hashtbl.create 101 in
     let retag_lbrace_semgrep = Hashtbl.create 1 in
     let retag_lcolon_semgrep = Hashtbl.create 1 in
+    let retag_lparen_semgrep = Hashtbl.create 1 in
 
     (match trees with
      (* TODO: check that actually a composite literal in it? *)
@@ -127,6 +128,16 @@ let fix_tokens_lbody toks =
                                                is_identifier horigin info ->
          Hashtbl.add retag_lcolon_semgrep t2 true
 
+     (* TODO: could check that xs looks like a parameter list
+      * TODO what comes after Parens could be a symbol part of a type
+      * instead of just a single type like 'int'?
+     *)
+     | F.Tok(_s, info)::F.Parens(l, _xs, _r)::F.Tok(_s2, info2)::_
+       when !Flag_parsing.sgrep_mode &&
+            is_identifier horigin info &&
+            is_identifier horigin info2
+       ->
+         Hashtbl.add retag_lparen_semgrep l true
      | _ -> ()
     );
 
@@ -227,6 +238,8 @@ let fix_tokens_lbody toks =
           T.LBRACE_SEMGREP info
       | T.LCOLON info when Hashtbl.mem retag_lcolon_semgrep info ->
           T.LCOLON_SEMGREP info
+      | T.LPAREN info when Hashtbl.mem retag_lparen_semgrep info ->
+          T.LPAREN_SEMGREP info
       | x -> x
     )
 
