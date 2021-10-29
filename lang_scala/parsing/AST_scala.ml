@@ -188,6 +188,7 @@ and type_ =
   | TyFunction2 of type_ list bracket * tok (* '=>' *) * type_
   | TyTuple of type_ list bracket
   | TyRepeated of type_ * tok (* '*' *)
+  | TyByName of tok (* => *) * type_
 
   | TyAnnotated of type_ * annotation list (* at least one *)
   | TyRefined of type_ option * refinement
