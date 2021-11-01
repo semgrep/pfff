@@ -4,9 +4,13 @@ open Ast_cpp
 module Ast = Ast_cpp
 module Flag = Flag_parsing
 
+let logger = Logging.get_logger [ __MODULE__ ]
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
+
+(* TODO: switch to use logger *)
 let warning s v =
   if !Flag.verbose_parsing
   then Common2.warning ("PARSING: " ^ s) v
@@ -195,8 +199,8 @@ let make_onedecl ~v_namei ~mods ~sto v_type : onedecl =
            match dn, iniopt with
            | DN n, _ -> V ({ name = n; specs = specs @ more_specs},
                            { v_init = iniopt; v_type })
-           | DNStructuredBinding ids, Some ini ->
-               StructuredBinding (v_type, ids, ini)
+           | DNStructuredBinding (l, (id, ids), r), Some ini ->
+               StructuredBinding (v_type, (l, id::ids, r), ini)
            | DNStructuredBinding _ids, None ->
                error "expecting an init for structured_binding" (ii_of_dname dn)
       )
@@ -286,31 +290,41 @@ let (fixOldCDecl: type_ -> type_) = fun ty ->
       error "seems this is not a function" ii
 
 (* TODO: this is ugly ... use record! *)
-let fixFunc ((name, ty, _stoTODO), cp) =
-  match ty with
-  | (aQ,(TFunction ({ft_params=params; _} as ftyp))) ->
-      (* it must be nullQualif, cos parser construct only this *)
-      assert (aQ =*= nQ);
+let fixFunc ((name, ty, _stoTODO), cp) : func_definition =
+  let ent = { name; specs = [] } in
+  let ftyp =
+    match ty with
+    | (aQ,(TFunction ({ft_params=params; _} as ftyp))) ->
+        (* it must be nullQualif, cos parser construct only this *)
+        assert (aQ =*= nQ);
 
-      (match Ast.unparen params with
-       | [P {p_name= None; p_type = ty2;_}] ->
-           (match Ast.unwrap_typeC ty2 with
-            | TPrimitive (TVoid, _) -> ()
-            (* failwith "internal errror: fixOldCDecl not good" *)
-            | _ -> ()
-           )
-       | params ->
-           params |> List.iter (function
-             | (P {p_name = Some _s;_}) -> ()
-             (* failwith "internal errror: fixOldCDecl not good" *)
-             | _ -> ()
-           )
-      );
-      let ent = { name; specs = [] } in
-      ent, { f_type = ftyp; (* TODO move in f_specs f_storage = sto; *) f_body = cp; f_specs = [] }
-  | _ ->
-      let ii = Lib_parsing_cpp.ii_of_any (Type ty) |> List.hd in
-      error "function definition without parameters" ii
+        (match Ast.unparen params with
+         | [P {p_name= None; p_type = ty2;_}] ->
+             (match Ast.unwrap_typeC ty2 with
+              | TPrimitive (TVoid, _) -> ()
+              (* failwith "internal errror: fixOldCDecl not good" *)
+              | _ -> ()
+             )
+         | params ->
+             params |> List.iter (function
+               | (P {p_name = Some _s;_}) -> ()
+               (* failwith "internal errror: fixOldCDecl not good" *)
+               | _ -> ()
+             )
+        );
+        ftyp
+    | _ ->
+        logger#error "weird, not a functionType. Got %s" (Ast_cpp.show_type_ ty);
+        (* this is possible if someone used a typedef to a function type, or
+         * when tree-sitter-cpp did some error recovery and wrongly parsed
+         * something as a function when it's really not
+        *)
+        { ft_params = Parse_info.unsafe_fake_bracket []; ft_ret = ty;
+          ft_specs = []; ft_const = None;
+          ft_throw = []; }
+  in
+  ent, { f_type = ftyp; (* TODO move in f_specs f_storage = sto; *) f_body = cp; f_specs = [] }
+
 
 let fixFieldOrMethodDecl (xs, semicolon) : class_member =
   match xs with
