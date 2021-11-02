@@ -3049,11 +3049,11 @@ let statSeq ?(errorMsg="illegal start of definition") ?(rev=false) stat in_ =
 *)
 
 let isCaseDefEnd in_ =
-    match in_.token with
-      | RBRACE _ | EOF _ -> true
-      | Kcase _ when lookingAhead (fun in_ -> match in_.token with Kclass _ -> false | _ -> true) in_ -> true
-      | _ -> false
-  
+  match in_.token with
+  | RBRACE _ | EOF _ -> true
+  | Kcase _ when lookingAhead (fun in_ -> match in_.token with Kclass _ -> false | _ -> true) in_ -> true
+  | _ -> false
+
 
 let blockStatSeq in_ : block_stat list =
   let acceptStatSepOptOrEndCase in_ =
