@@ -21,7 +21,7 @@ open Token_scala
 open AST_scala
 module AST = AST_scala
 
-let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
+let logger = Logging.get_logger [ __MODULE__ ]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -2168,7 +2168,7 @@ and block in_ : block =
 and blockExpr in_ : block_expr =
   inBraces (fun in_ ->
     match in_.token with
-    | Kcase _ ->
+    | Kcase _ when lookingAhead (fun in_ -> match in_.token with Kclass _ -> false | _ -> true) in_ ->
         let xs = caseClauses in_ in
         (* AST: Match(EmptyTree, xs *)
         BECases xs
@@ -3048,13 +3048,20 @@ let statSeq ?(errorMsg="illegal start of definition") ?(rev=false) stat in_ =
   *  }}}
 *)
 
+let isCaseDefEnd in_ =
+    match in_.token with
+      | RBRACE _ | EOF _ -> true
+      | Kcase _ when lookingAhead (fun in_ -> match in_.token with Kclass _ -> false | _ -> true) in_ -> true
+      | _ -> false
+  
+
 let blockStatSeq in_ : block_stat list =
   let acceptStatSepOptOrEndCase in_ =
     if not (TH.isCaseDefEnd in_.token)
     then acceptStatSepOpt in_
   in
   let stats = ref [] in
-  while not (TH.isStatSeqEnd in_.token) && not (TH.isCaseDefEnd in_.token) do
+  while not (TH.isStatSeqEnd in_.token) && not (isCaseDefEnd in_) do
     match in_.token with
     | Kimport _ ->
         let x = importClause in_ in
