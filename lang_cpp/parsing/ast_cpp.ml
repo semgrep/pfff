@@ -118,11 +118,13 @@ and ident_or_op =
   (* function name, macro name, variable, classname, enumname, namespace *)
   | IdIdent of ident
   (* c++ext: *)
-  | IdTemplateId of ident * template_arguments
   | IdDestructor of tok(*~*) * ident
   (* c++ext: operator overloading *)
   | IdOperator  of tok (* 'operator' *) * operator wrap
   | IdConverter of tok (* 'operator' *) * type_
+  (* TODO: not recursive, so should be enforced by making
+   * using 'ident_or_op * template_arguments option' in 'name' above. *)
+  | IdTemplated of ident_or_op * template_arguments
 
 
 and template_arguments = template_argument list angle
@@ -493,7 +495,7 @@ and condition_clause =
 
 and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
-  (* c++0x? less: entity be DStructrured_binding?  *)
+  (* c++0x? TODO: var_decl can be DStructrured_binding with vinit = None  *)
   | ForRange of var_decl (* vinit = None *)  * tok (*':'*) * initialiser
 
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
@@ -1046,6 +1048,7 @@ type any =
  * type will be int[2].
 *)
 type abstract_declarator = type_ -> type_
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (* A couple with a name and an abstract_declarator.
  * Note that with 'int* f(int)' we must return Func(Pointer int,int) and not
@@ -1054,8 +1057,11 @@ type abstract_declarator = type_ -> type_
 type declarator = { dn: declarator_name; dt: abstract_declarator }
 and declarator_name =
   | DN of name
-  (* c++17: structured binding, [n1, n2, n3] = expr *)
-  | DNStructuredBinding of ident list bracket
+  (* c++17: structured binding, [n1, n2, n3] = expr,
+   * at least one ident in it.
+  *)
+  | DNStructuredBinding of (ident * ident list) bracket
+[@@deriving show { with_path = false }] (* with tarzan *)
 
 (*****************************************************************************)
 (* Some constructors *)
@@ -1113,25 +1119,31 @@ let (string_of_name_tmp: name -> string) = fun name ->
 (* TODO: delete, used in highlight_cpp *)
 let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
-  match id with
-  | IdIdent (_s,ii) -> [ii]
-  | IdOperator (_, (_op, ii)) -> [ii]
-  | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
-  | IdDestructor (tok, (_s, ii)) -> [tok;ii]
-  | IdTemplateId ((_s, ii), _args) -> [ii]
+  let rec ident_or_op id =
+    match id with
+    | IdIdent (_s,ii) -> [ii]
+    | IdOperator (_, (_op, ii)) -> [ii]
+    | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
+    | IdDestructor (tok, (_s, ii)) -> [tok;ii]
+    | IdTemplated (x, _args) -> ident_or_op x
+  in
+  ident_or_op id
 let iis_of_dname = function
   | DN n -> ii_of_id_name n
-  | DNStructuredBinding (l, xs, r) ->
-      [l]@(xs |> List.map snd)@[r]
+  | DNStructuredBinding (l, (x, xs), r) ->
+      [l]@((x::xs) |> List.map snd)@[r]
 
 let (ii_of_name: name -> tok) = fun name ->
   let (_opt, _qu, id) = name in
-  match id with
-  | IdIdent (_s,ii) -> ii
-  | IdOperator (_, (_op, ii)) -> ii
-  | IdConverter (tok, _ft) -> tok
-  | IdDestructor (tok, (_s, _ii)) -> tok
-  | IdTemplateId ((_s, ii), _args) -> ii
+  let rec ident_or_op id =
+    match id with
+    | IdIdent (_s,ii) -> ii
+    | IdOperator (_, (_op, ii)) -> ii
+    | IdConverter (tok, _ft) -> tok
+    | IdDestructor (tok, (_s, _ii)) -> tok
+    | IdTemplated (x, _args) -> ident_or_op x
+  in
+  ident_or_op id
 
 let ii_of_dname = function
   | DN n -> ii_of_name n

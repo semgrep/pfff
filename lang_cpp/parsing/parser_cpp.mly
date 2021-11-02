@@ -1011,7 +1011,7 @@ type_name:
 
 template_id:
  | TIdent_Templatename TInf_Template listc(template_argument) TSup_Template
-    { IdTemplateId ($1, ($2, $3, $4)) }
+    { IdTemplated(IdIdent $1, ($2, $3, $4)) }
 
 (*c++ext: in the c++ grammar they have also 'template-name' but this is
  * catched in my case by type_id and its generic TypedefIdent, or will be
