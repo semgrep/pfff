@@ -474,8 +474,8 @@ let lookingAhead body in_ =
 
 let nextTokNotClass = lookingAhead (fun in_ ->
   match in_.token with
-  | Kclass _ -> true
-  | _ -> false)
+  | Kclass _ -> false
+  | _ -> true)
 
 (* ------------------------------------------------------------------------- *)
 (* newline: Newline management part2  *)
