@@ -82,6 +82,37 @@ class type logger =
 
   end
 
+(* Return the logger of that given name or create one if necessary.
+   Typically, we create one logger per module using the name of the module
+   as the single component:
+
+     let logger = Logging.get_logger [ __MODULE__ ]
+
+   This results in the name "Main."<module>.
+   TODO: why do this concatenation and not take a plain string like the
+   original Easy_logging API?
+*)
 val get_logger : string list -> logger
 
+(*
+   Get all the loggers created and registered with 'get_logger'.
+   This is useful to check which loggers and tags exist.
+*)
+val get_loggers : unit -> logger list
+
+(*
+   Iterate over all the registered loggers.
+*)
+val apply_to_all_loggers : (logger -> unit) -> unit
+
+(*
+   Set/reset the log level associated with each logger. This is normally
+   done just before fine-tuning with 'load_config_file'.
+*)
+val set_global_level : level -> unit
+
+(*
+   Load a json config file that sets log levels for each logger matching
+   specific tags.
+*)
 val load_config_file : Common.filename -> unit
