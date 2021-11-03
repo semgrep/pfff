@@ -21,7 +21,7 @@ open Token_scala
 open AST_scala
 module AST = AST_scala
 
-let logger = Logging.get_logger [(*__MODULE__*)"Parser_scala_..."]
+let logger = Logging.get_logger [ __MODULE__ ]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -468,6 +468,14 @@ let lookingAhead body in_ =
 (*****************************************************************************)
 (* Special parsing  *)
 (*****************************************************************************)
+(* ------------------------------------------------------------------------- *)
+(* case class: Check that we are parsing a case that is not part of case class  *)
+(* ------------------------------------------------------------------------- *)
+
+let nextTokNotClass = lookingAhead (fun in_ ->
+  match in_.token with
+  | Kclass _ -> false
+  | _ -> true)
 
 (* ------------------------------------------------------------------------- *)
 (* newline: Newline management part2  *)
@@ -2168,7 +2176,7 @@ and block in_ : block =
 and blockExpr in_ : block_expr =
   inBraces (fun in_ ->
     match in_.token with
-    | Kcase _ ->
+    | Kcase _ when nextTokNotClass in_ ->
         let xs = caseClauses in_ in
         (* AST: Match(EmptyTree, xs *)
         BECases xs
@@ -3048,13 +3056,20 @@ let statSeq ?(errorMsg="illegal start of definition") ?(rev=false) stat in_ =
   *  }}}
 *)
 
+let isCaseDefEnd in_ =
+  match in_.token with
+  | RBRACE _ | EOF _ -> true
+  | Kcase _ when nextTokNotClass in_ -> true
+  | _ -> false
+
+
 let blockStatSeq in_ : block_stat list =
   let acceptStatSepOptOrEndCase in_ =
     if not (TH.isCaseDefEnd in_.token)
     then acceptStatSepOpt in_
   in
   let stats = ref [] in
-  while not (TH.isStatSeqEnd in_.token) && not (TH.isCaseDefEnd in_.token) do
+  while not (TH.isStatSeqEnd in_.token) && not (isCaseDefEnd in_) do
     match in_.token with
     | Kimport _ ->
         let x = importClause in_ in
