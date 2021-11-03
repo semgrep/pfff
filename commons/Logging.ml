@@ -135,13 +135,21 @@ class type logger =
 (* Entry points *)
 (*****************************************************************************)
 
-(* it takes a list, so you can have a deep hierarchy like
- * get_logger ["Generic_vs_generic"; "Env"]
-*)
-let get_logger xs =
-  let final_name = ("Main"::xs) |> String.concat "." in
-  (Logging.get_logger final_name : logger)
+let all_loggers = ref ([] : logger list)
 
-(* see log_config.json for an example of configuration *)
+let apply_to_all_loggers f =
+  List.iter (fun logger -> f logger) !all_loggers
+
+let get_loggers () = !all_loggers
+
+let set_global_level level =
+  apply_to_all_loggers (fun logger -> logger#set_level level)
+
+let get_logger xs : logger =
+  let final_name = ("Main"::xs) |> String.concat "." in
+  let logger = Logging.get_logger final_name in
+  all_loggers := logger :: !all_loggers;
+  logger
+
 let load_config_file file =
   Logging.load_global_config_file file
