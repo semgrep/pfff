@@ -469,10 +469,10 @@ let lookingAhead body in_ =
 (* Special parsing  *)
 (*****************************************************************************)
 (* ------------------------------------------------------------------------- *)
-(* case class: Check that we are parsing a case that is not part of case class  *)
+(* case class: Check that we are parsing a case that is not part of case class or case object *)
 (* ------------------------------------------------------------------------- *)
 
-let notClassOrObject = lookingAhead (fun in_ ->
+let nextTokNotClassOrObject = lookingAhead (fun in_ ->
   match in_.token with
   | Kclass _ | Kobject _ -> false
   | _ -> true)
@@ -2176,7 +2176,7 @@ and block in_ : block =
 and blockExpr in_ : block_expr =
   inBraces (fun in_ ->
     match in_.token with
-    | Kcase _ when notClassOrObject in_ ->
+    | Kcase _ when nextTokNotClassOrObject in_ ->
         let xs = caseClauses in_ in
         (* AST: Match(EmptyTree, xs *)
         BECases xs
@@ -3059,7 +3059,7 @@ let statSeq ?(errorMsg="illegal start of definition") ?(rev=false) stat in_ =
 let isCaseDefEnd in_ =
   match in_.token with
   | RBRACE _ | EOF _ -> true
-  | Kcase _ when notClassOrObject in_ -> true
+  | Kcase _ when nextTokNotClassOrObject in_ -> true
   | _ -> false
 
 
