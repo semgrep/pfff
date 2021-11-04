@@ -598,7 +598,7 @@ let mods_with_annots mods annots = attrs_of_annots annots @ attrs_of_mods mods
 
 let is_variable_name s =
   (* start with lowercase, see varid *)
-  s =~ "[a-z].*"
+  s =~ "[_ a-z].*"
 
 let basic_param id =
   { p_name = id; p_type = None; p_attrs = []; p_default = None }
