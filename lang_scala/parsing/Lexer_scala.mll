@@ -92,10 +92,11 @@ let whiteSpace = [' ' '\t'] (* todo: also OA, OD? *)
    This is actually more permissive than scala, which limits identifiers to certain classes of
    unicode characters, but this is fine.
 *)
-let upper =
-  [^ 'a'-'z' '0'-'9' '+' '-' '*' '%' ':' ';' '=' '!' '#' '~' '?' '\\' '@' '|' '&' '^' '<' '>' ' ' '\t' '\n' '\r' '(' ')' '[' ']' '{' '}' '.' '/' ',' '"' '\'' '`']
-let lower =
-  [^ 'A'-'Z' '0'-'9' '+' '-' '*' '%' ':' ';' '=' '!' '#' '~' '?' '\\' '@' '|' '&' '^' '<' '>' ' ' '\t' '\n' '\r' '(' ')' '[' ']' '{' '}' '.' '/' ',' '"' '\'' '`']
+let reserved = ['0'-'9' '+' '-' '*' '%' ':' ';' '=' '!' '#' '~' '?' '\\' '@' '|' '&' '^' '<' '>' ' ' '\t' '\n' '\r' '(' ')' '[' ']' '{' '}' '.' '/' ',' '"' '\'' '`']
+
+let upper = _ # reserved # ['a'-'z']
+let lower = _ # reserved # ['A'-'Z']
+
 let letter = upper | lower
 
 let nonZeroDigit = ['1'-'9']
