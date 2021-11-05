@@ -87,9 +87,17 @@ let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
 let whiteSpace = [' ' '\t'] (* todo: also OA, OD? *)
 
-let upper = ['A'-'Z''$'] (* todo: and unicode category *)
-let lower = ['a'-'z''_'] (* todo: and unicode category L1 *)
-let letter = upper | lower (* todo: and unicode category Lo, Lt, Nl *)
+
+(* To allow for unicode characters, we just enumerate everything that a upper/lower is not.
+   This is actually more permissive than scala, which limits identifiers to certain classes of
+   unicode characters, but this is fine.
+*)
+let reserved = ['0'-'9' '+' '-' '*' '%' ':' ';' '=' '!' '#' '~' '?' '\\' '@' '|' '&' '^' '<' '>' ' ' '\t' '\n' '\r' '(' ')' '[' ']' '{' '}' '.' '/' ',' '"' '\'' '`']
+
+let upper = _ # reserved # ['a'-'z']
+let lower = _ # reserved # ['A'-'Z']
+
+let letter = upper | lower
 
 let nonZeroDigit = ['1'-'9']
 let digit = ['0'-'9']
