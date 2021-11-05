@@ -75,7 +75,7 @@ let expr_or_type_to_type tok x =
  *)
 let mk_call_or_cast (e, args) =
   match e, args with
-  | ParenType t, (_, [Arg e], _) -> Cast (t, e)
+  | ParenType t, (l, [Arg e], r) -> Cast (t, (l, e, r))
   | _ -> Call (e, args)
 
 let type_to_id x =
@@ -684,7 +684,7 @@ pexpr_no_paren:
 
 |   pseudocall { mk_call_or_cast $1 }
 
-|   convtype "(" expr ","? ")" { Cast ($1, $3) }
+|   convtype "(" expr ","? ")" { Cast ($1, ($2, $3, $5)) }
 
 |   comptype       lbrace braced_keyval_list "}"
     { CompositeLit ($1, ($2, $3, $4)) }

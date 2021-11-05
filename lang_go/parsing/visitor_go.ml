@@ -185,7 +185,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
             v_bracket v_tuple3 v2
           in ()
       | Call v1 -> let v1 = v_call_expr v1 in ()
-      | Cast (v1, v2) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
+      | Cast (v1, v2) -> let v1 = v_type_ v1 and v2 = v_bracket v_expr v2 in ()
       | Deref (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
       | Ref (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
       | Receive (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()

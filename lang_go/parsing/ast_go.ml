@@ -148,7 +148,7 @@ and expr =
    * such as (Foo)(nil) are unfortunately parsed as Calls, because again
    * you need typing information to know that.
   *)
-  | Cast of type_ * expr (* TODO: bracket *)
+  | Cast of type_ * expr bracket
 
   (* special cases of Unary *)
   | Deref of tok (* * *) * expr
