@@ -605,7 +605,7 @@ let inBracesOrNil = inBraces
 (** {{{ { `sep` part } }}}. *)
 let separatedToken sep part in_ =
   (* CHECK: "separator cannot be a comma" *)
-  in_ |> with_logging (spf "separatedTopen(%s)" (T.show sep)) (fun () ->
+  in_ |> with_logging (spf "separatedToken(%s)" (T.show sep)) (fun () ->
     let ts = ref [] in
     while in_.token =~= sep do
       let ii = TH.info_of_tok in_.token in
@@ -1952,8 +1952,8 @@ and argumentExprs in_ : arguments =
           | _ -> args in_
         ) in_
         |> (fun x -> Args x)
-    (* stricter: *)
-    | _ -> error "was expecting a ( or { for an argumentExprs" in_
+    (* TODO: is using this token a good idea? Would unsafe_fake_bracket be better or worse? *)
+    | _ -> Args (fb (TH.info_of_tok in_.token) [])
   )
 
 (* ------------------------------------------------------------------------- *)
