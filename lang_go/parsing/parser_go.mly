@@ -91,7 +91,11 @@ let type_to_id x =
 let adjust_signatures params =
   let params = List.rev params in
   let all_types =
-   params |> List.for_all (function ParamClassic {pname = None; _} -> true | _ ->false) in
+   params |> List.for_all (function
+      | ParamClassic {pname = None; _} -> true
+      (* sgrep-ext: ellipsis count as a type *)
+      | ParamEllipsis _ -> true
+      | _ ->false) in
   if all_types
   then params
   else
