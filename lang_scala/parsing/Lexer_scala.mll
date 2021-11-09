@@ -205,7 +205,7 @@ rule token = parse
       let info = tokinfo lexbuf in
       let buf = Buffer.create 127 in
       Buffer.add_string buf "/*";
-      comment buf lexbuf;
+      comment 0 buf lexbuf;
       Comment(info |> PI.rewrap_str (Buffer.contents buf))
     }
 
@@ -507,15 +507,13 @@ and in_interpolated_triple = parse
 (* Rule comment *)
 (*****************************************************************************)
 
-and comment buf = parse
-  | "*/"    { Buffer.add_string buf (tok lexbuf) }
-  (* noteopti: *)
-  | [^'*']+ { Buffer.add_string buf (tok lexbuf); comment buf lexbuf }
-  | "*"     { Buffer.add_string buf (tok lexbuf); comment buf lexbuf }
+and comment nesting buf = parse
+  | "/*"    { Buffer.add_string buf (tok lexbuf); comment (nesting + 1) buf lexbuf}
+  | "//" [^ '\r' '\n']* { Buffer.add_string buf (tok lexbuf); comment nesting buf lexbuf }
+  | "*/"    { Buffer.add_string buf (tok lexbuf); match nesting with 0 -> () | _ -> comment (nesting - 1) buf lexbuf }
   | eof     { error "end of file in comment" lexbuf }
   | _  {
       let s = tok lexbuf in
-      error ("unrecognised symbol in comment:"^s) lexbuf;
       Buffer.add_string buf s;
-      comment buf lexbuf
+      comment nesting buf lexbuf
     }
