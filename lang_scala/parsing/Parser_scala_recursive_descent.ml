@@ -1055,8 +1055,10 @@ and tupleInfixType in_ : type_ =
          (* CHECK: ts foreach checkNotByNameOrVarargs *)
          (* ast: makeSafeTupleType(ts) *)
          let tuple =  TyTuple ts in
-         warning "tupleInfixType:STILL? infixTypeRest(compoundTypeRest(...))";
-         tuple
+         let str = simpleTypeRest tuple in_ in
+         let atr = !annotTypeRest_ str in_ in
+         let ctr = compoundTypeRest (Some atr) in_ in
+         infixTypeRest ctr FirstOp in_
     )
   )
 
