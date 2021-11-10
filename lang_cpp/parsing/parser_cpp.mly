@@ -244,7 +244,7 @@ module PI = Parse_info
 (*************************************************************************)
 %start <Ast_cpp.program> main
 %start <Ast_cpp.toplevel option> toplevel
-%start <Ast_cpp.any> sgrep_spatch_pattern
+%start <Ast_cpp.any> semgrep_pattern
 
 %%
 (*************************************************************************)
@@ -311,18 +311,25 @@ toplevel_aux:
  | cpp_ifdef_directive (*external_declaration_list ...*) { CppIfdef $1 }
  | cpp_other           { $1 }
 
- (* when have error recovery, we can end up skipping the
-  * beginning of the file, and so get trailing unclosed } at the end *)
+ (* with error-recovery on, we can end up skipping the
+  * beginning of the file, and so we can get trailing } unclosd at the end *)
  | "}" { X (D (EmptyDef $1)) }
 
 (*************************************************************************)
-(* sgrep *)
+(* semgrep *)
 (*************************************************************************)
 
-sgrep_spatch_pattern:
+(* this is the entry point used by semgrep to parse patterns *)
+semgrep_pattern:
  | expr                                         EOF  { Expr $1 }
+ (* TODO: statement_or_decl_cpp below internally calls block_declaration
+  * which is not the same than declaration, hence some extra rules
+  * below which are 'declaration - block_declaration'
+  *)
  | statement_or_decl_cpp                        EOF  { Toplevel ($1) }
  | statement_or_decl_cpp statement_or_decl_cpp+ EOF  { Toplevels ($1::$2) }
+ (* declaration - block_declaration *)
+ | namespace_definition EOF { Toplevel (X (D $1)) }
 
 (*************************************************************************)
 (* Ident, scope *)
@@ -330,7 +337,7 @@ sgrep_spatch_pattern:
 
 id_expression:
  | unqualified_id { noQscope, $1 }
- | qualified_id { $1 }
+ | qualified_id   { $1 }
 
 (* todo:
  * ~id class_name,  conflict  IdDestructor
@@ -809,7 +816,7 @@ statement:
 
 compound: "{" statement_or_decl_cpp* "}" { ($1, $2, $3) }
 
-
+(* TODO: call declaration here? to factorize more? *)
 statement_or_decl:
  | statement { (S $1) }
 
@@ -1624,7 +1631,6 @@ block_declaration:
  | using_declaration { UsingDecl $1 }
  | using_directive   { UsingDecl $1 }
 
-
 (*----------------------------*)
 (* c++ext: *)
 (*----------------------------*)
@@ -1683,7 +1689,6 @@ asm_expr: assign_expr { $1 }
  *)
 declaration:
  | block_declaration                 { $1 }
-
  | function_definition               { Func ($1) }
 
  (* not in c++ grammar as merged with function_definition, but I can't *)
@@ -1704,6 +1709,8 @@ declaration_cpp:
  (* cppext: *)
  | cpp_directive                                 { CppDirective $1 }
  | cpp_ifdef_directive(* stat_or_decl_list ...*) { CppIfdef $1 }
+ (* sgrep-ext: *)
+ | "..." { Flag_parsing.sgrep_guard (X (S (ExprStmt (Some (Ellipsis $1), $1)))) }
 
 (*----------------------------*)
 (* c++ext: *)
