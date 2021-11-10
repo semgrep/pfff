@@ -508,11 +508,8 @@ and in_interpolated_triple = parse
 (*****************************************************************************)
 
 and comment nesting buf = parse
-  | "/*"    { Buffer.add_string buf (tok lexbuf); comment (nesting + 1) buf lexbuf}
-  | "*/"    { Buffer.add_string buf (tok lexbuf); match nesting with 0 -> () | _ -> comment (nesting - 1) buf lexbuf }
-  | eof     { error "end of file in comment" lexbuf }
-  | _  {
-      let s = tok lexbuf in
-      Buffer.add_string buf s;
-      comment nesting buf lexbuf
-    }
+  | "/*"     { Buffer.add_string buf (tok lexbuf); comment (nesting + 1) buf lexbuf}
+  | "*/"     { Buffer.add_string buf (tok lexbuf); match nesting with 0 -> () | _ -> comment (nesting - 1) buf lexbuf }
+  | [^ '*' '/']+ { Buffer.add_string buf (tok lexbuf); comment nesting buf lexbuf }
+  | eof      { error "end of file in comment" lexbuf }
+  | _        { Buffer.add_string buf (tok lexbuf); comment nesting buf lexbuf }
