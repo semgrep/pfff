@@ -291,8 +291,10 @@ let fix_tokens_cpp ~macro_defs tokens =
   let line_paren_grouped = TV.mk_line_parenthised paren_grouped in
   Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
   Parsing_hacks_pp.find_string_macro_paren paren_grouped;
-  Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
-  Parsing_hacks_pp.find_macro_paren        paren_grouped;
+  if not !Flag_parsing.sgrep_mode then begin
+    Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
+    Parsing_hacks_pp.find_macro_paren        paren_grouped;
+  end;
 
   (* todo: at some point we need to remove that and use
    * a better filter_for_typedef that also
