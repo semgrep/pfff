@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2010 Facebook
  * Copyright (C) 2011-2015 Tomohiro Matsuyama
- * Copyright (C) 2019 r2c
+ * Copyright (C) 2019-2021 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -60,6 +60,7 @@
 (*****************************************************************************)
 (* Names *)
 (*****************************************************************************)
+
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
@@ -70,15 +71,19 @@
 *)
 type tok = Parse_info.t
 [@@deriving show]
+
 (* a shortcut to annotate some information with token/position information *)
 type 'a wrap = 'a * tok
 [@@deriving show] (* with tarzan *)
+
 (* round(), square[], curly{}, angle<> brackets *)
 type 'a bracket = tok * 'a * tok
 [@@deriving show] (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Name *)
 (* ------------------------------------------------------------------------- *)
+
 type name = string wrap
 [@@deriving show] (* with tarzan *)
 
@@ -137,10 +142,6 @@ type expr =
   (* python3: *)
   (* inside an Assign (or ExprStmt) *)
   | TypedExpr of expr * type_
-  (* sgrep-ext: *)
-  | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
-  | DeepEllipsis of expr bracket
-  | TypedMetavar of name * tok * type_
 
   | BoolOp of boolop wrap (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator wrap (* op *) * expr (* right *)
@@ -170,6 +171,13 @@ type expr =
   (* =~ ObjAccess *)
   | Attribute of expr (* value *) * tok (* . *) * name (* attr *) *
                  expr_context (* ctx *)
+
+  (* sgrep-ext: *)
+  | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  | DeepEllipsis of expr bracket
+  | TypedMetavar of name * tok * type_
+  | ObjAccessEllipsis of expr * tok (* ... *)
+
 
 and number =
   | Int of int option wrap

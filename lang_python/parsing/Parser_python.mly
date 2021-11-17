@@ -710,6 +710,8 @@ atom_and_trailers:
         | l -> Subscript ($1, ($2, l, $4), Load) }
 
   | atom_and_trailers "." NAME { Attribute ($1, $2, $3, Load) }
+  (* sgrep-ext: *)
+  | atom_and_trailers "." "..." { ObjAccessEllipsis ($1, $3) }
 
 (*----------------------------*)
 (* Atom *)
