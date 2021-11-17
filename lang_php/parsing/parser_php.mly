@@ -291,9 +291,9 @@ let mk_Toplevel x =
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-%start main sgrep_spatch_pattern
+%start main semgrep_pattern
 %type <Cst_php.toplevel list> main
-%type <Cst_php.any>           sgrep_spatch_pattern
+%type <Cst_php.any>           semgrep_pattern
 
 %%
 (*************************************************************************)
@@ -333,11 +333,20 @@ top_statement:
  | namespace_declaration      { [$1] }
  | namespace_use_declaration  { $1 }
 
-sgrep_spatch_pattern:
+semgrep_pattern:
  | expr                         EOF { Expr $1 }
  | top_statement                EOF { mk_Toplevel $1 }
  | top_statement top_statement+ EOF { Toplevels ($1 @ List.flatten $2) }
  | ":" type_php                 EOF { Hint2 $2 }
+ (* We can't just use method_declaration, otherwise we get 3 s/r conflicts
+  * with regular functions. Thus, we force the visibility_modifier.
+  * Without such modifier, the regular function_declaration should work for
+  * a method_declaration anyway. *)
+ | visibility_modifier method_declaration EOF {
+    let def = $2 in
+    let def = { def with f_modifiers = $1::def.f_modifiers } in
+    Toplevel (FuncDef def)
+    }
 
  (* partials *)
  | T_IF "(" expr_or_dots ")"    EOF { Partial (PartialIf ($1, $3)) }
