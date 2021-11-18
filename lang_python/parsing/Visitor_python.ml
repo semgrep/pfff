@@ -96,7 +96,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_expr (x: expr) =
     (* tweak *)
     let k x =  match x with
-      | ObjAccessEllipsis (v1, v2) ->
+      | DotAccessEllipsis (v1, v2) ->
           v_expr v1;
           v_tok v2
       | None_ v1 -> let v1 = v_tok v1 in ()

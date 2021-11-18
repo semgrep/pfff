@@ -163,6 +163,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
   and v_expr x =
     let k =
       function
+      | DotAccessEllipsis (v1, v2) ->
+          v_expr v1;
+          v_tok v2
       | DeepEllipsis v1 -> v_bracket v_expr v1
       | BasicLit v1 -> let v1 = v_literal v1 in ()
       | CompositeLit (v1, v2) ->

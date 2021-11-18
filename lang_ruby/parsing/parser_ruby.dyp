@@ -957,6 +957,7 @@ formal_arg:
       { M.seen_str dyp id;
         Formal_default ($1, $2, e) }
   | any_LPAREN formal_arg_nonempty_list<f> T_RPAREN { Formal_tuple ($1, f, $3)}
+  /*(* sgrep-ext: and regular ruby? *)*/
   | T_DOT3 { ParamEllipsis $1 }
 
 formal_arg_nonempty_list:
@@ -1046,6 +1047,8 @@ message_identifier:
         (* TODO: use bin_msg instead *)
         match op with
         | B op -> MethodOperator(op,tk)
+        (* sgrep-ext: *)
+        | Op_DOT3 when !Flag_parsing.sgrep_mode -> MethodEllipsis (tk)
         | x -> failwith (Common.spf "not a binary msg: %s"
                           (Ast_ruby.show_binary_op x))
      }

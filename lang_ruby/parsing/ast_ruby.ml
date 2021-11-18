@@ -35,7 +35,8 @@
  * Mike Furr in diamondback-ruby.
  *
  * less:
- *  - [AST Format of the Whitequark parser](https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md)
+ *  - AST Format of the Whitequark parser
+ *    https://github.com/whitequark/parser/blob/master/doc/AST_FORMAT.md
  *  - https://rubygems.org/gems/ast
  *  - new AST format in RubyVM in ruby 2.6 (see wikipedia page on Ruby)
  *
@@ -137,7 +138,7 @@ type binary_op =
   (* less: move out, in hash or arguments *)
   | Op_ASSOC    (* => *)
 
-  (* sugar for .. and = probably *)
+  (* sugar for .. and = probably, also sgrep-ext:! *)
   | Op_DOT3     (* ... *)
 
 and binary_msg =
@@ -296,6 +297,8 @@ and method_name =
   | MethodOperator of binary_msg wrap
   (* a.(b) <=> a.call b (only in Call, not in definitions). *)
   | MethodSpecialCall of unit bracket
+  (* sgrep-ext: *)
+  | MethodEllipsis of tok
 
 (* ------------------------------------------------------------------------- *)
 (* Class or module name *)

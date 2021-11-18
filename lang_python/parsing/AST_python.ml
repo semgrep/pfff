@@ -172,11 +172,12 @@ type expr =
   | Attribute of expr (* value *) * tok (* . *) * name (* attr *) *
                  expr_context (* ctx *)
 
-  (* sgrep-ext: *)
+  (* sgrep-ext: typing-ext: *)
   | Ellipsis of tok (* should be only in .pyi, types Dict[str,...], or sgrep *)
+  (* sgrep-ext: *)
   | DeepEllipsis of expr bracket
   | TypedMetavar of name * tok * type_
-  | ObjAccessEllipsis of expr * tok (* ... *)
+  | DotAccessEllipsis of expr * tok (* ... *)
 
 
 and number =

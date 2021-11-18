@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2020-2021 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -165,11 +165,6 @@ and expr =
    * less: can appear only in a TypeSwitch, so could be moved there *)
   | TypeSwitchExpr of expr * tok (* 'type' *)
 
-  (* sgrep-ext: *)
-  | Ellipsis of tok
-  | DeepEllipsis of expr bracket
-  | TypedMetavar of ident * tok * type_
-
   | FuncLit of function_
 
   (* only used as an intermediate during parsing, should be converted *)
@@ -178,6 +173,12 @@ and expr =
   (* TODO: move in stmt, but need better comm_clause *)
   (* Send as opposed to Receive is a statement, not an expr *)
   | Send of expr (* denote a channel *) * tok (* <- *) * expr
+
+  (* sgrep-ext: *)
+  | Ellipsis of tok
+  | DeepEllipsis of expr bracket
+  | TypedMetavar of ident * tok * type_
+  | DotAccessEllipsis of expr * tok (* ... *)
 
 (* old: was just a string in ast.go *)
 and literal =

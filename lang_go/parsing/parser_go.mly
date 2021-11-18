@@ -663,9 +663,11 @@ pexpr_no_paren:
 
 |   name { Id ($1) }
     (* sgrep-ext: *)
-|   "(" name ":" ntype ")" { TypedMetavar($2, $3, $4) }
+|   "(" name ":" ntype ")" { Flag_parsing.sgrep_guard (TypedMetavar($2, $3, $4)) }
     (* can be many things *)
 |   pexpr "." sym { Selector ($1, $2, $3) }
+(* sgrep-ext: *)
+|   pexpr "." "..." { Flag_parsing.sgrep_guard (DotAccessEllipsis ($1, $3)) }
 
 |   pexpr "." "(" expr_or_type ")"
     { TypeAssert ($1, ($3, expr_or_type_to_type $2 $4, $5)) }
@@ -952,7 +954,7 @@ structdcl:
 |       packname      LSTR? { [EmbeddedField (None, $1), $2] }
 |   "*" packname      LSTR? { [EmbeddedField (Some $1, $2), $3] }
 (* sgrep-ext: *)
-| "..." { [FieldEllipsis $1, None] }
+| "..." { Flag_parsing.sgrep_guard [FieldEllipsis $1, None] }
 
 
 interfacetype:
@@ -965,7 +967,7 @@ interfacedcl:
 |   new_name indcl { Method ($1, $2) }
 |   packname       { EmbeddedInterface $1 }
 (* sgrep-ext: *)
-| "..."            { FieldEllipsis2 $1 }
+| "..."            { Flag_parsing.sgrep_guard (FieldEllipsis2 $1) }
 
 (* fntype // without func keyword *)
 indcl: "(" oarg_type_list_ocomma ")" fnres

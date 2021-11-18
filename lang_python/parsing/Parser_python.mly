@@ -711,7 +711,8 @@ atom_and_trailers:
 
   | atom_and_trailers "." NAME { Attribute ($1, $2, $3, Load) }
   (* sgrep-ext: *)
-  | atom_and_trailers "." "..." { ObjAccessEllipsis ($1, $3) }
+  | atom_and_trailers "." "..."
+    { Flag_parsing.sgrep_guard (DotAccessEllipsis ($1, $3)) }
 
 (*----------------------------*)
 (* Atom *)
@@ -743,7 +744,7 @@ atom:
 
   | atom_repr   { $1 }
 
-  (* typing-ext: sgrep-ext: *)
+  (* typing-ext: sgrep-ext: do not put Flag_parsing.sgrep_guard for '...' *)
   | "..."              { Ellipsis $1 }
   | "<..." test "...>" { Flag_parsing.sgrep_guard (DeepEllipsis ($1, $2, $3)) }
 
