@@ -92,7 +92,9 @@ let rec program top_l =
 
 and any x =
   let env = empty_env () in
-  any_aux env x
+  Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
+    any_aux env x
+  )
 
 and partial env = function
   | PartialIf (t, e) ->
