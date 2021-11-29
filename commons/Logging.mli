@@ -114,7 +114,9 @@ val set_global_level : level -> unit
 (*
    Registers a tag generator on each logger, tagging every log message
    with the PID of the current process.
-   If you use Parmap, make sure to call this on each spawned process.
+
+   If you use Parmap, make sure to call this on each spawned process, but
+   only once (you can use the Parmap's ~init function for this).
 *)
 val add_PID_tag : unit -> unit
 
