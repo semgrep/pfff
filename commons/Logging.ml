@@ -145,6 +145,12 @@ let get_loggers () = !all_loggers
 let set_global_level level =
   apply_to_all_loggers (fun logger -> logger#set_level level)
 
+let add_PID_tag () =
+  let get_pid_string () = Unix.getpid() |> string_of_int in
+  let pid_cache = ref (get_pid_string()) in
+  apply_to_all_loggers (fun logger ->
+    logger#add_tag_generator (fun () -> !pid_cache))
+
 let get_logger xs : logger =
   let final_name = ("Main"::xs) |> String.concat "." in
   let logger = Logging.get_logger final_name in
