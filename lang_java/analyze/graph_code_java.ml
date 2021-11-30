@@ -444,6 +444,7 @@ and class_decl env def =
               (* with anon classes we need to lookup enclosing final parameters/locals *)
               params_or_locals = env.params_or_locals |> List.filter (fun (_x,b) -> b);
               type_parameters = def.cl_tparams |> List.map (function
+                | TParamEllipsis _ -> raise Impossible
                 | TParam ((str,_tok), _constraints) -> str
               );
             }

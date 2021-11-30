@@ -87,6 +87,8 @@ and ref_type = typ
 
 type type_parameter =
   | TParam of ident * ref_type list (* extends *)
+  (* sgrep-ext: *)
+  | TParamEllipsis of tok
 
 [@@deriving show { with_path = false }] (* with tarzan *)
 

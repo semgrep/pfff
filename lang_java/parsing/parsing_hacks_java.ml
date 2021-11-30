@@ -19,6 +19,9 @@ module Flag = Flag_parsing
 module TH = Token_helpers_java
 module F = Ast_fuzzy
 module T = Parser_java
+module PI = Parse_info
+
+let logger = Logging.get_logger [__MODULE__]
 
 (*****************************************************************************)
 (* Prelude *)
@@ -45,9 +48,9 @@ let fix_tokens_generics xs =
     let depth_angle = env in
     if depth_angle < 0
     then begin
-      pr2 (spf "depth_angle < 0, %d" depth_angle);
-      pr2_gen (List.hd xs);
-      (* failwith "depth < 0" *)
+      logger#error "depth_angle < 0, %d" depth_angle;
+      logger#error "%s" (Common.dump (List.hd xs));
+      (* alt: failwith "depth < 0" *)
       aux 0 xs
     end
     else
@@ -98,17 +101,20 @@ let fix_tokens_generics xs =
        * this code. But pb, see previous comment.
       *)
       | IDENTIFIER (s, ii1)::LT ii2::xs when s =~ "^[A-Z]"->
+          logger#info "retagging < at %s" (PI.string_of_info ii2);
           IDENTIFIER (s, ii1)::LT_GENERIC ii2::aux (depth_angle + 1) xs
 
       | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::
         IDENTIFIER (s3, ii3)::xs
         when s =~ "^[A-Z]" && s3 =~ "^[A-Z]" ->
+          logger#info "retagging < at %s" (PI.string_of_info ii2);
           IDENTIFIER (s, ii1)::TCommentSpace iispace::LT_GENERIC ii2::
           aux (depth_angle + 1) (IDENTIFIER (s3, ii3)::xs)
 
       | IDENTIFIER (s, ii1)::TCommentSpace iispace::LT ii2::
         COND ii3::xs
         when s =~ "^[A-Z]" ->
+          logger#info "retagging < at %s" (PI.string_of_info ii2);
           IDENTIFIER (s, ii1)::TCommentSpace iispace::LT_GENERIC ii2::
           aux (depth_angle + 1) (COND ii3::xs)
 
@@ -117,6 +123,7 @@ let fix_tokens_generics xs =
        * so at least the >> get transformed into > >.
       *)
       | DOT ii1::LT ii2::xs ->
+          logger#info "retagging < at %s" (PI.string_of_info ii2);
           DOT ii1::LT_GENERIC ii2::aux (depth_angle + 1) xs
 
       (* <T extends ...> bar().
@@ -189,8 +196,10 @@ let fix_tokens_fuzzy toks =
     (* use the tagged information and transform tokens *)
     toks |> List.map (function
       | T.LP info when Hashtbl.mem retag_lparen info ->
+          logger#info "retagging ( for lambda at %s" (PI.string_of_info info);
           T.LP_LAMBDA info
       | T.DEFAULT info when Hashtbl.mem retag_default info ->
+          logger#info "retagging default at %s" (PI.string_of_info info);
           T.DEFAULT_COLON info
       | x -> x
     )

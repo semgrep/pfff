@@ -442,11 +442,22 @@ type_argument:
 (* Generics parameters *)
 (*----------------------------*)
 (* javaext: 1? *)
-type_parameters: LT listc(type_parameter) GT { $2 }
+type_parameters:
+  | LT listc(type_parameter) GT { $2 }
+  (* sgrep-ext: ugly, but <...> will be parsed as <... > *)
+  | "<..." GT { Flag_parsing.sgrep_guard [TParamEllipsis $1] }
+  | "<..." "," listc(type_parameter) GT
+      { Flag_parsing.sgrep_guard (TParamEllipsis $1::$3) }
+  | "<..." "," listc(type_parameter) "," "...>"
+      { Flag_parsing.sgrep_guard ([TParamEllipsis $1]@$3@[TParamEllipsis $5])}
+  | LT listc(type_parameter) "," "...>"
+      { Flag_parsing.sgrep_guard ($2 @ [ TParamEllipsis $4]) }
 
 type_parameter:
  | identifier               { TParam ($1, []) }
  | identifier EXTENDS bound { TParam ($1, $3) }
+ (* sgrep-ext: *)
+ | "..."                    { Flag_parsing.sgrep_guard (TParamEllipsis $1) }
 
 bound: list_sep(reference_type, AND) { $1 }
 

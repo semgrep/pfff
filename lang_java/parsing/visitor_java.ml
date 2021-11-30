@@ -125,6 +125,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_type_parameter =
     function
+    | TParamEllipsis v1 -> v_tok v1
     | TParam (v1, v2) ->
         let v1 = v_ident v1 and v2 = v_list v_ref_type v2 in ()
 
