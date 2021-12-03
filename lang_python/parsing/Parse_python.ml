@@ -48,37 +48,47 @@ let tokens parsing_mode file =
   let state = Lexer.create () in
   let python2 = parsing_mode = Python2 in
   let token lexbuf =
-    match Lexer.top_mode state with
-    | Lexer.STATE_TOKEN ->
-        Lexer.token python2 state lexbuf
-    | Lexer.STATE_OFFSET ->
-        failwith "impossibe STATE_OFFSET in python lexer"
-    | Lexer.STATE_UNDERSCORE_TOKEN ->
-        let tok = Lexer._token python2 state lexbuf in
-        (match tok, Lexer.top_mode state with
-         | T.TCommentSpace _, _ -> ()
-         | T.FSTRING_START _, _ -> ()
-         | _, Lexer.STATE_UNDERSCORE_TOKEN ->
-             (* Note that _token() may have changed the top state.
-              * For example, after having lexed 'f"{foo '", which puts us in a state
-              * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
-              * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
-              * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
-              * don't want to replace with ST_TOKEN. This is why we should switch
-              * back to ST_TOKEN only when the current state is
-              * STATE_UNDERSCORE_TOKEN. *)
-             Lexer.set_mode state Lexer.STATE_TOKEN
-         | _ -> ()
-        );
-        tok
-    | Lexer.STATE_IN_FSTRING_SINGLE pre ->
-        Lexer.fstring_single state pre lexbuf
-    | Lexer.STATE_IN_FSTRING_DOUBLE pre ->
-        Lexer.fstring_double state pre lexbuf
-    | Lexer.STATE_IN_FSTRING_TRIPLE_SINGLE pre ->
-        Lexer.fstring_triple_single state pre lexbuf
-    | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE pre ->
-        Lexer.fstring_triple_double state pre lexbuf
+    try (
+      match Lexer.top_mode state with
+      | Lexer.STATE_TOKEN ->
+          Lexer.token python2 state lexbuf
+      | Lexer.STATE_OFFSET ->
+          failwith "impossibe STATE_OFFSET in python lexer"
+      | Lexer.STATE_UNDERSCORE_TOKEN ->
+          let tok = Lexer._token python2 state lexbuf in
+          (match tok, Lexer.top_mode state with
+           | T.TCommentSpace _, _ -> ()
+           | T.FSTRING_START _, _ -> ()
+           | _, Lexer.STATE_UNDERSCORE_TOKEN ->
+               (* Note that _token() may have changed the top state.
+                * For example, after having lexed 'f"{foo '", which puts us in a state
+                * ST_UNDERSCORE_TOKEN with a full stack of [ST_UNDERSCORE_TOKEN;
+                * ST_IN_F_STRING_DOUBLE; ST_UNDERSCORE_TOKEN], encountering a '}' will
+                * pop the stack and leave ST_IN_FSTRING_DOUBLE at the top, which we
+                * don't want to replace with ST_TOKEN. This is why we should switch
+                * back to ST_TOKEN only when the current state is
+                * STATE_UNDERSCORE_TOKEN. *)
+               Lexer.set_mode state Lexer.STATE_TOKEN
+           | _ -> ()
+          );
+          tok
+      | Lexer.STATE_IN_FSTRING_SINGLE pre ->
+          Lexer.fstring_single state pre lexbuf
+      | Lexer.STATE_IN_FSTRING_DOUBLE pre ->
+          Lexer.fstring_double state pre lexbuf
+      | Lexer.STATE_IN_FSTRING_TRIPLE_SINGLE pre ->
+          Lexer.fstring_triple_single state pre lexbuf
+      | Lexer.STATE_IN_FSTRING_TRIPLE_DOUBLE pre ->
+          Lexer.fstring_triple_double state pre lexbuf
+    )
+    with
+    (* This can happen with "empty_mode stack" in Lexer.top_mode(), or
+     * even "hd" in Lexer.pop_mode().
+     * It's better to generate proper parsing error exn.
+    *)
+    | Failure s ->
+        Parse_info.lexical_error s lexbuf;
+        T.EOF (Parse_info.tokinfo lexbuf)
   in
   Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
     file token TH.visitor_info_of_tok TH.is_eof
