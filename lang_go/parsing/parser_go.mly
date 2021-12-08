@@ -758,6 +758,16 @@ complitexpr:
 |   "{" braced_keyval_list "}" { InitBraces ($1, $2, $3) }
 
 bare_complitexpr:
+(* Special case to deal with automatic semicolon insertion. We want to parse
+   &http.Transport{
+     ...
+   }
+   but ASI turns this into
+   &http.Transport{
+     ...;
+   }
+*)
+|   "..." ";" { InitExpr (Ellipsis $1)}
 |   expr { InitExpr $1 }
 |   "{" braced_keyval_list "}" { InitBraces ($1, $2, $3) }
 
