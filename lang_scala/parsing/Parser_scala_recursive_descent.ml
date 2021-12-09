@@ -1535,6 +1535,9 @@ and simplePattern in_ : pattern =
     | x when TH.isLiteral x ->
         let x = literal ~inPattern:true in_ in
         PatLiteral x
+    | Ellipsis t ->
+        nextToken in_;
+        PatEllipsis t
     (* scala3: deprecated XMLSTART *)
     | _ ->
         error "illegal start of simple pattern" in_

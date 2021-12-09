@@ -236,6 +236,7 @@ and pattern =
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
   | PatDisj of pattern * tok (* | *) * pattern
+  | PatEllipsis of tok
 
 (*****************************************************************************)
 (* Expressions *)
