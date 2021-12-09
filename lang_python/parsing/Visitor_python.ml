@@ -220,7 +220,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       function
       | CompList v1 -> let v1 = v_bracket (v_list of_a) v1 in ()
       | CompForIf v1 ->
-          v_comprehension of_a v1
+          v_bracket (v_comprehension of_a) v1
 
   and v_comprehension: 'a. ('a -> unit) -> 'a comprehension -> unit = fun of_a ->
     fun (v1, v2) ->

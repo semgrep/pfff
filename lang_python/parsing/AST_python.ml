@@ -213,7 +213,7 @@ and interpolated = expr
 
 and 'a list_or_comprehension =
   | CompList of 'a list bracket
-  | CompForIf of 'a comprehension
+  | CompForIf of 'a comprehension bracket
 
 and 'a comprehension = 'a * for_if list
 and for_if =

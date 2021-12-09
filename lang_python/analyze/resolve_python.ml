@@ -163,13 +163,13 @@ let resolve prog =
                                           resolved := Parameter; (* optional *)
                                      );
                                      k x
-                                 | Tuple (CompForIf x, _)
-                                 | List (CompForIf x, _)
+                                 | Tuple (CompForIf (_, x, _), _)
+                                 | List (CompForIf (_, x, _), _)
                                    (* bugfix: do not pass just k here, because we want to intercept
                                     * the processing of 'e' too!
                                    *)
                                    -> comprehension (fun e -> v (Expr e)) v x
-                                 | DictOrSet (CompForIf x) ->
+                                 | DictOrSet (CompForIf (_, x, _)) ->
                                      comprehension (fun elt -> v (DictElem elt)) v x
 
                                  (* general case *)

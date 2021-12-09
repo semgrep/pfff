@@ -54,6 +54,8 @@ let rewrap_paren_if_tuple l e r =
   match e with
   | Tuple (CompList (_, xs, _), Load) ->
       Tuple (CompList (l, xs, r), Load)
+  | Tuple (CompForIf (_, x, _), Load) ->
+      Tuple (CompForIf (l, x, r), Load)
   | _ -> e
 
 (* TODO: TypedExpr? ExprStar? then can appear as lvalue
@@ -837,8 +839,8 @@ atom_dict:
   | "{" dictorsetmaker "}" { DictOrSet ($2 ($1, $3)) }
 
 dictorsetmaker:
-  | dictorset_elem comp_for { fun _ -> CompForIf ($1, $2) }
-  | list_comma(dictorset_elem)     { fun (t1, t2) -> CompList (t1, $1, t2) }
+  | dictorset_elem comp_for    { fun (t1, t2) -> CompForIf (t1, ($1, $2), t2) }
+  | list_comma(dictorset_elem) { fun (t1, t2) -> CompList (t1, $1, t2) }
 
 dictorset_elem:
   | test ":" test { KeyVal ($1, $3) }
@@ -919,15 +921,18 @@ lambdadef: LAMBDA varargslist ":" test { Lambda ($1, $2, $3, $4) }
 (*----------------------------*)
 
 testlist_comp:
-  | namedexpr_or_star_expr listcomp_for  { fun _ -> CompForIf ($1, $2) }
+  | namedexpr_or_star_expr listcomp_for
+      { fun (t1, t2) -> CompForIf (t1, ($1, $2), t2) }
   | tuple(namedexpr_or_star_expr)
       { fun (t1, t2) -> CompList (t1, to_list $1, t2) }
 
 (* mostly equivalent to testlist_comp, but transform a single expression
  * in parenthesis, e.g., (1) in a regular expr, not a tuple *)
 testlist_comp_or_expr:
-  | namedexpr_or_star_expr comp_for  { Tuple (CompForIf ($1, $2), Load) }
-  | tuple(namedexpr_or_star_expr)    { tuple_expr $1 }
+  | namedexpr_or_star_expr comp_for
+     { Tuple (CompForIf (PI.unsafe_fake_bracket ($1, $2)), Load) }
+  | tuple(namedexpr_or_star_expr)
+     { tuple_expr $1 }
 
 (* supports comp_for when used generically -- not inside atom_list
  * Note that the division here is necessary to solve a shift-reduce conflict between:
