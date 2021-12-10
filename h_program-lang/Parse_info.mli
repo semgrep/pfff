@@ -229,6 +229,14 @@ val combine_infos: t -> t list -> t
  * line, otherwise the line/col of the result might be wrong *)
 val split_info_at_pos: int -> t -> t * t
 
+(*
+   Any non-ascii byte is replaced by this ascii character as a hack to
+   work around our lack of support for Unicode-aware code locations.
+   This character is 'Z'.
+   Any sequence of one of more Zs may be the result of such replacement.
+*)
+val unicode_hack_replacement_byte : char
+
 (* to be used by the lexer *)
 val tokenize_all_and_adjust_pos:
   ?unicode_hack:bool ->

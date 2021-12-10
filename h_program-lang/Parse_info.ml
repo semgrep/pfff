@@ -637,6 +637,8 @@ let complete_token_location_large filename table x =
     column = snd (table (x.charpos));
   }
 
+let unicode_hack_replacement_byte = 'Z'
+
 (* Why is it better to first get all the tokens?
  * Why not lex on-demand as yacc requires more tokens?
  * There are a few reasons:
@@ -654,13 +656,22 @@ let tokenize_all_and_adjust_pos ?(unicode_hack=false)
         let string =
           Common.profile_code "Unicode.input_and_replace_non_ascii" (fun () ->
           (*
+             We replace all unicode characters by Zs as a hack to avoid
+             invalid locations due to assumptions that one byte = character.
+             This causes any non-ascii character to be represented by a
+             sequence of Zs, resulting in false positives such
+             as '"😀"' matching '"🚀"'.
+             See https://github.com/returntocorp/semgrep/issues/2111
+             TODO: get rid of this hack and fix location problems properly
+
              This breaks java (and perhaps other) characters constants.
              UTF-8 characters become something invalid like this:
                char c = 'ZZZ'
              There's a hack in the java lexer to support such invalid
              character literals.
           *)
-            Unicode.input_and_replace_non_ascii ~replacement_byte:'Z' chan
+            Unicode.input_and_replace_non_ascii
+              ~replacement_byte:unicode_hack_replacement_byte chan
           ) in
         Lexing.from_string string
       else
