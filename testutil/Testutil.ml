@@ -86,6 +86,11 @@ let to_alcotest ?(speed_level = `Quick) tests : unit Alcotest.test list =
   tests
   |> list_map (fun (path, func) ->
     let category, name = split_path path in
+    let category =
+      match category with
+      | "" -> name
+      | s -> s
+    in
     let pretty_category = use_pretty_path_separator category in
     (pretty_category, (name, speed_level, func)))
   |> group_by_key

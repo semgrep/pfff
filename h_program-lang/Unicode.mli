@@ -1,5 +1,13 @@
 (*
    Utilities for dealing with Unicode issues.
+
+   Notes for later:
+
+   Eventually, we want to support Unicode properly! At a minimum, we want:
+   - comparing raw UTF-8 data is done correctly i.e. the pattern
+     '"😀"' matches the target code '"😀"' and not '"🚀"'.
+   - positions in source code (number of lines, position within the line)
+     must be interpreted identically in javascript, python, and ocaml.
 *)
 
 (*
