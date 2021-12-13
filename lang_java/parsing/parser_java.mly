@@ -247,6 +247,7 @@ let mk_stmt_or_stmts = function
 %token <Parse_info.t> LT_GENERIC		(* < ... > *)
 %token <Parse_info.t> LP_LAMBDA		(* ( ... ) ->  *)
 %token <Parse_info.t> DEFAULT_COLON		(* default :  *)
+%token <Parse_info.t> LP_PARAM		(* ( ) { }  *)
 
 (*************************************************************************)
 (* Priorities *)
@@ -255,9 +256,9 @@ let mk_stmt_or_stmts = function
 (*************************************************************************)
 (* Rules type declaration *)
 (*************************************************************************)
-%start goal sgrep_spatch_pattern
+%start goal semgrep_pattern
 %type <Ast_java.program> goal
-%type <Ast_java.any>     sgrep_spatch_pattern
+%type <Ast_java.any>     semgrep_pattern
 
 %%
 (*************************************************************************)
@@ -305,13 +306,18 @@ goal: compilation_unit EOF  { $1 }
  *)
 compilation_unit:
   | package_declaration import_declaration+ type_declaration*
-    { [DirectiveStmt $1] @ ($2 |> List.map (fun x -> DirectiveStmt x)) @ List.flatten $3 }
+    { [DirectiveStmt $1] @ ($2 |> List.map (fun x -> DirectiveStmt x))
+       @ List.flatten $3 }
   | package_declaration                     type_declaration*
     { [DirectiveStmt $1] @ List.flatten $2 }
   |                     import_declaration+ type_declaration*
     { ($1 |> List.map (fun x -> DirectiveStmt x)) @ List.flatten $2 }
   |                                         type_declaration*
     { List.flatten $1 }
+
+type_declaration:
+ | class_and_co_declaration { [DeclStmt $1] }
+ | ";"  { [] }
 
 class_and_co_declaration:
  | class_declaration      { Class $1 }
@@ -320,12 +326,11 @@ class_and_co_declaration:
  | enum_declaration       { Enum $1 }
  | annotation_type_declaration { Class $1 }
 
-declaration:
- | class_and_co_declaration { $1 }
- | method_declaration       { Method $1 }
+(*************************************************************************)
+(* Semgrep pattern *)
+(*************************************************************************)
 
-
-sgrep_spatch_pattern:
+semgrep_pattern:
  | expression   EOF              { AExpr $1 }
  | item_no_dots EOF              { mk_stmt_or_stmts $1 }
  | item_no_dots item+ EOF        { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
@@ -341,19 +346,24 @@ sgrep_spatch_pattern:
  | catch_clause          EOF { Partial (PartialCatch $1) }
  | finally               EOF { Partial (PartialFinally $1) }
 
-item:
- | statement { [$1] }
- | item_other { $1 }
-
 item_no_dots:
  | statement_no_dots { [$1] }
  | item_other { $1 }
 
+item:
+ | statement { [$1] }
+ | item_other { $1 }
+
 item_other:
- | declaration         { [DeclStmt $1] }
+ | item_declaration         { [DeclStmt $1] }
  | import_declaration  { [DirectiveStmt $1] }
  | package_declaration { [DirectiveStmt $1] }
  | local_variable_declaration_statement { $1 }
+
+item_declaration:
+ | class_and_co_declaration { $1 }
+ | method_declaration       { Method $1 }
+ | constructor_declaration_top  { $1 }
 
 (* coupling: copy paste of statement, without dots *)
 statement_no_dots:
@@ -364,8 +374,27 @@ statement_no_dots:
  | while_statement  { $1 }
  | for_statement  { $1 }
 
+
+(* Mostly a copy-paste of constructor_declaration but using LP_PARAM.
+ * conflicts: without this trick, when reading 'foo(' there is no way to
+ * know whether this is the start of a function call or a constructor
+ * declaration. We need to look-ahead far to see whether there is
+ * a {} after the closing parenthesis (which is what parsing_hacks_java.ml
+ * does).
+ *)
+constructor_declaration_top:
+  modifiers_opt constructor_declarator_top optl(throws) constructor_body
+  { let (id, formals) = $2 in
+    let var = { mods = $1; type_ = None; name = id } in
+    Method { m_var = var; m_formals = formals; m_throws = $3;
+	     m_body = $4 }
+  }
+
+constructor_declarator_top: identifier LP_PARAM listc0(formal_parameter) ")"
+  { $1, $3}
+
 (*************************************************************************)
-(* Package, Import, Type *)
+(* Package, Import *)
 (*************************************************************************)
 
 (* ident_list *)
@@ -382,10 +411,6 @@ import_declaration:
       ))) }
  | IMPORT STATIC? name "." TIMES ";"
     { (Import ($2, ImportAll ($1, qualified_ident $3, $5)))}
-
-type_declaration:
- | class_and_co_declaration { [DeclStmt $1] }
- | ";"  { [] }
 
 (*************************************************************************)
 (* Ident, namespace  *)

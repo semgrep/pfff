@@ -37,6 +37,14 @@ let logger = Logging.get_logger [__MODULE__]
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+(* alt: could have instead a better Ast_fuzzy type instead of putting
+ * everything in the Tok category?
+ * coupling: copy-paste of Parsing_hacks_go.is_identifier
+*)
+let is_identifier horigin (info : Parse_info.t) =
+  match Hashtbl.find_opt horigin info with
+  | Some (IDENTIFIER _) -> true
+  | _ -> false
 
 (*****************************************************************************)
 (* Generic inference *)
@@ -164,6 +172,19 @@ let fix_tokens_fuzzy toks =
     in
     let retag_lparen = Hashtbl.create 101 in
     let retag_default = Hashtbl.create 101 in
+    let retag_lparen_constructor = Hashtbl.create 101 in
+
+    let horigin = toks |> List.map (fun t -> TH.info_of_tok t, t)
+                  |> Common.hash_of_list in
+
+    (match trees with
+     (* MyConstructor(...) { ... } *)
+     | Tok(_s, info)::F.Parens(l, _xs, _r)::F.Braces(_, _, _)::_
+       when !Flag_parsing.sgrep_mode &&
+            is_identifier horigin info ->
+         Hashtbl.add retag_lparen_constructor l true
+     | _ -> ();
+    );
 
     let rec aux env trees =
       match trees with
@@ -198,6 +219,9 @@ let fix_tokens_fuzzy toks =
       | T.LP info when Hashtbl.mem retag_lparen info ->
           logger#info "retagging ( for lambda at %s" (PI.string_of_info info);
           T.LP_LAMBDA info
+      | T.LP info when Hashtbl.mem retag_lparen_constructor info ->
+          logger#info "retagging ( for constructor at %s" (PI.string_of_info info);
+          T.LP_PARAM info
       | T.DEFAULT info when Hashtbl.mem retag_default info ->
           logger#info "retagging default at %s" (PI.string_of_info info);
           T.DEFAULT_COLON info

@@ -289,7 +289,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
 
     (* symbols *)
 
-    | T.LP ii | T.LP_LAMBDA ii
+    | T.LP ii | T.LP_LAMBDA ii | T.LP_PARAM ii
     | T.RP ii
     | T.LC ii | T.RC ii
     | T.LB ii  | T.RB ii

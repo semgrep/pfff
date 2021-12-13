@@ -85,6 +85,7 @@ let visitor_info_of_tok f = function
   | LT ii -> LT (f ii)
   | LT_GENERIC ii -> LT_GENERIC (f ii)
   | LP_LAMBDA ii -> LP_LAMBDA (f ii)
+  | LP_PARAM ii -> LP_PARAM (f ii)
   | NOT ii -> NOT (f ii)
   | COMPL ii -> COMPL (f ii)
   | COND ii -> COND (f ii)

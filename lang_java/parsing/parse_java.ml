@@ -121,5 +121,5 @@ let any_of_string s =
       let toks = tokens file in
       let toks = Parsing_hacks_java.fix_tokens toks in
       let _tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
-      Parser_java.sgrep_spatch_pattern lexer lexbuf_fake
+      Parser_java.semgrep_pattern lexer lexbuf_fake
     ))
