@@ -1267,13 +1267,28 @@ explicit_constructor_invocation:
 formal_parameters: "(" listc0(formal_parameter) ")" { $2 }
 
 formal_parameter:
- | variable_modifier* type_ variable_declarator_id
+ | variable_modifiers type_ variable_declarator_id
   { ParamClassic (canon_var $1 (Some $2) $3) }
  (* javaext: 1.? *)
- | variable_modifier* type_ "..." variable_declarator_id
+ | variable_modifiers type_ "..." variable_declarator_id
   { ParamSpread ($3, canon_var $1 (Some $2) $4) }
  (* sgrep-ext: *)
  | "..." { ParamEllipsis $1 }
+ (* less: we could also restrict to AST_generic_.is_metavar_ellipsis *)
+ | IDENTIFIER
+   { Flag_parsing.sgrep_guard
+       (ParamClassic { name = $1; mods = []; type_ = None }) }
+
+(* conflicts: this is equivalent to variable_modifier*, but then
+ * we get a s/r conflict with IDENTIFIER because reading an IDENTIFIER
+ * menhir does not know whether to shift or to reduce variable_modifier*
+ * as type_ can begin witn an IDENTIFIER, so expanding and inline
+ * variable_modifier* helps.
+ *)
+%inline
+variable_modifiers:
+ | (* empty *) { [] }
+ | variable_modifier variable_modifier* { $1::$2}
 
  (* javaext: 1.? *)
 variable_modifier:

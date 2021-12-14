@@ -320,7 +320,7 @@ and resource = (var_with_init, expr) Common.either
 and entity = {
   name: ident;
   mods: modifiers;
-  (* None for inferred lambda parameters *)
+  (* None for inferred lambda parameters or $...PARAMS *)
   type_: typ option;
   (* todo? tparams: type_parameter list; *)
 }
@@ -368,14 +368,15 @@ and constructor_decl = method_decl
 
 and parameters = parameter_binding list (* TODO bracket *)
 and parameter_binding =
-  | ParamClassic of parameter
+  | ParamClassic of parameter_classic
   (* java-ext: ?? *)
-  | ParamSpread of tok (* ... *) * parameter
+  | ParamSpread of tok (* ... *) * parameter_classic
   (* java-ext: 8, name is always 'this' in parameter *)
-  | ParamReceiver of parameter
+  | ParamReceiver of parameter_classic
   (* sgrep-ext: *)
   | ParamEllipsis of tok
-and parameter = var_definition
+
+and parameter_classic = var_definition
 
 and field = var_with_init
 
