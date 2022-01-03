@@ -514,8 +514,8 @@ expr:
        Fun ($1, $2::params, e) }
 
  (* TODOAST: (type a) is ignored for now *)
- | Tfun "(" Ttype TLowerIdent+ ")" fun_def
-     { let (params, (_tok, e)) = $6 in
+ | Tfun "(" abstract_type ")" fun_def
+     { let (params, (_tok, e)) = $5 in
        Fun ($1, params, e) }
 
  | Tfunction "|"? match_cases                { Function ($1, $3) }
@@ -961,7 +961,11 @@ polymorphic_variant_type:
 
 poly_type:
  | type_parameter+ "." core_type { TyTodo(("Poly",$2), [$3]) }
+ | abstract_type "." core_type   { TyTodo(("Poly", $2), [$3]) }
  | core_type { $1 }
+
+(* TODOAST *)
+abstract_type: Ttype TLowerIdent+ { }
 
 row_field:
  | tag_field                                   { $1 }
@@ -1005,7 +1009,7 @@ strict_binding:
  (* function values, e.g. 'let x a b c = 1' *)
  | labeled_simple_pattern fun_binding { let (args, body) = $2 in $1::args,body}
  (* TODOAST *)
- | "(" Ttype TLowerIdent+ ")" fun_binding { $5 }
+ | "(" abstract_type ")" fun_binding { $4 }
 
 fun_def:
  | "->" expr                       { [], ($1, $2) }
