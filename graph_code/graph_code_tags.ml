@@ -17,6 +17,8 @@ open Common
 module G = Graph_code
 module E = Entity_code
 
+let logger = Logging.get_logger [__MODULE__]
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -68,7 +70,7 @@ let defs_of_graph_code ?(verbose=false) g =
            array.(line)
          with
          | Invalid_argument _out_of_bound ->
-             pr2 (spf "PB accessing line %d of %s" line file);
+             logger#error "PB accessing line %d of %s" line file;
              ""
          | Sys_error _no_such_file ->
              pr2_once (spf "PB accessing file %s" file);
