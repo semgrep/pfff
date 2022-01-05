@@ -213,6 +213,7 @@ list_sep_term(X,Sep):
 
 list_comma(X): list_sep_term(X, ",") { $1 }
 
+(* In most cases  it should be used with tuple(expr_or_star_expr) *)
 tuple(X):
  | X               { Single $1 }
  | X ","           { Tup [$1] }
@@ -525,7 +526,7 @@ continue_stmt: CONTINUE { Continue $1 }
 
 return_stmt:
   | RETURN          { Return ($1, None) }
-  | RETURN tuple(test) { Return ($1, Some (tuple_expr $2)) }
+  | RETURN tuple(test_or_star_expr) { Return ($1, Some (tuple_expr $2)) }
 
 yield_stmt: yield_expr { ExprStmt ($1) }
 
