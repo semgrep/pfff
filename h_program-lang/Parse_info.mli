@@ -1,4 +1,6 @@
-
+(* TODO: this module should be split in 3 or 4, and especially we should have
+ * a separate Tok.ml with all token related types.
+*)
 (*****************************************************************************)
 (* Tokens *)
 (*****************************************************************************)
@@ -49,6 +51,7 @@ and add =
  * It's just a lexeme, but the word lexeme is not as known as token.
 *)
 type t = token_mutable
+
 (* deprecated *)
 type info_ = t
 
@@ -67,6 +70,7 @@ type token_kind =
   | Esthet of esthet
   | Eof
   | Other
+
 and esthet =
   | Comment
   | Newline
@@ -75,6 +79,8 @@ and esthet =
 (*****************************************************************************)
 (* Errors during parsing *)
 (*****************************************************************************)
+
+(* TODO? move to Error_code.mli instead *)
 
 (* note that those exceptions can be converted in Error_code.error with
  * Error_code.try_with_exn_to_error()

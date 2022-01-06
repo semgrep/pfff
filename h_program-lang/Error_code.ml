@@ -54,7 +54,7 @@ let report_fatal_errors = ref false
 (* Types *)
 (*****************************************************************************)
 
-type error = {
+type t = {
   typ: error_kind;
   loc: Parse_info.token_location;
   sev: severity;
@@ -134,6 +134,8 @@ and error_kind =
 (* todo: should be merged with Graph_code.entity or put in Database_code?*)
 and entity = (string * Entity_code.entity_kind)
 
+(* deprecated: alias, but you should use Error_code.t *)
+type error = t
 
 type rank =
   (* Too many FPs for now. Not applied even in strict mode. *)
@@ -487,3 +489,35 @@ let (expected_error_lines_of_files :
       then Some (file, idx + 1)
       else None))
   |> List.flatten
+
+let compare_actual_to_expected actual_errors expected_error_lines =
+  let actual_error_lines =
+    actual_errors
+    |> List.map (fun err ->
+      let loc = err.loc in
+      (loc.PI.file, loc.PI.line))
+  in
+  (* diff report *)
+  let _common, only_in_expected, only_in_actual =
+    Common2.diff_set_eff expected_error_lines actual_error_lines
+  in
+
+  only_in_expected
+  |> List.iter (fun (src, l) ->
+    pr2 (spf "this one error is missing: %s:%d" src l));
+  only_in_actual
+  |> List.iter (fun (src, l) ->
+    pr2
+      (spf "this one error was not expected: %s:%d (%s)" src l
+         (actual_errors
+          |> List.find (fun err ->
+            let loc = err.loc in
+            src =$= loc.PI.file && l =|= loc.PI.line)
+          |> string_of_error)));
+  let num_errors = List.length only_in_actual + List.length only_in_expected in
+  let msg =
+    spf "it should find all reported errors and no more (%d errors)" num_errors
+  in
+  match num_errors with
+  | 0 -> Stdlib.Ok ()
+  | n -> Error (n, msg)

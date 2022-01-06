@@ -1,7 +1,7 @@
 
 (* types *)
 
-type error = {
+type t = {
   typ: error_kind;
   loc: Parse_info.token_location;
   sev: severity;
@@ -36,6 +36,9 @@ and error_kind =
   | OutOfMemory of string option
 
 and entity = (string * Entity_code.entity_kind)
+
+(* deprecated: alias, but you should use Error_code.t *)
+type error = t
 
 val mk_error_loc: Parse_info.token_location -> error_kind -> error
 
@@ -127,3 +130,9 @@ val expected_error_lines_of_files :
   ?regexp:string ->
   Common.filename list ->
   (Common.filename * int) (* line with ERROR *) list
+
+(*
+   Return the number of errors and an error message, if there's any error.
+*)
+val compare_actual_to_expected :
+  error list -> (Common.filename * int) list -> (unit, int * string) result

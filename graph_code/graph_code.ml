@@ -77,6 +77,7 @@ module G = Graphe
  *
  * related work:
  *  - grok: by steve yegge http://www.youtube.com/watch?v=KTJs-0EInW8
+ *  - scopegraph by github
  *)
 
 (*****************************************************************************)
