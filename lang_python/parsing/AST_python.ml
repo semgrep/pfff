@@ -342,21 +342,9 @@ type stmt =
   | ImportFrom of tok * module_name (* module *) * alias list (* names *)
 
   (* should be allowed just at the toplevel *)
-  | FunctionDef of
-    tok (* 'def' *) *
-    name (* name *) *
-    parameters (* args *) *
-    type_ option * (* return type *)
-    stmt list (* body *) *
-    decorator list (* decorator_list *)
+  | FunctionDef of function_definition
 
-  | ClassDef of
-    tok (* 'class' *) *
-    name (* name *) *
-    type_parent list (* bases *) *
-    stmt list (* body *) *
-    decorator list (* decorator_list *)
-
+  | ClassDef of class_definition
 
 and excepthandler =
     ExceptHandler of
@@ -368,6 +356,9 @@ and excepthandler =
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
+(* Note that there are no "Variable definition" section below.
+ * Variables in Python are defined by assignment.
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Decorators (a.k.a annotations) *)
@@ -377,14 +368,24 @@ and decorator = tok (* @ *) * dotted_name * argument list bracket option
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
 (* ------------------------------------------------------------------------- *)
+and function_definition =
+  tok (* 'def' *) *
+  name (* name *) *
+  parameters (* args *) *
+  type_ option * (* return type *)
+  stmt list (* body *) *
+  decorator list (* decorator_list *)
 
-(* ------------------------------------------------------------------------- *)
-(* Variable definition *)
-(* ------------------------------------------------------------------------- *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
+and class_definition =
+  tok (* 'class' *) *
+  name (* name *) *
+  type_parent list (* bases *) *
+  stmt list (* body *) *
+  decorator list (* decorator_list *)
 
 (*****************************************************************************)
 (* Module *)
