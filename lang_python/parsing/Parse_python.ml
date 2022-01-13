@@ -90,7 +90,7 @@ let tokens parsing_mode file =
         Parse_info.lexical_error s lexbuf;
         T.EOF (Parse_info.tokinfo lexbuf)
   in
-  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
+  Parse_info.tokenize_all_and_adjust_pos
     file token TH.visitor_info_of_tok TH.is_eof
 [@@profiling]
 

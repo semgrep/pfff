@@ -273,8 +273,6 @@ rule initial = parse
    * The right solution would be to switch to a unicode-aware lexer generator,
    * like ulex or sedlex.
    * todo: https://en.wikipedia.org/wiki/Whitespace_character#Unicode
-   * update: with Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:true
-   * the hack below is redundant.
    *)
   | "\xc2\xa0" (* non-breaking-space \u{00A0} *)
   | "\xef\xbb\xbf" (* byte-order-mark \u{FEFF} *)

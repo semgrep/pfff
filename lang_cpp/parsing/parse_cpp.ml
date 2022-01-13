@@ -109,7 +109,7 @@ let is_same_line_or_close line tok =
 
 (* called by parse below *)
 let tokens file =
-  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:false
+  Parse_info.tokenize_all_and_adjust_pos
     file Lexer.token TH.visitor_info_of_tok TH.is_eof
 [@@profiling]
 

@@ -216,12 +216,59 @@ let EscapeSequence =
 let EscapeSequence_semgrep =
   '\\' _
 
+(************************ UTF-8 boilerplate ************************)
+(*
+   Generic UTF-8 boilerplate.
 
-(* ugly: see unicode_hack in Parse_info.ml *)
-let UnicodeX = "Z"+
+   See https://erratique.ch/software/uucp/doc/unicode.html
+   for a good explanation of how this works.
+
+   We don't convert UTF-8-encoded data to code points. We only do the minimum
+   to ensure the correct identification of the boundaries between scalar
+   code points.
+*)
+
+(* 0xxxxxxx *)
+let ascii = ['\000'-'\127']
+
+(* 110xxxxx *)
+let utf8_head_byte2 = ['\192'-'\223']
+
+(* 1110xxxx *)
+let utf8_head_byte3 = ['\224'-'\239']
+
+(* 11110xxx *)
+let utf8_head_byte4 = ['\240'-'\247']
+
+(* 10xxxxxx *)
+let utf8_tail_byte = ['\128'-'\191']
+
+(* 7 bits of payload *)
+let utf8_1 = ascii
+
+(* 11 bits of payload *)
+let utf8_2 = utf8_head_byte2 utf8_tail_byte
+
+(* 16 bits of payload *)
+let utf8_3 = utf8_head_byte3 utf8_tail_byte utf8_tail_byte
+
+(* 21 bits of payload *)
+let utf8_4 = utf8_head_byte4 utf8_tail_byte utf8_tail_byte utf8_tail_byte
+
+(* Any UTF-8-encoded code point. This set includes more than it should
+   for simplicity.
+
+   - This includes encodings of the so-called surrogate code points
+     used by UTF-16 and not permitted by UTF-8.
+   - This includes the range 0x110000 to 0x1FFFFF which are beyond the
+     range of valid Unicode code points.
+*)
+let utf8 = utf8_1 | utf8_2 | utf8_3 | utf8_4
+
+(************************ end of UTF-8 boilerplate ************************)
 
 let SingleCharacter = [^ '\'' '\\' '\n' '\r']
-let CharacterLiteral = '\'' (SingleCharacter | EscapeSequence | UnicodeX ) '\''
+let CharacterLiteral = '\'' (SingleCharacter | EscapeSequence | utf8 ) '\''
 
 
 let StringCharacter = [^ '"' '\\' '\n' '\r']
