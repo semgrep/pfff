@@ -10,16 +10,28 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Use our own image with opam dependencies pre-installed to speed
+    # things up.
+    container: returntocorp/ocaml:ubuntu
+
     steps:
-    - uses: actions/checkout@v1
+    - name: Pre-checkout fixes
+      run: |
+        sudo chmod -R 777 /github
+        github_cache_dir="/__w"
+        sudo mkdir -p "$github_cache_dir"
+        sudo chmod -R 777 "$github_cache_dir"
+    - uses: actions/checkout@v2
+
+    # Move /home/user/.opam to the new HOME imposed by GHA
+    - name: Post-checkout fixes
+      run: ./.github/post-checkout
+
     - name: Install System Deps
       run: sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial ocaml opam
     - name: debugging
       run: opam --version
     - name: Install pfff
-      run: |
-        opam init
-        ./scripts/install-opam-deps --ocaml-version 4.10.2
-        opam install -y pfff
+      run: opam install -y pfff
     - name: Run Tests
       run: eval $(opam env); dune build && dune runtest -f
