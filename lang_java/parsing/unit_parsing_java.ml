@@ -15,11 +15,7 @@ let tests =
       let dir = Config_pfff.tests_path "java/parsing" in
       let files = Common2.glob (spf "%s/*.java" dir) in
       files |> List.iter (fun file ->
-        try
-          let _ = Parse_java.parse file in
-          ()
-        with Parse_info.Parsing_error _ ->
-          Alcotest.failf "it should correctly parse %s" file
+        Testutil.run file (fun () -> Parse_java.parse file |> ignore)
       )
     );
 

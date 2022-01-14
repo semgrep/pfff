@@ -11,11 +11,7 @@ let tests =
       let dir = Config_pfff.tests_path "python/parsing" in
       let files = Common2.glob (spf "%s/*.py" dir)in
       files |> List.iter (fun file ->
-        try
-          let _ = Parse_python.parse_program file in
-          ()
-        with Parse_info.Parsing_error _ ->
-          Alcotest.failf "it should correctly parse %s" file
+        Testutil.run file (fun () -> Parse_python.parse_program file |> ignore)
       )
     );
   ]

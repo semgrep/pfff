@@ -41,19 +41,85 @@ let error = Parse_info.lexical_error
 }
 
 (*****************************************************************************)
+(* UTF-8 boilerplate *)
+(*****************************************************************************)
+(*
+   Generic UTF-8 boilerplate.
+
+   See https://erratique.ch/software/uucp/doc/unicode.html
+   for a good explanation of how this works.
+
+   We don't convert UTF-8-encoded data to code points. We only do the minimum
+   to ensure the correct identification of the boundaries between scalar
+   code points.
+*)
+
+(* 0xxxxxxx *)
+let ascii = ['\000'-'\127']
+
+(* 110xxxxx *)
+let utf8_head_byte2 = ['\192'-'\223']
+
+(* 1110xxxx *)
+let utf8_head_byte3 = ['\224'-'\239']
+
+(* 11110xxx *)
+let utf8_head_byte4 = ['\240'-'\247']
+
+(* 10xxxxxx *)
+let utf8_tail_byte = ['\128'-'\191']
+
+(* 7 bits of payload *)
+let utf8_1 = ascii
+
+(* 11 bits of payload *)
+let utf8_2 = utf8_head_byte2 utf8_tail_byte
+
+(* 16 bits of payload *)
+let utf8_3 = utf8_head_byte3 utf8_tail_byte utf8_tail_byte
+
+(* 21 bits of payload *)
+let utf8_4 = utf8_head_byte4 utf8_tail_byte utf8_tail_byte utf8_tail_byte
+
+(* Any UTF-8-encoded code point. This set includes more than it should
+   for simplicity.
+
+   - This includes encodings of the so-called surrogate code points
+     used by UTF-16 and not permitted by UTF-8.
+   - This includes the range 0x110000 to 0x1FFFFF which are beyond the
+     range of valid Unicode code points.
+*)
+let utf8 = utf8_1 | utf8_2 | utf8_3 | utf8_4
+let utf8_nonascii = utf8_2 | utf8_3 | utf8_4
+
+(*****************************************************************************)
 (* Regexp aliases *)
 (*****************************************************************************)
 
 let newline = ('\n' | "\r\n")
 let whitespace = [' ' '\t']
 
-(* todo: *)
+(* TODO: unicode digits *)
 let unicode_digit = ['0'-'9']
+
+(* TODO: unicode letters *)
 let unicode_letter = ['a'-'z' 'A'-'Z']
-let unicode_char = [^ '\n' '\r']
-let unicode_char_no_quote = [^ '\n' '\r' '\'' '\\']
-let unicode_char_no_double_quote = [^ '\n' '\r' '"' '\\']
-let unicode_char_no_backquote = [^ '\n' '\r' '`' ]
+
+let unicode_char =
+  ascii # ['\n' '\r']
+| utf8_nonascii
+
+let unicode_char_no_quote =
+  ascii # ['\n' '\r' '\'' '\\']
+| utf8_nonascii
+
+let unicode_char_no_double_quote =
+  ascii # ['\n' '\r' '"' '\\']
+| utf8_nonascii
+
+let unicode_char_no_backquote =
+  ascii # ['\n' '\r' '`' ]
+| utf8_nonascii
 
 let letter = unicode_letter | '_'
 

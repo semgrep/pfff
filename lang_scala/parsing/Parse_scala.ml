@@ -48,7 +48,7 @@ let tokens file =
     tok
   in
   (* set to false to parse correctly arrows *)
-  Parse_info.tokenize_all_and_adjust_pos ~unicode_hack:false
+  Parse_info.tokenize_all_and_adjust_pos
     file token TH.visitor_info_of_tok TH.is_eof
 [@@profiling]
 

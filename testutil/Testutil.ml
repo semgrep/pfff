@@ -2,6 +2,8 @@
    Utilities for writing test suites for Alcotest.
 *)
 
+open Printf
+
 type test = string * (unit -> unit)
 
 (*
@@ -128,3 +130,11 @@ let filter ?substring ?pcre tests =
     && (matches_pcre path
         || matches_pcre pretty_path)
   )
+
+let run what f =
+  printf "running %s...\n%!" what;
+  Fun.protect
+    ~finally:(fun () ->
+      printf "done with %s.\n%!" what
+    )
+    f

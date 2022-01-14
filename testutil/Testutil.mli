@@ -107,3 +107,13 @@ val filter : ?substring:string -> ?pcre:string -> test list -> test list
 *)
 val to_alcotest :
   ?speed_level:Alcotest.speed_level -> test list -> unit Alcotest.test list
+
+(*
+   Log a function call. e.g.
+
+     Testutil.run file (fun () -> Parse_java.parse file)
+
+   will log the file name instead of letting us guess which file was being
+   parsed.
+*)
+val run : string -> (unit -> 'a) -> 'a

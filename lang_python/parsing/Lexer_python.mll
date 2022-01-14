@@ -205,9 +205,76 @@ let escapeseq = '\\' _
 (* for raw fstring *)
 let escapeseq2 = '\\' [^ '{']
 
-let identifier = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
+(************************ UTF-8 boilerplate ************************)
+(*
+   Generic UTF-8 boilerplate.
 
-let nonidchar = [^ 'a'-'z' 'A'-'Z' '0'-'9' '_']
+   See https://erratique.ch/software/uucp/doc/unicode.html
+   for a good explanation of how this works.
+
+   We don't convert UTF-8-encoded data to code points. We only do the minimum
+   to ensure the correct identification of the boundaries between scalar
+   code points.
+*)
+
+(* 0xxxxxxx *)
+let ascii = ['\000'-'\127']
+
+(* 110xxxxx *)
+let utf8_head_byte2 = ['\192'-'\223']
+
+(* 1110xxxx *)
+let utf8_head_byte3 = ['\224'-'\239']
+
+(* 11110xxx *)
+let utf8_head_byte4 = ['\240'-'\247']
+
+(* 10xxxxxx *)
+let utf8_tail_byte = ['\128'-'\191']
+
+(* 7 bits of payload *)
+let utf8_1 = ascii
+
+(* 11 bits of payload *)
+let utf8_2 = utf8_head_byte2 utf8_tail_byte
+
+(* 16 bits of payload *)
+let utf8_3 = utf8_head_byte3 utf8_tail_byte utf8_tail_byte
+
+(* 21 bits of payload *)
+let utf8_4 = utf8_head_byte4 utf8_tail_byte utf8_tail_byte utf8_tail_byte
+
+(* Any UTF-8-encoded code point. This set includes more than it should
+   for simplicity.
+
+   - This includes encodings of the so-called surrogate code points
+     used by UTF-16 and not permitted by UTF-8.
+   - This includes the range 0x110000 to 0x1FFFFF which are beyond the
+     range of valid Unicode code points.
+*)
+let utf8 = utf8_1 | utf8_2 | utf8_3 | utf8_4
+
+let utf8_nonascii = utf8_2 | utf8_3 | utf8_4
+
+(************************ end of UTF-8 boilerplate ************************)
+
+(*
+   https://www.python.org/dev/peps/pep-3131/ says:
+   The identifier syntax is <XID_Start> <XID_Continue>*.
+
+   TODO: use the correct character set for nonascii identifiers
+   For now, we don't have an implementation of the Unicode character classes
+   XID_Start and XID_Continue. We incorrectly assume that any nonascii
+   code point is valid as part of an identifier. This should be fine
+   as long as non-ascii characters aren't used for anything else than
+   identifiers and quoted strings.
+*)
+let identifier =
+  (* keeping the all-ascii case separate hoping it's faster this way *)
+    ['a'-'z' 'A'-'Z' '_']['a'-'z' 'A'-'Z' '0'-'9' '_']*
+
+  | (['a'-'z' 'A'-'Z' '_'] | utf8_nonascii)
+    (['a'-'z' 'A'-'Z' '0'-'9' '_'] | utf8_nonascii)*
 
 (*****************************************************************************)
 (* Rule initial *)
