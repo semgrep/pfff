@@ -31,11 +31,14 @@ jobs:
       run: sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial
     - name: debugging
       run: |
-        echo "HOME: $HOME"
-        echo "PATH: $PATH"
-        echo "current directory: $(pwd)"
-        echo "ocaml version: $(ocamlc -v)"
-        echo "opam version: $(opam --version)"
+        set -x
+        echo "$HOME"
+        echo "$PATH"
+        pwd
+        ocamlc -v
+        opam --version
+        opam switch list
+        opam switch
     - name: Install pfff
       run: opam install -y pfff
     - name: Run Tests
