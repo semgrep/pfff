@@ -34,11 +34,12 @@ jobs:
         set -x
         echo "$HOME"
         echo "$PATH"
-        pwd
-        ocamlc -v
+        opam exec -- ocamlc -v
         opam --version
         opam switch list
         opam switch
+        pwd
+        ls -a
     - name: Install pfff
       run: opam install -y pfff
     - name: Run Tests
