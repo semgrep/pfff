@@ -53,6 +53,9 @@
  *  - 2020 backport print and exec statements, to parse some python2 code.
  *
  * todo:
+ *  - some expr list used as a pattern can actually accept holes, like
+ *    in Assign
+ *  - for tree-sitter: async
  *  - could use records for all the XxxDef, but what matters now is
  *    AST_generic.ml, which uses records at least.
 *)
@@ -87,7 +90,10 @@ type 'a bracket = tok * 'a * tok
 type name = string wrap
 [@@deriving show] (* with tarzan *)
 
-(* note that name can be also the special "*" in an import context. *)
+(* note that name can be also the special "*" in an import context.
+ * TODO: encode in a proper way. Let Python_to_generic.ml to transpile
+ * that to a common representation.
+*)
 type dotted_name = name list
 [@@deriving show] (* with tarzan *)
 
@@ -128,8 +134,12 @@ type expr =
   (* introduce new vars when expr_context = Store *)
   | Name of name (* id *) * expr_context (* ctx *) * resolved_name ref
 
+  (* TODO: in some context the tuple does not have the enclosing brackets
+   * (in which case they are represented by fake tokens)
+  *)
   | Tuple of expr list_or_comprehension * expr_context
   | List  of expr list_or_comprehension * expr_context
+  (* todo? split in two, with Set of expr list_or_comprehension *)
   | DictOrSet of dictorset_elt list_or_comprehension
 
   (* python3: *)
@@ -161,6 +171,9 @@ type expr =
 
   | IfExp of expr (* test *) * expr (* body *) * expr (* orelse *)
 
+  (* TODO: in tree-sitter-python look more like
+   * YieldFrom of tok * tok * expr, or Yield of tok * expr list
+  *)
   | Yield of tok * expr option (* value *) * bool (* is_yield_from *)
   (* python3: *)
   | Await of tok * expr
@@ -182,6 +195,7 @@ type expr =
 
 and number =
   | Int of int option wrap
+  (* TODO: merge with Int? tree-sitter-python does not differentiate *)
   | LongInt of int option wrap
   | Float of float option wrap
   | Imag of string wrap
@@ -239,12 +253,11 @@ and slice =
 
 and parameters = parameter list
 and parameter =
-  (* the first expr can only be a Name or a Tuple (pattern?),
-   * and the Name can have a type associated with it
+  (* param_pattern is usually just a name.
+   * TODO? merge with ParamDefault
   *)
-  | ParamDefault of (name * type_ option) * expr (* default value *)
-  (* pattern can be either a name or a tuple pattern *)
   | ParamPattern of param_pattern * type_ option
+  | ParamDefault of (name * type_ option) * expr (* default value *)
   | ParamStar of tok (* '*' *)  * (name * type_ option)
   | ParamPow  of tok (* '**' *) * (name * type_ option)
   (* python3: single star delimiter to force keyword-only arguments after.
@@ -282,9 +295,9 @@ and type_parent = argument
 (* Name, or Tuple? or more? *)
 and pattern = expr
 
-(* python2? *)
 and param_pattern =
   | PatternName of name
+  (* this is only valid in python2 *)
   | PatternTuple of param_pattern list
 [@@deriving show { with_path = false }]  (* with tarzan *)
 
@@ -294,13 +307,15 @@ and param_pattern =
 type stmt =
   | ExprStmt of expr (* value *)
 
-  (* the left expr should be an lvalue: Name, List, Tuple, Subscript,
+  (* The left exprs should be lvalues: Name, List, Tuple, Subscript,
    * or Attribute, or ExprStar, which are anything with an expr_context
    * (see also Parser_python.set_expr_ctx).
-   * This can introduce new vars.
-   * TODO: why take an expr list? can reuse Tuple for tuple assignment
+   * They can introduce new vars.
+   * Why take an expr list? because those exprs are all really lhs.
+   * For example in a = b = c, we will have Assign ([a;b], c).
+   * TODO: can have holes on lhs?
   *)
-  | Assign of expr list (* targets *) * tok * expr (* value *)
+  | Assign of expr(*lhs*) list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
   | For of tok * pattern (* (pattern) introduce new vars *) *
@@ -311,8 +326,7 @@ type stmt =
   | If of tok * expr (* test *) * stmt list (* body *) *
           stmt list option (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
-  | With of tok * expr (* context_expr *) * expr option (* optional_vars *) *
-            stmt list (* body *)
+  | With of tok * with_clause * stmt list (* body *)
 
   | Return of tok * expr option (* value *)
   | Break of tok | Continue of tok
@@ -320,9 +334,11 @@ type stmt =
 
   | Raise of tok * (expr * expr option (* from *)) option
   | RaisePython2 of tok * expr * expr option (* arguments *) * expr option (* location *)
+  (* TODO: tree-sitter-python allow a finally also in TryExcept => merge? *)
   | TryExcept of tok * stmt list (* body *) * excepthandler list (* handlers *)
                  * stmt list (* orelse *)
   | TryFinally of tok * stmt list (* body *) * tok * stmt list (* finalbody *)
+  (* TODO: tree-sitter-python say expr list *)
   | Assert of tok * expr (* test *) * expr option (* msg *)
 
   | Global of tok * name list (* names *)
@@ -332,6 +348,9 @@ type stmt =
 
   (* python2: *)
   | Print of tok * expr option (* dest *) * expr list (* values *) * bool (* nl *)
+  (* TODO: tree-sitter-python has Exec of tok * string wrap * expr list option
+   * why? Python2 compatibility?
+  *)
   | Exec of tok * expr (* body *) * expr option (* glob *) * expr option (* local *)
 
   (* python3: for With, For, and FunctionDef *)
@@ -353,6 +372,9 @@ and excepthandler =
       name option (* name, introduce new var, todo: only if pattern is Some *) *
       stmt list (* body *)
 
+and with_clause =
+  expr (* context_expr *) * expr option (* optional_vars *)
+
 (*****************************************************************************)
 (* Definitions *)
 (*****************************************************************************)
@@ -363,6 +385,7 @@ and excepthandler =
 (* ------------------------------------------------------------------------- *)
 (* Decorators (a.k.a annotations) *)
 (* ------------------------------------------------------------------------- *)
+(* TODO: tree-sitter-python accept any expr *)
 and decorator = tok (* @ *) * dotted_name * argument list bracket option
 
 (* ------------------------------------------------------------------------- *)

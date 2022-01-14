@@ -227,7 +227,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                      );
                                      k x
 
-                                 | With (_, _e, eopt, _stmts) ->
+                                 | With (_, (_e, eopt), _stmts) ->
                                      eopt |> Common.do_option (fun e ->
                                        match e with
                                        | Name (name, _ctx, _res) ->

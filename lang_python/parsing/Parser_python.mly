@@ -299,10 +299,6 @@ import_as_name:
 (* Variable definition *)
 (*************************************************************************)
 
-namedexpr_test:
-  | test { $1 }
-  | test COLONEQ test { NamedExpr ($1, $2, $3) }
-
 expr_stmt:
   | tuple(test_or_star_expr)
       { ExprStmt (tuple_expr $1) }
@@ -318,10 +314,6 @@ expr_stmt:
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
   | tuple(test_or_star_expr) "=" expr_stmt_rhs_list
       { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
-
-namedexpr_or_star_expr:
-  | namedexpr_test { $1 }
-  | star_expr      { $1 }
 
 test_or_star_expr:
   | test      { $1 }
@@ -354,6 +346,15 @@ augassign:
   | XOREQ   { BitXor, $1 }
   | ANDEQ   { BitAnd, $1 }
   | FDIVEQ  { FloorDiv, $1 }
+
+
+namedexpr_test:
+  | test { $1 }
+  | test ":=" test { NamedExpr ($1, $2, $3) }
+
+namedexpr_or_star_expr:
+  | namedexpr_test { $1 }
+  | star_expr      { $1 }
 
 (*************************************************************************)
 (* Function definition *)
@@ -631,10 +632,10 @@ excepthandler:
 with_stmt: WITH with_inner { $2 $1 }
 
 with_inner:
-  | test         ":" suite      { fun t -> With (t, $1, None, $3) }
-  | test AS expr ":" suite      { fun t -> With (t, $1, Some $3, $5) }
-  | test         "," with_inner { fun t -> With (t, $1, None, [$3 t]) }
-  | test AS expr "," with_inner { fun t -> With (t, $1, Some $3, [$5 t]) }
+  | test         ":" suite      { fun t -> With (t, ($1, None), $3) }
+  | test AS expr ":" suite      { fun t -> With (t, ($1, Some $3), $5) }
+  | test         "," with_inner { fun t -> With (t, ($1, None), [$3 t]) }
+  | test AS expr "," with_inner { fun t -> With (t, ($1, Some $3), [$5 t]) }
 
 (* python3-ext: *)
 async_stmt:
@@ -898,8 +899,9 @@ comp_op:
   | GT      { Gt, $1 }
   | GEQ     { GtE, $1 }
   | IS      { Is, $1 }
-  | IS NOT  { IsNot, $1 }
   | IN      { In, $1 }
+  (* TODO: PI.combine_parse_info ? *)
+  | IS NOT  { IsNot, $1 }
   | NOT IN  { NotIn, $1 }
 
 (*----------------------------*)
@@ -998,7 +1000,7 @@ argument:
   | test comp_for  { ArgComp ($1, $2) }
 
   (* python3-ext: *)
-  | test COLONEQ test  { Arg (NamedExpr ($1, $2, $3)) }
+  | test ":=" test  { Arg (NamedExpr ($1, $2, $3)) }
   | "*" test           { ArgStar ($1, $2) }
   | "**" test          { ArgPow  ($1, $2) }
 

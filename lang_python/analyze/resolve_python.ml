@@ -212,7 +212,7 @@ let resolve prog =
                                        );
                                      );
                                      k x
-                                 | With (_, e, eopt, stmts) ->
+                                 | With (_, (e, eopt), stmts) ->
                                      v (Expr e);
                                      (match eopt with
                                       | None -> v (Stmts stmts)
