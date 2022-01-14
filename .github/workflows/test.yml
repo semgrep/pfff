@@ -28,7 +28,7 @@ jobs:
       run: ./.github/post-checkout
 
     - name: Install System Deps
-      run: sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial ocaml opam
+      run: sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial
     - name: debugging
       run: |
         echo "HOME: $HOME"
