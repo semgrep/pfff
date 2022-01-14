@@ -41,6 +41,6 @@ jobs:
         pwd
         ls -a
     - name: Install pfff
-      run: opam install -y pfff
+      run: opam install -y .
     - name: Run Tests
       run: eval $(opam env); dune build && dune runtest -f
