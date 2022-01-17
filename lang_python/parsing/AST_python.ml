@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2010 Facebook
  * Copyright (C) 2011-2015 Tomohiro Matsuyama
- * Copyright (C) 2019-2021 r2c
+ * Copyright (C) 2019-2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -18,7 +18,7 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Abstract Syntax Tree for Python3.
+(* Abstract Syntax Tree for Python3 (with a few extensions to handle Python2).
  *
  * Most of the code in this file derives from code from
  * Tomohiro Matsuyama in ocaml-pythonlib, which itself derives from
@@ -32,8 +32,8 @@
  *    using a PEG parser
  *
  * Note that this AST supports partly Python2 syntax with the special
- * print and exec statements. It does not support the special tuple
- * parameters syntax though.
+ * print and exec statements. It supports also the special tuple
+ * parameters syntax though. See the python2: tag below.
  *
  * related work:
  *  - https://github.com/m2ym/ocaml-pythonlib
@@ -53,9 +53,8 @@
  *  - 2020 backport print and exec statements, to parse some python2 code.
  *
  * todo:
- *  - some expr list used as a pattern can actually accept holes, like
- *    in Assign
- *  - for tree-sitter: async
+ *  - for tree-sitter-python: async
+ * less:
  *  - could use records for all the XxxDef, but what matters now is
  *    AST_generic.ml, which uses records at least.
 *)
@@ -87,16 +86,19 @@ type 'a bracket = tok * 'a * tok
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
+(* usually called 'ident' in our other ASTs, but the Python grammar
+ * uses this term instead. *)
 type name = string wrap
 [@@deriving show] (* with tarzan *)
 
 (* note that name can be also the special "*" in an import context.
- * TODO: encode in a proper way. Let Python_to_generic.ml to transpile
+ * TODO: encode in a proper way. Let Python_to_generic.ml transpiles
  * that to a common representation.
 *)
 type dotted_name = name list
 [@@deriving show] (* with tarzan *)
 
+(* TODO? encode also __future__ which is used in tree-sitter-python? *)
 type module_name =
   dotted_name *
   (* https://realpython.com/absolute-vs-relative-python-imports/ *)
@@ -123,11 +125,15 @@ type resolved_name =
 (*****************************************************************************)
 type expr =
   | Num of number (* n *)
+  (* TODO: cleanup strings, have prefix in string wrap, then
+   * content is string wrap bracket where bracket are enclosing
+   * quote/double-quote/triple-quotes
+  *)
   | Str of string wrap (* s *)
   (* todo: we should split the token in r'foo' in two, one string wrap
    * for the prefix and a string wrap for the string itself. *)
   | EncodedStr of string wrap * string (* prefix *)
-  (* python3: now officially reserved keywords *)
+  (* python3: true/false are now officially reserved keywords *)
   | Bool of bool wrap
   | None_ of tok
 
@@ -142,7 +148,7 @@ type expr =
   (* todo? split in two, with Set of expr list_or_comprehension *)
   | DictOrSet of dictorset_elt list_or_comprehension
 
-  (* python3: *)
+  (* python3: TODO of tok *)
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
   (* python3: f-strings
    * reference: https://www.python.org/dev/peps/pep-0498/ *)
@@ -221,7 +227,9 @@ and cmpop =
 
 (* usually a Str or a simple expr.
  * TODO: should also handle format specifier, they are skipped for now
- * during parsing
+ * during parsing.
+ * TODO: do like in AST_generic.ml, represent correctly interpolated
+ * constructs.
 *)
 and interpolated = expr
 
@@ -229,18 +237,22 @@ and 'a list_or_comprehension =
   | CompList of 'a list bracket
   | CompForIf of 'a comprehension bracket
 
+(* tree-sitter-python: imposes the first for_if to be a CompFor *)
 and 'a comprehension = 'a * for_if list
+(* TODO: CompFor can have an Async *)
 and for_if =
   | CompFor of expr (* introduce new vars *) * (* in *) expr
   | CompIf of expr
 
 and dictorset_elt =
-  | KeyVal of expr * expr
+  | KeyVal of expr * (* TODO of tok ':' *)expr
   | Key of expr
-  (* python3: *)
+  (* python3: TODO of tok '**', and merge with ArgPow? *)
   | PowInline of expr
 
-(* AugLoad and AugStore are not used *)
+(* AugLoad and AugStore are not used.
+ * TODO: get rid of? Anyway it's not used in Python_to_generic.ml
+*)
 and expr_context =
   | Load | Store
   | Del
@@ -251,13 +263,39 @@ and slice =
   | Slice of expr option (* lower *) * expr option (* upper *) * expr option (* step *)
   | Index of expr (* value *)
 
+(* ------------------------------------------------------------------------- *)
+(* Arguments *)
+(* ------------------------------------------------------------------------- *)
+
+and argument =
+  | Arg of expr (* this can be Ellipsis for sgrep *)
+  (* tree-sitter-python: (and Python2) allows any expression for the key, but
+   * the official Python 2 grammar says "ast.c makes sure it's a NAME" *)
+  | ArgKwd of name (* arg *) * expr (* value *)
+  (* TODO? just use ExprStar, and move PowInline in expr too? and just
+   * say in which context those constructs can actually appear
+   * (e.g., only in arg, or dict/set)
+  *)
+  | ArgStar of (* '*' *)  tok * expr
+  | ArgPow  of (* '**' *) tok * expr
+  (* TODO: merge with Tuple CompForIf, and actually there can be only 1
+   * ArgComp in arguments *)
+  | ArgComp of expr * for_if list
+
+(* ------------------------------------------------------------------------- *)
+(* Parameters (used for Lambda above and function_definition below) *)
+(* ------------------------------------------------------------------------- *)
+
 and parameters = parameter list
+
 and parameter =
   (* param_pattern is usually just a name.
    * TODO? merge with ParamDefault
   *)
   | ParamPattern of param_pattern * type_ option
   | ParamDefault of (name * type_ option) * expr (* default value *)
+  (* TODO: tree-sitter-python allows also a Subscript or Attribute instead
+   * of just name, what is that??  *)
   | ParamStar of tok (* '*' *)  * (name * type_ option)
   | ParamPow  of tok (* '**' *) * (name * type_ option)
   (* python3: single star delimiter to force keyword-only arguments after.
@@ -268,12 +306,10 @@ and parameter =
   (* sgrep-ext: *)
   | ParamEllipsis of tok
 
-and argument =
-  | Arg of expr (* this can be Ellipsis for sgrep *)
-  | ArgKwd of name (* arg *) * expr (* value *)
-  | ArgStar of (* '*' *)  tok * expr
-  | ArgPow  of (* '**' *) tok * expr
-  | ArgComp of expr * for_if list
+and param_pattern =
+  | PatternName of name
+  (* python2: this is only valid in python2 *)
+  | PatternTuple of param_pattern list
 
 (*****************************************************************************)
 (* Type *)
@@ -292,13 +328,10 @@ and type_parent = argument
 (*****************************************************************************)
 (* Pattern *)
 (*****************************************************************************)
-(* Name, or Tuple? or more? *)
+(* Name, Tuple (CompList), List( CompList), Attribute, Subscript,
+ * or ExprStar(Name|Attribute|Subscript), or more? *)
 and pattern = expr
 
-and param_pattern =
-  | PatternName of name
-  (* this is only valid in python2 *)
-  | PatternTuple of param_pattern list
 [@@deriving show { with_path = false }]  (* with tarzan *)
 
 (*****************************************************************************)
@@ -313,7 +346,7 @@ type stmt =
    * They can introduce new vars.
    * Why take an expr list? because those exprs are all really lhs.
    * For example in a = b = c, we will have Assign ([a;b], c).
-   * TODO: can have holes on lhs?
+   * TODO: lhs should be expr * type_ option
   *)
   | Assign of expr(*lhs*) list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
@@ -398,7 +431,6 @@ and function_definition =
   type_ option * (* return type *)
   stmt list (* body *) *
   decorator list (* decorator_list *)
-
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
