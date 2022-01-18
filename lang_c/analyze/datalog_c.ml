@@ -51,7 +51,7 @@ type env = {
   c_file_readable: Common.filename;
   long_format: bool;
 
-  globals: Graph_code.graph;
+  globals: Graph_code.t;
   (* we may also want the AST of macros *)
 
   (* Because of the trick we use in graph_code_c for e.g. renaming

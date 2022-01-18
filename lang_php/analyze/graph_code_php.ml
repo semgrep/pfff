@@ -72,7 +72,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type env = {
-  g: Graph_code.graph;
+  g: Graph_code.t;
 
   cur: current;
 

@@ -7,7 +7,7 @@ type graph = {
   use: (int list) array;
 }
 
-val convert: Graph_code.graph -> graph
+val convert: Graph_code.t -> graph
 
 val nb_nodes: graph -> int
 

@@ -5,7 +5,7 @@ type env = {
   scope: string;
   c_file_readable: Common.filename;
   long_format: bool;
-  globals: Graph_code.graph;
+  globals: Graph_code.t;
   globals_renames: Ast_c.name -> Ast_c.name;
   locals: (string * Ast_c.type_ option) list ref;
   facts: fact list ref;

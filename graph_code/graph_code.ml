@@ -126,7 +126,7 @@ type edgeinfo = {
  * note: file information are in readable path format in Dir and File
  * nodes (and should also be in readable format in the nodeinfo).
  *)
-type graph = {
+type t = {
   (* Actually the Has graph should really be a tree, but we need convenient
    * access to the children or parent of a node, which are provided
    * by the graph API so let's reuse that.

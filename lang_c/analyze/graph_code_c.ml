@@ -78,7 +78,7 @@ module Ast = Ast_c
 
 (* for the extract_uses visitor *)
 type env = {
-  g: Graph_code.graph;
+  g: Graph_code.t;
   (* now in Graph_code.gensym:  cnt: int ref; *)
 
   phase: phase;

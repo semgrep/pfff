@@ -56,7 +56,7 @@ type qualified_name = string
 
 (* for the extract_uses visitor *)
 type env = {
-  g: Graph_code.graph;
+  g: Graph_code.t;
 
   phase: phase;
 

@@ -69,7 +69,7 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 type env = {
-  g: Graph_code.graph;
+  g: Graph_code.t;
 
   phase: phase;
   current: Graph_code.node;

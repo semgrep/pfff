@@ -22,7 +22,7 @@ module E = Entity_code
 (*****************************************************************************)
 
 let (lookup_fully_qualified2:
-       Graph_code.graph -> string list -> Graph_code.node option) =
+       Graph_code.t -> string list -> Graph_code.node option) =
   fun g xs ->
   let rec aux current xs =
     match xs with

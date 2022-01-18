@@ -1,2 +1,2 @@
 
-val check: Graph_code.graph -> Error_code.error list
+val check: Graph_code.t -> Error_code.error list

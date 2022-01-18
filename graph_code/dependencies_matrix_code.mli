@@ -22,7 +22,7 @@ val explain_cell_list_use_edges:
   (Graph_code.node * Graph_code.node) list
 
 (* just the expanded root *)
-val basic_config: Graph_code.graph -> config
+val basic_config: Graph_code.t -> config
 val basic_config_opti: Graph_code_opti.graph -> config
 
 type config_path_elem =
@@ -38,7 +38,7 @@ val string_of_config_path: config_path -> string
 
 (* tree config manipulation *)
 val expand_node:
-  Graph_code.node -> tree -> Graph_code.graph -> tree
+  Graph_code.node -> tree -> Graph_code.t -> tree
 val expand_node_opti:
   Graph_code.node -> tree -> Graph_code_opti.graph -> tree
 val focus_on_node:

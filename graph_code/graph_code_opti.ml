@@ -61,7 +61,7 @@ let nb_nodes g =
 (* Converting *)
 (*****************************************************************************)
 
-let (convert2: Graph_code.graph -> graph) = fun g ->
+let (convert2: Graph_code.t -> graph) = fun g ->
   let n = G.nb_nodes g in
 
   let h = {

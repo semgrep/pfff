@@ -7,20 +7,20 @@
 *)
 type class_hierarchy = Graph_code.node Graphe.graph
 
-val class_hierarchy: Graph_code.graph -> class_hierarchy
+val class_hierarchy: Graph_code.t -> class_hierarchy
 
 (* Return the toplevel methods for each method name in the graph.
  * The returned hashtbl uses the Hashtbl.find_all property.
 *)
 val toplevel_methods:
-  Graph_code.graph -> class_hierarchy ->
+  Graph_code.t -> class_hierarchy ->
   (string, Graph_code.node(*list*)) Hashtbl.t
 
 (* Return the possible dispatched methods. *)
 val dispatched_methods:
-  Graph_code.graph -> class_hierarchy -> Graph_code.node (* a method *) ->
+  Graph_code.t -> class_hierarchy -> Graph_code.node (* a method *) ->
   Graph_code.node list
 
 
 (* print optimization opportunities, also print dead fields *)
-val protected_to_private_candidates: Graph_code.graph -> unit
+val protected_to_private_candidates: Graph_code.t -> unit

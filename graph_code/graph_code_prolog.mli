@@ -6,8 +6,8 @@ type context =
 
 val hook_use_edge_for_prolog:
   context -> bool ->
-  (Graph_code.node * Graph_code.node) -> Graph_code.graph ->
+  (Graph_code.node * Graph_code.node) -> Graph_code.t ->
   Parse_info.token_location ->
   unit
 
-val build: Graph_code.graph -> Prolog_code.fact list
+val build: Graph_code.t -> Prolog_code.fact list
