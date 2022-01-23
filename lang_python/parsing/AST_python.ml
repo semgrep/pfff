@@ -51,6 +51,7 @@
  *  - 2019 modified to support types, and many other Python 3 features
  *    (see the python3: tag in this file)
  *  - 2020 backport print and exec statements, to parse some python2 code.
+ *  - 2022 incorporate constructs needed for tree-sitter-python
  *
  * todo:
  *  - for tree-sitter-python: async
@@ -105,7 +106,7 @@ type module_name =
   (tok (* . or ... toks *) list) option (* levels, for relative imports *)
 [@@deriving show]
 
-(* TODO: reuse AST_generic one? *)
+(* TODO: reuse AST_generic one? or just get rid of it? *)
 type resolved_name =
   (* this can be computed by a visitor *)
   | LocalVar
@@ -130,7 +131,7 @@ type expr =
    * quote/double-quote/triple-quotes
   *)
   | Str of string wrap (* s *)
-  (* todo: we should split the token in r'foo' in two, one string wrap
+  (* TODO: we should split the token in r'foo' in two, one string wrap
    * for the prefix and a string wrap for the string itself. *)
   | EncodedStr of string wrap * string (* prefix *)
   (* python3: true/false are now officially reserved keywords *)
@@ -343,9 +344,10 @@ type stmt =
   (* The left exprs should be lvalues: Name, List, Tuple, Subscript,
    * or Attribute, or ExprStar, which are anything with an expr_context
    * (see also Parser_python.set_expr_ctx).
-   * They can introduce new vars.
+   * They can also introduce new vars (which we should transform
+   * in VarDef in Python_to_generic.ml).
    * Why take an expr list? because those exprs are all really lhs.
-   * For example in a = b = c, we will have Assign ([a;b], c).
+   * For example in 'a = b = c', we will have 'Assign ([a;b], c)'.
    * TODO: lhs should be expr * type_ option
   *)
   | Assign of expr(*lhs*) list (* targets *) * tok * expr (* value *)
@@ -374,6 +376,11 @@ type stmt =
   (* TODO: tree-sitter-python say expr list *)
   | Assert of tok * expr (* test *) * expr option (* msg *)
 
+  (* 'Global' is needed because Python does not have a VarDef and abuse Assign
+   * to declare new variables, which in turn requires Global and NonLocal
+   * below to explicitely say you don't want Assign to declare a new var
+   * but instead use an enclosing one (argh, I love Python).
+  *)
   | Global of tok * name list (* names *)
   | Delete of tok * expr list (* targets *)
   (* python3: *)
@@ -412,7 +419,7 @@ and with_clause =
 (* Definitions *)
 (*****************************************************************************)
 (* Note that there are no "Variable definition" section below.
- * Variables in Python are defined by assignment.
+ * Variables in Python are defined by assignment (ugly).
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -424,6 +431,7 @@ and decorator = tok (* @ *) * dotted_name * argument list bracket option
 (* ------------------------------------------------------------------------- *)
 (* Function (or method) definition *)
 (* ------------------------------------------------------------------------- *)
+(* less: use a record *)
 and function_definition =
   tok (* 'def' *) *
   name (* name *) *
@@ -435,6 +443,7 @@ and function_definition =
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
+(* less: use a record *)
 and class_definition =
   tok (* 'class' *) *
   name (* name *) *
@@ -460,6 +469,7 @@ type program = stmt list
 (*****************************************************************************)
 (* Any *)
 (*****************************************************************************)
+(* This is mostly for semgrep to represent a pattern *)
 type any =
   | Expr of expr
   | Stmt of stmt
@@ -477,6 +487,7 @@ let str_of_name = fst
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
+
 let context_of_expr = function
   | Attribute (_, _, _, ctx) -> Some ctx
   | Subscript (_, _, ctx) -> Some ctx
