@@ -283,13 +283,13 @@ val string_of_timeout_info : timeout_info -> string
    tl;dr nesting will fail
 *)
 val set_timeout:
-  ?verbose:bool -> name:string -> float -> (unit -> 'a) -> 'a option
+  name:string -> float -> (unit -> 'a) -> 'a option
 
 (*
    Only set a timer if a time limit is specified. Uses 'set_timeout'.
 *)
 val set_timeout_opt:
-  ?verbose:bool -> name:string -> float option -> (unit -> 'a) -> 'a option
+  name:string -> float option -> (unit -> 'a) -> 'a option
 
 (*
    Measure how long it takes for a function to run, returning the result
@@ -334,7 +334,7 @@ val erase_this_temp_file : filename -> unit
 val fullpath: filename -> filename
 
 val cache_computation :
-  ?verbose:bool -> ?use_cache:bool -> filename  -> string (* extension *) ->
+  ?use_cache:bool -> filename  -> string (* extension *) ->
   (unit -> 'a) -> 'a
 
 val filename_without_leading_path : string -> filename -> filename

@@ -1312,21 +1312,21 @@ let fullpath file =
  * want put the cache_computation funcall in comment, so just easier to
  * pass this extra option.
 *)
-let cache_computation2 ?(verbose=false) ?(use_cache=true) file ext_cache f =
+let cache_computation2 ?(use_cache=true) file ext_cache f =
   if not use_cache
   then f ()
   else begin
     if not (Sys.file_exists file)
     then begin
-      pr2 ("WARNING: cache_computation: can't find file "  ^ file);
-      pr2 ("defaulting to calling the function");
+      logger#error "WARNING: cache_computation: can't find %s" file;
+      logger#error "defaulting to calling the function";
       f ()
     end else begin
       let file_cache = (file ^ ext_cache) in
       if Sys.file_exists file_cache &&
          filemtime file_cache >= filemtime file
       then begin
-        if verbose then pr2 ("using cache: " ^ file_cache);
+        logger#info "using cache: %s" file_cache;
         get_value file_cache
       end
       else begin
@@ -1336,9 +1336,9 @@ let cache_computation2 ?(verbose=false) ?(use_cache=true) file ext_cache f =
       end
     end
   end
-let cache_computation ?verbose ?use_cache a b c =
+let cache_computation ?use_cache a b c =
   profile_code "Common.cache_computation" (fun () ->
-    cache_computation2 ?verbose ?use_cache a b c)
+    cache_computation2 ?use_cache a b c)
 
 
 (* emacs/lisp inspiration (eric cooper and yaron minsky use that too) *)
@@ -1382,7 +1382,7 @@ let current_timer = ref None
 
   question: can we have a signal and so exn when in a exn handler ?
 *)
-let set_timeout ?(verbose=false) ~name max_duration = fun f ->
+let set_timeout ~name max_duration = fun f ->
   (match !current_timer with
    | None -> ()
    | Some { name = running_name; max_duration = running_val } ->
@@ -1417,8 +1417,7 @@ let set_timeout ?(verbose=false) ~name max_duration = fun f ->
   with
   | Timeout {name; max_duration} ->
       clear_timer ();
-      if verbose then pr2 (spf "%S timeout at %g s (we abort)"
-                             name max_duration);
+      logger#info "%S timeout at %g s (we abort)" name max_duration;
       None
   | e ->
       (* It's important to disable the alarm before relaunching the exn,
@@ -1428,13 +1427,13 @@ let set_timeout ?(verbose=false) ~name max_duration = fun f ->
          Maybe signals are disabled when process an exception handler ?
       *)
       clear_timer ();
-      if verbose then pr2 "exn while in set_timeout";
+      logger#info "exn while in set_timeout";
       raise e
 
-let set_timeout_opt ?verbose ~name time_limit f =
+let set_timeout_opt ~name time_limit f =
   match time_limit with
   | None -> Some (f ())
-  | Some x -> set_timeout ?verbose ~name x f
+  | Some x -> set_timeout ~name x f
 
 (* creation of tmp files, a la gcc *)
 

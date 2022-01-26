@@ -3431,14 +3431,6 @@ let (with_open_outfile_append: filename -> (((string -> unit) * out_channel) -> 
     res)
     (fun _e -> close_out chan)
 
-(*
-   This uses a global resource so we can't duplicate that code.
-   Copy it from Common.ml when the time comes to get rid of Common.ml.
-*)
-let set_timeout = Common.set_timeout
-let set_timeout_opt = Common.set_timeout_opt
-
-
 let with_tmp_file ~(str: string) ~(ext: string) (f: string -> 'a) : 'a =
   let tmpfile = Common.new_temp_file "tmp" ("." ^ ext) in
   write_file ~file:tmpfile str;
