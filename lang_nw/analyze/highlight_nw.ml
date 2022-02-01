@@ -182,7 +182,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
                                    | _ when s =~ "^\\" -> Some (Parameter Use)
                                    | _ -> None
                                  in
-                                 categ_opt |> Common.do_option (fun categ ->
+                                 categ_opt |> Option.iter (fun categ ->
                                    tag_all_tok_trees_with ~tag categ brace_trees;
                                  );
                                  k trees
@@ -207,7 +207,7 @@ let visit_program ~tag_hook _prefs (trees, toks) =
                                    | "\\em" -> Some CommentWordImportantNotion
                                    | _ -> None
                                  in
-                                 categ_opt |> Common.do_option (fun categ ->
+                                 categ_opt |> Option.iter (fun categ ->
                                    tag_all_tok_trees_with ~tag categ brace_trees;
                                  );
                                  k trees

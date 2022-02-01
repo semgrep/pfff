@@ -373,7 +373,7 @@ let mk_destructor specs tilde id (lp, _voidopt, rp) exnopt cp =
     ft_params= (lp,  [], rp);
     ft_specs = [];
     ft_const = None;
-    ft_throw = opt_to_list exnopt;
+    ft_throw = Option.to_list exnopt;
   }
   in
   let name = None, noQscope, IdDestructor (tilde, id) in

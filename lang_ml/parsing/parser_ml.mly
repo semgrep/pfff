@@ -948,7 +948,7 @@ polymorphic_variant_type:
  | "[" tag_field "]"
      { TyTodo(("Tag",$1), [$2])}
  | "[" row_field? "|"  list_sep(row_field,"|") "]"
-     { TyTodo(("Rows|",$1),(opt_to_list $2)@ $4)}
+     { TyTodo(("Rows|",$1),(Option.to_list $2)@ $4)}
  | "[>" "|"?  list_sep(row_field,"|") "]"
      { TyTodo(("Rows>",$1), $3)}
  | "[<" "|"?  list_sep(row_field,"|") "]"

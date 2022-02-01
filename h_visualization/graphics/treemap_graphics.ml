@@ -125,7 +125,7 @@ let draw_label rect (w, h) depth label ~is_dir =
       Some "-misc-*-*-*-*-6-*-*-*-*-*-*"
   in
 
-  font_label_opt |> Common.do_option (fun font ->
+  font_label_opt |> Option.iter (fun font ->
     Graphics.set_font font;
 
     draw_text_center_rect_float_ortho
@@ -188,7 +188,7 @@ let display_treemap (treemap: ('dir,'file) treemap) (w, h) =
              color
              (w, h)
          in
-         rect_opt |> Common.do_option (update_mat_with_fileinfo fileinfo mat)
+         rect_opt |> Option.iter (update_mat_with_fileinfo fileinfo mat)
 
      | Node (tnode, dirinfo) ->
          ()

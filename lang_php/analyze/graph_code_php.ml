@@ -794,7 +794,7 @@ and class_def env def =
      in
   *)
   let env = add_node_and_has_edge env (def.c_name, E.Class) in
-  def.c_extends |> Common.do_option (fun c2 ->
+  def.c_extends |> Option.iter (fun c2 ->
     (* todo: also mark as use the generic arguments *)
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class);
   );
@@ -867,11 +867,11 @@ and hint_type env t =
   | HintTuple (_, xs, _) -> List.iter (hint_type env) xs
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;
-      Common.opt (hint_type env) tret_opt
+      Option.iter (hint_type env) tret_opt
   | HintTypeConst (x1, _, x2) ->
       hint_type env x1;
       hint_type env x2
-  | HintVariadic (_, t) -> do_option (hint_type env) t
+  | HintVariadic (_, t) -> Option.iter (hint_type env) t
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)

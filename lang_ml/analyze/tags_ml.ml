@@ -93,8 +93,8 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
 
         let categ = Common2.hfind_option info h in
 
-        categ |> Common.do_option (fun x ->
-          entity_of_highlight_category_opt x |> Common.do_option (fun kind ->
+        categ |> Option.iter (fun x ->
+          entity_of_highlight_category_opt x |> Option.iter (fun kind ->
 
             Common.push (Tags.tag_of_info filelines info kind) defs;
 

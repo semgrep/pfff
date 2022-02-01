@@ -94,7 +94,7 @@ and validate_parameter_list_empty = function
       then ()
       else raise Parsing.Parse_error
 
-let o2l = Common.opt_to_list
+let o2l = Option.to_list
 
 let qiopt a b =
   match a with

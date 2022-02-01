@@ -1232,7 +1232,7 @@ and refineStatSeq in_ : refine_stat list =
   let stats = ref [] in
   while not (TH.isStatSeqEnd in_.token) do
     let xopt = refineStat in_ in
-    stats ++= Common.opt_to_list xopt;
+    stats ++= Option.to_list xopt;
     if not (in_.token =~= (RBRACE ab))
     then acceptStatSep in_;
   done;
@@ -2221,7 +2221,7 @@ and guard_loop in_ : guard list =
     let g = guard in_ in
     let xs = guard_loop in_ in
     (* ast: makeFilter (g)::xs *)
-    Common.opt_to_list g @ xs
+    Option.to_list g @ xs
 
 and enumerator ~isFirst ?(allowNestedIf=true) in_ : enumerator =
   in_ |> with_logging "enumerator" (fun () ->
@@ -2499,7 +2499,7 @@ let modifiers in_ =
     match in_.token with
     | Kprivate _ | Kprotected _ ->
         let mopt = accessModifierOpt in_ in
-        loop (Common.opt_to_list mopt @ mods)
+        loop (Option.to_list mopt @ mods)
     (* old: let mods = addMod mods in_.token in_ in
      * let mods_bis = accessQualifierOpt in_ in
      * loop mods
@@ -3208,7 +3208,7 @@ let templateStatSeq ~isPre in_ : self_type option * block =
     else noSelfType, None
   in
   let xs = templateStats in_ in
-  self, Common.opt_to_list firstOpt @ xs
+  self, Option.to_list firstOpt @ xs
 
 (** {{{
  *  TemplateBody ::= [nl] `{` TemplateStatSeq `}`
@@ -3423,7 +3423,7 @@ let classDef ?(isTrait=false) ?(isCase=None) attrs in_ : definition =
         let constrMods = accessModifierOpt in_ in
         let vparamss = paramClauses ~ofCaseClass:(isCase <> None) name
             classContextBounds in_ in
-        Common.opt_to_list constrMods, vparamss
+        Option.to_list constrMods, vparamss
     in
 
     let kind = (if isTrait then Trait else Class), ikind in

@@ -685,7 +685,7 @@ and full_type env x =
 
   | TFunction ft -> A.TFunction (function_type env ft)
   | TArray ((_, eopt, _), ft) ->
-      A.TArray (Common.map_opt (expr env) eopt, full_type env ft)
+      A.TArray (Option.map (expr env) eopt, full_type env ft)
   | TypeName n -> A.TTypeName (name env n)
 
   | ClassName ((kind, _), n) ->

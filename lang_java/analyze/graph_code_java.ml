@@ -578,8 +578,8 @@ and enum_decl env def =
                 current_qualifier = full_ident;
               }
     in
-    args_opt |> Common.do_option (fun (_, xs, _) -> exprs env xs);
-    body_opt |> Common.do_option (fun (_, xs, _) -> decls env xs);
+    args_opt |> Option.iter (fun (_, xs, _) -> exprs env xs);
+    body_opt |> Option.iter (fun (_, xs, _) -> decls env xs);
   )
 
 (* ---------------------------------------------------------------------- *)
@@ -592,7 +592,7 @@ and stmt env = function
   | Expr (e, _) -> expr env e
   | If (_, e, st1, st2) ->
       expr env e;
-      stmts env (st1::(Common.opt_to_list st2))
+      stmts env (st1::(Option.to_list st2))
   | Switch (_, e, xs) ->
       expr env e;
       xs |> List.iter (fun (cs, sts) ->
@@ -647,7 +647,7 @@ and stmt env = function
   | Try (_, _resourcesTODO, st, xs, stopt) ->
       stmt env st;
       catches env xs;
-      stopt |> Common.do_option (fun (_, st) -> stmt env st);
+      stopt |> Option.iter (fun (_, st) -> stmt env st);
   | Throw (_, e) -> expr env e
   | Assert (_, e, eopt) ->
       exprs env (e::Common2.option_to_list eopt)
@@ -864,7 +864,7 @@ and typ env = function
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
 and var env v =
-  Common.do_option (typ env) v.type_;
+  Option.iter (typ env) v.type_;
   ()
 
 and field env f =

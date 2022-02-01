@@ -307,7 +307,7 @@ let unbracket = PI.unbracket
 
 (* less: could mv this conrete hooks in datalog_c at some point *)
 let with_datalog_env env f =
-  !facts |> Common.do_option (fun aref ->
+  !facts |> Option.iter (fun aref ->
     let env2 = { Datalog_c.
                  scope = fst env.current;
                  c_file_readable = env.c_file_readable;
@@ -531,7 +531,7 @@ and directive env x =
       let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
       hook_def env (DirStmt x);
       if env.phase = Uses && env.conf.macro_dependencies
-      then Common.do_option (define_body env) body
+      then Option.iter (define_body env) body
   | Macro (_t, name, params, body) ->
       let name =
         if kind_file env =*= Source then new_name_if_defs env name else name in
@@ -541,7 +541,7 @@ and directive env x =
                                (params |> List.map (fun p -> Ast.str_of_name p, None(*TAny*)))
                 } in
       if env.phase = Uses && env.conf.macro_dependencies
-      then Common.do_option (define_body env) body
+      then Option.iter (define_body env) body
   (* less: should analyze if s has the form "..." and not <> and
    * build appropriate link? but need to find the real File
    * corresponding to the string, so may need some -I
@@ -635,7 +635,7 @@ and definition env x =
            type_ env t;
            if env.phase = Uses
            then
-             eopt |> Common.do_option (fun e ->
+             eopt |> Option.iter (fun e ->
                let n = name in
                expr_toplevel env
                  (Assign ((Ast_cpp.SimpleAssign (snd n)), Id n, e))
@@ -681,7 +681,7 @@ and definition env x =
           Hashtbl.replace env.fields (prefix ^ s) fields;
 
           flds |> unbracket |> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
-            nameopt |> Common.do_option (fun name ->
+            nameopt |> Option.iter (fun name ->
               add_node_and_edge_if_defs_mode env (name, E.Field) (Some t)
               |>ignore;
             )
@@ -769,7 +769,7 @@ and stmt env = function
   | Asm xs -> List.iter (expr_toplevel env) xs
   | If (_, e, st1, st2) ->
       expr_toplevel env e;
-      stmts env (st1::(opt_to_list st2))
+      stmts env (st1::(Option.to_list st2))
   | Switch (_, e, xs) ->
       expr_toplevel env e;
       cases env xs
@@ -855,7 +855,7 @@ and expr env = function
             ]
             (if looks_like_macro name then E.Constant else E.Global)
         in
-        kind_opt |> Common.do_option (fun kind -> add_use_edge env (name, kind))
+        kind_opt |> Option.iter (fun kind -> add_use_edge env (name, kind))
 
   | Call (e, (_, es, _)) ->
       (match e with
@@ -878,7 +878,7 @@ and expr env = function
              (* we don't call call like foo(bar(x)) to be counted
               * as special calls in prolog, hence the NoCtx here.
              *)
-             kind_opt |> Common.do_option (fun kind ->
+             kind_opt |> Option.iter (fun kind ->
                add_use_edge { env with ctx = P.NoCtx } (name, kind);
                args { env with ctx = (P.CallCtx (fst name, kind)) } es
              )

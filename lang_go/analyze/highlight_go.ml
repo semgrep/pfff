@@ -160,7 +160,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                  k x
                                );
                                V.kparameter = (fun (k, _) x ->
-                                 x.pname |> Common.do_option (fun id ->
+                                 x.pname |> Option.iter (fun id ->
                                    tag_ident id (Parameter Def)
                                  );
                                  k x
@@ -193,7 +193,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
 
                                   | TStruct (_, flds) ->
                                       flds |> unbracket |> List.iter (fun (fld, tag_opt) ->
-                                        tag_opt |> Common.do_option (fun tag -> tag_ident tag Attribute);
+                                        tag_opt |> Option.iter (fun tag -> tag_ident tag Attribute);
                                         (match fld with
                                          | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
                                          | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))

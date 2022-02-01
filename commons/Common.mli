@@ -13,7 +13,6 @@ val (=*=): 'a -> 'a -> bool
 *)
 val pr : string -> unit
 
-
 (*
    Print a string and a newline to stderr, then flush stderr.
 *)
@@ -69,6 +68,7 @@ type path = string
 val cat :      filename -> string list
 
 val write_file : file:filename -> string -> unit
+
 (* Read the contents of file.
 
    This implementation works even with Linux files like /dev/fd/63
@@ -146,11 +146,8 @@ type 'a hashset = ('a, bool) Hashtbl.t
 val hashset_of_list : 'a list -> 'a hashset
 val hashset_to_list : 'a hashset -> 'a list
 
-val map_opt: ('a -> 'b) -> 'a option -> 'b option
-val opt: ('a -> unit) -> 'a option -> unit
-val do_option : ('a -> unit) -> 'a option -> unit
-val opt_to_list: 'a option -> 'a list
 val optlist_to_list: 'a list option -> 'a list
+(* you should prefer let ( let* ) = Option.bind though *)
 val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val (|||): 'a option -> 'a -> 'a
 
@@ -248,7 +245,6 @@ val debugger : bool ref
 
 (* emacs spirit *)
 val unwind_protect : (unit -> 'a) -> (exn -> 'b) -> 'a
-(* java spirit *)
 (* java spirit *)
 val finalize :       (unit -> 'a) -> (unit -> 'b) -> 'a
 

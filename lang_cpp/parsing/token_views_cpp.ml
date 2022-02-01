@@ -537,7 +537,7 @@ let rec iter_token_brace f xs =
   xs |> List.iter (function
     | BToken tok -> f tok;
     | Braceised (xxs, tok1, tok2opt) ->
-        f tok1; do_option f tok2opt;
+        f tok1; Option.iter f tok2opt;
         xxs |> List.iter (fun xs -> iter_token_brace f xs)
   )
 
@@ -559,7 +559,7 @@ let rec iter_token_multi f xs =
       ->
         f t1;
         iter_token_multi f xs;
-        Common.do_option f t2
+        Option.iter f t2
   )
 
 let tokens_of_paren xs =
@@ -616,7 +616,7 @@ let tokens_of_multi_grouped xs =
       | Angle (t1, xs, t2) ->
           add t1;
           aux xs;
-          Common.do_option add t2
+          Option.iter add t2
     )
   in
   aux xs;

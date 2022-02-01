@@ -512,7 +512,7 @@ else_:
 
 for_stmt:
  | LFOR simple_stmt? ";" simple_stmt? ";" simple_stmt? loop_body
-    { For ($1, ForClassic ($2, Common.map_opt (condition_of_stmt $1) $4, $6), $7) }
+    { For ($1, ForClassic ($2, Option.map (condition_of_stmt $1) $4, $6), $7) }
  | LFOR simple_stmt loop_body
     { let cond = condition_of_stmt $1 $2 in
       let for_header =

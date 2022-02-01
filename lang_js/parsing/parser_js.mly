@@ -744,7 +744,7 @@ class_decl: decorators T_CLASS binding_id? generics? class_heritage class_body
 class_body: "{" class_element* "}" { ($1, List.flatten $2, $3) }
 
 class_heritage: extends_clause? optl(implements_clause)
-  { Common.opt_to_list $1, $2 }
+  { Option.to_list $1, $2 }
 
 extends_clause: T_EXTENDS type_or_expr { $2 }
 (* typescript-ext: *)

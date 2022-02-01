@@ -949,7 +949,7 @@ let print_regression_information ~ext xs newscore =
     | _ -> None
   in
   let score_path = Config_pfff.regression_data_dir in
-  dirname_opt |> Common.do_option (fun dirname ->
+  dirname_opt |> Option.iter (fun dirname ->
     pr2 "------------------------------";
     pr2 "regression testing information";
     pr2 "------------------------------";

@@ -45,7 +45,7 @@ let check_imperative g =
   let pred = G.mk_eff_use_pred g in
 
   g |> G.iter_nodes (fun n ->
-    G.nodeinfo_opt n g |> Common.do_option (fun info ->
+    G.nodeinfo_opt n g |> Option.iter (fun info ->
 
       let ps = pred n in
       (* todo: filter nodes that are in boilerplate code *)
@@ -64,7 +64,7 @@ let check_imperative g =
         | s, E.GlobalExtern -> Some (s, E.Global)
         | _ -> None
       in
-      n_def_opt |> Common.do_option (fun n_def ->
+      n_def_opt |> Option.iter (fun n_def ->
         let n_decl = n in
         if not (G.has_node n_def g)
         then
@@ -84,7 +84,7 @@ let check_imperative g =
         | s, E.Global -> Some (s, E.GlobalExtern)
         | _ -> None
       in
-      n_decl_opt |> Common.do_option (fun n_decl ->
+      n_decl_opt |> Option.iter (fun n_decl ->
         let n_def = n in
         if (G.has_node n_decl g)
         then begin

@@ -164,7 +164,7 @@ let visit_prog prog =
                   (match param with
                    | P param
                    | ParamVariadic (_, _, param) ->
-                       param.p_name  |> Common.do_option (fun ident ->
+                       param.p_name  |> Option.iter (fun ident ->
                          add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
                        );
                        (*| _ -> () *)

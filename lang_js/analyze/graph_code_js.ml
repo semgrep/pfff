@@ -140,7 +140,7 @@ let fake s = Parse_info.fake_info s
 
 let unbracket (_, x, _) = x
 
-let option = Common.opt
+let option = Option.iter
 
 (*****************************************************************************)
 (* Qualified Name *)
@@ -345,7 +345,7 @@ and module_directive env x =
   | Import (_, name1, name2opt, (file, tok)) ->
       if env.phase = Uses then begin
         let str1 = s_of_n name1 in
-        let str2_opt = Common.map_opt s_of_n name2opt in
+        let str2_opt = Option.map s_of_n name2opt in
         let path_opt = Module_path_js.resolve_path
             ~root:env.root
             ~pwd:(Filename.dirname env.file_readable)
@@ -358,7 +358,7 @@ and module_directive env x =
               spf "NOTFOUND-|%s|.js" file
           | Some fullpath -> Common.readable env.root fullpath
         in
-        str2_opt |> Common.do_option (fun str2 ->
+        str2_opt |> Option.iter (fun str2 ->
           Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
         )
       end
@@ -427,7 +427,7 @@ and stmt env = function
       expr env e;
       cases env xs
   | Continue (_, lopt, _) | Break (_, lopt, _) ->
-      Common.opt (label env) lopt
+      Option.iter (label env) lopt
   | Return (_, eopt, _) ->
       option (expr env) eopt
   | Label (l, st) ->
@@ -437,8 +437,8 @@ and stmt env = function
       expr env e
   | Try (_, st1, catchopt, finalopt) ->
       stmt env st1;
-      catchopt |> Common.opt (catch_block env);
-      finalopt |> Common.opt (fun (_t, st) -> stmt env st);
+      catchopt |> Option.iter (catch_block env);
+      finalopt |> Option.iter (fun (_t, st) -> stmt env st);
   | With (_, e, st) ->
       expr env e;
       stmt env st
@@ -667,7 +667,7 @@ and parameters env xs = List.iter (parameter env) xs
 and parameter env = function
   | ParamEllipsis _ -> ()
   | ParamClassic p ->
-      Common.opt (expr env) p.p_default
+      Option.iter (expr env) p.p_default
   | ParamPattern _ -> () (* TODO *)
 
 (*****************************************************************************)

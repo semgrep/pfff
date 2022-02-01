@@ -35,7 +35,7 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
           Some ("S__" ^(Common.matched1 s), E.Type)
       | _ -> None
     in
-    n_def_opt |> Common.do_option (fun n_def ->
+    n_def_opt |> Option.iter (fun n_def ->
       let n_decl = n in
       if G.has_node n_def g
       then begin

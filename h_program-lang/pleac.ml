@@ -189,7 +189,7 @@ let gen_source_files
              pr (spf "%s %s %s" comment_start estet_sect2  comment_end);
              pr (spf "%s %s %s" comment_start section2 comment_end);
              pr (spf "%s %s %s" comment_start estet_sect2  comment_end);
-             code_opt |> Common.do_option (fun code -> code |> List.iter pr)
+             code_opt |> Option.iter (fun code -> code |> List.iter pr)
            )
          )
        )
@@ -213,7 +213,7 @@ let gen_source_files
                pr2 (spf "Section %s was not found in data file" secnumber);
                None
            in
-           code_opt |> Common.do_option (fun code ->
+           code_opt |> Option.iter (fun code ->
              Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
                let pr s = pr_no_nl (s ^ "\n") in
                pr (spf "%s %s %s" comment_start estet_sect1  comment_end);

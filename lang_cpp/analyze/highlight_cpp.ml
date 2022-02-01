@@ -366,7 +366,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (ast, toks) =
     );
 
     V.kclass_def = (fun (k,_) ((c_nameopt, _def) as x) ->
-      c_nameopt |> Common.do_option (fun name ->
+      c_nameopt |> Option.iter (fun name ->
         Ast.ii_of_id_name name |> List.iter (fun ii ->
           tag ii (Entity (Class, (Def2 fake_no_def2)));
         )

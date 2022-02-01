@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 1998-2021 Yoann Padioleau
+ * Copyright (C) 1998-2022 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -594,6 +594,9 @@ let sort_by_key_lowfirst xs =
 let push v l =
   l := v :: !l
 
+(*###########################################################################*)
+(* Exn *)
+(*###########################################################################*)
 
 let unwind_protect f cleanup =
   if !debugger then f () else
@@ -876,7 +879,7 @@ let mk_action_n_arg f = f
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Maybe *)
+(* Option/Either *)
 (*****************************************************************************)
 
 (* type 'a maybe  = Just of 'a | None *)
@@ -892,18 +895,21 @@ let (>>=) m1 m2 =
     | Some v -> v
     | None -> Lazy.force default
 *)
-
-let map_opt f = function
-  | None -> None
-  | Some x -> Some (f x)
-
-let do_option f = function
-  | None -> ()
-  | Some x -> f x
-let opt = do_option
-let opt_to_list : 'a option -> 'a list = function
-  | None -> []
-  | Some x -> [x]
+(* deprecated: use Option.map
+   let map_opt f = function
+   | None -> None
+   | Some x -> Some (f x)
+*)
+(* deprecated: use Option.iter
+   let do_option f = function
+   | None -> ()
+   | Some x -> f x
+*)
+(* deprecated: use Option.to_list
+   let opt_to_list : 'a option -> 'a list = function
+   | None -> []
+   | Some x -> [x]
+*)
 
 (* often used in grammar actions in menhir *)
 let optlist_to_list = function None -> [] | Some xs -> xs

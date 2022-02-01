@@ -196,7 +196,7 @@ let resolve prog =
                                      )
 
                                  | ImportAs (_, (dotted_name, _dotsTODO), asname_opt) ->
-                                     asname_opt |> Common.do_option (fun asname ->
+                                     asname_opt |> Option.iter (fun asname ->
                                        env |> add_name_env asname (ImportedModule dotted_name)
                                      );
                                      k x

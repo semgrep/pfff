@@ -373,8 +373,8 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
       in
       let rescue = List.map convert_rescue eb.exn_rescue in
       let ensure = eb.exn_ensure in (* ensure doesn't return a value *)
-      let eelse = map_opt q_to_stmt
-          (map_opt (convert_to_return add_f acc) eb.exn_else)
+      let eelse = Option.map q_to_stmt
+          (Option.map (convert_to_return add_f acc) eb.exn_else)
       in
       let eblk = C.exnblock body rescue ?ensure ?eelse stmt.pos in
       DQueue.enqueue eblk DQueue.empty
@@ -388,7 +388,7 @@ let rec convert_to_return (add_f : tuple_expr -> stmt_node) acc stmt = match stm
              (gs,bs')
           ) cb.case_whens
       in
-      let else' = map_opt
+      let else' = Option.map
           (fun s ->
              C.seq (DQueue.to_list (convert_to_return add_f acc s)) s.pos
           ) cb.case_else
@@ -684,7 +684,7 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
       acc, EId v'
 
   | Ast.Call(Ast.Id(("defined?", pos), Ast.ID_Lowercase), args, cb) ->
-      let _ = map_opt (fun _ -> Log.fatal (Log.of_tok pos) "cb for 'defined?' ??") cb in
+      let _ = Option.map (fun _ -> Log.fatal (Log.of_tok pos) "cb for 'defined?' ??") cb in
       let acc, v = fresh acc in
       let v' = match v with LId id -> id | _ -> failwith "Impossible" in
 
@@ -1124,7 +1124,7 @@ and refactor_codeblock acc : Ast.expr -> codeblock = function
   | _ ->
       Log.fatal Log.empty "refactor_codeblock: non-codeblock"
 
-and _map_codeblock acc cb_o = map_opt (refactor_codeblock acc) cb_o
+and _map_codeblock acc cb_o = Option.map (refactor_codeblock acc) cb_o
 
 (* assign the last value of the stmt to [id].
    e.g., add_last_assign "x" [if_stmt] becomes
@@ -1184,7 +1184,7 @@ and add_last_assign ~do_break (id:identifier) (s : stmt) : stmt =
                  ) exn.exn_rescue;
       in
       let ensure = exn.exn_ensure in (* ensure does not return a value *)
-      let eelse = map_opt (add_last_assign ~do_break id) exn.exn_else in
+      let eelse = Option.map (add_last_assign ~do_break id) exn.exn_else in
       C.exnblock body rescue ?ensure ?eelse s.pos
 
   | Case(cb) ->
@@ -1242,7 +1242,7 @@ and refactor_method_call_assign (acc:stmt acc) (lhs : lhs option) = function
       Log.fatal (Log.of_tok p1) "undef as method?"
 
   | Ast.Call(Ast.Id(("defined?", pos),Ast.ID_Lowercase), args, cb) ->
-      let _ = map_opt (fun _ -> Log.fatal (Log.of_tok pos) "cb for 'defined?' ??") cb in
+      let _ = Option.map (fun _ -> Log.fatal (Log.of_tok pos) "cb for 'defined?' ??") cb in
       let acc, v = match lhs with
         | None -> fresh acc
         | Some (LId id) -> acc, LId id

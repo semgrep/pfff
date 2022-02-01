@@ -1080,13 +1080,13 @@ direct_d:
      { (fst $1, fun x-> (snd $1)
          (nQ, (TFunction {
            ft_ret= x; ft_params = ($2, [], $3);
-           ft_specs = []; ft_const = $4; ft_throw = opt_to_list $5; })))
+           ft_specs = []; ft_const = $4; ft_throw = Option.to_list $5; })))
      }
  | direct_d "(" parameter_type_list ")" const_opt exn_spec?
      { (fst $1, fun x-> (snd $1)
           (nQ,(TFunction {
             ft_ret = x; ft_params = ($2,$3,$4);
-            ft_specs = []; ft_const = $5; ft_throw = opt_to_list $6; })))
+            ft_specs = []; ft_const = $5; ft_throw = Option.to_list $6; })))
      }
 
 (*----------------------------*)
@@ -1127,11 +1127,11 @@ direct_abstract_declarator:
  | direct_abstract_declarator "(" ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,[],$3);
-         ft_specs = []; ft_const = $4; ft_throw = opt_to_list $5; })) }
+         ft_specs = []; ft_const = $4; ft_throw = Option.to_list $5; })) }
  | direct_abstract_declarator "(" parameter_type_list ")" const_opt exn_spec?
      { fun x -> $1 (nQ, (TFunction {
          ft_ret = x; ft_params = ($2,$3,$4);
-         ft_specs = []; ft_const = $5; ft_throw = opt_to_list $6; })) }
+         ft_specs = []; ft_const = $5; ft_throw = Option.to_list $6; })) }
 
 (*-----------------------------------------------------------------------*)
 (* Parameters (use decl_spec_seq not type_spec just for 'register') *)
@@ -1454,7 +1454,7 @@ enum_specifier:
 
 enum_head:
  | enum_key ident? (*ioption(enum_base)*)
-     { $1, $2 |> Common.map_opt name_of_id }
+     { $1, $2 |> Option.map name_of_id }
 
 enumerator:
  | ident                { { e_name = $1; e_val = None; } }

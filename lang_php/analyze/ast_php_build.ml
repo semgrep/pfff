@@ -612,7 +612,7 @@ and hint_type env = function
   | HintTypeConst (lhs, tok, rhs) ->
       A.HintTypeConst (hint_type env lhs, tok, hint_type env rhs)
   | HintVariadic (tok, hint) ->
-      let hint = map_opt (hint_type env) hint in
+      let hint = Option.map (hint_type env) hint in
       A.HintVariadic (tok, hint)
 
 (* ------------------------------------------------------------------------- *)

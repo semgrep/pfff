@@ -77,7 +77,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
   in
 
   let lexer_based_tagger = (program = None) in
-  program |> Common.do_option Resolve_python.resolve;
+  program |> Option.iter Resolve_python.resolve;
   (* -------------------------------------------------------------------- *)
   (* AST phase 1 *)
   (* -------------------------------------------------------------------- *)
@@ -208,7 +208,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                      dotted_name |> List.iter (fun name ->
                                        tag_name name (Entity (kind, use2));
                                      );
-                                     asname_opt |> Common.do_option (fun asname ->
+                                     asname_opt |> Option.iter (fun asname ->
                                        tag_name asname (Entity (kind, def2));
                                      );
                                      k x
@@ -221,14 +221,14 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                      aliases |> List.iter (fun (name, asname_opt) ->
                                        let kind = E.Function in
                                        tag_name name (Entity (kind, use2));
-                                       asname_opt |> Common.do_option (fun asname ->
+                                       asname_opt |> Option.iter (fun asname ->
                                          tag_name asname (Entity (kind, def2));
                                        );
                                      );
                                      k x
 
                                  | With (_, (_e, eopt), _stmts) ->
-                                     eopt |> Common.do_option (fun e ->
+                                     eopt |> Option.iter (fun e ->
                                        match e with
                                        | Name (name, _ctx, _res) ->
                                            tag_name name (Local Def);
@@ -270,7 +270,7 @@ let visit_program ~tag_hook _prefs (program, toks) =
                                );
                              }
   in
-  program |> Common.do_option (fun prog ->
+  program |> Option.iter (fun prog ->
     visitor (Program prog);
   );
 
