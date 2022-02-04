@@ -1193,7 +1193,7 @@ assignment_expr:
  | T_YIELD     assignment_expr     { special Yield $1  [$2] }
  | T_YIELD "*" assignment_expr     { special YieldStar $1 [$3] }
  (* typescript-ext: 1.6, because <> cant be used in TSX files *)
- | left_hand_side_expr_(d1) T_AS type_ { $1 (* TODO $2 $3 *) }
+ | left_hand_side_expr_(d1) T_AS type_ { TypeAssert($1, $2, $3) }
 
  (* sgrep-ext: TODO can't move in primary_expr_no_braces, get s/r conflicts
   * (LDots however can be put in primary_expr_no_braces)
