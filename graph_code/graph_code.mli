@@ -1,6 +1,8 @@
 
 (* the main types *)
-type node = string * Entity_code.entity_kind
+type node = entity_name * Entity_code.entity_kind
+and entity_name = string
+
 type nodeinfo = {
   (* the filename embedded inside token_location can be a readable path *)
   pos: Parse_info.token_location;

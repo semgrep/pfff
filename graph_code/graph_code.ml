@@ -86,7 +86,11 @@ let logger = Logging.get_logger [__MODULE__]
 (* Types *)
 (*****************************************************************************)
 
-type node = string * E.entity_kind
+type node = entity_name * E.entity_kind
+(* TODO: at some point we might want a 'string list' here, to better represent
+ * entities like "Package1.Subpackage.FooClass.BarMethod"
+*)
+and entity_name = string
 
 type edge =
   (* a package Has subpackages, a subpackage Has classes, a class Has members,
