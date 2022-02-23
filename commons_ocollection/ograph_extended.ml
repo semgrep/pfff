@@ -290,7 +290,7 @@ let generate_ograph_xxx g filename =
 
 
 let get_os =
-  lazy (
+  let os = lazy (
     let ic = Unix.open_process_in "uname" in
     Fun.protect
       (fun () ->
@@ -301,7 +301,8 @@ let get_os =
          | _ -> `Unknown
       )
       ~finally:(fun () -> ignore (Unix.close_process_in ic))
-  )
+  ) in
+  fun () -> Lazy.force os
 
 let launch_png_cmd filename =
   let _status =
@@ -322,11 +323,11 @@ let launch_gv_cmd filename =
   *)
   ()
 
-let display_graph_cmd =
-  match Lazy.force get_os with
-  | `MacOs -> launch_png_cmd
-  | `Linux -> launch_gv_cmd
-  | _ -> fun _ -> ()
+let display_graph_cmd filename =
+  match get_os () with
+  | `MacOs -> launch_png_cmd filename
+  | `Linux -> launch_gv_cmd filename
+  | `Unknown -> ()
 
 let print_ograph_extended g filename display_graph =
   generate_ograph_xxx g filename;
