@@ -3574,7 +3574,7 @@ let try_rule toks frule =
   x
 
 let parse toks =
-  try 
+  try
     try_rule toks compilationUnit
   with PI.Parsing_error _ ->
     try_rule toks block
