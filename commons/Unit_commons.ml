@@ -68,10 +68,23 @@ world\n\
       flush stderr;
       assert false
 
+let test_readable () =
+  Alcotest.(check string) "same string" "Bar.java"
+    (Common.readable ~root:"." "./Bar.java");
+  Alcotest.(check string) "same string" "Bar.java"
+    (Common.readable ~root:"." "Bar.java");
+  Alcotest.(check string) "same string" "a/b/Bar.java"
+    (Common.readable ~root:"." "a/b/Bar.java");
+  Alcotest.(check string) "same string" "Bar.java"
+    (Common.readable ~root:"/a/b/" "/a/b/Bar.java");
+  ()
+  
+
 let tests =
   Testutil.pack_suites "commons" [
     Testutil.pack_suites "common" [
       Testutil.pack_tests "map" test_common_map;
       ["cat", test_cat];
+      ["readable", test_readable];
     ]
   ]

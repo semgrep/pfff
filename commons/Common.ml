@@ -1093,9 +1093,17 @@ let filename_without_leading_path prj_path s =
 
 (* TODO: we should use strong types like in Li Haoyi filename Scala library! *)
 let readable ~root s =
-  if root = "/"
-  then s
-  else filename_without_leading_path root s
+  match root with
+  | "/" -> s
+  | "." -> 
+     (match s with
+     | s when s =~ "^/" -> 
+       failwith (spf "file %s shouldn't start with / when root is ." s)
+     | s when s =~ "^\\./\\(.*\\)" -> matched1 s
+     | _ -> s
+     )
+  | _ ->
+    filename_without_leading_path root s
 
 let is_directory file =
   (* old: (Unix.stat file).Unix.st_kind =*= Unix.S_DIR *)
