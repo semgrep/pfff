@@ -3565,27 +3565,28 @@ let compilationUnit in_ : top_stat list =
   (* ast:  case ... makeEmptyPackage ... *)
   topstats in_
 
-let parse toks =
+
+let try_rule toks frule =
   let in_ = mk_env toks in
   init in_;
-  let xs = compilationUnit in_ in
+  let x = frule in_ in
   accept (EOF ab) in_;
-  xs
+  x
+
+let parse toks =
+  try 
+    try_rule toks compilationUnit
+  with PI.Parsing_error _ ->
+    try_rule toks block
+
 
 let semgrep_pattern toks =
-  let try_rule frule =
-    let in_ = mk_env toks in
-    init in_;
-    let x = frule in_ in
-    accept (EOF ab) in_;
-    x
-  in
   try
-    try_rule (fun in_ -> Ex (expr in_))
+    try_rule toks (fun in_ -> Ex (expr in_))
   with PI.Parsing_error _ ->
     begin
       try
-        try_rule (fun in_ -> Ss (block in_))
+        try_rule toks (fun in_ -> Ss (block in_))
       with PI.Parsing_error _ ->
-        try_rule (fun in_ -> Pr (compilationUnit in_))
+        try_rule toks (fun in_ -> Pr (compilationUnit in_))
     end
