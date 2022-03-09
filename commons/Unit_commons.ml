@@ -78,7 +78,7 @@ let test_readable () =
   Alcotest.(check string) "same string" "Bar.java"
     (Common.readable ~root:"/a/b/" "/a/b/Bar.java");
   ()
-  
+
 
 let tests =
   Testutil.pack_suites "commons" [
