@@ -77,6 +77,8 @@ let test_readable () =
     (Common.readable ~root:"." "a/b/Bar.java");
   Alcotest.(check string) "same string" "Bar.java"
     (Common.readable ~root:"/a/b/" "/a/b/Bar.java");
+  Alcotest.(check string) "same string" "Bar.java"
+    (Common.readable ~root:"/a/b/" "/a/b//Bar.java");
   ()
 
 

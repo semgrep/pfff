@@ -1085,7 +1085,8 @@ let filename_without_leading_path prj_path s =
   if s =$= prj_path
   then "."
   else
-  if s =~ ("^" ^ prj_path ^ "/\\(.*\\)$")
+    (* Note that we should handle multiple consecutive '/' as in 'path/to//file' *)
+  if s =~ ("^" ^ prj_path ^ "/+\\(.*\\)$")
   then matched1 s
   else
     failwith
