@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2020-2021 r2c
+ * Copyright (C) 2020-2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,6 +22,8 @@
  * implementation (e.g., it uses FuncLit instead of the more common Lambda).
  *
  * reference: https://golang.org/src/go/ast/ast.go
+ *
+ * This AST supports also generics (introduced in Go 1.18)
 *)
 
 (*****************************************************************************)
@@ -67,6 +69,8 @@ type qualified_ident = ident list (* 1 or 2 elements *)
 type type_ =
   | TName of qualified_ident (* includes the basic types: bool/int/... *)
   | TPtr of tok * type_
+  (* generics: generalize TArray and TMap to any types *)
+  | TGeneric of ident * type_arguments
 
   (* old: a TArray (None) was called a TSlice before *)
   | TArray of expr option bracket * type_
@@ -74,11 +78,15 @@ type type_ =
   | TArrayEllipsis of tok (* ... *) bracket * type_
 
   | TFunc of func_type
+  (* this could be deprecated in favor of TGeneric at some point *)
   | TMap of tok * type_ bracket * type_
   | TChan of tok * chan_dir * type_
 
   | TStruct    of tok * struct_field list bracket
   | TInterface of tok * interface_field list bracket
+
+(* generics: *)
+and type_arguments = type_ list bracket (* at least 1 elt *)
 
 and chan_dir = TSend | TRecv | TBidirectional
 and func_type =  {
@@ -107,8 +115,12 @@ and tag = string wrap
 and interface_field =
   | Method of ident * func_type
   | EmbeddedInterface of qualified_ident
+  (* generics: *)
+  | Constraints of constraint_ list (* at least one element *)
   (* sgrep-ext: *)
   | FieldEllipsis2 of tok
+
+and constraint_ = tok option (* ~ *) * ident
 
 and expr_or_type = (expr, type_) Common.either
 
@@ -263,7 +275,7 @@ and case_kind =
   (* TODO: stmt (* Send or Receive *) * stmt (* can be empty *) *)
 and comm_clause = case_clause
 
-and call_expr = expr * arguments bracket
+and call_expr = expr * type_arguments option (* generics *) * arguments bracket
 
 and simple =
   | ExprStmt of expr
@@ -294,10 +306,14 @@ and decl =
   (* type can be a TStruct to define and name a structure *)
   | DTypeAlias of ident * tok (* = *) * type_
   (* this introduces a distinct type, with different method set *)
-  | DTypeDef of ident * type_
+  | DTypeDef of ident * type_parameters option (* generics: *) * type_
   (* with tarzan *)
 
 and function_ = func_type * stmt
+
+(* generics: *)
+and type_parameters = type_parameter list bracket (* at least one *)
+and type_parameter = parameter_binding
 
 [@@deriving show { with_path = false }]
 
@@ -333,7 +349,7 @@ type top_decl =
   | Package of tok * ident
   | Import of import
 
-  | DFunc   of tok * ident *                            function_
+  | DFunc   of tok * ident * type_parameters option (* generics *) * function_
   | DMethod of tok * ident * parameter (* receiver *) * function_
   | DTop of decl
   (* tree-sitter-go: not used in pfff Go grammar *)

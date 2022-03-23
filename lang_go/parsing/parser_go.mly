@@ -73,10 +73,10 @@ let expr_or_type_to_type tok x =
  * Calls with a ParenType. We need to convert back those in
  * Cast.
  *)
-let mk_call_or_cast (e, args) =
-  match e, args with
-  | ParenType t, (l, [Arg e], r) -> Cast (t, (l, e, r))
-  | _ -> Call (e, args)
+let mk_call_or_cast (e, targs_opt, args) =
+  match e, targs_opt, args with
+  | ParenType t, None, (l, [Arg e], r) -> Cast (t, (l, e, r))
+  | _ -> Call (e, targs_opt, args)
 
 let type_to_id x =
   match x with
@@ -311,7 +311,7 @@ sgrep_spatch_pattern:
          * empty functions/methods, but I doubt people want explicitely
          * to match that => better to return a Partial
          *)
-        | DFunc (_, _, (_, Empty)) | DMethod (_, _, _, (_, Empty))
+        | DFunc (_, _, _, (_, Empty)) | DMethod (_, _, _, (_, Empty))
            -> Partial (PartialDecl top_decl)
         | _ -> item1 $1
         )
@@ -338,7 +338,7 @@ sgrep_spatch_pattern:
     { let pret =
          [ParamClassic { pname = None; ptype = $5; pdots = None }] in
       let ftype = { fparams = $3; fresults = pret } in
-      let top_decl = DFunc ($2, $1, (ftype, Empty)) in
+      let top_decl = DFunc ($2, $1, None, (ftype, Empty)) in
       Partial (PartialDecl top_decl)
     }
 
@@ -431,7 +431,7 @@ constdcl1:
 
 
 typedcl:
-| typedclname ntype     { DTypeDef ($1, $2) }
+| typedclname ntype     { DTypeDef ($1, None, $2) }
 (* alias decl, go 1.?? *)
 | typedclname "=" ntype { DTypeAlias ($1, $2, $3) }
 
@@ -711,12 +711,14 @@ basic_literal:
 (*
  * call-like statements that
  * can be preceded by 'defer' and 'go'
+ * the None below are for Call's type_arguments option, which are not handled
+ * in this file yet (but are handled in tree-sitter-go).
  *)
 pseudocall:
 |   pexpr "(" ")"
-      { ($1, ($2,[],$3)) }
+      { ($1, None, ($2,[],$3)) }
 |   pexpr "(" arguments ","? ")"
-      { ($1, ($2, $3 |> List.rev |> List.map mk_arg, $5)) }
+      { ($1, None, ($2, $3 |> List.rev |> List.map mk_arg, $5)) }
 |   pexpr "(" arguments "..." ","? ")"
       { let args =
           match $3 |> List.map mk_arg with
@@ -725,7 +727,7 @@ pseudocall:
           | (ArgDots _)::_ -> raise Impossible
           | (ArgType _t)::_ -> raise Impossible
          in
-         $1, ($2, args, $6)
+         $1, None, ($2, args, $6)
       }
 
 (* was expr_or_type_list before *)
@@ -981,7 +983,7 @@ interfacedcl:
 
 (* fntype // without func keyword *)
 indcl: "(" oarg_type_list_ocomma ")" fnres
-   { { fparams = $2; fresults = $4 } }
+   { { fparams = $2; fresults = $4; } }
 
 (*************************************************************************)
 (* Function *)
@@ -993,7 +995,9 @@ xfndcl: LFUNC fndcl fnbody
 
 fndcl:
 |   sym "(" oarg_type_list_ocomma ")" fnres
-     { fun tok body -> DFunc (tok, $1, ({ fparams=$3; fresults = $5 }, body)) }
+     { fun tok body ->
+        DFunc (tok, $1, None, ({ fparams=$3; fresults = $5; },body))
+     }
 |   "(" oarg_type_list_ocomma ")" sym
     "(" oarg_type_list_ocomma ")" fnres
      {
