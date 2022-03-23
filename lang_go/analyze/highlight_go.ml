@@ -13,10 +13,8 @@
  * license.txt for more details.
 *)
 
-open Ast_go
 open Highlight_code
 module T = Parser_go
-module V = Visitor_go
 module E = Entity_code
 
 (*****************************************************************************)
@@ -38,7 +36,7 @@ module E = Entity_code
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
 *)
-let def2 = Def2 NoUse
+let _def2 = Def2 NoUse
 let use2 = Use2 (NoInfoPlace, UniqueDef, MultiUse)
 
 
@@ -67,8 +65,6 @@ let builtin_functions = Common.hashset_of_list [
   "len";
 ]
 
-let unbracket (_, x, _) = x
-
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -79,7 +75,7 @@ let unbracket (_, x, _) = x
  * to figure out what kind of ident it is.
 *)
 
-let visit_program ~tag_hook _prefs (program, toks) =
+let visit_program ~tag_hook _prefs (_program, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -95,16 +91,6 @@ let visit_program ~tag_hook _prefs (program, toks) =
     if not (Hashtbl.mem already_tagged ii)
     then tag ii categ
   in
-  let tag_ident (_s, ii) categ = tag_if_not_tagged ii categ in
-  let tag_qid xs categ =
-    match xs with
-    | [] | _::_::_::_ -> raise Common.Impossible
-    | [x] -> tag_ident x categ
-    | [x;y] ->
-        tag_ident x (Entity (E.Module, use2));
-        tag_ident y categ
-  in
-
   (* Resolve_go.resolve program; *)
 
   (* -------------------------------------------------------------------- *)
@@ -113,152 +99,164 @@ let visit_program ~tag_hook _prefs (program, toks) =
   (* try to better colorize identifiers which can be many different things
    * e.g. a field, a type, a function, a parameter, etc
   *)
-  let in_toplevel = ref true in
+  (* TODO: use the generic AST highlighter now
+   * or update it to handle the idioms below
+     let tag_ident (_s, ii) categ = tag_if_not_tagged ii categ in  let _tag_qid xs categ =
+      match xs with
+      | [] | _::_::_::_ -> raise Common.Impossible
+      | [x] -> tag_ident x categ
+      | [x;y] ->
+          tag_ident x (Entity (E.Module, use2));
+          tag_ident y categ
+     in
 
-  let visitor = V.mk_visitor { V.default_visitor with
-                               (* use 'k x' as much as possible below. No need to
-                                * do v (Stmt st1); v (Expr e); ... Go deep to tag
-                                * special stuff (e.g., a local var in an exception handler) but then
-                                * just recurse from the top with 'k x', tag_if_not_tagged will
-                                * do its job.
-                               *)
+     let in_toplevel = ref true in
 
-                               (* defs *)
-                               V.kprogram = (fun (k, _) x ->
-                                 let (package, imports) = package_and_imports_of_program x in
+     let visitor = V.mk_visitor { V.default_visitor with
+                                 (* use 'k x' as much as possible below. No need to
+                                  * do v (Stmt st1); v (Expr e); ... Go deep to tag
+                                  * special stuff (e.g., a local var in an exception handler) but then
+                                  * just recurse from the top with 'k x', tag_if_not_tagged will
+                                  * do its job.
+                                 *)
 
-                                 tag_ident (snd package) (Entity (E.Module, def2));
-                                 imports |> List.iter (fun import ->
-                                   tag_ident import.i_path (Entity (E.Module, use2));
-                                   match import.i_kind with
-                                   | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
-                                   | ImportOrig | ImportDot _ -> ()
-                                 );
-                                 k x
-                               );
-                               V.ktop_decl = (fun (k, _) x ->
-                                 (match x with
-                                  | DFunc   (_, id,   (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
-                                  | DMethod (_, id,_o,(_t, _st)) -> tag_ident id (Entity (E.Method, def2))
-                                  | DTop _ | STop _ -> ()
-                                  | Package _ | Import _ -> ()
-                                 );
-                                 Common.save_excursion in_toplevel false (fun () ->
+                                 (* defs *)
+                                 V.kprogram = (fun (k, _) x ->
+                                   let (package, imports) = package_and_imports_of_program x in
+
+                                   tag_ident (snd package) (Entity (E.Module, def2));
+                                   imports |> List.iter (fun import ->
+                                     tag_ident import.i_path (Entity (E.Module, use2));
+                                     match import.i_kind with
+                                     | ImportNamed id -> tag_ident id (Entity (E.Module, def2))
+                                     | ImportOrig | ImportDot _ -> ()
+                                   );
                                    k x
                                  );
-                               );
-                               V.kdecl = (fun (k, _) x ->
-                                 (match x with
-                                  | DTypeDef (id, _) | DTypeAlias (id, _, _) ->
-                                      tag_ident id (Entity (E.Type, def2))
-                                  | DConst (id, _, _) -> tag_ident id (Entity (E.Constant, def2))
-                                  | DVar (id, _, _) ->
-                                      if !in_toplevel
-                                      then tag_ident id (Entity (E.Global, def2))
-                                      else tag_ident id (Local Def)
+                                 V.ktop_decl = (fun (k, _) x ->
+                                   (match x with
+                                    | DFunc   (_, id,   (_t, _st)) -> tag_ident id (Entity (E.Function, def2))
+                                    | DMethod (_, id,_o,(_t, _st)) -> tag_ident id (Entity (E.Method, def2))
+                                    | DTop _ | STop _ -> ()
+                                    | Package _ | Import _ -> ()
+                                   );
+                                   Common.save_excursion in_toplevel false (fun () ->
+                                     k x
+                                   );
                                  );
-                                 k x
-                               );
-                               V.kparameter = (fun (k, _) x ->
-                                 x.pname |> Option.iter (fun id ->
-                                   tag_ident id (Parameter Def)
+                                 V.kdecl = (fun (k, _) x ->
+                                   (match x with
+                                    | DTypeDef (id, _) | DTypeAlias (id, _, _) ->
+                                        tag_ident id (Entity (E.Type, def2))
+                                    | DConst (id, _, _) -> tag_ident id (Entity (E.Constant, def2))
+                                    | DVar (id, _, _) ->
+                                        if !in_toplevel
+                                        then tag_ident id (Entity (E.Global, def2))
+                                        else tag_ident id (Local Def)
+                                   );
+                                   k x
                                  );
-                                 k x
-                               );
-                               V.kstmt = (fun (k, _) x ->
-                                 (match x with
-                                  | SimpleStmt (DShortVars (xs, _, _)) ->
-                                      xs |> List.iter (function
-                                        | Id (id) ->
-                                            if !in_toplevel
-                                            then tag_ident id (Entity (E.Global, def2))
-                                            else tag_ident id (Local Def)
-                                        | _ -> ()
-                                      )
-                                  (* general case *)
-                                  | _ -> ()
+                                 V.kparameter = (fun (k, _) x ->
+                                   x.pname |> Option.iter (fun id ->
+                                     tag_ident id (Parameter Def)
+                                   );
+                                   k x
                                  );
-                                 k x
-                               );
+                                 V.kstmt = (fun (k, _) x ->
+                                   (match x with
+                                    | SimpleStmt (DShortVars (xs, _, _)) ->
+                                        xs |> List.iter (function
+                                          | Id (id) ->
+                                              if !in_toplevel
+                                              then tag_ident id (Entity (E.Global, def2))
+                                              else tag_ident id (Local Def)
+                                          | _ -> ()
+                                        )
+                                    (* general case *)
+                                    | _ -> ()
+                                   );
+                                   k x
+                                 );
 
 
-                               (* uses *)
+                                 (* uses *)
 
-                               V.ktype = (fun (k, _) x ->
-                                 (match x with
-                                  | TName ([(
-                                    "int" | "uint32" | "float" | "double"
-                                  ), ii]) -> tag ii TypeInt
-                                  | TName qid -> tag_qid qid (Entity (E.Type, use2))
+                                 V.ktype = (fun (k, _) x ->
+                                   (match x with
+                                    | TName ([(
+                                      "int" | "uint32" | "float" | "double"
+                                    ), ii]) -> tag ii TypeInt
+                                    | TName qid -> tag_qid qid (Entity (E.Type, use2))
 
-                                  | TStruct (_, flds) ->
-                                      flds |> unbracket |> List.iter (fun (fld, tag_opt) ->
-                                        tag_opt |> Option.iter (fun tag -> tag_ident tag Attribute);
-                                        (match fld with
-                                         | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
-                                         | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
-                                         | FieldEllipsis _ -> ()
+                                    | TStruct (_, flds) ->
+                                        flds |> unbracket |> List.iter (fun (fld, tag_opt) ->
+                                          tag_opt |> Option.iter (fun tag -> tag_ident tag Attribute);
+                                          (match fld with
+                                           | Field (id, _) -> tag_ident id (Entity (E.Field, def2));
+                                           | EmbeddedField (_, qid) -> tag_qid qid (Entity (E.Type, use2))
+                                           | FieldEllipsis _ -> ()
+                                          );
                                         );
-                                      );
-                                  | TInterface (_, flds) ->
-                                      flds |> unbracket |> List.iter (function
-                                        | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
-                                        | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
-                                        | FieldEllipsis2 _ -> ()
-                                      );
-                                      (* general case *)
-                                  | _ -> ()
+                                    | TInterface (_, flds) ->
+                                        flds |> unbracket |> List.iter (function
+                                          | Method (id, _)        -> tag_ident id (Entity (E.Method, def2))
+                                          | EmbeddedInterface qid -> tag_qid qid (Entity (E.Type, use2))
+                                          | FieldEllipsis2 _ -> ()
+                                        );
+                                        (* general case *)
+                                    | _ -> ()
+                                   );
+                                   k x
                                  );
-                                 k x
-                               );
 
-                               V.kexpr = (fun (k, _) x ->
-                                 (match x with
-                                  (* TODO
-                                                                    | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
-                                                                        tag_ident fld (Entity (E.Function, use2));
-                                  *)
-                                  | Call (Selector (_, _, fld),_) ->
-                                      tag_ident fld (Entity (E.Method, use2));
-                                  | Selector (Id (_m), _, fld) ->
-                                      tag_ident fld (Entity (E.Field, use2));
-                                  | Id (_id) -> ()
-(*
-                                      (match !resolved with
-                                       | None -> ()
-                                       | Some x ->
-                                           (match fst x with
-                                            | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
-                                            | G.Param -> tag_ident id (Parameter (Use))
-                                            | G.Local -> tag_ident id (Local (Use))
-                                            | G.EnclosedVar -> tag_ident id (Local Use) (* TODO *)
-                                            (* unless matched before in a Call *)
-                                            | G.Global -> tag_ident id (Entity (E.Global, use2))
-                                            | G.ImportedEntity _ -> tag_ident id (Entity (E.Global, use2))
-                                            | G.TypeName -> tag_ident id (Entity (E.Type, use2))
-                                            | G.Macro | G.EnumConstant -> ()
-                                           )
-                                      )
-*)
+                                 V.kexpr = (fun (k, _) x ->
+                                   (match x with
+                                    (* TODO
+                                                                      | Call (Selector (Id (_m, {contents=Some (G.ImportedModule _,_)}),_,fld),_)->
+                                                                          tag_ident fld (Entity (E.Function, use2));
+                                    *)
+                                    | Call (Selector (_, _, fld),_) ->
+                                        tag_ident fld (Entity (E.Method, use2));
+                                    | Selector (Id (_m), _, fld) ->
+                                        tag_ident fld (Entity (E.Field, use2));
+                                    | Id (_id) -> ()
+     (*
+                                        (match !resolved with
+                                         | None -> ()
+                                         | Some x ->
+                                             (match fst x with
+                                              | G.ImportedModule _ -> tag_ident id (Entity (E.Module, use2))
+                                              | G.Param -> tag_ident id (Parameter (Use))
+                                              | G.Local -> tag_ident id (Local (Use))
+                                              | G.EnclosedVar -> tag_ident id (Local Use) (* TODO *)
+                                              (* unless matched before in a Call *)
+                                              | G.Global -> tag_ident id (Entity (E.Global, use2))
+                                              | G.ImportedEntity _ -> tag_ident id (Entity (E.Global, use2))
+                                              | G.TypeName -> tag_ident id (Entity (E.Type, use2))
+                                              | G.Macro | G.EnumConstant -> ()
+                                             )
+                                        )
+   *)
 
-                                  (* general case *)
-                                  | _ -> ()
+                                    (* general case *)
+                                    | _ -> ()
+                                   );
+                                   k x
                                  );
-                                 k x
-                               );
 
-                               V.kinit = (fun (k, _) x ->
-                                 (match x with
-                                  | InitKeyValue (InitExpr (Id (id)), _, _) ->
-                                      tag_ident id (Entity (E.Field, use2))
-                                  | _ -> ()
+                                 V.kinit = (fun (k, _) x ->
+                                   (match x with
+                                    | InitKeyValue (InitExpr (Id (id)), _, _) ->
+                                        tag_ident id (Entity (E.Field, use2))
+                                    | _ -> ()
+                                   );
+                                   k x
+
                                  );
-                                 k x
 
-                               );
-
-                             } in
-  visitor (P program);
+                               } in
+     visitor (P program);
+  *)
 
   (* -------------------------------------------------------------------- *)
   (* tokens phase 1 (list of tokens) *)
