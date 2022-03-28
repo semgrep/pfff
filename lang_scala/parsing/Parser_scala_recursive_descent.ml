@@ -1495,7 +1495,8 @@ and simplePattern in_ : pattern =
     (* pad: the code was written in a very different way by doing that
      * below, given isIdentBool will say yes for MINUS
     *)
-    | MINUS ii ->
+    (* matthew: [val - = expr] and [case - => expr] and [- <- expr] are valid Scala, so we check that - is not the end of the pattern *)
+    | MINUS ii when lookingAhead (fun in_ -> match in_.token with EQUALS _ | ARROW _ | LARROW _ -> false | _ -> true) in_ ->
         nextToken in_;
         let x = literal ~isNegated:(Some ii) ~inPattern:true in_ in
         PatLiteral x
