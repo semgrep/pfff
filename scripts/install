@@ -4,10 +4,8 @@
 #
 set -eu
 
-sudo bash <<EOF
-eval $(opam env)
+eval "$(opam env)"
 dune install
-EOF
 
 #old:
 #make install
