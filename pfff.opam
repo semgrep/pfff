@@ -34,7 +34,7 @@ depends: [
   "dune"
   "ocamlgraph"
   "yojson"
-  "menhir" {= "20211128"}
+  "menhir" {= "20211128"} (* Newer versions cause massive build slowdowns *)
   "grain_dypgen"
   "ppx_deriving"
   "ppx_hash"
