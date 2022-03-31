@@ -10,5 +10,3 @@ commons commons_core
  (preprocess (pps ppx_deriving.show ppx_profiling))
 )
 (ocamllex Lexer_scala)
-(menhir (modules Parser_scala)
-        (flags --unused-tokens --explain --fixed-exception --external-tokens Token_scala))
