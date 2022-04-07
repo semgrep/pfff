@@ -1654,9 +1654,13 @@ and parseOther location (in_: env) : expr =
               ()
           | _ ->
               let tpt = typeOrInfixType location in_ in
-              (* AST: if isWildcard(t) ... *)
-              (* ast: Typed(t, tpt) *)
-              t := TypedExpr (!t, icolon, tpt)
+              match !t with
+              | Name ((Id (s,tok)),[]) when String.get s 0 = '$' ->
+                  t := TypedMetavar ((s,tok), icolon, tpt)
+              | _ ->
+                  (* AST: if isWildcard(t) ... *)
+                  (* ast: Typed(t, tpt) *)
+                  t := TypedExpr (!t, icolon, tpt)
          )
      | Kmatch ii ->
          skipToken in_;
