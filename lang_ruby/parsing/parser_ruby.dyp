@@ -724,6 +724,15 @@ pair:
     { token_immediate_check (snd $1) $2;
       $1, $2, $3
      }
+  /* HACK: 'unless' is a valid name for a keyword argument or a hash key!
+   * Tree-sitter's Ruby parser doesn't even treat 'unless' as a keyword.
+   * This is just a quick-fix until we use tree-sitter's parser also for
+   * parsing Semgrep patterns. */
+  | K_UNLESS T_COLON arg
+    {
+      token_immediate_check $1 $2;
+      ("unless", $1), $2, $3
+    }
 
 /*(*************************************************************************)*/
 /*(*1 Call *)*/
