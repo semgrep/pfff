@@ -126,9 +126,44 @@ let varid = lower idrest
 let _boundvarid = varid | '`' varid '`'
 let plainid = upper idrest | varid | op
 
+(* 110xxxxx *)
+let utf8_head_byte2 = ['\192'-'\223']
+
+(* 1110xxxx *)
+let utf8_head_byte3 = ['\224'-'\239']
+
+(* 11110xxx *)
+let utf8_head_byte4 = ['\240'-'\247']
+
+(* 10xxxxxx *)
+let utf8_tail_byte = ['\128'-'\191']
+
+(* 11 bits of payload *)
+let utf8_2 = utf8_head_byte2 utf8_tail_byte
+
+(* 16 bits of payload *)
+let utf8_3 = utf8_head_byte3 utf8_tail_byte utf8_tail_byte
+
+(* 21 bits of payload *)
+let utf8_4 = utf8_head_byte4 utf8_tail_byte utf8_tail_byte utf8_tail_byte
+
+(* Any UTF-8-encoded code point. This set includes more than it should
+   for simplicity.
+
+   - This includes encodings of the so-called surrogate code points
+     used by UTF-16 and not permitted by UTF-8.
+   - This includes the range 0x110000 to 0x1FFFFF which are beyond the
+     range of valid Unicode code points.
+*)
+let utf8_nonascii = utf8_2 | utf8_3 | utf8_4
+
 (* bugfix: also ...OrAntislash *)
 let charNoBackQuoteOrNewline   = [^'\n' '`'  '\\']
-let charNoQuoteOrNewline       = [^'\n' '\'' '\\']
+
+(* Needed so we can parse unicode character literals, doing this for the other charX defs doesn't seem to make a difference *)
+let charNoQuoteOrNewline_       = [^'\n' '\'' '\\']
+let charNoQuoteOrNewline       = charNoQuoteOrNewline_ | utf8_nonascii
+
 let charNoDoubleQuoteOrNewline = [^'\n' '"'  '\\']
 let charNoDoubleQuote =          [^'"' '\\']
 
