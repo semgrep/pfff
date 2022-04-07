@@ -465,6 +465,16 @@ let lookingAhead body in_ =
   let res = body in_' in
   res
 
+let lookingAhead2 body1 body2 in_ =
+  (* CHECK: allowLeadingInfixOperators *)
+  let in_' = copy_env in_ in
+  nextToken in_';
+  let res1 = body1 in_' in
+  match in_'.token with EOF _ -> false | _ ->
+    nextToken in_';
+    let res2 = body2 in_' in
+    res1 && res2
+
 (*****************************************************************************)
 (* Special parsing  *)
 (*****************************************************************************)
@@ -1775,6 +1785,11 @@ and simpleExpr in_ : expr =
       | x when TH.isLiteral x ->
           let x = literal in_ in
           L x
+      | x when TH.isIdentBool x &&
+               lookingAhead2 (fun in_ -> match in_.token with DOT _ -> true | _ -> false)
+                 (fun in_ -> match in_.token with Ellipsis _ -> true | _ -> false) in_ ->
+          let name = ident in_ in
+          Name (Id name,[])
       (* scala3: deprecated XMLSTART *)
       | x when TH.isIdentBool x ->
           let x = path ~thisOK:true ~typeOK:false in_ in
@@ -1842,9 +1857,17 @@ and simpleExprRest ~canApply t in_ : expr =
     match in_.token with
     | DOT ii ->
         nextToken in_;
-        let id = selector (*t*) in_ in
-        let x = stripParens (DotAccess (t, ii, id)) in
-        simpleExprRest ~canApply:true x in_
+        begin
+          match in_.token with
+          | Ellipsis ii ->
+              nextToken in_;
+              let x = stripParens (DotAccessEllipsis (t , ii)) in
+              simpleExprRest ~canApply:true x in_
+          | _ ->
+              let id = selector (*t*) in_ in
+              let x = stripParens (DotAccess (t, ii, id)) in
+              simpleExprRest ~canApply:true x in_
+        end
     | LBRACKET _ ->
         let t1 = stripParens t in
         (* crazy: parsing depending on built AST: Ident(_) | Select(_, _) | Apply(_, _) | Literal(_) *)
@@ -2678,9 +2701,10 @@ let paramClauses ~ofCaseClass owner _contextBoundBuf in_ : bindings list =
 let rec typeParamClauseOpt _owner _contextBoundBuf in_ : type_parameters =
   in_ |> with_logging "typeParamClauseOpt" (fun () ->
 
-    let typeParam tpannots in_ =
+    let typeParam in_ =
       in_ |> with_logging "typeParam" (fun () ->
         (* ast: ms | Flags.PARAM *)
+        let tpannots = annotations ~skipNewLines:true in_ in
         let tpvariance =
           match in_.token with
           (* STILL? is supposed to be only if isTypeName owner *)
@@ -2732,8 +2756,7 @@ let rec typeParamClauseOpt _owner _contextBoundBuf in_ : type_parameters =
     match in_.token with
     | LBRACKET _ ->
         let x = inBrackets (fun in_ ->
-          let annots = annotations ~skipNewLines:true in_ in
-          commaSeparated (typeParam annots) in_
+          commaSeparated typeParam in_
         ) in_
         in
         Some x
@@ -3577,8 +3600,11 @@ let try_rule toks frule =
 let parse toks =
   try
     try_rule toks compilationUnit
-  with PI.Parsing_error _ ->
+  with PI.Parsing_error _ as err1 ->
+  try
     try_rule toks block
+  with PI.Parsing_error _ -> raise err1
+
 
 
 let semgrep_pattern toks =
