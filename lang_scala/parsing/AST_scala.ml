@@ -283,7 +283,6 @@ and expr =
   (* semgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
-  | TypedMetavar of ident * tok * type_
   | DotAccessEllipsis of expr * tok (* ... *)
 
 
