@@ -524,7 +524,8 @@ let rec refactor_expr (acc:stmt acc) (e : Ast.expr) : stmt acc * Il_ruby.expr =
 
   | Ast.S Ast.Case _ | Ast.S Ast.ExnBlock _
   | Ast.D Ast.EndBlock _ | Ast.D Ast.BeginBlock _
-  | Ast.CodeBlock _ | Ast.D Ast.MethodDef _
+  | Ast.CodeBlock _ | Ast.Lambda _
+  | Ast.D Ast.MethodDef _
   | Ast.S Ast.For _
   | Ast.S Ast.Unless _ | Ast.S Ast.Until _
   | Ast.S Ast.While _
@@ -1630,7 +1631,8 @@ and refactor_stmt (acc: stmt acc) (e:Ast.expr) : stmt acc =
       let pos = raise Todo in
       refactor_body acc body pos
 
-  | Ast.CodeBlock _ as s ->
+  | Ast.CodeBlock _
+  | Ast.Lambda _ as s ->
       Log.fatal (Log.of_tok (tok_of s))
         "refactor_stmt: unknown stmt to refactor: %s\n"
         (Ast_ruby.show_expr s)
