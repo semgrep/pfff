@@ -45,6 +45,7 @@ let visitor_info_of_tok f = function
   | T_AMPER ii -> T_AMPER (f ii)
   | T_TILDE ii -> T_TILDE (f ii)
   | T_BANG ii -> T_BANG (f ii)
+  | T_RARROW ii -> T_RARROW (f ii)
   | T_VBAR ii -> T_VBAR (f ii)
   | T_CARROT ii -> T_CARROT (f ii)
   | T_PERCENT ii -> T_PERCENT (f ii)

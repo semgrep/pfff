@@ -216,6 +216,7 @@ type expr =
 
   (* true = {}, false = do/end *)
   | CodeBlock of bool bracket * formal_param list option * stmts
+  | Lambda of tok * formal_param list option * stmts
 
   | S of stmt
   | D of definition

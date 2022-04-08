@@ -6,6 +6,7 @@ type token =
   | T_BANG of Parse_info.t
   | T_VBAR of Parse_info.t
   | T_CARROT of Parse_info.t
+  | T_RARROW of Parse_info.t
   | T_PERCENT of Parse_info.t
   | T_SLASH of Parse_info.t
   | T_USTAR of Parse_info.t
@@ -196,6 +197,7 @@ val pp :
    | `Obj_T_PLUS of Parse_info.t
    | `Obj_T_POW of Parse_info.t
    | `Obj_T_QUESTION of Parse_info.t
+   | `Obj_T_RARROW of Parse_info.t
    | `Obj_T_RBRACE of Parse_info.t
    | `Obj_T_RBRACK of Parse_info.t
    | `Obj_T_REGEXP_BEG of Parse_info.t
@@ -265,6 +267,9 @@ val pp :
    | `Obj_interp_str of Ast_ruby.interp list
    | `Obj_interp_str_work of Ast_ruby.interp list
    | `Obj_keyword_as_id of Ast_ruby.ident
+   | `Obj_lambda of Ast_ruby.expr
+   | `Obj_lambda_args of Ast_ruby.formal_param list option
+   | `Obj_lambda_body of Ast_ruby.stmts
    | `Obj_lhs of Ast_ruby.expr
    | `Obj_lhs_assign_op of
         Ast_ruby.expr * Ast_ruby.binary_op * Parse_info.t

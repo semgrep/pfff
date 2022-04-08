@@ -344,6 +344,11 @@ and top_lexer state = parse
   | ws* "&&"
       { S.beg_state state;T_ANDOP (tk lexbuf) }
 
+  (* HACK: need precedence over `ws+ '-'` otherwise " ->" is tokenized as
+   * "-" followed by ">", instead of as "->". *)
+  | ws+ "->"
+    {S.beg_state state;T_RARROW (tk lexbuf)}
+
   (* the following lexemes may represent various tokens depending on
      the expression state and surrounding spaces.  Space before and
      after is typically the binop form, while a space before but not
@@ -445,6 +450,7 @@ and top_lexer state = parse
   | "!~"  {S.beg_state state;T_NMATCH (tk lexbuf) }
   | ">>"  {S.beg_state state;T_RSHFT (tk lexbuf)}
   | "=>"  {S.beg_state state;T_ASSOC (tk lexbuf)}
+  | "->"  {S.beg_state state;T_RARROW (tk lexbuf)}
   | '^'   {S.beg_state state;T_CARROT (tk lexbuf)}
   | '|'   {S.beg_state state;T_VBAR (tk lexbuf)}
 

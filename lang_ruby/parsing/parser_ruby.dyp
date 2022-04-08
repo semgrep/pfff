@@ -287,6 +287,7 @@ and params_to_pattern xs =
 %token <Parse_info.t> T_SLASH    /* / */
 %token <Parse_info.t> T_PERCENT  /* % */
 
+%token <Parse_info.t> T_RARROW   /* -> */
 %token <Parse_info.t> T_CARROT       /* ^ */
 %token <Parse_info.t> T_VBAR         /* | */
 %token <Parse_info.t> T_BANG         /* ! */
@@ -488,6 +489,8 @@ primary:
 
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
      { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) (fb xs) None }
+
+  | lambda { $1 }
 
   | array { $1 }
   | hash { $1 }
@@ -941,6 +944,20 @@ code_block_body:
 do_codeblock:
   | K_DO eols code_block_body<b> K_lEND
       { let args, body = b in CodeBlock(($1,false,$4),args,body) }
+
+/*(*----------------------------*)*/
+/*(*2 Lambda *)*/
+/*(*----------------------------*)*/
+
+lambda:
+  | T_RARROW<pos> lambda_args<opt_args> eols lambda_body<body>
+      { Lambda (pos, opt_args, body) }
+
+lambda_args:
+  | T_LPAREN eols formal_arg_list<args> T_RPAREN  { Some args }
+
+lambda_body:
+  | T_LBRACE_ARG eols stmt_list<body> T_RBRACE    { body }
 
 /*(*----------------------------*)*/
 /*(*2 parameters (not arguments, as the name (wrongly) says) *)*/

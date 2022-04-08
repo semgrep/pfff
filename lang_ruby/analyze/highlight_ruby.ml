@@ -195,6 +195,7 @@ let visit_program ~tag_hook _prefs (_program, toks) =
     | T.T_LPAREN ii | T.T_LPAREN_ARG ii
       -> tag ii Punctuation
 
+    | T.T_RARROW ii
     | T.T_ASSOC ii
     | T.T_COMMA ii
     | T.T_DOT ii
