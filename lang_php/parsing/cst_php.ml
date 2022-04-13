@@ -123,14 +123,19 @@ and qualified_ident_element =
   | QITok of tok (* '\' *)
 [@@deriving show { with_path = false }] (* with tarzan *)
 
+(* self and parent are not keywords in PHP, but have special behaviors in accessing class information. 
+ * This type represents this behavior. 
+*)
+type class_scope_resolution_ident = 
+  | Self of tok 
+  | Parent of tok [@@deriving show]
+
 type name =
   | XName of qualified_ident
   (* Could also transform at parsing time all occurences of self:: and
    * parent:: by their respective names. But I prefer to have all the
    * PHP features somehow explicitely represented in the AST.
   *)
-  | Self   of tok
-  | Parent of tok
   (* php 5.3 late static binding (no idea why it's useful ...) *)
   | LateStatic of tok
 [@@deriving show { with_path = false }] (* with tarzan *)
@@ -142,6 +147,7 @@ type name =
 type hint_type =
   | Hint of name (* only self/parent, no static *) *
             type_args option
+  | HintScopeResolution of class_scope_resolution_ident * type_args option
   | HintArray of tok
   | HintQuestion of (tok * hint_type)
   | HintTuple of hint_type comma_list paren
@@ -211,7 +217,7 @@ and expr =
   *)
   | IdVar of dname
   | This of tok
-
+  | ScopeResolutionIdent of class_scope_resolution_ident
   | Call of expr * arguments
   | ObjGet of expr * tok (* -> *) * expr
   | ClassGet of class_name_reference * tok (* :: *) * expr
@@ -794,7 +800,7 @@ type any =
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
-let noScope () = ref (Scope_code.NoScope)
+     let noScope () = ref (Scope_code.NoScope)
 
 let fakeInfo ?(next_to=None) str = { Parse_info.
                                      token = Parse_info.FakeTokStr (str, next_to);
@@ -854,7 +860,7 @@ let map_comma_list f xs = List.map (fun x ->
 *)
 
 let al_info x =
-  { x with Parse_info.token = Parse_info.Ab }
+         { x with Parse_info.token = Parse_info.Ab }
 
 (*****************************************************************************)
 (* Views *)
@@ -883,7 +889,7 @@ let info_of_qualified_ident = function
 
 let info_of_name x =
   match x with
-  | Self tok | Parent tok | LateStatic tok -> tok
+  | LateStatic tok -> tok
   | XName xs  ->
       (match xs with
        | [] -> raise Impossible
@@ -899,12 +905,12 @@ exception TodoNamespace of tok
 let str_of_name x =
   match x with
   | XName [QI x] -> str_of_ident x
-  | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
+  | LateStatic tok -> Parse_info.str_of_info tok
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
 
 let str_of_name_namespace x =
   match x with
-  | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
+  | LateStatic tok -> Parse_info.str_of_info tok
   | XName xs ->
       xs |> List.map (function
         | QITok _ -> "\\"
@@ -926,4 +932,4 @@ let ident_of_class_name x =
   match name with
   | XName [QI x] -> x
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
-  | Self _tok | Parent _tok | LateStatic _tok -> raise Impossible
+  | LateStatic _tok -> raise Impossible

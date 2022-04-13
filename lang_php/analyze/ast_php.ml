@@ -233,6 +233,10 @@ and special =
   | This
   (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
   | Eval
+  (* often transformed in Var "$self" in the analysis *)
+  | Self
+  (* often transformed in Var "$parent" in the analysis *)
+  | Parent
 
 and binaryOp =
   (* TODO: now available in AST_generic_ ? *)

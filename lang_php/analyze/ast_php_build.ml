@@ -196,8 +196,6 @@ and toplevel env st =
 and name env = function
   | XName [QI (Name ("class", tok))] -> [A.special "class", wrap tok]
   | XName qi -> qualified_ident env qi
-  | Self tok -> [A.special "self", wrap tok]
-  | Parent tok -> [A.special "parent", wrap tok]
   | LateStatic tok -> [A.special "static", wrap tok]
 
 and ident _env = function
@@ -366,6 +364,8 @@ and expr env = function
 
   | IdVar dn -> A.Var (dname dn)
   | This tok -> A.IdSpecial (A.This, tok)
+  | ScopeResolutionIdent(Self tok) -> A.IdSpecial (A.Self, tok)
+  | ScopeResolutionIdent(Parent tok) -> A.IdSpecial (A.Parent, tok)
 
   (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)
   | Call (ParenExpr(tok, ObjGet (e1, arrow, Id fld), _), (lp, args, rp)) ->
@@ -601,6 +601,10 @@ and static_scalar env a = expr env a
 (* ------------------------------------------------------------------------- *)
 and hint_type env = function
   | Hint (q, _typeTODO) -> A.Hint (name env q)
+  | HintScopeResolution (Self(tok), _typeTODO) -> 
+    A.Hint([A.special "self", wrap tok])
+  | HintScopeResolution (Parent(tok), _typeTODO) -> 
+    A.Hint([A.special "parent", wrap tok])
   | HintArray tok -> A.HintArray tok
   | HintQuestion (tok, t) -> A.HintQuestion (tok, hint_type env t)
   | HintTuple (t1, v1, t2) ->

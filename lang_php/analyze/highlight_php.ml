@@ -180,7 +180,6 @@ let tag_name ~tag name =
       let info = Ast.info_of_qualified_ident qu in
       tag info (Entity (Class, (Use2 fake_no_use2)));
       (* will be highlighted by the 'toks phase 2' *)
-  | Self _tok | Parent _tok -> ()
   | LateStatic tok ->
       tag tok BadSmell
 

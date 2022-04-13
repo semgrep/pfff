@@ -859,8 +859,8 @@ type_php:
 
 primary_type_php:
  | class_name { $1 }
- | T_SELF     { Hint (Self $1, None) }
- | T_PARENT   { Hint (Parent $1, None) }
+ | T_SELF     { HintScopeResolution (Self $1, None) }
+ | T_PARENT   { HintScopeResolution (Parent $1, None) }
  (* hack-ext: hack extensions *)
  | "?" type_php
      { HintQuestion ($1, $2)  }
@@ -1097,8 +1097,8 @@ primary_expr:
  | constant { Sc (C $1) }
 
  | qualified_class_name { Id $1  }
- | T_SELF               { Id (Self $1) }
- | T_PARENT             { Id (Parent $1) }
+ | T_SELF               { ScopeResolutionIdent(Self $1) }
+ | T_PARENT             { ScopeResolutionIdent(Parent $1) }
 (* php 5.3 late static binding *)
  | T_STATIC             { Id (LateStatic $1) }
 
@@ -1356,7 +1356,7 @@ keyword_as_ident:
 
 (* This is used in 'keyword_as_ident' above, as well as in 'member_expr' via:
  *  | member_expr "::" keyword_as_ident_for_field
- * note: can't put T_PARENT/T_SELF/... here because they are already used
+ * note: can't put T_PARENT/... here because they are already used
  * in primary_expr, hence the move in keyword_as_ident instead.
  *)
 keyword_as_ident_for_field:
