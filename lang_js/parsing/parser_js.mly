@@ -126,10 +126,15 @@ let mk_def (idopt, defkind) =
 let mk_Super tok =
   IdSpecial (Super, tok)
 
-let mk_pattern binding_pattern init_opt =
+let mk_pattern binding_pattern type_opt init_opt =
+  let pat =
+    match type_opt with
+    | None -> binding_pattern
+    | Some type_ -> Cast(binding_pattern, PI.unsafe_fake_info ":", type_)
+  in
   match init_opt with
-  | None -> binding_pattern
-  | Some (t, e) -> Assign (binding_pattern, t, e)
+  | None -> pat
+  | Some (t, e) -> Assign (pat, t, e)
 
 (* Javascript has implicit returns for arrows with expression body *)
 let mk_block_return e =
@@ -611,8 +616,8 @@ binding_property:
 
 (* in theory used also for formal parameter as is *)
 binding_element:
- | binding_id         initializeur? { mk_pattern (Id $1) $2 }
- | binding_pattern    initializeur? { mk_pattern ($1)       $2 }
+ | binding_id         initializeur? { mk_pattern (Id $1) None $2 }
+ | binding_pattern    initializeur? { mk_pattern ($1)    None $2 }
 
 (* array destructuring *)
 
@@ -690,7 +695,7 @@ formal_parameter:
  | id initializeur   { ParamClassic { (mk_param $1) with p_default = Some (snd $2)} }
   (* until here this is mostly equivalent to the 'binding_element' rule *)
   | binding_pattern annotation? initializeur?
-    { ParamPattern (mk_pattern $1 $3) (* annotation? *) }
+    { ParamPattern (mk_pattern $1 $2 $3) }
 
  (* es6: spread *)
  | "..." id          { ParamClassic { (mk_param $2) with p_dots = Some $1; } }
