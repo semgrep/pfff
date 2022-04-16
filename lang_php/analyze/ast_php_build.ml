@@ -193,11 +193,18 @@ and toplevel env st =
 (* ------------------------------------------------------------------------- *)
 (* Names *)
 (* ------------------------------------------------------------------------- *)
-and name env = function
+and name_hint_type env = function
   | XName [QI (Name ("class", tok))] -> [A.special "class", wrap tok]
   | XName qi -> qualified_ident env qi
+  | Self tok -> [A.special "self", wrap tok]
+  | Parent tok -> [A.special "parent", wrap tok]
   | LateStatic tok -> [A.special "static", wrap tok]
-
+and name_expr env = function
+| XName [QI (Name ("class", tok))] -> A.Id [A.special "class", wrap tok]
+| XName qi -> A.Id  (qualified_ident env qi)
+| Self tok -> A.IdSpecial (A.Self, tok)
+| Parent tok -> A.IdSpecial (A.Self, tok)
+| LateStatic tok -> A.Id  [A.special "static", wrap tok]
 and ident _env = function
   | Name (s, tok) -> s, wrap tok
 
@@ -359,22 +366,19 @@ and expr env = function
   | DeepEllipsis x -> A.DeepEllipsis (bracket (expr env) x)
 
   | Sc sc -> scalar env sc
-
-  | Id n -> A.Id (name env n)
-
+  
+  | Id n -> name_expr env n
   | IdVar dn -> A.Var (dname dn)
   | This tok -> A.IdSpecial (A.This, tok)
-  | ScopeResolutionIdent(Self tok) -> A.IdSpecial (A.Self, tok)
-  | ScopeResolutionIdent(Parent tok) -> A.IdSpecial (A.Parent, tok)
 
   (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)
   | Call (ParenExpr(tok, ObjGet (e1, arrow, Id fld), _), (lp, args, rp)) ->
       let e1 = expr env e1 in
-      let fld = name env fld in
+      let fld_ident = name_expr env fld in
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (A.Id ["call_user_func", wrap tok],
-              (lp, (A.Obj_get (e1, arrow, A.Id fld))::args, rp))
+              (lp, (A.Obj_get (e1, arrow, fld_ident))::args, rp))
 
   | Call (e, (lp, args, rp)) ->
       let e = expr env e in
@@ -600,11 +604,7 @@ and static_scalar env a = expr env a
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and hint_type env = function
-  | Hint (q, _typeTODO) -> A.Hint (name env q)
-  | HintScopeResolution (Self(tok), _typeTODO) -> 
-    A.Hint([A.special "self", wrap tok])
-  | HintScopeResolution (Parent(tok), _typeTODO) -> 
-    A.Hint([A.special "parent", wrap tok])
+  | Hint (q, _typeTODO) -> A.Hint (name_hint_type env q)
   | HintArray tok -> A.HintArray tok
   | HintQuestion (tok, t) -> A.HintQuestion (tok, hint_type env t)
   | HintTuple (t1, v1, t2) ->

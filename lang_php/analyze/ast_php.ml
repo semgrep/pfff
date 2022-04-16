@@ -53,6 +53,7 @@
  *    to __builtin__require (maybe not a good idea)
  *  - some special keywords, for instance 'self', are transformed in
  *    "__special__self". See special() below.
+ *    The comment is still relevant but we should use a different example than self.
  *  - the different ways to define namespaces are merged, no
  *    NamespaceBracketDef.
  *
@@ -233,9 +234,9 @@ and special =
   | This
   (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
   | Eval
-  (* often transformed in Var "$self" in the analysis *)
+  (* represents the "self" keyword expression in a classes  *)
   | Self
-  (* often transformed in Var "$parent" in the analysis *)
+  (* represents the "parent" keyword expression in a class *)
   | Parent
 
 and binaryOp =
