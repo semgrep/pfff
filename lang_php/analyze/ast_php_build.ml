@@ -200,11 +200,11 @@ and name_hint_type env = function
   | Parent tok -> [A.special "parent", wrap tok]
   | LateStatic tok -> [A.special "static", wrap tok]
 and name_expr env = function
-| XName [QI (Name ("class", tok))] -> A.Id [A.special "class", wrap tok]
-| XName qi -> A.Id  (qualified_ident env qi)
-| Self tok -> A.IdSpecial (A.Self, tok)
-| Parent tok -> A.IdSpecial (A.Self, tok)
-| LateStatic tok -> A.Id  [A.special "static", wrap tok]
+  | XName [QI (Name ("class", tok))] -> A.Id [A.special "class", wrap tok]
+  | XName qi -> A.Id  (qualified_ident env qi)
+  | Self tok -> A.IdSpecial (A.Self, tok)
+  | Parent tok -> A.IdSpecial (A.Self, tok)
+  | LateStatic tok -> A.Id  [A.special "static", wrap tok]
 and ident _env = function
   | Name (s, tok) -> s, wrap tok
 
@@ -366,7 +366,7 @@ and expr env = function
   | DeepEllipsis x -> A.DeepEllipsis (bracket (expr env) x)
 
   | Sc sc -> scalar env sc
-  
+
   | Id n -> name_expr env n
   | IdVar dn -> A.Var (dname dn)
   | This tok -> A.IdSpecial (A.This, tok)
