@@ -1,7 +1,16 @@
 {
 (* Joust: a Java lexer, parser, and pretty-printer written in OCaml
  *  Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
- *  Released under the GNU General Public License
+ *  Copyright (C) 2022  Eric C. Cooper <ecc@cmu.edu>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
  *
  * ocamllex lexer for Java
  *
