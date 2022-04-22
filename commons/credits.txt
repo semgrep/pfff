@@ -5,7 +5,6 @@ Thanks to
  - Nicolas Canasse for lib-xml/ (LGPL)
  - Thomas Gazagnaire for dynType (BSD-like)
  - Maas-Maarten Zeeman for OUnit (BSD-like)
- - Thorsten Ohl for xHTML.ml (GPL)
  - Brian Hurt and Nicolas Cannasse for their dynArray module (LGPL)
  - Christophe Troestler for his ANSITerminal.ml module (LGPL)
  - Sebastien ferre for his suffix tree module (public domain?)

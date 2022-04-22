@@ -39,7 +39,6 @@ SRC+=ocamlextra/graph_ocamldot.ml
 SRC+=ocamlextra/pretty_printer_indent.ml
 SRC+=ocamlextra/oUnit.ml
 SRC+=ocamlextra/xML2.ml
-SRC+=ocamlextra/xHTML2.ml
 
 SYSLIBS=str.cma bigarray.cma unix.cma
 
