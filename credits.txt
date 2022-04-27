@@ -9,7 +9,7 @@ Thanks to
  - Maas-Maarten Zeeman for OUnit.ml (BSD-like)
  - Guillaume Cottenceau for pleac/ (FDL)
  - Eric Cooper for the Joust Java parser (LGPL)
- - Dario Teixeira for the CSS parser (GPL)
+ - Dario Teixeira for the CSS parser (LGPL)
  - Gert Stolpmann for the HTML parser (LGPL)
  - John Whaley for bddbddb (LGPL)
 
