@@ -1,5 +1,5 @@
 =========================================================================
-| README for CCSS 1.2							|
+| README for CCSS							|
 |									|
 | Dario Teixeira (dario.teixeira@yahoo.com)				|
 | March 2010								|
@@ -120,8 +120,10 @@ for building the bytecode and native binaries.
 5. License
 ==========
 
-CCSS is distributed under the terms of the GNU GPL version 2.
-See LICENSE file for full license text.
+The CCSS library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public License
+version 2.1 as published by the Free Software Foundation, with the
+special exception on linking described in file LICENSE.
 
 
 References

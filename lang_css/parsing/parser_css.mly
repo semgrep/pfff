@@ -2,8 +2,10 @@
  * Copyright (c) 2010 Dario Teixeira (dario.teixeira@yahoo.com)
  * Copyright (C) 2011 Facebook
  *
- * This software is distributed under the terms of the GNU GPL version 2.
- *  See LICENSE file for full license text.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in the license.txt file.
  */
 %{
 open Ast_css
@@ -20,7 +22,7 @@ open Ast_css
  *
  * Most of the code in this file is copy pasted from Dario Teixera
  * css parser and preprocessor: http://forge.ocamlcore.org/projects/ccss/
- * I've mostly convereted it from menhir to ocamlyacc.
+ * I've mostly converted it from menhir to ocamlyacc.
  *)
 %}
 
