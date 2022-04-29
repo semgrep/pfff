@@ -468,6 +468,9 @@ and expr env = function
       let e2 = expr env (New (new_tok, class_ref, args)) in
       A.Assign (e1, tokeq, A.Ref (tokref, e2))
   | Cast (c, e) ->
+      let type_, tok = c in
+      let type_ = cast_type env type_ in
+      let c = (type_, wrap tok) in
       A.Cast (c, expr env e)
   | CastUnset (tok, _) ->
       error tok "TODO: CastUnset"
@@ -565,7 +568,13 @@ and unary_op = function
   | UnBang -> G.Not
   | UnTilde-> G.BitXor
 
-
+and cast_type _env = function
+  | BoolTy   -> A.BoolTy
+  | IntTy    -> A.IntTy
+  | DoubleTy -> A.DoubleTy
+  | StringTy -> A.StringTy
+  | ArrayTy  -> A.ArrayTy
+  | ObjectTy -> A.ObjectTy
 
 and scalar env = function
   | C cst -> constant env cst
@@ -786,7 +795,7 @@ and class_variables env st acc =
       let m =
         match m with
         | NoModifiers _ -> []
-        | VModifiers l -> l
+        | VModifiers l -> List.map (modifier env) l
       in
       let ht = opt hint_type env ht in
       List.map (fun (n, ss) ->
@@ -801,6 +810,16 @@ and class_variables env st acc =
       ) cvl @ acc
   | _ -> acc
 
+and modifier _env m =
+  let m, tok = m in
+  match m with
+  | Public -> (A.Public, tok)
+  | Private -> (A.Private, tok)
+  | Protected -> (A.Protected, tok)
+  | Abstract  -> (A.Abstract, tok)
+  | Final -> (A.Final, tok)
+  | Static -> (A.Static, tok)
+  | Async -> (A.Async, tok)
 
 and class_body env st (mets, flds) =
   match st with
@@ -814,7 +833,7 @@ and class_body env st (mets, flds) =
 
 and method_def env m =
   let _, params, _ = m.f_params in
-  let mds = m.f_modifiers in
+  let mds = List.map (modifier env) m.f_modifiers in
   let params = comma_list_dots_params (parameter env) params in
 (*
   let implicits =

@@ -220,7 +220,7 @@ type expr =
   | ConsArray of array_value list bracket
 
   | CondExpr of expr * expr * expr
-  | Cast of Cst_php.ptype wrap * expr
+  | Cast of cast_type wrap * expr
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
@@ -228,6 +228,14 @@ type expr =
   (* sgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
+
+and cast_type =
+  | BoolTy
+  | IntTy
+  | DoubleTy (* float *)
+  | StringTy
+  | ArrayTy
+  | ObjectTy
 
 and special =
   (* often transformed in Var "$this" in the analysis *)
@@ -378,7 +386,13 @@ and parameter_classic = {
 }
 
 (* for methods, and below for fields too *)
-and modifier = Cst_php.modifier wrap
+and modifier = keyword_modifier wrap
+
+and keyword_modifier =
+  | Public  | Private | Protected
+  | Abstract | Final
+  | Static
+  | Async
 
 (* normally either an Id or Call with only static arguments *)
 and attribute = expr
@@ -502,19 +516,21 @@ let special x = "__special__" ^ x
 let has_modifier cv =
   List.length cv.cv_modifiers > 0
 let is_static modifiers  =
-  List.mem Cst_php.Static  (List.map unwrap modifiers)
+  List.mem Static  (List.map unwrap modifiers)
 let is_private modifiers =
-  List.mem Cst_php.Private (List.map unwrap modifiers)
+  List.mem Private (List.map unwrap modifiers)
 
 let string_of_xhp_tag xs = ":" ^ Common.join ":" xs
 
 let str_of_ident (s, _) = s
 let tok_of_ident (_, x) = x
 
+exception TodoNamespace of tok
+
 let str_of_name = function
   | [id] -> str_of_ident id
   | [] -> raise Common.Impossible
-  | x::_xs -> raise (Cst_php.TodoNamespace (tok_of_ident x))
+  | x::_xs -> raise (TodoNamespace (tok_of_ident x))
 
 let tok_of_name = function
   | [id] -> tok_of_ident id
@@ -535,5 +551,5 @@ let name_of_class_name x =
   match x with
   | Hint ([name]) -> name
   | Hint [] -> raise Common.Impossible
-  | Hint name -> raise (Cst_php.TodoNamespace (tok_of_name name))
+  | Hint name -> raise (TodoNamespace (tok_of_name name))
   | _ -> raise Common.Impossible
