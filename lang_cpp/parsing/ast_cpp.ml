@@ -497,6 +497,8 @@ and for_header =
   | ForClassic of a_expr_or_vars * expr option * expr option
   (* c++0x? TODO: var_decl can be DStructrured_binding with vinit = None  *)
   | ForRange of var_decl (* vinit = None *)  * tok (*':'*) * initialiser
+  (* sgrep-ext: *)
+  | ForEllipsis of tok (* ... *)
 
 and a_expr_or_vars = (expr_stmt, vars_decl) Common.either
 

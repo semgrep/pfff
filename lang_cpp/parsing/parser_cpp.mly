@@ -5,7 +5,7 @@
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2019-2021 r2c
+ * Copyright (C) 2019-2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -94,7 +94,7 @@ module PI = Parse_info
   TShl TShr
   TPlus TMinus TMul "*" TDiv TMod
 
-(* semgrep-ext: *)
+(* sgrep-ext: *)
 %token <Parse_info.t> LDots "<..." RDots "...>"
 
 (*c++ext: see also TInf2 and TSup2 *)
@@ -872,6 +872,9 @@ iteration:
  (* c++ext: *)
  | Tfor "(" for_range_decl ":" for_range_init ")" statement
      { For ($1, ($2, ForRange ($3, $4, $5), $6), $7) }
+ (* sgrep-ext: *)
+ | Tfor "(" "..." ")" statement
+     { For ($1, ($2, ForEllipsis $3, $4), $5) }
  (* cppext: *)
  | TIdent_MacroIterator "(" optl(listc(argument)) ")" statement
      { MacroIteration ($1, ($2, $3, $4), $5) }

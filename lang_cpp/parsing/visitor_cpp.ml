@@ -503,6 +503,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     vin.kcompound (k, all_functions) v
   and v_for_header =
     function
+    | ForEllipsis v1 -> v_tok v1
     | ForClassic ((v1, v2, v3)) ->
         let v1 = v_a_expr_or_vars v1
         and v2 = v_option v_expr v2

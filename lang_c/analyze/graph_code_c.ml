@@ -776,10 +776,12 @@ and stmt env = function
   | While (_, e, st) | DoWhile (_, st, e) ->
       expr_toplevel env e;
       stmt env st
-  | For (_, e1, e2, e3, st) ->
+  | For (_, ForClassic (e1, e2, e3), st) ->
       expr_or_vars env e1;
       Common2.opt (expr_toplevel env) e2;
       Common2.opt (expr_toplevel env) e3;
+      stmt env st
+  | For (_, ForEllipsis _, st) ->
       stmt env st
   | Return (_, eopt) ->
       Common2.opt (expr_toplevel { env with in_return = true }) eopt;

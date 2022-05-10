@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2012, 2014 Facebook
+ * Copyright (C) 2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -70,7 +71,6 @@ open Common2.Infix
  *  - we could also use the AST used by cc in plan9 :)
  *
  * See also lang_cpp/parsing/cst_cpp.ml.
- *
 *)
 
 (*****************************************************************************)
@@ -214,11 +214,7 @@ type stmt =
 
   | While of tok * expr * stmt
   | DoWhile of tok * stmt * expr
-  | For of tok *
-           (var_decl list, expr) Common.either *
-           expr option *
-           expr option *
-           stmt
+  | For of tok * for_header * stmt
 
   | Return of tok * expr option
   | Continue of tok | Break of tok
@@ -241,6 +237,13 @@ type stmt =
 and case =
   | Case of tok * expr * stmt list
   | Default of tok * stmt list
+
+and for_header =
+  | ForClassic of (var_decl list, expr) Common.either *
+                  expr option *
+                  expr option
+  (* sgrep-ext: *)
+  | ForEllipsis of tok (* ... *)
 
 (*****************************************************************************)
 (* Variables *)

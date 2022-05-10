@@ -425,12 +425,15 @@ and stmt env st =
       A.DoWhile (t, stmt env st, expr env e)
   | For (t, (_, ForClassic (est1, est2, est3), _), st) ->
       A.For (t,
-             expr_or_vars env est1,
-             Common2.fmap (expr env) est2,
-             Common2.fmap (expr env) est3,
+             ForClassic (expr_or_vars env est1,
+                         Common2.fmap (expr env) est2,
+                         Common2.fmap (expr env) est3),
              stmt env st
             )
   | For (_, (_, ForRange _, _), _) -> raise CplusplusConstruct
+  | For (_, (_, ForEllipsis _, _), _) ->
+      debug (Stmt st);
+      raise Todo
 
   | MacroIteration _ ->
       debug (Stmt st); raise Todo
