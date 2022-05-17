@@ -244,6 +244,7 @@ and expr =
   | ObjAccessEllipsis of expr * tok (* ... *)
   | TypedMetavar of a_ident * tok * type_
 
+(* TODO: add Null and Undefined here (move out of IdSpecial) *)
 and literal =
   | Bool of bool wrap
   | Num of float option wrap
