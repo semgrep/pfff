@@ -2,7 +2,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010-2014 Facebook
- * Copyright (C) 2019-2020 r2c
+ * Copyright (C) 2019-2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -613,6 +613,8 @@ binding_property:
  (* can appear only at the end of a binding_property_list in ECMA *)
  | "..." binding_id      { FieldSpread ($1, Id $2) }
  | "..." binding_pattern { FieldSpread ($1, $2) }
+ (* sgrep-ext: *)
+ | "..." { FieldEllipsis $1 }
 
 (* in theory used also for formal parameter as is *)
 binding_element:
