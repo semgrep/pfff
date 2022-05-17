@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2019, 2020 r2c
+ * Copyright (C) 2019-2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -373,6 +373,8 @@ and type_ =
   | TyOr of type_ * tok * type_
   | TyAnd of type_ * tok * type_
 
+  (* ex: KeyOf, This, *, LitType, LookupType, CondType, IndexKey, Typeof
+   * MappedType, IsType, Infer, TemplateLitType *)
   | TypeTodo of a_todo_category * any list
 
 and a_type_parameter = a_ident (* TODO: constraints *)
@@ -477,6 +479,7 @@ and parameter_classic = {
 (* expr is usually simply an Id
  * typescript-ext: can have complex type.
  * For an interface, the parent is always a type_
+ * TODO: expr can have <type_arguments>
 *)
 and parent = (expr, type_) Common.either
 
