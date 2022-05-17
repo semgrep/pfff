@@ -475,7 +475,8 @@ and parameter_classic = {
 }
 
 (* expr is usually simply an Id
- * typescript-ext: can have complex type
+ * typescript-ext: can have complex type.
+ * For an interface, the parent is always a type_
 *)
 and parent = (expr, type_) Common.either
 
