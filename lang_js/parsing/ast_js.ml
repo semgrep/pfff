@@ -537,7 +537,7 @@ and module_directive =
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
   *)
-  | Import of tok * a_ident * a_ident option (* 'name1 as name2' *) * a_filename
+  | Import of tok * import_specifier * a_filename
   | Export of tok * a_ident
   (* export * from 'foo'
      export * as bar from 'foo' *)
@@ -551,6 +551,7 @@ and module_directive =
   *)
   | ImportFile of tok * a_filename
 
+and import_specifier = a_ident * a_ident option (* 'name1 as name2' *)
 (*  [@@deriving show { with_path = false} ] *)
 
 (*****************************************************************************)

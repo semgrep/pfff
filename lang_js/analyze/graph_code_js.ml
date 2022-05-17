@@ -342,7 +342,7 @@ and toplevel env x =
 
 and module_directive env x =
   match x with
-  | Import (_, name1, name2opt, (file, tok)) ->
+  | Import (_, (name1, name2opt), (file, tok)) ->
       if env.phase = Uses then begin
         let str1 = s_of_n name1 in
         let str2_opt = Option.map s_of_n name2opt in
