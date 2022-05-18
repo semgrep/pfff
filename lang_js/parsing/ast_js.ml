@@ -408,6 +408,7 @@ and keyword_attribute =
   (* typescript-ext: for fields *)
   | Readonly | Optional (* '?' *) | NotNull (* '!' *)
   | Abstract (* also valid for class *)
+  | Override (* since TS 4.3 *)
 
   (* method properties *)
   | Generator (* '*' *) | Async
