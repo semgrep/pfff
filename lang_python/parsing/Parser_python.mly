@@ -629,13 +629,23 @@ excepthandler:
   (* python2: *)
   | EXCEPT test "," NAME ":" suite { ExceptHandler ($1, Some $2, Some $4, $6) }
 
-with_stmt: WITH with_inner { $2 $1 }
+with_stmt:
+  | WITH with_inner ":" suite                         { $2 ($1, $4) }
+  | WITH "(" with_inner_in_parens ")" ":" suite       { $3 ($1, $6) }
 
 with_inner:
-  | test         ":" suite      { fun t -> With (t, ($1, None), $3) }
-  | test AS expr ":" suite      { fun t -> With (t, ($1, Some $3), $5) }
-  | test         "," with_inner { fun t -> With (t, ($1, None), [$3 t]) }
-  | test AS expr "," with_inner { fun t -> With (t, ($1, Some $3), [$5 t]) }
+  | test                        { fun (t, body) -> With (t, ($1, None), body) }
+  | test AS expr                { fun (t, body) -> With (t, ($1, Some $3), body) }
+  | test         "," with_inner { fun (t, body) -> With (t, ($1, None), [$3 (t, body)]) }
+  | test AS expr "," with_inner { fun (t, body) -> With (t, ($1, Some $3), [$5 (t, body)]) }
+
+with_inner_in_parens:
+  | test                                  { fun (t, body) -> With (t, ($1, None), body) }
+  | test AS expr                          { fun (t, body) -> With (t, ($1, Some $3), body) }
+  | test         ","                      { fun (t, body) -> With (t, ($1, None), body) }
+  | test AS expr ","                      { fun (t, body) -> With (t, ($1, Some $3), body) }
+  | test         "," with_inner_in_parens { fun (t, body) -> With (t, ($1, None), [$3 (t, body)]) }
+  | test AS expr "," with_inner_in_parens { fun (t, body) -> With (t, ($1, Some $3), [$5 (t, body)]) }
 
 (* python3-ext: *)
 async_stmt:
