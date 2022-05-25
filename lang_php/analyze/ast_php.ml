@@ -209,6 +209,7 @@ type expr =
   | Unpack of expr
 
   | Call of expr * expr list bracket
+  | Throw of tok * expr
 
   (* todo? transform into Call (builtin ...) ? *)
   | Infix of AST_generic_.incr_decr wrap * expr
@@ -303,7 +304,6 @@ and stmt =
   | Label of ident * tok (* : *) * stmt
   | Goto of tok * ident
 
-  | Throw of tok * expr
   | Try of tok * stmt * catch list * finally list
 
   (* only at toplevel in most of our code *)
