@@ -736,7 +736,6 @@ and stmt_bis env x =
   (* TODO: does anything special need to be done for Label and Goto? *)
   | Label (_,_,st) -> stmt env st
   | Goto _ -> ()
-  | Throw (_, e) -> expr env e
   | Try (_, xs, cs, fs) ->
       stmt env xs;
       catches env (cs);
@@ -959,6 +958,7 @@ and expr env x =
            expr env e;
            exprl env es
       )
+  | Throw (_, e) -> expr env e
 
   (* -------------------------------------------------- *)
   (* This should be executed only for access to class constants or static
