@@ -920,6 +920,11 @@ let (|||) a b =
   | Some x -> x
   | None -> b
 
+let (<|>) a b =
+  match a with
+  | Some _ -> a
+  | _ -> b
+
 type ('a,'b) either = Left of 'a | Right of 'b
 [@@deriving eq]
 (* with sexp *)
