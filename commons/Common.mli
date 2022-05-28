@@ -150,6 +150,7 @@ val optlist_to_list: 'a list option -> 'a list
 (* you should prefer let ( let* ) = Option.bind though *)
 val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val (|||): 'a option -> 'a -> 'a
+val (<|>): 'a option -> 'a option -> 'a option
 
 
 type ('a, 'b) either = Left of 'a | Right of 'b
