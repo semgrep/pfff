@@ -760,8 +760,16 @@ and case env = function
   | Default (_, xs) ->
       stmtl env xs
 
+and match_ env = function
+  | MCase (es, e) ->
+      exprl env es;
+      expr env e
+  | MDefault (_, e) ->
+      expr env e
+
 and stmtl env xs = List.iter (stmt env) xs
 and casel env xs = List.iter (case env) xs
+and matchl env xs = List.iter (match_ env) xs
 and catches env xs = List.iter (catch env) xs
 and finallys env xs = List.iter (finally env) xs
 
@@ -1050,6 +1058,9 @@ and expr env x =
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
   | Lambda def -> func_def env def
+  | Match (_, e, matches) ->
+      expr env e;
+      matchl env matches
   | Ellipsis _ | DeepEllipsis (_, _, _)
     -> raise Impossible
 

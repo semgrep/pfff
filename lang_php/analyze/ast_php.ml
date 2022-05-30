@@ -226,9 +226,15 @@ type expr =
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
 
+  | Match of tok * expr * match_ list
+
   (* sgrep-ext: *)
   | Ellipsis of tok
   | DeepEllipsis of expr bracket
+
+and match_ =
+  | MCase of expr list * expr
+  | MDefault of tok * expr
 
 and cast_type =
   | BoolTy
