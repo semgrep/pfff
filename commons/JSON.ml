@@ -21,6 +21,10 @@ let rec (to_yojson: t -> Y.t) = function
   | String s -> `String s
   | Int i -> `Int i
   | Bool b -> `Bool b
+  | Float x when Float.is_integer x ->
+      (* needed for atdgen readers that reject e.g. '4.0' when expecting
+         an integer *)
+      `Int (int_of_float x)
   | Float f -> `Float f
   | Null -> `Null
 
