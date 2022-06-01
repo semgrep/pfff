@@ -1806,8 +1806,12 @@ and simpleExpr in_ : expr =
        * expressions when part of a short lambda (arrow).
       *)
       | LPAREN _ ->
-          let xs = makeParens (commaSeparated expr) in_ in
-          Tuple xs
+          let (_,xs,_) as tuple = makeParens (commaSeparated expr) in_ in
+          begin
+            match xs with
+            | [x] -> x
+            | _ -> Tuple tuple
+          end
       | LBRACE _ ->
           canApply := false;
           let x = blockExpr in_ in
