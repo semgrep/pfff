@@ -114,6 +114,8 @@ type modifier =
 
   (* java-ext: ?? *)
   | DefaultModifier
+  (* since Java 15 *)
+  | Sealed | NonSealed
 
   | Annotation of annotation
 
@@ -251,6 +253,9 @@ and literal =
   | Char of string wrap
   | Bool of bool wrap
   | Null of tok
+  (* alt: merge with String? Java 15 *)
+  (* TODO? the string contains the enclosing triple quotes for now *)
+  | TextBlock of string wrap
 
 and arguments = expr list bracket
 
@@ -424,6 +429,7 @@ and class_decl = {
   cl_extends: typ option;
   (* for interface this is actually the extends *)
   cl_impls: ref_type list;
+  (* TODO: cl_permits: ref_type list; for classes and interfaces *)
 
   (* javaext: for Record *)
   cl_formals: parameters;
@@ -437,7 +443,7 @@ and class_kind =
   (* @interface, a.k.a annotation type declaration *)
   (* java-ext: tree-sitter-only: *)
   | AtInterface
-  (* java-ext: *)
+  (* java-ext: java 15 *)
   | Record
 
 (* Not all kind of decls. Restrictions are ?? *)

@@ -86,6 +86,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Abstract | Final
     | Static
     | Transient | Volatile | Native | StrictFP
+    | Sealed | NonSealed
     | Synchronized
     | DefaultModifier -> ()
     | Annotation v1 -> v_annotation v1
@@ -184,7 +185,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Int v1 -> let v1 = v_wrap v_id v1 in ()
     | Float v1 -> let v1 = v_wrap v_id v1 in ()
     | Char v1 -> let v1 = v_wrap v_string v1 in ()
-    | String v1 -> let v1 = v_wrap v_string v1 in ()
+    | String v1 | TextBlock v1 -> let v1 = v_wrap v_string v1 in ()
     | Null v1 -> let v1 = v_tok v1 in ()
 
   and v_expr (x : expr) =
