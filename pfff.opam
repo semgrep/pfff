@@ -38,7 +38,7 @@ depends: [
   "grain_dypgen"
   "ppx_deriving"
   "ppx_hash"
-  "ppxlib" {= "0.20.0" }
+  "ppxlib"
   "uutf"
   "uucp"
   "alcotest"
