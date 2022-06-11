@@ -603,25 +603,29 @@ let unwind_protect f cleanup =
     try f ()
     with e -> begin cleanup e; raise e end
 
-(* TODO: remove and use Fun.protect instead. *)
+(* TODO: remove and use Fun.protect instead? but then it will not have the
+ * !debugger goodies *)
 let finalize f cleanup =
-  (* bug: we can not just call f in debugger mode because
-   * this change the semantic of the program. I originally
-   * put this code below:
-   *   if !debugger then f () else
-   * because I wanted some errors to pop-out to the top so I can
-   * debug them but because now I use save_excursion and finalize
-   * quite a lot this changes too much the semantic.
-   * TODO: maybe I should not use save_excursion so much ? maybe
-   *  -debugger helps see code that I should refactor ?
+  (* Does this debugger mode changes the semantic of the program too much?
+   * Is it ok in a debugging context to not call certain cleanup()
+   * and let the exn bubble up?
+   * TODO: maybe I should not use save_excursion/finalize so much? maybe
+   *  -debugger can help to see code that I should refactor?
   *)
-  try
+  if !debugger then begin
     let res = f () in
     cleanup ();
     res
-  with e ->
-    cleanup ();
-    raise e
+  end
+  else begin
+    try
+      let res = f () in
+      cleanup ();
+      res
+    with e ->
+      cleanup ();
+      raise e
+  end
 
 let (lines: string -> string list) = fun s ->
   let rec lines_aux = function
@@ -1638,12 +1642,14 @@ let main_boilerplate f =
         raise (UnixExit (-1))
       ));
 
-      (* The finalize below makes it tedious to go back to exn when use
-       * 'back' in the debugger. Hence this special case. But the
-       * Common.debugger will be set in main(), so too late, so
-       * have to be quicker
+      (* The finalize() below makes it tedious to go back from exns when we use
+       * 'back' in ocamldebug. Hence the special code in finalize() to
+       * run differently when in "debugger mode". However the
+       * Common.debugger global will be set in main(), so too late, so
+       * we have to be quicker here and set it for the finalize() below.
       *)
-      if Sys.argv |> Array.to_list |> List.exists (fun x -> x =$= "-debugger")
+      if Sys.argv |> Array.to_list |> List.exists
+           (fun x -> x =$= "-debugger" || x =$= "--debugger")
       then debugger := true;
 
       finalize          (fun ()->
