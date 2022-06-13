@@ -124,7 +124,7 @@ type special =
   | Arguments
 
   (* Special apply *)
-  | New | NewTarget
+  | NewTarget
   | Eval (* builtin not in the grammar *)
   | Seq
   (* a kind of cast operator:
@@ -220,6 +220,7 @@ and expr =
   (* ident is a Some when recursive lambda or assigned in module.exports *)
   | Fun of function_definition * a_ident option
   | Apply of expr * a_arguments
+  | New of tok * expr * a_arguments
 
   (* copy-paste of AST_generic.xml (but with different 'expr') *)
   | Xml of xml

@@ -1311,13 +1311,13 @@ call_expr(x):
 
 new_expr(x):
  | member_expr(x)    { $1 }
- | T_NEW new_expr(d1) { special New $1 [$2] }
+ | T_NEW new_expr(d1) { New ($1, $2, fb $1 []) }
 
 member_expr(x):
  | primary_expr(x)                   { $1 }
  | member_expr(x) "[" expr "]"       { ArrAccess($1, ($2, $3, $4)) }
  | member_expr(x) "." field_name     { ObjAccess($1, $2, PN $3) }
- | T_NEW member_expr(d1) arguments   { Apply(special New $1 [$2], $3) }
+ | T_NEW member_expr(d1) arguments   { New ($1, $2, $3) }
  (* es6: *)
  | member_expr(x) template_literal   { mk_Encaps (Some $1) $2 }
  | T_SUPER "[" expr "]"              { ArrAccess(mk_Super($1),($2,$3,$4))}
