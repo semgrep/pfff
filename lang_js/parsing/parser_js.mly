@@ -1311,7 +1311,6 @@ call_expr(x):
 
 new_expr(x):
  | member_expr(x)    { $1 }
- | T_NEW new_expr(d1) { special New $1 [$2] }
 
 member_expr(x):
  | primary_expr(x)                   { $1 }
