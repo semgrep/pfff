@@ -362,6 +362,7 @@ and argument =
   | Arg    of expr
   | ArgRef of tok * w_variable
   | ArgUnpack of tok * expr
+  (* named arguments, since PHP 8.0 *)
   | ArgLabel of ident * tok * expr
 and arguments = argument comma_list paren
 
