@@ -12,6 +12,8 @@ jobs:
 
     # Use our own image with opam dependencies pre-installed to speed
     # things up.
+    # TODO: This image is pinned because the rolling image has broken this build, and that was blocking devs.
+    # We are looking into a long term fix for this, but the rollback should help for the time being.
     container: returntocorp/ocaml@sha256:c6a966eaf725e4e0d20c507cac6d67cc7b0aff3d045910ae0b117e725b5981e6
 
     steps:
