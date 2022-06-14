@@ -145,7 +145,7 @@ type name = qualified_ident
 type expr =
   (* booleans are really just Int in PHP :( *)
   (* I don't think ^ is true. It reads like a boolean represents a truth
-     value, where for purposes of conversion 0 is cast to false and 
+     value, where for purposes of conversion 0 is cast to false and
      non-0 is cast to true *)
   (* https://www.php.net/manual/en/language.types.boolean.php *)
   | Bool of bool wrap
