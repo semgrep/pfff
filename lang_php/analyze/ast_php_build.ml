@@ -582,6 +582,7 @@ and scalar env = function
   | HereDoc (t1, el, t2) -> A.Guil (t1, List.map (encaps env) el, t2)
 
 and constant env = function
+  | Bool x -> A.Bool x
   | Int x -> A.Int x
   | Double x -> A.Double x
   | String x -> A.String x

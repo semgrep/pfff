@@ -345,6 +345,7 @@ let TABS_AND_SPACES = [' ''\t']*
 let NEWLINE = ("\r"|"\n"|"\r\n")
 let WHITESPACEOPT = [' ' '\n' '\r' '\t']*
 let LABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']*
+let BOOL = (['T''t']['R''r']['U''u']['E''e']) | (['F''f']['A''a']['L''l']['S''s']['E''e'])
 let LNUM =	['0'-'9']+
 let DNUM =	(['0'-'9']*['.']['0'-'9']+) | (['0'-'9']+['.']['0'-'9']* )
 
@@ -547,6 +548,25 @@ rule st_in_scripting = parse
     | "$$" { TDOLLARDOLLAR(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
+  (* Constant *)
+  (* ----------------------------------------------------------------------- *)
+    | BOOL
+        {
+          let s = tok lexbuf in
+          let ii = tokinfo lexbuf in
+          T_BOOL (bool_of_string s, ii)
+        }
+    | LNUM | BINNUM | HEXNUM
+        {
+          (* more? cf original lexer *)
+          let s = tok lexbuf in
+          let ii = tokinfo lexbuf in
+          T_LNUMBER (int_of_string_opt s, ii)
+        }
+    | DNUM | EXPONENT_DNUM
+        { T_DNUMBER(float_of_string_opt ( tok lexbuf), tokinfo lexbuf) }
+
+  (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
     (* ugly: 'self' and 'parent' should be keywords forbidden to be used
@@ -613,20 +633,6 @@ rule st_in_scripting = parse
   (* sgrep-ext: *)
   | '$' "..." ['A'-'Z''_']['A'-'Z''_''0'-'9']*
      { Flag.sgrep_guard (T_METAVAR (tok lexbuf, tokinfo lexbuf)) }
-
-  (* ----------------------------------------------------------------------- *)
-  (* Constant *)
-  (* ----------------------------------------------------------------------- *)
-    | LNUM | BINNUM | HEXNUM
-        {
-          (* more? cf original lexer *)
-          let s = tok lexbuf in
-          let ii = tokinfo lexbuf in
-          T_LNUMBER (int_of_string_opt s, ii)
-        }
-    | DNUM | EXPONENT_DNUM
-        { T_DNUMBER(float_of_string_opt ( tok lexbuf), tokinfo lexbuf) }
-
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)

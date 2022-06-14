@@ -130,6 +130,7 @@ let mk_Toplevel x =
 (*-----------------------------------------*)
 (* The normal tokens *)
 (*-----------------------------------------*)
+%token <bool * Parse_info.t> T_BOOL
 %token <int option * Parse_info.t> T_LNUMBER
 %token <float option * Parse_info.t> T_DNUMBER
 %token <string * Parse_info.t>
@@ -1126,6 +1127,7 @@ primary_expr:
 
 
 constant:
+ | T_BOOL               { Bool($1) }
  | T_LNUMBER            { Int($1) }
  | T_DNUMBER            { Double($1) }
  | T_CONSTANT_ENCAPSED_STRING   { String($1) }

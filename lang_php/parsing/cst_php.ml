@@ -301,6 +301,7 @@ and scalar =
       tok  (* EOF; *)
 
 and constant =
+  | Bool of bool wrap
   | Int of int option wrap (* decimal, hex, or binary int format *)
   | Double of float option wrap
   (* see also Guil for interpolated strings

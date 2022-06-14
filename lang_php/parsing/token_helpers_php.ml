@@ -69,6 +69,7 @@ let visitor_info_of_tok f = function
   | TSpaces ii -> TSpaces(f ii)
   | TNewline ii -> TNewline(f ii)
   | TCommentPP ii -> TCommentPP(f ii)
+  | T_BOOL (s,ii) -> T_BOOL(s, f ii)
   | T_LNUMBER (s,ii) -> T_LNUMBER(s, f ii)
   | T_DNUMBER (s,ii) -> T_DNUMBER(s, f ii)
   | T_IDENT (s, ii) -> T_IDENT(s, f ii)
