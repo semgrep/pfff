@@ -12,7 +12,7 @@ jobs:
 
     # Use our own image with opam dependencies pre-installed to speed
     # things up.
-    container: returntocorp/ocaml:ubuntu
+    container: returntocorp/ocaml@sha256:c6a966eaf725e4e0d20c507cac6d67cc7b0aff3d045910ae0b117e725b5981e6
 
     steps:
     - name: Pre-checkout fixes
