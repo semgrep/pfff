@@ -21,6 +21,8 @@ jobs:
         github_cache_dir="/__w"
         sudo mkdir -p "$github_cache_dir"
         sudo chmod -R 777 "$github_cache_dir"
+        # Need to ensure that we set the current directory to be a safe directory for git.
+        sudo -u user git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v2
 
     # Move /home/user/.opam to the new HOME imposed by GHA
@@ -42,8 +44,6 @@ jobs:
         ls -a
     - name: Install pfff
       run: |
-        # Need to ensure that we set the current directory to be a safe directory for git.
-        sudo -u user git config --global --add safe.directory "$GITHUB_WORKSPACE"
         opam install -y .
     - name: Run Tests
       run: eval $(opam env); dune build && dune runtest -f
