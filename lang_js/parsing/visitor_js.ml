@@ -89,7 +89,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     | Module -> ()
     | Define -> ()
     | Arguments -> ()
-    | New -> ()
     | NewTarget -> ()
     | Eval -> ()
     | Seq -> ()
@@ -182,6 +181,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           ()
       | Fun (v1, v2) -> let v1 = v_function_definition v1 and v2 = v_option v_name v2 in ()
       | Apply (v1, v2) -> let v1 = v_expr v1 and v2 = v_bracket (v_list v_expr) v2 in ()
+      | New (t, v1, v2) ->
+          let t = v_tok t in
+          let v1 = v_expr v1 and v2 = v_bracket (v_list v_expr) v2 in ()
       | Arr v1 -> let v1 = v_bracket (v_list v_expr) v1 in ()
       | Conditional (v1, v2, v3) ->
           let v1 = v_expr v1 and v2 = v_expr v2 and v3 = v_expr v3 in ()
