@@ -144,6 +144,10 @@ type name = qualified_ident
 *)
 type expr =
   (* booleans are really just Int in PHP :( *)
+  (* I don't think ^ is true. It reads like a boolean represents
+     a truth value that you can cast to and from 1 *)
+  (* https://www.php.net/manual/en/language.types.boolean.php *)
+  | Bool of bool wrap
   | Int of int option wrap
   | Double of float option wrap
   (* PHP has no first-class functions so entities are sometimes passed
