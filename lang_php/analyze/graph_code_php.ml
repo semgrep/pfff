@@ -710,7 +710,7 @@ and stmt_bis env x =
   | NamespaceUse _ -> raise Impossible
 
   (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id[("define", _)], (_,[String(name); v],_)), _) ->
+  | Expr(Call(Id[("define", _)], (_,[Arg (String(name)); Arg v],_)), _) ->
       let env = add_node_and_has_edge env (name, E.Constant) in
       expr env v
 
@@ -925,7 +925,7 @@ and expr env x =
        | Id name ->
            (* less: increment dynamic_fails stats also when use func_call_args() *)
            add_use_edge env (name, E.Function);
-           exprl env es
+           argl env es
 
        (* static method call *)
        | Class_get (Id[ ("__special__self", tokopt)], tok, e2) ->
@@ -944,7 +944,7 @@ and expr env x =
             * in env.self::foo() below
            *)
            add_use_edge_lookup env (name1, name2) (E.Method);
-           exprl env es
+           argl env es
 
        (* object call *)
        | Obj_get (e1, _, Id name2) ->
@@ -958,13 +958,13 @@ and expr env x =
             | _ ->
                 env.phase_class_analysis |> Common.push (env.cur, name2);
                 expr env e1;
-                exprl env es
+                argl env es
            )
        | _ ->
            let tok = raise Todo (* Meta_ast_php.toks_of_any (Expr2 e) |> List.hd *) in
            env.stats.G.unresolved_calls |> Common.push tok;
            expr env e;
-           exprl env es
+           argl env es
       )
   | Throw (_, e) -> expr env e
 
@@ -1067,6 +1067,7 @@ and expr env x =
 and array_value env x = expr env x
 
 and exprl         env xs = List.iter (expr env) xs
+and argl env xs = List.iter (function Arg e | ArgRef (_,e) | ArgUnpack (_,e) | ArgLabel (_,_,e) -> expr env e) xs
 and array_valuel  env xs = List.iter (array_value env) xs
 
 (*****************************************************************************)

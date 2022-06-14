@@ -187,8 +187,8 @@ type expr =
   | Obj_get of expr * tok * expr
   | Class_get of expr * tok * expr
 
-  | New of tok * expr * expr list
-  | NewAnonClass of tok * expr list * class_def
+  | New of tok * expr * argument list
+  | NewAnonClass of tok * argument list * class_def
   | InstanceOf of tok * expr * expr
 
   (* pad: could perhaps be at the statement level? The left expr
@@ -213,7 +213,7 @@ type expr =
   (* e.g. f(...$x) *)
   | Unpack of expr
 
-  | Call of expr * expr list bracket
+  | Call of expr * argument list bracket
   | Throw of tok * expr
 
   (* todo? transform into Call (builtin ...) ? *)
@@ -265,6 +265,12 @@ and binaryOp =
   | CombinedComparison
   | ArithOp of AST_generic_.operator
 and unaryOp = AST_generic_.operator
+
+and argument =
+  | Arg    of expr
+  | ArgRef of tok * expr
+  | ArgUnpack of tok * expr
+  | ArgLabel of ident * tok * expr
 
 (* only Var, List, or Arrow, and apparently also Array_get is ok, so
  * basically any lvalue
