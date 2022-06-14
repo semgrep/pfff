@@ -1171,6 +1171,7 @@ function_call_argument:
  | expr_or_dots             { (Arg ($1)) }
  | TAND expr        { (ArgRef($1, $2)) }
  | "..." expr       { (ArgUnpack($1, $2)) }
+ | ident ":" expr { (ArgLabel (Name $1,$2,$3)) }
 
 (*----------------------------*)
 (* encaps *)
