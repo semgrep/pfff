@@ -145,13 +145,16 @@ val mk_info_of_loc: token_location -> t
 val is_fake: t -> bool
 val first_loc_of_file: Common.filename -> token_location
 
+(* Extract the lexeme (token) as a string *)
 val str_of_info   : t -> string
+
+(* Extract position information *)
 val line_of_info  : t -> int
 val col_of_info   : t -> int
 val pos_of_info   : t -> int
 val file_of_info  : t -> Common.filename
 
-(* small error reporting, for longer reports use error_message above *)
+(* Format the location file/line/column into a string *)
 val string_of_info: t -> string
 
 val is_origintok: t -> bool
