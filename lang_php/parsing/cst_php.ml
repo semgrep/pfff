@@ -301,6 +301,7 @@ and scalar =
       tok  (* EOF; *)
 
 and constant =
+  | Bool of bool wrap
   | Int of int option wrap (* decimal, hex, or binary int format *)
   | Double of float option wrap
   (* see also Guil for interpolated strings
@@ -362,6 +363,8 @@ and argument =
   | Arg    of expr
   | ArgRef of tok * w_variable
   | ArgUnpack of tok * expr
+  (* named arguments, since PHP 8.0 *)
+  | ArgLabel of ident * tok * expr
 and arguments = argument comma_list paren
 
 (* now unified with expr *)
@@ -823,11 +826,13 @@ let unarg arg =
   | Arg e -> e
   | ArgRef _ -> failwith "Found a ArgRef"
   | ArgUnpack _ -> failwith "Found a ArgUnpack"
+  | ArgLabel _ -> failwith "Found a ArgLabel"
 let unargs xs =
   uncomma xs |> Common.partition_either (function
     | Arg e -> Left e
-    | ArgRef (_tok, e) -> Right e
-    | ArgUnpack (_tok, e) -> Right e
+    | ArgRef (_,e)
+    | ArgUnpack (_, e)
+    | ArgLabel (_,_,e) -> Right e
   )
 let unmodifiers class_vars =
   match class_vars with

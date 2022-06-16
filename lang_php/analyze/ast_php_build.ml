@@ -293,19 +293,19 @@ and stmt env st acc =
       A.Try (tok, A.Block (lb, stl, rb), cl, fl) :: acc
   | Echo (tok, el, t) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
-                      fb tok (List.map (expr env) (comma_list el))), t) :: acc
+                      fb tok (List.map (fun e -> A.Arg (expr env e)) (comma_list el))), t) :: acc
   | Globals (tok, gvl, _) ->
       A.Global (tok, List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (tok, svl, _) ->
       A.StaticVars (tok, List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
-                      fb tok [A.String (s, wrap tok)]), tok) :: acc
+                      fb tok [A.Arg (A.String (s, wrap tok))]), tok) :: acc
   | Use (tok, _fn, _) ->
       error tok "TODO:Use"
   | Unset (tok, (t1, lp, t2), sc) ->
       let lp = comma_list lp in
-      let lp = List.map (lvalue env) lp in
+      let lp = List.map (fun e -> A.Arg (lvalue env e)) lp in
       A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], (t1, lp, t2)),sc)
       :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
@@ -378,7 +378,7 @@ and expr env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (A.Id ["call_user_func", wrap tok],
-              (lp, (A.Obj_get (e1, arrow, fld_ident))::args, rp))
+              (lp, (A.Arg (A.Obj_get (e1, arrow, fld_ident)))::args, rp))
 
   | Call (e, (lp, args, rp)) ->
       let e = expr env e in
@@ -405,7 +405,7 @@ and expr env = function
   | BraceIdent (_l, e, _r) ->
       expr env e
   | Deref (tok, e) ->
-      A.Call (A.Id [A.builtin "eval_var", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "eval_var", wrap tok], fb tok [A.Arg (expr env e)])
 
   | Binary (e1, (bop, tok), e2) ->
       let e1 = expr env e1 in
@@ -457,7 +457,7 @@ and expr env = function
       A.NewAnonClass (tok, args, cdef)
 
   | Clone (tok, e) ->
-      A.Call (A.Id [A.builtin "clone", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "clone", wrap tok], fb tok [A.Arg (expr env e)])
   | AssignRef (e1, tokeq, tokref, e2) ->
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
@@ -479,7 +479,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.InstanceOf (tok, e, cn)
   | Eval (tok, (lp, e, rp)) ->
-      A.Call (A.Id [A.builtin "eval", wrap tok], (lp, [expr env e], rp))
+      A.Call (A.Id [A.builtin "eval", wrap tok], (lp, [A.Arg (expr env e)], rp))
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
   | ShortLambda def ->
@@ -489,40 +489,40 @@ and expr env = function
         match e with
         | None
         | Some (_, None, _) -> []
-        | Some (_, Some e, _) -> [expr env e]
+        | Some (_, Some e, _) -> [A.Arg (expr env e)]
       in
       A.Call (A.Id [A.builtin "exit", wrap tok], fb tok arg)
   | At (tok, e) ->
-      let arg = expr env e in
+      let arg = A.Arg (expr env e) in
       A.Call (A.Id [A.builtin "at", wrap tok], fb tok [arg])
   | Print (tok, e) ->
-      A.Call (A.Id [A.builtin "print", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "print", wrap tok], fb tok [A.Arg (expr env e)])
   | BackQuote (t1, el, t2) ->
       A.Call (A.Id [A.builtin "exec", wrap t1 (* not really an exec token *)],
-              fb t1 [A.Guil (t1, List.map (encaps env) el, t2)])
+              fb t1 [A.Arg (A.Guil (t1, List.map (encaps env) el, t2))])
   | Include (tok, e) ->
-      A.Call (A.Id [A.builtin "include", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "include", wrap tok], fb tok [A.Arg (expr env e)])
   | IncludeOnce (tok, e) ->
-      A.Call (A.Id [A.builtin "include_once", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "include_once", wrap tok], fb tok [A.Arg (expr env e)])
   | Require (tok, e) ->
-      A.Call (A.Id [A.builtin "require", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "require", wrap tok], fb tok [A.Arg (expr env e)])
   | RequireOnce (tok, e) ->
-      A.Call (A.Id [A.builtin "require_once", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "require_once", wrap tok], fb tok [A.Arg (expr env e)])
 
   | Empty (tok, (lp, lv, rp)) ->
-      A.Call (A.Id [A.builtin "empty", wrap tok], (lp, [lvalue env lv], rp))
+      A.Call (A.Id [A.builtin "empty", wrap tok], (lp, [A.Arg (lvalue env lv)], rp))
   | Isset (tok, (lp, lvl, rp)) ->
       A.Call (A.Id [A.builtin "isset", wrap tok],
-              (lp, List.map (lvalue env) (comma_list lvl), rp))
+              (lp, List.map (fun e -> A.Arg (lvalue env e)) (comma_list lvl), rp))
 
   | Yield (tok, e) ->
-      A.Call (A.Id [A.builtin "yield", wrap tok], fb tok [array_pair env e])
+      A.Call (A.Id [A.builtin "yield", wrap tok], fb tok [A.Arg (array_pair env e)])
   (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
       A.Call (A.Id [A.builtin "yield", wrap tok],
-              fb tok [A.Id [A.builtin "yield_break", wrap tok2]])
+              fb tok [A.Arg(A.Id [A.builtin "yield_break", wrap tok2])])
   | Await (tok, e) ->
-      A.Call (A.Id [A.builtin "await", wrap tok], fb tok [expr env e])
+      A.Call (A.Id [A.builtin "await", wrap tok], fb tok [A.Arg (expr env e)])
   | Ellipsis t -> A.Ellipsis t
   | ParenExpr (_, e, _) -> expr env e
 
@@ -582,6 +582,7 @@ and scalar env = function
   | HereDoc (t1, el, t2) -> A.Guil (t1, List.map (encaps env) el, t2)
 
 and constant env = function
+  | Bool x -> A.Bool x
   | Int x -> A.Int x
   | Double x -> A.Double x
   | String x -> A.String x
@@ -600,9 +601,10 @@ and cpp_directive _env tok = function
 and lvalue env a = expr env a
 
 and argument env = function
-  | Arg e -> expr env e
-  | ArgRef (tok, e) -> A.Ref (tok, lvalue env e)
-  | ArgUnpack (_, e) -> A.Unpack (expr env e)
+  | Arg e -> Arg (expr env e)
+  | ArgRef (tok, e) -> A.ArgRef (tok, lvalue env e)
+  | ArgUnpack (tok, e) -> A.ArgUnpack (tok, expr env e)
+  | ArgLabel (label,tok,e) -> A.ArgLabel (ident env label, tok, expr env e)
 
 and class_name_reference env a = expr env a
 
@@ -980,9 +982,9 @@ and global_var env = function
   | GlobalVar dn -> A.Var (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) ->
-      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb tok [lvalue env lv])
+      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb tok [A.Arg (lvalue env lv)])
   | GlobalDollarExpr (tok, (_, e, _)) ->
-      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb tok [expr env e])
+      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], fb tok [A.Arg (expr env e)])
 
 
 and attributes env = function
@@ -992,5 +994,5 @@ and attributes env = function
       xs |> List.map (function
         | Attribute (s, tok) -> A.Id [s, wrap tok]
         | AttributeWithArgs ((s, tok), (lp, xs, rp)) ->
-            A.Call (A.Id [s, wrap tok], (lp, (List.map (static_scalar env) (comma_list xs)), rp)
+            A.Call (A.Id [s, wrap tok], (lp, (List.map (fun e -> A.Arg (static_scalar env e)) (comma_list xs)), rp)
                    ))

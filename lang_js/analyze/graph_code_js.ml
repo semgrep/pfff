@@ -579,13 +579,14 @@ and expr env e =
            add_use_edge_candidates env (n, E.Function) (*scope*)
        | IdSpecial (special, _tok) ->
            (match special, es with
-            | New, _ -> (* TODO *) ()
             | _ -> ()
            )
        | _ ->
            expr env e
       );
       List.iter (expr env) es
+
+  | New _ ->  (* TODO *) ()
 
   | Conditional (e1, e2, e3) ->
       List.iter (expr env) [e1;e2;e3]
