@@ -62,9 +62,9 @@ val reraise : t -> 'a
    execution of other functions. *)
 val catch_and_reraise : exn -> 'a
 
-(* Created a traced exception and record the state of the stack at this point
+(* Create a traced exception and record the state of the stack at this point
    in the program execution. When catching an exception, it's best to
-   use 'catch_exception' instead so as to get the full stack
+   use 'catch' instead so as to get the full stack
    (where the exception was raised rather than the smaller stack where
    the exception was caught). *)
 val trace : exn -> t
@@ -79,7 +79,7 @@ val get_exn : t -> exn
 val get_trace : t -> Printexc.raw_backtrace
 
 (*
-   Convert the exception and the trace to a string in a multiline format
+   Convert the exception and the trace into a string in a multiline format
    suitable for error messages. It always includes a terminal newline ('\n').
 
    It uses the standard 'Printexc.to_string' function, which itself will
