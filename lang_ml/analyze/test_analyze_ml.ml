@@ -20,7 +20,7 @@ let test_parse_ast_ml xs =
             (*             let _gen = Ml_to_generic.program ast in *)
             ()
           )))
-    with exn -> raise exn
+    with exn -> Exception.catch_and_reraise exn
   ))
 
 let test_dump_ml file =

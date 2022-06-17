@@ -207,5 +207,5 @@ let any_of_string ?timeout str =
         with (Dyp.Syntax_error
              | Failure _ | Stack.Empty | Parse_ruby_timeout
              ) as exn ->
-            raise exn
+            Exception.catch_and_reraise exn
       )))

@@ -355,12 +355,13 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
          (* Call parser *)
          (* -------------------------------------------------- *)
          parse_toplevel tr lexbuf_fake
-       with e ->
+       with exn ->
+         let e = Exception.catch exn in
          if not !Flag.error_recovery
          then raise (Parse_info.Parsing_error (TH.info_of_tok tr.PI.current));
 
          if !Flag.show_parsing_error then
-           (match e with
+           (match exn with
             (* ocamlyacc *)
             | Parsing.Parse_error
             (* dypgen *)
@@ -370,7 +371,8 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file : (Ast.program, T.to
                 pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
             | Parse_info.Other_error (s, _i) ->
                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
-            | e -> raise e
+            | _ ->
+                Exception.reraise e
            );
 
          let line_error = TH.line_of_tok tr.PI.current in

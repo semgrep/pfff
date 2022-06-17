@@ -97,15 +97,18 @@ let invoke2 f x =
          let output = Unix.out_channel_of_descr output in
 
          Marshal.to_channel output
-           (try `Res(f x)
-            with e ->
+           (try Ok (f x)
+            with exn ->
+              let e = Exception.catch exn in
+              (* Should we remove this printing since the trace is now
+                 propagated along with the exception, even across processes
+                 through Marshal to/from_string? *)
               if !backtrace_when_exn
               then begin
-                let backtrace = Printexc.get_backtrace () in
-                pr2 (spf "Exception in invoked func: %s" (Common.exn_to_s e));
-                pr2 backtrace;
+                pr2 (spf "Exception in invoked func: %s"
+                       (Exception.to_string e));
               end;
-              `Exn e
+              Error e
            ) [];
          close_out output;
 
@@ -116,8 +119,10 @@ let invoke2 f x =
             * which is the equivalence of Common.finalize ... (fun () exit 0)
            *)
            ()
-       | exn -> pr2 (spf "really unexpected exn in invoke child: %s"
-                       (Common.exn_to_s exn))
+       | exn ->
+           let e = Exception.catch exn in
+           pr2 (spf "really unexpected exn in invoke child: %s"
+                  (Exception.to_string e))
       );
       exit 0
   (* parent *)
@@ -135,10 +140,11 @@ let invoke2 f x =
         close_in input;
         check_status status;
         match v with
-        | Some (`Res x) -> x
-        | Some (`Exn e) ->
-            (* TODO: this actually does not work! The documentation in
-             * marshal.mli is pretty clear:
+        | Some (Ok x) -> x
+        | Some (Error (e : Exception.t)) ->
+            (* TODO: the exception we get here cannot be pattern-matched or
+               tested for equality!
+               The documentation in marshal.mli is pretty clear:
 
                Values of extensible variant types, for example exceptions (of
                extensible type [exn]), returned by the unmarshaller should not be
@@ -152,7 +158,7 @@ let invoke2 f x =
               * exception. You can just print it or do ugly Obj.magic
               * level stuff with it.
             *)
-            raise e
+            Exception.reraise e
         | None ->
             failwith "Bug in Parallel.invoke: child process appears to have \
                       exited successfully but produced invalid output."

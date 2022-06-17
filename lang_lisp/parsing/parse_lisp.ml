@@ -151,7 +151,7 @@ let parse2 filename =
         stat.PI.error_line_count <- stat.PI.total_line_count;
         None
     | exn ->
-        raise exn
+        Exception.catch_and_reraise exn
   in
   (ast, toks_orig), stat
 

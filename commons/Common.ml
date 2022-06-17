@@ -271,7 +271,9 @@ let profile_code category f =
     let t = Unix.gettimeofday () in
     let res, prefix =
       try Ok (f ()), ""
-      with Timeout _ as e -> Error e, "*"
+      with Timeout _ as exn ->
+        let e = Exception.catch exn in
+        Error e, "*"
     in
     let category = prefix ^ category in (* add a '*' to indicate timeout func *)
     let t' = Unix.gettimeofday () in
@@ -281,7 +283,7 @@ let profile_code category f =
     adjust_profile_entry category (t' -. t);
     (match res with
      | Ok res -> res
-     | Error e -> raise e
+     | Error e -> Exception.reraise e
     );
   end
 
@@ -599,9 +601,13 @@ let push v l =
 (*###########################################################################*)
 
 let unwind_protect f cleanup =
-  if !debugger then f () else
+  if !debugger then f ()
+  else
     try f ()
-    with e -> begin cleanup e; raise e end
+    with exn ->
+      let e = Exception.catch exn in
+      cleanup e;
+      Exception.reraise e
 
 (* TODO: remove and use Fun.protect instead? but then it will not have the
  * !debugger goodies *)
@@ -617,15 +623,8 @@ let finalize f cleanup =
     cleanup ();
     res
   end
-  else begin
-    try
-      let res = f () in
-      cleanup ();
-      res
-    with e ->
-      cleanup ();
-      raise e
-  end
+  else
+    Fun.protect f ~finally:cleanup
 
 let (lines: string -> string list) = fun s ->
   let rec lines_aux = function
@@ -1419,7 +1418,7 @@ let set_timeout ~name max_duration = fun f ->
        )
   );
   let info (* private *) = { name; max_duration } in
-  let timeout_exn = Timeout info in
+  let raise_timeout () = raise (Timeout info) in
   let clear_timer () =
     current_timer := None;
     Unix.setitimer Unix.ITIMER_REAL
@@ -1433,7 +1432,7 @@ let set_timeout ~name max_duration = fun f ->
     |> ignore
   in
   try
-    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise timeout_exn));
+    Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise_timeout ()));
     set_timer ();
     let x = f () in
     clear_timer ();
@@ -1443,7 +1442,8 @@ let set_timeout ~name max_duration = fun f ->
       clear_timer ();
       logger#info "%S timeout at %g s (we abort)" name max_duration;
       None
-  | e ->
+  | exn ->
+      let e = Exception.catch exn in
       (* It's important to disable the alarm before relaunching the exn,
          otherwise the alarm is still running.
 
@@ -1452,7 +1452,7 @@ let set_timeout ~name max_duration = fun f ->
       *)
       clear_timer ();
       logger#info "exn while in set_timeout";
-      raise e
+      Exception.reraise e
 
 let set_timeout_opt ~name time_limit f =
   match time_limit with
