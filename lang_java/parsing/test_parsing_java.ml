@@ -43,8 +43,9 @@ let test_parse xs  =
             Parse_java.parse file
           ))
       with exn ->
+        let e = Exception.catch exn in
         pr2 (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn));
-        raise exn
+        Exception.reraise e
     in
     Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.error_line_count in

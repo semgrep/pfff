@@ -318,8 +318,8 @@ let filter_maybe_parse_and_fatal_errors errs =
     | _ -> false
   )
 
-let exn_to_error file exn =
-  match exn with
+let exn_to_error file e =
+  match Exception.get_exn e with
   | Parse_info.Lexical_error (s, tok) ->
       mk_error tok (LexicalError s)
   | Parse_info.Parsing_error tok ->
@@ -343,37 +343,27 @@ let exn_to_error file exn =
   | Out_of_memory ->
       let loc = Parse_info.first_loc_of_file file in
       mk_error_loc loc (OutOfMemory None)
-  | (UnixExit _) as exn -> raise exn
+  | (UnixExit _) as exn -> Exception.catch_and_reraise exn
   (* general case, can't extract line information from it, default to line 1 *)
-  | exn ->
+  | _exn ->
       let loc = Parse_info.first_loc_of_file file in
-      let msg =
-        Common.spf "%s\n%s" (Common.exn_to_s exn) (Printexc.get_backtrace ()) in
+      let msg = Exception.to_string e in
       mk_error_loc loc (FatalError msg)
 
 let try_with_exn_to_error file f =
-  try f () with exn -> Common.push (exn_to_error file exn) g_errors
+  try f ()
+  with exn ->
+    let e = Exception.catch exn in
+    Common.push (exn_to_error file e) g_errors
 
 let try_with_print_exn_and_reraise file f =
   try
     f ()
   with exn ->
-    let bt = Printexc.get_backtrace () in
-    let err = exn_to_error file exn in
+    let e = Exception.catch exn in
+    let err = exn_to_error file e in
     pr2 (string_of_error err);
-    pr2 bt;
-    (* does not really re-raise :( lose some backtrace *)
-    raise exn
-
-(* fast = no stack trace *)
-let try_with_print_exn_and_exit_fast file f =
-  try
-    f ()
-  with exn ->
-    let err = exn_to_error file exn in
-    pr2 (string_of_error err);
-    exit 2
-
+    Exception.reraise e
 
 let adjust_paths_relative_to_root root errs =
   errs |> List.map (fun e ->
@@ -381,8 +371,6 @@ let adjust_paths_relative_to_root root errs =
     let file' = Common.filename_without_leading_path root file in
     { e with loc = { e.loc with PI.file = file' } }
   )
-
-
 
 (* this is for false positives *)
 let adjust_errors xs =

@@ -3605,10 +3605,13 @@ let try_rule toks frule =
 let parse toks =
   try
     try_rule toks compilationUnit
-  with PI.Parsing_error _ as err1 ->
-  try
-    try_rule toks block
-  with PI.Parsing_error _ -> raise err1
+  with
+  | PI.Parsing_error _ as err1 ->
+      let e1 = Exception.catch err1 in
+      try
+        try_rule toks block
+      with PI.Parsing_error _ ->
+        Exception.reraise e1
 
 
 

@@ -34,9 +34,11 @@ let parse file =
   let ast, stat =
     try (Ast_c_build.program ast), stat
     with exn ->
-      logger#error "PB: Ast_c_build, on %s (exn = %s)" file (Common.exn_to_s exn);
+      let e = Exception.catch exn in
+      logger#error "PB: Ast_c_build, on %s (exn = %s)"
+        file (Common.exn_to_s exn);
       (*None, { stat with Stat.bad = stat.Stat.bad + stat.Stat.correct } *)
-      raise exn
+      Exception.reraise e
   in
   { Parse_info. ast; tokens; stat }
 

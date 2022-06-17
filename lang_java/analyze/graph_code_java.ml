@@ -109,11 +109,12 @@ let parse ~show_parse_error file =
   try
     Parse_java.parse_program file
   with
-  | Timeout _ as e -> raise e
+  | Timeout _ as exn -> Exception.catch_and_reraise exn
   | exn ->
+      let e = Exception.catch exn in
       if show_parse_error
       then pr2_once (spf "PARSE ERROR with %s, exn = %s" file
-                       (Common.exn_to_s exn));
+                       (Exception.to_string e));
       []
 
 

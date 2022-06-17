@@ -53,10 +53,11 @@ let parse ~show_parse_error file =
       Parse_cpp.tokens file
     )
   with
-  | Timeout -> raise Timeout
+  | Timeout as exn -> Exception.catch_and_reraise exn
   | exn ->
+      let e = Exception.catch exn in
       pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
-      raise exn
+      Exception.reraise e
 
 let add_use_edge env (name, kind) =
   let src = env.current in

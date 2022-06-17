@@ -245,9 +245,9 @@ val action_list:
 val debugger : bool ref
 
 (* emacs spirit *)
-val unwind_protect : (unit -> 'a) -> (exn -> 'b) -> 'a
+val unwind_protect : (unit -> 'a) -> (Exception.t -> 'b) -> 'a
 (* java spirit *)
-val finalize :       (unit -> 'a) -> (unit -> 'b) -> 'a
+val finalize :       (unit -> 'a) -> (unit -> unit) -> 'a
 
 val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 
