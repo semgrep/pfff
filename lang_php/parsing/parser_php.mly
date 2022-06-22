@@ -214,6 +214,7 @@ let mk_Toplevel x =
  TDOLLARDOLLAR "$$"
  TGUIL
  T_ROCKET
+ TOATTR "#["
 
 (*-----------------------------------------*)
 (* PHP language extensions: *)
@@ -901,8 +902,8 @@ return_type: ":" type_php                 { $1, $2 }
 (*************************************************************************)
 (* Attributes *)
 (*************************************************************************)
- (* HPHP extension. *)
-attributes: T_SL listc(attribute) T_SR { ($1, $2, $3) }
+(* PHP 8 extension (was using << >> in HPHP) *)
+attributes: "#[" listc(attribute) "]" { ($1, $2, $3) }
 
 attribute:
  | ident                                  { Attribute $1 }

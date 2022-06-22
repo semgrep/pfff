@@ -61,6 +61,7 @@ let token_kind_of_tok t =
 *)
 
 let visitor_info_of_tok f = function
+  | TOATTR ii -> TOATTR (f ii)
   | LDots ii -> LDots (f ii)
   | RDots ii -> RDots (f ii)
   | T_FROM ii -> T_FROM(f ii)

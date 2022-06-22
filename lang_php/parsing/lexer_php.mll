@@ -491,6 +491,9 @@ rule st_in_scripting = parse
 
     | ":" { TCOLON(tokinfo lexbuf) }
     | "?" { TQUESTION(tokinfo lexbuf) }
+    (* PHP 8 attributes *)
+    | "#[" { TOATTR (tokinfo lexbuf) }
+
     (* semgrep-ext: or var args extension *)
     | "..." { T_ELLIPSIS(tokinfo lexbuf) }
     (* facebook-ext: short lambdas *)
