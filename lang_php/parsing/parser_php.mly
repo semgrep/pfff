@@ -1078,6 +1078,8 @@ call_expr:
  | call_expr "{" expr "}"   { HashGet($1, ($2, $3, $4)) }
  | call_expr "->" primary_expr { ObjGet($1, $2, $3) }
  | call_expr "->" "{" expr "}" { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
+ (* semgrep-ext: *)
+ | call_expr "->" "..." { ObjGet($1, $2, Ellipsis $3) }
 
 member_expr:
  | primary_expr { $1 }
