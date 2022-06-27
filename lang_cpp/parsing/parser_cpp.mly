@@ -1872,7 +1872,7 @@ cpp_directive:
          match () with
          | _ when filename =~ "^\"\\(.*\\)\"$" ->
           IncLocal (Common.matched1 filename, tok)
-         | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
+         | _ when filename =~ "^\\(\\<.*\\>\\)$" ->
           IncSystem (Common.matched1 filename, tok)
          | _ ->
           IncOther (N (name_of_id (filename, tok), noIdInfo()))

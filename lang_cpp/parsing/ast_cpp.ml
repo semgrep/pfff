@@ -957,9 +957,10 @@ and define_val =
   | DefineTodo of todo_category
 
 and include_kind =
-  (* tsonly: in pfff the string does not contain the enclosing chars *)
-  | IncLocal (* "" *) of string wrap
-  | IncSystem (* <> *) of string wrap
+  (* the string will not contain the enclosing '""' *)
+  | IncLocal (* ex: "foo.h" *) of string wrap
+  (* the string _will_ contain the enclosing '<>' *)
+  | IncSystem (* ex: <sys.h> *) of string wrap
   | IncOther of a_cppExpr (* ex: SYSTEM_H, foo("x") *)
 
 (* this is restricted to simple expressions like a && b *)
