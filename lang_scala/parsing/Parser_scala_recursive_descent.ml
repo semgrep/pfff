@@ -2255,9 +2255,9 @@ and guard_loop in_ : guard list =
 and enumerator ~isFirst ?(allowNestedIf=true) in_ : enumerator =
   in_ |> with_logging "enumerator" (fun () ->
     match in_.token with
-    | Kif _ when not isFirst ->
-        let xs = guard_loop in_ in
-        GIf xs
+    | Ellipsis tok ->
+        nextToken in_;
+        GEllipsis tok
     | _ ->
         let g = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
         G g

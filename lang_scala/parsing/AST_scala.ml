@@ -340,7 +340,7 @@ and for_header = enumerators bracket
 and enumerators = enumerator list
 and enumerator =
   | G of generator
-  | GIf of guard list
+  | GEllipsis of tok
   (* less: GAssign *)
 
 and generator = {
