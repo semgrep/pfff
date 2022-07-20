@@ -2372,10 +2372,9 @@ let importExpr in_ : import_expr =
       nextToken in_; (* 'this' *)
       (* AST: val t = This(name) *)
       accept (DOT ab) in_;
-      (*let result = selector (*t*) in_ in
+      let result = selector (*t*) in_ in
       accept (DOT ab) in_;
-      *)
-      This (nameopt, ii), []
+      This (nameopt, ii), [result]
     in
     (** Walks down import `foo.bar.baz.{ ... }` until it ends at
      * an underscore, a left brace, or an undotted identifier.
@@ -2414,10 +2413,11 @@ let importExpr in_ : import_expr =
         thisDotted (Some id) in_
       | _ -> Id id, [] in
       Right (loop start in_) in
-    match (pr2 (show_token in_.token); in_.token) with
+    match in_.token with
     | Kthis _ -> 
       let start = thisDotted None (*ast: empty*) in_ in
       Right (loop start in_)
+    (* We should allow single metavariables to be imported. *)
     | ID_LOWER id when TH.isMetavar in_.token ->
       nextToken in_;
       (match in_.token with
