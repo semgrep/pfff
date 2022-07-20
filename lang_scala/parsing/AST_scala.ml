@@ -122,7 +122,7 @@ type import_selector = ident_or_wildcard * alias option
 and alias = tok (* => *) * ident_or_wildcard
 [@@deriving show]
 
-type import_expr = stable_id * import_spec
+type import_expr = (ident, stable_id * import_spec) either
 and import_spec =
   | ImportId of ident
   | ImportWildcard of tok (* '_' *)

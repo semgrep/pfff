@@ -246,6 +246,13 @@ let isIdent = function
 
   | _ -> None
 
+let isMetavar = function
+  | ID_LOWER (s, _) ->
+    (try String.get s 0 = '$' 
+    with Invalid_argument _ -> false
+    )
+  | _ -> false
+
 let isIdentBool x =
   isIdent x <> None
 

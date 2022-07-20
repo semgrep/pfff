@@ -2362,7 +2362,7 @@ let importSelectors in_ : import_selector list bracket =
   inBracesOrNil (commaSeparated importSelector) in_
 
 (** {{{
- *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
+ *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors) | metavariable
  *  }}}
 *)
 let importExpr in_ : import_expr =
@@ -2372,9 +2372,10 @@ let importExpr in_ : import_expr =
       nextToken in_; (* 'this' *)
       (* AST: val t = This(name) *)
       accept (DOT ab) in_;
-      let result = selector (*t*) in_ in
+      (*let result = selector (*t*) in_ in
       accept (DOT ab) in_;
-      This (nameopt, ii), [result]
+      *)
+      This (nameopt, ii), []
     in
     (** Walks down import `foo.bar.baz.{ ... }` until it ends at
      * an underscore, a left brace, or an undotted identifier.
@@ -2407,24 +2408,30 @@ let importExpr in_ : import_expr =
           (* reaching here means we're done walking. *)
           (* AST: Import(expr, selectors) *)
     in
-    let start : stable_id =
-      match in_.token with
-      | Kthis _ -> thisDotted None (*ast: empty*) in_
-      | _ ->
-          (* AST: Ident() *)
-          let id = ident in_ in
-          (match in_.token with
-           | DOT _ -> accept (DOT ab) in_
-           | x when not (TH.isStatSep x) -> accept (DOT ab) in_
-           | _ -> error ". expected" in_
-          );
-          (match in_.token with
-           | Kthis _ ->
-               thisDotted (Some id) (* ast: id.name.toTypeName*) in_
-           | _ -> Id id, []
-          )
-    in
-    loop start in_
+    let handle_potential_this_with_id id in_ =
+      let start = match in_.token with
+      | Kthis _ ->
+        thisDotted (Some id) in_
+      | _ -> Id id, [] in
+      Right (loop start in_) in
+    match (pr2 (show_token in_.token); in_.token) with
+    | Kthis _ -> 
+      let start = thisDotted None (*ast: empty*) in_ in
+      Right (loop start in_)
+    | ID_LOWER id when TH.isMetavar in_.token ->
+      nextToken in_;
+      (match in_.token with
+      | DOT _ -> 
+        nextToken in_; 
+        handle_potential_this_with_id id in_
+      (* If there is no dot next, then it must be a lone metavariable. *)
+      | _ -> Left id)
+    | _ ->
+        (* AST: Ident() *)
+        let id = ident in_ in
+        (* A dot has to come after an ident. *)
+        accept (DOT ab) in_;
+        handle_potential_this_with_id id in_
   )
 
 (** {{{
