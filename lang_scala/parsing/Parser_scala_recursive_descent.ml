@@ -2409,23 +2409,23 @@ let importExpr in_ : import_expr =
     in
     let handle_potential_this_with_id id in_ =
       let start = match in_.token with
-      | Kthis _ ->
-        thisDotted (Some id) in_
-      | _ -> Id id, [] in
+        | Kthis _ ->
+            thisDotted (Some id) in_
+        | _ -> Id id, [] in
       Right (loop start in_) in
     match in_.token with
-    | Kthis _ -> 
-      let start = thisDotted None (*ast: empty*) in_ in
-      Right (loop start in_)
+    | Kthis _ ->
+        let start = thisDotted None (*ast: empty*) in_ in
+        Right (loop start in_)
     (* We should allow single metavariables to be imported. *)
     | ID_LOWER id when TH.isMetavar in_.token ->
-      nextToken in_;
-      (match in_.token with
-      | DOT _ -> 
-        nextToken in_; 
-        handle_potential_this_with_id id in_
-      (* If there is no dot next, then it must be a lone metavariable. *)
-      | _ -> Left id)
+        nextToken in_;
+        (match in_.token with
+         | DOT _ ->
+             nextToken in_;
+             handle_potential_this_with_id id in_
+         (* If there is no dot next, then it must be a lone metavariable. *)
+         | _ -> Left id)
     | _ ->
         (* AST: Ident() *)
         let id = ident in_ in
