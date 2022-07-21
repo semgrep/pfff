@@ -122,6 +122,7 @@ type import_selector = ident_or_wildcard * alias option
 and alias = tok (* => *) * ident_or_wildcard
 [@@deriving show]
 
+(* semgrep-ext: we allow single identifiers here so we can support import $X *)
 type import_expr = (ident, stable_id * import_spec) either
 and import_spec =
   | ImportId of ident

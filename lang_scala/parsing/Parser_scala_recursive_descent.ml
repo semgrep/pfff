@@ -2362,7 +2362,9 @@ let importSelectors in_ : import_selector list bracket =
   inBracesOrNil (commaSeparated importSelector) in_
 
 (** {{{
- *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors) | metavariable
+ *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
+                 | (* scala-ext: allow this for things like `import $X` *)
+                   metavariable
  *  }}}
 *)
 let importExpr in_ : import_expr =
@@ -2418,7 +2420,7 @@ let importExpr in_ : import_expr =
         let start = thisDotted None (*ast: empty*) in_ in
         Right (loop start in_)
     (* We should allow single metavariables to be imported. *)
-    | ID_LOWER id when TH.isMetavar in_.token ->
+    | ID_LOWER ((s, _) as id) when AST_generic_.is_metavar_name s ->
         nextToken in_;
         (match in_.token with
          | DOT _ ->
