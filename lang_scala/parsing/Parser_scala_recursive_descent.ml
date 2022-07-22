@@ -2363,6 +2363,8 @@ let importSelectors in_ : import_selector list bracket =
 
 (** {{{
  *  ImportExpr ::= StableId `.` (Id | `_` | ImportSelectors)
+                 | (* scala-ext: allow this for things like `import $X` *)
+                   metavariable
  *  }}}
 *)
 let importExpr in_ : import_expr =
@@ -2407,24 +2409,31 @@ let importExpr in_ : import_expr =
           (* reaching here means we're done walking. *)
           (* AST: Import(expr, selectors) *)
     in
-    let start : stable_id =
-      match in_.token with
-      | Kthis _ -> thisDotted None (*ast: empty*) in_
-      | _ ->
-          (* AST: Ident() *)
-          let id = ident in_ in
-          (match in_.token with
-           | DOT _ -> accept (DOT ab) in_
-           | x when not (TH.isStatSep x) -> accept (DOT ab) in_
-           | _ -> error ". expected" in_
-          );
-          (match in_.token with
-           | Kthis _ ->
-               thisDotted (Some id) (* ast: id.name.toTypeName*) in_
-           | _ -> Id id, []
-          )
-    in
-    loop start in_
+    let handle_potential_this_with_id id in_ =
+      let start = match in_.token with
+        | Kthis _ ->
+            thisDotted (Some id) in_
+        | _ -> Id id, [] in
+      Right (loop start in_) in
+    match in_.token with
+    | Kthis _ ->
+        let start = thisDotted None (*ast: empty*) in_ in
+        Right (loop start in_)
+    (* We should allow single metavariables to be imported. *)
+    | ID_LOWER ((s, _) as id) when AST_generic_.is_metavar_name s ->
+        nextToken in_;
+        (match in_.token with
+         | DOT _ ->
+             nextToken in_;
+             handle_potential_this_with_id id in_
+         (* If there is no dot next, then it must be a lone metavariable. *)
+         | _ -> Left id)
+    | _ ->
+        (* AST: Ident() *)
+        let id = ident in_ in
+        (* A dot has to come after an ident. *)
+        accept (DOT ab) in_;
+        handle_potential_this_with_id id in_
   )
 
 (** {{{
