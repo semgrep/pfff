@@ -412,16 +412,43 @@ sgrep_spatch_pattern:
  | T_LCURLY_SEMGREP listc(property_name_and_value) ","? "}"
      { Expr (Obj ($1, $2, $4)) }
 
- (* we would like to just use method_definition, but too many r/r conflicts *)
- | (* TODO decorators ioption(T_ASYNC) ioption(method_get_set_star)
+  | (* decorators, no body *)
+    decorator+ T_ID
+    T_LPAREN formal_parameter_list_opt ")" annotation?
+    EOF
+   {
+     Partial (PartialDef (mk_def (Some $2,
+      FuncDef
+       { f_kind = (Method, $3)
+       ; f_params = $4
+       ; f_body = Block (fb $3 [])
+       ; f_rettype = $6
+       ; f_attrs = $1
+       }
+     )))
+   }
+
+  | (* decorators, with body *)
+    decorator+ T_ID
+    T_LPAREN formal_parameter_list_opt ")" annotation?
+    "{" function_body "}" EOF
+   {
+     let sig_ = (None, ($3, $4, $5), $6) in
+     let fun_ = mk_Fun ~attrs:$1 (Method, $3) sig_ ($7, $8, $9) in
+     Property (mk_Field (PN $2) (Some fun_))
+   }
+
+
+  | (* TODO decorators ioption(T_ASYNC) ioption(method_get_set_star)
     * but need also to modify parsing hack for T_LPAREN_METHOD_SEMGREP
     *)
     T_ID
     T_LPAREN_METHOD_SEMGREP formal_parameter_list_opt ")" annotation?
     "{" function_body "}" EOF
-   { let sig_ = (None, ($2, $3, $4), $5) in
+   {
+     let sig_ = (None, ($2, $3, $4), $5) in
      let fun_ = mk_Fun (Method, $2) sig_ ($6, $7, $8) in
-     Property (mk_Field (PN $1) (Some fun_))
+     Property (mk_Field (PN $1) (Some fun_));
    }
 
  | assignment_expr_no_stmt  EOF  { Expr $1 }
