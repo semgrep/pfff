@@ -413,7 +413,7 @@ sgrep_spatch_pattern:
      { Expr (Obj ($1, $2, $4)) }
 
   | (* decorators, no body *)
-    decorators_nonempty T_ID
+    decorator+ T_ID
     T_LPAREN formal_parameter_list_opt ")" annotation?
     EOF
    {
@@ -429,7 +429,7 @@ sgrep_spatch_pattern:
    }
 
   | (* decorators, with body *)
-    decorators_nonempty T_ID
+    decorator+ T_ID
     T_LPAREN formal_parameter_list_opt ")" annotation?
     "{" function_body "}" EOF
    {
@@ -897,9 +897,6 @@ enum_member:
 decorators:
  | (* empty *) { [] }
  | decorator+   { $1 }
-
-decorators_nonempty:
- | decorator+ { $1 }
 
 decorator_name:
  | T_ID { [$1] }
