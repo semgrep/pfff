@@ -113,14 +113,16 @@ let mk_FieldColon ?(fld_type=None) ?(props=[]) fld_name eopt =
 let add_modifiers _propsTODO fld =
   fld
 
-let mk_def (idopt, defkind) =
+let mk_def ?(attrs=None) (idopt, defkind) =
   (* TODO: fun default_opt -> ... *)
   let name =
     match idopt with
     | None -> Flag_parsing.sgrep_guard (anon_semgrep_lambda, PI.unsafe_fake_info "")
     | Some id -> id
   in
-  basic_entity name, defkind
+  match attrs with
+  | None -> basic_entity name, defkind
+  | Some attrs -> {name; attrs}, defkind
 
 
 let mk_Super tok =
@@ -417,6 +419,9 @@ sgrep_spatch_pattern:
     T_LPAREN formal_parameter_list_opt ")" annotation?
     EOF
    {
+     (* We don't need to pass the attrs into `mk_def` because they're already
+        in the FuncDef.
+      *)
      Partial (PartialDef (mk_def (Some $2,
       FuncDef
        { f_kind = (Method, $3)
@@ -427,6 +432,9 @@ sgrep_spatch_pattern:
        }
      )))
    }
+
+  | decorator+ T_ID annotation? EOF
+     { Property (Field {fld_name = PN $2; fld_attrs=$1; fld_type = $3; fld_body = None }) }
 
   | (* decorators, with body *)
     decorator+ T_ID
