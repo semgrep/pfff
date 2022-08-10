@@ -306,7 +306,8 @@ and stmt env st acc =
   | Unset (tok, (t1, lp, t2), sc) ->
       let lp = comma_list lp in
       let lp = List.map (fun e -> A.Arg (lvalue env e)) lp in
-      A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], (t1, lp, t2)),sc)
+      let id = A.IdSpecial (A.FuncLike A.Unset, wrap tok) in
+      A.Expr (A.Call (id, (t1, lp, t2)),sc)
       :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
   | Declare (tok, args, colon_st) ->
@@ -479,7 +480,8 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.InstanceOf (tok, e, cn)
   | Eval (tok, (lp, e, rp)) ->
-      A.Call (A.Id [A.builtin "eval", wrap tok], (lp, [A.Arg (expr env e)], rp))
+      let id = A.IdSpecial (A.FuncLike A.Eval, wrap tok) in
+      A.Call (id, (lp, [A.Arg (expr env e)], rp))
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
   | ShortLambda def ->
@@ -491,7 +493,8 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [A.Arg (expr env e)]
       in
-      A.Call (A.Id [A.builtin "exit", wrap tok], fb tok arg)
+      let id = A.IdSpecial (A.FuncLike A.Exit, wrap tok) in
+      A.Call (id, fb tok arg)
   | At (tok, e) ->
       let arg = A.Arg (expr env e) in
       A.Call (A.Id [A.builtin "at", wrap tok], fb tok [arg])
@@ -510,9 +513,11 @@ and expr env = function
       A.Call (A.Id [A.builtin "require_once", wrap tok], fb tok [A.Arg (expr env e)])
 
   | Empty (tok, (lp, lv, rp)) ->
-      A.Call (A.Id [A.builtin "empty", wrap tok], (lp, [A.Arg (lvalue env lv)], rp))
+      let id = A.IdSpecial (A.FuncLike A.Empty, wrap tok) in
+      A.Call (id, (lp, [A.Arg (lvalue env lv)], rp))
   | Isset (tok, (lp, lvl, rp)) ->
-      A.Call (A.Id [A.builtin "isset", wrap tok],
+      let id = A.IdSpecial (A.FuncLike A.Isset, wrap tok) in
+      A.Call (id,
               (lp, List.map (fun e -> A.Arg (lvalue env e)) (comma_list lvl), rp))
 
   | Yield (tok, e) ->
