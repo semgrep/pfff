@@ -719,9 +719,40 @@ atom_and_trailers:
 
   | atom_and_trailers "[" list_comma(subscript)   "]"
       { match $3 with
-          (* TODO test* => Index (Tuple (elts)) *)
         | [s] -> Subscript ($1, ($2, [s], $4), Load)
-        | l -> Subscript ($1, ($2, l, $4), Load) }
+        | l ->
+          (* Comma separated values within brackets as part of an array (or
+           * other) access are treated as tuple elements, even when one or more
+           * of them are slices. Unfortunately, the current Python AST cannot
+           * represent a slice as a top level expression, and neither can
+           * Semgrep's generic AST. So, for now, let's continue representing
+           * sequences containing a slice as we were before, but for sequences
+           * that only contain ordinary expressions let's convert to a tuple.
+           *
+           * See https://gist.github.com/nmote/cd32eb4795af7e915486124b74ba9d6a
+           *
+           * TODO parse this as a tuple in all cases
+           * *)
+          let index_exprs =
+            List.filter_map
+              (function | Index x -> Some x | Slice _ -> None)
+              l
+          in
+          if List.length l = List.length index_exprs then
+            (* If everything in the brackets is a normal expression, return a
+             * single tuple *)
+            let tuple =
+              Tuple (CompList (PI.unsafe_fake_bracket index_exprs), Load)
+            in
+            Subscript (
+              $1,
+              ($2, [Index tuple], $4),
+              Load)
+          else
+            (* Otherwise, return separate items, some of which are slices, even
+             * though this is not correct (see above) *)
+            Subscript ($1, ($2, l, $4), Load)
+      }
 
   | atom_and_trailers "." NAME { Attribute ($1, $2, $3, Load) }
   (* sgrep-ext: *)
