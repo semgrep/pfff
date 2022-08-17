@@ -252,12 +252,19 @@ and cast_type =
 and special =
   (* often transformed in Var "$this" in the analysis *)
   | This
-  (* take many different forms in PHP, eval(), call_user_func, ${}, etc. *)
-  | Eval
   (* represents the "self" keyword expression in a classes  *)
   | Self
   (* represents the "parent" keyword expression in a class *)
   | Parent
+  | FuncLike of funclike
+
+(* language constructs that look like functions *)
+and funclike =
+  | Empty
+  | Eval
+  | Exit
+  | Isset
+  | Unset
 
 and binaryOp =
   (* TODO: now available in AST_generic_ ? *)
