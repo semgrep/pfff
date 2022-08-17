@@ -106,7 +106,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Num v1 -> let v1 = v_number v1 in ()
       | Str v1 -> let v1 = v_wrap v_string v1 in ()
       | EncodedStr (v1, v2) -> let v1 = v_wrap v_string v1 in let v2 = v_string v2 in ()
-      | InterpolatedString v1 -> let v1 = v_list v_expr v1 in ()
+      | InterpolatedString (v1, v2, v3) ->
+          let v1 = v_info v1 in
+          let v2 = v_list v_expr v2 in
+          let v3 = v_info v3 in
+          ()
       | ConcatenatedString v1 -> let v1 = v_list v_expr v1 in ()
       | Name (v1, v2, v3) ->
           let v1 = v_name v1
