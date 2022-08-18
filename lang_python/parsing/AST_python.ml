@@ -156,10 +156,6 @@ type expr =
   | InterpolatedString of interpolated list
   | ConcatenatedString of interpolated list (* always Str *)
 
-  (* python3: *)
-  (* inside an Assign (or ExprStmt) *)
-  | TypedExpr of expr * type_
-
   | BoolOp of boolop wrap (* op *) * expr list (* values *)
   | BinOp of expr (* left *) * operator wrap (* op *) * expr (* right *)
   | UnaryOp of unaryop wrap (* op *) * expr (* operand *)
@@ -350,7 +346,7 @@ type stmt =
    * For example in 'a = b = c', we will have 'Assign ([a;b], c)'.
    * TODO: lhs should be expr * type_ option
   *)
-  | Assign of expr(*lhs*) list (* targets *) * tok * expr (* value *)
+  | Assign of (expr * (tok * type_) option) (*lhs*) list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
   | For of tok * pattern (* (pattern) introduce new vars *) *
@@ -362,6 +358,11 @@ type stmt =
           stmt list option (* orelse *)
   (* https://docs.python.org/2.5/whatsnew/pep-343.html *)
   | With of tok * with_clause * stmt list (* body *)
+
+  | Switch of
+      tok
+      * expr
+      * case_and_body list
 
   | Return of tok * expr option (* value *)
   | Break of tok | Continue of tok
@@ -404,6 +405,14 @@ type stmt =
   | FunctionDef of function_definition
 
   | ClassDef of class_definition
+
+and case_and_body =
+  | CasesAndBody of case list * stmt list
+  (* sgrep-ext: *)
+  | CaseEllipsis of (* ... *) tok
+
+and case =
+  | Case of tok * pattern
 
 and excepthandler =
     ExceptHandler of
