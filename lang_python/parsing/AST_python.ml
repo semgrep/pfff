@@ -153,7 +153,7 @@ type expr =
   | ExprStar of expr (* less: expr_context? always Store anyway no? *)
   (* python3: f-strings
    * reference: https://www.python.org/dev/peps/pep-0498/ *)
-  | InterpolatedString of interpolated list
+  | InterpolatedString of tok * interpolated list * tok
   | ConcatenatedString of interpolated list (* always Str *)
 
   (* python3: *)

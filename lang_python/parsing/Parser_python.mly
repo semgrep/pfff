@@ -775,11 +775,11 @@ testlist1:
 string:
   | STR { let (s, pre, tok) = $1 in
           if pre = "" then Str (s, tok) else EncodedStr ((s, tok), pre) }
-  | FSTRING_START interpolated* FSTRING_END { InterpolatedString $2 }
+  | FSTRING_START interpolated* FSTRING_END { InterpolatedString ($1, $2, $3) }
 
 interpolated:
   | FSTRING_STRING { Str $1 }
-  | FSTRING_LBRACE interpolant fstring_print_spec "}" { InterpolatedString ($2::$3) }
+  | FSTRING_LBRACE interpolant fstring_print_spec "}" { InterpolatedString ($1, $2::$3, $4) }
 
 fstring_print_spec:
   |     fstring_format_clause { $1 }
