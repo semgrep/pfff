@@ -292,8 +292,8 @@ dot_level:
   | "..." dot_level { $1::$2 }
 
 import_as_name:
-  | NAME         { $1, None }
-  | NAME AS NAME { $1, Some $3 }
+  | NAME         { failwith "ood" }
+  | NAME AS NAME { failwith "ood" }
 
 (*************************************************************************)
 (* Variable definition *)

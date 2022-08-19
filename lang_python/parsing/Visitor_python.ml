@@ -363,6 +363,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_list v_annot v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
       | AugAssign (v1, v2, v3) ->
           let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
+      | Cast (expr, t, ty) ->
+          v_expr expr; v_info t; v_type_ ty; ()
       | Raise (t, v1) ->
           let t = v_info t in
           let v1 =

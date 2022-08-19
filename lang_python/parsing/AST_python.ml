@@ -349,6 +349,8 @@ type stmt =
   | Assign of (expr * (tok * type_) option) (*lhs*) list (* targets *) * tok * expr (* value *)
   | AugAssign of expr (* target *) * operator wrap (* op *) * expr (* value *)
 
+  | Cast of expr * tok * type_
+
   | For of tok * pattern (* (pattern) introduce new vars *) *
            tok * expr (* 'in' iter *) *
            stmt list (* body *) * stmt list (* orelse *)
