@@ -291,7 +291,7 @@ dot_level:
   | "." dot_level  { $1::$2 }
   | "..." dot_level { $1::$2 }
 
-(* ood for "out of date", this will no longer be necessary later )
+(* ood for "out of date", this will no longer be necessary later *)
 import_as_name:
   | NAME         { failwith "ood" }
   | NAME AS NAME { failwith "ood" }
