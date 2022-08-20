@@ -315,6 +315,15 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v3 = v_list v_stmt v3
           and v4 = v_list v_decorator v4
           in ()
+      | Assign (v1, v2, v3) ->
+          let v_annot (expr, tt_opt) =
+            v_expr expr;
+            v_option (fun (tk, ty) -> v_info tk; v_type_ ty; ()) tt_opt
+          in
+          let v1 = v_list v_annot v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
+      | AugAssign (v1, v2, v3) ->
+          let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
+
       | Return (t, v1) ->
           let t = v_info t in
           let v1 = v_option v_expr v1 in ()
@@ -355,14 +364,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let exp = v_expr exp
           and cases = v_list v_cases_and_body cases in
           ()
-      | Assign (v1, v2, v3) ->
-          let v_annot (expr, tt_opt) =
-            v_expr expr;
-            v_option (fun (tk, ty) -> v_info tk; v_type_ ty; ()) tt_opt
-          in
-          let v1 = v_list v_annot v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
-      | AugAssign (v1, v2, v3) ->
-          let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
       | Cast (expr, t, ty) ->
           v_expr expr; v_info t; v_type_ ty; ()
       | Raise (t, v1) ->
