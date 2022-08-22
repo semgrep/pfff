@@ -117,10 +117,6 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v2 = v_expr_context v2
           and v3 = v_ref_do_not_visit v_resolved_name v3
           in ()
-      | TypedExpr (v1, v2) ->
-          let v1 = v_expr v1 in
-          let v2 = v_type_ v2 in
-          ()
       | TypedMetavar (v1, v2, v3) ->
           let v1 = v_name v1 in
           let v2 = v_tok v2 in
@@ -324,7 +320,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v4 = v_list v_decorator v4
           in ()
       | Assign (v1, v2, v3) ->
-          let v1 = v_list v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
+          let v_annot (expr, tt_opt) =
+            v_expr expr;
+            v_option (fun (tk, ty) -> v_info tk; v_type_ ty; ()) tt_opt
+          in
+          let v1 = v_list v_annot v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
       | AugAssign (v1, v2, v3) ->
           let v1 = v_expr v1 and v2 = v_wrap v_operator v2 and v3 = v_expr v3 in ()
       | Return (t, v1) ->
@@ -362,6 +362,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           and v2 = v_option v_expr v2
           and v3 = v_list v_stmt v3
           in ()
+      | Switch (t, exp, cases) ->
+          let t = v_info t in
+          let exp = v_expr exp
+          and cases = v_list v_cases_and_body cases in
+          ()
+      | Cast (expr, t, ty) ->
+          v_expr expr; v_info t; v_type_ ty; ()
       | Raise (t, v1) ->
           let t = v_info t in
           let v1 =
@@ -420,6 +427,19 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     in
     vin.kstmt (k, all_functions) x
 
+  and v_cases_and_body = function
+    | CasesAndBody (cases, stmts) ->
+        let cases = v_list v_case cases
+        and stmts = v_list v_stmt stmts in
+        ()
+    | CaseEllipsis v1 ->
+        let v1 = v_tok v1 in ()
+
+  and v_case = function
+    | Case (t, pat) ->
+        let t = v_info t in
+        let pat = v_expr pat in
+        ()
 
   and v_excepthandler =
     function

@@ -304,16 +304,16 @@ expr_stmt:
       { ExprStmt (tuple_expr $1) }
   (* typing-ext: *)
   | tuple(test_or_star_expr) ":" test
-      { ExprStmt (TypedExpr (tuple_expr $1, $3)) }
+      { Cast (tuple_expr $1, $2, $3) }
   | tuple(test_or_star_expr) ":" test "=" test
-      { Assign ([TypedExpr (tuple_expr_store $1, $3)], $4, $5) }
+      { Assign ([let expr = tuple_expr_store $1 in (expr, Some ($2, $3))], $4, $5) }
 
   | tuple(test_or_star_expr) augassign yield_expr
       { AugAssign (tuple_expr_store $1, $2, $3) }
   | tuple(test_or_star_expr) augassign tuple(test)
       { AugAssign (tuple_expr_store $1, $2, tuple_expr $3) }
   | tuple(test_or_star_expr) "=" expr_stmt_rhs_list
-      { Assign ((tuple_expr_store $1)::(fst $3), $2, snd $3) }
+      { Assign ((tuple_expr_store $1, None)::(fst $3), $2, snd $3) }
 
 test_or_star_expr:
   | test      { $1 }
@@ -327,7 +327,7 @@ exprlist: tuple(expr_or_star_expr) { $1 }
 
 expr_stmt_rhs_list:
   | expr_stmt_rhs                         { [], $1 }
-  | expr_stmt_rhs "=" expr_stmt_rhs_list  { (expr_store $1)::(fst $3), snd $3 }
+  | expr_stmt_rhs "=" expr_stmt_rhs_list  { (expr_store $1, None)::(fst $3), snd $3 }
 
 expr_stmt_rhs:
   | yield_expr               { $1 }
