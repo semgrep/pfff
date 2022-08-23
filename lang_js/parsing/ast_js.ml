@@ -596,6 +596,7 @@ and partial =
   | PartialSingleField of string wrap (* an id or str *) * tok (* : *) * expr
   (* not really a partial, but the partial machinery can help with that *)
   | PartialFunOrFuncDef of tok (* ... *) * function_definition
+  | PartialSwitchCase of case
 
 (* this is now mutually recursive with the previous types because of StmtTodo*)
 and any =
