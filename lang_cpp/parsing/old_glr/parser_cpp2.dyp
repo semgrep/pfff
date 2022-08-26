@@ -1172,7 +1172,7 @@ template_id:
     { IdTemplateId ($1, ($2, $3, $4)) }
 
 /*
-(*c++ext: in the c++ grammar they have also 'template-name' but this is catched
+(*c++ext: in the c++ grammar they have also 'template-name' but this is caught
  * in my case by type_id and its generic TypedefIdent, or will be parsed
  * as an Ident and so assign_expr. In this later case may need a ast post
  * disambiguation analysis for some false positive.
