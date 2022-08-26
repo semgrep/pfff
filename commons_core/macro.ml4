@@ -67,7 +67,7 @@ pb let obj' = f obj
      #load "pa_extend.cmo";;
     add Extend rule, copy paste in interpreter
     Grammar.Entry.parse expr (Stream.of_string "2 + 3");;
-      expr is already binded with the expr for caml
+      expr is already bound with the expr for caml
     can use the exception tricks to display (as in exception Print of type_decl)
 
    using p4 in p4 (with pattern that are quotation) is confusing

@@ -1024,7 +1024,7 @@ template_id:
     { IdTemplated(IdIdent $1, ($2, $3, $4)) }
 
 (*c++ext: in the c++ grammar they have also 'template-name' but this is
- * catched in my case by type_id and its generic TypedefIdent, or will be
+ * caught in my case by type_id and its generic TypedefIdent, or will be
  * parsed as an Ident and so assign_expr. In this later case may need an AST
  * post-disambiguation analysis for some false positives.
  *)

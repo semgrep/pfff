@@ -971,7 +971,7 @@ and expr env x =
 
   (* -------------------------------------------------- *)
   (* This should be executed only for access to class constants or static
-   * class variable; calls should have been catched in the Call pattern above.
+   * class variable; calls should have been caught in the Call pattern above.
   *)
   | Class_get (e1, tok, e2) ->
       (match e1, e2 with

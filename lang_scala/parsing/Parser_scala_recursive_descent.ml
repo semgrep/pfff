@@ -1420,7 +1420,7 @@ and pattern2 in_ : pattern =
        (* ast: Bind(name, body), if WILDCARD then ... *)
        | PatVarid varid -> PatBind (varid, ii, y)
        (* stricter? *)
-       | _ -> error "binded patterns work only with a varid" in_
+       | _ -> error "bound patterns work only with a varid" in_
       )
   | _ -> x
 
