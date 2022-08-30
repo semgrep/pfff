@@ -81,6 +81,51 @@ let test_readable () =
     (Common.readable ~root:"/a/b/" "/a/b//Bar.java");
   ()
 
+let with_file contents f =
+  let file, oc = Filename.open_temp_file "test_pfff_read_file_" ".dat" in
+  Fun.protect
+    ~finally:(fun () ->
+      close_out_noerr oc;
+      Sys.remove file
+    )
+    (fun () ->
+       output_string oc contents;
+       close_out oc;
+       f file
+    )
+
+(* We don't have tests for reading from named pipes (FIFO) because it would
+   too complicated (involves two processes) and name pipes are useful mostly
+   with Bash's process substitution feature.
+*)
+let test_read_file () =
+  (* test file smaller than one filesystem block (most likely) *)
+  let data = String.make 200 'A' in
+  with_file data (fun file ->
+    assert (Common.read_file file = data)
+  );
+  (* test file larger than one filesystem block (most likely) *)
+  let data = String.make 100_000 'A' in
+  with_file data (fun file ->
+    assert (Common.read_file file = data)
+  );
+  (* test empty file *)
+  let data = "" in
+  with_file data (fun file ->
+    assert (Common.read_file file = data)
+  );
+  (* test partial read *)
+  let data = String.make 8192 'A' in
+  let max_len = 100 in
+  with_file data (fun file ->
+    assert (Common.read_file ~max_len file = String.sub data 0 max_len)
+  );
+  (* test 0-length read *)
+  let data = String.make 8192 'A' in
+  let max_len = 0 in
+  with_file data (fun file ->
+    assert (Common.read_file ~max_len file = String.sub data 0 max_len)
+  )
 
 let tests =
   Testutil.pack_suites "commons" [
@@ -88,5 +133,6 @@ let tests =
       Testutil.pack_tests "map" test_common_map;
       ["cat", test_cat];
       ["readable", test_readable];
+      ["read_file", test_read_file];
     ]
   ]
