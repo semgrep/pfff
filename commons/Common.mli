@@ -77,8 +77,10 @@ val write_file : file:filename -> string -> unit
      my-ocaml-program <(echo contents)
 
    * https://www.gnu.org/software/bash/manual/html_node/Process-Substitution.html
+
+   If max_len is specified, at most that many bytes are read from the file.
 *)
-val read_file : filename -> string
+val read_file : ?max_len:int -> filename -> string
 
 val with_open_outfile :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a

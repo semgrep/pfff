@@ -1246,7 +1246,7 @@ let cat file =
    Why such a function is not provided by the ocaml standard library is
    unclear.
 *)
-let read_file2 path =
+let read_file2 ?(max_len = max_int) path =
   let buf_len = 4096 in
   let extbuf = Buffer.create 4096 in
   let buf = Bytes.create buf_len in
@@ -1257,15 +1257,18 @@ let read_file2 path =
         assert (num_bytes > 0);
         assert (num_bytes <= buf_len);
         Buffer.add_subbytes extbuf buf 0 num_bytes;
-        loop fd
+        if Buffer.length extbuf >= max_len then
+          Buffer.sub extbuf 0 max_len
+        else
+          loop fd
   in
   let fd = Unix.openfile path [Unix.O_RDONLY] 0 in
   Fun.protect
     ~finally:(fun () -> Unix.close fd)
     (fun () -> loop fd)
 
-let read_file a =
-  profile_code "Common.read_file" (fun () -> read_file2 a)
+let read_file ?max_len a =
+  profile_code "Common.read_file" (fun () -> read_file2 ?max_len a)
 
 let write_file ~file s =
   let chan = open_out_bin file in
