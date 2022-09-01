@@ -384,6 +384,7 @@ let fetchToken in_ =
 
         (match x with
          | Space _ | Comment _ ->
+             let () = () in
              loop (x::aux)
          (* pad: the newline is skipped here, but reinserted conditionally in
           * insertNL() *)
@@ -2244,6 +2245,7 @@ and enumerators in_ : enumerators =
 
 (* pad: this was duplicated in enumerator and generator in the original code*)
 and guard_loop in_ : guard list =
+  newLineOpt in_;
   if not (in_.token =~= (Kif ab))
   then []
   else
