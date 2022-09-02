@@ -61,6 +61,8 @@ let parse filename =
   let stat = Parse_info.default_stat filename in
   let toks = tokens filename in
 
+  Common.(pr2 (spf "tokens are %s" ([%show: Token_scala.t list] toks)));
+
  (*
   let tr, lexer, lexbuf_fake =
     Parse_info.mk_lexer_for_yacc toks TH.is_comment in
