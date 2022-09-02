@@ -384,7 +384,6 @@ let fetchToken in_ =
 
         (match x with
          | Space _ | Comment _ ->
-             let () = () in
              loop (x::aux)
          (* pad: the newline is skipped here, but reinserted conditionally in
           * insertNL() *)
