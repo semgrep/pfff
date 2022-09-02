@@ -1513,9 +1513,7 @@ and simplePattern in_ : pattern =
         let x = literal ~isNegated:(Some ii) ~inPattern:true in_ in
         PatLiteral x
     | x when TH.isIdentBool x || x =~= (Kthis ab) ->
-        Common.(pr2 (spf "before stableidj at %s" ([%show: T.t] in_.token)));
         let t = stableId in_ in
-        Common.(pr2 (spf "after stableid at %s" ([%show: T.t] in_.token)));
         (* less: if t = Ident("-") literal isNegated:true inPattern:true *)
         let typeAppliedTree =
           match in_.token with
@@ -2281,28 +2279,20 @@ and generator ~eqOK ~allowNestedIf in_ : generator =
   in_ |> with_logging "generator" (fun () ->
     let hasVal = in_.token =~= (Kval ab) in
     if hasVal then nextToken in_;
-    Common.(pr2 (spf "before pat at %s" ([%show: T.t] in_.token)));
     let pat = noSeq pattern1 in_ in
-    Common.(pr2 (spf "after pat at %s" ([%show: T.t] in_.token)));
     let hasEq = in_.token =~= (EQUALS ab) in
     (* CHECK: scala3: "`val` keyword in for comprehension is" *)
     let ieq = TH.info_of_tok in_.token in
     (if hasEq && eqOK
      then nextToken in_
-     else
-       (Common.(pr2 (spf "before accept at %s" ([%show: T.t] in_.token)));
-        accept (LARROW ab) in_
-       )
+     else accept (LARROW ab) in_
     );
-    Common.(pr2 (spf "before expr at %s" ([%show: T.t] in_.token)));
     let rhs = expr in_ in
-    Common.(pr2 (spf "after expr at %s" ([%show: T.t] in_.token)));
     let tail =
       if allowNestedIf
       then guard_loop in_
       else []
     in
-    Common.(pr2 (spf "after guard loop at %s" ([%show: T.t] in_.token)));
     (* ast: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
     {genpat = pat; gentok = ieq; genbody = rhs; genguards = tail }
   )
