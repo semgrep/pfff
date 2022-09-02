@@ -274,7 +274,7 @@ val adjust_pinfo_wrt_base : token_location -> token_location -> token_location
    This is something we can do at relatively low cost by going through and inspecting
    the contents of the token, plus the start information.
 *)
-val mk_end_token_location : token_location -> token_location
+val get_token_end_info : token_location -> int * int * int
 
 (** [adjust_info_wrt_base base_loc tok], where [tok] represents a location
   * relative to [base_loc], returns the same [tok] but with an absolute

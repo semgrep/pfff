@@ -724,14 +724,14 @@ let adjust_pinfo_wrt_base base_loc loc =
    This is something we can do at relatively low cost by going through and inspecting
    the contents of the token, plus the start information.
 *)
-let mk_end_token_location loc =
+let get_token_end_info loc =
   let line, col =
     String.fold_left (fun (line, col) c ->
       match c with
       | '\n' -> (line + 1, 0)
       | _ -> (line, col + 1)
     ) (loc.line, loc.column) loc.str in
-  { loc with line; column = col; charpos = loc.charpos + String.length loc.str}
+  line, col, loc.charpos + String.length loc.str
 
 let fix_token_location fix ii =
   { ii with token =
