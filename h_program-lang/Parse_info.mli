@@ -268,6 +268,14 @@ val fix_token_location : (token_location -> token_location) -> token_mutable -> 
 (** See [adjust_info_wrt_base]. *)
 val adjust_pinfo_wrt_base : token_location -> token_location -> token_location
 
+(* Token locations are supposed to denote the beginning of a token.
+   Suppose we are interested in instead having line, column, and charpos of
+   the end of a token instead.
+   This is something we can do at relatively low cost by going through and inspecting
+   the contents of the token, plus the start information.
+*)
+val get_token_end_info : token_location -> int * int * int
+
 (** [adjust_info_wrt_base base_loc tok], where [tok] represents a location
   * relative to [base_loc], returns the same [tok] but with an absolute
   * {! token_location}. This is useful for fixing parse info after
