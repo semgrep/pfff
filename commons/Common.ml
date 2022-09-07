@@ -885,6 +885,8 @@ let mk_action_n_arg f = f
 (* Option/Either *)
 (*****************************************************************************)
 
+let (let*) = Option.bind
+
 (* type 'a maybe  = Just of 'a | None *)
 let (>>=) m1 m2 =
   match m1 with

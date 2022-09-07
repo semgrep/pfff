@@ -248,10 +248,29 @@ val hashset_to_list : 'a hashset -> 'a list
 
 val optlist_to_list: 'a list option -> 'a list
 
-(* you should prefer let ( let* ) = Option.bind though
- * TODO: delete those functions, let* is better.
+(* Since OCaml 4.08 you can define your own "binding operator"
+ * (see https://v2.ocaml.org/manual/bindingops.html)
+ * 'let*' is one such binding operator and an alias to Option.bind.
+ * [bind o f] is [f v] if [o] is [Some v] and [None] if [o] is [None].
+ * Here is an example of use:
+ *  let* x1 = xs |> List.find_opt (fun x -> x > 1) in
+ *  let* x2 = xs |> List.find_opt (fun x -> x > 2) in
+ *  (x1 + x2)
+ *
+ * Without let*, you would have to write lots of boilerplace code like:
+ *  match xs |> List.find_opt (fun x -> x > 1) with
+ *  | None -> None
+ *  | Some x1 ->
+ *    (match xs |> List.find_opt (fun x -> x > 2) in
+ *    | None -> None
+ *    | Some x2 -> Some (x1 + x2)
+ *    )
 *)
+val (let*) : 'a option -> ('a -> 'b option) -> 'b option
+
+(* TODO: we should delete this function; let* is better *)
 val (>>=): 'a option -> ('a -> 'b option) -> 'b option
+
 val (|||): 'a option -> 'a -> 'a
 val (<|>): 'a option -> 'a option -> 'a option
 
