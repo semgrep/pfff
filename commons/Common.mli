@@ -255,7 +255,7 @@ val optlist_to_list: 'a list option -> 'a list
  * Here is an example of use:
  *  let* x1 = xs |> List.find_opt (fun x -> x > 1) in
  *  let* x2 = xs |> List.find_opt (fun x -> x > 2) in
- *  (x1 + x2)
+ *  Some (x1 + x2)
  *
  * Without let*, you would have to write lots of boilerplace code like:
  *  match xs |> List.find_opt (fun x -> x > 1) with
