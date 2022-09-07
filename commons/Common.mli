@@ -1,46 +1,89 @@
-(* you should set this flag when you run code compiled by js_of_ocaml *)
-val jsoo: bool ref
+(* This module contains functions (and types) which are very often used.
+ * They are so common (hence the name of this file) that lots of modules
+ * just 'open Common' to get in scope those functions.
+ * This file acts like a second Pervasive/Stdlib.
+ *
+ * However, because this module is often open'ed, it should
+ * not define too many functions (<100) because we can't impose
+ * to other programmers the mental effort to know too many functions.
+ * This was actually a big problem with Common.ml originally
+ * (renamed to Common2.ml since).
+*)
 
+(* You should avoid using the polymorphic '='. It is convenient but
+ * its use will eventually backfire. You should use instead 'deriving eq'
+ * where the equality function can be customized.
+ * If you really need to use '=', at least use the more precise operators
+ * below.
+*)
 val (=|=) : int    -> int    -> bool
 val (=<=) : char   -> char   -> bool
 val (=$=) : string -> string -> bool
 val (=:=) : bool   -> bool   -> bool
 
+(* if you really really need to use the polymorphic '=', at least use
+ * the operator below so it's easier to grep for it if one needs to refactor
+ * the code to use 'deriving eq' instead.
+*)
 val (=*=): 'a -> 'a -> bool
 
-(*
-   Same as print_endline: print the string and a newline, then flush stdout.
-*)
+(* Same as print_endline: print the string and a newline, then flush stdout.
+ * Just shorter. *)
 val pr : string -> unit
 
-(*
-   Print a string and a newline to stderr, then flush stderr.
-*)
+(* Print a string and a newline to stderr, then flush stderr. The '2'
+ * is used to refect that it prints on stderr (file descriptor '2' in Unix). *)
 val pr2 : string -> unit
 
 (* forbid pr2_once to do the once "optimisation" *)
 val _already_printed : (string, bool) Hashtbl.t
 val disable_pr2_once : bool ref
+
+(* Print on stderr but only once (to avoid printing the same error
+ * again and again) *)
 val pr2_once : string -> unit
 
+(* Print on stderr any data structure (see dump() below) *)
 val pr2_gen: 'a -> unit
+
+(* Dump any OCaml data-structure in a string. dump() relies on the Obj module
+ * internally so it is limited (e.g., it just dumps numbers for constructors).
+ * You should use instead 'deriving show' which correctly handle
+ * constructors, fields, etc. However, if you can't use 'deriving show',
+ * then this function helps.
+*)
 val dump: 'a -> string
 
 (* to be used in pipes as in foo() |> before_return (fun v -> pr2_gen v)*)
 val before_return: ('a -> unit) -> 'a -> 'a
 
 exception Todo
+
+(* some people prefer assert false *)
 exception Impossible
 
+(* similar to Not_found but to use when something returns too many findings *)
 exception Multi_found
 
+(* Convert any exception to a string *)
 val exn_to_s : exn -> string
 
+(* shortcuts for string_of_int and int_of_string *)
 val i_to_s : int -> string
 val s_to_i : string -> int
 
 val null_string : string -> bool
 
+(* Perl-like regexp pattern matching. We need the many matchedxxx()
+ * because OCaml does not support polytypic functions (same problem
+ * with zip1/zip2/etc.).
+ * Here is how to use =~ and matchedxxx together:
+ *    let s = "foobar" in
+ *    if s =~ "f\\(..\\)\\(.*\\)"
+ *    then
+ *      let after_f, endpart = Common.matched2 s in
+ *      ...
+*)
 val (=~) : string -> string -> bool
 val matched1 : string -> string
 val matched2 : string -> string * string
@@ -50,14 +93,29 @@ val matched5 : string -> string * string * string * string * string
 val matched6 : string -> string * string * string * string * string * string
 val matched7 : string -> string * string * string * string * string * string * string
 
+(* Shortcut for Printf.sprintf *)
 val spf : ('a, unit, string) format -> 'a
 
 val join : string (* sep *) -> string list -> string
 val split : string (* sep regexp *) -> string -> string list
 
+(* Some signatures are arguably clearer when using 'filename' instead of
+ * 'string' (see write_file below for an example).
+ * Ideally 'filename' should be a different type like in Scala with the
+ * Path module: https://www.lihaoyi.com/post/HowtoworkwithFilesinScala.html
+*)
 type filename = string
-val pp_filename: Format.formatter -> filename -> unit
-val equal_filename: filename -> filename -> bool
+[@@deriving show, eq]
+(* the deriving above will define those functions below, which
+ * are needed if one use 'deriving eq, show' on other types
+ * using internally 'filename'
+ * (e.g., 'type foo = Foo of filename [@@deriving show]')
+ *
+ * val pp_filename: Format.formatter -> filename -> unit
+ * val equal_filename: filename -> filename -> bool
+*)
+
+(* TODO: those are not used very often, maybe we should delete them *)
 type dirname = string
 type path = string
 
@@ -82,44 +140,84 @@ val write_file : file:filename -> string -> unit
 *)
 val read_file : ?max_len:int -> filename -> string
 
+(* Scheme-inspired combinators that automatically close the file
+ * once the function callback is done. Here is an example of use:
+ *   with_open_outfile "/tmp/foo.txt" (fun (pr, _chan) ->
+ *     pr "this goes in foo.txt"
+ *   )
+*)
 val with_open_outfile :
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
 val with_open_infile :
   filename -> (in_channel -> 'a) -> 'a
 
-exception CmdError of Unix.process_status * string
-val command2 : string -> unit
-val cmd_to_list :  ?verbose:bool -> string -> string list (* alias *)
+(* This allows to capture the output of an external command.
+ * It is more convenient to use than Unix.open_process_in.
+ * Here is an example of use:
+ *  let (lines, _status) = cmd_to_list_and_status "find /home" in
+ *  ...
+*)
 val cmd_to_list_and_status:
   ?verbose:bool -> string -> string list * Unix.process_status
 
+exception CmdError of Unix.process_status * string
+
+(* this may raise CmdError *)
+val cmd_to_list :  ?verbose:bool -> string -> string list (* alias *)
+
+(* ignore(Sys.command s).
+ * TODO: we should get rid of it because it's bad programming to not
+ * check the exit status of Sys.command
+*)
+val command2 : string -> unit
+
+(* shortcut for xs = [].
+ * TODO: delete, not that shorter actually.
+*)
 val null : 'a list -> bool
 
 (** Same as [List.map] but stack-safe and slightly faster on short lists.
     Additionally, we guarantee that the mapping function is applied from
-    from left to right like for [List.iter].
+    left to right like for [List.iter].
 *)
 val map : ('a -> 'b) -> 'a list -> 'b list
 
+(* opposite of Common.filter *)
 val exclude : ('a -> bool) -> 'a list -> 'a list
+
+(* Sort in a polymorphic way. You should really use 'deriving ord' instead *)
 val sort : 'a list -> 'a list
 
 val uniq_by: ('a -> 'a -> bool) -> 'a list -> 'a list
 
 (** Same as [List.filter_map] but tail recursive. *)
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
+
 val find_opt: ('a -> bool) -> 'a list -> 'a option
 val find_some : ('a -> 'b option) -> 'a list -> 'b
 val find_some_opt : ('a -> 'b option) -> 'a list -> 'b option
 val filter_some: 'a option list -> 'a list
 
+(* Haskell-inspired list combinators (take/drop/span) *)
+
+(* this may raise Failure "Common.take: not enough" *)
 val take : int -> 'a list -> 'a list
+(* this does not raise a Failure and take only the first n elements *)
 val take_safe : int -> 'a list -> 'a list
+
+(* this may raise Failure "drop: not enough" *)
 val drop : int -> 'a list -> 'a list
+
 val span : ('a -> bool) -> 'a list -> 'a list * 'a list
 
+(* zip a list with an increasing list of numbers.
+ * e.g., index_list ["a"; "b"] -> ["a", 0; "b", 1].
+ * An alternative is to use functions like List.iteri.
+*)
 val index_list   : 'a list -> ('a * int) list
 val index_list_0 : 'a list -> ('a * int) list
+
+(* similar to index_list_0 but start the index at 1 *)
 val index_list_1 : 'a list -> ('a * int) list
 
 type ('a, 'b) assoc = ('a * 'b) list
@@ -149,27 +247,24 @@ val hashset_of_list : 'a list -> 'a hashset
 val hashset_to_list : 'a hashset -> 'a list
 
 val optlist_to_list: 'a list option -> 'a list
-(* you should prefer let ( let* ) = Option.bind though *)
+
+(* you should prefer let ( let* ) = Option.bind though
+ * TODO: delete those functions, let* is better.
+*)
 val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val (|||): 'a option -> 'a -> 'a
 val (<|>): 'a option -> 'a option -> 'a option
 
-
+(* Haskell-inspired either type *)
 type ('a, 'b) either = Left of 'a | Right of 'b
-val pp_either: (Format.formatter -> 'a -> 'b) ->
-  (Format.formatter -> 'c -> 'd) ->
-  Format.formatter -> ('a, 'c) either -> unit
-val equal_either:
-  ('a -> 'a -> bool) ->
-  ('b -> 'b -> bool) ->
-  ('a, 'b) either -> ('a, 'b) either -> bool
-type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
-val pp_either3: (Format.formatter -> 'a -> 'b) ->
-  (Format.formatter -> 'c -> 'd) ->
-  (Format.formatter -> 'e -> 'f) ->
-  Format.formatter -> ('a, 'c, 'e) either3 -> unit
+[@@deriving eq, show]
+
 val partition_either :
   ('a -> ('b, 'c) either) -> 'a list -> 'b list * 'c list
+
+type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
+[@@deriving eq, show]
+
 val partition_either3 :
   ('a -> ('b, 'c, 'd) either3) -> 'a list -> 'b list * 'c list * 'd list
 
@@ -180,6 +275,9 @@ val partition_either3 :
 val partition_result :
   ('a -> ('ok, 'error) result) -> 'a list -> 'ok list * 'error list
 
+(* Pad's extensions to Arg for actions. See pfff/Main.ml for
+ * an example of use.
+*)
 type arg_spec_full = Arg.key * Arg.spec * Arg.doc
 type cmdline_options = arg_spec_full list
 
@@ -246,18 +344,21 @@ val action_list:
 *)
 val debugger : bool ref
 
-(* emacs spirit *)
+(* Emacs-inspired finalize-like function. *)
 val unwind_protect : (unit -> 'a) -> (Exception.t -> 'b) -> 'a
-(* java spirit *)
-val finalize :       (unit -> 'a) -> (unit -> unit) -> 'a
-
 val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
+
+(* Java-inspired combinator *)
+val finalize :       (unit -> 'a) -> (unit -> unit) -> 'a
 
 val memoized :
   ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 
 exception ExceededMemoryLimit of string
 
+(* You should use this instead of 'exit n' because it allows you
+ * to intercept the exn and do something special before exiting.
+*)
 exception UnixExit of int
 
 (* Contains the name given by the user to the timer and the time limit *)
@@ -303,6 +404,9 @@ val with_time: (unit -> 'a) -> 'a * float
 val pr_time: string -> (unit -> 'a) -> 'a
 val pr2_time: string -> (unit -> 'a) -> 'a
 
+(* Pad's poor's man profiler. See pfff/Main.ml for example of use
+ * and the -profile command-line flag
+*)
 type prof = ProfAll | ProfNone | ProfSome of string list
 val profile : prof ref
 val show_trace_profile : bool ref
@@ -349,3 +453,6 @@ val main_boilerplate : (unit -> unit) -> unit
 (* type of maps from string to `a *)
 module SMap : Map.S with type key = String.t
 type 'a smap = 'a SMap.t
+
+(* you should set this flag when you run code compiled by js_of_ocaml *)
+val jsoo: bool ref
