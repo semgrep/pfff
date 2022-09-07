@@ -16,7 +16,7 @@
 (* Prelude *)
 (*###########################################################################*)
 
-(* if set then certain functions like unwind_protect will not
+(* if set, certain functions like unwind_protect will not
  * do a try and finalize and instead just call the function, which
  * helps in ocamldebug and also in getting better backtraces.
  * This is also useful to set in a js_of_ocaml (jsoo) context to
@@ -25,9 +25,9 @@
 let debugger = ref false
 
 (* You should set this to true when you run code compiled by js_of_ocaml
- * so some functions here can change their implementation and rely
+ * so some functions can change their implementation and rely
  * less on non-portable API like Unix which does not work well under
- * node or on the browser.
+ * node or in the browser.
 *)
 let jsoo = ref false
 
@@ -40,10 +40,10 @@ let logger = Logging.get_logger [__MODULE__]
 (* The following functions should be in their respective sections but
  * because some functions in some sections use functions in other
  * sections, and because I don't want to take care of the order of
- * those sections, of those dependencies, I put the functions causing
+ * those sections (of those dependencies), I put the functions causing
  * dependency problem here. C is better than OCaml on this with the
  * ability to declare prototypes, enabling some form of forward
- * reference.
+ * references.
 *)
 
 let spf = Printf.sprintf
@@ -929,41 +929,45 @@ let (<|>) a b =
   | _ -> b
 
 type ('a,'b) either = Left of 'a | Right of 'b
-[@@deriving eq]
+[@@deriving eq, show]
 (* with sexp *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
+[@@deriving eq, show]
 (* with sexp *)
 
-(* for [@@deriving show] *)
-(* result of ocamlfind ocamlc -dsource ... on this code
-   type ('a, 'b) either =
-   | Left of 'a
-   | Right of 'b
-   [@@deriving show]
+(* If you don't want to use [@@deriving eq, show] above, you
+ * can copy-paste manually the generated code by getting the
+ * result of ocamlfind ocamlc -dsource ... on this code
+ *  type ('a, 'b) either =
+ *  | Left of 'a
+ *  | Right of 'b
+ *  [@@deriving show]
+ *
+ * which should look like this:
+ * let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
+ *   | Left a0 ->
+ *       (Format.fprintf fmt "(@[<2>Left@ ";
+ *        (poly_a fmt) a0;
+ *        Format.fprintf fmt "@])")
+ *   | Right a0 ->
+ *       (Format.fprintf fmt "(@[<2>Right@ ";
+ *        (poly_b fmt) a0;
+ *        Format.fprintf fmt "@])")
+ *
+ * let pp_either3 = fun poly_a -> fun poly_b -> fun poly_c -> fun fmt -> function
+ *   | Left3 a0 ->
+ *       (Format.fprintf fmt "(@[<2>Left3@ ";
+ *        (poly_a fmt) a0;
+ *        Format.fprintf fmt "@])")
+ *   | Middle3 a0 ->
+ *       (Format.fprintf fmt "(@[<2>Middle3@ ";
+ *        (poly_b fmt) a0;
+ *        Format.fprintf fmt "@])")
+ *   | Right3 a0 ->
+ *       (Format.fprintf fmt "(@[<2>Right3@ ";
+ *        (poly_c fmt) a0;
+ *        Format.fprintf fmt "@])")
 *)
-let pp_either = fun poly_a -> fun poly_b -> fun fmt -> function
-  | Left a0 ->
-      (Format.fprintf fmt "(@[<2>Left@ ";
-       (poly_a fmt) a0;
-       Format.fprintf fmt "@])")
-  | Right a0 ->
-      (Format.fprintf fmt "(@[<2>Right@ ";
-       (poly_b fmt) a0;
-       Format.fprintf fmt "@])")
-
-let pp_either3 = fun poly_a -> fun poly_b -> fun poly_c -> fun fmt -> function
-  | Left3 a0 ->
-      (Format.fprintf fmt "(@[<2>Left3@ ";
-       (poly_a fmt) a0;
-       Format.fprintf fmt "@])")
-  | Middle3 a0 ->
-      (Format.fprintf fmt "(@[<2>Middle3@ ";
-       (poly_b fmt) a0;
-       Format.fprintf fmt "@])")
-  | Right3 a0 ->
-      (Format.fprintf fmt "(@[<2>Right3@ ";
-       (poly_c fmt) a0;
-       Format.fprintf fmt "@])")
 
 let partition_either f l =
   let rec part_either left right = function
