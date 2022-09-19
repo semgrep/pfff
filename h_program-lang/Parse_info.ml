@@ -92,7 +92,7 @@ type token_origin =
    * polluate in debug mode.
   *)
   | Ab
-[@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false}, eq ] (* with tarzan *)
 
 type token_mutable = {
   (* contains among other things the position of the token through
@@ -116,7 +116,7 @@ and add =
   | AddStr of string
   | AddNewlineAndIdent
 
-[@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false}, eq ] (* with tarzan *)
 
 exception NoTokenLocation of string
 
@@ -200,6 +200,7 @@ and esthet =
 
 (* shortcut *)
 type t = token_mutable
+[@@deriving eq]
 type info_ = t
 
 
