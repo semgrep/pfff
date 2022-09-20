@@ -1,6 +1,6 @@
-(* Yoann Padioleau
+(* Yoann Padioleau, Matthew McQuaid
  *
- * Copyright (C) 2021 R2C
+ * Copyright (C) 2021-2022 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -669,9 +669,6 @@ let stripParens x =
 let commaSeparated part in_ =
   tokenSeparated (COMMA ab) part in_
 
-let caseSeparated part in_ =
-  separatedToken (Kcase ab) part in_
-
 (*****************************************************************************)
 (* Parsing names  *)
 (*****************************************************************************)
@@ -1168,6 +1165,7 @@ and compoundType in_ : type_ =
 
 and compoundTypeRest topt in_ =
   let ts = ref [] in
+  (* less: could use separatedToken (Kwith ab) annotType instead of while *)
   while in_.token =~= (Kwith ab) do
     let iwith = TH.info_of_tok in_.token in
     nextToken in_;
@@ -2019,7 +2017,7 @@ and caseClause icase in_ : case_clause =
   let g = guard in_ in
   let (iarrow, block) = caseBlock in_ in
   (* ast: makeCaseDef *)
-  { casetoks = (icase, iarrow); casepat = p; caseguard = g; casebody = block}
+  CC { casetoks = (icase, iarrow); casepat = p; caseguard = g; casebody = block}
 
 (** {{{
  *  CaseClauses ::= CaseClause {CaseClause}
@@ -2028,7 +2026,28 @@ and caseClause icase in_ : case_clause =
 *)
 and caseClauses in_ : case_clauses =
   (* CHECK: empty cases *)
-  caseSeparated caseClause in_
+  (* old: was
+   *   caseSeparated caseClause in_
+   * with
+   *   let caseSeparated part in_ =
+   *     separatedToken (Kcase ab) part in_
+   * but for semgrep we also need to handle ellipsis
+  *)
+  (* similar to separatedToken body *)
+  let ts = ref [] in
+  while in_.token =~= (Kcase ab) || in_.token =~= (Ellipsis ab) do
+    (match in_.token with
+     | Kcase ii ->
+         nextToken in_;
+         let x = caseClause ii in_ in
+         ts += x;
+     | Ellipsis ii ->
+         nextToken in_;
+         ts += (CaseEllipsis ii);
+     | _ -> raise Impossible
+    )
+  done;
+  List.rev !ts
 
 (* ------------------------------------------------------------------------- *)
 (* Misc *)
@@ -3292,6 +3311,7 @@ let templateParents in_ : template_parents =
   in
   let (parent, args) = readAppliedParent () in
   let cwith = ref [] in
+  (* less: could use separatedToken (Kwith ab) instead of while *)
   while in_.token =~= (Kwith ab) do
     nextToken in_;
     let (parent, args) = readAppliedParent () in

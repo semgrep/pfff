@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2021 R2C
+ * Copyright (C) 2021-2022 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -237,6 +237,7 @@ and pattern =
   | PatUnderscoreStar of tok (* '_' *) * tok (* '*' *)
 
   | PatDisj of pattern * tok (* | *) * pattern
+  (* semgrep-ext: *)
   | PatEllipsis of tok
 
 (*****************************************************************************)
@@ -299,7 +300,11 @@ and arguments =
 and argument = expr
 
 and case_clauses = case_clause list
-and case_clause = {
+and case_clause =
+  | CC of case_clause_classic
+  (* semgrep-ext: *)
+  | CaseEllipsis of tok
+and case_clause_classic = {
   casetoks: tok (* 'case' *) * tok (* '=>' *);
   casepat: pattern;
   caseguard: guard option;
@@ -341,6 +346,7 @@ and for_header = enumerators bracket
 and enumerators = enumerator list
 and enumerator =
   | G of generator
+  (* semgrep-ext: *)
   | GEllipsis of tok
   (* less: GAssign *)
 
