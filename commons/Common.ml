@@ -1506,40 +1506,6 @@ let erase_this_temp_file f =
 (* Paths *)
 (*****************************************************************************)
 
-(* This module governs a Path structure, which can only produce values which
-   are for normalized paths.
-   These paths are always canonically kept at their absolute forms, in order to
-   maintain a canonicity property. Due to the `Path` constructor being private, we
-   can enforce this invariant at the type level.
-*)
-type path_special = Path of string
-[@@deriving show, eq]
-
-module Path =
-struct
-  type t = path_special [@@deriving show, eq]
-  let of_string s = Path (Unix.realpath s)
-  let to_string (Path s) = s
-  let canonical s = to_string (of_string s)
-
-  let (/) (Path s1) s2 = of_string (Filename.concat s1 s2)
-  let concat = (/)
-
-  let apply ~f (Path s) = f s
-
-  let file_exists (Path s) = Sys.file_exists s
-
-  let cat = apply ~f:cat
-  let read_file ?max_len = apply ~f:(read_file ?max_len)
-  let write_file ~file:(Path s1) = write_file ~file:s1
-  let is_directory = apply ~f:is_directory
-
-  let basename (Path s) = Filename.basename s |> of_string
-  let dirname (Path s) = Filename.dirname s |> of_string
-  let extension (Path s) = Filename.extension s
-end
-
-
 (*###########################################################################*)
 (* Collection-like types other than List *)
 (*###########################################################################*)

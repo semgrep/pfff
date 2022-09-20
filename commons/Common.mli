@@ -142,33 +142,6 @@ val read_file : ?max_len:int -> filename -> string
 
 val is_directory : filename -> bool
 
-
-type path_special = private Path of string [@@deriving show, eq]
-
-module Path :
-sig
-  type t = path_special [@@deriving show, eq]
-  val of_string : string -> t
-  val to_string : t -> string
-  val canonical : string -> string
-
-  val (/) : t -> string -> t
-  val concat : t -> string -> t
-  val apply : f:(string -> 'a) -> t -> 'a
-
-  val cat : t -> string list
-
-  val write_file : file:t -> string -> unit
-
-  val read_file : ?max_len:int -> t -> string
-  val file_exists : t -> bool
-
-  val is_directory : t -> bool
-  val basename : t -> t
-  val dirname : t -> t
-  val extension : t -> string
-end
-
 (* the deriving above will define those functions below, which
  * are needed if one use 'deriving eq, show' on other types
  * using internally 'filename'

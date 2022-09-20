@@ -4,6 +4,9 @@
 
 open Printf
 
+(* ran from _build/default/src/pfff/tests/ hence the '..'s below *)
+let tests_path = "../../../../../tests"
+
 (*
    This only checks the correctness of the results of the map function.
    For a benchmark, we could use and adapt
@@ -127,6 +130,21 @@ let test_read_file () =
     assert (Common.read_file ~max_len file = String.sub data 0 max_len)
   )
 
+let test_path_conversion () =
+  let check_path path =
+    FPath.to_string (FPath.of_string (Filename.concat tests_path path)) = Unix.realpath (Filename.concat tests_path path)
+  in
+  assert (check_path ".");
+  assert (check_path "..");
+  assert (check_path "../..");
+  assert (FPath.to_string (FPath.of_string "/") = Unix.realpath "/");
+  assert (FPath.to_string (FPath.of_string "/tmp") = Unix.realpath "/tmp");
+  assert (FPath.basename (FPath.of_string (Filename.concat tests_path "..")) = "semgrep-core");
+  assert (FPath.basename (FPath.of_string tests_path) = "tests");
+  assert (FPath.basename (FPath.(of_string tests_path / "..")) = "semgrep-core");
+  assert (FPath.to_string (FPath.(of_string "." / "." / ".." / "." / "..")) = Unix.realpath "../..")
+
+
 let tests =
   Testutil.pack_suites "commons" [
     Testutil.pack_suites "common" [
@@ -134,5 +152,6 @@ let tests =
       ["cat", test_cat];
       ["readable", test_readable];
       ["read_file", test_read_file];
+      ["path_conversion", test_path_conversion]
     ]
   ]
