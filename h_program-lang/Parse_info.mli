@@ -51,6 +51,7 @@ and add =
  * It's just a lexeme, but the word lexeme is not as known as token.
 *)
 type t = token_mutable
+[@@deriving eq]
 
 (* deprecated *)
 type info_ = t
