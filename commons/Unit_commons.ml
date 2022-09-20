@@ -4,9 +4,6 @@
 
 open Printf
 
-(* ran from _build/default/src/pfff/tests/ hence the '..'s below *)
-let tests_path = "../../../../../tests"
-
 (*
    This only checks the correctness of the results of the map function.
    For a benchmark, we could use and adapt
@@ -132,7 +129,7 @@ let test_read_file () =
 
 let test_path_conversion () =
   let check_path path =
-    FPath.to_string (FPath.of_string (Filename.concat tests_path path)) = Unix.realpath (Filename.concat tests_path path)
+    FPath.to_string (FPath.of_string path) = Unix.realpath path
   in
   let data = String.make 150 'v' in
   assert (check_path ".");
@@ -149,9 +146,6 @@ let test_path_conversion () =
     assert (FPath.file_exists path);
     assert (not (FPath.is_directory path))
   );
-  assert (FPath.basename (FPath.of_string (Filename.concat tests_path "..")) = "semgrep-core");
-  assert (FPath.basename (FPath.of_string tests_path) = "tests");
-  assert (FPath.basename (FPath.(of_string tests_path / "..")) = "semgrep-core");
   assert (FPath.to_string (FPath.(of_string "." / "." / ".." / "." / "..")) = Unix.realpath "../..")
 
 
