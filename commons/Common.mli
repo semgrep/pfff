@@ -106,6 +106,14 @@ val split : string (* sep regexp *) -> string -> string list
 *)
 type filename = string
 [@@deriving show, eq]
+(* the deriving above will define those functions below, which
+ * are needed if one use 'deriving eq, show' on other types
+ * using internally 'filename'
+ * (e.g., 'type foo = Foo of filename [@@deriving show]')
+ *
+ * val pp_filename: Format.formatter -> filename -> unit
+ * val equal_filename: filename -> filename -> bool
+*)
 
 (* TODO: those are not used very often, maybe we should delete them *)
 type dirname = string
