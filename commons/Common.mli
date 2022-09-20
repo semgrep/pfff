@@ -142,15 +142,6 @@ val read_file : ?max_len:int -> filename -> string
 
 val is_directory : filename -> bool
 
-(* the deriving above will define those functions below, which
- * are needed if one use 'deriving eq, show' on other types
- * using internally 'filename'
- * (e.g., 'type foo = Foo of filename [@@deriving show]')
- *
- * val pp_filename: Format.formatter -> filename -> unit
- * val equal_filename: filename -> filename -> bool
-*)
-
 (* Scheme-inspired combinators that automatically close the file
  * once the function callback is done. Here is an example of use:
  *   with_open_outfile "/tmp/foo.txt" (fun (pr, _chan) ->
