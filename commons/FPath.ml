@@ -1,12 +1,43 @@
+(* Brandon Wu
+ *
+ * Copyright (C) 2022 r2c
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+*)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (* This module governs a path type, which can only produce values which
    are for normalized paths to existent files or directories.
    These paths are always canonically kept at their absolute forms, in order to
    maintain a canonicity property. Due to the `Path` constructor being private, we
    can enforce this invariant at the type level.
+
+   This file was originally called `Path.ml`, but this conflicts with
+   the OCaml compiler libraries.
 *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type path = Path of string [@@deriving show, eq]
 type t = path [@@deriving show, eq]
+
+(*****************************************************************************)
+(* Main functions *)
+(*****************************************************************************)
+
 let of_string s = Path (Unix.realpath s)
 let to_string (Path s) = s
 let canonical s = to_string (of_string s)

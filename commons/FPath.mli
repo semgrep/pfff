@@ -1,5 +1,5 @@
 
-(* This special path type uses private variants:
+(* This path type uses private variants:
    https://v2.ocaml.org/manual/privatetypes.html#ss%3Aprivate-types-variant
 
    A private variant constructor is one which behaves like a regular constructor,
@@ -12,7 +12,7 @@
 
    Importantly, due to this reliance on `Unix.realpath`, this means that all values of this type
    must be valid paths to existent files or directories. You cannot use this for something which
-   does not yet exist.
+   does not yet exist. See some examples of this in `Unit_commons.test_path_conversion()`.
 *)
 type path = private Path of string [@@deriving show, eq]
 type t = path [@@deriving show, eq]
