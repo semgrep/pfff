@@ -140,6 +140,8 @@ val write_file : file:filename -> string -> unit
 *)
 val read_file : ?max_len:int -> filename -> string
 
+val is_directory : filename -> bool
+
 (* Scheme-inspired combinators that automatically close the file
  * once the function callback is done. Here is an example of use:
  *   with_open_outfile "/tmp/foo.txt" (fun (pr, _chan) ->
