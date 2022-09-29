@@ -100,7 +100,7 @@ val filter_maybe_parse_and_fatal_errors: error list -> error list
 val adjust_paths_relative_to_root:
   Common.path -> error list -> error list
 
-val exn_to_error: Common.filename -> Exception.t -> error
+val exception_to_error: Common.filename -> Exception.t -> error
 
 val try_with_exn_to_error : Common.filename -> (unit -> unit) -> unit
 
