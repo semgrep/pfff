@@ -2129,7 +2129,6 @@ and parseFor in_ : stmt =
     then inBraces enumerators in_
     else inParens enumerators in_
   in
-  Common.(pr2 "got the enums tbh");
   newLinesOpt in_;
   let body =
     match in_.token with
@@ -2235,21 +2234,16 @@ and enumerators in_ : enumerators =
     let enums = ref [] in
     let x = enumerator ~isFirst:true in_ in
     enums += x;
-    Common.(pr2 "after an enum");
     while TH.isStatSep in_.token do
-      Common.(pr2 (spf "in loop %s" ([%show: Token_scala.t] in_.token)));
       nextToken in_;
       let x = enumerator ~isFirst:false in_ in
       enums += x;
-      Common.(pr2 "before EOL");
     done;
-    Common.(pr2 (spf "finished with enums before rev %s" ([%show: Token_scala.t] in_.token)));
     List.rev !enums
   )
 
 (* pad: this was duplicated in enumerator and generator in the original code*)
 and guard_loop in_ : guard list =
-  Common.(pr2 (spf "enter guard loop w token %s" ([%show: Token_scala.t ] in_.token)));
   let is_if =
     in_.token =~= Kif ab ||
     lookingAhead (fun in_' ->
@@ -2259,12 +2253,9 @@ and guard_loop in_ : guard list =
         false)
       in_
   in
-  Common.(pr2 (spf "after is if w %s" (if is_if then "true" else "false")));
   if not is_if then []
   else
-    let _ = Common.(pr2 (spf "guardin on %s" ([%show: Token_scala.t] in_.token))) in
     let g = guard in_ in
-    Common.(pr2 (spf "loopin again on %s" ([%show: Token_scala.t] in_.token)));
     let xs = guard_loop in_ in
     (* ast: makeFilter (g)::xs *)
     Option.to_list g @ xs
@@ -2276,7 +2267,6 @@ and enumerator ~isFirst ?(allowNestedIf=true) in_ : enumerator =
         nextToken in_;
         GEllipsis tok
     | _ ->
-        Common.(pr2 (spf "going back to enum %s" ([%show: Token_scala.t] in_.token)));
         let g = generator ~eqOK:(not isFirst) ~allowNestedIf in_ in
         G g
   )
@@ -2287,7 +2277,6 @@ and enumerator ~isFirst ?(allowNestedIf=true) in_ : enumerator =
 *)
 and generator ~eqOK ~allowNestedIf in_ : generator =
   in_ |> with_logging "generator" (fun () ->
-    Common.(pr2 (spf "start of gen with %s" ([%show: Token_scala.t] in_.token)));
     let hasVal = in_.token =~= (Kval ab) in
     if hasVal then nextToken in_;
     let pat = noSeq pattern1 in_ in
@@ -2299,13 +2288,11 @@ and generator ~eqOK ~allowNestedIf in_ : generator =
      else accept (LARROW ab) in_
     );
     let rhs = expr in_ in
-    Common.(pr2 (spf "next token do be %s" ([%show: Token_scala.t] in_.token)));
     let tail =
       if allowNestedIf
       then guard_loop in_
       else []
     in
-    Common.(pr2 "end of generator");
     (* ast: gen.mkGenerator(genPos, pat, hasEq, rhs) :: tail *)
     {genpat = pat; gentok = ieq; genbody = rhs; genguards = tail }
   )
