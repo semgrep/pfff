@@ -1,4 +1,8 @@
-name: CI
+# The goals of this workflow are to check that:
+# - we can build pfff
+# - all our tests are passing
+
+name: test
 
 on:
   pull_request:
@@ -7,28 +11,15 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    # Use our own image with opam dependencies pre-installed to speed
-    # things up.
-    container: returntocorp/ocaml:ubuntu
-
+    # Use our own image with opam dependencies pre-installed to speed things up.
+    container: returntocorp/ocaml:ubuntu-2022-09-24
+    # We need this hack because GHA tampers with the HOME in container
+    # and this does not play well with 'opam' installed in /root
+    env:
+      HOME: /root
     steps:
-    - name: Pre-checkout fixes
-      run: |
-        sudo chmod -R 777 /github
-        github_cache_dir="/__w"
-        sudo mkdir -p "$github_cache_dir"
-        sudo chmod -R 777 "$github_cache_dir"
-        # Need to ensure that we set the current directory to be a safe directory for git.
-        sudo -u user git config --global --add safe.directory "$GITHUB_WORKSPACE"
-    - uses: actions/checkout@v2
-
-    # Move /home/user/.opam to the new HOME imposed by GHA
-    - name: Post-checkout fixes
-      run: ./.github/post-checkout
-
+    - uses: actions/checkout@v3
     - name: Install System Deps
       run: sudo apt update && sudo apt-get install -y --no-install-recommends wget swi-prolog mercurial
     - name: debugging
