@@ -2263,8 +2263,16 @@ and enumerators in_ : enumerators =
 
 (* pad: this was duplicated in enumerator and generator in the original code*)
 and guard_loop in_ : guard list =
-  if not (in_.token =~= (Kif ab))
-  then []
+  let is_if =
+    in_.token =~= Kif ab ||
+    lookingAhead (fun in_' ->
+      if in_'.token =~= Kif ab then
+        (nextToken in_; true)
+      else
+        false)
+      in_
+  in
+  if not is_if then []
   else
     let g = guard in_ in
     let xs = guard_loop in_ in
