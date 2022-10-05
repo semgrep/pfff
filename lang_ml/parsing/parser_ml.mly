@@ -290,6 +290,7 @@ semgrep_pattern:
      { I { i = $1; iattrs = $2 } }
  | ":" core_type                       EOF { T $2 }
  | "|" pattern                         EOF { P $2 }
+ | "|" pattern match_action            EOF { MC ($2, $3) }
  (* partial *)
  | partial EOF { Partial $1 }
 

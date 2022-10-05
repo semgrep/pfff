@@ -412,6 +412,7 @@ type any =
   | T of type_
   | E of expr
   | P of pattern
+  | MC of match_case
 
   | I of item
   | Id of ident
