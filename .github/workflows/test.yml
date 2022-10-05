@@ -33,6 +33,9 @@ jobs:
         opam switch
         pwd
         ls -a
+    #TODO: this does not work! I get an error about git-ls-files, weird
+    # It's not really needed because our docker image is pre-built with
+    # the necessary packages, but still, would be nice to fix it
     #- name: Install pfff
     #  run: opam install -y .
     - name: Run Tests
