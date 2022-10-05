@@ -308,7 +308,7 @@ and type_def_kind =
 
 and constructor_decl = ident * constructor_decl_kind
 
-(* TODO: GADT : ..., Alias, inline record def, etc. *)
+(* TODO: GADT : ..., Alias, InlineRecord def, etc. *)
 and constructor_decl_kind =
   (* of ... *)
   type_ list

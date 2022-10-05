@@ -318,7 +318,7 @@ let filter_maybe_parse_and_fatal_errors errs =
     | _ -> false
   )
 
-let exn_to_error file e =
+let exception_to_error file e =
   match Exception.get_exn e with
   | Parse_info.Lexical_error (s, tok) ->
       mk_error tok (LexicalError s)
@@ -354,14 +354,14 @@ let try_with_exn_to_error file f =
   try f ()
   with exn ->
     let e = Exception.catch exn in
-    Common.push (exn_to_error file e) g_errors
+    Common.push (exception_to_error file e) g_errors
 
 let try_with_print_exn_and_reraise file f =
   try
     f ()
   with exn ->
     let e = Exception.catch exn in
-    let err = exn_to_error file e in
+    let err = exception_to_error file e in
     pr2 (string_of_error err);
     Exception.reraise e
 

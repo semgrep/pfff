@@ -92,7 +92,7 @@ type token_origin =
    * polluate in debug mode.
   *)
   | Ab
-[@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false}, eq ] (* with tarzan *)
 
 type token_mutable = {
   (* contains among other things the position of the token through
@@ -116,7 +116,7 @@ and add =
   | AddStr of string
   | AddNewlineAndIdent
 
-[@@deriving show { with_path = false} ] (* with tarzan *)
+[@@deriving show { with_path = false}, eq ] (* with tarzan *)
 
 exception NoTokenLocation of string
 
@@ -200,6 +200,7 @@ and esthet =
 
 (* shortcut *)
 type t = token_mutable
+[@@deriving eq]
 type info_ = t
 
 
@@ -717,6 +718,21 @@ let adjust_pinfo_wrt_base base_loc loc =
       else
         loc.column;
     file    = base_loc.file; }
+
+(* Token locations are supposed to denote the beginning of a token.
+   Suppose we are interested in instead having line, column, and charpos of
+   the end of a token instead.
+   This is something we can do at relatively low cost by going through and inspecting
+   the contents of the token, plus the start information.
+*)
+let get_token_end_info loc =
+  let line, col =
+    String.fold_left (fun (line, col) c ->
+      match c with
+      | '\n' -> (line + 1, 0)
+      | _ -> (line, col + 1)
+    ) (loc.line, loc.column) loc.str in
+  line, col, loc.charpos + String.length loc.str
 
 let fix_token_location fix ii =
   { ii with token =

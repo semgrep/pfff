@@ -301,7 +301,7 @@ signature_or_structure_common:
      { Type ($1, $2) }
  | Texternal val_ident ":" core_type "=" primitive_declaration
      { External ($1, $2, $4, $6) }
- | Texception TUpperIdent constructor_arguments
+ | Texception TUpperIdent generalized_constructor_arguments
      { Exception ($1, $2, $3) }
  | Topen "!"? mod_longident
      { Open ($1, $3) }
@@ -761,10 +761,12 @@ pattern:
  (* nested patterns *)
  | pattern "|" pattern                            { PatDisj ($1, $3) }
 
+ (* extensions *)
+
  (* name tag extension *)
  | name_tag pattern %prec prec_constr_appl
     { PatPolyVariant ($1, Some $2) }
-
+ | Tlazy simple_pattern { PatTodo(("Lazy", $1), [$2]) }
 
 
 simple_pattern:
@@ -868,11 +870,16 @@ type_kind:
       { Some ($1, RecordType ($3, ($4), $5)) }
 
 
-constructor_declaration: constr_ident constructor_arguments  { $1, $2 }
+constructor_declaration: constr_ident generalized_constructor_arguments
+  { $1, $2 }
+
+generalized_constructor_arguments:
+ | (*empty*)                                { [] }
+ | Tof constructor_arguments      { $2 }
 
 constructor_arguments:
- | (*empty*)                                { [] }
- | Tof list_sep(simple_core_type, "*")      { $2 }
+ | list_sep(simple_core_type, "*") { $1 }
+ | "{" label_declarations "}" { [ TyTodo(("InlineRecord", $1), []) ] }
 
 type_parameters:
  |  (*empty*)                          { []  }
