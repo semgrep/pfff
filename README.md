@@ -20,12 +20,7 @@ more documentation on how to use or extend pfff.
 
 pfff is also made of few tools:
  - `pfff`, which allows to test the different parsers on a single file
- - `scheck`, a bug finder
  - `stags`, an Emacs tag generator
- - `sgrep`, a syntactical grep
- - `spatch`, a syntactical patch
- - `codequery`, an interactive tool a la SQL to query information
-   about the structure of a codebase using Prolog as the query engine
  - `pfff_db`, which does some global analysis on a set of source files and
    store the data in a marshalled form in a file somewhere (e.g. `/tmp/db.json`)
 
@@ -37,6 +32,9 @@ A few pfff-related tools are now in their own repositories:
  - `codegraph_build`, a source code indexer
  - `codegraph`, a package/module/class dependency visualizer leveraging
    the information computed previously by `codegraph_build`
+ - `codequery`, an interactive tool a la SQL to query information
+   about the structure of a codebase using Prolog as the query engine
+ - `scheck`, a bug finder
 
 For more information, look at the pfff wiki here:
  http://github.com/returntocorp/pfff/wiki/Main
