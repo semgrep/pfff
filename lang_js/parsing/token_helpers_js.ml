@@ -128,6 +128,7 @@ let visitor_info_of_tok f = function
   | T_PLUS_ASSIGN ii -> T_PLUS_ASSIGN (f ii)
   | T_ASSIGN ii -> T_ASSIGN (f ii)
   | T_PLING ii -> T_PLING (f ii)
+  | T_QUESTDOT ii -> T_QUESTDOT (f ii)
   | T_COLON ii -> T_COLON (f ii)
   | T_OR ii -> T_OR (f ii)
   | T_AND ii -> T_AND (f ii)

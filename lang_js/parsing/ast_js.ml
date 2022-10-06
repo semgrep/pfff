@@ -213,7 +213,7 @@ and expr =
   (* ident is None when assigned in module.exports  *)
   | Class of class_definition * a_ident option
 
-  | ObjAccess of expr * tok * property_name
+  | ObjAccess of expr * tok * (* is optional `?.` *) bool * property_name
   (* this can also be used to access object fields dynamically *)
   | ArrAccess of expr * expr bracket
 

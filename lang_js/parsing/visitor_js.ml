@@ -175,8 +175,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let t = v_tok t in
           ()
       | Class (v1, v2) -> let v1 = v_class_definition v1 in let v2 = v_option v_name v2 in ()
-      | ObjAccess (v1, t, v2) ->
-          let v1 = v_expr v1 and v2 = v_property_name v2 in
+      | ObjAccess (v1, t, b, v2) ->
+          let v1 = v_expr v1 and v2 = v_property_name v2 and b = v_bool b in
           let t = v_tok t in
           ()
       | Fun (v1, v2) -> let v1 = v_function_definition v1 and v2 = v_option v_name v2 in ()
