@@ -324,35 +324,6 @@ let type_of_string s =
   in
   let ty = Parser_js.type_for_lsif lexer lexbuf in
   ty
-(*let type_of_string s =
-  Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
-    let toks = tokens file in
-    let toks = Parsing_hacks_js.fix_tokens toks in
-    let toks = Parsing_hacks_js.fix_tokens_ASI toks in
-
-    let tr, lexer, lexbuf_fake = PI.mk_lexer_for_yacc toks TH.is_comment in
-    let last_charpos_error = ref 0 in
-
-    let rec parse_type tr =
-      try
-        Parser_js.type_for_lsif lexer lexbuf_fake
-
-      with Parsing.Parse_error ->
-        let cur = tr.PI.current in
-        let info = TH.info_of_tok cur in
-        let charpos = Parse_info.pos_of_info info in
-        (* try Automatic Semicolon Insertion *)
-        (match asi_opportunity charpos last_charpos_error cur tr with
-          | None -> raise Parsing.Parse_error
-          | Some (passed_before, passed_offending, passed_after) ->
-              asi_insert charpos last_charpos_error tr
-                (passed_before, passed_offending, passed_after);
-              parse_type tr
-        )
-    in
-    parse_type tr
-  )
-*)
 
 (* for sgrep/spatch *)
 let any_of_string s =
