@@ -327,7 +327,7 @@ let mk_Encaps opt (t1, xs, _t2) =
 (* for lang_json/ *)
 %start <Ast_js.expr> json
 %start <Ast_js.any> json_pattern
-%start <Ast_js.type_> type_for_lsif 
+%start <Ast_js.type_> type_for_lsif
 
 (* just for better type error *)
 %type <Ast_js.stmt list> stmt item module_item
