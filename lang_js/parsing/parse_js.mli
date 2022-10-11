@@ -19,6 +19,10 @@ val parse_string :
 val any_of_string:
   string -> Ast_js.any
 
+(* for lsif *)
+val type_of_string:
+  string -> Ast_js.type_
+
 (* to help write test code *)
 val program_of_string: string -> Ast_js.a_program
 
