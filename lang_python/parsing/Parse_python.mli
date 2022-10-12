@@ -25,6 +25,10 @@ val parse_program:
 val any_of_string:
   ?parsing_mode:parsing_mode -> string -> AST_python.any
 
+(* for lsif *)
+val type_of_string:
+  ?parsing_mode:parsing_mode -> string -> AST_python.type_
+
 (* for sgrep via fuzzy AST *)
 (*
 val parse_fuzzy:

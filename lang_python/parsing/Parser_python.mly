@@ -193,6 +193,7 @@ let mk_str ii =
 (*************************************************************************)
 %start <AST_python.program> main
 %start <AST_python.any> sgrep_spatch_pattern
+%start <AST_python.type_> type_for_lsif
 %%
 
 (*************************************************************************)
@@ -758,6 +759,9 @@ atom_and_trailers:
   (* sgrep-ext: *)
   | atom_and_trailers "." "..."
     { Flag_parsing.sgrep_guard (DotAccessEllipsis ($1, $3)) }
+
+type_for_lsif:
+  | expr EOF { $1 }
 
 (*----------------------------*)
 (* Atom *)

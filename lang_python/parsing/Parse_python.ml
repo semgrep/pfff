@@ -182,6 +182,19 @@ let (program_of_string: string -> AST_python.program) = fun s ->
     parse_program file
   )
 
+let type_of_string ?(parsing_mode=Python) s =
+  let lexbuf = Lexing.from_string s in
+  let is_python2 = parsing_mode = Python2 in
+  let state = Lexer.create () in
+  let rec lexer  lexbuf =
+    let res = Lexer_python.token is_python2 state lexbuf in
+    if TH.is_comment res
+    then lexer lexbuf
+    else res
+  in
+  let ty = Parser_python.type_for_lsif lexer lexbuf in
+  ty
+
 (* for sgrep/spatch *)
 let any_of_string ?(parsing_mode=Python) s =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
