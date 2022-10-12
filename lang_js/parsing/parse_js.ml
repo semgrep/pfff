@@ -314,6 +314,17 @@ let (program_of_string: string -> Ast_js.a_program) = fun s ->
     parse_program file
   )
 
+let type_of_string s =
+  let lexbuf = Lexing.from_string s in
+  let rec lexer lexbuf =
+    let res = Lexer_js.initial lexbuf in
+    if TH.is_comment res
+    then lexer lexbuf
+    else res
+  in
+  let ty = Parser_js.type_for_lsif lexer lexbuf in
+  ty
+
 (* for sgrep/spatch *)
 let any_of_string s =
   Common.save_excursion Flag_parsing.sgrep_mode true (fun () ->
