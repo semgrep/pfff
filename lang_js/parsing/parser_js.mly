@@ -1334,7 +1334,7 @@ call_expr(x):
  | member_expr(x) arguments          { Apply ($1, $2) }
  | call_expr(x) arguments            { Apply ($1, $2) }
  | call_expr(x) "[" expr "]"         { ArrAccess ($1, ($2, $3,$4))}
- | call_expr(x) access method_name      { ObjAccess ($1, fst $2, snd $2, PN $3) }
+ | call_expr(x) access method_name      { ObjAccess ($1, $2, PN $3) }
  (* es6: *)
  | call_expr(x) template_literal     { mk_Encaps (Some $1) $2 }
  | T_SUPER arguments                 { Apply (mk_Super($1), $2) }
@@ -1354,18 +1354,18 @@ new_expr(x):
  | T_NEW new_expr(d1) { New ($1, $2, fb $1 []) }
 
 access:
-  | "." { $1, false }
-  | T_QUESTDOT { $1, true }
+  | "." { Dot, $1 }
+  | T_QUESTDOT { QuestDot, $1 }
 
 member_expr(x):
  | primary_expr(x)                   { $1 }
  | member_expr(x) "[" expr "]"       { ArrAccess($1, ($2, $3, $4)) }
- | member_expr(x) access field_name  { ObjAccess($1, fst $2, snd $2, PN $3) }
+ | member_expr(x) access field_name  { ObjAccess($1, $2, PN $3) }
  | T_NEW member_expr(d1) arguments   { New ($1, $2, $3) }
  (* es6: *)
  | member_expr(x) template_literal   { mk_Encaps (Some $1) $2 }
  | T_SUPER "[" expr "]"              { ArrAccess(mk_Super($1),($2,$3,$4))}
- | T_SUPER access field_name            { ObjAccess(mk_Super($1), fst $2, snd $2, PN $3) }
+ | T_SUPER access field_name            { ObjAccess(mk_Super($1), $2, PN $3) }
  | T_NEW "." id {
      if fst $3 = "target"
      then special NewTarget $1 []

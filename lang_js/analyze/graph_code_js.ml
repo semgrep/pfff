@@ -546,7 +546,7 @@ and expr env e =
             add_locals env [v]
       in
       class_ env c
-  | ObjAccess (e, _, _, prop) ->
+  | ObjAccess (e, _, prop) ->
       (match e with
        | Id (n (*, scope*)) when not (is_local env n) ->
            add_use_edge_candidates env (n, E.Class) (*scope*)
