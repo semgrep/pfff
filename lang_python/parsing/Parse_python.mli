@@ -27,7 +27,7 @@ val any_of_string:
 
 (* for lsif *)
 val type_of_string:
-  ?parsing_mode:parsing_mode -> string -> AST_python.type_
+  ?parsing_mode:parsing_mode -> string -> AST_python.lsif_type
 
 (* for sgrep via fuzzy AST *)
 (*

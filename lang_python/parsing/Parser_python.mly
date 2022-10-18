@@ -193,7 +193,7 @@ let mk_str ii =
 (*************************************************************************)
 %start <AST_python.program> main
 %start <AST_python.any> sgrep_spatch_pattern
-%start <AST_python.type_> type_for_lsif
+%start <AST_python.lsif_type> type_for_lsif
 %%
 
 (*************************************************************************)
@@ -761,7 +761,11 @@ atom_and_trailers:
     { Flag_parsing.sgrep_guard (DotAccessEllipsis ($1, $3)) }
 
 type_for_lsif:
-  | expr EOF { $1 }
+  | expr EOF { Type $1 }
+  (* This introduces some shift-reduce conflicts. But, it should be a relatively
+     unimportant warning, as this doesn't affect normal Python parsing.
+   *)
+  | parameters SUB GT expr EOF { Arrow ($1, $4) }
 
 (*----------------------------*)
 (* Atom *)

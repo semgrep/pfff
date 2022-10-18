@@ -319,6 +319,8 @@ and param_pattern =
 *)
 and type_ = expr
 
+and lsif_type = Type of type_ | Arrow of parameters * type_
+
 (* used in inheritance, to allow default value for metaclass *)
 and type_parent = argument
 
