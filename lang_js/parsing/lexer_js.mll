@@ -301,6 +301,7 @@ rule initial = parse
   | "," { T_COMMA (tokinfo lexbuf) }
   | ":" { T_COLON (tokinfo lexbuf) }
   | "?" { T_PLING (tokinfo lexbuf) }
+  | "?." { T_QUESTDOT (tokinfo lexbuf) }
   | "&&" { T_AND (tokinfo lexbuf) } | "||" { T_OR (tokinfo lexbuf) }
   | "===" { T_STRICT_EQUAL (tokinfo lexbuf) }
   | "!==" { T_STRICT_NOT_EQUAL (tokinfo lexbuf) }
