@@ -766,8 +766,8 @@ type_for_lsif:
      unimportant warning, as this doesn't affect normal Python parsing.
 
      We need this because our normal Python type parser does not understand function
-     types. However, the output from the LSIF hover info might have these function
-     types. So we need to be able to interpret it.
+     types. However, `semgrep-proprietary` needs to use it to parse type hover info,
+     which may contain function types. So we need to be able to interpret it.
    *)
   | parameters SUB GT expr EOF { Arrow ($1, $4) }
 
