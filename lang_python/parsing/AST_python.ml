@@ -319,6 +319,10 @@ and param_pattern =
 *)
 and type_ = expr
 
+(* This is purely for LSIF type parsing, which is needed since Python types
+   do not natively have arrows in them.
+   So we expose this type to get that data out in the LSIF type parsing.
+*)
 and lsif_type = Type of type_ | Arrow of parameters * type_
 
 (* used in inheritance, to allow default value for metaclass *)
