@@ -319,6 +319,13 @@ and param_pattern =
 *)
 and type_ = expr
 
+(* This is exposed for `semgrep-proprietary`, which uses this to parse
+   type hover information from the Language Server Index Format (https://lsif.dev/).
+   Python types do not natively have arrows in them, so we must expose this type to
+   get that data out.
+*)
+and lsif_type = Type of type_ | Arrow of parameters * type_
+
 (* used in inheritance, to allow default value for metaclass *)
 and type_parent = argument
 
