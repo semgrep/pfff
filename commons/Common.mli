@@ -119,6 +119,13 @@ type filename = string
 type dirname = string
 type path = string
 
+(* Inputs a line of text in a platform-agnostic way. Should be preferred over
+   `input_line`, especially when dealing with Windows.
+   More info can be found in `Common.ml`.
+   This in-channel should be opened in binary mode.
+*)
+val input_text_line : in_channel -> string
+
 (*
    Return the lines of a file. Both Windows-style and Unix-style line endings
    are recognized and removed from the end of the line.
