@@ -1089,6 +1089,8 @@ member_expr:
  | member_expr "->" primary_expr {  ObjGet($1, $2, $3) }
  | member_expr "->" "{" expr "}"
      { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
+ | member_expr "->" "..."
+    { Flag_parsing.sgrep_guard (ObjGet($1, $2, Ellipsis $3)) }
  | member_expr "::" primary_expr { ClassGet($1, $2, $3) }
  (* conflicts: special rule to avoid conflicts in primary_expr *)
  | member_expr "::" keyword_as_ident_for_field
