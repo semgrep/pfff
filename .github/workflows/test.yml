@@ -38,5 +38,7 @@ jobs:
     # the necessary packages, but still, would be nice to fix it
     #- name: Install pfff
     #  run: opam install -y .
+    - name: Install OCaml deps
+      run: opam install stdcompat
     - name: Run Tests
       run: eval $(opam env); dune build && dune runtest -f
