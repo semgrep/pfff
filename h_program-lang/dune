@@ -3,6 +3,7 @@
  (name pfff_h_program_lang)
  (wrapped false)
  (libraries
+   stdcompat
    yojson uucp uutf alcotest
 
    commons

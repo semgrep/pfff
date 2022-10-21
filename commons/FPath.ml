@@ -38,7 +38,10 @@ type t = path [@@deriving show, eq]
 (* Main functions *)
 (*****************************************************************************)
 
-let of_string s = Path (Unix.realpath s)
+(* TODO: we should use Unix.realpath but it's available only in 4.13
+ * and there is no unixcompat like we have stdcompat.
+*)
+let of_string s = Path (Common.fullpath s)
 let to_string (Path s) = s
 let canonical s = to_string (of_string s)
 

@@ -727,7 +727,7 @@ let adjust_pinfo_wrt_base base_loc loc =
 *)
 let get_token_end_info loc =
   let line, col =
-    String.fold_left (fun (line, col) c ->
+    Stdcompat.String.fold_left (fun (line, col) c ->
       match c with
       | '\n' -> (line + 1, 0)
       | _ -> (line, col + 1)
