@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "pfff"
-version: "0.42.1"
+version: "0.118.0"
 synopsis: "Tools and APIs for program analysis, code visualization, refactoring"
 description: """
 pfff is a set of tools and APIs to perform some static analysis,
@@ -30,7 +30,8 @@ install: [
   ["dune" "install"]
 ]
 depends: [
-  "ocaml" {>= "4.07.0"}
+  "ocaml" {>= "4.12.0"}
+  "stdcompat"
   "dune"
   "ocamlgraph"
   "yojson"
