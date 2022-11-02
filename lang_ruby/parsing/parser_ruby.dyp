@@ -488,7 +488,7 @@ primary:
   | T_USCOPE<pos> variable<id>       { ScopedId(TopScope(pos, id)) }
 
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_list_trail<xs> eols T_RBRACK<t2>
-     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t2))) (fb xs) None }
+     { M.methodcall (DotAccess(p,(t1), MethodOperator(Op_AREF,t1))) (t1, xs, t2) None }
 
   | lambda { $1 }
 
