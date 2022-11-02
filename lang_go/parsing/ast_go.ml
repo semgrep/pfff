@@ -69,8 +69,10 @@ type qualified_ident = ident list (* 1 or 2 elements *)
 type type_ =
   | TName of qualified_ident (* includes the basic types: bool/int/... *)
   | TPtr of tok * type_
-  (* generics: generalize TArray and TMap to any types *)
-  | TGeneric of ident * type_arguments
+  (* generics: generalize TArray and TMap to any types.
+   * alt: we could merge it with TName
+  *)
+  | TGeneric of qualified_ident * type_arguments
 
   (* old: a TArray (None) was called a TSlice before *)
   | TArray of expr option bracket * type_
