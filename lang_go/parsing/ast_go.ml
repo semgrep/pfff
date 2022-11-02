@@ -115,14 +115,17 @@ and struct_field_kind =
 and tag = string wrap
 
 and interface_field =
+  (* "basic" interfaces, a simple list of methods *)
   | Method of ident * func_type
+  (* "embedded" interfaces *)
   | EmbeddedInterface of qualified_ident
-  (* generics: *)
+  (* "general" interfaces *)
   | Constraints of constraint_ list (* at least one element *)
   (* sgrep-ext: *)
   | FieldEllipsis2 of tok
 
-and constraint_ = tok option (* ~ *) * ident
+(* the 'type_' below can't be an interface itself and can't be a type param *)
+and constraint_ = tok option (* '~', "underlying" type *) * type_
 
 and expr_or_type = (expr, type_) Common.either
 
