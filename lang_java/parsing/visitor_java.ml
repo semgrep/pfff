@@ -79,6 +79,56 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and v_incr_decr _x = ()
 
+  and v_soql_value_expr = function
+    | FieldId x -> v_qualified_ident x
+
+  and v_soql_selectable_expr = function
+    | ValueExpr x -> v_soql_value_expr x
+
+  and v_soql_select_expr = function
+    | SelExpr xs -> v_list v_soql_selectable_expr xs
+    | SelCount (t1, t2) ->
+        v_tok t1;
+        v_tok t2
+
+  and v_soql_storage { stor_id; stor_as } =
+    v_qualified_ident stor_id;
+    v_option v_ident stor_as
+
+  and v_soql_literal = function
+    | QInt x -> v_wrap v_id x
+    | QDecimal x -> v_wrap v_id x
+    | QString x -> v_wrap v_string x
+    | QDate x -> v_wrap v_id x
+    | QDateTime x -> v_wrap v_id x
+    | QBool x -> v_wrap v_bool x
+
+  and v_soql_value_comparison = function
+    | SoqlLiteral x -> v_soql_literal x
+    | BoundApexExpr (t, x) ->
+        v_tok t;
+        v_expr x
+
+  and v_soql_comparison = function
+    | CompVal (v1, v2) ->
+        v_wrap v_arith_op v1;
+        v_soql_value_comparison v2
+
+  and v_soql_cond_expr = function
+    | And xs -> v_list v_soql_cond_expr xs
+    | Or xs -> v_list v_soql_cond_expr xs
+    | Not (t, x) ->
+        v_tok t;
+        v_soql_cond_expr x
+    | CompExpr (v1, v2) ->
+        v_soql_value_expr v1;
+        v_soql_comparison v2
+
+  and v_soql_query { select; from; where } =
+    v_soql_select_expr select;
+    v_soql_storage from;
+    v_option v_soql_cond_expr where
+
   and v_modifiers xs = v_list (v_wrap v_modifier) xs
 
   and v_modifier = function
@@ -256,6 +306,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let v1 = v_parameters v1 in
           v_tok t;
           let v2 = v_stmt v2 in
+          ()
+      | SoqlQuery (t1, x, t2) ->
+          v_tok t1;
+          let x = v_soql_query x in
+          v_tok t2;
           ()
     in
     vin.kexpr (k, all_functions) x

@@ -12,6 +12,7 @@
  * license.txt for more details.
  *
  * Extended by Yoann Padioleau to support more recent versions of Java.
+ * Extended by Martin Jambon to support Apex.
  * Copyright (C) 2011 Facebook
  * Copyright (C) 2020 r2c
 *)
@@ -19,7 +20,7 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* An AST for Java.
+(* An AST for Java and Apex.
  *
  * For Java we directly do an AST, as opposed to a CST (Concrete
  * Syntax Tree) as in lang_php/. This should be enough for higlight_java.ml
@@ -101,11 +102,104 @@ type type_parameter =
 
 [@@deriving show { with_path = false }] (* with tarzan *)
 
+(*****************************************************************************)
+(* SOQL queries: SQL-like expressions embedded in Apex *)
+(*****************************************************************************)
+(*
+   SOQL expressions can embed regular Apex expressions.
+*)
+
+type soql_value_expr =
+(*
+  | FuncExpr of function_expr
+*)
+  | FieldId of qualified_ident
+[@@deriving show { with_path = false }] (* with tarzan *)
+
+type soql_selectable_expr =
+  | ValueExpr of soql_value_expr
+  (* incomplete *)
+[@@deriving show { with_path = false }] (* with tarzan *)
+
+type soql_select_expr =
+  | SelExpr of soql_selectable_expr list
+  | SelCount of tok (* count( *) * tok (* ) *)
+[@@deriving show { with_path = false }] (* with tarzan *)
+
+type soql_storage = {
+  stor_id: qualified_ident;
+  stor_as: ident option;
+}
+[@@deriving show { with_path = false }] (* with tarzan *)
+
+type soql_literal =
+  | QInt of int wrap
+  | QDecimal of string wrap
+  | QString of string wrap
+  | QDate of string wrap
+  | QDateTime of string wrap
+  | QBool of bool wrap
+  (* incomplete *)
+[@@deriving show { with_path = false }] (* with tarzan *)
+
+type soql_value_comparison =
+  | SoqlLiteral of soql_literal
+  | BoundApexExpr of tok (* : *) * expr
+
+(*
+   value_comparison_operator: ($) =>
+     choice("=", "!=", "<>", "<", "<=", ">", ">=", ci("LIKE")),
+   set_comparison_operator: ($) =>
+     choice(ci("IN"), seq(ci("NOT IN")), ci("INCLUDES"), ci("EXCLUDES")),
+*)
+and soql_comparison =
+  | CompVal of AST_generic_.operator wrap * soql_value_comparison
+(*
+  | CompSet of soql_set_comparison_operator * soql_set_comparison
+*)
+
+and soql_cond_expr =
+  | And of soql_cond_expr list (* non-empty list *)
+  | Or of soql_cond_expr list (* non-empty list *)
+  | Not of tok (* not *) * soql_cond_expr
+  | CompExpr of soql_value_expr * soql_comparison
+
+(*
+   $.select_clause,
+   $.from_clause,
+   optional(alias($.soql_using_clause, $.using_clause)),
+   optional($.where_clause),
+   optional(alias($.soql_with_clause, $.with_clause)),
+   optional($.group_by_clause),
+   optional($.order_by_clause),
+   optional($.limit_clause),
+   optional($.offset_clause),
+   optional($.for_clause),
+   optional($.update_clause),
+*)
+and soql_query = {
+  select: soql_select_expr;
+  from: soql_storage;
+(*
+  using: option;
+*)
+  where: soql_cond_expr option;
+(*
+  with_: option;
+  group_by: option;
+  order_by: option;
+  limit: option;
+  offset: option;
+  for_: option;
+  update: option;
+*)
+}
+
 (* ------------------------------------------------------------------------- *)
 (* Modifier *)
 (* ------------------------------------------------------------------------- *)
 (* TODO: do as in AST_generic and have attribute = KeywordAttr | Annot of ...*)
-type modifier =
+and modifier =
   | Public | Protected | Private
   | Abstract | Final
   | Static
@@ -239,6 +333,9 @@ and expr =
 
   (* javaext: 1.? *)
   | Lambda of parameters * tok (* -> *) * stmt
+
+  (* Apex SOQL *)
+  | SoqlQuery of tok (* [ *) * soql_query * tok (* ] *)
 
   (* sgrep-ext: *)
   | Ellipsis of tok

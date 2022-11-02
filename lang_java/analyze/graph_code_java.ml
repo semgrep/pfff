@@ -806,8 +806,14 @@ and expr env = function
       typ env (tref);
   | Ellipsis _ | DeepEllipsis _ | ObjAccessEllipsis _ -> ()
   | Lambda (_params, _t, _st) -> raise Todo (* imitate method_decl code *)
-  | MethodRef _ -> raise Todo
+  | SoqlQuery (_t1, { select; from; where }, _t2) ->
+      ignore select;
+      ignore from;
+      (match where with
+       | None -> ()
+       | Some x -> soql_cond_expr env x)
 
+  | MethodRef _ -> raise Todo
 
 and exprs env xs = List.iter (expr env) xs
 and init env = function
@@ -817,6 +823,17 @@ and init_opt env opt =
   match opt with
   | None -> ()
   | Some ini -> init env ini
+
+and soql_cond_expr env = function
+  | And xs
+  | Or xs -> List.iter (soql_cond_expr env) xs
+  | Not (_t, x) -> soql_cond_expr env x
+  | CompExpr (_soql_value_expr, soql_comparison) ->
+      (match soql_comparison with
+       | CompVal (_op, x) ->
+           (match x with
+            | SoqlLiteral _ -> ()
+            | BoundApexExpr (_t, e) -> expr env e))
 
 (* ---------------------------------------------------------------------- *)
 (* Types *)
