@@ -706,8 +706,8 @@ array_body_rest:
 array_item:
   | arg<e> { e }
   | constant<c> T_LBRACK<t1> eols call_args<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t2))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
-                     (fb xs) None }
+      { M.methodcall (DotAccess(c, (t1), MethodOperator(Op_AREF,t1))) (* TODO: Wrong pos Binop, and probably all the following Binop in this file *)
+                     (t1, xs, t2) None }
 
 
 hash: T_LBRACE eols hash_elem_list eols T_RBRACE { Hash(true, ($1, $3, $5)) }
@@ -860,7 +860,7 @@ lhs:
   | K_TRUE            { Literal(Bool (true,$1)) }
   | K_FALSE           { Literal(Bool (false,$1)) }
   | primary<p> T_LBRACK_ARG<t1> eols arg_comma_star_list<xs> eols T_RBRACK<t2>
-      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t2))) (fb xs) None}
+      { M.methodcall (DotAccess(p,(t1),MethodOperator(Op_AREF,t1))) (t1, xs, t2) None}
   | primary<p> T_DOT<t> eols message_identifier<m>
       { M.methodcall (DotAccess(p,(t), (m))) (fb []) None}
 
