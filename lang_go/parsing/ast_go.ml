@@ -69,8 +69,10 @@ type qualified_ident = ident list (* 1 or 2 elements *)
 type type_ =
   | TName of qualified_ident (* includes the basic types: bool/int/... *)
   | TPtr of tok * type_
-  (* generics: generalize TArray and TMap to any types *)
-  | TGeneric of ident * type_arguments
+  (* generics: generalize TArray and TMap to any types.
+   * alt: we could merge it with TName
+  *)
+  | TGeneric of qualified_ident * type_arguments
 
   (* old: a TArray (None) was called a TSlice before *)
   | TArray of expr option bracket * type_
@@ -113,14 +115,17 @@ and struct_field_kind =
 and tag = string wrap
 
 and interface_field =
+  (* "basic" interfaces, a simple list of methods *)
   | Method of ident * func_type
+  (* "embedded" interfaces *)
   | EmbeddedInterface of qualified_ident
-  (* generics: *)
+  (* "general" interfaces *)
   | Constraints of constraint_ list (* at least one element *)
   (* sgrep-ext: *)
   | FieldEllipsis2 of tok
 
-and constraint_ = tok option (* ~ *) * ident
+(* the 'type_' below can't be an interface itself and can't be a type param *)
+and constraint_ = tok option (* '~', "underlying" type *) * type_
 
 and expr_or_type = (expr, type_) Common.either
 

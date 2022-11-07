@@ -567,7 +567,9 @@ export_decl:
  | T_EXPORT variable_stmt
     { vars_to_stmts $2 (*$1, ExportDecl (St $2)*) }
  | T_EXPORT decl
-    { $2 |> List.map (fun v -> DefStmt v) (*$1, ExportDecl $2*) }
+    { $2 |> List.concat_map (fun (ent, defkind) ->
+        [DefStmt (ent, defkind); M (Export ($1, ent.name))]
+      ) }
  (* in theory just func/gen/class, no lexical_decl *)
  | T_EXPORT T_DEFAULT decl
     { $3 |> List.map (fun v -> DefStmt v) (* $1, ExportDefaultDecl ($2, $3) *) }
