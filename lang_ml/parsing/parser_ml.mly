@@ -60,7 +60,6 @@ let seq1 = function
 
 let topseqexpr v1 = mki (TopExpr (seq1 v1))
 
-
 %}
 (*************************************************************************)
 (* Tokens *)
@@ -507,8 +506,6 @@ expr:
  | simple_expr labeled_simple_expr+          { Call ($1, $2) }
 
  | Tlet Trec? list_and(let_binding) Tin seq_expr  { LetIn ($1,$2,$3,seq1 $5)}
- (* TODO: very partial support for monadic let *)
- | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, None, $2,seq1 $4)}
 
  | Tfun labeled_simple_pattern fun_def
      { let (params, (_tok, e)) = $3 in
@@ -584,15 +581,23 @@ expr:
  (* bigarray extension, a.{i} <- v *)
  | simple_expr "." "{" expr "}" "<-" expr
      { ExprTodo (("BigArray",$2), [$1;$4;$7]) }
+
  (* local open *)
  | Tlet Topen mod_longident Tin seq_expr
      { ExprTodo (("LocalOpen",$1), $5) }
+ | Tlet Tmodule TUpperIdent module_binding Tin seq_expr
+     { ExprTodo (("LocalModule", $1), $6) }
+
+ (* TODO: very partial support for monadic let *)
+ | LETOP list_and(let_binding) Tin seq_expr { LetIn (snd $1, None, $2,seq1 $4)}
+
  | Tassert simple_expr
      { ExprTodo (("Assert",$1), [$2]) }
  | name_tag simple_expr
      { PolyVariant ($1, Some $2) }
  | Tlazy simple_expr
      { ExprTodo (("Lazy",$1), [$2]) }
+
   (* objects *)
  | label "<-" expr
      { ExprTodo (("ObjUpdate",$2), [$3]) }
@@ -902,6 +907,18 @@ label_declaration: Tmutable? label ":" poly_type attribute*
 (* Types expressions *)
 (*----------------------------*)
 
+(* from the 4.10 grammar:
+   Atomic types are the most basic level in the syntax of types.
+   Atomic types include:
+   - types between parentheses:           (int -> int)
+   - first-class module types:            (module S)
+   - type variables:                      'a
+   - applications of type constructors:   int, int list, int option list
+   - variant types:                       [`A]
+  TODO: used only in fun_def for now, but should be used at more places
+ *)
+atomic_type: simple_core_type_or_tuple { $1 }
+
 core_type:
  | simple_core_type_or_tuple
      { $1 }
@@ -1021,6 +1038,8 @@ strict_binding:
 
 fun_def:
  | "->" expr                       { [], ($1, $2) }
+ (* TODOAST: $2 *)
+ | ":" atomic_type "->" expr       { [], ($3, $4) }
  | labeled_simple_pattern fun_def  { let (args, body) = $2 in $1::args, body }
 
 
