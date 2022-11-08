@@ -3203,7 +3203,7 @@ let (readdir_to_kind_list: string -> Unix.file_kind -> string list) =
     try
       let stat = Unix.lstat (path ^ "/" ^  s) in
       stat.Unix.st_kind =*= kind
-    with _e ->
+    with Unix.Unix_error _ ->
       pr2 ("EXN pb stating file: " ^ s);
       false
   )
