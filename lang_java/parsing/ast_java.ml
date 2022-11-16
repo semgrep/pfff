@@ -289,6 +289,8 @@ and stmt =
 
   (* decl as statement *)
   | LocalVar of var_with_init
+  (* helper to desugar `int a = 1, b = 2` into two DefStmts later *)
+  | LocalVarList of stmts
   (* in recent Java, used to be only LocalClass *)
   | DeclStmt of decl
   | DirectiveStmt of directive

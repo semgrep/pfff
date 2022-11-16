@@ -654,6 +654,7 @@ and stmt env = function
       exprs env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
   | LocalVar f -> field env f
+  | LocalVarList xs -> stmts env xs
   | DeclStmt x -> decl env (x, 0)
   | DirectiveStmt _ -> raise Todo
 
