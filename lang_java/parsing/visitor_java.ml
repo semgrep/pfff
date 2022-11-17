@@ -321,8 +321,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Throw (t, v1) ->
           let t = v_info t in
           let v1 = v_expr v1 in ()
-      | LocalVarList v1 -> let v1 = v_stmts v1 in ()
-      | LocalVar v1 -> let v1 = v_var_with_init v1 in ()
+      | LocalVarList v1 -> let v1 = v_list v_var_with_init v1 in ()
       | DeclStmt v1 -> let v1 = v_decl v1 in ()
       | DirectiveStmt v1 -> let v1 = v_directive v1 in ()
       | Assert (t, v1, v2) ->

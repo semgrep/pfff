@@ -288,9 +288,7 @@ and stmt =
   | Throw of tok * expr
 
   (* decl as statement *)
-  | LocalVar of var_with_init
-  (* helper to desugar `int a = 1, b = 2` into two DefStmts later *)
-  | LocalVarList of stmts
+  | LocalVarList of var_with_init list
   (* in recent Java, used to be only LocalClass *)
   | DeclStmt of decl
   | DirectiveStmt of directive
