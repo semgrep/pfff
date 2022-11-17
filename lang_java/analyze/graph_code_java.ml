@@ -666,8 +666,8 @@ and stmts env xs =
           match x with
           | LocalVarList flds ->
               List.fold_right (fun fld env ->
-              { env with
-                params_or_locals = p_or_l fld.f_var :: env.params_or_locals }) flds env
+                { env with
+                  params_or_locals = p_or_l fld.f_var :: env.params_or_locals }) flds env
           (* also add LocalClass case? no, 'lookup env ...' handles that *)
           | _ -> env
         in

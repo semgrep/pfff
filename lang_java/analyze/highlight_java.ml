@@ -97,8 +97,8 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
                                  (match x with
                                   | LocalVarList vs ->
                                       List.iter (fun v ->
-                                      let ident = v.f_var.name in
-                                      tag_ident ident (Local Def)) vs
+                                        let ident = v.f_var.name in
+                                        tag_ident ident (Local Def)) vs
                                   | _ -> ()
                                  );
                                  k x
