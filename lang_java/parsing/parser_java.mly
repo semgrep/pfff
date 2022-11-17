@@ -880,13 +880,13 @@ statement_without_trailing_substatement:
  | ASSERT expression ";"                { Assert ($1, $2, None) }
  | ASSERT expression ":" expression ";" { Assert ($1, $2, Some $4) }
 
-block: "{" block_statement* "}"  { Block ($1, List.flatten $2, $3) }
+block: "{" block_statement* "}"  { Block ($1, $2, $3) }
 
 block_statement:
- | local_variable_declaration_statement  { [$1] }
- | statement          { [$1] }
+ | local_variable_declaration_statement  { $1 }
+ | statement          { $1 }
  (* javaext: ? *)
- | class_declaration  { [DeclStmt (Class $1)] }
+ | class_declaration  { DeclStmt (Class $1) }
 
 local_variable_declaration_statement: local_variable_declaration ";"
   { LocalVarList $1 }
@@ -933,7 +933,7 @@ switch_block:
      { List.rev (($3, []) :: $2) }
 
 switch_block_statement_group: switch_label+ block_statement+
-  {$1, List.flatten $2}
+  {$1, $2}
 
 switch_label:
  | CASE constant_expression ":"        { Case ($1, $2) }
@@ -1252,9 +1252,9 @@ constructor_declarator: identifier "(" listc0(formal_parameter) ")" { $1, $3}
 
 constructor_body:
  | "{" block_statement* "}"
-    { Block ($1, List.flatten $2, $3) }
+    { Block ($1, $2, $3) }
  | "{" explicit_constructor_invocation block_statement* "}"
-    { Block ($1, $2::(List.flatten $3), $4) }
+    { Block ($1, $2::$3, $4) }
 
 
 explicit_constructor_invocation:
