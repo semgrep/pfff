@@ -653,7 +653,7 @@ and stmt env = function
   | Assert (_, e, eopt) ->
       exprs env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
-  | LocalVar f -> field env f
+  | LocalVarList xs -> List.iter (field env) xs
   | DeclStmt x -> decl env (x, 0)
   | DirectiveStmt _ -> raise Todo
 
@@ -664,9 +664,10 @@ and stmts env xs =
         stmt env x;
         let env =
           match x with
-          | LocalVar fld ->
-              { env with
-                params_or_locals = p_or_l fld.f_var :: env.params_or_locals }
+          | LocalVarList flds ->
+              List.fold_right (fun fld env ->
+                { env with
+                  params_or_locals = p_or_l fld.f_var :: env.params_or_locals }) flds env
           (* also add LocalClass case? no, 'lookup env ...' handles that *)
           | _ -> env
         in

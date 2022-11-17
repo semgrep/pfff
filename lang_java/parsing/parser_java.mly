@@ -367,7 +367,7 @@ item_other:
  | item_declaration         { [DeclStmt $1] }
  | import_declaration  { [DirectiveStmt $1] }
  | package_declaration { [DirectiveStmt $1] }
- | local_variable_declaration_statement { $1 }
+ | local_variable_declaration_statement { [$1] }
 
 item_declaration:
  | class_and_co_declaration { $1 }
@@ -883,13 +883,13 @@ statement_without_trailing_substatement:
 block: "{" block_statement* "}"  { Block ($1, List.flatten $2, $3) }
 
 block_statement:
- | local_variable_declaration_statement  { $1 }
+ | local_variable_declaration_statement  { [$1] }
  | statement          { [$1] }
  (* javaext: ? *)
  | class_declaration  { [DeclStmt (Class $1)] }
 
 local_variable_declaration_statement: local_variable_declaration ";"
-  { List.map (fun x -> LocalVar x) $1 }
+  { LocalVarList $1 }
 
 (* cant factorize with variable_modifier_opt, conflicts otherwise *)
 local_variable_declaration: modifiers_opt type_ listc(variable_declarator)
