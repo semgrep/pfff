@@ -414,9 +414,13 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
          | Some name -> v_name name
          | None -> ());
         v_tok v4; v_filename v5
-    | Import (t, (v1, v2), v3) ->
+    | Import (t, v1, v2) ->
         let t = v_tok t in
-        let v1 = v_name v1 and v2 = v_option v_name v2 and v3 = v_filename v3
+        let v1 = v_list (fun (v1, v2) ->
+          let v1 = v_name v1 and v2 = v_option v_name v2 in
+          ()
+        ) v1 in
+        let v2 = v_filename v2
         in ()
     | ImportFile (t, v1) ->
         let t = v_tok t in

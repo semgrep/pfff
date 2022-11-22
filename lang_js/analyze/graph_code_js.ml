@@ -344,26 +344,28 @@ and toplevel env x =
 
 and module_directive env x =
   match x with
-  | Import (_, (name1, name2opt), (file, tok)) ->
-      if env.phase = Uses then begin
-        let str1 = s_of_n name1 in
-        let str2_opt = Option.map s_of_n name2opt in
-        let path_opt = Module_path_js.resolve_path
-            ~root:env.root
-            ~pwd:(Filename.dirname env.file_readable)
-            file in
-        let readable =
-          match path_opt with
-          | None ->
-              env.pr2_and_log (spf "could not resolve path %s at %s" file
-                                 (Parse_info.string_of_info tok));
-              spf "NOTFOUND-|%s|.js" file
-          | Some fullpath -> Common.readable env.root fullpath
-        in
-        str2_opt |> Option.iter (fun str2 ->
-          Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
-        )
-      end
+  | Import (_, names, (file, tok)) ->
+      List.iter (fun (name1, name2opt) ->
+        if env.phase = Uses then begin
+          let str1 = s_of_n name1 in
+          let str2_opt = Option.map s_of_n name2opt in
+          let path_opt = Module_path_js.resolve_path
+              ~root:env.root
+              ~pwd:(Filename.dirname env.file_readable)
+              file in
+          let readable =
+            match path_opt with
+            | None ->
+                env.pr2_and_log (spf "could not resolve path %s at %s" file
+                                   (Parse_info.string_of_info tok));
+                spf "NOTFOUND-|%s|.js" file
+            | Some fullpath -> Common.readable env.root fullpath
+          in
+          str2_opt |> Option.iter (fun str2 ->
+            Hashtbl.replace env.imports str2 (mk_qualified_name readable str1)
+          )
+        end
+      ) names
   | Export (_t, name)
   | ReExportNamespace (_t, _, Some name, _, _) ->
       if env.phase = Defs then begin
