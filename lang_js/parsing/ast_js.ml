@@ -548,7 +548,7 @@ and module_directive =
    * when you do 'import "react"' to get a resolved path).
    * See Module_path_js to resolve paths.
   *)
-  | Import of tok * import_specifier * a_filename
+  | Import of tok * import_specifier list * a_filename
   | Export of tok * a_ident
   (* export * from 'foo'
      export * as bar from 'foo' *)
