@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2009-2013 Facebook
- * Copyright (C) 2020 R2C
+ * Copyright (C) 2020-2022 R2C
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -1190,6 +1190,9 @@ encaps:
      { EncapsString $1 }
  | T_VARIABLE
      { EncapsVar (mk_var $1)  }
+ (* sgrep-ext: *)
+ | T_METAVAR
+     { EncapsString $1 }
  | T_VARIABLE "[" encaps_var_offset "]"
      { EncapsVar (ArrayGet (mk_var $1,($2,Some $3,$4)))}
  | T_VARIABLE "->" ident_encaps

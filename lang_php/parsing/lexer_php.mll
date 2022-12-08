@@ -2,6 +2,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2009-2012 Facebook
+ * Copyright (C) 2020-2022 r2c
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -70,6 +71,18 @@ let lang_ext_or_t_ident ii fii =
   if !Flag_php.facebook_lang_extensions
   then fii ii
   else T_IDENT(case_str (PI.str_of_info ii), ii)
+
+let t_variable_or_metavar s info =
+  (* sgrep-ext: we used to generate a T_IDENT here, so a metavariable
+   * could be used where a T_IDENT was expected, e.g., a function name,
+   * but we also want to use a metavariable where a T_VARIABLE could
+   * be used, e.g., a parameter, so simpler to use a separate
+   * token for metavariables. That way we also avoid certain
+   * conflicts in the grammar.
+   *)
+  if AST_generic_.is_metavar_name ("$" ^ s) && !Flag.sgrep_mode
+  then T_METAVAR (case_str ("$" ^ s), info)
+  else T_VARIABLE(case_str s, info)
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -611,17 +624,8 @@ rule st_in_scripting = parse
      * later when we generate a Var or This.
      *)
     | "$" (LABEL as s) {
-        let info = tokinfo lexbuf in
-        (* sgrep-ext: we used to generate a T_IDENT here, so a metavariable
-         * could be used where a T_IDENT was expected, e.g., a function name,
-         * but we also want to use a metavariable where a T_VARIABLE could
-         * be used, e.g., a parameter, so simpler to use a separate
-         * token for metavariables. That way we also avoid certain
-         * conflicts in the grammar.
-         *)
-        if AST_generic_.is_metavar_name ("$" ^ s) && !Flag.sgrep_mode
-        then T_METAVAR (case_str ("$" ^ s), info)
-        else T_VARIABLE(case_str s, info)
+          let info = tokinfo lexbuf in
+          t_variable_or_metavar s info
           }
     | ("$" as dollar) "$" (LABEL as s) {
         let info = tokinfo lexbuf in
@@ -894,7 +898,7 @@ and st_double_quotes = parse
   (* todo? was in original scanner ? *)
   | "{" {  T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)  }
 
-    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { t_variable_or_metavar s (tokinfo lexbuf) }
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
@@ -941,8 +945,8 @@ and st_backquote = parse
   | BACKQUOTE_CHARS+ {
       T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
     }
-
-    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
+    (* TODO? should we use t_variable_or_metavar? *)
+    | "$" (LABEL as s)     { T_VARIABLE (case_str s, (tokinfo lexbuf)) }
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
@@ -1019,7 +1023,7 @@ and st_start_heredoc stopdoc = parse
     }
   | "\\" ANY_CHAR { T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf) }
 
-    | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
+    | "$" (LABEL as s)     { t_variable_or_metavar s (tokinfo lexbuf) }
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
