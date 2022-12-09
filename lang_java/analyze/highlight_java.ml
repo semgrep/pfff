@@ -123,6 +123,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
                                  (match e with
                                   (* done on PRIMITIVE_TYPE below *)
                                   | TBasic (_s, _ii) -> ()
+                                  | TVar _ii -> ()
                                   | TClass xs ->
                                       (match List.rev xs with
                                        | [] -> raise Impossible

@@ -142,6 +142,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | TBasic v1 -> let v1 = v_wrap v_string v1 in ()
       | TClass v1 -> let v1 = v_class_type v1 in ()
       | TArray v1 -> let v1 = v_bracket v_typ v1 in ()
+      | TVar v1 -> v_tok v1
     in
     vin.ktype (k, all_functions) x
 

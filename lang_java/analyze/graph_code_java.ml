@@ -150,6 +150,7 @@ let _looks_like_enum_constant s =
 
 let rec classname_and_info_of_typ t =
   match t with
+  | TVar ii -> "var", ii
   | TBasic x -> x
   | TArray (_, t, _) -> classname_and_info_of_typ t
   | TClass xs ->
@@ -823,7 +824,7 @@ and init_opt env opt =
 (* Types *)
 (* ---------------------------------------------------------------------- *)
 and typ env = function
-  | TBasic _ -> ()
+  | TBasic _ | TVar _ -> ()
   | TArray (_, t, _) -> typ env t
   (* other big dependency source! *)
   | TClass reft ->

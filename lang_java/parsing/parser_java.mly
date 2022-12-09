@@ -57,12 +57,15 @@ let void_type ii = named_type ("void", ii)
  * because of some ambiguity but what we really wanted was an
  * identifier followed by some type arguments.
  *)
-let (class_type: name_or_class_type -> class_type) = fun xs ->
-  xs |> List.map (function
-  | Id x -> x, None
-  | Id_then_TypeArgs (x, xs) -> x, Some xs
-  | TypeArgs_then_Id _ -> raise Parsing.Parse_error
-  )
+let (class_type: name_or_class_type -> typ) = fun xs ->
+  let ys =
+    xs |> List.map (function
+    | Id x -> x, None
+    | Id_then_TypeArgs (x, xs) -> x, Some xs
+    | TypeArgs_then_Id _ -> raise Parsing.Parse_error
+    )
+  in
+  TClass ys
 
 let (name: name_or_class_type -> expr) = fun xs ->
   let ys =
@@ -450,7 +453,12 @@ type_:
 
 primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 
-class_or_interface_type: name { TClass (class_type $1) }
+class_or_interface_type: name {
+    match class_type $1 with
+    (* since Java 10 *)
+    | TClass [("var", ii), None] -> TVar ii
+    | t -> t
+ }
 
 reference_type:
  | class_or_interface_type { $1 }
@@ -539,13 +547,13 @@ literal:
 
 class_literal:
  | primitive_type "." CLASS  { ClassLiteral ($1, $3) }
- | name           "." CLASS  { ClassLiteral (TClass (class_type ($1)), $3) }
+ | name           "." CLASS  { ClassLiteral (class_type $1, $3) }
  | array_type     "." CLASS  { ClassLiteral ($1, $3) }
  | VOID           "." CLASS  { ClassLiteral (void_type $1, $3) }
 
 class_instance_creation_expression:
  | NEW name "(" listc0(argument) ")" class_body?
-   { NewClass ($1, TClass (class_type $2), ($3,$4,$5), $6) }
+   { NewClass ($1, class_type $2, ($3,$4,$5), $6) }
  (* javaext: ? *)
  | primary "." NEW identifier "(" listc0(argument) ")" class_body?
    { NewQualifiedClass ($1, $2, $3, TClass ([$4,None]), ($5,$6,$7), $8) }
@@ -560,7 +568,7 @@ array_creation_expression:
  | NEW primitive_type dim_expr+ dims_opt
        { NewArray ($1, $2, $3, $4, None) }
  | NEW name           dim_expr+ dims_opt
-       { NewArray ($1, TClass (class_type ($2)), $3, $4, None) }
+       { NewArray ($1, class_type $2, $3, $4, None) }
 
 (* A new array that can be accessed right away by appending [index] as follows:
  * new String[] { "abc", "def" }[1]  // a string
@@ -569,7 +577,7 @@ array_creation_expression_with_initializer:
  | NEW primitive_type dims array_initializer
        { NewArray ($1, $2, [], $3, Some $4) }
  | NEW name           dims array_initializer
-       { NewArray ($1, TClass (class_type ($2)), [], $3, Some $4) }
+       { NewArray ($1, class_type $2, [], $3, Some $4) }
 
 dim_expr: "[" expression "]"  { $2 }
 
@@ -825,12 +833,12 @@ lambda_body:
 method_reference:
  | name       "::" identifier
     { (* TODO? probably a type? *)
-       MethodRef (Right (TClass (class_type $1)), $2, None, $3)
+       MethodRef (Right (class_type $1), $2, None, $3)
     }
  | primary    "::" identifier       { MethodRef (Left $1, $2, None, $3) }
  | array_type "::" identifier       { MethodRef (Right $1, $2, None, $3) }
  | name       "::" NEW
-    { MethodRef (Right (TClass (class_type $1)), $2, None, new_id $3) }
+    { MethodRef (Right (class_type $1), $2, None, new_id $3) }
  | array_type "::" NEW              { MethodRef (Right $1, $2, None, new_id $3) }
  | SUPER      "::" identifier       { MethodRef (Left (super $1), $2, None, $3) }
  | name "." SUPER   "::" identifier

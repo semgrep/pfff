@@ -75,6 +75,8 @@ type typ =
   | TBasic of string wrap
   | TClass of class_type
   | TArray of typ bracket
+  (* since Java 10 *)
+  | TVar of tok (* 'var' *)
 
 (* class or interface or enum type actually *)
 and class_type =
