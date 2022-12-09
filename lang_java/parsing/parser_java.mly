@@ -351,6 +351,7 @@ semgrep_pattern:
 
  | explicit_constructor_invocation_stmt EOF { AStmt $1 }
  | explicit_constructor_invocation EOF      { AExpr $1 }
+ | static_initializer EOF { AStmt (DeclStmt $1) }
 
  (* partial defs *)
  | class_header          EOF { Partial (PartialDecl (Class $1)) }
