@@ -286,7 +286,7 @@ and stmt =
   | Return of tok * expr option
   | Label of ident * stmt
 
-  | Sync of (* TODO: tok * *) expr * stmt
+  | Sync of tok (* 'synchronized' *) * expr (* todo: bracket *) * stmt
 
   | Try of tok * resources option * stmt * catches * (tok * stmt) option
   | Throw of tok * expr

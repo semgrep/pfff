@@ -643,7 +643,7 @@ and stmt env = function
   | Label (_id, st) -> stmt env st
   | Break (_, _idopt) | Continue (_, _idopt) -> ()
   | Return (_, eopt) -> exprs env (Common2.option_to_list eopt)
-  | Sync (e, st) ->
+  | Sync (_, e, st) ->
       expr env e;
       stmt env st;
   | Try (_, _resourcesTODO, st, xs, stopt) ->

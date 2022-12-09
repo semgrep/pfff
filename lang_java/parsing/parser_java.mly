@@ -997,7 +997,7 @@ break_statement:    BREAK    identifier? ";"  { Break ($1, $2) }
 continue_statement: CONTINUE identifier? ";"  { Continue ($1, $2) }
 return_statement:   RETURN expression? ";"  { Return ($1, $2) }
 
-synchronized_statement: SYNCHRONIZED "(" expression ")" block { Sync ($3, $5) }
+synchronized_statement: SYNCHRONIZED "(" expression ")" block { Sync ($1, $3, $5) }
 
 (*----------------------------*)
 (* Exceptions *)

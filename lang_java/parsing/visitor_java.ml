@@ -311,7 +311,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
           let t = v_info t in
           let v1 = v_option v_expr v1 in ()
       | Label (v1, v2) -> let v1 = v_ident v1 and v2 = v_stmt v2 in ()
-      | Sync (v1, v2) -> let v1 = v_expr v1 and v2 = v_stmt v2 in ()
+      | Sync (v0, v1, v2) ->
+          v_info v0;
+          let v1 = v_expr v1 and v2 = v_stmt v2 in ()
       | Try (t, v0, v1, v2, v3) ->
           let t = v_info t in
           let v0 = v_option v_resources v0 in
