@@ -27,7 +27,7 @@
  *
  * More modifications by Yoann Padioleau to support more recent versions.
  * Copyright (C) 2011 Facebook
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2020-2022 r2c
  *
  * Support for:
  *  - generics (partial)
@@ -348,6 +348,9 @@ semgrep_pattern:
  | item_no_dots item+ EOF        { mk_stmt_or_stmts ($1 @ (List.flatten $2)) }
 
  | annotation EOF { AMod (Annotation $1, Common2.fst3 $1) }
+
+ | explicit_constructor_invocation_stmt EOF { AStmt $1 }
+ | explicit_constructor_invocation EOF      { AExpr $1 }
 
  (* partial defs *)
  | class_header          EOF { Partial (PartialDecl (Class $1)) }
@@ -1261,21 +1264,24 @@ constructor_declarator: identifier "(" listc0(formal_parameter) ")" { $1, $3}
 constructor_body:
  | "{" block_statement* "}"
     { Block ($1, $2, $3) }
- | "{" explicit_constructor_invocation block_statement* "}"
+ | "{" explicit_constructor_invocation_stmt block_statement* "}"
     { Block ($1, $2::$3, $4) }
 
 
+explicit_constructor_invocation_stmt:
+ explicit_constructor_invocation ";" { Expr ($1, $2) }
+
 explicit_constructor_invocation:
- | THIS "(" listc0(argument) ")" ";"
-      { Expr (Call (This $1, ($2,$3,$4)), $5) }
- | SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation (NameId (super_ident $1)) ($2,$3,$4) $5 }
+ | THIS "(" listc0(argument) ")"
+      { Call (This $1, ($2,$3,$4)) }
+ | SUPER "(" listc0(argument) ")"
+      { Call (NameId (super_ident $1), ($2,$3,$4)) }
  (* javaext: ? *)
- | primary "." SUPER "(" listc0(argument) ")" ";"
-      { Expr (Call ((Dot ($1, $2, super_ident $3)), ($4,$5,$6)), $7) }
+ | primary "." SUPER "(" listc0(argument) ")"
+      { Call ((Dot ($1, $2, super_ident $3)), ($4,$5,$6)) }
  (* not in 2nd edition java language specification. *)
- | name "." SUPER "(" listc0(argument) ")" ";"
-      { constructor_invocation (Dot (name $1, $2, super_ident $3)) ($4,$5,$6) $7 }
+ | name "." SUPER "(" listc0(argument) ")"
+      { Call (Dot (name $1, $2, super_ident $3), ($4,$5,$6)) }
 
 (*----------------------------*)
 (* Method parameter *)

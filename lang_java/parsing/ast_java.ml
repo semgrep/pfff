@@ -13,7 +13,7 @@
  *
  * Extended by Yoann Padioleau to support more recent versions of Java.
  * Copyright (C) 2011 Facebook
- * Copyright (C) 2020 r2c
+ * Copyright (C) 2020-2022 r2c
 *)
 
 (*****************************************************************************)
@@ -35,6 +35,7 @@
  * - 2010 port to the pfff infrastructure.
  * - 2012 heavily modified to support annotations, generics, enum, foreach, etc
  * - 2020 support lambdas
+ * - 2022 support 'var' directly (via TVar)
 *)
 
 (*****************************************************************************)
@@ -179,6 +180,7 @@ and expr =
   | NameId of ident
 
   | This of tok (* used in Dot but also can be in Call *)
+  (* TODO: Super of tok *)
 
   (* This is used only in the context of annotations *)
   | NameOrClassType of name_or_class_type
@@ -375,7 +377,8 @@ and method_decl = {
 
   (* Empty for methods in interfaces.
    * For constructor the first stmts can contain
-   * explicit_constructor_invocations.
+   * explicit_constructor_invocations (which are currently parsed as
+   * regular Call)
   *)
   m_body: stmt
 }
@@ -609,9 +612,6 @@ let decls f = fun mods vtype vars ->
     f { f_var = canon_var mods (Some vtype) v; f_init = init }
   in
   List.map dcl vars
-
-let constructor_invocation name args sc =
-  Expr (Call ((name), args), sc)
 
 let typ_of_qualified_id xs =
   TClass (xs |> List.map (fun id -> id, None))
