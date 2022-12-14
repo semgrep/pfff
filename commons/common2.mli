@@ -1154,6 +1154,10 @@ val with_open_stringbuf :
   (((string -> unit) * Buffer.t) -> unit) -> string
 
 val with_tmp_file: str:string -> ext:string -> (filename -> 'a) -> 'a
+(* Runs just before a tmp file is deleted. Multiple hooks can be added, but the
+ * order in which they are called is unspecified. *)
+val register_tmp_file_cleanup_hook: (string -> unit) -> unit
+
 val with_tmp_dir: (dirname -> 'a) -> 'a
 
 (* If the user use some exit 0 in his code, then no one can intercept this
